@@ -138,7 +138,7 @@ private struct AppShellEmptyStateView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Open an app_export.json file")
                     .font(.title2.weight(.semibold))
-                Text("This shell reads local LocationHistory2GPX app_export contract files offline. Google raw exports, persistence and cloud features are out of scope here.")
+                Text("This product-oriented shell reads local LocationHistory2GPX app_export contract files offline. Google raw exports, persistence and cloud features stay out of scope here.")
                     .font(.body)
                     .foregroundStyle(.secondary)
             }
@@ -158,7 +158,7 @@ private struct AppShellEmptyStateView: View {
                     Button("Clear", action: clearAction)
                         .buttonStyle(.bordered)
                 }
-                Text("Expected input is a local app_export.json file that matches the frozen consumer contract. Demo data is optional and secondary.")
+                Text("Expected input is a local app_export.json file that matches the frozen consumer contract. Demo data remains optional and secondary.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

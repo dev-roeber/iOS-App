@@ -7,7 +7,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
 - Consumer only
 - kein Parser fuer Google-Rohdaten
 - keine GPX-/GeoJSON-/CSV-Erzeugung
-- keine Produkt-UI in diesem Schritt
+- keine fertige Produkt-App in diesem Schritt
 - offline-first, ohne Netzwerkcode, Tracking oder Cloud-Sync
 
 ## Contract-Herkunft
@@ -68,6 +68,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
   - `app_export.schema.json`
   - `golden_app_export_*.json`
 - `docs/CONTRACT.md`
+- `docs/XCODE_APP_PREPARATION.md`
 - `ROADMAP.md`
 - `NEXT_STEPS.md`
 
@@ -82,6 +83,8 @@ Der Standardweg ist jetzt nativer lokaler Swift 5.9.
 Auf Apple-Plattformen kann die lokale Demo-Harness danach ueber das Swift Package in Xcode oder per `swift run LocationHistoryConsumerDemo` gestartet werden. Sie ist bewusst keine Produkt-App. Standardmaessig nutzt sie eine feste lokale Demo-Fixture, kann aber auch lokal eine `app_export.json` fuer denselben Consumer-Contract laden.
 
 Zusaetzlich gibt es jetzt eine kleine produktnahe App-Shell `LocationHistoryConsumerApp`. Sie startet leerer und import-zentriert, bleibt aber weiter offline-only und noch keine fertige Produkt-App. Unter Linux ist nur der nicht-UI Teil ueber `swift test` ehrlich verifizierbar.
+
+Die aktuelle Apple-/Xcode-nahe Vorbereitung ist bewusst klein und dokumentiert in `docs/XCODE_APP_PREPARATION.md`. Es gibt absichtlich noch kein als verifiziert behauptetes Xcode-/iOS-Projektsetup.
 
 ## Contract-Files aktualisieren
 
@@ -130,3 +133,11 @@ Die App-Shell ist die produktnaehere Einstiegsschicht dieses Repos:
 - fuehrt Quelle, Dateiname, Schema-Version, Exportzeitpunkt und Tagesanzahl kompakt im UI
 - erlaubt Open Another File, Load Demo Data und Clear ohne Persistenz oder Dateiverlauf
 - bleibt offline-only und fuehrt keine neue Business-Logik ein
+
+## Apple-/Xcode-Vorbereitung
+
+- `LocationHistoryConsumerApp` ist die vorgesehene produktnahe Apple-App-Huelle
+- `LocationHistoryConsumerDemo` bleibt der Harness-/Verifikationspfad
+- `LocationHistoryConsumerAppSupport` enthaelt die gemeinsame app-nahe Import-/Session-Logik
+- die aktuelle Vorbereitungsnotiz fuer Xcode und Apple-Validierung steht in `docs/XCODE_APP_PREPARATION.md`
+- unter Linux bleiben nur SwiftPM-Build und `swift test` ehrlich verifiziert

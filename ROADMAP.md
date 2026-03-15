@@ -52,6 +52,13 @@
 - [x] Open / Replace / Demo / Clear-Fluss klarer fuehren
 - [x] leere, fehlerhafte und importierte Inhaltszustaende sauberer unterscheiden
 
+## Phase 10
+
+- [x] Apple-/Xcode-nahe Produkt-App-Vorbereitung dokumentarisch ergaenzen
+- [x] Rollen von Core / Demo / App-Support / App-Shell weiter schaerfen
+- [x] produktnahe App-Shell als Apple-Einstieg klarer positionieren
+- [x] Linux- und Apple-Verifikationsgrenzen ehrlich dokumentieren
+
 ## Nicht Teil dieser Phase
 
 - Google-Rohdaten-Import
