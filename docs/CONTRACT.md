@@ -72,5 +72,6 @@ Die SwiftUI-Demo in `Sources/LocationHistoryConsumerDemo/` ist nur ein lokaler H
 - Sie laedt eine feste gebuendelte Golden-Fixture aus `LocationHistoryConsumerDemoSupport`.
 - Sie kann auf Apple-Plattformen alternativ lokal eine `app_export.json` laden.
 - Sie nutzt nur Decoder + Query-Layer, keine neue Domain-Logik.
+- Sie fuehrt Quelle, Reset und Fehlerzustand bewusst nur in einer kleinen Demo-Session-Schicht.
 - Sie bleibt auf den eingefrorenen Consumer-Contract beschraenkt und importiert keine Google-Rohdaten.
 - Sie ist keine Produkt-App und fuehrt keine Persistenz ein.

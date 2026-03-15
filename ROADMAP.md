@@ -31,6 +31,12 @@
 - [x] lokaler Import-Flow fuer `app_export.json` in der Demo
 - [x] Demo-Fixture als Fallback neben importierter Datei beibehalten
 - [x] klare Fehleranzeige fuer Datei- und Decoding-Fehler
+
+## Phase 7
+
+- [x] klarere Zustandsfuehrung fuer Demo, Import und Fehler
+- [x] sichtbare Quelle fuer Demo-Fixture vs. importierte Datei
+- [x] bessere Leer- und Fallback-Zustaende fuer Liste und Detail
 - [ ] Produkt-UI
 
 ## Nicht Teil dieser Phase

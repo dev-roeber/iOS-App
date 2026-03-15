@@ -7,46 +7,53 @@ import UniformTypeIdentifiers
 #endif
 
 struct RootView: View {
-    @State private var state: LoadState = .loading
-    @State private var selectedDate: String?
+    @State private var session = DemoSessionState(isLoading: true)
     @State private var isImportingFile = false
 
     var body: some View {
         Group {
-            switch state {
-            case .loading:
+            if session.isLoading && !session.hasLoadedContent {
                 ProgressView("Loading app export...")
-            case let .failed(message):
-                PlaceholderStateView(
-                    title: "Unable to load app export",
-                    systemImage: "exclamationmark.triangle",
-                    message: message
-                )
-            case let .loaded(content):
+            } else if session.content != nil {
                 NavigationSplitView {
                     DayListView(
-                        summaries: content.daySummaries,
-                        selectedDate: $selectedDate
+                        summaries: session.daySummaries,
+                        selectedDate: Binding(
+                            get: { session.selectedDate },
+                            set: { session.selectDay($0) }
+                        )
                     )
                     .safeAreaInset(edge: .bottom) {
-                        sourceFooter(content.source)
+                        sourceFooter
                     }
                     .navigationTitle("Days")
                 } detail: {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
-                            OverviewSection(overview: content.overview)
-                            DayDetailView(detail: content.detail(for: selectedDate))
+                            SessionStatusView(
+                                message: session.message,
+                                sourceDescription: session.sourceDescription,
+                                isLoading: session.isLoading,
+                                hasDays: session.hasDays
+                            )
+                            if let overview = session.overview {
+                                OverviewSection(overview: overview)
+                            }
+                            DayDetailView(
+                                detail: session.selectedDetail,
+                                hasDays: session.hasDays
+                            )
                         }
                         .padding()
                     }
-                    .navigationTitle(selectedDate ?? "Overview")
+                    .navigationTitle(session.selectedDate ?? "Overview")
                 }
-                .task {
-                    if selectedDate == nil {
-                        selectedDate = content.selectedDate
-                    }
-                }
+            } else {
+                PlaceholderStateView(
+                    title: session.message?.title ?? "No app export loaded",
+                    systemImage: "exclamationmark.triangle",
+                    message: session.message?.message ?? "Load the demo fixture or import a local app_export.json file."
+                )
             }
         }
         .toolbar {
@@ -58,7 +65,7 @@ struct RootView: View {
             }
         }
         .task {
-            guard case .loading = state else { return }
+            guard session.isLoading, !session.hasLoadedContent else { return }
             loadBundledDemo()
         }
         #if canImport(UniformTypeIdentifiers)
@@ -78,12 +85,16 @@ struct RootView: View {
     }
 
     private func loadBundledDemo() {
+        session.beginLoading()
         do {
             let content = try DemoDataLoader.loadDefaultContent()
-            state = .loaded(content)
-            selectedDate = content.selectedDate
+            session.show(content: content)
         } catch {
-            state = .failed(error.localizedDescription)
+            session.showFailure(
+                title: "Unable to load demo fixture",
+                message: error.localizedDescription,
+                preserveCurrentContent: false
+            )
         }
     }
 
@@ -92,12 +103,19 @@ struct RootView: View {
         switch result {
         case let .success(urls):
             guard let url = urls.first else {
-                state = .failed("No file was selected.")
                 return
             }
+            session.beginLoading()
             loadImportedFile(at: url)
         case let .failure(error):
-            state = .failed(error.localizedDescription)
+            if isUserCancelled(error) {
+                return
+            }
+            session.showFailure(
+                title: "Import failed",
+                message: error.localizedDescription,
+                preserveCurrentContent: session.hasLoadedContent
+            )
         }
     }
 
@@ -111,23 +129,35 @@ struct RootView: View {
 
         do {
             let content = try DemoDataLoader.loadImportedContent(from: url)
-            state = .loaded(content)
-            selectedDate = content.selectedDate
+            session.show(content: content)
         } catch {
-            state = .failed(error.localizedDescription)
+            session.showFailure(
+                title: "Import failed",
+                message: error.localizedDescription,
+                preserveCurrentContent: session.hasLoadedContent
+            )
         }
+    }
+
+    private func isUserCancelled(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError
     }
     #endif
 
-    @ViewBuilder
-    private func sourceFooter(_ source: DemoContentSource) -> some View {
+    private var sourceFooter: some View {
         VStack(alignment: .leading, spacing: 4) {
             Divider()
-            Text("Source")
+            Text("Active Source")
                 .font(.caption.weight(.semibold))
-            Text(sourceLabel(for: source))
+            Text(session.sourceDescription ?? "No source loaded")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            if session.hasLoadedContent {
+                Text("Load Demo resets the harness back to the bundled sample.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
@@ -135,21 +165,6 @@ struct RootView: View {
         .padding(.bottom, 12)
         .background(.thinMaterial)
     }
-
-    private func sourceLabel(for source: DemoContentSource) -> String {
-        switch source {
-        case let .bundledFixture(name):
-            return "Demo fixture: \(name).json"
-        case let .importedFile(filename):
-            return "Imported file: \(filename)"
-        }
-    }
-}
-
-private enum LoadState {
-    case loading
-    case loaded(DemoContent)
-    case failed(String)
 }
 
 private struct PlaceholderStateView: View {
@@ -171,6 +186,74 @@ private struct PlaceholderStateView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
+    }
+}
+
+private struct SessionStatusView: View {
+    let message: DemoUserMessage?
+    let sourceDescription: String?
+    let isLoading: Bool
+    let hasDays: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let sourceDescription {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Current Source")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(sourceDescription)
+                        .font(.subheadline)
+                }
+            }
+
+            if let message {
+                MessageCard(message: message)
+            }
+
+            if isLoading {
+                HStack(spacing: 10) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Processing app export...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if !hasDays {
+                Text("This app export currently has no day entries. Overview data is still shown above.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct MessageCard: View {
+    let message: DemoUserMessage
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(message.title)
+                .font(.subheadline.weight(.semibold))
+            Text(message.message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(backgroundColor)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private var backgroundColor: Color {
+        switch message.kind {
+        case .info:
+            return Color.accentColor.opacity(0.12)
+        case .error:
+            return Color.red.opacity(0.12)
+        }
     }
 }
 #endif

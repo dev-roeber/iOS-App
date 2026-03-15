@@ -27,6 +27,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
 - read-only Query-/ViewState-Daten aus dem App-Export ableiten
 - eine minimale lokale SwiftUI-Demo-Shell mit fixer Golden-Fixture bereitstellen
 - in der Demo lokal `app_export.json` fuer denselben Consumer-Contract importieren
+- Demo-Quelle, Reset und Fehlerzustaende klar sichtbar fuehren
 - Golden-basierte Contract-Tests lokal ausfuehren
 - klar dokumentieren, welche Producer-Artefakte konsumiert werden
 - Producer-Contract-Artefakte lokal reproduzierbar aktualisieren
@@ -110,5 +111,6 @@ Die Demo-Shell ist nur ein lokaler Harness fuer die Query-Schicht:
 - optionaler lokaler Dateiimport fuer `app_export.json`
 - zeigt Overview, sortierte Day-Liste und Day-Detail
 - nutzt weiter nur Decoder + Query-Layer
+- zeigt aktive Quelle, Reset auf Demo und klarere Fehler-/Leerzustaende
 - keine Persistenz, keine Maps, kein Google-Rohdatenimport
 - Fehler beim Fixture- oder Datei-Load werden schlicht als Fehlzustand angezeigt
