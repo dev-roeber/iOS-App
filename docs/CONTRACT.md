@@ -29,6 +29,7 @@
 - Schema-konformes App-Export-JSON dekodieren
 - additive non-breaking Felder tolerieren, wenn sie optional bleiben
 - bei unbekannter `schema_version` defensiv fehlschlagen
+- read-only Query-/ViewState-Ergebnisse aus bereits decodierten Contract-Daten ableiten
 
 ## Nicht Teil des Contracts
 
@@ -57,3 +58,10 @@
 
 - Primär: nativer lokaler Lauf mit `swift test`
 - Docker ist kein Standardworkflow dieses Repos mehr
+
+## Read-only Query-Layer
+
+Die Query-Schicht in `Sources/LocationHistoryConsumer/Queries/` ist bewusst consumer-only:
+- Sie liest nur `AppExport` und erzeugt kleine Read-Modelle fuer Listen, Detail und Header.
+- Sie fuehrt keine Producer-Aufgaben wie Parsing, Dedupe, Trip-Erkennung oder Export-Erzeugung aus.
+- Sie ist fuer eine spaetere UI gedacht, bleibt aber selbst UI-frei.

@@ -5,7 +5,8 @@
 - Dieses Repo ist ausschliesslich Consumer des stabilen App-Exports aus `LocationHistory2GPX`.
 - Keine Producer-Verantwortung hierher ziehen.
 - Keine Google-Rohdaten parsern.
-- Keine Produkt-UI in diesem Bootstrap-Schritt bauen.
+- Keine Produkt-UI in diesem Schritt bauen.
+- Read-only Query-/ViewState-Schicht ist erlaubt, solange sie contract-basiert bleibt.
 
 ## Stabiler Contract
 
@@ -19,6 +20,7 @@
 
 - Foundation-first, keine unnötigen Frameworks
 - Decoder und Modelle klein, klar, testbar halten
+- Query-Typen klein, wertbasiert und UI-unabhaengig halten
 - additive Felder optional modellieren
 - unbekannte additive JSON-Felder tolerieren, aber unbekannte `schema_version` weiter ablehnen
 - Breaking Changes nur mit dokumentierter Contract-Version

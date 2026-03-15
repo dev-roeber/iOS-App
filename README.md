@@ -24,6 +24,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
 
 - App-Export-JSON laden
 - gegen Swift-Modelle decodieren
+- read-only Query-/ViewState-Daten aus dem App-Export ableiten
 - Golden-basierte Contract-Tests lokal ausfuehren
 - klar dokumentieren, welche Producer-Artefakte konsumiert werden
 - Producer-Contract-Artefakte lokal reproduzierbar aktualisieren
@@ -41,9 +42,12 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
   - `AppExportModels.swift`
   - `AppExportDecoder.swift`
   - `ContractVersion.swift`
+  - `Queries/*.swift`
 - `Tests/LocationHistoryConsumerTests/`
   - `AppExportGoldenDecodingTests.swift`
   - `ContractFixturePresenceTests.swift`
+  - `AppExportQueriesTests.swift`
+  - `DayDetailViewStateTests.swift`
 - `Fixtures/contract/`
   - `app_export.schema.json`
   - `golden_app_export_*.json`
@@ -74,3 +78,13 @@ Der Sync-Skriptlauf aktualisiert nur:
 - `Fixtures/contract/CONTRACT_SOURCE.json` mit dem referenzierten Producer-Commit
 
 Consumer-lokale Forward-Compatibility-Fixtures bleiben bewusst unangetastet.
+
+## Query-Layer
+
+Die Query-Schicht ist bewusst read-only und UI-unabhaengig:
+- `ExportOverview` fuer Header-/Summary-Daten
+- `DaySummary` fuer sortierte Tageslisten
+- `DayDetailViewState` fuer eine einzelne Tagesansicht ohne UI-Komponenten
+- `AppExportQueries` fuer Lookup und Datumsbereichsfilter
+
+Diese Schicht liest nur den eingefrorenen Consumer-Contract. Parsing, Dedupe, Trips und weitere Producer-Business-Logik bleiben im Python-Repo.

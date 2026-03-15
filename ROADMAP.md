@@ -16,7 +16,9 @@
 
 ## Phase 4
 
-- [ ] UI-unabhaengige Query-/ViewState-Schicht
+- [x] UI-unabhaengige Query-/ViewState-Schicht
+- [x] sortierte Day-Summaries und Day-Detail-Read-Models
+- [x] Header-/Overview-Query und Datumsbereichsfilter
 - [ ] Produkt-UI
 
 ## Nicht Teil dieser Phase

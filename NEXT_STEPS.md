@@ -1,5 +1,5 @@
 # NEXT_STEPS
 
-1. Eine UI-unabhaengige Query-/ViewState-Schicht auf Basis des decodierten App-Exports aufsetzen.
-2. Danach erst eine minimale Produkt-UI evaluieren.
+1. Eine minimale SwiftUI-App-Shell auf Basis der Query-Schicht aufsetzen.
+2. Danach einen echten lokalen Import-Flow fuer `app_export.json` evaluieren.
 3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
