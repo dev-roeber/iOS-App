@@ -70,5 +70,7 @@ Die Query-Schicht in `Sources/LocationHistoryConsumer/Queries/` ist bewusst cons
 
 Die SwiftUI-Demo in `Sources/LocationHistoryConsumerDemo/` ist nur ein lokaler Harness:
 - Sie laedt eine feste gebuendelte Golden-Fixture aus `LocationHistoryConsumerDemoSupport`.
+- Sie kann auf Apple-Plattformen alternativ lokal eine `app_export.json` laden.
 - Sie nutzt nur Decoder + Query-Layer, keine neue Domain-Logik.
-- Sie ist kein echter Import-Flow und keine Produkt-App.
+- Sie bleibt auf den eingefrorenen Consumer-Contract beschraenkt und importiert keine Google-Rohdaten.
+- Sie ist keine Produkt-App und fuehrt keine Persistenz ein.

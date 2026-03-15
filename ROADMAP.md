@@ -25,6 +25,12 @@
 - [x] minimale SwiftUI-Demo-/Harness-Shell
 - [x] feste lokale Demo-Fixture
 - [x] Overview, Day-Liste und Day-Detail auf Basis der Query-Schicht
+
+## Phase 6
+
+- [x] lokaler Import-Flow fuer `app_export.json` in der Demo
+- [x] Demo-Fixture als Fallback neben importierter Datei beibehalten
+- [x] klare Fehleranzeige fuer Datei- und Decoding-Fehler
 - [ ] Produkt-UI
 
 ## Nicht Teil dieser Phase

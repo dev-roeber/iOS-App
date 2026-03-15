@@ -8,6 +8,7 @@
 - Keine Produkt-UI in diesem Schritt bauen.
 - Read-only Query-/ViewState-Schicht ist erlaubt, solange sie contract-basiert bleibt.
 - Eine minimale lokale Demo-/Harness-Shell ist erlaubt, solange sie nur Decoder + Query-Layer nutzt.
+- Ein lokaler `app_export.json`-Import in der Demo ist erlaubt, solange er nur den Consumer-Contract laedt und keine Persistenz oder Producer-Logik einfuehrt.
 
 ## Stabiler Contract
 
@@ -23,6 +24,7 @@
 - Decoder und Modelle klein, klar, testbar halten
 - Query-Typen klein, wertbasiert und UI-unabhaengig halten
 - Demo-Views dumm halten; keine neue Business-Logik in SwiftUI schieben
+- Apple-spezifische Dateiimport-UI von plattformneutralem DemoSupport trennen
 - additive Felder optional modellieren
 - unbekannte additive JSON-Felder tolerieren, aber unbekannte `schema_version` weiter ablehnen
 - Breaking Changes nur mit dokumentierter Contract-Version

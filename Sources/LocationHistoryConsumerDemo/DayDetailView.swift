@@ -68,7 +68,18 @@ struct DayDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
-            ContentUnavailableView("No Day Selected", systemImage: "calendar", description: Text("Choose a day from the list to inspect visits, activities and paths."))
+            VStack(spacing: 12) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.secondary)
+                Text("No Day Selected")
+                    .font(.headline)
+                Text("Choose a day from the list to inspect visits, activities and paths.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity, minHeight: 240)
         }
     }
 

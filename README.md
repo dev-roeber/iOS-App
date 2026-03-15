@@ -26,6 +26,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
 - gegen Swift-Modelle decodieren
 - read-only Query-/ViewState-Daten aus dem App-Export ableiten
 - eine minimale lokale SwiftUI-Demo-Shell mit fixer Golden-Fixture bereitstellen
+- in der Demo lokal `app_export.json` fuer denselben Consumer-Contract importieren
 - Golden-basierte Contract-Tests lokal ausfuehren
 - klar dokumentieren, welche Producer-Artefakte konsumiert werden
 - Producer-Contract-Artefakte lokal reproduzierbar aktualisieren
@@ -74,7 +75,7 @@ swift test
 
 Der Standardweg ist jetzt nativer lokaler Swift 5.9.
 
-Auf Apple-Plattformen kann die lokale Demo-Harness danach ueber das Swift Package in Xcode oder per `swift run LocationHistoryConsumerDemo` gestartet werden. Sie ist bewusst keine Produkt-App und nutzt nur eine feste lokale Demo-Fixture.
+Auf Apple-Plattformen kann die lokale Demo-Harness danach ueber das Swift Package in Xcode oder per `swift run LocationHistoryConsumerDemo` gestartet werden. Sie ist bewusst keine Produkt-App. Standardmaessig nutzt sie eine feste lokale Demo-Fixture, kann aber auch lokal eine `app_export.json` fuer denselben Consumer-Contract laden.
 
 ## Contract-Files aktualisieren
 
@@ -106,6 +107,8 @@ Diese Schicht liest nur den eingefrorenen Consumer-Contract. Parsing, Dedupe, Tr
 
 Die Demo-Shell ist nur ein lokaler Harness fuer die Query-Schicht:
 - feste gebuendelte Fixture: `golden_app_export_sample_small.json`
+- optionaler lokaler Dateiimport fuer `app_export.json`
 - zeigt Overview, sortierte Day-Liste und Day-Detail
-- kein Dateipicker, kein Import-Flow, keine Persistenz
-- Fehler beim Fixture-Load werden schlicht als Fehlzustand angezeigt
+- nutzt weiter nur Decoder + Query-Layer
+- keine Persistenz, keine Maps, kein Google-Rohdatenimport
+- Fehler beim Fixture- oder Datei-Load werden schlicht als Fehlzustand angezeigt
