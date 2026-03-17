@@ -3,17 +3,19 @@
 ## Aktueller Stand (2026-03-18)
 
 ### Abgeschlossen
-Phasen 2–19 vollstaendig abgeschlossen. Lokaler iPhone-Betrieb real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17): App-Start, Import (app_export.json), Day-Liste, Day-Detail, Karte, Persistenz/Restore, Clear.
+Phasen 2–19 vollstaendig abgeschlossen. Lokaler iPhone-Betrieb real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
 
-### Aktiver Fokus
-Produkt-UX Feinschliff: Empty-State-Onboarding klaerer – Tool-Name und Workflow jetzt im Idle-Zustand kommuniziert, nicht erst bei einem Fehler.
+### Aktiver lokaler Fokus
+Lokale Produktweiterentwicklung (Phase 19.x): UX-Verbesserungen, Lesbarkeit, Robustheit.
+Aktuell in Umsetzung: Phase 19.1 – Day-Detail-Lesbarkeit und Onboarding-Klarheit.
 
-### Extern geparkt (ASC-Zugang erforderlich)
-Phase 20 lokal vollstaendig verifiziert (Screenshots, Archive, Privacy Manifest, Review Guidelines). Extern verbleibend: App Store Connect Projekt anlegen, Metadaten eintragen, Upload, TestFlight-Beta aktivieren. Aktiv sobald ASC-Zugang verfuegbar.
+### Geparkt / Extern
+Apple-/Developer-/ASC-/TestFlight-/Release-Themen (Phasen 20–21): kein aktiver Fokus.
+Bleibt geparkt bis Developer-Account-Zugang und tatsaechliche Durchfuehrung moeglich sind.
 
 ### Spaeter
-- iPad-Betrieb: bewusst zurueckgestellt, nach iPhone-Stabilisierung
-- Phase 21 (v1.0 Release): erst nach abgeschlossener Beta-Phase und Feedback
+- iPad-Betrieb: bewusst zurueckgestellt
+- Phase 21 (v1.0 Release): erst nach abgeschlossener Beta-Phase
 
 ---
 
@@ -222,9 +224,40 @@ Phase 20 lokal vollstaendig verifiziert (Screenshots, Archive, Privacy Manifest,
 
 ---
 
-## Phase 20 – TestFlight + App Store Readiness
+## Lokale Produktweiterentwicklung
 
-**Ziel:** App ist bereit fuer externe Beta-Tester und App Store Review.
+> Kleine, saubere lokale Produktschritte nach Phase 19. Kein Apple-Developer-Account noetig.
+
+### Phase 19.1 – UX: Onboarding und Day-Detail-Lesbarkeit
+
+**Datum:** 2026-03-18
+**Ziel:** First-Use-Klarheit verbessern und Day-Detail-Anzeige fuer echte Nutzer lesbar machen.
+
+- [x] Tool-Name (LocationHistory2GPX) im Empty-State-Subtitle kommuniziert
+- [x] Idle-Statustext erklaert den Tool-Workflow statt generischem Datei-Hinweis
+- [x] Zeitangaben in Day-Detail lesbar formatiert (ISO 8601 → lokale Uhrzeit, z. B. "7:20 AM")
+- [x] Typ-Labels in Day-Detail formatiert (WALKING → Walking, IN PASSENGER VEHICLE → In Passenger Vehicle, HOME → Home)
+
+**Definition of Done:** Nutzer sieht sofort, womit app_export.json erstellt wird. Day-Detail zeigt lesbare Uhrzeiten und verstaendliche Typ-Labels statt roher ISO-Strings und ALL_CAPS.
+
+**Tests:** `swift test` gruen. Manueller Smoke: Day-Detail mit echten Daten auf Simulator oder Geraet.
+
+**Betroffene Dateien:** `AppShellRootView.swift`, `AppSessionState.swift`, `AppContentSplitView.swift` (Core-Repo); `ContentView.swift` (Wrapper-Repo).
+
+**Nicht-Ziele:** Keine Lokalisierung. Kein Redesign. Keine neuen Features.
+
+---
+
+## Geparkt / Extern
+
+> **Apple-/Developer-/ASC-/TestFlight-/Release-Themen bleiben geparkt,**
+> **bis Developer-Account-Zugang und tatsaechliche Durchfuehrung moeglich sind.**
+> Diese Phasen sind vollstaendig dokumentiert, aber kein aktiver Fokus.
+> iPad ebenfalls spaeter.
+
+### Phase 20 – TestFlight + App Store Readiness (GEPARKT)
+
+**Wartet auf:** Apple Developer Account / ASC-Zugang.
 
 - [ ] App Store Beschreibung und Metadaten (Vorentwurf in docs/TESTFLIGHT_RUNBOOK.md im Wrapper-Repo)
 - [x] App Store Screenshots fuer iPhone und iPad
@@ -238,7 +271,7 @@ Phase 20 lokal vollstaendig verifiziert (Screenshots, Archive, Privacy Manifest,
 
 **Lokal abgeschlossen (2026-03-17):** Screenshots via UI-Test erstellt (iPhone 17 Pro Max + iPad Pro 13" M5, iOS 26.3.1). Liegen in `docs/appstore-screenshots/` im Wrapper-Repo.
 
-**Extern – bewusst geparkt (2026-03-17):** ASC-Zugang aktuell nicht verfuegbar. Verbleibend: App Store Connect Projekt anlegen, Metadaten eintragen, Upload, TestFlight-Beta aktivieren. Naechster aktiver Fokus: Lokaler iPhone-Betrieb (s. NEXT_STEPS).
+**Extern – bewusst geparkt (2026-03-17):** ASC-Zugang aktuell nicht verfuegbar. Verbleibend: App Store Connect Projekt anlegen, Metadaten eintragen, Upload, TestFlight-Beta aktivieren.
 
 **Nachgelagert:** Beta-Feedback einarbeiten (erst nach laufender Beta relevant).
 
@@ -250,9 +283,9 @@ Phase 20 lokal vollstaendig verifiziert (Screenshots, Archive, Privacy Manifest,
 
 ---
 
-## Phase 21 – v1.0 Release
+### Phase 21 – v1.0 Release (GEPARKT – erst nach Beta-Feedback)
 
-**Ziel:** Erste oeffentliche Version im App Store.
+**Wartet auf:** Abgeschlossene TestFlight-Beta-Phase (Phase 20).
 
 - [ ] finale QA-Runde auf aktuellem iOS
 - [ ] App Store Submit
@@ -298,3 +331,5 @@ Diese Regeln gelten fuer alle kuenftigen Aenderungen an dieser Roadmap:
 7. **Zwei-Repo-Grenze ehrlich abbilden.** Phasen, die das Wrapper-Repo `LH2GPXWrapper` betreffen, muessen das klar benennen. Dieses Repo bleibt die Library-Quelle.
 
 8. **Phase-8-Restpunkt `Produkt-UI` ist nach Phase 17 abgeschlossen.** Der offene Punkt aus Phase 8 wird nicht nachtraeglich abgehakt, sondern durch Phase 17 abgeloest.
+
+9. **Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt.** Phasen 20 und 21 werden erst aktiviert, wenn Developer-Account-Zugang tatsaechlich vorhanden ist. Kein Checkbox-Update in diesen Phasen solange der Zugang fehlt.

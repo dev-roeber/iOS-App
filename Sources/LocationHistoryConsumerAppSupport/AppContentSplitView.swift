@@ -31,6 +31,20 @@ private enum AppDateDisplay {
     }
 }
 
+// MARK: - Time Formatting
+
+private enum AppTimeDisplay {
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        return f
+    }()
+
+    static func time(_ iso8601: String) -> String {
+        guard let date = isoFormatter.date(from: iso8601) else { return iso8601 }
+        return date.formatted(date: .omitted, time: .shortened)
+    }
+}
+
 // MARK: - Main Split View
 
 public struct AppContentSplitView: View {
@@ -466,10 +480,10 @@ public struct AppDayDetailView: View {
     @ViewBuilder
     private func visitCard(_ visit: DayDetailViewState.VisitItem) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(visit.semanticType ?? "Visit")
+            Text(visit.semanticType?.capitalized ?? "Visit")
                 .font(.subheadline.weight(.medium))
             if let start = visit.startTime, let end = visit.endTime {
-                Label("\(start) → \(end)", systemImage: "clock")
+                Label("\(AppTimeDisplay.time(start)) – \(AppTimeDisplay.time(end))", systemImage: "clock")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -488,11 +502,11 @@ public struct AppDayDetailView: View {
     @ViewBuilder
     private func activityCard(_ activity: DayDetailViewState.ActivityItem) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(activity.activityType ?? "Activity")
+            Text(activity.activityType?.capitalized ?? "Activity")
                 .font(.subheadline.weight(.medium))
             HStack(spacing: 12) {
                 if let start = activity.startTime, let end = activity.endTime {
-                    Label("\(start) → \(end)", systemImage: "clock")
+                    Label("\(AppTimeDisplay.time(start)) – \(AppTimeDisplay.time(end))", systemImage: "clock")
                 }
                 if let dist = activity.distanceM {
                     Label(formatDistance(dist), systemImage: "ruler")
@@ -510,7 +524,7 @@ public struct AppDayDetailView: View {
     @ViewBuilder
     private func pathCard(_ path: DayDetailViewState.PathItem) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(path.activityType ?? "Path")
+            Text(path.activityType?.capitalized ?? "Path")
                 .font(.subheadline.weight(.medium))
             HStack(spacing: 12) {
                 Label("\(path.pointCount) points", systemImage: "location.north.line")
