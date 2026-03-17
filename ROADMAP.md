@@ -219,7 +219,7 @@
 
 **Lokal abgeschlossen (2026-03-17):** Screenshots via UI-Test erstellt (iPhone 17 Pro Max + iPad Pro 13" M5, iOS 26.3.1). Liegen in `docs/appstore-screenshots/` im Wrapper-Repo.
 
-**Extern (ASC-Zugang):** App Store Connect Projekt anlegen, Metadaten eintragen, Upload, TestFlight-Beta aktivieren.
+**Extern – bewusst geparkt (2026-03-17):** ASC-Zugang aktuell nicht verfuegbar. Verbleibend: App Store Connect Projekt anlegen, Metadaten eintragen, Upload, TestFlight-Beta aktivieren. Naechster aktiver Fokus: Lokaler iPhone-Betrieb (s. NEXT_STEPS).
 
 **Nachgelagert:** Beta-Feedback einarbeiten (erst nach laufender Beta relevant).
 
