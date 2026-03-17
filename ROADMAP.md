@@ -104,11 +104,11 @@
 
 **Ziel:** Die App merkt sich die zuletzt importierte Datei und laedt sie beim Neustart automatisch. Ohne das ist die App praktisch bei jedem Start leer.
 
-- [ ] Security-Scoped Bookmarks fuer importierte Dateien speichern und wiederherstellen
-- [ ] letzten Import-Pfad ueber App-Neustarts hinweg persistent halten
-- [ ] automatischen Re-Load beim App-Start, falls Bookmark vorhanden und gueltig
-- [ ] sauberen Fallback wenn gespeicherte Datei nicht mehr erreichbar ist
-- [ ] Tests fuer Bookmark-Speicherung, -Wiederherstellung und Fehlerfaelle
+- [x] Security-Scoped Bookmarks fuer importierte Dateien speichern und wiederherstellen
+- [x] letzten Import-Pfad ueber App-Neustarts hinweg persistent halten
+- [x] automatischen Re-Load beim App-Start, falls Bookmark vorhanden und gueltig
+- [x] sauberen Fallback wenn gespeicherte Datei nicht mehr erreichbar ist
+- [x] Tests fuer Bookmark-Speicherung, -Wiederherstellung und Fehlerfaelle
 
 **Definition of Done:** App startet mit zuletzt importierter Datei, wenn vorhanden. Fehlender/ungueltiger Bookmark fuehrt sauber zum import-first-Zustand. Tests gruen.
 

@@ -12,6 +12,7 @@
 - Kleine Demo-Zustandslogik fuer Quelle, Reset, Auswahl und Fehler ist erlaubt, solange sie in der Harness-Schicht bleibt und testbar bleibt.
 - Eine kleine produktnahe App-Shell ist erlaubt, solange sie nur lokalen `app_export.json`-Import anbietet und dieselben Core-/Support-Typen wiederverwendet.
 - Kleine app-nahe Informationsarchitektur fuer Quelle, Status, Replace- und Reset-Fluss ist erlaubt, solange sie nur Composition/State bleibt und keine neue Fachlogik einfuehrt.
+- Security-Scoped Bookmark-Persistenz fuer die zuletzt importierte Datei ist erlaubt, solange sie nur UserDefaults nutzt und keine Inhaltsdaten persistiert.
 - Ehrliche Apple-/Xcode-Vorbereitung ist erlaubt, solange Linux-Tests intakt bleiben und keine ungetestete Apple-Verifikation behauptet wird.
 - `docs/XCODE_RUNBOOK.md` und `docs/APPLE_VERIFICATION_CHECKLIST.md` sind die kanonischen Stellen fuer Apple-Laufweg und Verifikationsstatus.
 

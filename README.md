@@ -64,6 +64,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
   - `AppExportQueriesTests.swift`
   - `DayDetailViewStateTests.swift`
   - `DemoDataLoaderTests.swift`
+  - `ImportBookmarkStoreTests.swift`
 - `Fixtures/contract/`
   - `app_export.schema.json`
   - `golden_app_export_*.json`
@@ -146,7 +147,8 @@ Die App-Shell ist die produktnaehere Einstiegsschicht dieses Repos:
 - nutzt dieselben Decoder-, Query- und Session-Typen wie die Demo
 - zeigt klarer, ob noch nichts geladen ist, Demo-Daten aktiv sind, eine Datei importiert wurde oder ein Import fehlgeschlagen ist
 - fuehrt Quelle, Dateiname, Schema-Version, Exportzeitpunkt und Tagesanzahl kompakt im UI
-- erlaubt Open Another File, Load Demo Data und Clear ohne Persistenz oder Dateiverlauf
+- erlaubt Open Another File, Load Demo Data und Clear
+- merkt sich die zuletzt importierte Datei per Security-Scoped Bookmark und laedt sie beim Neustart automatisch
 - bleibt offline-only und fuehrt keine neue Business-Logik ein
 
 ## Apple-/Xcode-Vorbereitung

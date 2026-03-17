@@ -52,9 +52,13 @@ struct AppShellRootView: View {
             onCompletion: handleImportResult
         )
         #endif
+        .task {
+            restoreBookmarkedFile()
+        }
     }
 
     private func loadBundledDemo() {
+        ImportBookmarkStore.clear()
         session.beginLoading()
         do {
             session.show(content: try DemoDataLoader.loadDefaultContent())
@@ -76,7 +80,34 @@ struct AppShellRootView: View {
     }
 
     private func clearCurrentContent() {
+        ImportBookmarkStore.clear()
         session.clearContent()
+    }
+
+    private func restoreBookmarkedFile() {
+        guard !session.hasLoadedContent, !session.isLoading else {
+            return
+        }
+        guard let url = ImportBookmarkStore.restore() else {
+            return
+        }
+        session.beginLoading()
+        let accessedSecurityScope = url.startAccessingSecurityScopedResource()
+        defer {
+            if accessedSecurityScope {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        do {
+            session.show(content: try AppContentLoader.loadImportedContent(from: url))
+        } catch {
+            ImportBookmarkStore.clear()
+            session.showFailure(
+                title: "Unable to restore previous import",
+                message: error.localizedDescription,
+                preserveCurrentContent: false
+            )
+        }
     }
 
     #if canImport(UniformTypeIdentifiers)
@@ -109,7 +140,9 @@ struct AppShellRootView: View {
         }
 
         do {
-            session.show(content: try AppContentLoader.loadImportedContent(from: url))
+            let content = try AppContentLoader.loadImportedContent(from: url)
+            ImportBookmarkStore.save(url: url)
+            session.show(content: content)
         } catch {
             session.showFailure(
                 title: "Unable to open app export",
