@@ -4,6 +4,7 @@ import LocationHistoryConsumer
 public enum AppContentLoaderError: LocalizedError {
     case fixtureNotFound(String)
     case fileReadFailed(String)
+    case unsupportedFormat(String)
     case decodeFailed(String)
 
     public var errorDescription: String? {
@@ -12,6 +13,8 @@ public enum AppContentLoaderError: LocalizedError {
             return "Demo fixture not found: \(name).json"
         case let .fileReadFailed(name):
             return "Unable to read app export file: \(name)"
+        case let .unsupportedFormat(name):
+            return "'\(name)' has an unsupported format. LH2GPX requires an app_export.json created by the LocationHistory2GPX tool."
         case let .decodeFailed(name):
             return "Unable to decode app export file: \(name)"
         }
@@ -40,6 +43,12 @@ public enum AppContentLoader {
             data = try Data(contentsOf: url)
         } catch {
             throw AppContentLoaderError.fileReadFailed(sourceName)
+        }
+
+        // Pre-check: Google Location History exports use a JSON array as root.
+        // Attempting to decode them as AppExport would produce a misleading error.
+        if (try? JSONSerialization.jsonObject(with: data)) is [Any] {
+            throw AppContentLoaderError.unsupportedFormat(sourceName)
         }
 
         do {
