@@ -167,11 +167,11 @@
 
 **Ziel:** Pfade und Besuche aus dem App-Export auf einer Karte darstellen. Natuerliche Kernfunktion fuer Location-History-Daten.
 
-- [ ] MapKit-Integration in der Day-Detail-Ansicht
-- [ ] Pfade als Polylines auf der Karte visualisieren
-- [ ] Besuche als Marker/Pins darstellen
-- [ ] Basis-Interaktion: Zoom, Pan, Kartenausschnitt an Tagesdaten anpassen
-- [ ] sauberer Fallback wenn keine Koordinaten vorhanden
+- [x] MapKit-Integration in der Day-Detail-Ansicht
+- [x] Pfade als Polylines auf der Karte visualisieren
+- [x] Besuche als Marker/Pins darstellen
+- [x] Basis-Interaktion: Zoom, Pan, Kartenausschnitt an Tagesdaten anpassen
+- [x] sauberer Fallback wenn keine Koordinaten vorhanden
 
 **Definition of Done:** Tagesansicht zeigt Pfade und Besuche auf einer Karte. Tage ohne Koordinaten zeigen keinen Kartenfehler. Tests gruen.
 

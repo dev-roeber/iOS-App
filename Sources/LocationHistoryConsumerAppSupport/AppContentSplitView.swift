@@ -1,6 +1,9 @@
 #if canImport(SwiftUI)
 import SwiftUI
 import LocationHistoryConsumer
+#if canImport(MapKit)
+import MapKit
+#endif
 
 // MARK: - Date Formatting
 
@@ -385,6 +388,12 @@ public struct AppDayDetailView: View {
                 Text(AppDateDisplay.longDate(detail.date))
                     .font(.title2.weight(.semibold))
             }
+
+            #if canImport(MapKit)
+            if #available(iOS 17.0, macOS 14.0, *) {
+                AppDayMapView(mapData: DayMapDataExtractor.mapData(from: detail))
+            }
+            #endif
 
             HStack(spacing: 16) {
                 quickStat("\(detail.visits.count)", label: "Visits", icon: "mappin.and.ellipse")

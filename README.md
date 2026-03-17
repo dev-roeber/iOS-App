@@ -49,7 +49,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
   - `Queries/*.swift`
 - `Sources/LocationHistoryConsumerAppSupport/`
   - generische Session-/Loader-Typen
-  - gemeinsame SwiftUI-Produkt-UI fuer App und Demo (NavigationSplitView, Dashboard, Day-Detail)
+  - gemeinsame SwiftUI-Produkt-UI fuer App und Demo (NavigationSplitView, Dashboard, Day-Detail, Map)
 - `Sources/LocationHistoryConsumerDemoSupport/`
   - `DemoDataLoader.swift`
   - `Resources/golden_app_export_sample_small.json`
@@ -62,6 +62,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
   - `ContractFixturePresenceTests.swift`
   - `AppExportQueriesTests.swift`
   - `DayDetailViewStateTests.swift`
+  - `DayMapDataTests.swift`
   - `DemoDataLoaderTests.swift`
   - `ImportBookmarkStoreTests.swift`
 - `Fixtures/contract/`
@@ -144,6 +145,7 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - NavigationSplitView mit Day-Liste (formatierte Daten, Icons, Summary) und Detail-Pane
 - Overview-Dashboard mit Statistik-Grid (Days, Visits, Activities, Paths)
 - Day-Detail mit strukturierten Sections, Cards und Quick-Stats
+- Karten-MVP: MapKit-Ansicht im Day-Detail mit Pfad-Polylines und Visit-Markern (iOS 17+)
 - konsistente Leer-/Fehler-/Ladezustaende mit SF Symbols und klaren Texten
 - Toolbar-Aktionen mit Icons: Import, Demo Data, Clear
 - startet mit lokalem `app_export.json`-Import als primaerem Einstieg
