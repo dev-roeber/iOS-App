@@ -38,6 +38,14 @@
 - unbekannte additive JSON-Felder tolerieren, aber unbekannte `schema_version` weiter ablehnen
 - Breaking Changes nur mit dokumentierter Contract-Version
 
+## Zwei-Repo-Architektur
+
+- Dieses Repo (`LocationHistory2GPX-iOS`) ist das Core-/Consumer-Repo: Swift Package mit Decoder, Queries, AppSupport, DemoSupport.
+- `LH2GPXWrapper` (`~/Desktop/Github-ios/LH2GPXWrapper/`) ist das Wrapper-/App-Repo: Xcode-Projekt mit Bundle-Config, Signing, Assets und dem iOS-App-Target.
+- Das Wrapper-Repo referenziert dieses Repo als lokales Swift Package (`../../../Code/LocationHistory2GPX-iOS`).
+- Keine Business-Logik oder neue Fachtypen ins Wrapper-Repo schieben.
+- Keine Xcode-Projektdateien oder Bundle-Config in dieses Library-Repo ziehen.
+
 ## Roadmap-Governance
 
 - `ROADMAP.md` enthaelt die verbindliche Delivery-Roadmap bis v1.0 einschliesslich Governance-Regeln.

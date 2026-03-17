@@ -179,6 +179,10 @@ Fuer den reproduzierbaren no-days-Apple-UI-Fall gibt es jetzt zusaetzlich `Fixtu
 
 Wichtig: Apple-/Xcode-Verifikation ist getrennt von `swift test` zu betrachten. Linux- oder SwiftPM-Erfolge ersetzen keinen echten Apple-UI-Lauf.
 
+## Wrapper-Repo
+
+Das separate Xcode-Wrapper-Projekt `LH2GPXWrapper` liegt unter `~/Desktop/Github-ios/LH2GPXWrapper/`. Es bindet dieses Repo als lokales Swift Package ein und liefert die iOS-App mit Bundle-Metadaten, Signing, App-Icon und Privacy-Manifest. Dieses Library-Repo bleibt die alleinige Quelle fuer Decoder, Queries, AppSupport und DemoSupport.
+
 ## Roadmap
 
 Die vollstaendige Delivery-Roadmap bis App v1.0 steht in `ROADMAP.md`. Die naechsten offenen Schritte stehen in `NEXT_STEPS.md`.

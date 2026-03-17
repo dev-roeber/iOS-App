@@ -124,12 +124,12 @@
 
 **Ziel:** Das Xcode-Wrapper-Projekt (`LH2GPXWrapper`) wird fuer echte Geraete-Nutzung und spaetere App-Store-Einreichung vorbereitet.
 
-- [ ] App-Icon mindestens als Platzhalter in allen erforderlichen Groessen
-- [ ] Info.plist mit korrekten Bundle-Metadaten (Display Name, Version, Build)
-- [ ] PrivacyInfo.xcprivacy mit den fuer App Store Review erforderlichen Deklarationen
-- [ ] Signing-Konfiguration fuer Development und Distribution pruefen
-- [ ] Launch-Screen oder Launch-Storyboard konfigurieren
-- [ ] SPM-Dependency auf dieses Package stabil und reproduzierbar halten
+- [x] App-Icon mindestens als Platzhalter in allen erforderlichen Groessen
+- [x] Info.plist mit korrekten Bundle-Metadaten (Display Name, Version, Build)
+- [x] PrivacyInfo.xcprivacy mit den fuer App Store Review erforderlichen Deklarationen
+- [x] Signing-Konfiguration fuer Development und Distribution pruefen
+- [x] Launch-Screen oder Launch-Storyboard konfigurieren
+- [x] SPM-Dependency auf dieses Package stabil und reproduzierbar halten
 
 **Definition of Done:** Wrapper baut auf echtem Geraet mit korrektem Icon, Bundle-Metadaten und Privacy-Manifest. Xcode-Archive-Build moeglich.
 
