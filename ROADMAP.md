@@ -73,6 +73,13 @@
 - [x] nativen Apple-Dateiimporter mit gueltiger Datei, invalidem JSON und no-days-Zustand real verifizieren
 - [x] reproduzierbare Zero-Day-Fixture fuer Apple-UI-Verifikation ergaenzen
 
+## Phase 13
+
+- [x] reproduzierbares macOS-Launch-Script fuer die App-Shell (`scripts/run_app_shell_macos.sh`)
+- [x] temporaere ad-hoc-App-Wrapper-Konvention durch standardisiertes Script ersetzen
+- [x] Apple-Verifikations-Checkliste aktualisieren
+- [x] Xcode-Runbook mit CLI-Launch-Abschnitt ergaenzen
+
 ## Nicht Teil dieser Phase
 
 - Google-Rohdaten-Import

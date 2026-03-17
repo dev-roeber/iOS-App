@@ -24,6 +24,10 @@ Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 - [x] echter Zero-Day-Export / no days
 - [x] Day-Liste und Day-Detail als echter UI-Durchgang
 
+### Seit Phase 13 zusaetzlich verifiziert
+
+- [x] reproduzierbarer foreground-Launch via `scripts/run_app_shell_macos.sh` (standardisiertes .app-Bundle statt ad-hoc-Wrapper)
+
 ### Noch offen
 
 - [ ] foreground-Run explizit ueber `Product > Run` in Xcode selbst noch einmal separat bestaetigen, falls genau dieser IDE-spezifische Laufweg regressionskritisch wird
@@ -35,7 +39,7 @@ Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 - `xcode-select -p`: `/Applications/Xcode.app/Contents/Developer`
 - Swift unter echtem Xcode: `Apple Swift version 6.2.4`
 - Apple-CLI-Schritte wurden weiterhin explizit mit `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` gefahren
-- fuer die echte interaktive UI-Verifikation wurde das per `xcodebuild` gebaute SwiftPM-App-Binary in eine kleine lokale temporaere `.app`-Wrapper-Struktur gestartet, weil der nackte CLI-Executable-Start ausserhalb eines App-Bundles in dieser Session als `background only` erschien
+- fuer die echte interaktive UI-Verifikation wurde das gebaute SwiftPM-App-Binary als foreground-App gestartet; seit Phase 13 ist dieser Schritt ueber `scripts/run_app_shell_macos.sh` standardisiert (baut, wrapped in minimales .app-Bundle, startet per `open`)
 - verifizierte UI-Dateien:
   - Demo: gebuendelte `golden_app_export_sample_small.json`
   - gueltiger Import: lokale Kopie von `Fixtures/contract/golden_app_export_sample_small.json`

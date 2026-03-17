@@ -93,6 +93,14 @@ Zusaetzlich gibt es jetzt eine kleine produktnahe App-Shell `LocationHistoryCons
 
 Die aktuelle Apple-/Xcode-nahe Vorbereitung ist bewusst klein und jetzt in `docs/XCODE_RUNBOOK.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md` und der historischen Vorbereitungsnotiz `docs/XCODE_APP_PREPARATION.md` beschrieben. Es gibt weiterhin absichtlich kein aufgeblasenes `.xcodeproj`.
 
+Fuer einen reproduzierbaren foreground-Start der App-Shell auf macOS:
+
+```bash
+./scripts/run_app_shell_macos.sh
+```
+
+Das Script baut die App per `swift build`, erstellt ein minimales `.app`-Bundle und startet es als foreground-App.
+
 ## Contract-Files aktualisieren
 
 Producer-Updates starten immer im Python-Repo `LocationHistory2GPX`. Wenn dort Schema, Goldens und Contract-Tests aktualisiert wurden, uebernimmst du hier nur die producer-abgeleiteten Consumer-Artefakte:

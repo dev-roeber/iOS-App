@@ -22,6 +22,7 @@
 - Update-Herkunft: Producer-Repo `dev-roeber/LocationHistory2GPX` ab Commit `7630b0e`
 - `trips_index.json` gehoert nicht zum Consumer-Contract
 - `./scripts/update_contract_fixtures.sh` ist der lokale Standardweg fuer producer-abgeleitete Fixture-Updates
+- `./scripts/run_app_shell_macos.sh` ist der standardisierte Weg fuer reproduzierbaren foreground-Launch der App-Shell auf macOS
 
 ## Arbeitsstil
 

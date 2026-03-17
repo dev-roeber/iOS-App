@@ -162,7 +162,23 @@ Erwartet:
 - Day-Liste zeigt `No Days Available`
 - Detailbereich meldet, dass keine Day-Entries vorhanden sind
 
-## CLI-Hilfsbefehle fuer denselben Laufweg
+## Reproduzierbarer CLI-Launch
+
+Fuer einen reproduzierbaren foreground-Start der App-Shell ohne manuelles Xcode-IDE `Product > Run` gibt es ein standardisiertes Script:
+
+```bash
+./scripts/run_app_shell_macos.sh
+```
+
+Das Script:
+
+1. baut `LocationHistoryConsumerApp` per `swift build`
+2. erstellt eine minimale `.app`-Bundle-Struktur unter `.build/AppBundle/`
+3. startet die App per `open` als echte foreground-macOS-App
+
+Das ersetzt die fruehere ad-hoc-Methode, das gebaute Binary manuell in eine temporaere App-Wrapper-Struktur zu kopieren. Die `.build/AppBundle/`-Ausgabe wird durch `.gitignore` (`.build/`) automatisch ignoriert.
+
+## Weitere CLI-Hilfsbefehle
 
 Die Xcode-IDE bleibt der bevorzugte manuelle Weg. Fuer reproduzierbare CLI-Pruefung koennen dieselben Schemes ueber das echte Xcode gebaut werden:
 
@@ -183,7 +199,7 @@ Stand 2026-03-17 wurde auf einer echten macOS-/Xcode-Maschine Folgendes real gep
 - das echte Xcode-CLI wurde fuer die dokumentierten Apple-Kommandos trotzdem explizit ueber `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` verwendet
 - `xcodebuild -list` erkannte unter anderem die Schemes `LocationHistoryConsumerApp` und `LocationHistoryConsumerDemo`
 - `xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build` lief erfolgreich durch
-- das gebaute Binary `.../Build/Products/Debug/LocationHistoryConsumerApp` liess sich bauen und fuer die echte UI-Session in eine kleine lokale temporaere foreground-`.app`-Wrapper-Struktur starten
+- das gebaute Binary `.../Build/Products/Debug/LocationHistoryConsumerApp` liess sich bauen und fuer die echte UI-Session starten; der foreground-App-Launch ist seit Phase 13 ueber `scripts/run_app_shell_macos.sh` standardisiert
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` lief mit 28 Tests gruen durch
 - echte interaktive Apple-UI-Laeufe wurden erfolgreich gegen die produktnahe App-Shell ausgefuehrt:
   - sichtbarer import-first Startscreen
