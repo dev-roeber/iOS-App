@@ -106,6 +106,46 @@ final class AppSessionStateTests: XCTestCase {
         XCTAssertEqual(state.sourceSummary.sourceValue, "None")
     }
 
+    func testBeginLoadingThenRestoreFailureClearsLoadingState() {
+        // Simulates the restoreBookmarkedFile() path: beginLoading → decode error → showFailure.
+        var state = AppSessionState()
+        state.beginLoading()
+        XCTAssertTrue(state.isLoading)
+        XCTAssertEqual(state.presentationState, .loading)
+
+        state.showFailure(
+            title: "Unable to restore previous import",
+            message: "Unable to read app export file: old_import.json",
+            preserveCurrentContent: false
+        )
+
+        XCTAssertFalse(state.isLoading)
+        XCTAssertFalse(state.hasLoadedContent)
+        XCTAssertNil(state.selectedDate)
+        XCTAssertEqual(state.presentationState, .failedWithoutContent)
+        XCTAssertEqual(state.message?.kind, .error)
+        XCTAssertEqual(state.message?.title, "Unable to restore previous import")
+    }
+
+    func testClearAfterRestoreFailureResetsToIdleWithInfoMessage() {
+        // After a restore failure the user can tap Clear to return to a clean import-first state.
+        var state = AppSessionState()
+        state.showFailure(
+            title: "Unable to restore previous import",
+            message: "File missing",
+            preserveCurrentContent: false
+        )
+        XCTAssertEqual(state.presentationState, .failedWithoutContent)
+
+        state.clearContent()
+
+        XCTAssertEqual(state.presentationState, .idle)
+        XCTAssertFalse(state.hasLoadedContent)
+        XCTAssertNil(state.selectedDate)
+        XCTAssertEqual(state.message?.kind, .info)
+        XCTAssertEqual(state.message?.title, "No app export loaded")
+    }
+
     func testIdleAndFailureStatesHaveDistinctSourceSummaries() {
         var idleState = AppSessionState()
         XCTAssertEqual(idleState.presentationState, .idle)
