@@ -1,5 +1,22 @@
 # ROADMAP
 
+## Aktueller Stand (2026-03-18)
+
+### Abgeschlossen
+Phasen 2–19 vollstaendig abgeschlossen. Lokaler iPhone-Betrieb real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17): App-Start, Import (app_export.json), Day-Liste, Day-Detail, Karte, Persistenz/Restore, Clear.
+
+### Aktiver Fokus
+Produkt-UX Feinschliff: Empty-State-Onboarding klaerer – Tool-Name und Workflow jetzt im Idle-Zustand kommuniziert, nicht erst bei einem Fehler.
+
+### Extern geparkt (ASC-Zugang erforderlich)
+Phase 20 lokal vollstaendig verifiziert (Screenshots, Archive, Privacy Manifest, Review Guidelines). Extern verbleibend: App Store Connect Projekt anlegen, Metadaten eintragen, Upload, TestFlight-Beta aktivieren. Aktiv sobald ASC-Zugang verfuegbar.
+
+### Spaeter
+- iPad-Betrieb: bewusst zurueckgestellt, nach iPhone-Stabilisierung
+- Phase 21 (v1.0 Release): erst nach abgeschlossener Beta-Phase und Feedback
+
+---
+
 ## Phase 2
 
 - [x] Minimales Swift-Consumer-Repo bootstrappen

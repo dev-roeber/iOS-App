@@ -150,7 +150,7 @@ final class AppSessionStateTests: XCTestCase {
         var idleState = AppSessionState()
         XCTAssertEqual(idleState.presentationState, .idle)
         XCTAssertEqual(idleState.sourceSummary.stateTitle, "No app export loaded")
-        XCTAssertTrue(idleState.sourceSummary.statusText.contains("Open a local app_export.json file"))
+        XCTAssertTrue(idleState.sourceSummary.statusText.contains("LocationHistory2GPX"))
 
         idleState.showFailure(
             title: "Unable to open app export",

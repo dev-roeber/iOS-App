@@ -166,7 +166,7 @@ public struct AppSessionState {
                 inputFormat: nil,
                 exportedAt: nil,
                 dayCountText: nil,
-                statusText: message?.message ?? "Open a local app_export.json file. Demo data remains available as a fallback."
+                statusText: message?.message ?? "Use the LocationHistory2GPX tool to create an app_export.json, then open it here. Demo data is available as a fallback."
             )
         case .loading:
             return AppSourceSummary(
