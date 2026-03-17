@@ -215,9 +215,13 @@
 
 **Definition of Done:** TestFlight-Build an Tester verteilt. App Store Metadaten vollstaendig. Keine Review-Guideline-Verstoesse bekannt.
 
-**Lokal verifiziert (2026-03-17):** `xcodebuild archive` erfolgreich (v1.0, Build 1). PrivacyInfo.xcprivacy konform. Review-Guidelines geprueft: konform bis auf Platzhalter-Icon. TestFlight-Runbook in `docs/TESTFLIGHT_RUNBOOK.md` im Wrapper-Repo.
+**Lokal verifiziert (2026-03-17):** `xcodebuild archive` erfolgreich (v1.0, Build 1). PrivacyInfo.xcprivacy konform. Review-Guidelines geprueft: konform. App Icon ersetzt (Map-Pin + LH2GPX, kein Gradient-Placeholder mehr). Screenshot-Simulator-Workflow dokumentiert. TestFlight-Runbook in `docs/TESTFLIGHT_RUNBOOK.md` im Wrapper-Repo.
 
-**Offen (erfordern ASC-Zugang):** App Store Metadaten in ASC eintragen, Screenshots erstellen, Upload/TestFlight, Beta-Tester-Feedback.
+**Lokal noch offen:** Screenshots manuell per Simulator erstellen (Workflow in Runbook).
+
+**Extern (ASC-Zugang):** App Store Connect Projekt anlegen, Metadaten eintragen, Upload, TestFlight-Beta aktivieren.
+
+**Nachgelagert:** Beta-Feedback einarbeiten (erst nach laufender Beta relevant).
 
 **Tests:** TestFlight-Install auf echtem Geraet. Beta-Tester-Feedback. Crash-Reports pruefen.
 
