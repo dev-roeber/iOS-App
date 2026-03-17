@@ -65,7 +65,13 @@
 - [x] Apple-Verifikations-Checkliste mit klaren Erfolgskriterien anlegen
 - [x] erste echte macOS-/Xcode-Build-Verifikation fuer `LocationHistoryConsumerApp` dokumentieren
 - [x] ersten echten Startversuch des gebauten App-Shell-Binaries dokumentieren
-- [ ] interaktive Apple-UI-Verifikation fuer Demo-Laden, Dateiimport, Clear und Fehlerfaelle abschliessen
+- [x] interaktive Apple-UI-Verifikation fuer Demo-Laden, Dateiimport, Clear und Fehlerfaelle abschliessen
+
+## Phase 12
+
+- [x] erste echte foreground-Apple-UI-Session fuer die produktnahe App-Shell dokumentieren
+- [x] nativen Apple-Dateiimporter mit gueltiger Datei, invalidem JSON und no-days-Zustand real verifizieren
+- [x] reproduzierbare Zero-Day-Fixture fuer Apple-UI-Verifikation ergaenzen
 
 ## Nicht Teil dieser Phase
 

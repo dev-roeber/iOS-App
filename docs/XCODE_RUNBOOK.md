@@ -107,6 +107,7 @@ Erwartet:
 Fuer den ersten lokalen Import muss kein echtes Produkt-Exportfile vorliegen. Eine Contract-Fixture aus dem Repo reicht fuer diesen UI-Laufweg:
 
 - `Fixtures/contract/golden_app_export_sample_small.json`
+- `Fixtures/contract/golden_app_export_no_days_zero.json`
 - alternativ ein anderer `golden_app_export_*.json` Contract-Fall
 
 Schritte:
@@ -151,8 +152,9 @@ Erwartet:
 
 ### Leerer Export / No Days
 
-1. eine no-days-geeignete Fixture oder ein reales `app_export.json` ohne Tage laden
-2. auf Listen- und Detaildarstellung achten
+1. eine echte Zero-Day-Fixture oder ein reales `app_export.json` ohne Tage laden
+2. bevorzugt: `Fixtures/contract/golden_app_export_no_days_zero.json`
+3. auf Listen- und Detaildarstellung achten
 
 Erwartet:
 
@@ -177,21 +179,31 @@ Stand 2026-03-17 wurde auf einer echten macOS-/Xcode-Maschine Folgendes real gep
 
 - Host: macOS 15.7
 - Xcode: 26.3 (`Build version 17C529`)
-- `xcode-select -p` zeigte noch `/Library/Developer/CommandLineTools`
-- das echte Xcode-CLI wurde deshalb explizit ueber `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` verwendet
+- `xcode-select -p` zeigte `/Applications/Xcode.app/Contents/Developer`
+- das echte Xcode-CLI wurde fuer die dokumentierten Apple-Kommandos trotzdem explizit ueber `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` verwendet
 - `xcodebuild -list` erkannte unter anderem die Schemes `LocationHistoryConsumerApp` und `LocationHistoryConsumerDemo`
 - `xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build` lief erfolgreich durch
-- das gebaute Binary `.../Build/Products/Debug/LocationHistoryConsumerApp` liess sich starten und blieb aktiv, bis es manuell beendet wurde
+- das gebaute Binary `.../Build/Products/Debug/LocationHistoryConsumerApp` liess sich bauen und fuer die echte UI-Session in eine kleine lokale temporaere foreground-`.app`-Wrapper-Struktur starten
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` lief mit 28 Tests gruen durch
-- ein nacktes `swift test` mit aktivem `/Library/Developer/CommandLineTools` scheiterte auf dieser Maschine an `no such module 'XCTest'`
+- echte interaktive Apple-UI-Laeufe wurden erfolgreich gegen die produktnahe App-Shell ausgefuehrt:
+  - sichtbarer import-first Startscreen
+  - `Load Demo Data`
+  - `Open app_export.json` ueber nativen Apple-Dateiimporter mit gueltiger lokaler Datei
+  - `Open Another File` zum Ersetzen des aktuellen Inhalts
+  - `Clear`
+  - invalides JSON mit sichtbarer Fehlermeldung bei erhaltenem letztem gueltigen Inhalt
+  - echter Zero-Day-Import mit `No Days Available` und `No Day Details Available`
+  - sichtbare Day-Liste und Day-Detail-Darstellung fuer Demo und gueltigen Import
 
-Nicht ehrlich verifiziert in dieser Phase:
+Fuer die UI-Laeufe verwendete lokale Dateien:
 
-- sichtbarer interaktiver Xcode-Run mit bestaetigtem Fenster
-- manuelles Klicken von `Load Demo Data`
-- manuelles Klicken von `Open app_export.json`
-- Apple-Dateiimporter-Ende-zu-Ende
-- invalides JSON und no-days als echte interaktive UI-Durchgaenge
+- gueltiger Import: lokale Kopie von `Fixtures/contract/golden_app_export_sample_small.json`
+- invalid: lokale Datei `lh2gpx_invalid.json` mit Inhalt `{`
+- no-days: lokale Kopie von `Fixtures/contract/golden_app_export_no_days_zero.json`
+
+Nicht separat als eigener Nachweis festgehalten:
+
+- foreground-Run exakt ueber `Product > Run` in Xcode selbst; die reale UI-Verifikation dieser Phase lief gegen denselben Xcode-gebauten Binary-Output in einer temporaeren lokalen foreground-App-Wrapper-Struktur
 
 ## Bekannte Grenzen dieser Phase
 

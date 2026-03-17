@@ -13,6 +13,7 @@ final class ContractFixturePresenceTests: XCTestCase {
             "golden_app_export_consumer_forward_compatible_additive_fields.json",
             "golden_app_export_empty_collections_minimal.json",
             "golden_app_export_multi_day_varied_structure.json",
+            "golden_app_export_no_days_zero.json",
         ]
 
         let fixtures = try TestSupport.contractFixturesDirectory()
@@ -39,6 +40,7 @@ final class ContractFixturePresenceTests: XCTestCase {
         XCTAssertTrue(local.contains("golden_app_export_consumer_forward_compatible_additive_fields.json"))
         XCTAssertTrue(local.contains("golden_app_export_empty_collections_minimal.json"))
         XCTAssertTrue(local.contains("golden_app_export_multi_day_varied_structure.json"))
+        XCTAssertTrue(local.contains("golden_app_export_no_days_zero.json"))
         XCTAssertEqual(producerCommit.count, 7)
     }
 }

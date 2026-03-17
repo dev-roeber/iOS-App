@@ -57,6 +57,11 @@ final class AppExportGoldenDecodingTests: XCTestCase {
                 XCTAssertEqual(export.stats?.activities?.count, 0)
                 XCTAssertEqual(export.stats?.periods?.count, 0)
             }),
+            ("golden_app_export_no_days_zero.json", { export in
+                XCTAssertTrue(export.data.days.isEmpty)
+                XCTAssertEqual(export.stats?.activities?.count, 0)
+                XCTAssertEqual(export.stats?.periods?.count, 0)
+            }),
         ]
 
         for (fileName, assertions) in cases {

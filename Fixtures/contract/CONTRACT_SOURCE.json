@@ -16,7 +16,8 @@
   "consumer_local_artifacts": [
     "golden_app_export_consumer_forward_compatible_additive_fields.json",
     "golden_app_export_empty_collections_minimal.json",
-    "golden_app_export_multi_day_varied_structure.json"
+    "golden_app_export_multi_day_varied_structure.json",
+    "golden_app_export_no_days_zero.json"
   ],
   "excluded_artifacts": [
     "trips_index_mvp.json",

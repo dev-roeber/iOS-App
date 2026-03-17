@@ -23,6 +23,8 @@
   - deckt mehrere Tage, gemischte Tagesstruktur und minimale Path-Punkte ab
 - `golden_app_export_empty_collections_minimal.json`
   - deckt leere erlaubte Sammlungen und leere Stats-Strukturen ab
+- `golden_app_export_no_days_zero.json`
+  - deckt einen echten Zero-Day-Export fuer Apple-UI-Verifikation und no-days-Zustaende ab
 
 ## Consumer-Verantwortung
 

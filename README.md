@@ -156,15 +156,15 @@ Die App-Shell ist die produktnaehere Einstiegsschicht dieses Repos:
 Stand 2026-03-17 ist auf einer realen macOS-/Xcode-Maschine ehrlich verifiziert:
 - Xcode 26.3 erkennt die relevanten Swift-Package-Schemes
 - `LocationHistoryConsumerApp` baut fuer `platform=macOS` erfolgreich per `xcodebuild`
-- das gebaute App-Shell-Binary laesst sich starten und lief lokal weiter, bis es manuell beendet wurde
+- die produktnahe App-Shell startet sichtbar in einer echten foreground-App-Session
+- `Load Demo Data`, `Open app_export.json`, `Open Another File`, `Clear`, invalides JSON und ein echter Zero-Day-Import wurden als reale Apple-UI-Durchgaenge verifiziert
 - `swift test` laeuft mit dem echten Xcode-Developer-Dir gruen
 
 Stand 2026-03-17 ist noch offen:
-- sichtbarer interaktiver UI-Run in Xcode
-- manuelles Klicken von `Load Demo Data`
-- manuelles `Open app_export.json` ueber den Apple-Dateiimporter
-- invalides JSON, leerer Export und Clear-/Reset-Fluss als echte UI-Durchgaenge
+- ein separat protokollierter foreground-Lauf exakt ueber `Product > Run` in Xcode, falls genau dieser IDE-spezifische Weg regressionskritisch wird
 
 Zusatz fuer diese konkrete Maschine: mit aktivem `/Library/Developer/CommandLineTools` schlug ein nacktes `swift test` an `no such module 'XCTest'` fehl. Der gruene Testlauf wurde ehrlich mit `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` erreicht.
+
+Fuer den reproduzierbaren no-days-Apple-UI-Fall gibt es jetzt zusaetzlich `Fixtures/contract/golden_app_export_no_days_zero.json`.
 
 Wichtig: Apple-/Xcode-Verifikation ist getrennt von `swift test` zu betrachten. Linux- oder SwiftPM-Erfolge ersetzen keinen echten Apple-UI-Lauf.

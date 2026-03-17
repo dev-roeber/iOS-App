@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "exported_at": "2024-03-01T00:00:00Z",
+    "tool_version": "1.8.2",
+    "source": {
+      "zip_basename": "no-days.json",
+      "zip_path": "/abs/path/no-days.json",
+      "input_format": "records"
+    },
+    "output": {
+      "out_dir": "/abs/path/out"
+    },
+    "config": {
+      "mode": "all",
+      "split_midnight": null,
+      "split_mode": "daily",
+      "export_format": [
+        "json"
+      ],
+      "input_format": "auto"
+    },
+    "filters": {}
+  },
+  "data": {
+    "days": []
+  },
+  "stats": {
+    "activities": {},
+    "periods": []
+  }
+}
