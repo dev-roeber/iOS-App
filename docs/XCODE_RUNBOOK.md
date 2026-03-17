@@ -1,0 +1,202 @@
+# Xcode Runbook
+
+## Zweck
+
+Dieses Runbook beschreibt den kleinsten reproduzierbaren Xcode-Laufweg fuer das Swift-Package `LocationHistory2GPX-iOS`.
+Es fokussiert bewusst nur den bestehenden Consumer-Scope:
+
+- `LocationHistoryConsumer` bleibt der app_export-Consumer-Core
+- `LocationHistoryConsumerDemo` bleibt Harness/Sample
+- `LocationHistoryConsumerAppSupport` bleibt app-nahe Session-/State-/Composition-Schicht
+- `LocationHistoryConsumerApp` bleibt die produktnaehere App-Shell fuer lokalen `app_export.json`-Import
+
+Keine Maps, keine Persistenz, keine Suche, kein Sync und keine Producer-Logik in Swift.
+
+## Voraussetzungen
+
+- macOS mit Xcode und SwiftPM-Unterstuetzung fuer Swift Tools 5.9
+- Package-Plattformen gemaess `Package.swift`:
+  - iOS 16+
+  - macOS 13+
+- empfohlen: Xcode 26.3 oder neuer, solange das Paket unveraendert auf Swift 5.9 basiert
+
+Wenn `xcode-select -p` nur auf die Command Line Tools zeigt, sind Xcode-CLI-Schritte trotzdem moeglich, solange das echte Xcode installiert ist. Dann entweder:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -list
+```
+
+und fuer SwiftPM-Tests auf derselben Maschine entsprechend:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
+```
+
+oder den aktiven Developer Directory lokal auf Xcode umstellen.
+
+## Repo in Xcode oeffnen
+
+Der vorgesehene Einstieg bleibt das Swift Package, nicht ein separates `.xcodeproj`.
+
+```bash
+cd /pfad/zu/LocationHistory2GPX-iOS
+open Package.swift
+```
+
+Alternativ in Xcode:
+
+1. `File > Open...`
+2. `Package.swift` oder das Repo-Verzeichnis waehlen
+3. Package-Resolution abwarten
+
+## Relevante Schemes und Schichten
+
+Die fuer diese Phase relevanten Schemes sind:
+
+- `LocationHistoryConsumerApp`
+  - produktnaehere App-Shell
+  - import-first Startzustand
+  - lokales `app_export.json` oeffnen
+  - Demo-Daten nur als Fallback
+- `LocationHistoryConsumerDemo`
+  - Harness-/Verifikationsoberflaeche
+  - startet standardmaessig mit gebuendelter Demo-Fixture
+  - kann auf Apple-Plattformen ebenfalls lokales `app_export.json` laden
+- `LocationHistoryConsumer`
+  - Consumer-Core fuer Contract, Decoder und Query-Layer
+- `LocationHistoryConsumerAppSupport`
+  - gemeinsame Session-, Loader- und Inhaltsdarstellung fuer App und Demo
+- `LocationHistoryConsumerDemoSupport`
+  - fixture-zentrierte Demo-Unterstuetzung und gebuendelte Sample-Ressourcen
+
+## Empfohlener Xcode-Run fuer die produktnahe App-Shell
+
+1. In Xcode das Scheme `LocationHistoryConsumerApp` waehlen.
+2. Als Destination `My Mac` oder einen passenden Apple-Laufweg waehlen.
+3. `Product > Build` ausfuehren.
+4. `Product > Run` ausfuehren.
+
+Erwarteter Startzustand:
+
+- leerer import-first Screen
+- Titel `Open an app_export.json file`
+- primaerer Button `Open app_export.json`
+- sekundaerer Button `Load Demo Data`
+- noch keine Persistenz oder Dateihistorie
+
+## Demo-Daten in der App-Shell pruefen
+
+Die produktnahe App-Shell darf Demo-Daten laden, bleibt aber nicht der primaere Einstieg.
+
+Schritte:
+
+1. App mit `LocationHistoryConsumerApp` starten
+2. `Load Demo Data` klicken
+
+Erwartet:
+
+- Statuskarte `Demo data loaded`
+- aktive Quelle `Demo fixture: golden_app_export_sample_small.json`
+- Schema `1.0`
+- Day-Liste mit `2024-05-01` und `2024-05-02`
+- Day-Detail und Overview werden angezeigt
+- Toolbar zeigt danach `Open Another File`, `Reload Demo Data` und `Clear`
+
+## Lokalen `app_export.json`-Import pruefen
+
+Fuer den ersten lokalen Import muss kein echtes Produkt-Exportfile vorliegen. Eine Contract-Fixture aus dem Repo reicht fuer diesen UI-Laufweg:
+
+- `Fixtures/contract/golden_app_export_sample_small.json`
+- alternativ ein anderer `golden_app_export_*.json` Contract-Fall
+
+Schritte:
+
+1. App mit `LocationHistoryConsumerApp` starten
+2. `Open app_export.json` oder spaeter `Open Another File` klicken
+3. im Apple-Dateiimporter eine lokale JSON-Datei aus `Fixtures/contract/` waehlen
+
+Erwartet:
+
+- Statuskarte `Imported app export loaded`
+- aktive Quelle `Imported file: <dateiname>.json`
+- Overview wird angezeigt
+- Day-Liste und Day-Detail sind sichtbar
+- ein weiterer `Open Another File`-Lauf ersetzt den aktuellen Inhalt
+
+## Reset- und Fehlerpfade
+
+Mindestens diese kleinen UI-Laufwege pruefen:
+
+### Clear / Reset
+
+1. nach Demo- oder Datei-Load `Clear` klicken
+2. erwarteter Rueckfall in den import-first Leerlaufzustand
+
+Erwartet:
+
+- Status `No app export loaded`
+- aktive Quelle `None`
+- Buttons `Open app_export.json` und `Load Demo Data`
+
+### Invalides JSON
+
+1. lokal eine kaputte JSON-Datei bereitstellen, z. B. mit Inhalt `{`
+2. ueber `Open app_export.json` importieren
+
+Erwartet:
+
+- Fehlzustand `Unable to open app export`
+- bei leerem Vorzustand bleibt keine aktive Quelle
+- bei bereits geladenem Inhalt bleibt letzter gueltiger Inhalt sichtbar
+
+### Leerer Export / No Days
+
+1. eine no-days-geeignete Fixture oder ein reales `app_export.json` ohne Tage laden
+2. auf Listen- und Detaildarstellung achten
+
+Erwartet:
+
+- Overview bleibt sichtbar
+- Day-Liste zeigt `No Days Available`
+- Detailbereich meldet, dass keine Day-Entries vorhanden sind
+
+## CLI-Hilfsbefehle fuer denselben Laufweg
+
+Die Xcode-IDE bleibt der bevorzugte manuelle Weg. Fuer reproduzierbare CLI-Pruefung koennen dieselben Schemes ueber das echte Xcode gebaut werden:
+
+```bash
+cd /pfad/zu/LocationHistory2GPX-iOS
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -list
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
+```
+
+## Reale Verifikation in dieser Phase
+
+Stand 2026-03-17 wurde auf einer echten macOS-/Xcode-Maschine Folgendes real geprueft:
+
+- Host: macOS 15.7
+- Xcode: 26.3 (`Build version 17C529`)
+- `xcode-select -p` zeigte noch `/Library/Developer/CommandLineTools`
+- das echte Xcode-CLI wurde deshalb explizit ueber `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` verwendet
+- `xcodebuild -list` erkannte unter anderem die Schemes `LocationHistoryConsumerApp` und `LocationHistoryConsumerDemo`
+- `xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build` lief erfolgreich durch
+- das gebaute Binary `.../Build/Products/Debug/LocationHistoryConsumerApp` liess sich starten und blieb aktiv, bis es manuell beendet wurde
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` lief mit 28 Tests gruen durch
+- ein nacktes `swift test` mit aktivem `/Library/Developer/CommandLineTools` scheiterte auf dieser Maschine an `no such module 'XCTest'`
+
+Nicht ehrlich verifiziert in dieser Phase:
+
+- sichtbarer interaktiver Xcode-Run mit bestaetigtem Fenster
+- manuelles Klicken von `Load Demo Data`
+- manuelles Klicken von `Open app_export.json`
+- Apple-Dateiimporter-Ende-zu-Ende
+- invalides JSON und no-days als echte interaktive UI-Durchgaenge
+
+## Bekannte Grenzen dieser Phase
+
+- kein `.xcodeproj`, nur Swift Package
+- keine Signierung, keine Distribution, keine Entitlements-Arbeit
+- keine Persistenz, keine Maps, keine Suche, kein Sync
+- kein Google-Rohdatenimport
+- Apple-Verifikation ersetzt nicht `swift test`, und `swift test` ersetzt keinen echten Apple-UI-Lauf

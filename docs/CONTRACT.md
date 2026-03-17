@@ -73,7 +73,9 @@ Die Query-Schicht in `Sources/LocationHistoryConsumer/Queries/` ist bewusst cons
 - `Sources/LocationHistoryConsumerDemoSupport/` bleibt fixture-zentrierte Demo-Unterstuetzung.
 - `Sources/LocationHistoryConsumerDemo/` bleibt Harness-/Verifikationsoberflaeche.
 - `Sources/LocationHistoryConsumerApp/` ist die kleine produktnaehere Einstiegsschicht fuer lokalen `app_export.json`-Import.
-- `docs/XCODE_APP_PREPARATION.md` dokumentiert die kleine Apple-/Xcode-nahe Vorbereitung und die bewusst noch offenen Verifikationsschritte.
+- `docs/XCODE_RUNBOOK.md` dokumentiert den reproduzierbaren Xcode-Laufweg.
+- `docs/APPLE_VERIFICATION_CHECKLIST.md` dokumentiert die konkreten Apple-Pruefschritte und deren Status.
+- `docs/XCODE_APP_PREPARATION.md` bleibt die kleinere vorbereitende Notiz aus der Vorphase.
 
 ## Demo-Harness
 

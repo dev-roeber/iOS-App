@@ -59,6 +59,14 @@
 - [x] produktnahe App-Shell als Apple-Einstieg klarer positionieren
 - [x] Linux- und Apple-Verifikationsgrenzen ehrlich dokumentieren
 
+## Phase 11
+
+- [x] Xcode-Runbook fuer das Swift Package und die produktnahe App-Shell dokumentieren
+- [x] Apple-Verifikations-Checkliste mit klaren Erfolgskriterien anlegen
+- [x] erste echte macOS-/Xcode-Build-Verifikation fuer `LocationHistoryConsumerApp` dokumentieren
+- [x] ersten echten Startversuch des gebauten App-Shell-Binaries dokumentieren
+- [ ] interaktive Apple-UI-Verifikation fuer Demo-Laden, Dateiimport, Clear und Fehlerfaelle abschliessen
+
 ## Nicht Teil dieser Phase
 
 - Google-Rohdaten-Import

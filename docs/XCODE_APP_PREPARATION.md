@@ -4,6 +4,7 @@
 
 Diese Notiz beschreibt die kleinste aktuell sinnvolle Apple-/Xcode-nahe Vorbereitung in diesem Repo.
 Sie fuehrt bewusst kein `.xcodeproj` und keine ungetesteten Produkt-App-Dateien ein.
+Das konkrete operative Runbook liegt ab Phase 11 in `docs/XCODE_RUNBOOK.md`, die konkrete Pruefliste in `docs/APPLE_VERIFICATION_CHECKLIST.md`.
 
 ## Aktueller Einstieg
 
@@ -57,6 +58,20 @@ Unter Linux ist nicht verifiziert:
 - echter iOS-/macOS-SwiftUI-Lauf
 - `fileImporter` auf Apple-Plattformen
 - Signierung, Sandbox, Bundle-Metadaten
+
+Stand 2026-03-17 ist auf einer echten macOS-/Xcode-Maschine zusaetzlich verifiziert:
+
+- Xcode 26.3 erkennt die Swift-Package-Schemes
+- `LocationHistoryConsumerApp` baut fuer macOS erfolgreich via `xcodebuild`
+- das gebaute Binary laesst sich starten und blieb bis zum manuellen Abbruch aktiv
+- `swift test` laeuft mit dem echten Xcode-Developer-Dir gruen
+
+Stand 2026-03-17 bleibt offen:
+
+- sichtbarer interaktiver UI-Run mit manuell bestaetigter Fensterdarstellung
+- `Load Demo Data`, `Open app_export.json`, `Clear` und Fehlerfaelle als echte UI-Durchgaenge
+
+Wichtig fuer diese konkrete Maschine: das aktive `xcode-select` zeigte auf `/Library/Developer/CommandLineTools`; deshalb wurden Xcode-Build und SwiftPM-Test bewusst ueber `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` ausgefuehrt.
 
 ## Naechster Apple-Schritt
 

@@ -13,6 +13,7 @@
 - Eine kleine produktnahe App-Shell ist erlaubt, solange sie nur lokalen `app_export.json`-Import anbietet und dieselben Core-/Support-Typen wiederverwendet.
 - Kleine app-nahe Informationsarchitektur fuer Quelle, Status, Replace- und Reset-Fluss ist erlaubt, solange sie nur Composition/State bleibt und keine neue Fachlogik einfuehrt.
 - Ehrliche Apple-/Xcode-Vorbereitung ist erlaubt, solange Linux-Tests intakt bleiben und keine ungetestete Apple-Verifikation behauptet wird.
+- `docs/XCODE_RUNBOOK.md` und `docs/APPLE_VERIFICATION_CHECKLIST.md` sind die kanonischen Stellen fuer Apple-Laufweg und Verifikationsstatus.
 
 ## Stabiler Contract
 
@@ -30,6 +31,7 @@
 - generische Session-/Loader-Typen in app-nahem Support halten, nicht in Demo-spezifischen Views vergraben
 - Demo-Views dumm halten; keine neue Business-Logik in SwiftUI schieben
 - Apple-spezifische Dateiimport-UI von plattformneutralem DemoSupport trennen
+- Apple-Build, Apple-Start und interaktive UI-Verifikation getrennt dokumentieren; einen erfolgreichen Build nie als UI-Lauf verkaufen
 - additive Felder optional modellieren
 - unbekannte additive JSON-Felder tolerieren, aber unbekannte `schema_version` weiter ablehnen
 - Breaking Changes nur mit dokumentierter Contract-Version
@@ -38,3 +40,4 @@
 
 - `swift test`
 - nativer lokaler Swift ist der Primärweg; Docker hoechstens als Ausnahmefall, nicht als Standard
+- fuer Apple-Phasen zusaetzlich `git diff --check` und, wenn echte Xcode-Verifikation behauptet wird, die konkreten Xcode-Schritte im Runbook ehrlich gegenpruefen

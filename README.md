@@ -69,6 +69,8 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
   - `golden_app_export_*.json`
 - `docs/CONTRACT.md`
 - `docs/XCODE_APP_PREPARATION.md`
+- `docs/XCODE_RUNBOOK.md`
+- `docs/APPLE_VERIFICATION_CHECKLIST.md`
 - `ROADMAP.md`
 - `NEXT_STEPS.md`
 
@@ -79,12 +81,17 @@ swift test
 ```
 
 Der Standardweg ist jetzt nativer lokaler Swift 5.9.
+Wenn auf macOS das aktive Developer Directory nur auf die Command Line Tools zeigt, kann fuer Apple-komplette Testlaeufe stattdessen das echte Xcode explizit gesetzt werden:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
+```
 
 Auf Apple-Plattformen kann die lokale Demo-Harness danach ueber das Swift Package in Xcode oder per `swift run LocationHistoryConsumerDemo` gestartet werden. Sie ist bewusst keine Produkt-App. Standardmaessig nutzt sie eine feste lokale Demo-Fixture, kann aber auch lokal eine `app_export.json` fuer denselben Consumer-Contract laden.
 
 Zusaetzlich gibt es jetzt eine kleine produktnahe App-Shell `LocationHistoryConsumerApp`. Sie startet leerer und import-zentriert, bleibt aber weiter offline-only und noch keine fertige Produkt-App. Unter Linux ist nur der nicht-UI Teil ueber `swift test` ehrlich verifizierbar.
 
-Die aktuelle Apple-/Xcode-nahe Vorbereitung ist bewusst klein und dokumentiert in `docs/XCODE_APP_PREPARATION.md`. Es gibt absichtlich noch kein als verifiziert behauptetes Xcode-/iOS-Projektsetup.
+Die aktuelle Apple-/Xcode-nahe Vorbereitung ist bewusst klein und jetzt in `docs/XCODE_RUNBOOK.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md` und der historischen Vorbereitungsnotiz `docs/XCODE_APP_PREPARATION.md` beschrieben. Es gibt weiterhin absichtlich kein aufgeblasenes `.xcodeproj`.
 
 ## Contract-Files aktualisieren
 
@@ -139,5 +146,25 @@ Die App-Shell ist die produktnaehere Einstiegsschicht dieses Repos:
 - `LocationHistoryConsumerApp` ist die vorgesehene produktnahe Apple-App-Huelle
 - `LocationHistoryConsumerDemo` bleibt der Harness-/Verifikationspfad
 - `LocationHistoryConsumerAppSupport` enthaelt die gemeinsame app-nahe Import-/Session-Logik
-- die aktuelle Vorbereitungsnotiz fuer Xcode und Apple-Validierung steht in `docs/XCODE_APP_PREPARATION.md`
+- das konkrete Xcode-Runbook steht in `docs/XCODE_RUNBOOK.md`
+- die konkrete Apple-Verifikations-Checkliste steht in `docs/APPLE_VERIFICATION_CHECKLIST.md`
+- `docs/XCODE_APP_PREPARATION.md` bleibt die kleinere vorbereitende Notiz aus Phase 10
 - unter Linux bleiben nur SwiftPM-Build und `swift test` ehrlich verifiziert
+
+## Apple-Verifikationsstatus
+
+Stand 2026-03-17 ist auf einer realen macOS-/Xcode-Maschine ehrlich verifiziert:
+- Xcode 26.3 erkennt die relevanten Swift-Package-Schemes
+- `LocationHistoryConsumerApp` baut fuer `platform=macOS` erfolgreich per `xcodebuild`
+- das gebaute App-Shell-Binary laesst sich starten und lief lokal weiter, bis es manuell beendet wurde
+- `swift test` laeuft mit dem echten Xcode-Developer-Dir gruen
+
+Stand 2026-03-17 ist noch offen:
+- sichtbarer interaktiver UI-Run in Xcode
+- manuelles Klicken von `Load Demo Data`
+- manuelles `Open app_export.json` ueber den Apple-Dateiimporter
+- invalides JSON, leerer Export und Clear-/Reset-Fluss als echte UI-Durchgaenge
+
+Zusatz fuer diese konkrete Maschine: mit aktivem `/Library/Developer/CommandLineTools` schlug ein nacktes `swift test` an `no such module 'XCTest'` fehl. Der gruene Testlauf wurde ehrlich mit `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` erreicht.
+
+Wichtig: Apple-/Xcode-Verifikation ist getrennt von `swift test` zu betrachten. Linux- oder SwiftPM-Erfolge ersetzen keinen echten Apple-UI-Lauf.
