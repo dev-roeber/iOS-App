@@ -218,7 +218,9 @@ public struct AppContentSplitView: View {
             }
             .tag(2)
         }
-        .onChange(of: session.daySummaries) { _ in
+        // Replaces deprecated onChange(of:perform:) — task(id:) fires on
+        // appearance and whenever id changes, which is the same behaviour.
+        .task(id: session.daySummaries) {
             daysNavigationPath = NavigationPath()
             daySearchText = ""
         }

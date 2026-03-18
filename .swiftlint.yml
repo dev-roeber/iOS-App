@@ -1,0 +1,25 @@
+# SwiftLint — minimal, clean baseline.
+# Goal: zero violations on existing code; catch genuinely dangerous patterns
+# on new code. Rules causing many pre-existing violations are disabled here
+# and can be re-enabled incrementally as the codebase is cleaned up.
+
+excluded:
+  - .build
+  - .swiftpm
+
+disabled_rules:
+  - trailing_comma          # Swift PM DSL and test fixtures use trailing commas
+  - line_length             # Many view-builder lines exceed 120; tighten gradually
+  - identifier_name         # Short loop/closure vars (f, d, v) are common here
+  - file_length             # AppContentSplitView.swift is large; split is tracked separately
+  - type_body_length        # Large SwiftUI struct bodies
+  - function_body_length    # SwiftUI @ViewBuilder closures
+  - function_parameter_count
+  - large_tuple             # Intentional in GoogleTimelineConverter
+  - cyclomatic_complexity   # filterDescriptions; acceptable for now
+
+# Downgrade force_try from error to warning:
+# test files use `try!` intentionally — this keeps CI green while still
+# surfacing force_try in production source as a visible signal.
+force_try:
+  severity: warning

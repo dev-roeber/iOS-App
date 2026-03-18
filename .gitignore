@@ -2,5 +2,5 @@
 .build.docker/
 DerivedData/
 .swiftpm/
-Package.resolved
+# Package.resolved is intentionally tracked (committed) for reproducible builds.
 .DS_Store
