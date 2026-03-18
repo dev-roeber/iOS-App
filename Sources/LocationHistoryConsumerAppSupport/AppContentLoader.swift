@@ -38,7 +38,10 @@ public enum AppContentLoader {
 
     private static func loadZipContent(from url: URL) throws -> AppSessionContent {
         let zipName = url.lastPathComponent
-        guard let archive = Archive(url: url, accessMode: .read) else {
+        let archive: Archive
+        do {
+            archive = try Archive(url: url, accessMode: .read)
+        } catch {
             throw AppContentLoaderError.fileReadFailed(zipName)
         }
         let entry = archive["app_export.json"]

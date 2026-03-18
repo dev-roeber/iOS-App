@@ -4,10 +4,14 @@
 
 ### Abgeschlossen
 Phasen 2–19 vollstaendig abgeschlossen. Lokaler iPhone-Betrieb real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
+Lokale Produktweiterentwicklung: Phasen 19.10–19.16 abgeschlossen.
 
 ### Aktiver lokaler Fokus
 Lokale Produktweiterentwicklung (Phase 19.x): UX-Verbesserungen, Lesbarkeit, Robustheit.
-Phasen 19.1–19.6 abgeschlossen. Persistenz technisch vorhanden, aktuell bewusst deaktiviert.
+Phasen 19.1–19.16 abgeschlossen. Persistenz technisch vorhanden, aktuell bewusst deaktiviert.
+
+### Bekannte offene Bugs (nicht Teil der abgeschlossenen Phasen)
+- **Searchable Days List – Schwarz-Bug (iOS dark mode):** compactDayList wechselt bei Sucheingabe zwischen List und VStack. Der VStack hat keinen Hintergrund; im dark mode erscheint der nackte NavigationStack-Hintergrund als schwarze Flaeche. Reproduzierbar bei beliebiger Sucheingabe. Fix: in Phase 19.17 adressieren.
 
 ### Persistenz-Status
 Auto-Restore (ImportBookmarkStore) ist technisch implementiert und funktioniert korrekt (Phase 15).
@@ -95,7 +99,47 @@ Reaktivierung moeglich sobald iPhone-Flow gefestigt und Nutzerwert klar.
 
 **Betroffene Dateien:** AppContentSplitView.swift (Days-Suche, Highlight-Icons, Charts). AppDayMapView.swift (Style-Toggle, Visit-Marker-Farben).
 
-**Nicht-Ziele:** Kein iPad-Fokus. Keine Persistenz. Keine Apple-/ASC-Arbeit. Stat-Cards-Drilldown (naechster Run). Day-Timeline/Gantt (separater Run). ZIP-Import (Dependency noetig).
+**Nicht-Ziele:** Kein iPad-Fokus. Keine Persistenz. Keine Apple-/ASC-Arbeit.
+
+---
+
+### Phase 19.15 – Day-Detail-Timeline + tappbare Overview-Stat-Cards
+
+**Datum:** 2026-03-18
+**Ziel:** Gantt-Zeitleiste im Day-Detail. Overview-Stat-Cards navigierbar.
+
+- [x] DayTimelineView: Gantt-Balken fuer Visits (blau) und Activities (gruen) auf gemeinsamer Zeitachse (GeometryReader, ISO8601-Parsing, Start/End-Labels)
+- [x] AppDayDetailView: DayTimelineView nach der Karte eingebunden
+- [x] AppOverviewSection: statCard mit optionalem action-Parameter; chevron-Indicator bei interaktiven Karten
+- [x] Overview-Stat-Cards: Days → Days-Tab, Visits/Activities/Paths → Insights-Tab (nur iPhone compact, iPad nil)
+
+**Tests:** swift test gruen. swift build + xcodebuild BUILD SUCCEEDED.
+
+**Betroffene Dateien:** AppContentSplitView.swift.
+
+**Nicht-Ziele:** Kein iPad-Fokus. Kein Tap-Effekt auf Timeline (rein visuell). Keine Persistenz. Keine Apple-/ASC-Arbeit.
+
+---
+
+### Phase 19.16 – ZIP-Import (ZipFoundation)
+
+**Datum:** 2026-03-18
+**Ziel:** app_export.json direkt aus einer .zip-Datei importieren.
+
+- [x] Package.swift: ZipFoundation 0.9.19+ als SPM-Dependency; LocationHistoryConsumerAppSupport verknuepft
+- [x] AppContentLoader: loadImportedContent erkennt .zip per Dateiendung; loadZipContent sucht app_export.json an Root und in Unterverzeichnissen
+- [x] Neuer Fehler jsonNotFoundInZip mit sprechender Meldung
+- [x] AppShellRootView (Core-App-Target): fileImporter akzeptiert .json und .zip
+- [x] ContentView (Wrapper, tatsaechlich auf iPhone): fileImporter korrigiert auf [.json, .zip]; Labels aktualisiert
+- [x] Tests: 6 neue ZIP-Tests (valid/invalid ZIP, Unterverzeichnis, Google-Format in ZIP, Error-Descriptions); alle 76 Tests gruen
+
+**Hinweis:** Der urspruengliche Phase-19.16-Commit hatte ContentView.swift im Wrapper vergessen. Der fileImporter dort hatte nur [.json], weshalb ZIP-Dateien ausgegraut waren. Dieser Commit behebt den echten Bug.
+
+**Tests:** swift test 76/76 gruen. xcodebuild BUILD SUCCEEDED.
+
+**Betroffene Dateien:** Package.swift, AppContentLoader.swift, AppShellRootView.swift (Core), ContentView.swift (Wrapper), AppContentLoaderTests.swift.
+
+**Nicht-Ziele:** Kein iPad-Fokus. Keine Persistenz. Keine Apple-/ASC-Arbeit.
 
 ---
 

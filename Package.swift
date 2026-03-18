@@ -71,6 +71,7 @@ let package = Package(
                 "LocationHistoryConsumer",
                 "LocationHistoryConsumerAppSupport",
                 "LocationHistoryConsumerDemoSupport",
+                .product(name: "ZIPFoundation", package: "ZIPFoundation"),
             ]
         ),
     ]
