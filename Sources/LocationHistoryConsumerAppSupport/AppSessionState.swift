@@ -268,6 +268,13 @@ public struct AppSessionState {
         }
     }
 
+    /// Clears selectedDate if the currently selected day has no content.
+    /// Call this on compact width to prevent dead-end navigation to empty detail screens.
+    public mutating func sanitizeSelectionIfContentEmpty() {
+        guard let detail = selectedDetail, !detail.hasContent else { return }
+        selectedDate = nil
+    }
+
     public mutating func clearContent() {
         isLoading = false
         content = nil

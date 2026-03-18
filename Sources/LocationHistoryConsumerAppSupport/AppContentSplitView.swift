@@ -49,6 +49,7 @@ private enum AppTimeDisplay {
 
 public struct AppContentSplitView: View {
     @Binding private var session: AppSessionState
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     public init(session: Binding<AppSessionState>) {
         self._session = session
@@ -67,13 +68,24 @@ public struct AppContentSplitView: View {
         } detail: {
             detailPane
         }
+        .task { sanitizeCompactSelection() }
+        .onChange(of: session.daySummaries) { _ in sanitizeCompactSelection() }
+    }
+
+    private func sanitizeCompactSelection() {
+        guard horizontalSizeClass == .compact else { return }
+        session.sanitizeSelectionIfContentEmpty()
     }
 
     @ViewBuilder
     private var detailPane: some View {
         if let detail = session.selectedDetail {
             ScrollView {
-                AppDayDetailView(detail: detail)
+                AppDayDetailView(
+                        detail: detail,
+                        hasDays: true,
+                        onBackToOverview: horizontalSizeClass == .compact ? { session.selectDay(nil) } : nil
+                    )
                     .padding()
             }
             .navigationTitle(AppDateDisplay.longDate(detail.date))
@@ -366,16 +378,19 @@ public struct AppDayListView: View {
 public struct AppDayDetailView: View {
     let detail: DayDetailViewState?
     let hasDays: Bool
+    let onBackToOverview: (() -> Void)?
 
-    public init(detail: DayDetailViewState?, hasDays: Bool) {
+    public init(detail: DayDetailViewState?, hasDays: Bool, onBackToOverview: (() -> Void)? = nil) {
         self.detail = detail
         self.hasDays = hasDays
+        self.onBackToOverview = onBackToOverview
     }
 
     // Convenience init for use within the split view
     init(detail: DayDetailViewState) {
         self.detail = detail
         self.hasDays = true
+        self.onBackToOverview = nil
     }
 
     public var body: some View {
@@ -385,7 +400,8 @@ public struct AppDayDetailView: View {
             } else {
                 emptyDayState(
                     "No Content",
-                    message: "This day exists in the export but contains no visits, activities or paths."
+                    message: "This day exists in the export but contains no visits, activities or paths.",
+                    recovery: onBackToOverview
                 )
             }
         } else if hasDays {
@@ -568,7 +584,7 @@ public struct AppDayDetailView: View {
     }
 
     @ViewBuilder
-    private func emptyDayState(_ title: String, message: String) -> some View {
+    private func emptyDayState(_ title: String, message: String, recovery: (() -> Void)? = nil) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "calendar")
                 .font(.largeTitle)
@@ -580,8 +596,14 @@ public struct AppDayDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+            if let recovery {
+                Button(action: recovery) {
+                    Label("Back to Overview", systemImage: "chevron.backward")
+                }
+                .buttonStyle(.bordered)
+                .padding(.top, 4)
+            }
         }
-        .accessibilityElement(children: .combine)
         .frame(maxWidth: .infinity, minHeight: 240)
     }
 }
