@@ -7,7 +7,12 @@ Phasen 2–19 vollstaendig abgeschlossen. Lokaler iPhone-Betrieb real verifizier
 
 ### Aktiver lokaler Fokus
 Lokale Produktweiterentwicklung (Phase 19.x): UX-Verbesserungen, Lesbarkeit, Robustheit.
-Phasen 19.1–19.3 abgeschlossen. Aktuell: Phase 19.4 – Locale-aware Distanzformatierung.
+Phasen 19.1–19.5 abgeschlossen. Persistenz technisch vorhanden, aktuell bewusst deaktiviert.
+
+### Persistenz-Status
+Auto-Restore (ImportBookmarkStore) ist technisch implementiert und funktioniert korrekt (Phase 15).
+Aktuell bewusst deaktiviert (Phase 19.5): App startet immer manuell (Open / Demo). Kein automatisches Wiederherstellen der letzten Datei.
+Reaktivierung moeglich sobald iPhone-Flow gefestigt und Nutzerwert klar.
 
 ### Geparkt / Extern
 Apple-/Developer-/ASC-/TestFlight-/Release-Themen (Phasen 20–21): kein aktiver Fokus.
@@ -298,6 +303,26 @@ Bleibt geparkt bis Developer-Account-Zugang und tatsaechliche Durchfuehrung moeg
 **Betroffene Dateien:** AppContentSplitView.swift (Core-Repo, formatDistance in AppDayDetailView). Wrapper-Repo via SPM automatisch aktuell.
 
 **Nicht-Ziele:** Keine Einheitenauswahl durch Nutzer. Kein eigener Einheitenkonverter. Keine neuen Features.
+
+### Phase 19.5 – Persistenz-Pause + iPhone-Einstieg klar machen
+
+**Datum:** 2026-03-18
+**Ziel:** Auto-Restore vorläufig deaktivieren. App startet immer bewusst manuell. iPhone-Einstieg ist klar und vorhersehbar.
+
+- [x] Auto-Restore (restoreBookmarkedFile) in AppShellRootView und ContentView auskommentiert und als PARKED dokumentiert
+- [x] Persistenz-Code (ImportBookmarkStore, restoreBookmarkedFile) vollstaendig erhalten
+- [x] Kommentar-Dokumentation direkt im Code: "PARKED: Auto-restore temporarily disabled (Phase 19.5)"
+- [x] ROADMAP und NEXT_STEPS aktualisiert
+
+**Problem vorher:** App startete automatisch mit zuletzt importierter Datei. Auf iPhone fuehrte das zu einem eingeschraenkten, schwer vorhersehbaren Einstiegspunkt. Nutzer landete direkt in der Navigation ohne sichtbaren Ausgangspunkt.
+
+**Jetzt:** Jeder App-Start beginnt mit dem manuellen Einstieg (Open app_export.json / Load Demo Data). Persistenz-Logik ist vollstaendig erhalten und kann jederzeit wieder aktiviert werden.
+
+**Tests:** swift test gruen (70/70). xcodebuild build im Wrapper-Repo BUILD SUCCEEDED.
+
+**Betroffene Dateien:** AppShellRootView.swift (Core-Repo); ContentView.swift (Wrapper-Repo). Persistenz-Code unangetastet.
+
+**Nicht-Ziele:** Keine Loeschung der Persistenz-Logik. Kein neues Design. Keine neue Navigation. Keine neuen Features.
 
 ---
 

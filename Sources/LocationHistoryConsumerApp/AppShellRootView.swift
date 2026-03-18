@@ -56,7 +56,9 @@ struct AppShellRootView: View {
         )
         #endif
         .task {
-            restoreBookmarkedFile()
+            // PARKED: Auto-restore temporarily disabled (Phase 19.5).
+            // restoreBookmarkedFile()
+            // App always starts at the manual import/demo entry point.
         }
     }
 

@@ -2,9 +2,14 @@
 
 Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
-1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Naechster Schritt: Phase 19.5 bestimmen. Kandidaten: weitere kleine UX-Feinschliffe, placeId-Darstellung, "sidebar"→"list"-Text.
+1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.5 abgeschlossen. Naechster Schritt: Phase 19.6 bestimmen. Kandidaten: placeId-Darstellung, "sidebar"→"list"-Text, weitere UX-Feinschliffe, oder Persistenz reaktivieren sobald iPhone-Flow gefestigt.
 2. **Phase 20 / Phase 21 – bewusst geparkt** – Erfordert Apple Developer Account / ASC-Zugang. Kein aktiver Fokus.
 3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+
+**Abgeschlossene Phase 19.5 (2026-03-18):**
+- Auto-Restore deaktiviert: App startet immer manuell (Open / Demo)
+- Persistenz-Code vollstaendig erhalten (geparkt, kommentiert)
+- iPhone-Einstieg klar und vorhersehbar
 
 **Abgeschlossene Phase 19.4 (2026-03-18):**
 - formatDistance() durch Measurement.formatted(.measurement(width: .abbreviated, usage: .road)) ersetzt
