@@ -18,7 +18,6 @@ struct AppShellRootView: View {
                 ProgressView("Opening app export...")
             } else {
                 AppShellEmptyStateView(
-                    summary: session.sourceSummary,
                     message: session.message,
                     openAction: { isImportingFile = true },
                     loadDemoAction: loadBundledDemo,
@@ -165,7 +164,6 @@ struct AppShellRootView: View {
 }
 
 private struct AppShellEmptyStateView: View {
-    let summary: AppSourceSummary
     let message: AppUserMessage?
     let openAction: () -> Void
     let loadDemoAction: () -> Void
@@ -180,8 +178,6 @@ private struct AppShellEmptyStateView: View {
                     .font(.body)
                     .foregroundStyle(.secondary)
             }
-
-            AppSourceSummaryCard(summary: summary)
 
             if let message, message.kind == .error {
                 AppMessageCard(message: message)

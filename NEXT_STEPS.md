@@ -2,9 +2,14 @@
 
 Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
-1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.5 abgeschlossen. Naechster Schritt: Phase 19.6 bestimmen. Kandidaten: placeId-Darstellung, "sidebar"→"list"-Text, weitere UX-Feinschliffe, oder Persistenz reaktivieren sobald iPhone-Flow gefestigt.
+1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.6 abgeschlossen. Naechster Schritt: Phase 19.7 bestimmen. Kandidaten: placeId-Darstellung, Toolbar-Kompression auf iPhone, weitere UX-Feinschliffe.
 2. **Phase 20 / Phase 21 – bewusst geparkt** – Erfordert Apple Developer Account / ASC-Zugang. Kein aktiver Fokus.
 3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+
+**Abgeschlossene Phase 19.6 (2026-03-18):**
+- AppSourceSummaryCard aus Empty State entfernt: kein technisches Rauschen mehr im Idle-Zustand
+- Empty State zeigt nur Titel, Beschreibung, Fehler (falls vorhanden) und Aktions-Buttons
+- AppSourceSummaryCard bleibt unveraendert im geladenen Overview-Pane (sinnvoll dort)
 
 **Abgeschlossene Phase 19.5 (2026-03-18):**
 - Auto-Restore deaktiviert: App startet immer manuell (Open / Demo)

@@ -7,7 +7,7 @@ Phasen 2–19 vollstaendig abgeschlossen. Lokaler iPhone-Betrieb real verifizier
 
 ### Aktiver lokaler Fokus
 Lokale Produktweiterentwicklung (Phase 19.x): UX-Verbesserungen, Lesbarkeit, Robustheit.
-Phasen 19.1–19.5 abgeschlossen. Persistenz technisch vorhanden, aktuell bewusst deaktiviert.
+Phasen 19.1–19.6 abgeschlossen. Persistenz technisch vorhanden, aktuell bewusst deaktiviert.
 
 ### Persistenz-Status
 Auto-Restore (ImportBookmarkStore) ist technisch implementiert und funktioniert korrekt (Phase 15).
@@ -323,6 +323,28 @@ Bleibt geparkt bis Developer-Account-Zugang und tatsaechliche Durchfuehrung moeg
 **Betroffene Dateien:** AppShellRootView.swift (Core-Repo); ContentView.swift (Wrapper-Repo). Persistenz-Code unangetastet.
 
 **Nicht-Ziele:** Keine Loeschung der Persistenz-Logik. Kein neues Design. Keine neue Navigation. Keine neuen Features.
+
+---
+
+### Phase 19.6 – UX: Empty-State-Bereinigung
+
+**Datum:** 2026-03-18
+**Ziel:** AppSourceSummaryCard aus dem leeren (Idle-)Startzustand entfernen. Der Nutzer sieht beim ersten Oeffnen kein technisches Rauschen ("Source: None", "Schema: n/a"), sondern nur Titel, Erklaerungstext und Aktions-Buttons.
+
+- [x] AppSourceSummaryCard aus AppShellEmptyStateView (Core-Repo) entfernt
+- [x] summary-Parameter aus AppShellEmptyStateView entfernt (nicht mehr benoetigt)
+- [x] AppSourceSummaryCard aus ContentView.emptyStateView (Wrapper-Repo) entfernt
+- [x] AppSourceSummaryCard bleibt unveraendert im geladenen Overview-Pane (AppSessionStatusView)
+
+**Problem vorher:** Im Idle-Zustand (kein Export geladen) zeigte die App eine graue Info-Card mit "No app export loaded", "Source: None" und wiederholendem Statustext. Dieser Inhalt duplizierte den bereits vorhandenen Titel/Untertitel und wirkte technisch statt einladend.
+
+**Jetzt:** Empty State zeigt direkt: Titel, Erklaerung, ggf. Fehler-Card, Aktions-Buttons. Kein technisches Rauschen.
+
+**Tests:** swift test gruen (70/70). xcodebuild build im Wrapper-Repo BUILD SUCCEEDED.
+
+**Betroffene Dateien:** AppShellRootView.swift (Core-Repo); ContentView.swift (Wrapper-Repo).
+
+**Nicht-Ziele:** Keine Aenderung des AppSessionState. Keine Aenderung der AppSourceSummaryCard selbst. Kein Redesign.
 
 ---
 
