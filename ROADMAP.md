@@ -4,16 +4,47 @@
 
 ### Abgeschlossen
 Phasen 2–19 vollstaendig abgeschlossen. Lokaler iPhone-Betrieb real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
-Lokale Produktweiterentwicklung: Phasen 19.10–19.18 abgeschlossen.
+Lokale Produktweiterentwicklung: Phasen 19.10–19.21b abgeschlossen.
 
 ### Aktiver lokaler Fokus
 Lokale Produktweiterentwicklung (Phase 19.x): UX-Verbesserungen, Lesbarkeit, Robustheit.
-Phasen 19.1–19.18 abgeschlossen. Persistenz technisch vorhanden, aktuell bewusst deaktiviert.
+Phasen 19.1–19.21b abgeschlossen. Persistenz technisch vorhanden, aktuell bewusst deaktiviert.
 
 ### Persistenz-Status
 Auto-Restore (ImportBookmarkStore) ist technisch implementiert und funktioniert korrekt (Phase 15).
 Aktuell bewusst deaktiviert (Phase 19.5): App startet immer manuell (Open / Demo). Kein automatisches Wiederherstellen der letzten Datei.
 Reaktivierung moeglich sobald iPhone-Flow gefestigt und Nutzerwert klar.
+
+### Phase 19.21b – Google Timeline JSON direkt importierbar
+
+**Datum:** 2026-03-18
+**Ziel:** Google Location History JSON (`location-history.json`) direkt importierbar (ohne ZIP-Verpackung).
+
+- [x] `decodeFile`: erkennt JSON-Array-Root → probiert `GoogleTimelineConverter.convert` vor `AppExportDecoder`
+- [x] `GoogleTimelineConverter.convert`: `hasValidEntry`-Guard – leere Arrays und `[{}]` ohne `startTime` werfen `notGoogleTimeline` (→ `unsupportedFormat`)
+- [x] Real getestet: `location-history.json` mit 64.926 Eintraegen importiert korrekt
+- [x] 2 neue Tests (`testImportsGoogleTimelineJsonDirectly`, `testRealLocationHistoryJsonOnDesktop`); 96/96 gruen
+
+**Problem vorher:** Direkte JSON-Datei mit Array-Root warf sofort `unsupportedFormat`. Nur ZIP-Verpackung funktionierte.
+
+---
+
+### Phase 19.21 – Google Timeline ZIP direkt importierbar
+
+**Datum:** 2026-03-18
+**Ziel:** Google Takeout ZIP (`location-history.zip`) direkt in der App oeffnen ohne vorherige Konvertierung.
+
+- [x] `GoogleTimelineConverter`: konvertiert Google Timeline JSON-Array → AppExport per JSON-Dictionary-Roundtrip
+- [x] `loadGoogleTimelineFromZip`: Fallback wenn kein LH2GPX-Export im ZIP; bevorzugt `location-history.json` bei Mehrdeutigkeit
+- [x] `isGoogleTimeline`: prueft Array-Root; `convert` prueft zusaetzlich auf mindestens einen gueltigen `startTime`-Eintrag
+- [x] Unterstuetzt: `visit`, `activity`, `timelinePath`-Eintraege; `geo:lat,lon`-Format; `distanceMeters` als String oder Double
+- [x] ISO8601-Parser mit und ohne Bruchteile; Zeitzonenoffsets (`+02:00`) korrekt behandelt
+- [x] Real getestet: `location-history.zip` (64.926 Eintraege) importiert korrekt
+- [x] 6 neue Tests fuer Google Timeline ZIP; 94/94 gruen
+
+**Problem vorher:** ZIP musste einen LH2GPX-App-Export enthalten. Google Takeout ZIPs wurden mit `jsonNotFoundInZip` abgewiesen.
+
+---
 
 ### Phase 19.20 – ZIP-Import: Dateiname-agnostisch
 

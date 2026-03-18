@@ -2,10 +2,19 @@
 
 Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
-1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.20 abgeschlossen (ZIP-Import dateiname-agnostisch). Kein konkret naechster Schritt definiert.
+1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.21b abgeschlossen (Google Timeline JSON direkt importierbar). Kein konkret naechster Schritt definiert.
 2. **Phase 20 / Phase 21 – bewusst geparkt** – Erfordert Apple Developer Account / ASC-Zugang. Kein aktiver Fokus.
 3. **Accessibility-Audit – bewusst geparkt** – Kein konkreter Bug, kein Trigger. Kein aktiver Fokus.
 4. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+
+**Abgeschlossene Phase 19.21b (2026-03-18):**
+- Google Timeline JSON direkt importierbar (ohne ZIP); hasValidEntry-Guard fuer leere Arrays
+- 2 neue Tests; 96/96 gruen
+
+**Abgeschlossene Phase 19.21 (2026-03-18):**
+- Google Takeout ZIP direkt importierbar: GoogleTimelineConverter (visit/activity/timelinePath)
+- distanceMeters String/Double; ISO8601 mit Zeitzonenoffsets; hasValidEntry-Guard
+- 6 neue Tests; 94/94 gruen
 
 **Abgeschlossene Phase 19.20 (2026-03-18):**
 - ZIP-Import dateiname-agnostisch: jede .json im ZIP wird geprueft
