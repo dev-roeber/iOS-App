@@ -5,6 +5,9 @@ import LocationHistoryConsumer
 // MARK: - Date Formatting
 
 enum AppDateDisplay {
+    // en_US_POSIX locale is required so that the fixed "yyyy-MM-dd" format is
+    // interpreted literally, regardless of the device's regional settings.
+    // Without it, DateFormatter may silently rearrange the format on some locales.
     private static let isoFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"

@@ -1,8 +1,11 @@
 import Foundation
 import LocationHistoryConsumer
 
+/// Identifies where the currently loaded content originated.
 public enum AppContentSource: Equatable {
+    /// Bundled demo fixture loaded from the app bundle.
     case demoFixture(name: String)
+    /// File imported by the user from the local file system.
     case importedFile(filename: String)
 
     public var displayName: String {
@@ -15,12 +18,19 @@ public enum AppContentSource: Equatable {
     }
 }
 
+/// The coarse UI state that drives which view the shell renders.
 public enum AppSessionPresentationState: Equatable {
+    /// No content loaded, no error. Initial state.
     case idle
+    /// Import is in progress.
     case loading
+    /// Demo fixture is active.
     case demoLoaded
+    /// User-imported file is active.
     case importedLoaded
+    /// Last import failed and no prior content is available.
     case failedWithoutContent
+    /// Last import failed but prior content remains visible.
     case failedWithContent
 }
 
@@ -77,6 +87,11 @@ public struct AppUserMessage: Equatable {
     }
 }
 
+/// Value-type state machine that drives the app shell UI.
+///
+/// Mutations are performed via the `mutating` helper methods (`beginLoading`,
+/// `show(content:)`, `showFailure`, `clearContent`, `selectDay`). Views should
+/// derive their display state from `presentationState` and the computed properties.
 public struct AppSessionState {
     public private(set) var isLoading: Bool
     public private(set) var content: AppSessionContent?

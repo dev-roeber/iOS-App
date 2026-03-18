@@ -2,6 +2,7 @@ import Foundation
 import LocationHistoryConsumer
 import ZIPFoundation
 
+/// Errors that can occur when loading or decoding an app export.
 public enum AppContentLoaderError: LocalizedError {
     case fixtureNotFound(String)
     case fileReadFailed(String)
@@ -45,9 +46,12 @@ public enum AppContentLoaderError: LocalizedError {
     }
 }
 
+/// Decodes app exports (JSON or ZIP) and fixture files into `AppSessionContent`.
 public enum AppContentLoader {
+    /// Name of the bundled demo fixture used by default when no file is imported.
     public static let defaultDemoFixtureName = "golden_app_export_sample_small"
 
+    /// Loads a user-imported file (`.json` or `.zip`) from the given URL.
     public static func loadImportedContent(from url: URL) throws -> AppSessionContent {
         if url.pathExtension.lowercased() == "zip" {
             return try loadZipContent(from: url)

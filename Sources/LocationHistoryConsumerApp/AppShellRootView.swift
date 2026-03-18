@@ -50,11 +50,6 @@ struct AppShellRootView: View {
             onCompletion: handleImportResult
         )
         #endif
-        .task {
-            // PARKED: Auto-restore temporarily disabled (Phase 19.5).
-            // restoreBookmarkedFile()
-            // App always starts at the manual import/demo entry point.
-        }
     }
 
     @ViewBuilder
@@ -104,32 +99,6 @@ struct AppShellRootView: View {
     private func clearCurrentContent() {
         ImportBookmarkStore.clear()
         session.clearContent()
-    }
-
-    private func restoreBookmarkedFile() {
-        guard !session.hasLoadedContent, !session.isLoading else {
-            return
-        }
-        guard let url = ImportBookmarkStore.restore() else {
-            return
-        }
-        session.beginLoading()
-        let accessedSecurityScope = url.startAccessingSecurityScopedResource()
-        defer {
-            if accessedSecurityScope {
-                url.stopAccessingSecurityScopedResource()
-            }
-        }
-        do {
-            session.show(content: try AppContentLoader.loadImportedContent(from: url))
-        } catch {
-            ImportBookmarkStore.clear()
-            session.showFailure(
-                title: "Unable to restore previous import",
-                message: error.localizedDescription,
-                preserveCurrentContent: false
-            )
-        }
     }
 
     #if canImport(UniformTypeIdentifiers)
