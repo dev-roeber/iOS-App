@@ -47,7 +47,7 @@ public struct AppDayMapView: View {
                 MapPolyline(coordinates: path.coordinates.map {
                     CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
                 })
-                .stroke(.blue, lineWidth: 3)
+                .stroke(polylineColor(for: path.activityType), lineWidth: 3)
             }
 
             ForEach(Array(mapData.visitAnnotations.enumerated()), id: \.offset) { _, visit in
@@ -62,6 +62,20 @@ public struct AppDayMapView: View {
             }
         }
         .mapStyle(.standard)
+    }
+
+    private func polylineColor(for activityType: String?) -> Color {
+        switch (activityType ?? "").uppercased() {
+        case "WALKING": return .green
+        case "CYCLING": return .teal
+        case "RUNNING": return .red
+        case "IN PASSENGER VEHICLE": return .gray
+        case "IN BUS": return .orange
+        case "IN TRAIN": return .purple
+        case "IN SUBWAY": return .purple
+        case "FLYING": return .blue
+        default: return .blue
+        }
     }
 }
 #endif

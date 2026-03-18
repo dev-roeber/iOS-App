@@ -72,6 +72,32 @@ Reaktivierung moeglich sobald iPhone-Flow gefestigt und Nutzerwert klar.
 
 ---
 
+### Phase 19.13 – Visual Insights: Swift Charts + tappbare Navigation + Politur
+
+**Datum:** 2026-03-18
+**Ziel:** Insights-Tab von reinem Zahlenviewer zu echtem Analytics-Bereich transformieren. Swift Charts integriert. Highlight-Cards tappbar (navigieren zu Day Detail). AppSourceSummaryCard kollapsierbar. Path Cards mit Activity-Type-Icon. Map-Polylines farblich nach Activity-Type.
+
+- [x] Swift Charts: Distanz-pro-Tag-Balkendiagramm als Hero-Sektion im Insights-Tab (tappbare Balken navigieren zu Day Detail)
+- [x] Swift Charts: Activity-Type-Verteilung als horizontale Balken in Insights
+- [x] Swift Charts: Visit-Type-Proportionen als horizontale Balken in Insights
+- [x] Highlight-Cards (Busiest Day, Longest Distance) tappbar – navigiert zu Days-Tab + Day Detail
+- [x] TabView mit Selection-Binding (selectedTab) fuer programmatischen Tab-Wechsel
+- [x] AppSourceSummaryCard: DisclosureGroup – nur Titel + Source immer sichtbar, Details kollapsierbar
+- [x] Path Cards: Activity-Type-Icon (Konsistenz zu Visit/Activity Cards)
+- [x] Map-Polylines: Farbe nach Activity-Type (Walking=gruen, Cycling=teal, Vehicle=grau, Bus=orange, Train/Subway=lila, Running=rot, default=blau)
+
+**Problem vorher:** Insights-Tab zeigte ausschliesslich Zahlen in Cards/Listen – kein einziger Chart trotz vollstaendiger Datenlage. Overview-Highlights waren tote Zahlen ohne Navigation. AppSourceSummaryCard zeigte Debug-artige Technikdetails immer. Path Cards hatten kein Icon. Alle Polylines waren blau.
+
+**Jetzt:** Insights hat 3 echte Swift Charts. Das Distanz-Balkendiagramm ist die erste visuelle Zeitreihe der App. Tapping eines Balkens springt direkt zum Day Detail. Highlight-Cards sind tappbar und wechseln Tab+Destination. AppSourceSummaryCard ist kompakt (Details per DisclosureGroup erweiterbar). Path Cards haben Activity-Type-Icon. Polylines sind farblich nach Activity-Type differenziert.
+
+**Tests:** swift test gruen (70/70). swift build BUILD SUCCEEDED.
+
+**Betroffene Dateien:** AppContentSplitView.swift (Charts, Navigation, SourceSummaryCard, PathCard). AppDayMapView.swift (Polyline-Farben).
+
+**Nicht-Ziele:** Kein iPad-Fokus. Keine Persistenz-Aktivierung. Keine Apple-/ASC-Arbeit. Day-Detail-Timeline (Phase 19.14+).
+
+---
+
 ### Phase 19.12 – UX: Overview-Highlights + Day-Detail-Enrichment + Filter-Transparenz
 
 **Datum:** 2026-03-18

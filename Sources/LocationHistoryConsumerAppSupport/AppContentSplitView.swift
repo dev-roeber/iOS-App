@@ -1,6 +1,9 @@
 #if canImport(SwiftUI)
 import SwiftUI
 import LocationHistoryConsumer
+#if canImport(Charts)
+import Charts
+#endif
 #if canImport(MapKit)
 import MapKit
 #endif
@@ -111,6 +114,7 @@ public struct AppContentSplitView: View {
     @Binding private var session: AppSessionState
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var daysNavigationPath = NavigationPath()
+    @State private var selectedTab = 0
 
     private let onOpen: () -> Void
     private let onLoadDemo: () -> Void
@@ -139,7 +143,7 @@ public struct AppContentSplitView: View {
     // MARK: - Compact (iPhone) Tab View
 
     private var compactTabView: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             NavigationStack {
                 ScrollView {
                     overviewPaneContent
@@ -155,6 +159,7 @@ public struct AppContentSplitView: View {
             .tabItem {
                 Label("Overview", systemImage: "chart.bar.doc.horizontal")
             }
+            .tag(0)
 
             NavigationStack(path: $daysNavigationPath) {
                 compactDayList
@@ -178,6 +183,7 @@ public struct AppContentSplitView: View {
             .tabItem {
                 Label("Days", systemImage: "calendar")
             }
+            .tag(1)
 
             NavigationStack {
                 ScrollView {
@@ -194,6 +200,7 @@ public struct AppContentSplitView: View {
             .tabItem {
                 Label("Insights", systemImage: "chart.xyaxis.line")
             }
+            .tag(2)
         }
         .onChange(of: session.daySummaries) { _ in
             daysNavigationPath = NavigationPath()
@@ -322,7 +329,11 @@ public struct AppContentSplitView: View {
                             value: busiest.value,
                             date: AppDateDisplay.mediumDate(busiest.date),
                             icon: "flame.fill",
-                            color: .orange
+                            color: .orange,
+                            onTap: {
+                                daysNavigationPath.append(busiest.date)
+                                selectedTab = 1
+                            }
                         )
                     }
                     if let longest = insights.longestDistanceDay {
@@ -331,7 +342,11 @@ public struct AppContentSplitView: View {
                             value: longest.value,
                             date: AppDateDisplay.mediumDate(longest.date),
                             icon: "road.lanes",
-                            color: .purple
+                            color: .purple,
+                            onTap: {
+                                daysNavigationPath.append(longest.date)
+                                selectedTab = 1
+                            }
                         )
                     }
                 }
@@ -340,7 +355,24 @@ public struct AppContentSplitView: View {
     }
 
     @ViewBuilder
-    private func highlightCard(title: String, value: String, date: String, icon: String, color: Color) -> some View {
+    private func highlightCard(title: String, value: String, date: String, icon: String, color: Color, onTap: (() -> Void)? = nil) -> some View {
+        Group {
+            if let onTap {
+                Button(action: onTap) {
+                    highlightCardBody(title: title, value: value, date: date, icon: icon, color: color, isInteractive: true)
+                }
+                .buttonStyle(.plain)
+            } else {
+                highlightCardBody(title: title, value: value, date: date, icon: icon, color: color, isInteractive: false)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title): \(value), \(date)")
+        .accessibilityAddTraits(onTap != nil ? .isButton : [])
+    }
+
+    @ViewBuilder
+    private func highlightCardBody(title: String, value: String, date: String, icon: String, color: Color, isInteractive: Bool) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
@@ -349,6 +381,12 @@ public struct AppContentSplitView: View {
                 Text(title)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                if isInteractive {
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(color.opacity(0.5))
+                }
             }
             Text(value)
                 .font(.headline.monospacedDigit())
@@ -360,8 +398,6 @@ public struct AppContentSplitView: View {
         .padding(12)
         .background(color.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(title): \(value), \(date)")
     }
 
     @ViewBuilder
@@ -383,7 +419,14 @@ public struct AppContentSplitView: View {
     @ViewBuilder
     private var insightsPaneContent: some View {
         if let insights = session.insights {
-            AppInsightsContentView(insights: insights)
+            AppInsightsContentView(
+                insights: insights,
+                daySummaries: session.daySummaries,
+                onDayTap: { date in
+                    daysNavigationPath.append(date)
+                    selectedTab = 1
+                }
+            )
         } else {
             VStack(spacing: 12) {
                 Image(systemName: "chart.xyaxis.line")
@@ -514,6 +557,7 @@ public struct AppSessionStatusView: View {
 
 public struct AppSourceSummaryCard: View {
     let summary: AppSourceSummary
+    @State private var isExpanded = false
 
     public init(summary: AppSourceSummary) {
         self.summary = summary
@@ -521,27 +565,41 @@ public struct AppSourceSummaryCard: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(summary.stateTitle)
-                .font(.headline)
+            HStack {
+                Text(summary.stateTitle)
+                    .font(.headline)
+                Spacer()
+                Text(summary.statusText)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
 
             summaryRow("Source", value: summary.sourceValue, icon: "doc")
 
-            if let v = summary.schemaVersion {
-                summaryRow("Schema", value: v, icon: "number")
+            let hasDetails = summary.schemaVersion != nil || summary.inputFormat != nil || summary.exportedAt != nil || summary.dayCountText != nil
+            if hasDetails {
+                DisclosureGroup(isExpanded: $isExpanded) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        if let v = summary.schemaVersion {
+                            summaryRow("Schema", value: v, icon: "number")
+                        }
+                        if let v = summary.inputFormat {
+                            summaryRow("Format", value: v, icon: "square.grid.2x2")
+                        }
+                        if let v = summary.exportedAt {
+                            summaryRow("Exported", value: v, icon: "clock")
+                        }
+                        if let v = summary.dayCountText {
+                            summaryRow("Days", value: v, icon: "calendar")
+                        }
+                    }
+                    .padding(.top, 6)
+                } label: {
+                    Text("Details")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
-            if let v = summary.inputFormat {
-                summaryRow("Format", value: v, icon: "square.grid.2x2")
-            }
-            if let v = summary.exportedAt {
-                summaryRow("Exported", value: v, icon: "clock")
-            }
-            if let v = summary.dayCountText {
-                summaryRow("Days", value: v, icon: "calendar")
-            }
-
-            Text(summary.statusText)
-                .font(.caption)
-                .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
@@ -955,8 +1013,13 @@ public struct AppDayDetailView: View {
     @ViewBuilder
     private func pathCard(_ path: DayDetailViewState.PathItem) -> some View {
         coloredCard(color: CardAccent.path) {
-            Text(path.activityType?.capitalized ?? "Path")
-                .font(.subheadline.weight(.medium))
+            HStack(spacing: 6) {
+                Image(systemName: iconForActivityType(path.activityType))
+                    .foregroundColor(CardAccent.path)
+                    .font(.subheadline)
+                Text(path.activityType?.capitalized ?? "Path")
+                    .font(.subheadline.weight(.medium))
+            }
             HStack(spacing: 12) {
                 Label("\(path.pointCount) points", systemImage: "location.north.line")
                 if let dist = path.distanceM {
@@ -1031,9 +1094,28 @@ public struct AppDayDetailView: View {
 
 private struct AppInsightsContentView: View {
     let insights: ExportInsights
+    let daySummaries: [DaySummary]
+    let onDayTap: ((String) -> Void)?
+
+    init(insights: ExportInsights, daySummaries: [DaySummary] = [], onDayTap: ((String) -> Void)? = nil) {
+        self.insights = insights
+        self.daySummaries = daySummaries
+        self.onDayTap = onDayTap
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 28) {
+
+            // Distance Over Time
+            #if canImport(Charts)
+            let hasDistanceData = daySummaries.contains(where: { $0.totalPathDistanceM > 0 })
+            if !daySummaries.isEmpty && hasDistanceData {
+                insightSection("Distance Over Time", icon: "chart.bar.fill") {
+                    distanceChart
+                }
+            }
+            #endif
+
             // Daily Averages
             insightSection("Daily Averages", icon: "chart.bar.fill") {
                 let avg = insights.averagesPerDay
@@ -1048,6 +1130,9 @@ private struct AppInsightsContentView: View {
             // Activity Types
             if !insights.activityBreakdown.isEmpty {
                 insightSection("Activity Types", icon: "figure.walk") {
+                    #if canImport(Charts)
+                    activityTypeChart
+                    #endif
                     ForEach(Array(insights.activityBreakdown.enumerated()), id: \.offset) { _, item in
                         activityBreakdownCard(item)
                     }
@@ -1057,6 +1142,9 @@ private struct AppInsightsContentView: View {
             // Visit Types
             if !insights.visitTypeBreakdown.isEmpty {
                 insightSection("Visit Types", icon: "mappin.and.ellipse") {
+                    #if canImport(Charts)
+                    visitTypeChart
+                    #endif
                     ForEach(Array(insights.visitTypeBreakdown.enumerated()), id: \.offset) { _, item in
                         visitTypeRow(item)
                     }
@@ -1184,6 +1272,91 @@ private struct AppInsightsContentView: View {
         .background(periodColor.opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
+
+    // MARK: - Charts
+
+    #if canImport(Charts)
+    @ViewBuilder
+    private var distanceChart: some View {
+        let showXAxis = daySummaries.count <= 10
+        Chart {
+            ForEach(daySummaries, id: \.date) { summary in
+                BarMark(
+                    x: .value("Date", summary.date),
+                    y: .value("km", summary.totalPathDistanceM / 1000)
+                )
+                .foregroundStyle(Color.accentColor.gradient)
+                .cornerRadius(3)
+            }
+        }
+        .chartXAxis(showXAxis ? .automatic : .hidden)
+        .chartYAxisLabel("km", alignment: .trailing)
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        if let onDayTap,
+                           let date: String = proxy.value(atX: location.x - geometry.frame(in: .local).minX) {
+                            if daySummaries.contains(where: { $0.date == date }) {
+                                onDayTap(date)
+                            }
+                        }
+                    }
+            }
+        }
+        .frame(height: 150)
+    }
+
+    @ViewBuilder
+    private var activityTypeChart: some View {
+        let totalCount = insights.activityBreakdown.reduce(0) { $0 + $1.count }
+        if totalCount > 0 {
+            Chart {
+                ForEach(insights.activityBreakdown, id: \.activityType) { item in
+                    BarMark(
+                        x: .value("Count", item.count),
+                        y: .value("Type", item.activityType.capitalized)
+                    )
+                    .foregroundStyle(Color.green.gradient)
+                    .cornerRadius(4)
+                    .annotation(position: .trailing) {
+                        Text("\(item.count)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .chartXAxis(.hidden)
+            .frame(height: CGFloat(max(insights.activityBreakdown.count, 1)) * 40 + 8)
+        }
+    }
+
+    @ViewBuilder
+    private var visitTypeChart: some View {
+        let totalCount = insights.visitTypeBreakdown.reduce(0) { $0 + $1.count }
+        if totalCount > 0 {
+            Chart {
+                ForEach(insights.visitTypeBreakdown, id: \.semanticType) { item in
+                    BarMark(
+                        x: .value("Count", item.count),
+                        y: .value("Type", item.semanticType.capitalized)
+                    )
+                    .foregroundStyle(Color.blue.gradient)
+                    .cornerRadius(4)
+                    .annotation(position: .trailing) {
+                        Text("\(item.count)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .chartXAxis(.hidden)
+            .frame(height: CGFloat(max(insights.visitTypeBreakdown.count, 1)) * 40 + 8)
+        }
+    }
+    #endif
 
     private func formatDuration(_ hours: Double) -> String {
         if hours < 1 {
