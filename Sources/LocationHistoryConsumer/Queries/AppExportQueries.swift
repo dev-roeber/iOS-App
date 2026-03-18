@@ -184,6 +184,25 @@ public enum AppExportQueries {
         let totalActivities = days.reduce(0) { $0 + $1.activities.count }
         let totalPaths = days.reduce(0) { $0 + $1.paths.count }
 
+        let summaries = daySummaries(from: export)
+
+        let busiestDay: DayHighlight? = {
+            guard let best = summaries.max(by: {
+                ($0.visitCount + $0.activityCount + $0.pathCount) < ($1.visitCount + $1.activityCount + $1.pathCount)
+            }), (best.visitCount + best.activityCount + best.pathCount) > 0 else { return nil }
+            let total = best.visitCount + best.activityCount + best.pathCount
+            return DayHighlight(date: best.date, value: "\(total) events")
+        }()
+
+        let longestDistanceDay: DayHighlight? = {
+            guard let best = summaries.max(by: { $0.totalPathDistanceM < $1.totalPathDistanceM }),
+                  best.totalPathDistanceM > 0 else { return nil }
+            let km = best.totalPathDistanceM / 1000
+            return DayHighlight(date: best.date, value: String(format: "%.1f km", km))
+        }()
+
+        let activeFilterDescriptions = Self.filterDescriptions(from: export.meta.filters)
+
         return ExportInsights(
             dateRange: dateRange,
             totalDistanceM: totalDistanceM,
@@ -195,8 +214,27 @@ public enum AppExportQueries {
                 avgActivitiesPerDay: dayCount > 0 ? Double(totalActivities) / Double(dayCount) : 0,
                 avgPathsPerDay: dayCount > 0 ? Double(totalPaths) / Double(dayCount) : 0,
                 avgDistancePerDayM: dayCount > 0 ? totalDistanceM / Double(dayCount) : 0
-            )
+            ),
+            busiestDay: busiestDay,
+            longestDistanceDay: longestDistanceDay,
+            activeFilterDescriptions: activeFilterDescriptions
         )
+    }
+
+    private static func filterDescriptions(from filters: ExportFilters) -> [String] {
+        var descriptions: [String] = []
+        if let v = filters.fromDate { descriptions.append("From: \(v)") }
+        if let v = filters.toDate { descriptions.append("To: \(v)") }
+        if let v = filters.year { descriptions.append("Year: \(v)") }
+        if let v = filters.month { descriptions.append("Month: \(v)") }
+        if let v = filters.weekday { descriptions.append("Weekday: \(v)") }
+        if let v = filters.limit { descriptions.append("Limit: \(v) days") }
+        if let v = filters.days, !v.isEmpty { descriptions.append("Days: \(v.joined(separator: ", "))") }
+        if let v = filters.has, !v.isEmpty { descriptions.append("Has: \(v.joined(separator: ", "))") }
+        if let v = filters.maxAccuracyM { descriptions.append("Max accuracy: \(Int(v))m") }
+        if let v = filters.activityTypes, !v.isEmpty { descriptions.append("Activity types: \(v.map { $0.capitalized }.joined(separator: ", "))") }
+        if let v = filters.minGapMin { descriptions.append("Min gap: \(v) min") }
+        return descriptions
     }
 
     private static func sortedDays(in export: AppExport) -> [Day] {

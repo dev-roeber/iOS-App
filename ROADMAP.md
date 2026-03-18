@@ -71,6 +71,36 @@ Reaktivierung moeglich sobald iPhone-Flow gefestigt und Nutzerwert klar.
 **Nicht-Ziele:** Keine Charts/Graphen. Kein iPad-Fokus. Keine Persistenz-Aktivierung. Keine Apple-/ASC-Arbeit.
 
 ---
+
+### Phase 19.12 – UX: Overview-Highlights + Day-Detail-Enrichment + Filter-Transparenz
+
+**Datum:** 2026-03-18
+**Ziel:** App auf ein deutlich hoeheres Reifelevel bringen. Overview mit Highlights (Busiest Day, Longest Distance) und Filter-Transparenz. Day Detail mit Tagesdistanz, Tageszeitraum und semantischen Icons. Insights Period Breakdown farbkodiert. Informationsarchitektur professionalisiert.
+
+- [x] Overview neu strukturiert: Highlights-Section (Busiest Day, Longest Distance Day) prominent oben
+- [x] Overview: AppSourceSummaryCard (Export Details) nach unten verschoben – nutzbare Info zuerst
+- [x] Overview: Activity Types Comma-Text entfernt (redundant mit Insights-Tab)
+- [x] Filter-Transparenz: Aktive Export-Filter (Limit, From/To, Activity Types, etc.) als oranges Banner in Overview
+- [x] Day Detail: Tagesdistanz als vierte Stat-Card (Distance, purple)
+- [x] Day Detail: Tageszeitraum im Header (frueheste Startzeit → spaeteste Endzeit)
+- [x] Day Detail: Visit-Cards mit semantischen Typ-Icons (HOME=house, WORK=briefcase, CAFE=cup, etc.)
+- [x] Day Detail: Activity-Cards mit Typ-spezifischen Icons (WALKING=figure.walk, CYCLING=bicycle, CAR=car, BUS=bus, etc.)
+- [x] Insights: Period Breakdown Cards farbkodiert (purple bei Distanz > 0)
+- [x] Icon-Mapping-Funktionen als wiederverwendbare file-level Helfer extrahiert (statt dupliziert in Insights)
+- [x] ExportInsights um busiestDay, longestDistanceDay, activeFilterDescriptions erweitert
+- [x] AppExportQueries.insights() berechnet Highlights aus DaySummary und Filter-Beschreibungen aus ExportFilters
+
+**Problem vorher:** Overview zeigte technische Quelle (SourceSummaryCard) vor nuetzlicher Info. Keine Highlights fuer Orientierung. Day Detail hatte keine Tagesdistanz, keinen Zeitraum, keine semantischen Icons auf Cards. Visit- und Activity-Cards waren reiner Text ohne visuelle Differenzierung. Export-Filter waren dekodiert aber unsichtbar – Nutzer wusste nicht, ob Daten gefiltert sind. Activity Types als Comma-Text in Overview redundant mit Insights-Tab.
+
+**Jetzt:** Overview fuehrt mit Highlights (orangener Busiest Day, violetter Longest Distance Day) und Total Distance. Technische Export-Details sind sauber am Ende. Aktive Filter sind sofort als oranges Banner sichtbar. Day Detail zeigt Tagesdistanz als 4. Stat-Card, Zeitraum im Header, semantische Icons auf Visit- und Activity-Cards. Period Breakdown Cards haben Farbakzente. Die App wirkt professioneller und nutzt die vorhandenen Daten deutlich besser aus.
+
+**Tests:** swift test gruen (70/70). xcodebuild build im Wrapper-Repo BUILD SUCCEEDED.
+
+**Betroffene Dateien:** ExportInsights.swift (Core-Repo, DayHighlight + neue Felder). AppExportQueries.swift (Core-Repo, Highlights + Filter). AppContentSplitView.swift (Core-Repo, Haupt-UI-Aenderungen). Wrapper-Repo via SPM automatisch aktuell.
+
+**Nicht-Ziele:** Keine Charts/Graphen. Kein iPad-Fokus. Keine Persistenz-Aktivierung. Keine Apple-/ASC-Arbeit.
+
+---
 ## Geparkt / Extern
 Apple-/Developer-/ASC-/TestFlight-/Release-Themen (Phasen 20–21): kein aktiver Fokus.
 Bleibt geparkt bis Developer-Account-Zugang und tatsaechliche Durchfuehrung moeglich sind.

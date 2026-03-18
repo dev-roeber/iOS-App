@@ -268,16 +268,6 @@ public struct AppContentSplitView: View {
                 }
             }
 
-            AppSessionStatusView(
-                summary: session.sourceSummary,
-                message: session.message,
-                isLoading: session.isLoading,
-                hasDays: session.hasDays
-            )
-            if let overview = session.overview {
-                AppOverviewSection(overview: overview)
-            }
-
             if let insights = session.insights, insights.totalDistanceM > 0 {
                 HStack(spacing: 12) {
                     Image(systemName: "road.lanes")
@@ -296,7 +286,98 @@ public struct AppContentSplitView: View {
                 .background(Color.accentColor.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
+
+            if let insights = session.insights {
+                overviewHighlights(insights)
+            }
+
+            if let overview = session.overview {
+                AppOverviewSection(overview: overview)
+            }
+
+            if let insights = session.insights, !insights.activeFilterDescriptions.isEmpty {
+                activeFiltersSection(insights.activeFilterDescriptions)
+            }
+
+            AppSessionStatusView(
+                summary: session.sourceSummary,
+                message: session.message,
+                isLoading: session.isLoading,
+                hasDays: session.hasDays
+            )
         }
+    }
+
+    @ViewBuilder
+    private func overviewHighlights(_ insights: ExportInsights) -> some View {
+        let hasHighlights = insights.busiestDay != nil || insights.longestDistanceDay != nil
+        if hasHighlights {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Highlights")
+                    .font(.title3.weight(.semibold))
+                HStack(spacing: 12) {
+                    if let busiest = insights.busiestDay {
+                        highlightCard(
+                            title: "Busiest Day",
+                            value: busiest.value,
+                            date: AppDateDisplay.mediumDate(busiest.date),
+                            icon: "flame.fill",
+                            color: .orange
+                        )
+                    }
+                    if let longest = insights.longestDistanceDay {
+                        highlightCard(
+                            title: "Longest Distance",
+                            value: longest.value,
+                            date: AppDateDisplay.mediumDate(longest.date),
+                            icon: "road.lanes",
+                            color: .purple
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func highlightCard(title: String, value: String, date: String, icon: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .font(.caption)
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text(value)
+                .font(.headline.monospacedDigit())
+            Text(date)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(color.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title): \(value), \(date)")
+    }
+
+    @ViewBuilder
+    private func activeFiltersSection(_ filters: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Filtered Export", systemImage: "line.3.horizontal.decrease.circle.fill")
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(.orange)
+            Text(filters.joined(separator: " · "))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.orange.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     @ViewBuilder
@@ -545,15 +626,6 @@ public struct AppOverviewSection: View {
                 statCard("\(overview.totalPathCount)", label: "Paths", icon: "location.north.line", color: .orange)
             }
 
-            if !overview.statsActivityTypes.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Activity Types")
-                        .font(.subheadline.weight(.medium))
-                    Text(overview.statsActivityTypes.map { $0.capitalized }.joined(separator: ", "))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
         }
     }
 
@@ -686,6 +758,35 @@ private func coloredCard<Content: View>(
     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 }
 
+// MARK: - Icon Helpers
+
+private func iconForVisitType(_ type: String?) -> String {
+    switch (type ?? "").uppercased() {
+    case "HOME": return "house.fill"
+    case "WORK": return "briefcase.fill"
+    case "CAFE": return "cup.and.saucer.fill"
+    case "PARK": return "leaf.fill"
+    case "LEISURE": return "gamecontroller.fill"
+    case "EVENT": return "star.fill"
+    case "STAY": return "bed.double.fill"
+    default: return "mappin"
+    }
+}
+
+private func iconForActivityType(_ type: String?) -> String {
+    switch (type ?? "").uppercased() {
+    case "WALKING": return "figure.walk"
+    case "CYCLING": return "bicycle"
+    case "IN PASSENGER VEHICLE": return "car.fill"
+    case "IN BUS": return "bus.fill"
+    case "RUNNING": return "figure.run"
+    case "IN TRAIN": return "tram.fill"
+    case "IN SUBWAY": return "tram.fill"
+    case "FLYING": return "airplane"
+    default: return "figure.walk"
+    }
+}
+
 // MARK: - Day Detail
 
 public struct AppDayDetailView: View {
@@ -738,6 +839,7 @@ public struct AppDayDetailView: View {
                     .foregroundStyle(.secondary)
                 Text(AppDateDisplay.longDate(detail.date))
                     .font(.title2.weight(.semibold))
+                dayTimeRange(detail)
             }
 
             #if canImport(MapKit)
@@ -746,10 +848,14 @@ public struct AppDayDetailView: View {
             }
             #endif
 
-            HStack(spacing: 16) {
+            let dayDistance = detail.paths.reduce(0.0) { $0 + ($1.distanceM ?? 0) }
+            HStack(spacing: 12) {
                 quickStat("\(detail.visits.count)", label: "Visits", icon: "mappin.and.ellipse", color: .blue)
                 quickStat("\(detail.activities.count)", label: "Activities", icon: "figure.walk", color: .green)
                 quickStat("\(detail.paths.count)", label: "Paths", icon: "location.north.line", color: .orange)
+                if dayDistance > 0 {
+                    quickStat(formatDistance(dayDistance), label: "Distance", icon: "road.lanes", color: .purple)
+                }
             }
 
             if !detail.visits.isEmpty {
@@ -808,8 +914,13 @@ public struct AppDayDetailView: View {
     @ViewBuilder
     private func visitCard(_ visit: DayDetailViewState.VisitItem) -> some View {
         coloredCard(color: CardAccent.visit) {
-            Text(visit.semanticType?.capitalized ?? "Visit")
-                .font(.subheadline.weight(.medium))
+            HStack(spacing: 6) {
+                Image(systemName: iconForVisitType(visit.semanticType))
+                    .foregroundColor(CardAccent.visit)
+                    .font(.subheadline)
+                Text(visit.semanticType?.capitalized ?? "Visit")
+                    .font(.subheadline.weight(.medium))
+            }
             if let start = visit.startTime, let end = visit.endTime {
                 Label("\(AppTimeDisplay.time(start)) – \(AppTimeDisplay.time(end))", systemImage: "clock")
                     .font(.caption)
@@ -821,8 +932,13 @@ public struct AppDayDetailView: View {
     @ViewBuilder
     private func activityCard(_ activity: DayDetailViewState.ActivityItem) -> some View {
         coloredCard(color: CardAccent.activity) {
-            Text(activity.activityType?.capitalized ?? "Activity")
-                .font(.subheadline.weight(.medium))
+            HStack(spacing: 6) {
+                Image(systemName: iconForActivityType(activity.activityType))
+                    .foregroundColor(CardAccent.activity)
+                    .font(.subheadline)
+                Text(activity.activityType?.capitalized ?? "Activity")
+                    .font(.subheadline.weight(.medium))
+            }
             HStack(spacing: 12) {
                 if let start = activity.startTime, let end = activity.endTime {
                     Label("\(AppTimeDisplay.time(start)) – \(AppTimeDisplay.time(end))", systemImage: "clock")
@@ -870,6 +986,19 @@ public struct AppDayDetailView: View {
         .padding(.vertical, 8)
         .background(color.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func dayTimeRange(_ detail: DayDetailViewState) -> some View {
+        let allStarts = detail.visits.compactMap(\.startTime) + detail.activities.compactMap(\.startTime) + detail.paths.compactMap(\.startTime)
+        let allEnds = detail.visits.compactMap(\.endTime) + detail.activities.compactMap(\.endTime) + detail.paths.compactMap(\.endTime)
+        let earliest = allStarts.min()
+        let latest = allEnds.max()
+        if let earliest, let latest {
+            Label("\(AppTimeDisplay.time(earliest)) – \(AppTimeDisplay.time(latest))", systemImage: "clock")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
     }
 
     @ViewBuilder
@@ -1036,6 +1165,7 @@ private struct AppInsightsContentView: View {
 
     @ViewBuilder
     private func periodRow(_ item: PeriodBreakdownItem) -> some View {
+        let periodColor = item.distanceM > 0 ? Color.purple : Color.secondary
         VStack(alignment: .leading, spacing: 6) {
             Text(item.label)
                 .font(.subheadline.weight(.medium))
@@ -1051,7 +1181,7 @@ private struct AppInsightsContentView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(Color.secondary.opacity(0.05))
+        .background(periodColor.opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
@@ -1064,17 +1194,5 @@ private struct AppInsightsContentView: View {
         return m > 0 ? "\(h)h \(m)m" : "\(h)h"
     }
 
-    private func iconForVisitType(_ type: String) -> String {
-        switch type.uppercased() {
-        case "HOME": return "house.fill"
-        case "WORK": return "briefcase.fill"
-        case "CAFE": return "cup.and.saucer.fill"
-        case "PARK": return "leaf.fill"
-        case "LEISURE": return "gamecontroller.fill"
-        case "EVENT": return "star.fill"
-        case "STAY": return "bed.double.fill"
-        default: return "mappin"
-        }
-    }
 }
 #endif
