@@ -176,14 +176,14 @@ public struct AppSessionState {
             )
         case .loading:
             return AppSourceSummary(
-                stateTitle: "Opening app export",
+                stateTitle: "Opening location history",
                 sourceLabel: "Active Source",
                 sourceValue: sourceDescription ?? "Pending",
                 schemaVersion: overview?.schemaVersion,
-                inputFormat: overview?.inputFormat,
+                inputFormat: displayInputFormat(overview?.inputFormat),
                 exportedAt: overview?.exportedAt,
                 dayCountText: dayCountText,
-                statusText: "Processing app export data."
+                statusText: "Processing location history data."
             )
         case .demoLoaded:
             return AppSourceSummary(
@@ -191,7 +191,7 @@ public struct AppSessionState {
                 sourceLabel: "Active Source",
                 sourceValue: sourceDescription ?? "Demo fixture",
                 schemaVersion: overview?.schemaVersion,
-                inputFormat: overview?.inputFormat,
+                inputFormat: displayInputFormat(overview?.inputFormat),
                 exportedAt: overview?.exportedAt,
                 dayCountText: dayCountText,
                 statusText: hasDays
@@ -199,17 +199,18 @@ public struct AppSessionState {
                     : "Bundled demo data decoded successfully but does not contain any day entries."
             )
         case .importedLoaded:
+            let isGoogleTimeline = overview?.inputFormat == "google_timeline"
             return AppSourceSummary(
-                stateTitle: "Imported app export loaded",
+                stateTitle: isGoogleTimeline ? "Google Timeline loaded" : "Imported app export loaded",
                 sourceLabel: "Active Source",
                 sourceValue: sourceDescription ?? "Imported file",
                 schemaVersion: overview?.schemaVersion,
-                inputFormat: overview?.inputFormat,
+                inputFormat: displayInputFormat(overview?.inputFormat),
                 exportedAt: overview?.exportedAt,
                 dayCountText: dayCountText,
                 statusText: hasDays
-                    ? "Local app_export.json content is active. Open another file to replace it."
-                    : "This app_export.json decoded successfully but does not contain any day entries."
+                    ? "Local file content is active. Open another file to replace it."
+                    : "The file was decoded successfully but does not contain any day entries."
             )
         case .failedWithoutContent:
             return AppSourceSummary(
@@ -228,11 +229,19 @@ public struct AppSessionState {
                 sourceLabel: "Active Source",
                 sourceValue: sourceDescription ?? "Current content",
                 schemaVersion: overview?.schemaVersion,
-                inputFormat: overview?.inputFormat,
+                inputFormat: displayInputFormat(overview?.inputFormat),
                 exportedAt: overview?.exportedAt,
                 dayCountText: dayCountText,
                 statusText: "The last successfully loaded content remains visible. Open another file to replace it or Clear to reset."
             )
+        }
+    }
+
+    private func displayInputFormat(_ raw: String?) -> String? {
+        guard let raw else { return nil }
+        switch raw {
+        case "google_timeline": return "Google Timeline"
+        default: return raw
         }
     }
 
@@ -245,9 +254,17 @@ public struct AppSessionState {
         self.content = content
         selectedDate = content.selectedDate
         isLoading = false
+        let title: String
+        if content.source == .demoFixture(name: AppContentLoader.defaultDemoFixtureName) {
+            title = "Demo data ready"
+        } else if content.overview.inputFormat == "google_timeline" {
+            title = "Google Timeline loaded"
+        } else {
+            title = "Imported app export ready"
+        }
         message = AppUserMessage(
             kind: .info,
-            title: content.source == .demoFixture(name: AppContentLoader.defaultDemoFixtureName) ? "Demo data ready" : "Imported app export ready",
+            title: title,
             message: sourceDescription ?? content.source.displayName
         )
     }

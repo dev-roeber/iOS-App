@@ -184,7 +184,17 @@ public enum AppExportQueries {
         let totalActivities = days.reduce(0) { $0 + $1.activities.count }
         let totalPaths = days.reduce(0) { $0 + $1.paths.count }
 
-        let summaries = daySummaries(from: export)
+        // Derive summaries from the already-sorted `days` to avoid a second sort.
+        let summaries = days.map { day in
+            DaySummary(
+                date: day.date,
+                visitCount: day.visits.count,
+                activityCount: day.activities.count,
+                pathCount: day.paths.count,
+                totalPathPointCount: day.paths.reduce(0) { $0 + $1.points.count },
+                totalPathDistanceM: day.paths.reduce(0) { $0 + ($1.distanceM ?? 0) }
+            )
+        }
 
         let busiestDay: DayHighlight? = {
             guard let best = summaries.max(by: {

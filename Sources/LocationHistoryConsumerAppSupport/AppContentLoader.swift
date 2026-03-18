@@ -56,6 +56,10 @@ public enum AppContentLoader {
         return AppSessionContent(export: export, source: .importedFile(filename: url.lastPathComponent))
     }
 
+    /// Maximum uncompressed size (256 MB) for a single ZIP entry.
+    /// Guards against ZIP-bomb style inputs while staying well above any realistic export size.
+    private static let maxUncompressedEntrySize = 256 * 1024 * 1024
+
     private static func loadZipContent(from url: URL) throws -> AppSessionContent {
         let zipName = url.lastPathComponent
         let archive: Archive
@@ -65,19 +69,27 @@ public enum AppContentLoader {
             throw AppContentLoaderError.fileReadFailed(zipName)
         }
 
-        // Collect all JSON candidates, ignoring macOS resource forks and hidden files.
+        // Collect JSON candidates, excluding macOS resource forks, hidden files, and oversized entries.
         let candidates = archive.filter { isJsonCandidate($0) }
 
-        // Attempt to decode each candidate as a valid LH2GPX app export.
-        let valid: [(entry: Entry, export: AppExport)] = candidates.compactMap { entry in
-            guard let export = tryDecodeEntry(entry, in: archive) else { return nil }
-            return (entry, export)
+        // Extract each candidate once; reuse the Data for both LH2GPX and Google Timeline attempts.
+        let extracted: [(entry: Entry, data: Data)] = candidates.compactMap { entry in
+            var data = Data()
+            guard (try? archive.extract(entry, bufferSize: 65536) { data.append($0) }) != nil else { return nil }
+            return (entry, data)
+        }
+
+        // Try to decode each extracted candidate as a valid LH2GPX app export.
+        let valid: [(entry: Entry, export: AppExport)] = extracted.compactMap { item in
+            guard !((try? JSONSerialization.jsonObject(with: item.data)) is [Any]) else { return nil }
+            guard let export = try? AppExportDecoder.decode(data: item.data) else { return nil }
+            return (item.entry, export)
         }
 
         switch valid.count {
         case 0:
-            // No LH2GPX export found — try Google Timeline conversion as fallback.
-            return try loadGoogleTimelineFromZip(candidates: candidates, archive: archive, zipName: zipName)
+            // No LH2GPX export found — try Google Timeline conversion using already-extracted data.
+            return try loadGoogleTimelineFromExtracted(extracted, zipName: zipName)
         case 1:
             return AppSessionContent(export: valid[0].export, source: .importedFile(filename: zipName))
         default:
@@ -92,18 +104,11 @@ public enum AppContentLoader {
         }
     }
 
-    private static func loadGoogleTimelineFromZip(
-        candidates: [Entry],
-        archive: Archive,
+    private static func loadGoogleTimelineFromExtracted(
+        _ extracted: [(entry: Entry, data: Data)],
         zipName: String
     ) throws -> AppSessionContent {
-        // Collect all JSON candidates that look like Google Timeline (array root).
-        let timelineCandidates: [(entry: Entry, data: Data)] = candidates.compactMap { entry in
-            var data = Data()
-            guard (try? archive.extract(entry, bufferSize: 65536) { data.append($0) }) != nil,
-                  GoogleTimelineConverter.isGoogleTimeline(data) else { return nil }
-            return (entry, data)
-        }
+        let timelineCandidates = extracted.filter { GoogleTimelineConverter.isGoogleTimeline($0.data) }
 
         switch timelineCandidates.count {
         case 0:
@@ -134,18 +139,12 @@ public enum AppContentLoader {
 
     private static func isJsonCandidate(_ entry: Entry) -> Bool {
         guard entry.type == .file else { return false }
+        guard entry.uncompressedSize <= maxUncompressedEntrySize else { return false }
         let path = entry.path
         guard !path.hasPrefix("__MACOSX/"), !path.contains("/__MACOSX/") else { return false }
         let filename = (path as NSString).lastPathComponent
         guard !filename.hasPrefix(".") else { return false }
         return filename.lowercased().hasSuffix(".json")
-    }
-
-    private static func tryDecodeEntry(_ entry: Entry, in archive: Archive) -> AppExport? {
-        var data = Data()
-        guard (try? archive.extract(entry, bufferSize: 65536) { data.append($0) }) != nil else { return nil }
-        guard !((try? JSONSerialization.jsonObject(with: data)) is [Any]) else { return nil }
-        return try? AppExportDecoder.decode(data: data)
     }
 
     public static func loadFixtureContent(named name: String, from bundle: Bundle, source: AppContentSource) throws -> AppSessionContent {
