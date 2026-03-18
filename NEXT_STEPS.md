@@ -2,9 +2,13 @@
 
 Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
-1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.15 abgeschlossen. Naechster Schritt: Phase 19.16 = ZIP-Import (Dependency noetig). Danach: Accessibility-Audit als Kandidat.
+1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.16 abgeschlossen. Naechster Schritt: Accessibility-Audit (VoiceOver, Dynamic Type) oder weiteres Feature bestimmen.
 2. **Phase 20 / Phase 21 – bewusst geparkt** – Erfordert Apple Developer Account / ASC-Zugang. Kein aktiver Fokus.
 3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+
+**Abgeschlossene Phase 19.16 (2026-03-18):**
+- ZIP-Import: ZipFoundation 0.9.19+, erkennt app_export.json in Root + Unterverzeichnissen
+- fileImporter akzeptiert .json und .zip; Labels aktualisiert
 
 **Abgeschlossene Phase 19.15 (2026-03-18):**
 - Day-Detail-Timeline: Gantt-Zeitleiste (Visits blau, Activities gruen) mit GeometryReader
