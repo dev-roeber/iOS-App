@@ -2,9 +2,10 @@
 
 Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
-1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.18 abgeschlossen (Searchable Days List Dark Mode Fix). Naechster Schritt: Accessibility-Audit.
+1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.18 abgeschlossen. Kein konkret naechster Schritt definiert.
 2. **Phase 20 / Phase 21 – bewusst geparkt** – Erfordert Apple Developer Account / ASC-Zugang. Kein aktiver Fokus.
-3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+3. **Accessibility-Audit – bewusst geparkt** – Kein konkreter Bug, kein Trigger. Kein aktiver Fokus.
+4. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
 
 **Abgeschlossene Phase 19.18 (2026-03-18):**
 - compactDayList immer mit List als Root; No-Results + Empty als .overlay
