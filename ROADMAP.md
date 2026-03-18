@@ -371,6 +371,29 @@ Bleibt geparkt bis Developer-Account-Zugang und tatsaechliche Durchfuehrung moeg
 
 
 
+### Phase 19.9 – UX: iPhone Navigation-Shell + UI Polish
+
+**Datum:** 2026-03-18
+**Ziel:** iPhone-Navigation professionell ueberarbeiten. Toolbar-Ueberladung beseitigen, NavigationStack fuer Empty State, zentrierter Empty State mit App-Icon, Overview-Button mit Text-Label.
+
+- [x] Toolbar-Buttons (Open, Demo, Clear) in ein einzelnes Actions-Menu konsolidiert (ellipsis.circle)
+- [x] NavigationStack um Empty State / Loading: App-Name "LH2GPX" als Navigation-Titel sichtbar
+- [x] Empty State zentriert mit Karten-Icon (map.fill): modernes iOS-Muster statt linksbundigem Text
+- [x] Overview-Button in Day-List-Toolbar zeigt jetzt Text-Label (.labelStyle(.titleAndIcon)) statt nur Icon
+
+**Problem vorher:** Drei separate Toolbar-Buttons (Open, Demo, Clear) plus Overview-Button drängten sich auf iPhone compact in der Navigation Bar. Labels wurden abgeschnitten, nur Icons sichtbar. Empty State hatte keinen NavigationStack — kein App-Name, keine Toolbar, kein einheitlicher Nav-Container. Empty State war linksbündig und ohne visuelle Identität.
+
+**Jetzt:** Ein einzelner "..."‐Button öffnet ein Menu mit allen Aktionen (Open, Demo, Clear mit Divider). Empty State zeigt Navigation-Titel "LH2GPX", zentriertes Karten-Icon und zentrierte Buttons. Overview-Button in Day List zeigt "Overview" als lesbaren Text. Professioneller, aufgeraeuemter iPhone-Flow.
+
+**Tests:** swift test gruen (70/70). xcodebuild build im Wrapper-Repo BUILD SUCCEEDED.
+
+**Betroffene Dateien:** AppContentSplitView.swift (Core-Repo, Overview-Button-Label). AppShellRootView.swift (Core-Repo, NavigationStack + Menu + Empty State). ContentView.swift (Wrapper-Repo, NavigationStack + Menu + Empty State).
+
+**Nicht-Ziele:** Kein Card-Redesign. Kein App-Logo. Keine neue Architektur. Kein iPad-Fokus. Keine Persistenz-Aktivierung. Keine Apple-/ASC-Arbeit.
+
+---
+
+
 **Datum:** 2026-03-18
 **Ziel:** AppSourceSummaryCard aus dem leeren (Idle-)Startzustand entfernen. Der Nutzer sieht beim ersten Oeffnen kein technisches Rauschen ("Source: None", "Schema: n/a"), sondern nur Titel, Erklaerungstext und Aktions-Buttons.
 

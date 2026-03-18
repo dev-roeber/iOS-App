@@ -74,6 +74,7 @@ public struct AppContentSplitView: View {
                             isOverviewPushed = true
                         } label: {
                             Label("Overview", systemImage: "chart.bar.doc.horizontal")
+                                .labelStyle(.titleAndIcon)
                         }
                     }
                 }

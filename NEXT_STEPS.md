@@ -2,9 +2,15 @@
 
 Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
-1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.8 abgeschlossen. Naechster Schritt: Phase 19.9 bestimmen. Kandidaten: Toolbar-Kompression auf iPhone (drei Buttons + lange Titel), Empty-State-Button-Layout auf iPhone.
+1. **Lokale Produktweiterentwicklung (aktiver Fokus)** – Phase 19.9 abgeschlossen. Naechster Schritt: Phase 19.10 bestimmen. Kandidaten: Card-Redesign (Visit/Activity/Path-Cards visuell differenzieren), AppSourceSummaryCard vereinfachen (technische Details reduzieren).
 2. **Phase 20 / Phase 21 – bewusst geparkt** – Erfordert Apple Developer Account / ASC-Zugang. Kein aktiver Fokus.
 3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+
+**Abgeschlossene Phase 19.9 (2026-03-18):**
+- Toolbar-Buttons in Actions-Menu konsolidiert (ein Button statt drei)
+- NavigationStack fuer Empty State: App-Name "LH2GPX" als Titel sichtbar
+- Empty State zentriert mit Karten-Icon: modernes iOS-Muster
+- Overview-Button zeigt Text-Label statt nur Icon
 
 **Abgeschlossene Phase 19.8 (2026-03-18):**
 - Day List als Landing auf iPhone compact: kein Auto-Push in Day Detail beim Laden
