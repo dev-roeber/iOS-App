@@ -610,7 +610,7 @@ public struct AppSourceSummaryCard: View {
                 Spacer()
                 Text(summary.statusText)
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
             }
 
             summaryRow("Source", value: summary.sourceValue, icon: "doc")
@@ -889,6 +889,8 @@ private func coloredCard<Content: View>(
         .background(color.opacity(0.06))
     }
     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    // Combine children so VoiceOver reads the whole card as one item.
+    .accessibilityElement(children: .combine)
 }
 
 // MARK: - Icon Helpers
@@ -961,19 +963,19 @@ public struct AppDayDetailView: View {
                 contentView(detail)
             } else {
                 emptyDayState(
-                    "No Content",
-                    message: "This day exists in the export but contains no visits, activities or paths.",
+                    "Nothing Recorded",
+                    message: "This day has no visits, activities or paths in the export.",
                     recovery: onBackToOverview
                 )
             }
         } else if hasDays {
             emptyDayState(
-                "No Day Selected",
+                "Select a Day",
                 message: "Choose a day from the list to view details."
             )
         } else {
             emptyDayState(
-                "No Day Details",
+                "No Day Entries",
                 message: "Import a file with day entries to view details."
             )
         }
@@ -994,6 +996,11 @@ public struct AppDayDetailView: View {
             #if canImport(MapKit)
             if #available(iOS 17.0, macOS 14.0, *) {
                 AppDayMapView(mapData: DayMapDataExtractor.mapData(from: detail))
+            } else {
+                Label("Map view requires iOS 17 or later.", systemImage: "map")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             #endif
 
@@ -1153,7 +1160,7 @@ public struct AppDayDetailView: View {
         if let earliest, let latest {
             Label("\(AppTimeDisplay.time(earliest)) – \(AppTimeDisplay.time(latest))", systemImage: "clock")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -1221,6 +1228,20 @@ private struct DayTimelineView: View {
         return (earliest, latest)
     }
 
+    private var accessibilitySummary: String {
+        let from = bounds.map { $0.start.formatted(date: .omitted, time: .shortened) } ?? ""
+        let to   = bounds.map { $0.end.formatted(date: .omitted, time: .shortened) } ?? ""
+        var parts: [String] = []
+        if !visitSlots.isEmpty {
+            parts.append("\(visitSlots.count) visit\(visitSlots.count == 1 ? "" : "s")")
+        }
+        if !activitySlots.isEmpty {
+            parts.append("\(activitySlots.count) \(activitySlots.count == 1 ? "activity" : "activities")")
+        }
+        if !from.isEmpty { parts.append("from \(from) to \(to)") }
+        return "Day timeline: \(parts.joined(separator: ", "))"
+    }
+
     var body: some View {
         if let b = bounds {
             let span = b.end.timeIntervalSince(b.start)
@@ -1246,6 +1267,10 @@ private struct DayTimelineView: View {
             .padding(12)
             .background(Color.secondary.opacity(0.06))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            // Treat the whole Gantt chart as one accessibility element; the
+            // individual coloured shapes have no standalone meaning for VoiceOver.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilitySummary)
         }
     }
 
