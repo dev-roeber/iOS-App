@@ -724,7 +724,7 @@ public struct AppOverviewSection: View {
                 statCard("\(overview.dayCount)", label: "Days", icon: "calendar", color: .blue, action: onDaysTap)
                 statCard("\(overview.totalVisitCount)", label: "Visits", icon: "mappin.and.ellipse", color: .purple, action: onInsightsTap)
                 statCard("\(overview.totalActivityCount)", label: "Activities", icon: "figure.walk", color: .green, action: onInsightsTap)
-                statCard("\(overview.totalPathCount)", label: "Paths", icon: "location.north.line", color: .orange, action: onInsightsTap)
+                statCard("\(overview.totalPathCount)", label: "Routes", icon: "location.north.line", color: .orange, action: onInsightsTap)
             }
         }
     }
@@ -806,7 +806,7 @@ private struct AppDayRow: View {
             .font(.caption)
             .foregroundStyle(.secondary)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(summary.visitCount) Visits, \(summary.activityCount) Activities, \(summary.pathCount) Paths")
+            .accessibilityLabel("\(summary.visitCount) Visits, \(summary.activityCount) Activities, \(summary.pathCount) Routes")
         }
         .padding(.vertical, 4)
     }
@@ -922,6 +922,20 @@ private func iconForActivityType(_ type: String?) -> String {
     }
 }
 
+private func colorForActivityType(_ type: String?) -> Color {
+    switch (type ?? "").uppercased() {
+    case "WALKING":              return .green
+    case "RUNNING":              return .orange
+    case "CYCLING":              return .blue
+    case "FLYING":               return .purple
+    case "IN PASSENGER VEHICLE": return .red
+    case "IN BUS":               return .teal
+    case "IN TRAIN":             return .indigo
+    case "IN SUBWAY":            return .indigo
+    default:                     return .gray
+    }
+}
+
 private func displayNameForActivityType(_ type: String?, default defaultName: String = "Activity") -> String {
     switch (type ?? "").uppercased() {
     case "WALKING":              return "Walking"
@@ -1010,7 +1024,7 @@ public struct AppDayDetailView: View {
             HStack(spacing: 12) {
                 quickStat("\(detail.visits.count)", label: "Visits", icon: "mappin.and.ellipse", color: .blue)
                 quickStat("\(detail.activities.count)", label: "Activities", icon: "figure.walk", color: .green)
-                quickStat("\(detail.paths.count)", label: "Paths", icon: "location.north.line", color: .orange)
+                quickStat("\(detail.paths.count)", label: "Routes", icon: "location.north.line", color: .orange)
                 if dayDistance > 0 {
                     quickStat(formatDistance(dayDistance), label: "Distance", icon: "road.lanes", color: .purple)
                 }
@@ -1033,7 +1047,7 @@ public struct AppDayDetailView: View {
             }
 
             if !detail.paths.isEmpty {
-                detailSection("Paths", icon: "location.north.line", count: detail.paths.count) {
+                detailSection("Routes", icon: "location.north.line", count: detail.paths.count) {
                     ForEach(Array(detail.paths.enumerated()), id: \.offset) { _, path in
                         pathCard(path)
                     }
@@ -1117,7 +1131,7 @@ public struct AppDayDetailView: View {
                 Image(systemName: iconForActivityType(path.activityType))
                     .foregroundColor(CardAccent.path)
                     .font(.subheadline)
-                Text(displayNameForActivityType(path.activityType, default: "Path"))
+                Text(displayNameForActivityType(path.activityType, default: "Route"))
                     .font(.subheadline.weight(.medium))
             }
             HStack(spacing: 12) {
@@ -1359,18 +1373,23 @@ private struct AppInsightsContentView: View {
             if !daySummaries.isEmpty && hasDistanceData {
                 insightSection("Distance Over Time", icon: "chart.bar.fill") {
                     distanceChart
+                    Text("Route distances only")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
             }
             #endif
 
-            // Daily Averages
-            insightSection("Daily Averages", icon: "chart.bar.fill") {
-                let avg = insights.averagesPerDay
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
-                    avgCard(String(format: "%.1f", avg.avgVisitsPerDay), label: "Visits / Day", icon: "mappin.and.ellipse", color: .blue)
-                    avgCard(String(format: "%.1f", avg.avgActivitiesPerDay), label: "Activities / Day", icon: "figure.walk", color: .green)
-                    avgCard(String(format: "%.1f", avg.avgPathsPerDay), label: "Paths / Day", icon: "location.north.line", color: .orange)
-                    avgCard(formatDistance(avg.avgDistancePerDayM), label: "Distance / Day", icon: "road.lanes", color: .purple)
+            // Daily Averages (only meaningful with multiple days)
+            if daySummaries.count >= 2 {
+                insightSection("Daily Averages", icon: "chart.bar.fill") {
+                    let avg = insights.averagesPerDay
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
+                        avgCard(String(format: "%.1f", avg.avgVisitsPerDay), label: "Visits / Day", icon: "mappin.and.ellipse", color: .blue)
+                        avgCard(String(format: "%.1f", avg.avgActivitiesPerDay), label: "Activities / Day", icon: "figure.walk", color: .green)
+                        avgCard(String(format: "%.1f", avg.avgPathsPerDay), label: "Routes / Day", icon: "location.north.line", color: .orange)
+                        avgCard(formatDistance(avg.avgDistancePerDayM), label: "Distance / Day", icon: "road.lanes", color: .purple)
+                    }
                 }
             }
 
@@ -1461,8 +1480,12 @@ private struct AppInsightsContentView: View {
 
     @ViewBuilder
     private func activityBreakdownCard(_ item: ActivityBreakdownItem) -> some View {
+        let color = colorForActivityType(item.activityType)
         VStack(alignment: .leading, spacing: 8) {
             HStack {
+                Image(systemName: iconForActivityType(item.activityType))
+                    .foregroundColor(color)
+                    .font(.subheadline)
                 Text(displayNameForActivityType(item.activityType))
                     .font(.subheadline.weight(.semibold))
                 Spacer()
@@ -1471,7 +1494,7 @@ private struct AppInsightsContentView: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.12))
+                    .background(color.opacity(0.12))
                     .clipShape(Capsule())
             }
             HStack(spacing: 16) {
@@ -1490,7 +1513,7 @@ private struct AppInsightsContentView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color.green.opacity(0.06))
+        .background(color.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
