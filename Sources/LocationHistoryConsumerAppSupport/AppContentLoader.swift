@@ -76,16 +76,57 @@ public enum AppContentLoader {
 
         switch valid.count {
         case 0:
-            throw AppContentLoaderError.jsonNotFoundInZip(zipName)
+            // No LH2GPX export found — try Google Timeline conversion as fallback.
+            return try loadGoogleTimelineFromZip(candidates: candidates, archive: archive, zipName: zipName)
         case 1:
             return AppSessionContent(export: valid[0].export, source: .importedFile(filename: zipName))
         default:
-            // Multiple valid exports: prefer the canonical name if present and unambiguous.
+            // Multiple valid LH2GPX exports: prefer the canonical name if present and unambiguous.
             let preferred = valid.first(where: {
                 ($0.entry.path as NSString).lastPathComponent == "app_export.json"
             })
             if let preferred {
                 return AppSessionContent(export: preferred.export, source: .importedFile(filename: zipName))
+            }
+            throw AppContentLoaderError.multipleExportsInZip(zipName)
+        }
+    }
+
+    private static func loadGoogleTimelineFromZip(
+        candidates: [Entry],
+        archive: Archive,
+        zipName: String
+    ) throws -> AppSessionContent {
+        // Collect all JSON candidates that look like Google Timeline (array root).
+        let timelineCandidates: [(entry: Entry, data: Data)] = candidates.compactMap { entry in
+            var data = Data()
+            guard (try? archive.extract(entry, bufferSize: 65536) { data.append($0) }) != nil,
+                  GoogleTimelineConverter.isGoogleTimeline(data) else { return nil }
+            return (entry, data)
+        }
+
+        switch timelineCandidates.count {
+        case 0:
+            throw AppContentLoaderError.jsonNotFoundInZip(zipName)
+        case 1:
+            do {
+                let export = try GoogleTimelineConverter.convert(data: timelineCandidates[0].data)
+                return AppSessionContent(export: export, source: .importedFile(filename: zipName))
+            } catch {
+                throw AppContentLoaderError.decodeFailed(zipName)
+            }
+        default:
+            // Multiple Google Timeline JSONs: prefer "location-history.json" if unambiguous.
+            let preferred = timelineCandidates.first(where: {
+                ($0.entry.path as NSString).lastPathComponent == "location-history.json"
+            })
+            if let preferred {
+                do {
+                    let export = try GoogleTimelineConverter.convert(data: preferred.data)
+                    return AppSessionContent(export: export, source: .importedFile(filename: zipName))
+                } catch {
+                    throw AppContentLoaderError.decodeFailed(zipName)
+                }
             }
             throw AppContentLoaderError.multipleExportsInZip(zipName)
         }

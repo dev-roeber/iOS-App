@@ -215,19 +215,126 @@ final class AppContentLoaderTests: XCTestCase {
         XCTAssertFalse(content.daySummaries.isEmpty, "Should have loaded day summaries from nested ZIP entry")
     }
 
-    func testZipWithGoogleTimelineFormat_throwsJsonNotFoundInZip() throws {
-        // ZIP containing a JSON array (e.g. Google Timeline) is not a valid LH2GPX export.
-        // Since no valid export is found, the result is jsonNotFoundInZip (not unsupportedFormat).
-        let googleJson = Data("[{}]".utf8)
+    func testZipWithGoogleTimelineFormat_convertsSuccessfully() throws {
+        // ZIP containing a Google Timeline JSON array → converted and loaded.
+        // Previously this threw; now the app handles Google Timeline ZIPs directly.
+        let googleJson = Data("""
+        [{"startTime":"2024-05-01T08:00:00Z","endTime":"2024-05-01T09:00:00Z",
+          "visit":{"topCandidate":{"semanticType":"HOME","placeLocation":"geo:52.5,13.4"}}}]
+        """.utf8)
         let zipURL = try makeZip(entries: ["app_export.json": googleJson])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
+        XCTAssertNoThrow(try AppContentLoader.loadImportedContent(from: zipURL),
+                         "Google Timeline ZIP should now be converted and loaded")
+    }
+
+    // MARK: - ZIP Import: Google Timeline conversion
+
+    func testZipWithGoogleTimelineJson_convertsAndLoads() throws {
+        let zipURL = try makeZip(entries: ["location-history.json": minimalGoogleTimelineData()])
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        XCTAssertFalse(content.daySummaries.isEmpty, "Should convert Google Timeline and produce day summaries")
+        guard case .importedFile(let filename) = content.source else {
+            XCTFail("Expected importedFile source"); return
+        }
+        XCTAssertTrue(filename.hasSuffix(".zip"))
+    }
+
+    func testZipWithGoogleTimelineInSubdirectory_convertsAndLoads() throws {
+        let zipURL = try makeZip(entries: ["Takeout/Location History/location-history.json": minimalGoogleTimelineData()])
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        XCTAssertFalse(content.daySummaries.isEmpty, "Should find and convert Google Timeline nested in subdirectory")
+    }
+
+    func testZipWithGoogleTimelineAllEntryTypes_convertsSuccessfully() throws {
+        let data = Data("""
+        [
+          {
+            "startTime": "2024-05-01T08:00:00.000Z",
+            "endTime": "2024-05-01T09:00:00.000Z",
+            "visit": {
+              "topCandidate": {
+                "semanticType": "HOME",
+                "placeLocation": "geo:52.5,13.4",
+                "placeID": "ChIJtest"
+              }
+            }
+          },
+          {
+            "startTime": "2024-05-01T09:00:00.000Z",
+            "endTime": "2024-05-01T10:00:00.000Z",
+            "activity": {
+              "topCandidate": {"type": "WALKING"},
+              "distanceMeters": 1500.0,
+              "start": "geo:52.5,13.4",
+              "end": "geo:52.51,13.41"
+            }
+          },
+          {
+            "startTime": "2024-05-01T10:00:00.000Z",
+            "endTime": "2024-05-01T11:00:00.000Z",
+            "timelinePath": [
+              {"point": "geo:52.51,13.41", "durationMinutesOffsetFromStartTime": "0"},
+              {"point": "geo:52.52,13.42", "durationMinutesOffsetFromStartTime": "30"}
+            ]
+          }
+        ]
+        """.utf8)
+        let zipURL = try makeZip(entries: ["location-history.json": data])
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        let day = try XCTUnwrap(content.daySummaries.first)
+        XCTAssertEqual(day.date, "2024-05-01")
+        XCTAssertEqual(day.visitCount, 1)
+        XCTAssertEqual(day.activityCount, 1)
+        XCTAssertEqual(day.pathCount, 1)
+    }
+
+    func testZipWithMultipleGoogleTimelines_prefersLocationHistoryJson() throws {
+        let zipURL = try makeZip(entries: [
+            "location-history.json": minimalGoogleTimelineData(),
+            "other-timeline.json": minimalGoogleTimelineData()
+        ])
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        XCTAssertNoThrow(try AppContentLoader.loadImportedContent(from: zipURL),
+                         "Should prefer location-history.json when multiple timelines present")
+    }
+
+    func testZipWithMultipleGoogleTimelines_noPreferred_throwsMultipleExports() throws {
+        let zipURL = try makeZip(entries: [
+            "timeline_a.json": minimalGoogleTimelineData(),
+            "timeline_b.json": minimalGoogleTimelineData()
+        ])
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
         XCTAssertThrowsError(try AppContentLoader.loadImportedContent(from: zipURL)) { error in
-            guard case AppContentLoaderError.jsonNotFoundInZip = error else {
-                XCTFail("Expected jsonNotFoundInZip but got: \(error)")
-                return
+            guard case AppContentLoaderError.multipleExportsInZip = error else {
+                XCTFail("Expected multipleExportsInZip but got: \(error)"); return
             }
         }
+    }
+
+    func testZipWithLh2gpxExportTakesPrecedenceOverGoogleTimeline() throws {
+        // If a ZIP contains both a valid LH2GPX export and a Google Timeline,
+        // the LH2GPX export must be used (no conversion needed).
+        let fixtureURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
+        let lh2gpxData = try Data(contentsOf: fixtureURL)
+        let zipURL = try makeZip(entries: [
+            "app_export.json": lh2gpxData,
+            "location-history.json": minimalGoogleTimelineData()
+        ])
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        // The LH2GPX fixture has more days than our minimal timeline stub.
+        XCTAssertTrue(content.daySummaries.count > 1, "Should have loaded the LH2GPX export, not the minimal stub")
     }
 
     // MARK: - ZIP Import: filename-agnostic loading
@@ -317,7 +424,33 @@ final class AppContentLoaderTests: XCTestCase {
         XCTAssertFalse(content.daySummaries.isEmpty, "Should load without being confused by __MACOSX entry")
     }
 
+    func testRealLocationHistoryZipOnDesktop() throws {
+        let url = URL(fileURLWithPath: "/Users/sebastian/Desktop/location-history.zip")
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw XCTSkip("location-history.zip not on Desktop")
+        }
+        let content = try AppContentLoader.loadImportedContent(from: url)
+        XCTAssertGreaterThan(content.daySummaries.count, 0, "Should load days from real Google Timeline ZIP")
+    }
+
     // MARK: - Helpers
+
+    private func minimalGoogleTimelineData() -> Data {
+        Data("""
+        [
+          {
+            "startTime": "2024-05-01T08:00:00.000Z",
+            "endTime": "2024-05-01T09:00:00.000Z",
+            "visit": {
+              "topCandidate": {
+                "semanticType": "HOME",
+                "placeLocation": "geo:52.5,13.4"
+              }
+            }
+          }
+        ]
+        """.utf8)
+    }
 
     private func writeTemp(json: String, filename: String) throws -> URL {
         let data = try XCTUnwrap(json.data(using: .utf8))
