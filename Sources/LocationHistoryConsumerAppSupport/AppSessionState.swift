@@ -97,6 +97,8 @@ public struct AppSessionState {
     public private(set) var content: AppSessionContent?
     public private(set) var selectedDate: String?
     public private(set) var message: AppUserMessage?
+    /// App-wide export selection. Cleared automatically on new import or content clear.
+    public var exportSelection: ExportSelectionState = ExportSelectionState()
 
     public init(
         isLoading: Bool = false,
@@ -268,6 +270,7 @@ public struct AppSessionState {
     public mutating func show(content: AppSessionContent) {
         self.content = content
         selectedDate = content.selectedDate
+        exportSelection.clearAll()
         isLoading = false
         let title: String
         if content.source == .demoFixture(name: AppContentLoader.defaultDemoFixtureName) {
@@ -317,6 +320,7 @@ public struct AppSessionState {
         isLoading = false
         content = nil
         selectedDate = nil
+        exportSelection.clearAll()
         message = AppUserMessage(
             kind: .info,
             title: "No app export loaded",

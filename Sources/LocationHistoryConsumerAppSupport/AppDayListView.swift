@@ -7,6 +7,7 @@ import LocationHistoryConsumer
 struct AppDayRow: View {
     let summary: DaySummary
     var highlightIcons: [String] = []
+    var isSelectedForExport: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -15,13 +16,16 @@ struct AppDayRow: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
-                if !highlightIcons.isEmpty {
-                    HStack(spacing: 4) {
-                        ForEach(highlightIcons, id: \.self) { icon in
-                            Image(systemName: icon)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
+                HStack(spacing: 4) {
+                    if isSelectedForExport {
+                        Image(systemName: "square.and.arrow.up.circle.fill")
+                            .font(.caption2)
+                            .foregroundColor(.accentColor)
+                    }
+                    ForEach(highlightIcons, id: \.self) { icon in
+                        Image(systemName: icon)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }

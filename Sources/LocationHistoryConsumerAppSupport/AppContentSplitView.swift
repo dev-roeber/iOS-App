@@ -10,6 +10,7 @@ public struct AppContentSplitView: View {
     @State private var daysNavigationPath = NavigationPath()
     @State private var selectedTab = 0
     @State private var daySearchText = ""
+    @State private var isShowingExportSheet = false
 
     private let onOpen: () -> Void
     private let onLoadDemo: () -> Void
@@ -111,6 +112,21 @@ public struct AppContentSplitView: View {
                 Label("Insights", systemImage: "chart.xyaxis.line")
             }
             .tag(2)
+
+            NavigationStack {
+                AppExportView(session: $session)
+                    .navigationTitle("Export")
+                    .toolbar {
+                        ToolbarItem(placement: .primaryAction) {
+                            actionsMenu
+                        }
+                    }
+            }
+            .tabItem {
+                Label("Export", systemImage: "square.and.arrow.up")
+            }
+            .tag(3)
+            .badge(session.exportSelection.count > 0 ? session.exportSelection.count : 0)
         }
         // Replaces deprecated onChange(of:perform:) — task(id:) fires on
         // appearance and whenever id changes, which is the same behaviour.
@@ -127,7 +143,7 @@ public struct AppContentSplitView: View {
             if groups.count == 1 {
                 ForEach(groups[0].summaries, id: \.date) { summary in
                     NavigationLink(value: summary.date) {
-                        AppDayRow(summary: summary, highlightIcons: highlightIconsFor(summary.date))
+                        AppDayRow(summary: summary, highlightIcons: highlightIconsFor(summary.date), isSelectedForExport: session.exportSelection.isSelected(summary.date))
                     }
                 }
             } else {
@@ -420,6 +436,14 @@ public struct AppContentSplitView: View {
             Button(action: onLoadDemo) {
                 Label(demoButtonTitle, systemImage: "testtube.2")
             }
+            if session.hasDays && horizontalSizeClass != .compact {
+                Divider()
+                Button {
+                    isShowingExportSheet = true
+                } label: {
+                    Label("Export…", systemImage: "square.and.arrow.up")
+                }
+            }
             if session.hasLoadedContent || session.message?.kind == .error {
                 Divider()
                 Button(role: .destructive, action: onClear) {
@@ -428,6 +452,17 @@ public struct AppContentSplitView: View {
             }
         } label: {
             Label("Actions", systemImage: "ellipsis.circle")
+        }
+        .sheet(isPresented: $isShowingExportSheet) {
+            NavigationStack {
+                AppExportView(session: $session)
+                    .navigationTitle("Export")
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { isShowingExportSheet = false }
+                        }
+                    }
+            }
         }
     }
 
