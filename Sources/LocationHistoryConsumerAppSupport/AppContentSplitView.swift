@@ -44,6 +44,8 @@ public struct AppContentSplitView: View {
     private func highlightIconsFor(_ date: String) -> [String] {
         var icons: [String] = []
         if session.insights?.busiestDay?.date == date { icons.append("flame.fill") }
+        if session.insights?.mostVisitsDay?.date == date { icons.append("mappin.circle.fill") }
+        if session.insights?.mostRoutesDay?.date == date { icons.append("location.north.circle.fill") }
         if session.insights?.longestDistanceDay?.date == date { icons.append("road.lanes") }
         return icons
     }
@@ -370,12 +372,15 @@ public struct AppContentSplitView: View {
 
     @ViewBuilder
     private func overviewHighlights(_ insights: ExportInsights) -> some View {
-        let hasHighlights = insights.busiestDay != nil || insights.longestDistanceDay != nil
+        let hasHighlights = insights.busiestDay != nil
+            || insights.mostVisitsDay != nil
+            || insights.mostRoutesDay != nil
+            || insights.longestDistanceDay != nil
         if hasHighlights {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Highlights")
                     .font(.title3.weight(.semibold))
-                HStack(spacing: 12) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12)], spacing: 12) {
                     if let busiest = insights.busiestDay {
                         highlightCard(
                             title: "Busiest Day",
@@ -384,8 +389,31 @@ public struct AppContentSplitView: View {
                             icon: "flame.fill",
                             color: .orange,
                             onTap: {
-                                daysNavigationPath.append(busiest.date)
-                                selectedTab = 1
+                                openHighlightedDay(busiest.date)
+                            }
+                        )
+                    }
+                    if let visits = insights.mostVisitsDay {
+                        highlightCard(
+                            title: "Most Visits",
+                            value: visits.value,
+                            date: AppDateDisplay.mediumDate(visits.date),
+                            icon: "mappin.circle.fill",
+                            color: .blue,
+                            onTap: {
+                                openHighlightedDay(visits.date)
+                            }
+                        )
+                    }
+                    if let routes = insights.mostRoutesDay {
+                        highlightCard(
+                            title: "Most Routes",
+                            value: routes.value,
+                            date: AppDateDisplay.mediumDate(routes.date),
+                            icon: "location.north.circle.fill",
+                            color: .green,
+                            onTap: {
+                                openHighlightedDay(routes.date)
                             }
                         )
                     }
@@ -397,14 +425,18 @@ public struct AppContentSplitView: View {
                             icon: "road.lanes",
                             color: .purple,
                             onTap: {
-                                daysNavigationPath.append(longest.date)
-                                selectedTab = 1
+                                openHighlightedDay(longest.date)
                             }
                         )
                     }
                 }
             }
         }
+    }
+
+    private func openHighlightedDay(_ date: String) {
+        daysNavigationPath.append(date)
+        selectedTab = 1
     }
 
     @ViewBuilder

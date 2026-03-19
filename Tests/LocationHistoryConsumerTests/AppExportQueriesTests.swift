@@ -71,6 +71,30 @@ final class AppExportQueriesTests: XCTestCase {
         XCTAssertEqual(summaries[0].totalPathDistanceM, 0)
     }
 
+    func testInsightsExposeAdditionalVisitAndRouteHighlights() throws {
+        let export = try loadExport(named: "golden_app_export_contract_gate.json")
+
+        let insights = AppExportQueries.insights(from: export)
+        let summaries = AppExportQueries.daySummaries(from: export)
+        let busiestSummary = try XCTUnwrap(
+            summaries.max(by: {
+                ($0.visitCount + $0.activityCount + $0.pathCount) < ($1.visitCount + $1.activityCount + $1.pathCount)
+            })
+        )
+        let mostVisitsSummary = try XCTUnwrap(summaries.max(by: { $0.visitCount < $1.visitCount }))
+        let mostRoutesSummary = try XCTUnwrap(summaries.max(by: { $0.pathCount < $1.pathCount }))
+        let longestDistanceSummary = try XCTUnwrap(summaries.max(by: { $0.totalPathDistanceM < $1.totalPathDistanceM }))
+
+        XCTAssertEqual(insights.busiestDay?.date, busiestSummary.date)
+        XCTAssertEqual(insights.busiestDay?.value, "\(busiestSummary.visitCount + busiestSummary.activityCount + busiestSummary.pathCount) events")
+        XCTAssertEqual(insights.mostVisitsDay?.date, mostVisitsSummary.date)
+        XCTAssertEqual(insights.mostVisitsDay?.value, "\(mostVisitsSummary.visitCount) visits")
+        XCTAssertEqual(insights.mostRoutesDay?.date, mostRoutesSummary.date)
+        XCTAssertEqual(insights.mostRoutesDay?.value, "\(mostRoutesSummary.pathCount) routes")
+        XCTAssertEqual(insights.longestDistanceDay?.date, longestDistanceSummary.date)
+        XCTAssertEqual(insights.longestDistanceDay?.value, String(format: "%.1f km", longestDistanceSummary.totalPathDistanceM / 1000))
+    }
+
     private func loadExport(named name: String) throws -> AppExport {
         try AppExportDecoder.decode(contentsOf: TestSupport.contractFixtureURL(named: name))
     }

@@ -8,6 +8,8 @@ public struct ExportInsights: Equatable {
     public let periodBreakdown: [PeriodBreakdownItem]
     public let averagesPerDay: DayAverages
     public let busiestDay: DayHighlight?
+    public let mostVisitsDay: DayHighlight?
+    public let mostRoutesDay: DayHighlight?
     public let longestDistanceDay: DayHighlight?
     public let activeFilterDescriptions: [String]
 
@@ -19,6 +21,8 @@ public struct ExportInsights: Equatable {
         periodBreakdown: [PeriodBreakdownItem],
         averagesPerDay: DayAverages,
         busiestDay: DayHighlight? = nil,
+        mostVisitsDay: DayHighlight? = nil,
+        mostRoutesDay: DayHighlight? = nil,
         longestDistanceDay: DayHighlight? = nil,
         activeFilterDescriptions: [String] = []
     ) {
@@ -29,6 +33,8 @@ public struct ExportInsights: Equatable {
         self.periodBreakdown = periodBreakdown
         self.averagesPerDay = averagesPerDay
         self.busiestDay = busiestDay
+        self.mostVisitsDay = mostVisitsDay
+        self.mostRoutesDay = mostRoutesDay
         self.longestDistanceDay = longestDistanceDay
         self.activeFilterDescriptions = activeFilterDescriptions
     }

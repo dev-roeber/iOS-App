@@ -206,6 +206,24 @@ public enum AppExportQueries {
             return DayHighlight(date: best.date, value: "\(total) events")
         }()
 
+        let mostVisitsDay: DayHighlight? = {
+            guard let best = summaries.max(by: { $0.visitCount < $1.visitCount }),
+                  best.visitCount > 0 else { return nil }
+            return DayHighlight(
+                date: best.date,
+                value: "\(best.visitCount) visit\(best.visitCount == 1 ? "" : "s")"
+            )
+        }()
+
+        let mostRoutesDay: DayHighlight? = {
+            guard let best = summaries.max(by: { $0.pathCount < $1.pathCount }),
+                  best.pathCount > 0 else { return nil }
+            return DayHighlight(
+                date: best.date,
+                value: "\(best.pathCount) route\(best.pathCount == 1 ? "" : "s")"
+            )
+        }()
+
         let longestDistanceDay: DayHighlight? = {
             guard let best = summaries.max(by: { $0.totalPathDistanceM < $1.totalPathDistanceM }),
                   best.totalPathDistanceM > 0 else { return nil }
@@ -228,6 +246,8 @@ public enum AppExportQueries {
                 avgDistancePerDayM: dayCount > 0 ? totalDistanceM / Double(dayCount) : 0
             ),
             busiestDay: busiestDay,
+            mostVisitsDay: mostVisitsDay,
+            mostRoutesDay: mostRoutesDay,
             longestDistanceDay: longestDistanceDay,
             activeFilterDescriptions: activeFilterDescriptions
         )

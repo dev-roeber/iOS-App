@@ -4,7 +4,7 @@
 
 ### Abgeschlossen
 Lokaler iPhone-Betrieb wurde zuletzt auf Apple-Hardware real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
-Lokale Produktweiterentwicklung: Phasen 19.10–19.43 abgeschlossen.
+Lokale Produktweiterentwicklung: Phasen 19.10–19.44 abgeschlossen.
 Die frueher als `20.1` und `20.2` gefuehrten lokalen Produktschritte werden ab diesem Stand logisch als `19.29` und `19.30` gefuehrt.
 
 ### Aktiver lokaler Fokus
@@ -14,7 +14,21 @@ Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. 
 
 ### Offene lokale Phasen
 
+- Phase 19.45 – Import-/Export-Deduplizierung
 - Phase 20 / 21 bleibt weiterhin bewusst geparkt
+
+### Phase 19.44 – Insights / Highlights Expansion
+
+**Datum:** 2026-03-19
+**Ziel:** Den Insights-Tab ueber reine Diagramme hinaus zu einer staerkeren, direkt navigierbaren Analyseflaeche ausbauen und dabei bestehende Export-Filter klar sichtbar halten.
+
+- [x] `ExportInsights`/`AppExportQueries` liefern jetzt zusaetzlich `Most Visits` und `Most Routes` als weitere Day-Highlights
+- [x] Day-Liste und Overview spiegeln diese neuen Highlight-Tage jetzt mit zusaetzlichen Icons bzw. Karten zurueck
+- [x] Insights zeigt aktive Export-Filter jetzt als eigene Kontexthilfe statt sie nur implizit in den Daten stecken zu lassen
+- [x] neuer interaktiver `Top Days`-Block rankt Tage nach `Events`, `Visits`, `Routes` oder `Distance` und oeffnet per Tap direkt den jeweiligen Tag
+- [x] `InsightsTopDaysPresentation` kapselt Ranking, Tiebreaker und Copy testbar; `DaySummary` hat dafuer jetzt einen expliziten `public init`
+- [x] Query- und Presentation-Tests decken neue Highlights und Top-Day-Ranking ab
+- Bewusst nicht in diesem Schritt: neue Rohdatenquellen, Crossfilter zwischen Charts, Background-Tracking oder Sprachumschaltung
 
 ### Phase 19.43 – KML / weitere Exportformate schrittweise aktivieren
 

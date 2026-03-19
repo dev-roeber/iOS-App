@@ -4,7 +4,19 @@ Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
 1. **Phase 20 / 21 – bewusst nicht jetzt**
    - keine Apple-/ASC-/TestFlight-/Release-Arbeit
-2. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+2. **Phase 19.45 – Import-/Export-Deduplizierung**
+   - importierte History vor Insights und Export um echte Dubletten und unbrauchbare Track-Fragmente bereinigen
+   - saubere GPX-/KML-Dateien fuer Strava/Garmin vorbereiten, ohne den Import-Contract zu veraendern
+3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+4. Spaeterer Produktwunsch: Optionen um App-Sprache erweitern (`English`, `Deutsch`), ohne das jetzt schon umzusetzen.
+
+**Abgeschlossene Phase 19.44 (2026-03-19):**
+- `ExportInsights`/`AppExportQueries` liefern jetzt zusaetzlich `Most Visits` und `Most Routes`
+- Day-Liste und Overview zeigen diese Highlight-Tage nun sichtbar ueber weitere Icons und Karten
+- Insights hat jetzt eine eigene `Active Filters`-Sektion statt Filter nur indirekt wirken zu lassen
+- neuer interaktiver `Top Days`-Block rankt Tage nach `Events`, `Visits`, `Routes` oder `Distance` und springt per Tap direkt in den Tag
+- `InsightsTopDaysPresentation` kapselt Ranking, Tiebreaker und Copy testbar; `DaySummary` hat dafuer jetzt einen expliziten `public init`
+- 4 neue/erweiterte Tests; Volltest folgt gruener Paket-Suite
 
 **Abgeschlossene Phase 19.43 (2026-03-19):**
 - Export-Flow unterstuetzt jetzt `KML` als zweites echtes Dateiformat neben `GPX`
