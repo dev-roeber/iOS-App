@@ -2,13 +2,20 @@
 
 Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
-1. **Phase 20 / 21 – bewusst nicht jetzt**
+1. **Phase 19.46 – Filterung / Accuracy groundwork**
+   - bestehende Export-/Insights-Daten um echte Accuracy-orientierte Filterbarkeit erweitern statt nur Filtertexte anzuzeigen
+   - den Weg fuer spaetere Polygon-/Bereichsfilter vorbereiten, ohne schon eine volle Geometrie-UI aufzubauen
+2. **Phase 20 / 21 – bewusst nicht jetzt**
    - keine Apple-/ASC-/TestFlight-/Release-Arbeit
-2. **Phase 19.45 – Import-/Export-Deduplizierung**
-   - importierte History vor Insights und Export um echte Dubletten und unbrauchbare Track-Fragmente bereinigen
-   - saubere GPX-/KML-Dateien fuer Strava/Garmin vorbereiten, ohne den Import-Contract zu veraendern
 3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
 4. Spaeterer Produktwunsch: Optionen um App-Sprache erweitern (`English`, `Deutsch`), ohne das jetzt schon umzusetzen.
+
+**Abgeschlossene Phase 19.45 (2026-03-19):**
+- `ExportRouteSanitizer` bereinigt jetzt exakte aufeinanderfolgende Duplikatpunkte zentral vor Export und Vorschau
+- Routen, die nach der Bereinigung unter zwei Punkte fallen, werden nicht mehr als exportierbar oder preview-faehig behandelt
+- `DaySummary` fuehrt dafuer eine echte `exportablePathCount`-Sicht; Export-Readiness und Helper-Copy zaehlen jetzt dieselben Routen wie GPX/KML wirklich schreiben
+- Insights-/Overview-Review-Fix: Day-Navigation aus Highlights und Insights funktioniert jetzt auch auf regular width
+- 2 neue Tests plus erweiterte Query-/Export-Tests; `swift test` gruen: `171/171`
 
 **Abgeschlossene Phase 19.44 (2026-03-19):**
 - `ExportInsights`/`AppExportQueries` liefern jetzt zusaetzlich `Most Visits` und `Most Routes`

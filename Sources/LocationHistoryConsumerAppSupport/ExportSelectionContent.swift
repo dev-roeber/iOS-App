@@ -49,7 +49,7 @@ enum ExportSelectionContent {
             selectedDaySummaries: selectedDaySummaries,
             selectedRecordedTracks: selectedRecordedTracks,
             exportableDaySummaries: selectedDaySummaries.filter { $0.exportablePathCount > 0 },
-            exportableRecordedTracks: selectedRecordedTracks.filter { $0.points.count >= 2 }
+            exportableRecordedTracks: selectedRecordedTracks.filter(isExportableRecordedTrack)
         )
     }
 
@@ -97,7 +97,7 @@ enum ExportSelectionContent {
 
         return AppExportQueries.days(in: export)
             .filter { selection.isSelected($0.date) }
-            .filter { $0.paths.contains(where: { !$0.points.isEmpty }) }
+            .compactMap(ExportRouteSanitizer.sanitizedDay)
     }
 
     private static func selectedRecordedTrackDays(
@@ -106,12 +106,11 @@ enum ExportSelectionContent {
     ) -> [Day] {
         recordedTracks
             .filter { selection.isSelected(recordedTrackID: $0.id) }
-            .filter { $0.points.count >= 2 }
             .sorted { $0.startedAt < $1.startedAt }
-            .map(exportDay(for:))
+            .compactMap(exportDay(for:))
     }
 
-    private static func exportDay(for track: RecordedTrack) -> Day {
+    private static func exportDay(for track: RecordedTrack) -> Day? {
         let pathPoints = track.points.map { point in
             PathPoint(
                 lat: point.latitude,
@@ -121,7 +120,7 @@ enum ExportSelectionContent {
             )
         }
 
-        let path = Path(
+        let rawPath = Path(
             startTime: isoTimestampFormatter.string(from: track.startedAt),
             endTime: isoTimestampFormatter.string(from: track.endedAt),
             activityType: "LIVE TRACK",
@@ -131,11 +130,19 @@ enum ExportSelectionContent {
             flatCoordinates: nil
         )
 
+        guard let path = ExportRouteSanitizer.sanitizedPath(rawPath) else {
+            return nil
+        }
+
         return Day(
             date: track.dayKey,
             visits: [],
             activities: [],
             paths: [path]
         )
+    }
+
+    private static func isExportableRecordedTrack(_ track: RecordedTrack) -> Bool {
+        exportDay(for: track) != nil
     }
 }

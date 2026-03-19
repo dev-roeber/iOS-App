@@ -29,7 +29,7 @@ public enum AppExportQueries {
                 totalPathPointCount: day.paths.reduce(0) { $0 + $1.points.count },
                 totalPathDistanceM: day.paths.reduce(0) { $0 + ($1.distanceM ?? 0) },
                 hasContent: !day.visits.isEmpty || !day.activities.isEmpty || !day.paths.isEmpty,
-                exportablePathCount: day.paths.filter { !$0.points.isEmpty }.count
+                exportablePathCount: ExportRouteSanitizer.exportablePathCount(in: day)
             )
         }
     }
@@ -196,7 +196,7 @@ public enum AppExportQueries {
                 totalPathPointCount: day.paths.reduce(0) { $0 + $1.points.count },
                 totalPathDistanceM: day.paths.reduce(0) { $0 + ($1.distanceM ?? 0) },
                 hasContent: !day.visits.isEmpty || !day.activities.isEmpty || !day.paths.isEmpty,
-                exportablePathCount: day.paths.filter { !$0.points.isEmpty }.count
+                exportablePathCount: ExportRouteSanitizer.exportablePathCount(in: day)
             )
         }
 

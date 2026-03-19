@@ -4,7 +4,7 @@
 
 ### Abgeschlossen
 Lokaler iPhone-Betrieb wurde zuletzt auf Apple-Hardware real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
-Lokale Produktweiterentwicklung: Phasen 19.10–19.44 abgeschlossen.
+Lokale Produktweiterentwicklung: Phasen 19.10–19.45 abgeschlossen.
 Die frueher als `20.1` und `20.2` gefuehrten lokalen Produktschritte werden ab diesem Stand logisch als `19.29` und `19.30` gefuehrt.
 
 ### Aktiver lokaler Fokus
@@ -14,8 +14,21 @@ Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. 
 
 ### Offene lokale Phasen
 
-- Phase 19.45 – Import-/Export-Deduplizierung
+- Phase 19.46 – Filterung / Accuracy groundwork
 - Phase 20 / 21 bleibt weiterhin bewusst geparkt
+
+### Phase 19.45 – Import-/Export-Deduplizierung
+
+**Datum:** 2026-03-19
+**Ziel:** Export, Vorschau und Export-Readiness sollen exakte Dubletten und unbrauchbare 1-Punkt-Routen gleich behandeln, damit die erzeugten Dateien naeher an einem sauberen Track landen.
+
+- [x] `ExportRouteSanitizer` dedupliziert jetzt exakte aufeinanderfolgende Trackpunkte (`lat`/`lon`/`time`) zentral im Core
+- [x] Routen, die nach dieser Bereinigung unter zwei Punkte fallen, werden fuer Export und Vorschau verworfen
+- [x] `AppExportQueries` fuehrt dafuer eine echte `exportablePathCount`-Sicht in `DaySummary` statt blind `pathCount > 0` zu vertrauen
+- [x] Export-Readiness, Helper-Copy und Route-Preview orientieren sich jetzt an derselben sanitisierten Geometrie wie GPX/KML
+- [x] Insights-/Overview-Review-Fix: Day-Navigation aus Highlights und Insights funktioniert jetzt auch auf regular width statt nur auf compact
+- [x] neue Sanitizer-Tests plus erweiterte Query-/Export-Tests; `swift test` jetzt 171/171 gruen
+- Bewusst nicht in diesem Schritt: fuzzy dedupe, Aktivitaets-/Visit-Bereinigung, Polygonfilter oder Import-Contract-Aenderungen
 
 ### Phase 19.44 – Insights / Highlights Expansion
 
