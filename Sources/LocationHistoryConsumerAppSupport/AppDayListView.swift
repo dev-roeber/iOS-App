@@ -11,9 +11,15 @@ struct AppDayRow: View {
     var isSelectedForExport: Bool = false
 
     var body: some View {
+        let presentation = DaySummaryRowPresentationBuilder.presentation(
+            for: summary,
+            unit: preferences.distanceUnit,
+            context: .list
+        )
+
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(AppDateDisplay.weekday(summary.date))
+                Text(presentation.weekdayText)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -34,30 +40,17 @@ struct AppDayRow: View {
                     }
                 }
             }
-            Text(AppDateDisplay.mediumDate(summary.date))
+            Text(presentation.dateText)
                 .font(.headline)
-            if summary.hasContent {
-                HStack(spacing: 12) {
-                    Label("\(summary.visitCount)", systemImage: "mappin.and.ellipse")
-                    Label("\(summary.activityCount)", systemImage: "figure.walk")
-                    Label("\(summary.pathCount)", systemImage: "location.north.line")
-                    if summary.totalPathDistanceM > 0 {
-                        Label(formatDistance(summary.totalPathDistanceM, unit: preferences.distanceUnit), systemImage: "ruler")
-                    }
-                }
+            Text(presentation.subtitle)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(summary.visitCount) Visits, \(summary.activityCount) Activities, \(summary.pathCount) Routes")
-            } else {
-                Label("No recorded entries", systemImage: "tray")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel("No recorded entries for this day")
-            }
+            DaySummaryMetricChipsView(metrics: presentation.metrics)
         }
         .padding(.vertical, 4)
         .opacity(summary.hasContent ? 1 : 0.72)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(presentation.accessibilityLabel)
     }
 }
 

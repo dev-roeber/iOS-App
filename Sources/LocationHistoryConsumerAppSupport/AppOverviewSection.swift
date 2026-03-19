@@ -6,11 +6,18 @@ import LocationHistoryConsumer
 
 public struct AppOverviewSection: View {
     let overview: ExportOverview
+    let daySummaries: [DaySummary]
     var onDaysTap: (() -> Void)? = nil
     var onInsightsTap: (() -> Void)? = nil
 
-    public init(overview: ExportOverview, onDaysTap: (() -> Void)? = nil, onInsightsTap: (() -> Void)? = nil) {
+    public init(
+        overview: ExportOverview,
+        daySummaries: [DaySummary] = [],
+        onDaysTap: (() -> Void)? = nil,
+        onInsightsTap: (() -> Void)? = nil
+    ) {
         self.overview = overview
+        self.daySummaries = daySummaries
         self.onDaysTap = onDaysTap
         self.onInsightsTap = onInsightsTap
     }
@@ -20,61 +27,77 @@ public struct AppOverviewSection: View {
     ]
 
     public var body: some View {
+        let presentation = OverviewPresentation.section(
+            overview: overview,
+            daySummaries: daySummaries
+        )
+
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Imported History")
                     .font(.title3.weight(.semibold))
-                Text("Core totals from the currently loaded export.")
+                Text(presentation.subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             LazyVGrid(columns: columns, spacing: 12) {
-                statCard("\(overview.dayCount)", label: "Days", icon: "calendar", color: .blue, action: onDaysTap)
-                statCard("\(overview.totalVisitCount)", label: "Visits", icon: "mappin.and.ellipse", color: .purple, action: onInsightsTap)
-                statCard("\(overview.totalActivityCount)", label: "Activities", icon: "figure.walk", color: .green, action: onInsightsTap)
-                statCard("\(overview.totalPathCount)", label: "Routes", icon: "location.north.line", color: .orange, action: onInsightsTap)
+                ForEach(presentation.stats) { stat in
+                    statCard(
+                        stat,
+                        action: stat.id == "days" ? onDaysTap : onInsightsTap
+                    )
+                }
             }
         }
     }
 
     @ViewBuilder
-    private func statCard(_ value: String, label: String, icon: String, color: Color, action: (() -> Void)? = nil) -> some View {
+    private func statCard(_ stat: OverviewStatPresentation, action: (() -> Void)? = nil) -> some View {
         Group {
             if let action {
                 Button(action: action) {
-                    statCardBody(value, label: label, icon: icon, color: color, isInteractive: true)
+                    statCardBody(stat, isInteractive: true)
                 }
                 .buttonStyle(.plain)
             } else {
-                statCardBody(value, label: label, icon: icon, color: color, isInteractive: false)
+                statCardBody(stat, isInteractive: false)
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(value) \(label)")
+        .accessibilityLabel([stat.value, stat.label, stat.note].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAddTraits(action != nil ? .isButton : [])
     }
 
     @ViewBuilder
-    private func statCardBody(_ value: String, label: String, icon: String, color: Color, isInteractive: Bool) -> some View {
+    private func statCardBody(_ stat: OverviewStatPresentation, isInteractive: Bool) -> some View {
         VStack(spacing: 6) {
-            Image(systemName: icon)
+            Image(systemName: stat.icon)
                 .font(.title3)
-                .foregroundColor(color)
-            Text(value)
+                .foregroundColor(stat.color)
+            Text(stat.value)
                 .font(.title2.weight(.bold).monospacedDigit())
-            Text(label)
+            Text(stat.label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            if let note = stat.note {
+                Text(note)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .frame(minHeight: 28)
+            }
             if isInteractive {
                 Image(systemName: "chevron.right")
                     .font(.caption2)
-                    .foregroundStyle(color.opacity(0.5))
+                    .foregroundStyle(stat.color.opacity(0.5))
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(color.opacity(0.08))
+        .padding(.horizontal, 10)
+        .background(stat.color.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

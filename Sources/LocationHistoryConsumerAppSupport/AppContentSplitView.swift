@@ -326,6 +326,7 @@ public struct AppContentSplitView: View {
             if let overview = session.overview {
                 AppOverviewSection(
                     overview: overview,
+                    daySummaries: session.daySummaries,
                     onDaysTap: horizontalSizeClass == .compact ? { selectedTab = 1 } : nil,
                     onInsightsTap: horizontalSizeClass == .compact ? { selectedTab = 2 } : nil
                 )

@@ -180,37 +180,32 @@ public struct AppExportView: View {
 
     @ViewBuilder
     private func dayRow(summary: DaySummary, isSelected: Bool) -> some View {
+        let presentation = DaySummaryRowPresentationBuilder.presentation(
+            for: summary,
+            unit: preferences.distanceUnit,
+            context: .export
+        )
+
         HStack(spacing: 12) {
             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                 .font(.title3)
                 .foregroundColor(isSelected ? .accentColor : .secondary)
                 .animation(.easeInOut(duration: 0.15), value: isSelected)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(AppDateDisplay.mediumDate(summary.date))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(presentation.dateText)
                     .font(.subheadline.weight(.medium))
-                HStack(spacing: 10) {
-                    if summary.pathCount > 0 {
-                        Label("\(summary.pathCount) route\(summary.pathCount == 1 ? "" : "s")", systemImage: "location.north.line")
-                            .foregroundStyle(.secondary)
-                    }
-                    if summary.totalPathDistanceM > 0 {
-                        Label(formatDistance(summary.totalPathDistanceM, unit: preferences.distanceUnit), systemImage: "ruler")
-                            .foregroundStyle(.secondary)
-                    }
-                    if summary.pathCount == 0 {
-                        Text("No routes")
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-                .font(.caption)
+                Text(presentation.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                DaySummaryMetricChipsView(metrics: presentation.metrics)
             }
 
             Spacer()
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(AppDateDisplay.mediumDate(summary.date)), \(summary.pathCount) routes")
+        .accessibilityLabel(presentation.accessibilityLabel)
         .accessibilityValue(isSelected ? "Selected" : "Not selected")
         .accessibilityAddTraits(.isButton)
     }
