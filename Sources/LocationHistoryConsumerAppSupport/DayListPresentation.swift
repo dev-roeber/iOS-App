@@ -1,6 +1,15 @@
 import Foundation
+import LocationHistoryConsumer
 
 enum DayListPresentation {
+    static func filteredSummaries(_ summaries: [DaySummary], query: String) -> [DaySummary] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return summaries
+        }
+        return summaries.filter { $0.date.localizedCaseInsensitiveContains(trimmed) }
+    }
+
     static func exportSelectionTitle(count: Int) -> String {
         guard count > 0 else {
             return "No export days selected"

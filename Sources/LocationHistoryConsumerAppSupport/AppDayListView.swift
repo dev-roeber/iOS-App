@@ -65,25 +65,36 @@ struct AppDayRow: View {
 
 public struct AppDayListView: View {
     let summaries: [DaySummary]
+    let totalSummaryCount: Int
+    let searchQuery: String
     @Binding var selectedDate: String?
     let exportSelection: ExportSelectionState
     var onOpenExport: (() -> Void)? = nil
 
     public init(
         summaries: [DaySummary],
+        totalSummaryCount: Int? = nil,
+        searchQuery: String = "",
         selectedDate: Binding<String?>,
         exportSelection: ExportSelectionState = ExportSelectionState(),
         onOpenExport: (() -> Void)? = nil
     ) {
         self.summaries = summaries
+        self.totalSummaryCount = totalSummaryCount ?? summaries.count
+        self.searchQuery = searchQuery
         self._selectedDate = selectedDate
         self.exportSelection = exportSelection
         self.onOpenExport = onOpenExport
     }
 
     public var body: some View {
-        if summaries.isEmpty {
+        if totalSummaryCount == 0 {
             AppDayListEmptyView()
+        } else if summaries.isEmpty {
+            AppDaySearchEmptyView(
+                query: searchQuery,
+                exportSelectionCount: exportSelection.count
+            )
         } else {
             let groups = groupByMonth(summaries)
             List(selection: $selectedDate) {

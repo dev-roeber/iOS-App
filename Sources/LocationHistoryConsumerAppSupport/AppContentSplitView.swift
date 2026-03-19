@@ -35,10 +35,7 @@ public struct AppContentSplitView: View {
     }
 
     private var filteredDaySummaries: [DaySummary] {
-        guard !daySearchText.trimmingCharacters(in: .whitespaces).isEmpty else {
-            return session.daySummaries
-        }
-        return session.daySummaries.filter { $0.date.localizedCaseInsensitiveContains(daySearchText) }
+        DayListPresentation.filteredSummaries(session.daySummaries, query: daySearchText)
     }
 
     private func highlightIconsFor(_ date: String) -> [String] {
@@ -53,10 +50,12 @@ public struct AppContentSplitView: View {
     }
 
     public var body: some View {
-        if horizontalSizeClass == .compact {
-            compactTabView
-        } else {
-            regularSplitView
+        withGlobalSheets {
+            if horizontalSizeClass == .compact {
+                compactTabView
+            } else {
+                regularSplitView
+            }
         }
     }
 
@@ -211,7 +210,9 @@ public struct AppContentSplitView: View {
     private var regularSplitView: some View {
         NavigationSplitView {
             AppDayListView(
-                summaries: session.daySummaries,
+                summaries: filteredDaySummaries,
+                totalSummaryCount: session.daySummaries.count,
+                searchQuery: daySearchText,
                 selectedDate: Binding(
                     get: { session.selectedDate },
                     set: { session.selectDayForDisplay($0) }
@@ -220,6 +221,7 @@ public struct AppContentSplitView: View {
                 onOpenExport: { isShowingExportSheet = true }
             )
             .navigationTitle("Days")
+            .searchable(text: $daySearchText, prompt: "Search by date")
         } detail: {
             Group {
                 detailPane
@@ -573,39 +575,44 @@ public struct AppContentSplitView: View {
         } label: {
             Label("Actions", systemImage: "ellipsis.circle")
         }
-        .sheet(isPresented: $isShowingExportSheet) {
-            NavigationStack {
-                AppExportView(session: $session)
-                    .environmentObject(preferences)
-                    .navigationTitle("Export")
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { isShowingExportSheet = false }
+    }
+
+    @ViewBuilder
+    private func withGlobalSheets<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .sheet(isPresented: $isShowingExportSheet) {
+                NavigationStack {
+                    AppExportView(session: $session)
+                        .environmentObject(preferences)
+                        .navigationTitle("Export")
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { isShowingExportSheet = false }
+                            }
                         }
-                    }
-            }
-        }
-        .sheet(isPresented: $isShowingTracksLibrary) {
-            NavigationStack {
-                tracksLibrarySheetContent
-                    .environmentObject(preferences)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { isShowingTracksLibrary = false }
                 }
             }
-        }
-        .sheet(isPresented: $isShowingOptions) {
-            NavigationStack {
-                AppOptionsView(preferences: preferences)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { isShowingOptions = false }
+            .sheet(isPresented: $isShowingTracksLibrary) {
+                NavigationStack {
+                    tracksLibrarySheetContent
+                        .environmentObject(preferences)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { isShowingTracksLibrary = false }
+                            }
                         }
-                    }
+                }
             }
-        }
-    }
+            .sheet(isPresented: $isShowingOptions) {
+                NavigationStack {
+                    AppOptionsView(preferences: preferences)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { isShowingOptions = false }
+                            }
+                        }
+                }
+            }
     }
 
     private var liveTracksOverviewSection: some View {
