@@ -148,12 +148,27 @@ final class GPXBuilderTests: XCTestCase {
         var state = ExportSelectionState()
         state.selectAll(from: ["2024-01-10", "2024-01-11", "2024-01-12"])
         XCTAssertEqual(state.count, 3)
+        XCTAssertEqual(state.selectedDayCount, 3)
         XCTAssertTrue(state.isSelected("2024-01-11"))
+    }
+
+    func testRecordedTrackSelectionCountsTowardTotalSelection() {
+        var state = ExportSelectionState()
+        let id = UUID()
+        state.toggleRecordedTrack(id)
+        XCTAssertTrue(state.isSelected(recordedTrackID: id))
+        XCTAssertEqual(state.selectedRecordedTrackCount, 1)
+        XCTAssertEqual(state.count, 1)
+
+        state.clearRecordedTracks()
+        XCTAssertFalse(state.isSelected(recordedTrackID: id))
+        XCTAssertEqual(state.count, 0)
     }
 
     func testClearAll() {
         var state = ExportSelectionState()
         state.selectAll(from: ["2024-01-10", "2024-01-11"])
+        state.selectAllRecordedTracks(from: [UUID(), UUID()])
         state.clearAll()
         XCTAssertTrue(state.isEmpty)
     }

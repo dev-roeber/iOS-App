@@ -4,11 +4,20 @@ import LocationHistoryConsumer
 
 final class ExportPresentationTests: XCTestCase {
     func testReadinessHandlesEmptySelection() {
-        let readiness = ExportPresentation.readiness(selection: ExportSelectionState(), summaries: [])
+        let readiness = ExportPresentation.readiness(
+            selection: ExportSelectionState(),
+            summaries: [],
+            recordedTracks: []
+        )
         XCTAssertEqual(readiness, .nothingSelected)
         XCTAssertEqual(
-            ExportPresentation.helperMessage(selection: ExportSelectionState(), summaries: [], format: .gpx),
-            "Choose at least one day with routes to prepare a GPX file."
+            ExportPresentation.helperMessage(
+                selection: ExportSelectionState(),
+                summaries: [],
+                recordedTracks: [],
+                format: .gpx
+            ),
+            "Choose at least one imported day or saved track with routes to prepare a GPX file."
         )
     }
 
@@ -25,12 +34,17 @@ final class ExportPresentationTests: XCTestCase {
         """)
 
         XCTAssertEqual(
-            ExportPresentation.readiness(selection: selection, summaries: summaries),
-            .noRoutesSelected(selectedDayCount: 1)
+            ExportPresentation.readiness(selection: selection, summaries: summaries, recordedTracks: []),
+            .noRoutesSelected(selectedSourceCount: 1)
         )
         XCTAssertEqual(
-            ExportPresentation.buttonTitle(selection: selection, summaries: summaries, format: .gpx),
-            "Selected day has no routes"
+            ExportPresentation.buttonTitle(
+                selection: selection,
+                summaries: summaries,
+                recordedTracks: [],
+                format: .gpx
+            ),
+            "Selected item has no routes"
         )
     }
 
@@ -57,16 +71,62 @@ final class ExportPresentationTests: XCTestCase {
         """)
 
         XCTAssertEqual(
-            ExportPresentation.readiness(selection: selection, summaries: summaries),
-            .ready(selectedDayCount: 2, exportableDayCount: 1, routeCount: 2)
+            ExportPresentation.readiness(selection: selection, summaries: summaries, recordedTracks: []),
+            .ready(
+                selectedSourceCount: 2,
+                exportableSourceCount: 1,
+                routeCount: 2,
+                selectedDayCount: 2,
+                selectedRecordedTrackCount: 0
+            )
         )
         XCTAssertTrue(
-            ExportPresentation.helperMessage(selection: selection, summaries: summaries, format: .gpx)
-                .contains("1 of 2 selected days contribute 2 routes")
+            ExportPresentation.helperMessage(
+                selection: selection,
+                summaries: summaries,
+                recordedTracks: [],
+                format: .gpx
+            )
+            .contains("1 of 2 selected items contribute 2 routes")
         )
         XCTAssertEqual(
-            ExportPresentation.filenameMessage(selection: selection, format: .gpx),
+            ExportPresentation.filenameMessage(
+                selection: selection,
+                summaries: summaries,
+                recordedTracks: [],
+                format: .gpx
+            ),
             "Suggested filename: lh2gpx-2024-05-01_to_2024-05-02.gpx (GPX)."
+        )
+    }
+
+    func testReadinessTreatsSavedTrackAsExportableRouteSource() {
+        var selection = ExportSelectionState()
+        let recordedTrack = makeRecordedTrack(dayKey: "2024-05-03")
+        selection.toggleRecordedTrack(recordedTrack.id)
+
+        XCTAssertEqual(
+            ExportPresentation.readiness(
+                selection: selection,
+                summaries: [],
+                recordedTracks: [recordedTrack]
+            ),
+            .ready(
+                selectedSourceCount: 1,
+                exportableSourceCount: 1,
+                routeCount: 1,
+                selectedDayCount: 0,
+                selectedRecordedTrackCount: 1
+            )
+        )
+        XCTAssertEqual(
+            ExportPresentation.filenameMessage(
+                selection: selection,
+                summaries: [],
+                recordedTracks: [recordedTrack],
+                format: .gpx
+            ),
+            "Suggested filename: lh2gpx-2024-05-03.gpx (GPX)."
         )
     }
 
@@ -88,5 +148,32 @@ final class ExportPresentationTests: XCTestCase {
 
         let export = try! AppExportDecoder.decode(data: Data(json.utf8))
         return AppExportQueries.daySummaries(from: export)
+    }
+
+    private func makeRecordedTrack(dayKey: String) -> RecordedTrack {
+        let formatter = ISO8601DateFormatter()
+        let start = formatter.date(from: "\(dayKey)T08:00:00Z")!
+        let end = formatter.date(from: "\(dayKey)T08:30:00Z")!
+        return RecordedTrack(
+            startedAt: start,
+            endedAt: end,
+            dayKey: dayKey,
+            distanceM: 700,
+            captureMode: .foregroundWhileInUse,
+            points: [
+                RecordedTrackPoint(
+                    latitude: 48.0,
+                    longitude: 11.0,
+                    timestamp: start,
+                    horizontalAccuracyM: 5
+                ),
+                RecordedTrackPoint(
+                    latitude: 48.001,
+                    longitude: 11.001,
+                    timestamp: end,
+                    horizontalAccuracyM: 5
+                )
+            ]
+        )
     }
 }

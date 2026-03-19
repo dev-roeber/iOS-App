@@ -4,17 +4,20 @@ Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
 1. **Phase 20 / 21 – bewusst nicht jetzt**
    - keine Apple-/ASC-/TestFlight-/Release-Arbeit
-2. **Phase 19.41 – Live-Tracks in Export integrieren**
-   - gespeicherte Live-Tracks als explizite Exportquelle neben importierten Tagen vorbereiten
-   - Auswahl-, Copy- und Fehlverhalten im bestehenden Export-Flow sauber auf die neue Quelle erweitern
-   - bewusst noch keine neuen Dateiformate oder Background-Tracking-Abhaengigkeiten aufmachen
-3. **Phase 19.42 – Export-Vorschaukarte**
+2. **Phase 19.42 – Export-Vorschaukarte**
    - vor dem eigentlichen Dateiexport eine klare Karten-Vorschau fuer die aktuelle Selektion anbieten
    - importierte Tage und spaeter Live-Tracks in der Vorschau nachvollziehbar rahmen
-4. **Phase 19.43 – Weitere Exportformate**
+3. **Phase 19.43 – Weitere Exportformate**
    - `KML` als naechstes reales Zusatzformat aktivieren
    - Formatwahl, Dateinamencopy und Export-Guard nicht nur architektonisch, sondern produktseitig vollenden
-5. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+4. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+
+**Abgeschlossene Phase 19.41 (2026-03-19):**
+- Export unterstuetzt jetzt neben importierten Tagen auch `Saved Tracks` als echte zweite Quelle
+- Export-Screen zeigt getrennte Auswahlbereiche fuer `Imported Days` und `Saved Tracks`
+- gemischte Selektionen aus Tagen und Saved Tracks werden in Readiness, Helper-Copy und Dateinamenerwartung gemeinsam gefuehrt
+- gespeicherte Live-Tracks werden fuer GPX kontrolliert in exportierbare `Day`/`Path`-Strukturen ueberfuehrt
+- 4 neue Tests; `swift test` gruen: `159/159`
 
 **Abgeschlossene Phase 19.40 (2026-03-19):**
 - schneller Re-Select des compact `Days`-Tabs oeffnet jetzt den relevanten aktuellen Tag statt am aeltesten Listenkontext haengen zu bleiben

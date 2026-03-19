@@ -32,61 +32,86 @@ public enum ExportFormat: String, CaseIterable, Identifiable {
 public struct AppExportView: View {
     @EnvironmentObject private var preferences: AppPreferences
     @Binding var session: AppSessionState
+    @ObservedObject private var liveLocation: LiveLocationFeatureModel
     @State private var selectedFormat: ExportFormat = .gpx
     @State private var isExporting = false
     @State private var exportDocument: GPXDocument?
     @State private var exportError: String?
 
-    public init(session: Binding<AppSessionState>) {
+    public init(session: Binding<AppSessionState>, liveLocation: LiveLocationFeatureModel) {
         self._session = session
+        self._liveLocation = ObservedObject(wrappedValue: liveLocation)
     }
 
     // MARK: - Body
 
     public var body: some View {
         let summaries = session.daySummaries
-        if summaries.isEmpty {
+        let recordedTracks = liveLocation.recordedTracks
+        if summaries.isEmpty && recordedTracks.isEmpty {
             emptyState
         } else {
-            exportContent(summaries: summaries)
+            exportContent(summaries: summaries, recordedTracks: recordedTracks)
         }
     }
 
     // MARK: - Main Content
 
     @ViewBuilder
-    private func exportContent(summaries: [DaySummary]) -> some View {
+    private func exportContent(summaries: [DaySummary], recordedTracks: [RecordedTrack]) -> some View {
         let selection = session.exportSelection
         VStack(spacing: 0) {
-            exportStatusCard(selection: selection, summaries: summaries)
+            exportStatusCard(selection: selection, summaries: summaries, recordedTracks: recordedTracks)
                 .padding(.horizontal)
                 .padding(.top, 12)
 
-            // Day list with selection checkboxes
             List {
-                Section {
-                    ForEach(summaries, id: \.date) { summary in
-                        dayRow(summary: summary, isSelected: selection.isSelected(summary.date))
+                if !summaries.isEmpty {
+                    Section {
+                        ForEach(summaries, id: \.date) { summary in
+                            dayRow(summary: summary, isSelected: selection.isSelected(summary.date))
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    session.exportSelection.toggle(summary.date)
+                                }
+                        }
+                    } header: {
+                        selectionHeader(
+                            title: "Imported Days",
+                            isAllSelected: selection.selectedDayCount == summaries.count,
+                            onSelectAll: {
+                                session.exportSelection.selectAll(from: summaries.map(\.date))
+                            },
+                            onDeselectAll: {
+                                session.exportSelection.clearAllDays()
+                            }
+                        )
+                    }
+                }
+
+                if !recordedTracks.isEmpty {
+                    Section {
+                        ForEach(recordedTracks) { track in
+                            recordedTrackRow(
+                                track: track,
+                                isSelected: selection.isSelected(recordedTrackID: track.id)
+                            )
                             .contentShape(Rectangle())
                             .onTapGesture {
-                                session.exportSelection.toggle(summary.date)
+                                session.exportSelection.toggleRecordedTrack(track.id)
                             }
-                    }
-                } header: {
-                    HStack {
-                        Text("Days")
-                        Spacer()
-                        if selection.count == summaries.count {
-                            Button("Deselect All") {
-                                session.exportSelection.clearAll()
-                            }
-                            .font(.subheadline)
-                        } else {
-                            Button("Select All") {
-                                session.exportSelection.selectAll(from: summaries.map(\.date))
-                            }
-                            .font(.subheadline)
                         }
+                    } header: {
+                        selectionHeader(
+                            title: "Saved Tracks",
+                            isAllSelected: selection.selectedRecordedTrackCount == recordedTracks.count,
+                            onSelectAll: {
+                                session.exportSelection.selectAllRecordedTracks(from: recordedTracks.map(\.id))
+                            },
+                            onDeselectAll: {
+                                session.exportSelection.clearRecordedTracks()
+                            }
+                        )
                     }
                 }
             }
@@ -97,7 +122,7 @@ public struct AppExportView: View {
             #endif
 
             // Bottom bar: format + export button
-            exportBar(selection: selection, summaries: summaries)
+            exportBar(selection: selection, summaries: summaries, recordedTracks: recordedTracks)
         }
         #if canImport(UniformTypeIdentifiers)
         .fileExporter(
@@ -161,10 +186,43 @@ public struct AppExportView: View {
         .accessibilityAddTraits(.isButton)
     }
 
+    @ViewBuilder
+    private func recordedTrackRow(track: RecordedTrack, isSelected: Bool) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.title3)
+                .foregroundColor(isSelected ? .accentColor : .secondary)
+                .animation(.easeInOut(duration: 0.15), value: isSelected)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(savedTrackTitle(track))
+                    .font(.subheadline.weight(.medium))
+                HStack(spacing: 10) {
+                    Label("\(track.pointCount) points", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+                        .foregroundStyle(.secondary)
+                    Label(formatDistance(track.distanceM, unit: preferences.distanceUnit), systemImage: "ruler")
+                        .foregroundStyle(.secondary)
+                }
+                .font(.caption)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(savedTrackTitle(track)), \(track.pointCount) points")
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityAddTraits(.isButton)
+    }
+
     // MARK: - Export Bar
 
     @ViewBuilder
-    private func exportBar(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
+    private func exportBar(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        recordedTracks: [RecordedTrack]
+    ) -> some View {
         VStack(spacing: 0) {
             Divider()
             VStack(spacing: 12) {
@@ -191,14 +249,28 @@ public struct AppExportView: View {
                     }
                 }
 
-                exportButton(selection: selection, summaries: summaries)
+                exportButton(selection: selection, summaries: summaries, recordedTracks: recordedTracks)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(ExportPresentation.helperMessage(selection: selection, summaries: summaries, format: selectedFormat))
+                    Text(
+                        ExportPresentation.helperMessage(
+                            selection: selection,
+                            summaries: summaries,
+                            recordedTracks: recordedTracks,
+                            format: selectedFormat
+                        )
+                    )
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     if !selection.isEmpty {
-                        Text(ExportPresentation.filenameMessage(selection: selection, format: selectedFormat))
+                        Text(
+                            ExportPresentation.filenameMessage(
+                                selection: selection,
+                                summaries: summaries,
+                                recordedTracks: recordedTracks,
+                                format: selectedFormat
+                            )
+                        )
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
@@ -213,9 +285,22 @@ public struct AppExportView: View {
     }
 
     @ViewBuilder
-    private func exportButton(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
-        let readiness = ExportPresentation.readiness(selection: selection, summaries: summaries)
-        let label = ExportPresentation.buttonTitle(selection: selection, summaries: summaries, format: selectedFormat)
+    private func exportButton(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        recordedTracks: [RecordedTrack]
+    ) -> some View {
+        let readiness = ExportPresentation.readiness(
+            selection: selection,
+            summaries: summaries,
+            recordedTracks: recordedTracks
+        )
+        let label = ExportPresentation.buttonTitle(
+            selection: selection,
+            summaries: summaries,
+            recordedTracks: recordedTracks,
+            format: selectedFormat
+        )
         let isDisabled: Bool = {
             switch readiness {
             case .nothingSelected, .noRoutesSelected:
@@ -226,7 +311,7 @@ public struct AppExportView: View {
         }()
 
         Button {
-            prepareExport(selection: selection, summaries: summaries)
+            prepareExport(selection: selection, summaries: summaries, recordedTracks: recordedTracks)
         } label: {
             Label(label, systemImage: "square.and.arrow.up")
                 .frame(maxWidth: .infinity)
@@ -245,7 +330,7 @@ public struct AppExportView: View {
                 .accessibilityHidden(true)
             Text("Nothing to Export")
                 .font(.headline)
-            Text("Import a location history file first to enable export.")
+            Text("Import a location history file or save a live track first to enable export.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -257,28 +342,41 @@ public struct AppExportView: View {
     // MARK: - Helpers
 
     @ViewBuilder
-    private func exportStatusCard(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
-        let readiness = ExportPresentation.readiness(selection: selection, summaries: summaries)
+    private func exportStatusCard(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        recordedTracks: [RecordedTrack]
+    ) -> some View {
+        let readiness = ExportPresentation.readiness(
+            selection: selection,
+            summaries: summaries,
+            recordedTracks: recordedTracks
+        )
+        let snapshot = ExportSelectionContent.snapshot(
+            selection: selection,
+            summaries: summaries,
+            recordedTracks: recordedTracks
+        )
         VStack(alignment: .leading, spacing: 6) {
             Label("Export Selection", systemImage: "square.and.arrow.up")
                 .font(.subheadline.weight(.semibold))
             switch readiness {
             case .nothingSelected:
-                Text("No days selected yet.")
+                Text("No export items selected yet.")
                     .font(.subheadline)
-                Text("Pick one or more days below. GPX export includes route tracks only.")
+                Text("Pick one or more imported days or saved tracks below. GPX export includes route tracks only.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            case let .noRoutesSelected(selectedDayCount):
-                Text("\(selectedDayCount) \(selectedDayCount == 1 ? "day" : "days") selected, but no routes available.")
+            case let .noRoutesSelected(selectedSourceCount):
+                Text("\(selectedSourceCount) \(selectedSourceCount == 1 ? "item" : "items") selected, but no routes available.")
                     .font(.subheadline)
-                Text("Choose a day that contains recorded routes with GPS points.")
+                Text("Choose an imported day with routes or a saved track with enough GPS points.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            case let .ready(selectedDayCount, exportableDayCount, routeCount):
-                Text("\(selectedDayCount) \(selectedDayCount == 1 ? "day" : "days") selected.")
+            case let .ready(selectedSourceCount, _, routeCount, _, _):
+                Text("\(selectedSourceCount) \(selectedSourceCount == 1 ? "item" : "items") selected.")
                     .font(.subheadline)
-                Text("\(exportableDayCount) exportable \(exportableDayCount == 1 ? "day" : "days") · \(routeCount) \(routeCount == 1 ? "route" : "routes")")
+                Text(selectionDetailText(snapshot: snapshot, routeCount: routeCount))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -289,19 +387,69 @@ public struct AppExportView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private func prepareExport(selection: ExportSelectionState, summaries: [DaySummary]) {
-        guard let export = session.content?.export else { return }
-        let selectedDates = selection.selectedDates
-        let days = AppExportQueries.days(in: export).filter { selectedDates.contains($0.date) }
-        let exportableDays = days.filter { !$0.paths.isEmpty && $0.paths.contains(where: { !$0.points.isEmpty }) }
-        guard !exportableDays.isEmpty else {
+    private func prepareExport(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        recordedTracks: [RecordedTrack]
+    ) {
+        let exportDays = ExportSelectionContent.exportDays(
+            importedExport: session.content?.export,
+            selection: selection,
+            recordedTracks: recordedTracks
+        )
+        guard !exportDays.isEmpty else {
             exportError = "The current selection does not contain any routes with GPS points, so no GPX file can be created."
             return
         }
-        let gpxString = GPXBuilder.build(from: exportableDays)
-        let filename = ExportPresentation.suggestedFilename(selection: selection)
+        let gpxString = GPXBuilder.build(from: exportDays)
+        let filename = ExportPresentation.suggestedFilename(
+            selection: selection,
+            summaries: summaries,
+            recordedTracks: recordedTracks
+        )
         exportDocument = GPXDocument(content: gpxString, suggestedFilename: filename)
         isExporting = true
+    }
+
+    @ViewBuilder
+    private func selectionHeader(
+        title: String,
+        isAllSelected: Bool,
+        onSelectAll: @escaping () -> Void,
+        onDeselectAll: @escaping () -> Void
+    ) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Button(isAllSelected ? "Deselect All" : "Select All") {
+                if isAllSelected {
+                    onDeselectAll()
+                } else {
+                    onSelectAll()
+                }
+            }
+            .font(.subheadline)
+        }
+    }
+
+    private func selectionDetailText(snapshot: ExportSelectionSnapshot, routeCount: Int) -> String {
+        let dayPart = snapshot.selectedDayCount > 0
+            ? "\(snapshot.selectedDayCount) imported \(snapshot.selectedDayCount == 1 ? "day" : "days")"
+            : nil
+        let trackPart = snapshot.selectedRecordedTrackCount > 0
+            ? "\(snapshot.selectedRecordedTrackCount) saved \(snapshot.selectedRecordedTrackCount == 1 ? "track" : "tracks")"
+            : nil
+        let sourceParts = [dayPart, trackPart].compactMap { $0 }.joined(separator: " · ")
+        let routePart = "\(routeCount) \(routeCount == 1 ? "route" : "routes")"
+        return sourceParts.isEmpty ? routePart : "\(sourceParts) · \(routePart)"
+    }
+
+    private func savedTrackTitle(_ track: RecordedTrack) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: track.startedAt)
     }
 }
 

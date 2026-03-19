@@ -109,6 +109,18 @@ public struct Day: Codable {
     public let visits: [Visit]
     public let activities: [Activity]
     public let paths: [Path]
+
+    public init(
+        date: String,
+        visits: [Visit],
+        activities: [Activity],
+        paths: [Path]
+    ) {
+        self.date = date
+        self.visits = visits
+        self.activities = activities
+        self.paths = paths
+    }
 }
 
 public struct Visit: Codable {
@@ -183,6 +195,24 @@ public struct Path: Codable {
         case points
         case flatCoordinates = "flat_coordinates"
     }
+
+    public init(
+        startTime: String?,
+        endTime: String?,
+        activityType: String?,
+        distanceM: Double?,
+        sourceType: String?,
+        points: [PathPoint],
+        flatCoordinates: [Double]?
+    ) {
+        self.startTime = startTime
+        self.endTime = endTime
+        self.activityType = activityType
+        self.distanceM = distanceM
+        self.sourceType = sourceType
+        self.points = points
+        self.flatCoordinates = flatCoordinates
+    }
 }
 
 public struct PathPoint: Codable {
@@ -196,6 +226,18 @@ public struct PathPoint: Codable {
         case lon
         case time
         case accuracyM = "accuracy_m"
+    }
+
+    public init(
+        lat: Double,
+        lon: Double,
+        time: String?,
+        accuracyM: Double?
+    ) {
+        self.lat = lat
+        self.lon = lon
+        self.time = time
+        self.accuracyM = accuracyM
     }
 }
 

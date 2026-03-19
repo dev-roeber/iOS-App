@@ -3,69 +3,109 @@ import LocationHistoryConsumer
 
 enum ExportReadiness: Equatable {
     case nothingSelected
-    case noRoutesSelected(selectedDayCount: Int)
-    case ready(selectedDayCount: Int, exportableDayCount: Int, routeCount: Int)
+    case noRoutesSelected(selectedSourceCount: Int)
+    case ready(
+        selectedSourceCount: Int,
+        exportableSourceCount: Int,
+        routeCount: Int,
+        selectedDayCount: Int,
+        selectedRecordedTrackCount: Int
+    )
 }
 
 enum ExportPresentation {
-    static func readiness(selection: ExportSelectionState, summaries: [DaySummary]) -> ExportReadiness {
-        let selected = selectedSummaries(selection: selection, summaries: summaries)
-        guard !selected.isEmpty else {
+    static func readiness(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        recordedTracks: [RecordedTrack]
+    ) -> ExportReadiness {
+        let snapshot = ExportSelectionContent.snapshot(
+            selection: selection,
+            summaries: summaries,
+            recordedTracks: recordedTracks
+        )
+
+        guard snapshot.selectedSourceCount > 0 else {
             return .nothingSelected
         }
 
-        let exportable = selected.filter { $0.pathCount > 0 }
-        let routeCount = exportable.reduce(0) { $0 + $1.pathCount }
-        guard !exportable.isEmpty else {
-            return .noRoutesSelected(selectedDayCount: selected.count)
+        guard snapshot.routeCount > 0 else {
+            return .noRoutesSelected(selectedSourceCount: snapshot.selectedSourceCount)
         }
 
         return .ready(
-            selectedDayCount: selected.count,
-            exportableDayCount: exportable.count,
-            routeCount: routeCount
+            selectedSourceCount: snapshot.selectedSourceCount,
+            exportableSourceCount: snapshot.exportableSourceCount,
+            routeCount: snapshot.routeCount,
+            selectedDayCount: snapshot.selectedDayCount,
+            selectedRecordedTrackCount: snapshot.selectedRecordedTrackCount
         )
     }
 
-    static func buttonTitle(selection: ExportSelectionState, summaries: [DaySummary], format: ExportFormat) -> String {
-        switch readiness(selection: selection, summaries: summaries) {
+    static func buttonTitle(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        recordedTracks: [RecordedTrack],
+        format: ExportFormat
+    ) -> String {
+        switch readiness(selection: selection, summaries: summaries, recordedTracks: recordedTracks) {
         case .nothingSelected:
-            return "Select days to export"
-        case let .noRoutesSelected(selectedDayCount):
-            return selectedDayCount == 1
-                ? "Selected day has no routes"
-                : "Selected days have no routes"
-        case let .ready(selectedDayCount, _, _):
-            return "Export \(selectedDayCount) \(selectedDayCount == 1 ? "day" : "days") as \(format.rawValue)"
+            return "Select history or tracks to export"
+        case let .noRoutesSelected(selectedSourceCount):
+            return selectedSourceCount == 1
+                ? "Selected item has no routes"
+                : "Selected items have no routes"
+        case let .ready(selectedSourceCount, _, _, _, _):
+            return "Export \(selectedSourceCount) \(selectedSourceCount == 1 ? "item" : "items") as \(format.rawValue)"
         }
     }
 
-    static func helperMessage(selection: ExportSelectionState, summaries: [DaySummary], format: ExportFormat) -> String {
-        switch readiness(selection: selection, summaries: summaries) {
+    static func helperMessage(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        recordedTracks: [RecordedTrack],
+        format: ExportFormat
+    ) -> String {
+        switch readiness(selection: selection, summaries: summaries, recordedTracks: recordedTracks) {
         case .nothingSelected:
-            return "Choose at least one day with routes to prepare a \(format.rawValue) file."
-        case let .noRoutesSelected(selectedDayCount):
-            return selectedDayCount == 1
-                ? "The selected day contains no routes with GPS points."
-                : "None of the selected days contain routes with GPS points."
-        case let .ready(selectedDayCount, exportableDayCount, routeCount):
-            if exportableDayCount < selectedDayCount {
-                return "\(exportableDayCount) of \(selectedDayCount) selected days contribute \(routeCount) route\(routeCount == 1 ? "" : "s"). Days without routes stay out of the GPX content."
+            return "Choose at least one imported day or saved track with routes to prepare a \(format.rawValue) file."
+        case let .noRoutesSelected(selectedSourceCount):
+            return selectedSourceCount == 1
+                ? "The selected item contains no route with usable GPS points."
+                : "None of the selected items contain routes with usable GPS points."
+        case let .ready(selectedSourceCount, exportableSourceCount, routeCount, _, _):
+            if exportableSourceCount < selectedSourceCount {
+                return "\(exportableSourceCount) of \(selectedSourceCount) selected items contribute \(routeCount) route\(routeCount == 1 ? "" : "s"). Items without routes stay out of the GPX content."
             }
             return "\(routeCount) route\(routeCount == 1 ? "" : "s") will be written to the \(format.rawValue) file."
         }
     }
 
-    static func suggestedFilename(selection: ExportSelectionState) -> String {
-        GPXBuilder.suggestedFilename(for: Array(selection.selectedDates))
+    static func suggestedFilename(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        recordedTracks: [RecordedTrack]
+    ) -> String {
+        GPXBuilder.suggestedFilename(
+            for: ExportSelectionContent.filenameDates(
+                selection: selection,
+                summaries: summaries,
+                recordedTracks: recordedTracks
+            )
+        )
     }
 
-    static func filenameMessage(selection: ExportSelectionState, format: ExportFormat) -> String {
-        let filename = suggestedFilename(selection: selection)
+    static func filenameMessage(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        recordedTracks: [RecordedTrack],
+        format: ExportFormat
+    ) -> String {
+        let filename = suggestedFilename(
+            selection: selection,
+            summaries: summaries,
+            recordedTracks: recordedTracks
+        )
         return "Suggested filename: \(filename) (\(format.fileExtension.uppercased()))."
-    }
-
-    private static func selectedSummaries(selection: ExportSelectionState, summaries: [DaySummary]) -> [DaySummary] {
-        summaries.filter { selection.isSelected($0.date) }
     }
 }

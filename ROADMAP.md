@@ -4,7 +4,7 @@
 
 ### Abgeschlossen
 Lokaler iPhone-Betrieb wurde zuletzt auf Apple-Hardware real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
-Lokale Produktweiterentwicklung: Phasen 19.10–19.40 abgeschlossen.
+Lokale Produktweiterentwicklung: Phasen 19.10–19.41 abgeschlossen.
 Die frueher als `20.1` und `20.2` gefuehrten lokalen Produktschritte werden ab diesem Stand logisch als `19.29` und `19.30` gefuehrt.
 
 ### Aktiver lokaler Fokus
@@ -14,10 +14,23 @@ Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. 
 
 ### Offene lokale Phasen
 
-- Phase 19.41 – Live-Tracks in Export integrieren
 - Phase 19.42 – Export-Vorschaukarte vor dem Dateiexport
 - Phase 19.43 – KML / weitere Exportformate schrittweise aktivieren
 - Phase 20 / 21 bleibt weiterhin bewusst geparkt
+
+### Phase 19.41 – Live-Tracks in Export integrieren
+
+**Datum:** 2026-03-19
+**Ziel:** Gespeicherte Live-Tracks im bestehenden Export-Flow als echte zweite Quelle neben importierten Tagen verfuegbar machen, ohne die GPX-/Datei-Architektur zu duplizieren.
+
+- [x] `ExportSelectionState` kann jetzt neben importierten Tagen auch Saved-Track-IDs selektieren
+- [x] Export-Screen zeigt jetzt getrennte Quellen fuer `Imported Days` und `Saved Tracks`
+- [x] leerer Export-Screen beruecksichtigt jetzt auch reine Live-Track-Nutzung ohne importierte History
+- [x] `ExportSelectionContent` kapselt die gemischte Auswahl, GPX-Quellenkonvertierung und Dateinamendaten testbar
+- [x] gespeicherte Live-Tracks werden fuer den bestehenden GPX-Builder kontrolliert in exportierbare `Day`/`Path`-Strukturen ueberfuehrt statt XML doppelt zu erzeugen
+- [x] Export-Copy, Button-Titel, Dateinamenerwartung und Readiness behandeln jetzt gemischte Selektionen aus Tagen und Saved Tracks
+- [x] `swift test` jetzt 159/159 gruen
+- Bewusst nicht in diesem Schritt: Karten-Vorschau vor dem Export, KML/GeoJSON/CSV oder Hintergrundtracking
 
 ### Phase 19.40 – Compact Days Reselect / Current-Day Focus
 

@@ -157,7 +157,7 @@ public struct AppContentSplitView: View {
             .tag(2)
 
             NavigationStack {
-                AppExportView(session: $session)
+                AppExportView(session: $session, liveLocation: liveLocation)
                     .navigationTitle("Export")
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
@@ -615,7 +615,7 @@ public struct AppContentSplitView: View {
         content()
             .sheet(isPresented: $isShowingExportSheet) {
                 NavigationStack {
-                    AppExportView(session: $session)
+                    AppExportView(session: $session, liveLocation: liveLocation)
                         .environmentObject(preferences)
                         .navigationTitle("Export")
                         .toolbar {
