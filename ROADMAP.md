@@ -4,7 +4,7 @@
 
 ### Abgeschlossen
 Lokaler iPhone-Betrieb wurde zuletzt auf Apple-Hardware real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
-Lokale Produktweiterentwicklung: Phasen 19.10–19.42 abgeschlossen.
+Lokale Produktweiterentwicklung: Phasen 19.10–19.43 abgeschlossen.
 Die frueher als `20.1` und `20.2` gefuehrten lokalen Produktschritte werden ab diesem Stand logisch als `19.29` und `19.30` gefuehrt.
 
 ### Aktiver lokaler Fokus
@@ -14,8 +14,20 @@ Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. 
 
 ### Offene lokale Phasen
 
-- Phase 19.43 – KML / weitere Exportformate schrittweise aktivieren
 - Phase 20 / 21 bleibt weiterhin bewusst geparkt
+
+### Phase 19.43 – KML / weitere Exportformate schrittweise aktivieren
+
+**Datum:** 2026-03-19
+**Ziel:** Den bisherigen GPX-only-Export produktseitig zu einem echten Mehrformat-Flow erweitern, beginnend mit `KML`.
+
+- [x] `ExportFormat` bietet jetzt neben `GPX` auch `KML` als echten Produktfall statt nur als Architektur-Placeholder
+- [x] `KMLBuilder` erzeugt aus denselben exportierbaren Day-/Track-Daten eine einfache KML-LineString-Datei
+- [x] File-Export nutzt jetzt einen formatneutralen `ExportDocument` statt eines GPX-spezifischen Dokumenttyps
+- [x] Dateinamencopy, Dateiendung und Fehlertexte folgen jetzt dem wirklich ausgewaehlten Format
+- [x] bestehende Export-Selektion, Vorschau und Readiness bleiben formatuebergreifend gleich und oeffnen keinen zweiten UI-Pfad
+- [x] `swift test` jetzt 164/164 gruen
+- Bewusst nicht in diesem Schritt: `GeoJSON`, `CSV`, `KMZ`, KML-Styling-Details oder Waypoints
 
 ### Phase 19.42 – Export-Vorschaukarte vor dem Dateiexport
 

@@ -130,6 +130,31 @@ final class ExportPresentationTests: XCTestCase {
         )
     }
 
+    func testFilenameMessageUsesSelectedExportFormatExtension() {
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+        let summaries = makeSummaries(daysJSON: """
+        {
+          "date":"2024-05-01",
+          "visits":[],
+          "activities":[],
+          "paths":[
+            {"activity_type":"WALKING","distance_m":700,"points":[{"lat":48.0,"lon":11.0},{"lat":48.001,"lon":11.001}]}
+          ]
+        }
+        """)
+
+        XCTAssertEqual(
+            ExportPresentation.filenameMessage(
+                selection: selection,
+                summaries: summaries,
+                recordedTracks: [],
+                format: .kml
+            ),
+            "Suggested filename: lh2gpx-2024-05-01.kml (KML)."
+        )
+    }
+
     private func makeSummaries(daysJSON: String) -> [DaySummary] {
         let json = """
         {

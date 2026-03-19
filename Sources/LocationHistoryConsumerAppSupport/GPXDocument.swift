@@ -8,14 +8,18 @@ extension UTType {
     static var gpx: UTType {
         UTType(filenameExtension: "gpx") ?? .xml
     }
+
+    static var kml: UTType {
+        UTType(filenameExtension: "kml") ?? .xml
+    }
 }
 
-/// A write-only `FileDocument` wrapper for GPX content.
+/// A write-only `FileDocument` wrapper for XML-based export content.
 ///
 /// Used with SwiftUI's `.fileExporter` modifier to let the user save or share
-/// a GPX file via the system share sheet / Files app.
-struct GPXDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.gpx] }
+/// an export file via the system share sheet / Files app.
+struct ExportDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.gpx, .kml] }
 
     let content: String
     let suggestedFilename: String
@@ -32,7 +36,7 @@ struct GPXDocument: FileDocument {
             throw CocoaError(.fileReadCorruptFile)
         }
         self.content = text
-        self.suggestedFilename = "import.gpx"
+        self.suggestedFilename = "import.xml"
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {

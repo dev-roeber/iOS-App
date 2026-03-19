@@ -75,7 +75,7 @@ enum ExportPresentation {
                 : "None of the selected items contain routes with usable GPS points."
         case let .ready(selectedSourceCount, exportableSourceCount, routeCount, _, _):
             if exportableSourceCount < selectedSourceCount {
-                return "\(exportableSourceCount) of \(selectedSourceCount) selected items contribute \(routeCount) route\(routeCount == 1 ? "" : "s"). Items without routes stay out of the GPX content."
+                return "\(exportableSourceCount) of \(selectedSourceCount) selected items contribute \(routeCount) route\(routeCount == 1 ? "" : "s"). Items without routes stay out of the \(format.rawValue) content."
             }
             return "\(routeCount) route\(routeCount == 1 ? "" : "s") will be written to the \(format.rawValue) file."
         }
@@ -84,15 +84,25 @@ enum ExportPresentation {
     static func suggestedFilename(
         selection: ExportSelectionState,
         summaries: [DaySummary],
-        recordedTracks: [RecordedTrack]
+        recordedTracks: [RecordedTrack],
+        format: ExportFormat
     ) -> String {
-        GPXBuilder.suggestedFilename(
-            for: ExportSelectionContent.filenameDates(
-                selection: selection,
-                summaries: summaries,
-                recordedTracks: recordedTracks
-            )
+        let sortedDates = ExportSelectionContent.filenameDates(
+            selection: selection,
+            summaries: summaries,
+            recordedTracks: recordedTracks
         )
+        switch sortedDates.count {
+        case 0:
+            return "lh2gpx-export.\(format.fileExtension)"
+        case 1:
+            return "lh2gpx-\(sortedDates[0]).\(format.fileExtension)"
+        default:
+            guard let first = sortedDates.first, let last = sortedDates.last else {
+                return "lh2gpx-export.\(format.fileExtension)"
+            }
+            return "lh2gpx-\(first)_to_\(last).\(format.fileExtension)"
+        }
     }
 
     static func filenameMessage(
@@ -104,7 +114,8 @@ enum ExportPresentation {
         let filename = suggestedFilename(
             selection: selection,
             summaries: summaries,
-            recordedTracks: recordedTracks
+            recordedTracks: recordedTracks,
+            format: format
         )
         return "Suggested filename: \(filename) (\(format.fileExtension.uppercased()))."
     }

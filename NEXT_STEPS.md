@@ -4,10 +4,14 @@ Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
 1. **Phase 20 / 21 – bewusst nicht jetzt**
    - keine Apple-/ASC-/TestFlight-/Release-Arbeit
-2. **Phase 19.43 – Weitere Exportformate**
-   - `KML` als naechstes reales Zusatzformat aktivieren
-   - Formatwahl, Dateinamencopy und Export-Guard nicht nur architektonisch, sondern produktseitig vollenden
-3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+2. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+
+**Abgeschlossene Phase 19.43 (2026-03-19):**
+- Export-Flow unterstuetzt jetzt `KML` als zweites echtes Dateiformat neben `GPX`
+- `KMLBuilder` erzeugt KML-LineStrings aus denselben exportierbaren Quellen wie GPX
+- FileExporter, Dateinamencopy und Fehlertexte folgen jetzt dem ausgewaehlten Format
+- bestehende Export-Selektion und Vorschau bleiben formatuebergreifend gleich
+- 3 neue Tests; `swift test` gruen: `164/164`
 
 **Abgeschlossene Phase 19.42 (2026-03-19):**
 - Export-Screen zeigt jetzt eine `Route Preview`-Karte vor der eigentlichen Quellenliste

@@ -10,17 +10,37 @@ import UniformTypeIdentifiers
 /// Supported export formats. Architecture is ready for additional cases.
 public enum ExportFormat: String, CaseIterable, Identifiable {
     case gpx = "GPX"
+    case kml = "KML"
 
     public var id: String { rawValue }
     public var fileExtension: String {
-        switch self { case .gpx: return "gpx" }
+        switch self {
+        case .gpx: return "gpx"
+        case .kml: return "kml"
+        }
     }
     public var description: String {
-        switch self { case .gpx: return "GPS Exchange Format – compatible with most navigation and mapping apps." }
+        switch self {
+        case .gpx:
+            return "GPS Exchange Format – compatible with most navigation and mapping apps."
+        case .kml:
+            return "Keyhole Markup Language – useful for Google Earth and map viewers that prefer KML."
+        }
     }
     public var systemImage: String {
-        switch self { case .gpx: return "location.north.line.fill" }
+        switch self {
+        case .gpx: return "location.north.line.fill"
+        case .kml: return "globe.americas.fill"
+        }
     }
+    #if canImport(UniformTypeIdentifiers)
+    public var contentType: UTType {
+        switch self {
+        case .gpx: return .gpx
+        case .kml: return .kml
+        }
+    }
+    #endif
 }
 
 // MARK: - Export View
@@ -35,7 +55,7 @@ public struct AppExportView: View {
     @ObservedObject private var liveLocation: LiveLocationFeatureModel
     @State private var selectedFormat: ExportFormat = .gpx
     @State private var isExporting = false
-    @State private var exportDocument: GPXDocument?
+    @State private var exportDocument: ExportDocument?
     @State private var exportError: String?
 
     public init(session: Binding<AppSessionState>, liveLocation: LiveLocationFeatureModel) {
@@ -137,8 +157,8 @@ public struct AppExportView: View {
         .fileExporter(
             isPresented: $isExporting,
             document: exportDocument,
-            contentType: .gpx,
-            defaultFilename: exportDocument?.suggestedFilename ?? "lh2gpx-export.gpx"
+            contentType: selectedFormat.contentType,
+            defaultFilename: exportDocument?.suggestedFilename ?? "lh2gpx-export.\(selectedFormat.fileExtension)"
         ) { result in
             if case let .failure(error) = result {
                 exportError = error.localizedDescription
@@ -405,7 +425,7 @@ public struct AppExportView: View {
             case .nothingSelected:
                 Text("No export items selected yet.")
                     .font(.subheadline)
-                Text("Pick one or more imported days or saved tracks below. GPX export includes route tracks only.")
+                Text("Pick one or more imported days or saved tracks below. Export writes route geometry only.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case let .noRoutesSelected(selectedSourceCount):
@@ -439,16 +459,23 @@ public struct AppExportView: View {
             recordedTracks: recordedTracks
         )
         guard !exportDays.isEmpty else {
-            exportError = "The current selection does not contain any routes with GPS points, so no GPX file can be created."
+            exportError = "The current selection does not contain any routes with GPS points, so no \(selectedFormat.rawValue) file can be created."
             return
         }
-        let gpxString = GPXBuilder.build(from: exportDays)
+        let exportString: String
+        switch selectedFormat {
+        case .gpx:
+            exportString = GPXBuilder.build(from: exportDays)
+        case .kml:
+            exportString = KMLBuilder.build(from: exportDays)
+        }
         let filename = ExportPresentation.suggestedFilename(
             selection: selection,
             summaries: summaries,
-            recordedTracks: recordedTracks
+            recordedTracks: recordedTracks,
+            format: selectedFormat
         )
-        exportDocument = GPXDocument(content: gpxString, suggestedFilename: filename)
+        exportDocument = ExportDocument(content: exportString, suggestedFilename: filename)
         isExporting = true
     }
 
