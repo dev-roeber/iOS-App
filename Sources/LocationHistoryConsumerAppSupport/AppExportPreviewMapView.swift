@@ -25,7 +25,7 @@ struct AppExportPreviewMapView: View {
                     MapPolyline(coordinates: path.coordinates.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
                     })
-                    .stroke(polylineColor(for: path.activityType), lineWidth: 4)
+                    .stroke(MapPalette.routeColor(for: path.activityType), lineWidth: 4)
                 }
             }
             .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
@@ -43,21 +43,16 @@ struct AppExportPreviewMapView: View {
                 .padding(8)
                 .accessibilityLabel(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map")
             }
+            .accessibilityLabel(mapAccessibilityLabel)
         }
     }
 
-    private func polylineColor(for activityType: String?) -> Color {
-        switch (activityType ?? "").uppercased() {
-        case "WALKING": return .green
-        case "CYCLING": return .teal
-        case "RUNNING": return .red
-        case "IN PASSENGER VEHICLE": return .gray
-        case "IN BUS": return .orange
-        case "IN TRAIN", "IN SUBWAY": return .purple
-        case "FLYING": return .blue
-        case "LIVE TRACK": return .accentColor
-        default: return .blue
+    private var mapAccessibilityLabel: String {
+        let routes = previewData.pathOverlays.count
+        let points = previewData.pathOverlays.reduce(0) { partialResult, overlay in
+            partialResult + overlay.coordinates.count
         }
+        return "Preview map with \(routes) \(routes == 1 ? "route" : "routes") and \(points) plotted points"
     }
 }
 #endif

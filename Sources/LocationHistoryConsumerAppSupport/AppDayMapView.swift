@@ -39,8 +39,8 @@ public struct AppDayMapView: View {
         switch (visits, paths) {
         case (0, 0): return "Map"
         case (_, 0): return "Map with \(visits) \(visits == 1 ? "visit" : "visits")"
-        case (0, _): return "Map with \(paths) \(paths == 1 ? "path" : "paths")"
-        default: return "Map with \(visits) \(visits == 1 ? "visit" : "visits") and \(paths) \(paths == 1 ? "path" : "paths")"
+        case (0, _): return "Map with \(paths) \(paths == 1 ? "route" : "routes")"
+        default: return "Map with \(visits) \(visits == 1 ? "visit" : "visits") and \(paths) \(paths == 1 ? "route" : "routes")"
         }
     }
 
@@ -60,48 +60,21 @@ public struct AppDayMapView: View {
                 MapPolyline(coordinates: path.coordinates.map {
                     CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
                 })
-                .stroke(polylineColor(for: path.activityType), lineWidth: 3)
+                .stroke(MapPalette.routeColor(for: path.activityType), lineWidth: 3)
             }
 
             ForEach(Array(mapData.visitAnnotations.enumerated()), id: \.offset) { _, visit in
                 Marker(
-                    visit.semanticType ?? "Visit",
+                    displayNameForVisitType(visit.semanticType, default: "Visit"),
                     coordinate: CLLocationCoordinate2D(
                         latitude: visit.coordinate.lat,
                         longitude: visit.coordinate.lon
                     )
                 )
-                .tint(visitMarkerColor(for: visit.semanticType))
+                .tint(MapPalette.visitColor(for: visit.semanticType))
             }
         }
         .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
-    }
-
-    private func visitMarkerColor(for semanticType: String?) -> Color {
-        switch (semanticType ?? "").uppercased() {
-        case "HOME": return .blue
-        case "WORK": return .indigo
-        case "CAFE", "RESTAURANT", "FOOD": return .orange
-        case "PARK", "NATURE", "GARDEN": return .green
-        case "LEISURE", "GYM", "SPORT", "FITNESS": return .teal
-        case "EVENT", "CONCERT": return .yellow
-        case "STAY", "HOTEL", "ACCOMMODATION": return .mint
-        default: return .red
-        }
-    }
-
-    private func polylineColor(for activityType: String?) -> Color {
-        switch (activityType ?? "").uppercased() {
-        case "WALKING": return .green
-        case "CYCLING": return .teal
-        case "RUNNING": return .red
-        case "IN PASSENGER VEHICLE": return .gray
-        case "IN BUS": return .orange
-        case "IN TRAIN": return .purple
-        case "IN SUBWAY": return .purple
-        case "FLYING": return .blue
-        default: return .blue
-        }
     }
 }
 #endif

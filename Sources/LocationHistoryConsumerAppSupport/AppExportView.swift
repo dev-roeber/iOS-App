@@ -372,20 +372,19 @@ public struct AppExportView: View {
 
     @ViewBuilder
     private func exportPreviewCard(previewData: ExportPreviewData) -> some View {
+        let presentation = MapPresentation.exportPreview(previewData, unit: preferences.distanceUnit)
+
         VStack(alignment: .leading, spacing: 10) {
             Label("Route Preview", systemImage: "map")
                 .font(.subheadline.weight(.semibold))
 
             if previewData.hasMapContent {
-                Text(previewSummary(previewData))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
                 #if canImport(MapKit)
                 if #available(iOS 17.0, macOS 14.0, *) {
                     AppExportPreviewMapView(previewData: previewData)
                 }
                 #endif
+                MapSectionSupplementaryView(presentation: presentation)
             } else if previewData.selectedSourceCount == 0 {
                 Text("Select imported days or saved tracks to preview the route before exporting.")
                     .font(.caption)
@@ -510,18 +509,6 @@ public struct AppExportView: View {
         let sourceParts = [dayPart, trackPart].compactMap { $0 }.joined(separator: " · ")
         let routePart = "\(routeCount) \(routeCount == 1 ? "route" : "routes")"
         return sourceParts.isEmpty ? routePart : "\(sourceParts) · \(routePart)"
-    }
-
-    private func previewSummary(_ previewData: ExportPreviewData) -> String {
-        let importedPart = previewData.importedDayCount > 0
-            ? "\(previewData.importedDayCount) imported \(previewData.importedDayCount == 1 ? "day" : "days")"
-            : nil
-        let trackPart = previewData.savedTrackCount > 0
-            ? "\(previewData.savedTrackCount) saved \(previewData.savedTrackCount == 1 ? "track" : "tracks")"
-            : nil
-        let sourceSummary = [importedPart, trackPart].compactMap { $0 }.joined(separator: " · ")
-        let routeSummary = "\(previewData.pathOverlays.count) \(previewData.pathOverlays.count == 1 ? "route" : "routes") in preview"
-        return sourceSummary.isEmpty ? routeSummary : "\(sourceSummary) · \(routeSummary)"
     }
 
     private func savedTrackTitle(_ track: RecordedTrack) -> String {
