@@ -100,6 +100,42 @@ final class ExportPresentationTests: XCTestCase {
         )
     }
 
+    func testReadinessCountsOnlyRoutesWithUsablePoints() {
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-04")
+        let summaries = makeSummaries(daysJSON: """
+        {
+          "date":"2024-05-04",
+          "visits":[],
+          "activities":[],
+          "paths":[
+            {"activity_type":"WALKING","distance_m":700,"points":[{"lat":48.0,"lon":11.0},{"lat":48.001,"lon":11.001}]},
+            {"activity_type":"WALKING","distance_m":0,"points":[]}
+          ]
+        }
+        """)
+
+        XCTAssertEqual(
+            ExportPresentation.readiness(selection: selection, summaries: summaries, recordedTracks: []),
+            .ready(
+                selectedSourceCount: 1,
+                exportableSourceCount: 1,
+                routeCount: 1,
+                selectedDayCount: 1,
+                selectedRecordedTrackCount: 0
+            )
+        )
+        XCTAssertEqual(
+            ExportPresentation.helperMessage(
+                selection: selection,
+                summaries: summaries,
+                recordedTracks: [],
+                format: .gpx
+            ),
+            "1 route will be written to the GPX file."
+        )
+    }
+
     func testReadinessTreatsSavedTrackAsExportableRouteSource() {
         var selection = ExportSelectionState()
         let recordedTrack = makeRecordedTrack(dayKey: "2024-05-03")

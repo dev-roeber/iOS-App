@@ -389,7 +389,7 @@ public struct AppContentSplitView: View {
                             icon: "flame.fill",
                             color: .orange,
                             onTap: {
-                                openHighlightedDay(busiest.date)
+                                openDayFromInsights(busiest.date)
                             }
                         )
                     }
@@ -401,7 +401,7 @@ public struct AppContentSplitView: View {
                             icon: "mappin.circle.fill",
                             color: .blue,
                             onTap: {
-                                openHighlightedDay(visits.date)
+                                openDayFromInsights(visits.date)
                             }
                         )
                     }
@@ -413,7 +413,7 @@ public struct AppContentSplitView: View {
                             icon: "location.north.circle.fill",
                             color: .green,
                             onTap: {
-                                openHighlightedDay(routes.date)
+                                openDayFromInsights(routes.date)
                             }
                         )
                     }
@@ -425,7 +425,7 @@ public struct AppContentSplitView: View {
                             icon: "road.lanes",
                             color: .purple,
                             onTap: {
-                                openHighlightedDay(longest.date)
+                                openDayFromInsights(longest.date)
                             }
                         )
                     }
@@ -434,9 +434,16 @@ public struct AppContentSplitView: View {
         }
     }
 
-    private func openHighlightedDay(_ date: String) {
-        daysNavigationPath.append(date)
-        selectedTab = 1
+    private func openDayFromInsights(_ date: String) {
+        session.selectDayForDisplay(date)
+        guard session.selectedDate == date else { return }
+
+        if horizontalSizeClass == .compact {
+            daySearchText = ""
+            daysNavigationPath = NavigationPath()
+            daysNavigationPath.append(date)
+            selectedTab = 1
+        }
     }
 
     @ViewBuilder
@@ -543,8 +550,7 @@ public struct AppContentSplitView: View {
                 insights: insights,
                 daySummaries: session.daySummaries,
                 onDayTap: { date in
-                    daysNavigationPath.append(date)
-                    selectedTab = 1
+                    openDayFromInsights(date)
                 }
             )
         } else {

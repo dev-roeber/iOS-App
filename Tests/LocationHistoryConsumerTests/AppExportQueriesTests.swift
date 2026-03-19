@@ -32,9 +32,11 @@ final class AppExportQueriesTests: XCTestCase {
         XCTAssertEqual(summaries[0].visitCount, 1)
         XCTAssertEqual(summaries[1].activityCount, 1)
         XCTAssertEqual(summaries[1].pathCount, 1)
+        XCTAssertEqual(summaries[1].exportablePathCount, 1)
         XCTAssertEqual(summaries[1].totalPathPointCount, 3)
         XCTAssertEqual(summaries[1].totalPathDistanceM, 2410.0, accuracy: 0.0001)
         XCTAssertEqual(summaries[2].pathCount, 0)
+        XCTAssertEqual(summaries[2].exportablePathCount, 0)
     }
 
     func testSortsSummariesEvenWhenDecodedDaysAreNotInOrder() throws {

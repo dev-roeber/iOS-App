@@ -24,7 +24,7 @@ struct ExportSelectionSnapshot: Equatable {
     }
 
     var routeCount: Int {
-        exportableDaySummaries.reduce(0) { $0 + $1.pathCount } + exportableRecordedTracks.count
+        exportableDaySummaries.reduce(0) { $0 + $1.exportablePathCount } + exportableRecordedTracks.count
     }
 }
 
@@ -48,7 +48,7 @@ enum ExportSelectionContent {
         return ExportSelectionSnapshot(
             selectedDaySummaries: selectedDaySummaries,
             selectedRecordedTracks: selectedRecordedTracks,
-            exportableDaySummaries: selectedDaySummaries.filter { $0.pathCount > 0 },
+            exportableDaySummaries: selectedDaySummaries.filter { $0.exportablePathCount > 0 },
             exportableRecordedTracks: selectedRecordedTracks.filter { $0.points.count >= 2 }
         )
     }
