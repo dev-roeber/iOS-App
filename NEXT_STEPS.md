@@ -2,13 +2,16 @@
 
 Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
-1. **Phase 19.34 – Days List / Export-Koharenz**
-   - Export-Selektion in der Day-Liste visuell klarer priorisieren
-   - Such- und Leerzustaende nicht nur korrekt, sondern auch klar priorisiert darstellen
-2. **Phase 20 / 21 – bewusst nicht jetzt**
+1. **Phase 20 / 21 – bewusst nicht jetzt**
    - keine weiteren `20.x`-Folgearbeiten fuer Background-Location, Resume oder Recorded-Track-Export aktivieren
    - keine Apple-/ASC-/TestFlight-/Release-Arbeit
-3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+2. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+
+**Abgeschlossene Phase 19.34 (2026-03-19):**
+- Day-Liste zeigt jetzt einen expliziten Export-Statusblock statt die GPX-Selektion nur ueber kleine Row-Icons anzudeuten
+- compact und regular Layout spiegeln dieselbe Export-Selektion konsistent im Listenkontext
+- Export-markierte Tage tragen jetzt ein klares `Export`-Badge statt nur ein kleines Symbol
+- Such-Empty-State erklaert jetzt auch, wenn bereits markierte Export-Tage nach dem Leeren der Suche weiter vorhanden bleiben
 
 **Abgeschlossene Phase 19.33 (2026-03-19):**
 - Overview fuehrt jetzt wieder mit Import-Status und aktiven Export-Filtern statt lokale Tools frueh zu vermischen

@@ -69,8 +69,11 @@ Present:
 - sorted day list derived from export days
 - month grouping when multiple months are present
 - compact search by date string
+- list-level export-selection summary card in compact and regular day lists
 - day rows show weekday, formatted date, visit/activity/route counts and optional distance
+- export-marked days carry a visible `Export` badge
 - no-content days stay visible in the list, but show a dedicated `No recorded entries` hint
+- search empty state explains when selected export days still remain after clearing the query
 - no-content days are not treated as normal detail targets in compact or regular navigation
 - compact list can show highlight icons for busiest/longest day
 - day rows support export-selection badge state in grouped and ungrouped layouts

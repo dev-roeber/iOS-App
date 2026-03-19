@@ -12,11 +12,22 @@ UI-/UX-/Informationsarchitektur fuer iPhone wird erneut priorisiert. Weitere Pro
 Phase 20 bleibt wieder ausschliesslich fuer Apple-/ASC-/TestFlight-/externe Distribution geparkt. Export- und Live-Recording-Unterbau bleiben vorhanden, sind aber bewusst nicht der naechste Fokus.
 Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt unberuehrt.
 
-### Offene lokale Phasen 19.34
+### Offene lokale Phasen
 
-**Phase 19.34 – Days List / Export-Koharenz**
-- Day-List-Zustaende, Suchzustand und Export-Selektion visuell konsistent machen
-- Such-, Leer- und Exportzustand in eine klarere visuelle Prioritaet bringen
+- aktuell keine weiteren offenen 19.x-Produktphasen
+- Phase 20 / 21 bleibt weiterhin bewusst geparkt
+
+### Phase 19.34 – Days List / Export-Koharenz
+
+**Datum:** 2026-03-19
+**Ziel:** Day-Liste, Suchzustand und Export-Selektion so zusammenbringen, dass GPX-Markierungen nicht wie ein Nebeneffekt wirken und Such-Empty-States die Selektion nicht verschweigen.
+
+- [x] Day-Liste fuehrt jetzt mit einem kleinen Export-Statusblock statt die GPX-Selektion nur in Zeilen-Icons zu verstecken
+- [x] compact und regular Layout zeigen dieselbe Export-Selektion konsistent im Listenkontext
+- [x] exportmarkierte Tage tragen ein deutliches `Export`-Badge statt nur eines kleinen Symbols
+- [x] Such-Empty-State nennt jetzt weiter vorhandene Export-Markierungen, wenn die Suche gerade keine Tage trifft
+- [x] `DayListPresentation` kapselt Export-/Search-Copy testbar
+- Bewusst nicht in diesem Schritt: neue Suchfilter, Massenaktionen direkt in der Day-Liste oder neue Exportformate
 
 ### Phase 19.33 – Overview-Informationsarchitektur / Primaeraktionen
 

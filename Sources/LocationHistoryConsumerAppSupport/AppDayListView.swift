@@ -19,9 +19,13 @@ struct AppDayRow: View {
                 Spacer()
                 HStack(spacing: 4) {
                     if isSelectedForExport {
-                        Image(systemName: "square.and.arrow.up.circle.fill")
-                            .font(.caption2)
-                            .foregroundColor(.accentColor)
+                        Label(DayListPresentation.exportBadgeTitle, systemImage: "square.and.arrow.up.circle.fill")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.accentColor.opacity(0.12))
+                            .clipShape(Capsule())
                     }
                     ForEach(highlightIcons, id: \.self) { icon in
                         Image(systemName: icon)
@@ -62,10 +66,19 @@ struct AppDayRow: View {
 public struct AppDayListView: View {
     let summaries: [DaySummary]
     @Binding var selectedDate: String?
+    let exportSelection: ExportSelectionState
+    var onOpenExport: (() -> Void)? = nil
 
-    public init(summaries: [DaySummary], selectedDate: Binding<String?>) {
+    public init(
+        summaries: [DaySummary],
+        selectedDate: Binding<String?>,
+        exportSelection: ExportSelectionState = ExportSelectionState(),
+        onOpenExport: (() -> Void)? = nil
+    ) {
         self.summaries = summaries
         self._selectedDate = selectedDate
+        self.exportSelection = exportSelection
+        self.onOpenExport = onOpenExport
     }
 
     public var body: some View {
@@ -73,20 +86,35 @@ public struct AppDayListView: View {
             AppDayListEmptyView()
         } else {
             let groups = groupByMonth(summaries)
-            if groups.count == 1 {
-                List(summaries, id: \.date, selection: $selectedDate) { summary in
-                    AppDayRow(summary: summary)
+            List(selection: $selectedDate) {
+                Section {
+                    DayListExportSelectionCard(
+                        selectionCount: exportSelection.count,
+                        onOpenExport: onOpenExport
+                    )
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowSeparator(.hidden)
+                }
+
+                if groups.count == 1 {
+                    ForEach(summaries, id: \.date) { summary in
+                        AppDayRow(
+                            summary: summary,
+                            isSelectedForExport: exportSelection.isSelected(summary.date)
+                        )
                         .tag(summary.date)
                         .disabled(!summary.hasContent)
-                }
-            } else {
-                List(selection: $selectedDate) {
+                    }
+                } else {
                     ForEach(groups) { group in
                         Section(group.title) {
                             ForEach(group.summaries, id: \.date) { summary in
-                                AppDayRow(summary: summary)
-                                    .tag(summary.date)
-                                    .disabled(!summary.hasContent)
+                                AppDayRow(
+                                    summary: summary,
+                                    isSelectedForExport: exportSelection.isSelected(summary.date)
+                                )
+                                .tag(summary.date)
+                                .disabled(!summary.hasContent)
                             }
                         }
                     }
@@ -115,6 +143,56 @@ struct AppDayListEmptyView: View {
         .accessibilityElement(children: .combine)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
+    }
+}
+
+struct AppDaySearchEmptyView: View {
+    let query: String
+    let exportSelectionCount: Int
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "magnifyingglass")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text("No Results")
+                .font(.headline)
+            Text(DayListPresentation.searchEmptyMessage(query: query, exportSelectionCount: exportSelectionCount))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(24)
+    }
+}
+
+struct DayListExportSelectionCard: View {
+    let selectionCount: Int
+    var onOpenExport: (() -> Void)? = nil
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Label(DayListPresentation.exportSelectionTitle(count: selectionCount), systemImage: "square.and.arrow.up")
+                    .font(.subheadline.weight(.semibold))
+                Text(DayListPresentation.exportSelectionMessage(count: selectionCount))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if let onOpenExport {
+                Button(DayListPresentation.exportButtonTitle, action: onOpenExport)
+                    .buttonStyle(.bordered)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.accentColor.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

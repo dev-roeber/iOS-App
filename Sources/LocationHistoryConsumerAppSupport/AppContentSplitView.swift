@@ -159,6 +159,15 @@ public struct AppContentSplitView: View {
         let summaries = filteredDaySummaries
         let groups = groupByMonth(summaries)
         return List {
+            Section {
+                DayListExportSelectionCard(
+                    selectionCount: session.exportSelection.count,
+                    onOpenExport: { selectedTab = 3 }
+                )
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .listRowSeparator(.hidden)
+            }
+
             if groups.count == 1 {
                 ForEach(groups[0].summaries, id: \.date) { summary in
                     if summary.hasContent {
@@ -189,20 +198,10 @@ public struct AppContentSplitView: View {
             if session.daySummaries.isEmpty {
                 AppDayListEmptyView()
             } else if summaries.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.largeTitle)
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                    Text("No Results")
-                        .font(.headline)
-                    Text("No days match \"\(daySearchText)\".")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(24)
+                AppDaySearchEmptyView(
+                    query: daySearchText,
+                    exportSelectionCount: session.exportSelection.count
+                )
             }
         }
     }
@@ -216,7 +215,9 @@ public struct AppContentSplitView: View {
                 selectedDate: Binding(
                     get: { session.selectedDate },
                     set: { session.selectDayForDisplay($0) }
-                )
+                ),
+                exportSelection: session.exportSelection,
+                onOpenExport: { isShowingExportSheet = true }
             )
             .navigationTitle("Days")
         } detail: {

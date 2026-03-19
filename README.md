@@ -153,6 +153,8 @@ Die Demo-Shell ist nur ein lokaler Harness fuer die Query-Schicht:
 Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - adaptives Layout: iPhone nutzt `TabView` (`Overview`, `Days`, `Insights`, `Export`), regular width nutzt `NavigationSplitView` mit Day-Liste und Detail-Pane
 - no-content-Tage bleiben in `Days` sichtbar, werden aber nicht mehr wie normale Detailziele behandelt
+- Day-Liste fuehrt jetzt mit einem kleinen Export-Statusblock; exportmarkierte Tage tragen ein klares `Export`-Badge
+- Such-Empty-States in `Days` verschweigen vorhandene GPX-Markierungen nicht mehr
 - Overview-Dashboard fuehrt mit Import-Status, optionalen Export-Filtern und einem kompakten `Go To`-Block fuer `Days`, `Insights` und `Export`
 - Overview-Dashboard mit klar als `Imported History` gerahmtem Statistik-Grid (Days, Visits, Activities, Paths)
 - Day-Detail mit strukturierten Sections, Cards und Quick-Stats
