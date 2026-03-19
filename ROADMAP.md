@@ -4,7 +4,7 @@
 
 ### Abgeschlossen
 Lokaler iPhone-Betrieb wurde zuletzt auf Apple-Hardware real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
-Lokale Produktweiterentwicklung: Phasen 19.10–19.41 abgeschlossen.
+Lokale Produktweiterentwicklung: Phasen 19.10–19.42 abgeschlossen.
 Die frueher als `20.1` und `20.2` gefuehrten lokalen Produktschritte werden ab diesem Stand logisch als `19.29` und `19.30` gefuehrt.
 
 ### Aktiver lokaler Fokus
@@ -14,9 +14,22 @@ Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. 
 
 ### Offene lokale Phasen
 
-- Phase 19.42 – Export-Vorschaukarte vor dem Dateiexport
 - Phase 19.43 – KML / weitere Exportformate schrittweise aktivieren
 - Phase 20 / 21 bleibt weiterhin bewusst geparkt
+
+### Phase 19.42 – Export-Vorschaukarte vor dem Dateiexport
+
+**Datum:** 2026-03-19
+**Ziel:** Vor dem eigentlichen Dateiexport einen sichtbaren Karten-Aha-Moment schaffen, der nur die wirklich exportierbare Routen-Geometrie zeigt.
+
+- [x] Export-Screen zeigt jetzt eine eigene `Route Preview`-Karte direkt vor der Quellenliste
+- [x] Vorschau basiert auf denselben exportierbaren Daten wie die GPX-Datei und zeigt daher nur wirkliche Routen statt beliebiger Day-Map-Inhalte
+- [x] gemischte Selektionen aus importierten Tagen und Saved Tracks werden gemeinsam in einer Vorschau gerahmt
+- [x] leere oder route-lose Selektionen erklaeren explizit, warum noch keine Karte angezeigt wird
+- [x] `ExportPreviewDataBuilder` kapselt Overlay- und Region-Berechnung testbar
+- [x] Core-Map-Werttypen (`DayMapRegion`, `DayMapPathOverlay`, `DayMapData`) haben jetzt saubere `public init`s fuer Wiederverwendung ausserhalb des Query-Layers
+- [x] `swift test` jetzt 161/161 gruen
+- Bewusst nicht in diesem Schritt: interaktive Day-/Track-Filter auf der Karte, KML-Layer, Waypoints oder Export-Split-Optionen
 
 ### Phase 19.41 – Live-Tracks in Export integrieren
 

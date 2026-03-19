@@ -60,8 +60,17 @@ public struct AppExportView: View {
     @ViewBuilder
     private func exportContent(summaries: [DaySummary], recordedTracks: [RecordedTrack]) -> some View {
         let selection = session.exportSelection
+        let previewData = ExportPreviewDataBuilder.previewData(
+            importedExport: session.content?.export,
+            selection: selection,
+            recordedTracks: recordedTracks
+        )
         VStack(spacing: 0) {
             exportStatusCard(selection: selection, summaries: summaries, recordedTracks: recordedTracks)
+                .padding(.horizontal)
+                .padding(.top, 12)
+
+            exportPreviewCard(previewData: previewData)
                 .padding(.horizontal)
                 .padding(.top, 12)
 
@@ -342,6 +351,38 @@ public struct AppExportView: View {
     // MARK: - Helpers
 
     @ViewBuilder
+    private func exportPreviewCard(previewData: ExportPreviewData) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Route Preview", systemImage: "map")
+                .font(.subheadline.weight(.semibold))
+
+            if previewData.hasMapContent {
+                Text(previewSummary(previewData))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                #if canImport(MapKit)
+                if #available(iOS 17.0, macOS 14.0, *) {
+                    AppExportPreviewMapView(previewData: previewData)
+                }
+                #endif
+            } else if previewData.selectedSourceCount == 0 {
+                Text("Select imported days or saved tracks to preview the route before exporting.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("The current selection has no exportable route geometry yet, so there is nothing to preview on the map.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.secondary.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    @ViewBuilder
     private func exportStatusCard(
         selection: ExportSelectionState,
         summaries: [DaySummary],
@@ -442,6 +483,18 @@ public struct AppExportView: View {
         let sourceParts = [dayPart, trackPart].compactMap { $0 }.joined(separator: " · ")
         let routePart = "\(routeCount) \(routeCount == 1 ? "route" : "routes")"
         return sourceParts.isEmpty ? routePart : "\(sourceParts) · \(routePart)"
+    }
+
+    private func previewSummary(_ previewData: ExportPreviewData) -> String {
+        let importedPart = previewData.importedDayCount > 0
+            ? "\(previewData.importedDayCount) imported \(previewData.importedDayCount == 1 ? "day" : "days")"
+            : nil
+        let trackPart = previewData.savedTrackCount > 0
+            ? "\(previewData.savedTrackCount) saved \(previewData.savedTrackCount == 1 ? "track" : "tracks")"
+            : nil
+        let sourceSummary = [importedPart, trackPart].compactMap { $0 }.joined(separator: " · ")
+        let routeSummary = "\(previewData.pathOverlays.count) \(previewData.pathOverlays.count == 1 ? "route" : "routes") in preview"
+        return sourceSummary.isEmpty ? routeSummary : "\(sourceSummary) · \(routeSummary)"
     }
 
     private func savedTrackTitle(_ track: RecordedTrack) -> String {

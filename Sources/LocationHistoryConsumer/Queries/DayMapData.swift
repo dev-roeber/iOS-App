@@ -15,6 +15,13 @@ public struct DayMapRegion: Equatable {
     public let centerLon: Double
     public let spanLat: Double
     public let spanLon: Double
+
+    public init(centerLat: Double, centerLon: Double, spanLat: Double, spanLon: Double) {
+        self.centerLat = centerLat
+        self.centerLon = centerLon
+        self.spanLat = spanLat
+        self.spanLon = spanLon
+    }
 }
 
 public struct DayMapVisitAnnotation: Equatable {
@@ -22,12 +29,30 @@ public struct DayMapVisitAnnotation: Equatable {
     public let semanticType: String?
     public let startTime: String?
     public let endTime: String?
+
+    public init(
+        coordinate: DayMapCoordinate,
+        semanticType: String?,
+        startTime: String?,
+        endTime: String?
+    ) {
+        self.coordinate = coordinate
+        self.semanticType = semanticType
+        self.startTime = startTime
+        self.endTime = endTime
+    }
 }
 
 public struct DayMapPathOverlay: Equatable {
     public let coordinates: [DayMapCoordinate]
     public let activityType: String?
     public let distanceM: Double?
+
+    public init(coordinates: [DayMapCoordinate], activityType: String?, distanceM: Double?) {
+        self.coordinates = coordinates
+        self.activityType = activityType
+        self.distanceM = distanceM
+    }
 }
 
 public struct DayMapData: Equatable {
@@ -35,6 +60,18 @@ public struct DayMapData: Equatable {
     public let pathOverlays: [DayMapPathOverlay]
     public let fittedRegion: DayMapRegion?
     public let hasMapContent: Bool
+
+    public init(
+        visitAnnotations: [DayMapVisitAnnotation],
+        pathOverlays: [DayMapPathOverlay],
+        fittedRegion: DayMapRegion?,
+        hasMapContent: Bool
+    ) {
+        self.visitAnnotations = visitAnnotations
+        self.pathOverlays = pathOverlays
+        self.fittedRegion = fittedRegion
+        self.hasMapContent = hasMapContent
+    }
 }
 
 public enum DayMapDataExtractor {

@@ -4,13 +4,17 @@ Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
 1. **Phase 20 / 21 – bewusst nicht jetzt**
    - keine Apple-/ASC-/TestFlight-/Release-Arbeit
-2. **Phase 19.42 – Export-Vorschaukarte**
-   - vor dem eigentlichen Dateiexport eine klare Karten-Vorschau fuer die aktuelle Selektion anbieten
-   - importierte Tage und spaeter Live-Tracks in der Vorschau nachvollziehbar rahmen
-3. **Phase 19.43 – Weitere Exportformate**
+2. **Phase 19.43 – Weitere Exportformate**
    - `KML` als naechstes reales Zusatzformat aktivieren
    - Formatwahl, Dateinamencopy und Export-Guard nicht nur architektonisch, sondern produktseitig vollenden
-4. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+3. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+
+**Abgeschlossene Phase 19.42 (2026-03-19):**
+- Export-Screen zeigt jetzt eine `Route Preview`-Karte vor der eigentlichen Quellenliste
+- die Vorschau nutzt nur wirklich exportierbare Routen-Geometrie aus importierten Tagen und Saved Tracks
+- leere und route-lose Selektionen erklaeren explizit, warum noch keine Karte erscheint
+- `ExportPreviewDataBuilder` kapselt Overlay-/Region-Logik testbar
+- 2 neue Tests; `swift test` gruen: `161/161`
 
 **Abgeschlossene Phase 19.41 (2026-03-19):**
 - Export unterstuetzt jetzt neben importierten Tagen auch `Saved Tracks` als echte zweite Quelle
