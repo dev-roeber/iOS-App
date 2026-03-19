@@ -51,6 +51,42 @@ final class DayListPresentationTests: XCTestCase {
         )
     }
 
+    func testReselectTargetPrefersTodayThenMostRecentPastContentfulDay() {
+        let summaries = makeSummaries(daysJSON: """
+        [
+          {"date":"2024-05-01","visits":[{"lat":48.0,"lon":11.0,"start_time":"2024-05-01T08:00:00Z","end_time":"2024-05-01T08:30:00Z"}],"activities":[],"paths":[]},
+          {"date":"2024-05-02","visits":[],"activities":[],"paths":[]},
+          {"date":"2024-05-03","visits":[{"lat":48.1,"lon":11.1,"start_time":"2024-05-03T08:00:00Z","end_time":"2024-05-03T08:30:00Z"}],"activities":[],"paths":[]}
+        ]
+        """)
+
+        XCTAssertEqual(
+            DayListPresentation.reselectTargetDate(summaries, relativeTo: makeReferenceDate("2024-05-03")),
+            "2024-05-03"
+        )
+        XCTAssertEqual(
+            DayListPresentation.reselectTargetDate(summaries, relativeTo: makeReferenceDate("2024-05-02")),
+            "2024-05-01"
+        )
+        XCTAssertEqual(
+            DayListPresentation.reselectTargetDate(summaries, relativeTo: makeReferenceDate("2024-04-30")),
+            "2024-05-01"
+        )
+    }
+
+    func testReselectTargetReturnsNilWhenNoContentfulDaysExist() {
+        let summaries = makeSummaries(daysJSON: """
+        [
+          {"date":"2024-05-01","visits":[],"activities":[],"paths":[]},
+          {"date":"2024-05-02","visits":[],"activities":[],"paths":[]}
+        ]
+        """)
+
+        XCTAssertNil(
+            DayListPresentation.reselectTargetDate(summaries, relativeTo: makeReferenceDate("2024-05-02"))
+        )
+    }
+
     private func makeSummaries(daysJSON: String) -> [DaySummary] {
         let json = """
         {
@@ -82,5 +118,13 @@ final class DayListPresentationTests: XCTestCase {
         let data = Data(json.utf8)
         let export = try! AppExportDecoder.decode(data: data)
         return AppExportQueries.daySummaries(from: export)
+    }
+
+    private func makeReferenceDate(_ isoDate: String) -> Date {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.date(from: isoDate)!
     }
 }

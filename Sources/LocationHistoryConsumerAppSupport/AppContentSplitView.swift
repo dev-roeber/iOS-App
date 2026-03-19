@@ -15,10 +15,13 @@ public struct AppContentSplitView: View {
     @State private var isShowingExportSheet = false
     @State private var isShowingTracksLibrary = false
     @State private var isShowingOptions = false
+    @State private var lastCompactTabInteraction: (tab: Int, timestamp: Date)?
 
     private let onOpen: () -> Void
     private let onLoadDemo: () -> Void
     private let onClear: () -> Void
+    private let compactDaysTabTag = 1
+    private let compactDaysReselectInterval: TimeInterval = 0.8
 
     public init(
         session: Binding<AppSessionState>,
@@ -49,6 +52,36 @@ public struct AppContentSplitView: View {
         session.selectDayForDisplay(session.selectedDate)
     }
 
+    private var compactTabSelection: Binding<Int> {
+        Binding(
+            get: { selectedTab },
+            set: { newValue in
+                let now = Date()
+                let isDaysReselect = newValue == compactDaysTabTag &&
+                    selectedTab == compactDaysTabTag &&
+                    lastCompactTabInteraction?.tab == compactDaysTabTag &&
+                    now.timeIntervalSince(lastCompactTabInteraction?.timestamp ?? .distantPast) <= compactDaysReselectInterval
+
+                selectedTab = newValue
+                lastCompactTabInteraction = (newValue, now)
+
+                guard isDaysReselect else { return }
+                revealMostRelevantDayInCompactDays()
+            }
+        )
+    }
+
+    private func revealMostRelevantDayInCompactDays() {
+        daySearchText = ""
+        daysNavigationPath = NavigationPath()
+        guard let targetDate = DayListPresentation.reselectTargetDate(session.daySummaries, relativeTo: Date()) else {
+            session.selectDayForDisplay(nil)
+            return
+        }
+        session.selectDayForDisplay(targetDate)
+        daysNavigationPath.append(targetDate)
+    }
+
     public var body: some View {
         withGlobalSheets {
             if horizontalSizeClass == .compact {
@@ -62,7 +95,7 @@ public struct AppContentSplitView: View {
     // MARK: - Compact (iPhone) Tab View
 
     private var compactTabView: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: compactTabSelection) {
             NavigationStack {
                 ScrollView {
                     overviewPaneContent

@@ -4,7 +4,7 @@
 
 ### Abgeschlossen
 Lokaler iPhone-Betrieb wurde zuletzt auf Apple-Hardware real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
-Lokale Produktweiterentwicklung: Phasen 19.10–19.31 abgeschlossen.
+Lokale Produktweiterentwicklung: Phasen 19.10–19.40 abgeschlossen.
 Die frueher als `20.1` und `20.2` gefuehrten lokalen Produktschritte werden ab diesem Stand logisch als `19.29` und `19.30` gefuehrt.
 
 ### Aktiver lokaler Fokus
@@ -14,8 +14,34 @@ Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. 
 
 ### Offene lokale Phasen
 
-- aktuell keine weiteren offenen 19.x-Produktphasen
+- Phase 19.41 – Live-Tracks in Export integrieren
+- Phase 19.42 – Export-Vorschaukarte vor dem Dateiexport
+- Phase 19.43 – KML / weitere Exportformate schrittweise aktivieren
 - Phase 20 / 21 bleibt weiterhin bewusst geparkt
+
+### Phase 19.40 – Compact Days Reselect / Current-Day Focus
+
+**Datum:** 2026-03-19
+**Ziel:** Doppelte bzw. schnelle Re-Selection des `Days`-Tabs auf iPhone soll den relevantesten aktuellen Tag oeffnen statt Nutzer wieder beim aeltesten Eintrag haengen zu lassen.
+
+- [x] compact `TabView` behandelt schnelle Re-Selection des `Days`-Tabs jetzt explizit als Navigation-Aktion statt als No-Op
+- [x] Re-Selection leert aktive Day-Suche, setzt den compact Navigation-Stack zurueck und oeffnet den Zieltag direkt
+- [x] Zieltag wird testbar als `heute`, sonst als letzter vergangener inhaltshaltiger Tag, sonst als erster zukuenftiger inhaltshaltiger Tag bestimmt
+- [x] no-content-Tage werden auch bei dieser Sprunglogik nicht als neue Dead Ends geoeffnet
+- [x] `DayListPresentation` kapselt die Datumswahl testbar; `swift test` jetzt 157/157 gruen
+- Bewusst nicht in diesem Schritt: Scroll-to-row fuer die Listenwurzel, gleiches Verhalten fuer andere Tabs oder Background-/Live-Export-Ausbau
+
+### Phase 19.39 – Search / Sheet Stabilization
+
+**Datum:** 2026-03-19
+**Ziel:** Day-Suche und Actions-Sheets so haerten, dass Suche nicht je nach Layout andere Ergebnisse zeigt und `Optionen`/`Export`/`Saved Tracks` stabil praesentiert werden.
+
+- [x] Day-Suche nutzt jetzt auf compact und regular dieselbe zentrale Filterlogik
+- [x] regular-width `Days` zeigt bei Suchtreffern `0` nicht mehr faelschlich `No Days`, sondern denselben Search-Empty-State wie compact
+- [x] Blank-Queries werden explizit als inaktive Suche behandelt statt als impliziter Filter-Randfall
+- [x] `Optionen`, `Export` und `Saved Tracks` haengen nicht mehr als wiederverwendete `.sheet`-Modifier direkt am `Menu`, sondern an stabilen globalen Sheet-Praesentationen
+- [x] `DayListPresentation` deckt Filter- und Search-Copy-Verhalten testbar ab; `swift test` jetzt 155/155 gruen
+- Bewusst nicht in diesem Schritt: Volltextsuche ueber Orte/Aktivitaeten, neue Filterfacetten oder ein neues Actions-Menue-Design
 
 ### Phase 19.34 – Days List / Export-Koharenz
 

@@ -3,9 +3,32 @@
 Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte.
 
 1. **Phase 20 / 21 – bewusst nicht jetzt**
-   - keine weiteren `20.x`-Folgearbeiten fuer Background-Location, Resume oder Recorded-Track-Export aktivieren
    - keine Apple-/ASC-/TestFlight-/Release-Arbeit
-2. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+2. **Phase 19.41 – Live-Tracks in Export integrieren**
+   - gespeicherte Live-Tracks als explizite Exportquelle neben importierten Tagen vorbereiten
+   - Auswahl-, Copy- und Fehlverhalten im bestehenden Export-Flow sauber auf die neue Quelle erweitern
+   - bewusst noch keine neuen Dateiformate oder Background-Tracking-Abhaengigkeiten aufmachen
+3. **Phase 19.42 – Export-Vorschaukarte**
+   - vor dem eigentlichen Dateiexport eine klare Karten-Vorschau fuer die aktuelle Selektion anbieten
+   - importierte Tage und spaeter Live-Tracks in der Vorschau nachvollziehbar rahmen
+4. **Phase 19.43 – Weitere Exportformate**
+   - `KML` als naechstes reales Zusatzformat aktivieren
+   - Formatwahl, Dateinamencopy und Export-Guard nicht nur architektonisch, sondern produktseitig vollenden
+5. Contract-Files weiter ausschliesslich vom Producer-Repo aus aktualisieren.
+
+**Abgeschlossene Phase 19.40 (2026-03-19):**
+- schneller Re-Select des compact `Days`-Tabs oeffnet jetzt den relevanten aktuellen Tag statt am aeltesten Listenkontext haengen zu bleiben
+- Re-Select leert aktive Suche, setzt den compact Navigation-Stack zurueck und springt direkt in den Zieltag
+- Zieltag-Logik bevorzugt `heute`, sonst den letzten vergangenen contentful day, sonst den ersten zukuenftigen contentful day
+- no-content-Tage werden in diesem Sprungpfad weiter als Dead End vermieden
+- 2 neue Tests; `swift test` gruen: `157/157`
+
+**Abgeschlossene Phase 19.39 (2026-03-19):**
+- Day-Suche nutzt jetzt auf compact und regular dieselbe zentrale Filterlogik
+- regular-width `Days` zeigt bei `0` Suchtreffern denselben Search-Empty-State wie compact statt `No Days`
+- Blank-Queries werden explizit als inaktive Suche behandelt
+- `Optionen`, `Export` und `Saved Tracks` werden ueber stabile globale Sheets praesentiert statt ueber fragilen Menu-Sheet-Aufbau
+- 1 neuer Test; `swift test` gruen: `155/155`
 
 **Abgeschlossene Phase 19.34 (2026-03-19):**
 - Day-Liste zeigt jetzt einen expliziten Export-Statusblock statt die GPX-Selektion nur ueber kleine Row-Icons anzudeuten

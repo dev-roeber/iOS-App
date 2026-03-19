@@ -2,12 +2,38 @@ import Foundation
 import LocationHistoryConsumer
 
 enum DayListPresentation {
+    private static let isoFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
+
     static func filteredSummaries(_ summaries: [DaySummary], query: String) -> [DaySummary] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             return summaries
         }
         return summaries.filter { $0.date.localizedCaseInsensitiveContains(trimmed) }
+    }
+
+    static func reselectTargetDate(_ summaries: [DaySummary], relativeTo referenceDate: Date) -> String? {
+        let contentfulSummaries = summaries.filter(\.hasContent)
+        guard !contentfulSummaries.isEmpty else {
+            return nil
+        }
+
+        let referenceISODate = isoFormatter.string(from: referenceDate)
+        if let exactMatch = contentfulSummaries.first(where: { $0.date == referenceISODate }) {
+            return exactMatch.date
+        }
+
+        if let mostRecentPastOrToday = contentfulSummaries.last(where: { $0.date < referenceISODate }) {
+            return mostRecentPastOrToday.date
+        }
+
+        return contentfulSummaries.first?.date
     }
 
     static func exportSelectionTitle(count: Int) -> String {
