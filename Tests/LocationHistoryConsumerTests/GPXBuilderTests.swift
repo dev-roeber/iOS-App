@@ -102,6 +102,28 @@ final class GPXBuilderTests: XCTestCase {
         XCTAssertTrue(gpx.contains("2024-01-11"))
     }
 
+    func testBuildIncludesAdditionalTracks() {
+        let pt = PathPoint(lat: 47.0, lon: 8.0, time: nil, accuracyM: nil)
+        let path = Path(startTime: nil, endTime: nil, activityType: "WALKING", distanceM: nil, sourceType: nil, points: [pt], flatCoordinates: nil)
+        let day = Day(date: "2024-01-10", visits: [], activities: [], paths: [path])
+        let additionalTrack = GPXTrack(
+            name: "Saved Live Track",
+            type: "FOREGROUND",
+            points: [
+                GPXTrackPoint(latitude: 48.0, longitude: 11.0, time: "2024-01-10T11:00:00Z"),
+                GPXTrackPoint(latitude: 48.1, longitude: 11.1, time: "2024-01-10T11:05:00Z")
+            ]
+        )
+
+        let gpx = GPXBuilder.build(from: [day], additionalTracks: [additionalTrack])
+
+        let trackCount = gpx.components(separatedBy: "<trk>").count - 1
+        XCTAssertEqual(trackCount, 2)
+        XCTAssertTrue(gpx.contains("Saved Live Track"))
+        XCTAssertTrue(gpx.contains("FOREGROUND"))
+        XCTAssertTrue(gpx.contains("lat=\"48.00000000\""))
+    }
+
     func testXMLEscapingInActivityType() {
         let pt = PathPoint(lat: 47.0, lon: 8.0, time: nil, accuracyM: nil)
         let path = Path(startTime: nil, endTime: nil, activityType: "Rock & Roll", distanceM: nil, sourceType: nil, points: [pt], flatCoordinates: nil)

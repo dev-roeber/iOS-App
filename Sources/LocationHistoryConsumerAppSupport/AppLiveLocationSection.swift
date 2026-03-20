@@ -18,9 +18,9 @@ public struct AppLiveLocationSection: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Live Recording")
+                    Text("Local Recording")
                         .font(.headline)
-                    Text(SavedTracksPresentation.liveSectionMessage)
+                    Text("Current position and saved live tracks stay separate from imported history.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -137,7 +137,7 @@ public struct AppLiveLocationSection: View {
     private var savedTracksList: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Label(SavedTracksPresentation.libraryTitle, systemImage: SavedTracksPresentation.libraryIcon)
+                Text("Saved Live Tracks")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Text("\(liveLocation.recordedTracks.count)")
@@ -149,22 +149,25 @@ public struct AppLiveLocationSection: View {
                     .clipShape(Capsule())
             }
 
-            Text(SavedTracksPresentation.liveListMessage)
+            Text("Tap a saved live track to edit points or clean up local-only recordings.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
             ForEach(liveLocation.recordedTracks) { track in
-                let presentation = SavedTrackPresentation.row(
-                    for: track,
-                    unit: preferences.distanceUnit
-                )
                 Button {
                     selectedRecordedTrack = track
                 } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: SavedTracksPresentation.libraryIcon)
+                        Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
                             .foregroundColor(.green)
-                        SavedTrackSummaryContentView(presentation: presentation)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(savedTrackTitle(track))
+                                .font(.subheadline)
+                                .foregroundStyle(.primary)
+                            Text("\(track.pointCount) points · \(formatDistance(track.distanceM, unit: preferences.distanceUnit))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                         Spacer()
                         Image(systemName: "slider.horizontal.3")
                             .foregroundStyle(.secondary)
@@ -172,8 +175,6 @@ public struct AppLiveLocationSection: View {
                     .padding(.vertical, 2)
                 }
                 .buttonStyle(.plain)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(presentation.accessibilityLabel), opens point editor")
             }
         }
     }
@@ -182,9 +183,9 @@ public struct AppLiveLocationSection: View {
     private var savedTracksSection: some View {
         if liveLocation.recordedTracks.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
-                Label(SavedTracksPresentation.libraryTitle, systemImage: SavedTracksPresentation.libraryIcon)
+                Label("Saved Live Tracks", systemImage: "slider.horizontal.3")
                     .font(.subheadline.weight(.semibold))
-                Text(SavedTracksPresentation.liveEmptyMessage)
+                Text("Record a short local track, switch Record off, then open the saved live track here to edit points, insert midpoints or delete it.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -223,6 +224,14 @@ public struct AppLiveLocationSection: View {
             ),
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         ))
+    }
+
+    private func savedTrackTitle(_ track: RecordedTrack) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: track.startedAt)
     }
 }
 #endif

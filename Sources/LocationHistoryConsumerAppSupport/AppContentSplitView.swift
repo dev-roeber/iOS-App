@@ -12,16 +12,11 @@ public struct AppContentSplitView: View {
     @State private var daysNavigationPath = NavigationPath()
     @State private var selectedTab = 0
     @State private var daySearchText = ""
-    @State private var isShowingExportSheet = false
-    @State private var isShowingTracksLibrary = false
-    @State private var isShowingOptions = false
-    @State private var lastCompactTabInteraction: (tab: Int, timestamp: Date)?
+    @State private var presentedSheet: PresentedSheet?
 
     private let onOpen: () -> Void
     private let onLoadDemo: () -> Void
     private let onClear: () -> Void
-    private let compactDaysTabTag = 1
-    private let compactDaysReselectInterval: TimeInterval = 0.8
 
     public init(
         session: Binding<AppSessionState>,
@@ -38,18 +33,28 @@ public struct AppContentSplitView: View {
     }
 
     private var filteredDaySummaries: [DaySummary] {
-        DayListPresentation.filteredSummaries(session.daySummaries, query: daySearchText)
+        AppDaySearch.filter(session.daySummaries, query: daySearchText)
     }
 
-    private var daySummaryLookup: [String: DaySummary] {
-        Dictionary(uniqueKeysWithValues: session.daySummaries.map { ($0.date, $0) })
+    private enum PresentedSheet: String, Identifiable {
+        case export
+        case tracksLibrary
+        case options
+
+        var id: String { rawValue }
     }
+
+    private static let currentDayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .autoupdatingCurrent
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 
     private func highlightIconsFor(_ date: String) -> [String] {
         var icons: [String] = []
         if session.insights?.busiestDay?.date == date { icons.append("flame.fill") }
-        if session.insights?.mostVisitsDay?.date == date { icons.append("mappin.circle.fill") }
-        if session.insights?.mostRoutesDay?.date == date { icons.append("location.north.circle.fill") }
         if session.insights?.longestDistanceDay?.date == date { icons.append("road.lanes") }
         return icons
     }
@@ -58,50 +63,18 @@ public struct AppContentSplitView: View {
         session.selectDayForDisplay(session.selectedDate)
     }
 
-    private var compactTabSelection: Binding<Int> {
-        Binding(
-            get: { selectedTab },
-            set: { newValue in
-                let now = Date()
-                let isDaysReselect = newValue == compactDaysTabTag &&
-                    selectedTab == compactDaysTabTag &&
-                    lastCompactTabInteraction?.tab == compactDaysTabTag &&
-                    now.timeIntervalSince(lastCompactTabInteraction?.timestamp ?? .distantPast) <= compactDaysReselectInterval
-
-                selectedTab = newValue
-                lastCompactTabInteraction = (newValue, now)
-
-                guard isDaysReselect else { return }
-                revealMostRelevantDayInCompactDays()
-            }
-        )
-    }
-
-    private func revealMostRelevantDayInCompactDays() {
-        daySearchText = ""
-        daysNavigationPath = NavigationPath()
-        guard let targetDate = DayListPresentation.reselectTargetDate(session.daySummaries, relativeTo: Date()) else {
-            session.selectDayForDisplay(nil)
-            return
-        }
-        session.selectDayForDisplay(targetDate)
-        daysNavigationPath.append(targetDate)
-    }
-
     public var body: some View {
-        withGlobalSheets {
-            if horizontalSizeClass == .compact {
-                compactTabView
-            } else {
-                regularSplitView
-            }
+        if horizontalSizeClass == .compact {
+            compactTabView
+        } else {
+            regularSplitView
         }
     }
 
     // MARK: - Compact (iPhone) Tab View
 
     private var compactTabView: some View {
-        TabView(selection: compactTabSelection) {
+        TabView(selection: $selectedTab) {
             NavigationStack {
                 ScrollView {
                     overviewPaneContent
@@ -177,6 +150,14 @@ public struct AppContentSplitView: View {
             .tag(3)
             .badge(session.exportSelection.count > 0 ? session.exportSelection.count : 0)
         }
+        #if canImport(UIKit) && os(iOS)
+        .background(
+            IOSTabReselectionObserver { index, isReselection in
+                guard isReselection, index == 1 else { return }
+                handleDaysTabReselection()
+            }
+        )
+        #endif
         // Replaces deprecated onChange(of:perform:) — task(id:) fires on
         // appearance and whenever id changes, which is the same behaviour.
         .task(id: session.daySummaries) {
@@ -197,15 +178,27 @@ public struct AppContentSplitView: View {
         let summaries = filteredDaySummaries
         let groups = groupByMonth(summaries)
         return List {
-            Section {
-                DayListExportSelectionCard(
-                    selectionCount: session.exportSelection.count,
-                    onOpenExport: { selectedTab = 3 }
-                )
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                .listRowSeparator(.hidden)
+            if session.exportSelection.count > 0 {
+                Section {
+                    HStack(spacing: 10) {
+                        Image(systemName: "square.and.arrow.up")
+                            .foregroundColor(.accentColor)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(session.exportSelection.count) day\(session.exportSelection.count == 1 ? "" : "s") selected for export")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Open the Export tab to review or save the current GPX selection.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Export") {
+                            selectedTab = 3
+                        }
+                        .font(.caption.weight(.semibold))
+                    }
+                    .padding(.vertical, 4)
+                }
             }
-
             if groups.count == 1 {
                 ForEach(groups[0].summaries, id: \.date) { summary in
                     if summary.hasContent {
@@ -236,10 +229,20 @@ public struct AppContentSplitView: View {
             if session.daySummaries.isEmpty {
                 AppDayListEmptyView()
             } else if summaries.isEmpty {
-                AppDaySearchEmptyView(
-                    query: daySearchText,
-                    exportSelectionCount: session.exportSelection.count
-                )
+                VStack(spacing: 12) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.largeTitle)
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                    Text("No Results")
+                        .font(.headline)
+                    Text("No days match \"\(daySearchText)\".")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(24)
             }
         }
     }
@@ -249,18 +252,16 @@ public struct AppContentSplitView: View {
     private var regularSplitView: some View {
         NavigationSplitView {
             AppDayListView(
-                summaries: filteredDaySummaries,
-                totalSummaryCount: session.daySummaries.count,
-                searchQuery: daySearchText,
+                summaries: session.daySummaries,
+                selectedForExportDates: session.exportSelection.selectedDates,
                 selectedDate: Binding(
                     get: { session.selectedDate },
                     set: { session.selectDayForDisplay($0) }
                 ),
-                exportSelection: session.exportSelection,
-                onOpenExport: { isShowingExportSheet = true }
+                searchText: $daySearchText
             )
             .navigationTitle("Days")
-            .searchable(text: $daySearchText, prompt: "Search by date")
+            .searchable(text: $daySearchText, prompt: "Search by date, weekday or month")
         } detail: {
             Group {
                 detailPane
@@ -285,13 +286,7 @@ public struct AppContentSplitView: View {
                 hasDays: session.hasDays
             )
 
-            if let insights = session.insights, !insights.activeFilterDescriptions.isEmpty {
-                activeFiltersSection(insights.activeFilterDescriptions)
-            }
-
-            if horizontalSizeClass == .compact, session.hasLoadedContent {
-                overviewPrimaryActionsSection
-            }
+            overviewPrimaryActionsSection
 
             if let range = session.insights?.dateRange {
                 HStack(spacing: 8) {
@@ -330,46 +325,72 @@ public struct AppContentSplitView: View {
             if let overview = session.overview {
                 AppOverviewSection(
                     overview: overview,
-                    daySummaries: session.daySummaries,
                     onDaysTap: horizontalSizeClass == .compact ? { selectedTab = 1 } : nil,
                     onInsightsTap: horizontalSizeClass == .compact ? { selectedTab = 2 } : nil
                 )
             }
 
-            localToolsSection
+            if let insights = session.insights, !insights.activeFilterDescriptions.isEmpty {
+                activeFiltersSection(insights.activeFilterDescriptions)
+            }
+
+            liveTracksOverviewSection
         }
     }
 
     @ViewBuilder
     private var overviewPrimaryActionsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Go To")
+            Text("Primary Actions")
                 .font(.title3.weight(.semibold))
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-                overviewActionCard(
-                    title: "Days",
-                    subtitle: "Browse imported history day by day.",
-                    icon: "calendar",
-                    color: .blue
-                ) {
-                    selectedTab = 1
-                }
-                overviewActionCard(
-                    title: "Insights",
-                    subtitle: "Open charts and aggregate breakdowns.",
-                    icon: "chart.xyaxis.line",
-                    color: .indigo
-                ) {
-                    selectedTab = 2
-                }
-                overviewActionCard(
-                    title: "Export",
-                    subtitle: "Review selection and create a GPX file.",
-                    icon: "square.and.arrow.up",
-                    color: .orange
-                ) {
-                    selectedTab = 3
+                overviewActionButton(
+                    title: openButtonTitle,
+                    subtitle: "Replace the current import with another local file.",
+                    icon: "doc.badge.plus",
+                    color: .accentColor,
+                    action: onOpen
+                )
+
+                if horizontalSizeClass == .compact {
+                    overviewActionButton(
+                        title: "Browse Days",
+                        subtitle: "Jump into the day list and open imported history entries.",
+                        icon: "calendar",
+                        color: .blue
+                    ) {
+                        selectedTab = 1
+                    }
+
+                    overviewActionButton(
+                        title: "Open Insights",
+                        subtitle: "Switch to charts and derived breakdowns for the current import.",
+                        icon: "chart.xyaxis.line",
+                        color: .indigo
+                    ) {
+                        selectedTab = 2
+                    }
+
+                    if session.hasDays {
+                        overviewActionButton(
+                            title: "Export GPX",
+                            subtitle: "Choose days and prepare a GPX export from recorded routes.",
+                            icon: "square.and.arrow.up",
+                            color: .green
+                        ) {
+                            selectedTab = 3
+                        }
+                    }
+                } else if session.hasDays {
+                    overviewActionButton(
+                        title: "Export GPX",
+                        subtitle: "Open the export sheet for the current imported history.",
+                        icon: "square.and.arrow.up",
+                        color: .green
+                    ) {
+                        presentSheet(.export)
+                    }
                 }
             }
         }
@@ -377,101 +398,91 @@ public struct AppContentSplitView: View {
 
     @ViewBuilder
     private func overviewHighlights(_ insights: ExportInsights) -> some View {
-        let items = overviewHighlightItems(insights)
-        if !items.isEmpty {
+        let hasHighlights = insights.busiestDay != nil || insights.longestDistanceDay != nil
+        if hasHighlights {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Highlights")
                     .font(.title3.weight(.semibold))
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12)], spacing: 12) {
-                    ForEach(items) { item in
-                        highlightCard(item) {
-                            openDayFromInsights(item.date)
-                        }
+                HStack(spacing: 12) {
+                    if let busiest = insights.busiestDay {
+                        highlightCard(
+                            title: "Busiest Day",
+                            value: busiest.value,
+                            date: AppDateDisplay.mediumDate(busiest.date),
+                            icon: "flame.fill",
+                            color: .orange,
+                            onTap: {
+                                daysNavigationPath.append(busiest.date)
+                                selectedTab = 1
+                            }
+                        )
+                    }
+                    if let longest = insights.longestDistanceDay {
+                        highlightCard(
+                            title: "Longest Distance",
+                            value: longestDistanceValue(for: longest),
+                            date: AppDateDisplay.mediumDate(longest.date),
+                            icon: "road.lanes",
+                            color: .purple,
+                            onTap: {
+                                daysNavigationPath.append(longest.date)
+                                selectedTab = 1
+                            }
+                        )
                     }
                 }
             }
         }
     }
 
-    private func openDayFromInsights(_ date: String) {
-        session.selectDayForDisplay(date)
-        guard session.selectedDate == date else { return }
-
-        if horizontalSizeClass == .compact {
-            daySearchText = ""
-            daysNavigationPath = NavigationPath()
-            daysNavigationPath.append(date)
-            selectedTab = 1
+    @ViewBuilder
+    private func highlightCard(title: String, value: String, date: String, icon: String, color: Color, onTap: (() -> Void)? = nil) -> some View {
+        Group {
+            if let onTap {
+                Button(action: onTap) {
+                    highlightCardBody(title: title, value: value, date: date, icon: icon, color: color, isInteractive: true)
+                }
+                .buttonStyle(.plain)
+            } else {
+                highlightCardBody(title: title, value: value, date: date, icon: icon, color: color, isInteractive: false)
+            }
         }
-    }
-
-    private func overviewHighlightItems(_ insights: ExportInsights) -> [InsightsHighlightItem] {
-        var items: [InsightsHighlightItem] = []
-        if let busiest = insights.busiestDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "busiest",
-                    title: "Busiest Day",
-                    icon: "flame.fill",
-                    color: .orange,
-                    highlight: busiest,
-                    summary: daySummaryLookup[busiest.date],
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        if let visits = insights.mostVisitsDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "visits",
-                    title: "Most Visits",
-                    icon: "mappin.circle.fill",
-                    color: .blue,
-                    highlight: visits,
-                    summary: daySummaryLookup[visits.date],
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        if let routes = insights.mostRoutesDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "routes",
-                    title: "Most Routes",
-                    icon: "location.north.circle.fill",
-                    color: .green,
-                    highlight: routes,
-                    summary: daySummaryLookup[routes.date],
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        if let longest = insights.longestDistanceDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "distance",
-                    title: "Longest Distance",
-                    icon: "road.lanes",
-                    color: .purple,
-                    highlight: longest,
-                    summary: daySummaryLookup[longest.date],
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        return items
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title): \(value), \(date)")
+        .accessibilityAddTraits(onTap != nil ? .isButton : [])
     }
 
     @ViewBuilder
-    private func highlightCard(_ item: InsightsHighlightItem, onTap: @escaping () -> Void) -> some View {
-        Button(action: onTap) {
-            InsightsHighlightCardView(item: item, isInteractive: true)
+    private func highlightCardBody(title: String, value: String, date: String, icon: String, color: Color, isInteractive: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .font(.caption)
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if isInteractive {
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(color.opacity(0.5))
+                }
+            }
+            Text(value)
+                .font(.headline.monospacedDigit())
+            Text(date)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(color.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     @ViewBuilder
-    private func overviewActionCard(
+    private func overviewActionButton(
         title: String,
         subtitle: String,
         icon: String,
@@ -479,28 +490,34 @@ public struct AppContentSplitView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: icon)
-                        .font(.headline)
-                        .foregroundStyle(color)
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: icon)
+                    .font(.subheadline)
+                    .foregroundColor(color)
+                    .frame(width: 18, alignment: .center)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.subheadline.weight(.semibold))
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
-                        .foregroundStyle(color.opacity(0.5))
+                        .foregroundStyle(.primary)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
                 }
 
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(color.opacity(0.5))
+                    .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
-            .background(color.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(color.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -528,7 +545,8 @@ public struct AppContentSplitView: View {
                 insights: insights,
                 daySummaries: session.daySummaries,
                 onDayTap: { date in
-                    openDayFromInsights(date)
+                    daysNavigationPath.append(date)
+                    selectedTab = 1
                 }
             )
         } else {
@@ -603,14 +621,14 @@ public struct AppContentSplitView: View {
             }
             Divider()
             Button {
-                isShowingOptions = true
+                presentSheet(.options)
             } label: {
                 Label("Options", systemImage: "slider.horizontal.3")
             }
             if session.hasDays && horizontalSizeClass != .compact {
                 Divider()
                 Button {
-                    isShowingExportSheet = true
+                    presentSheet(.export)
                 } label: {
                     Label("Export…", systemImage: "square.and.arrow.up")
                 }
@@ -624,72 +642,85 @@ public struct AppContentSplitView: View {
         } label: {
             Label("Actions", systemImage: "ellipsis.circle")
         }
-    }
-
-    @ViewBuilder
-    private func withGlobalSheets<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .sheet(isPresented: $isShowingExportSheet) {
-                NavigationStack {
+        .sheet(item: $presentedSheet) { sheet in
+            NavigationStack {
+                switch sheet {
+                case .export:
                     AppExportView(session: $session, liveLocation: liveLocation)
                         .environmentObject(preferences)
                         .navigationTitle("Export")
                         .toolbar {
                             ToolbarItem(placement: .confirmationAction) {
-                                Button("Done") { isShowingExportSheet = false }
+                                Button("Done") { presentedSheet = nil }
                             }
                         }
-                }
-            }
-            .sheet(isPresented: $isShowingTracksLibrary) {
-                NavigationStack {
+                case .tracksLibrary:
                     tracksLibrarySheetContent
                         .environmentObject(preferences)
                         .toolbar {
                             ToolbarItem(placement: .confirmationAction) {
-                                Button("Done") { isShowingTracksLibrary = false }
+                                Button("Done") { presentedSheet = nil }
                             }
                         }
-                }
-            }
-            .sheet(isPresented: $isShowingOptions) {
-                NavigationStack {
+                case .options:
                     AppOptionsView(preferences: preferences)
                         .toolbar {
                             ToolbarItem(placement: .confirmationAction) {
-                                Button("Done") { isShowingOptions = false }
+                                Button("Done") { presentedSheet = nil }
                             }
                         }
                 }
             }
+        }
+    }
+
+    private func presentSheet(_ sheet: PresentedSheet) {
+        DispatchQueue.main.async {
+            presentedSheet = sheet
+        }
+    }
+
+    private func handleDaysTabReselection() {
+        daySearchText = ""
+        daysNavigationPath = NavigationPath()
+
+        let todayKey = Self.currentDayFormatter.string(from: Date())
+        guard let todaySummary = session.daySummaries.first(where: { $0.date == todayKey }) else {
+            return
+        }
+
+        guard todaySummary.hasContent else {
+            session.selectDay(nil)
+            return
+        }
+
+        session.selectDayForDisplay(todaySummary.date)
+        daysNavigationPath.append(todaySummary.date)
     }
 
     private var liveTracksOverviewSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Label(SavedTracksPresentation.libraryTitle, systemImage: SavedTracksPresentation.libraryIcon)
+                    Label("Saved Live Tracks", systemImage: "slider.horizontal.3")
                         .font(.headline)
                     Text(liveTracksOverviewMessage)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button(SavedTracksPresentation.libraryButtonTitle) {
-                    isShowingTracksLibrary = true
+                Button("Open Library") {
+                    presentSheet(.tracksLibrary)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
             }
 
             if let latestTrack = liveLocation.recordedTracks.first {
                 HStack(spacing: 12) {
-                    Image(systemName: SavedTracksPresentation.libraryIcon)
+                    Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
                         .font(.title3)
                         .foregroundStyle(.green)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(SavedTracksPresentation.latestTrackLabel)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                         Text(savedTrackTitle(latestTrack))
                             .font(.subheadline.weight(.semibold))
                         Text("\(latestTrack.pointCount) points · \(formatDistance(latestTrack.distanceM, unit: preferences.distanceUnit))")
@@ -697,7 +728,7 @@ public struct AppContentSplitView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Text("\(liveLocation.recordedTracks.count) total")
+                    Text("\(liveLocation.recordedTracks.count) saved")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
@@ -705,20 +736,8 @@ public struct AppContentSplitView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color.green.opacity(0.05))
+        .background(Color.green.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-
-    @ViewBuilder
-    private var localToolsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Local Tools")
-                .font(.title3.weight(.semibold))
-            Text("Saved Tracks remain a separate local utility and do not change the imported history above.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            liveTracksOverviewSection
-        }
     }
 
     @ViewBuilder
@@ -727,19 +746,19 @@ public struct AppContentSplitView: View {
             AppRecordedTracksLibraryView(liveLocation: liveLocation)
         } else {
             VStack(spacing: 12) {
-                Image(systemName: SavedTracksPresentation.libraryIcon)
+                Image(systemName: "slider.horizontal.3")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary)
-                Text(SavedTracksPresentation.unavailableTitle)
+                Text("Saved Live Tracks Unavailable")
                     .font(.headline)
-                Text(SavedTracksPresentation.unavailableMessage)
+                Text("Saved live tracks can be reviewed and edited on platforms that support the local track library.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(24)
-            .navigationTitle(SavedTracksPresentation.libraryTitle)
+            .navigationTitle("Saved Live Tracks")
         }
     }
 
@@ -753,7 +772,10 @@ public struct AppContentSplitView: View {
     }
 
     private var liveTracksOverviewMessage: String {
-        SavedTracksPresentation.overviewMessage(hasTracks: !liveLocation.recordedTracks.isEmpty)
+        if liveLocation.recordedTracks.isEmpty {
+            return "Saved live tracks live in a separate local library. Record a short track on any day, then open it from here."
+        }
+        return "Open the local track library directly from Overview to edit points, insert midpoints or delete a saved live track."
     }
 
     private func savedTrackTitle(_ track: RecordedTrack) -> String {
@@ -764,6 +786,12 @@ public struct AppContentSplitView: View {
         return formatter.string(from: track.startedAt)
     }
 
+    private func longestDistanceValue(for highlight: DayHighlight) -> String {
+        guard let summary = session.daySummaries.first(where: { $0.date == highlight.date }) else {
+            return highlight.value
+        }
+        return formatDistance(summary.totalPathDistanceM, unit: preferences.distanceUnit)
+    }
 }
 
 #endif

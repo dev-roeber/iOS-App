@@ -1,5 +1,29 @@
 import Foundation
 
+public struct GPXTrackPoint: Equatable {
+    public let latitude: Double
+    public let longitude: Double
+    public let time: String?
+
+    public init(latitude: Double, longitude: Double, time: String?) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.time = time
+    }
+}
+
+public struct GPXTrack: Equatable {
+    public let name: String
+    public let type: String?
+    public let points: [GPXTrackPoint]
+
+    public init(name: String, type: String? = nil, points: [GPXTrackPoint]) {
+        self.name = name
+        self.type = type
+        self.points = points
+    }
+}
+
 /// Builds GPX 1.1 documents from `Day` arrays.
 ///
 /// Only `Path` entries that carry at least one `PathPoint` are exported as GPX tracks.
@@ -15,6 +39,10 @@ public enum GPXBuilder {
     ///   Days are output in the order supplied; sort before calling if needed.
     /// - Returns: A well-formed GPX 1.1 XML string (UTF-8).
     public static func build(from days: [Day]) -> String {
+        build(from: days, additionalTracks: [])
+    }
+
+    public static func build(from days: [Day], additionalTracks: [GPXTrack]) -> String {
         var lines: [String] = []
 
         lines.append(#"<?xml version="1.0" encoding="UTF-8"?>"#)
@@ -31,32 +59,51 @@ public enum GPXBuilder {
                 guard !validPoints.isEmpty else { continue }
 
                 let trackName = trackTitle(date: day.date, activityType: path.activityType, index: pathIndex)
-                lines.append("  <trk>")
-                lines.append("    <name>\(xmlEscape(trackName))</name>")
-                if let type = path.activityType, !type.isEmpty {
-                    lines.append("    <type>\(xmlEscape(type))</type>")
-                }
-                lines.append("    <trkseg>")
-                for pt in validPoints {
-                    let latStr = String(format: "%.8f", pt.lat)
-                    let lonStr = String(format: "%.8f", pt.lon)
-                    if let time = pt.time {
-                        lines.append("""
-                                <trkpt lat="\(latStr)" lon="\(lonStr)">
-                                  <time>\(xmlEscape(time))</time>
-                                </trkpt>
-                            """)
-                    } else {
-                        lines.append(#"      <trkpt lat="\#(latStr)" lon="\#(lonStr)"/>"#)
-                    }
-                }
-                lines.append("    </trkseg>")
-                lines.append("  </trk>")
+                appendTrack(
+                    GPXTrack(
+                        name: trackName,
+                        type: path.activityType,
+                        points: validPoints.map {
+                            GPXTrackPoint(latitude: $0.lat, longitude: $0.lon, time: $0.time)
+                        }
+                    ),
+                    to: &lines
+                )
             }
+        }
+
+        for track in additionalTracks where !track.points.isEmpty {
+            appendTrack(track, to: &lines)
         }
 
         lines.append("</gpx>")
         return lines.joined(separator: "\n")
+    }
+
+    private static func appendTrack(_ track: GPXTrack, to lines: inout [String]) {
+        guard !track.points.isEmpty else { return }
+
+        lines.append("  <trk>")
+        lines.append("    <name>\(xmlEscape(track.name))</name>")
+        if let type = track.type, !type.isEmpty {
+            lines.append("    <type>\(xmlEscape(type))</type>")
+        }
+        lines.append("    <trkseg>")
+        for point in track.points {
+            let latStr = String(format: "%.8f", point.latitude)
+            let lonStr = String(format: "%.8f", point.longitude)
+            if let time = point.time {
+                lines.append("""
+                        <trkpt lat="\(latStr)" lon="\(lonStr)">
+                          <time>\(xmlEscape(time))</time>
+                        </trkpt>
+                    """)
+            } else {
+                lines.append(#"      <trkpt lat="\#(latStr)" lon="\#(lonStr)"/>"#)
+            }
+        }
+        lines.append("    </trkseg>")
+        lines.append("  </trk>")
     }
 
     /// Suggests a GPX filename for the given set of export dates.

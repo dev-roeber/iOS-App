@@ -1,198 +1,105 @@
 # ROADMAP
 
-## Aktueller Stand (2026-03-19)
+## Aktueller Stand (2026-03-20)
 
 ### Abgeschlossen
 Lokaler iPhone-Betrieb wurde zuletzt auf Apple-Hardware real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
-Lokale Produktweiterentwicklung: Phasen 19.10–19.45 abgeschlossen.
+Lokale Produktweiterentwicklung: Phasen 19.10–19.38 abgeschlossen.
 Die frueher als `20.1` und `20.2` gefuehrten lokalen Produktschritte werden ab diesem Stand logisch als `19.29` und `19.30` gefuehrt.
 
 ### Aktiver lokaler Fokus
-UI-/UX-/Informationsarchitektur fuer iPhone wird erneut priorisiert. Weitere Produktarbeit wird wieder in feine 19.x-Schritte geschnitten.
-Phase 20 bleibt wieder ausschliesslich fuer Apple-/ASC-/TestFlight-/externe Distribution geparkt. Export- und Live-Recording-Unterbau bleiben vorhanden, sind aber bewusst nicht der naechste Fokus.
+Der lokale 19.x-UI-/UX-/Informationsarchitektur-Fokus ist fuer den aktuellen Scope abgeschlossen.
+Phase 20 bleibt wieder ausschliesslich fuer Apple-/ASC-/TestFlight-/externe Distribution geparkt. Export- und Live-Recording-Unterbau bleiben vorhanden, sind aber bewusst nicht der naechste lokale Implementierungsfokus.
 Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt unberuehrt.
 
-### Offene lokale Phasen
+### Keine weiteren aktiven lokalen 19.x-Phasen
 
-- Phase 19.46 – Filterung / Accuracy groundwork
-- Phase 20 / 21 bleibt weiterhin bewusst geparkt
-
-### Phase 19.45 – Import-/Export-Deduplizierung
-
-**Datum:** 2026-03-19
-**Ziel:** Export, Vorschau und Export-Readiness sollen exakte Dubletten und unbrauchbare 1-Punkt-Routen gleich behandeln, damit die erzeugten Dateien naeher an einem sauberen Track landen.
-
-- [x] `ExportRouteSanitizer` dedupliziert jetzt exakte aufeinanderfolgende Trackpunkte (`lat`/`lon`/`time`) zentral im Core
-- [x] Routen, die nach dieser Bereinigung unter zwei Punkte fallen, werden fuer Export und Vorschau verworfen
-- [x] `AppExportQueries` fuehrt dafuer eine echte `exportablePathCount`-Sicht in `DaySummary` statt blind `pathCount > 0` zu vertrauen
-- [x] Export-Readiness, Helper-Copy und Route-Preview orientieren sich jetzt an derselben sanitisierten Geometrie wie GPX/KML
-- [x] Insights-/Overview-Review-Fix: Day-Navigation aus Highlights und Insights funktioniert jetzt auch auf regular width statt nur auf compact
-- [x] neue Sanitizer-Tests plus erweiterte Query-/Export-Tests; `swift test` jetzt 171/171 gruen
-- Bewusst nicht in diesem Schritt: fuzzy dedupe, Aktivitaets-/Visit-Bereinigung, Polygonfilter oder Import-Contract-Aenderungen
-
-### Phase 19.44 – Insights / Highlights Expansion
-
-**Datum:** 2026-03-19
-**Ziel:** Den Insights-Tab ueber reine Diagramme hinaus zu einer staerkeren, direkt navigierbaren Analyseflaeche ausbauen und dabei bestehende Export-Filter klar sichtbar halten.
-
-- [x] `ExportInsights`/`AppExportQueries` liefern jetzt zusaetzlich `Most Visits` und `Most Routes` als weitere Day-Highlights
-- [x] Day-Liste und Overview spiegeln diese neuen Highlight-Tage jetzt mit zusaetzlichen Icons bzw. Karten zurueck
-- [x] Insights zeigt aktive Export-Filter jetzt als eigene Kontexthilfe statt sie nur implizit in den Daten stecken zu lassen
-- [x] neuer interaktiver `Top Days`-Block rankt Tage nach `Events`, `Visits`, `Routes` oder `Distance` und oeffnet per Tap direkt den jeweiligen Tag
-- [x] `InsightsTopDaysPresentation` kapselt Ranking, Tiebreaker und Copy testbar; `DaySummary` hat dafuer jetzt einen expliziten `public init`
-- [x] Query- und Presentation-Tests decken neue Highlights und Top-Day-Ranking ab
-- Bewusst nicht in diesem Schritt: neue Rohdatenquellen, Crossfilter zwischen Charts, Background-Tracking oder Sprachumschaltung
-
-### Phase 19.43 – KML / weitere Exportformate schrittweise aktivieren
-
-**Datum:** 2026-03-19
-**Ziel:** Den bisherigen GPX-only-Export produktseitig zu einem echten Mehrformat-Flow erweitern, beginnend mit `KML`.
-
-- [x] `ExportFormat` bietet jetzt neben `GPX` auch `KML` als echten Produktfall statt nur als Architektur-Placeholder
-- [x] `KMLBuilder` erzeugt aus denselben exportierbaren Day-/Track-Daten eine einfache KML-LineString-Datei
-- [x] File-Export nutzt jetzt einen formatneutralen `ExportDocument` statt eines GPX-spezifischen Dokumenttyps
-- [x] Dateinamencopy, Dateiendung und Fehlertexte folgen jetzt dem wirklich ausgewaehlten Format
-- [x] bestehende Export-Selektion, Vorschau und Readiness bleiben formatuebergreifend gleich und oeffnen keinen zweiten UI-Pfad
-- [x] `swift test` jetzt 164/164 gruen
-- Bewusst nicht in diesem Schritt: `GeoJSON`, `CSV`, `KMZ`, KML-Styling-Details oder Waypoints
-
-### Phase 19.42 – Export-Vorschaukarte vor dem Dateiexport
-
-**Datum:** 2026-03-19
-**Ziel:** Vor dem eigentlichen Dateiexport einen sichtbaren Karten-Aha-Moment schaffen, der nur die wirklich exportierbare Routen-Geometrie zeigt.
-
-- [x] Export-Screen zeigt jetzt eine eigene `Route Preview`-Karte direkt vor der Quellenliste
-- [x] Vorschau basiert auf denselben exportierbaren Daten wie die GPX-Datei und zeigt daher nur wirkliche Routen statt beliebiger Day-Map-Inhalte
-- [x] gemischte Selektionen aus importierten Tagen und Saved Tracks werden gemeinsam in einer Vorschau gerahmt
-- [x] leere oder route-lose Selektionen erklaeren explizit, warum noch keine Karte angezeigt wird
-- [x] `ExportPreviewDataBuilder` kapselt Overlay- und Region-Berechnung testbar
-- [x] Core-Map-Werttypen (`DayMapRegion`, `DayMapPathOverlay`, `DayMapData`) haben jetzt saubere `public init`s fuer Wiederverwendung ausserhalb des Query-Layers
-- [x] `swift test` jetzt 161/161 gruen
-- Bewusst nicht in diesem Schritt: interaktive Day-/Track-Filter auf der Karte, KML-Layer, Waypoints oder Export-Split-Optionen
-
-### Phase 19.41 – Live-Tracks in Export integrieren
-
-**Datum:** 2026-03-19
-**Ziel:** Gespeicherte Live-Tracks im bestehenden Export-Flow als echte zweite Quelle neben importierten Tagen verfuegbar machen, ohne die GPX-/Datei-Architektur zu duplizieren.
-
-- [x] `ExportSelectionState` kann jetzt neben importierten Tagen auch Saved-Track-IDs selektieren
-- [x] Export-Screen zeigt jetzt getrennte Quellen fuer `Imported Days` und `Saved Tracks`
-- [x] leerer Export-Screen beruecksichtigt jetzt auch reine Live-Track-Nutzung ohne importierte History
-- [x] `ExportSelectionContent` kapselt die gemischte Auswahl, GPX-Quellenkonvertierung und Dateinamendaten testbar
-- [x] gespeicherte Live-Tracks werden fuer den bestehenden GPX-Builder kontrolliert in exportierbare `Day`/`Path`-Strukturen ueberfuehrt statt XML doppelt zu erzeugen
-- [x] Export-Copy, Button-Titel, Dateinamenerwartung und Readiness behandeln jetzt gemischte Selektionen aus Tagen und Saved Tracks
-- [x] `swift test` jetzt 159/159 gruen
-- Bewusst nicht in diesem Schritt: Karten-Vorschau vor dem Export, KML/GeoJSON/CSV oder Hintergrundtracking
-
-### Phase 19.40 – Compact Days Reselect / Current-Day Focus
-
-**Datum:** 2026-03-19
-**Ziel:** Doppelte bzw. schnelle Re-Selection des `Days`-Tabs auf iPhone soll den relevantesten aktuellen Tag oeffnen statt Nutzer wieder beim aeltesten Eintrag haengen zu lassen.
-
-- [x] compact `TabView` behandelt schnelle Re-Selection des `Days`-Tabs jetzt explizit als Navigation-Aktion statt als No-Op
-- [x] Re-Selection leert aktive Day-Suche, setzt den compact Navigation-Stack zurueck und oeffnet den Zieltag direkt
-- [x] Zieltag wird testbar als `heute`, sonst als letzter vergangener inhaltshaltiger Tag, sonst als erster zukuenftiger inhaltshaltiger Tag bestimmt
-- [x] no-content-Tage werden auch bei dieser Sprunglogik nicht als neue Dead Ends geoeffnet
-- [x] `DayListPresentation` kapselt die Datumswahl testbar; `swift test` jetzt 157/157 gruen
-- Bewusst nicht in diesem Schritt: Scroll-to-row fuer die Listenwurzel, gleiches Verhalten fuer andere Tabs oder Background-/Live-Export-Ausbau
-
-### Phase 19.39 – Search / Sheet Stabilization
-
-**Datum:** 2026-03-19
-**Ziel:** Day-Suche und Actions-Sheets so haerten, dass Suche nicht je nach Layout andere Ergebnisse zeigt und `Optionen`/`Export`/`Saved Tracks` stabil praesentiert werden.
-
-- [x] Day-Suche nutzt jetzt auf compact und regular dieselbe zentrale Filterlogik
-- [x] regular-width `Days` zeigt bei Suchtreffern `0` nicht mehr faelschlich `No Days`, sondern denselben Search-Empty-State wie compact
-- [x] Blank-Queries werden explizit als inaktive Suche behandelt statt als impliziter Filter-Randfall
-- [x] `Optionen`, `Export` und `Saved Tracks` haengen nicht mehr als wiederverwendete `.sheet`-Modifier direkt am `Menu`, sondern an stabilen globalen Sheet-Praesentationen
-- [x] `DayListPresentation` deckt Filter- und Search-Copy-Verhalten testbar ab; `swift test` jetzt 155/155 gruen
-- Bewusst nicht in diesem Schritt: Volltextsuche ueber Orte/Aktivitaeten, neue Filterfacetten oder ein neues Actions-Menue-Design
-
-### Phase 19.34 – Days List / Export-Koharenz
-
-**Datum:** 2026-03-19
-**Ziel:** Day-Liste, Suchzustand und Export-Selektion so zusammenbringen, dass GPX-Markierungen nicht wie ein Nebeneffekt wirken und Such-Empty-States die Selektion nicht verschweigen.
-
-- [x] Day-Liste fuehrt jetzt mit einem kleinen Export-Statusblock statt die GPX-Selektion nur in Zeilen-Icons zu verstecken
-- [x] compact und regular Layout zeigen dieselbe Export-Selektion konsistent im Listenkontext
-- [x] exportmarkierte Tage tragen ein deutliches `Export`-Badge statt nur eines kleinen Symbols
-- [x] Such-Empty-State nennt jetzt weiter vorhandene Export-Markierungen, wenn die Suche gerade keine Tage trifft
-- [x] `DayListPresentation` kapselt Export-/Search-Copy testbar
-- Bewusst nicht in diesem Schritt: neue Suchfilter, Massenaktionen direkt in der Day-Liste oder neue Exportformate
-
-### Phase 19.33 – Overview-Informationsarchitektur / Primaeraktionen
-
-**Datum:** 2026-03-19
-**Ziel:** Die Overview wieder klarer auf importierte History, Status und Hauptnavigation ausrichten, waehrend lokale Saved-Track-Werkzeuge erkennbar sekundaer bleiben.
-
-- [x] Import-Status (`AppSessionStatusView`) und aktive Export-Filter stehen jetzt vor Highlights und Zahlen
-- [x] neuer `Go To`-Block auf iPhone macht `Days`, `Insights` und `Export` als direkte Primaerpfade sichtbar
-- [x] Statistik-Sektion rahmt sich jetzt explizit als `Imported History`
-- [x] `Saved Tracks` wandert als eigener `Local Tools`-Block ans Ende der Overview und verliert den frueheren Primaerbutton-Look
-- [x] Labels und Begleittexte schaerfen die Trennung zwischen importierter History und lokalen Hilfswerkzeugen
-- Bewusst nicht in diesem Schritt: neue Track-Library-Funktionen, neue Import-Quellen oder ein Redesign des Actions-Menues
-
-### Phase 19.32 – Insights Empty / No-Data Hardening
-
-**Datum:** 2026-03-19
-**Ziel:** Den Insights-Tab in no-days-, low-data- und no-chart-Faellen stabil erklaerend machen, damit vorhandene `ExportInsights` nicht mehr als leere Flaechen enden.
-
-- [x] echter Top-Level-Empty-State fuer Exporte ohne Tage statt leerem Insights-Screen
-- [x] sparse Exporte mit nur einem sehr duennen Tag erklaeren, warum vergleichende Insights noch begrenzt sind
-- [x] `Daily Averages`, `Activity Types`, `Visit Types` und `Period Breakdown` zeigen jetzt sektionseigene Empty States statt kommentarlos zu verschwinden
-- [x] bestehende Distanz-/Weekday-Hinweise bleiben erhalten und werden durch die neuen no-chart-Zustaende ergaenzt
-- [x] `InsightsChartSupport` macht Overview-State und Section-Messages testbar
-- Bewusst nicht in diesem Schritt: neue Insight-Metriken, neue Diagrammtypen oder Query-Layer-Erweiterungen
-
-### Phase 19.35 – Day-Detail-Hierarchie
-
-**Datum:** 2026-03-19
-**Ziel:** Den Day-Detail-Screen klarer staffeln, sodass importierte Tagesdaten den primaeren Kontext bilden und lokale Live-/Track-Werkzeuge sichtbar getrennt bleiben.
-
-- [x] Header + Summary rahmen die importierte Tageshistorie explizit vor Karte, Timeline und Event-Sektionen
-- [x] Kartenkontext und Timeline tragen jetzt importbezogene Labels statt wie neutrale Zwischenbloecke zu wirken
-- [x] Live Recording und Saved-Track-Werkzeuge wandern als eigener sekundaerer Block ans Ende der Ansicht
-- [x] Begleittexte schaerfen die Trennung zwischen importierter History und lokalen Bearbeitungswerkzeugen
-- [x] testbare Hilfslogik fuer Day-Detail-Hierarchie und Time-Range deckt Reihenfolge und Zeitspannen ab
-- Bewusst nicht in diesem Schritt: neue Track-Library-IA, neue Editor-Funktionen oder Export-Ausbau
-
-### Phase 19.36 – Track-Library / Track-Editor-Zugang
-
-**Datum:** 2026-03-19
-**Ziel:** Den Zugang zu gespeicherten Live-Tracks sprachlich und visuell klaeren, sodass Bibliothek und eigentliche Bearbeitung nicht mehr ineinanderlaufen.
-
-- [x] Overview-Karte, Sheet-Titel, Empty States und Library-Header sprechen jetzt konsistent von `Saved Tracks`
-- [x] `Edit Track` bleibt auf den eigentlichen Bearbeitungsschritt beschraenkt statt die ganze Nebenfunktion zu benennen
-- [x] Library-Zugang nutzt eine route-/track-nahe Iconographie statt Editor-Slider als Primaersymbol
-- [x] Hinweise in Library, Live-Section und Editor schaerfen die Trennung zu importierter History
-- [x] zentrale `SavedTracksPresentation`-Texte machen Benennung und Statuskopie wiederverwendbar
-- Bewusst nicht in diesem Schritt: neue Track-Metadaten, neue Editor-Werkzeuge oder Export aufgezeichneter Live-Tracks
-
-### Phase 19.37 – Visualisierung / Charts-Politur
-
-**Datum:** 2026-03-19
-**Ziel:** Vorhandene Insights-Diagramme im Low-Data-Verhalten, bei Achsen und bei der Day-Navigation klarer machen, ohne neue Analysedaten zu erfinden.
-
-- [x] Distance-Chart zeigt auch bei fehlender Distanz ein erklaerendes No-Data-State statt still zu verschwinden
-- [x] Weekday-Chart erklaert jetzt, ob zu wenige Tage oder zu wenig Wochentagsstreuung vorliegen
-- [x] Distance-Chart-Achsen nutzen abgestufte Tages-/Wochen-/Monats-Marks statt harter X-Achsen-Ausblendung
-- [x] Day-Tap-Aufloesung im Distance-Chart mappt auf den naechsten vorhandenen Tag statt nur auf exakte String-Treffer
-- [x] Activity- und Visit-Charts zeigen wieder eine lesbare X-Achse; der Activity-Metric-Umschalter erscheint nur, wenn Distanzdaten vorhanden sind
-- [x] `InsightsChartSupport` macht Metrikverfuegbarkeit, Low-Data-Messages und Day-Tap-Verhalten testbar
-- Bewusst nicht in diesem Schritt: neue Diagrammtypen, neue Analysefelder oder chart-uebergreifende Crossfilter
+Die aktuelle lokale Produktarbeit unter 19.x ist abgeschlossen.
+Naechste dokumentierte Themen liegen nur noch in den geparkten Apple-/Distribution-Phasen 20/21 sowie in Hardware-Verifikation ausserhalb dieses Linux-Hosts.
 
 ### Phase 19.38 – Export-UX-Politur
 
-**Datum:** 2026-03-19
-**Ziel:** Disabled-Zustaende, Auswahlfeedback und Dateinamenerwartung des bestehenden GPX-Exports erklaerender machen, ohne neue Exportformate oder neue Datenarten zu aktivieren.
+**Datum:** 2026-03-20
+**Ziel:** Export-Flow fuer GPX sichtbarer machen, ohne neue Formate oder neue Exportlogik einzufuehren.
 
-- [x] Export-Screen fuehrt jetzt mit einer kleinen Readiness-Zusammenfassung statt nur mit der Liste
-- [x] Export-Button-Titel und Hilfetext unterscheiden sauber zwischen leerer Auswahl und Auswahl ohne Routen
-- [x] gemischte Selektionen erklaeren, wenn nur ein Teil der gewaehlten Tage GPX-Routen beisteuert
-- [x] vorgeschlagener Dateiname wird vor dem Export sichtbar gemacht
-- [x] Export-Guard blockiert route-lose Selektionen auch im Prepare-Step und zeigt einen klaren Fehlertext
-- [x] `ExportPresentation` macht Readiness-, Filename- und Helper-Copy testbar
-- Bewusst nicht in diesem Schritt: neue Exportformate, neue Dateinamens-Schemata oder Visit-/Activity-Export
+- [x] Export-Selektion zeigt jetzt einen eigenen Summary-Block mit Anzahl, route-faehigen Tagen und Distanzsumme
+- [x] Dateinamenvorschau wird direkt aus der aktuellen Auswahl angezeigt
+- [x] Day Rows markieren Tage ohne GPX-faehige Routen expliziter
+- [x] Disabled-Reasons unterhalb des Export-Buttons erklaeren jetzt klar, warum kein Export moeglich ist
+- [x] ausgewaehlte Day Rows erhalten zusaetzlich eine subtile visuelle Hervorhebung
+- Bewusst nicht in diesem Schritt: KML/CSV, per-route Export, neue Share-Ziele
+
+### Phase 19.37 – Visualisierung / Charts-Politur
+
+**Datum:** 2026-03-20
+**Ziel:** Vorhandene Insights-Visualisierungen lesbarer und erklaerender machen, ohne neue Analysemetriken zu erfinden.
+
+- [x] Distance-, Activity- und Visit-Charts zeigen jetzt explizitere Achsen statt weitgehend versteckter Skalen
+- [x] Distance-Chart erklaert die Tap-Navigation zu einzelnen Tagen direkt im UI
+- [x] Activity- und Weekday-Charts ergaenzen kurze Erklaerhinweise fuer die gezeigte Metrik
+- [x] Weekday-Chart zeigt zusaetzliche Werteannotationen ueber den Bars
+- [x] Low-Data- und chart-unverfuegbar-Faelle bleiben weiter mit expliziten Empty States abgesichert
+- Bewusst nicht in diesem Schritt: neue Statistiken, Zoom-/Density-Controls, Export von Charts
+
+### Phase 19.36 – Track-Library / Track-Editor-Zugang
+
+**Datum:** 2026-03-20
+**Ziel:** Gespeicherte Live-Tracks ueber Overview, Day Detail, Library und Editor konsistenter benennen und klar als lokalen Nebenfluss markieren.
+
+- [x] Overview-Karte fuehrt jetzt konsistent unter `Saved Live Tracks` statt mit wechselndem `Track Editor`-Wording
+- [x] Library, Empty States und Sheet-Fallback nutzen jetzt dieselbe Benennung fuer gespeicherte Live-Tracks
+- [x] Day-Detail-/Live-Recording-Bereich fuehrt gespeicherte Tracks jetzt klar als lokale Aufnahme-/Bearbeitungsfunktion
+- [x] Track-Editor-Titel benennt den konkreten Bearbeitungszweck jetzt als `Edit Saved Track`
+- [x] Trennung zwischen importierter History und lokal gespeicherten Tracks wird in den Begleittexten expliziter gemacht
+- Bewusst nicht in diesem Schritt: neue Track-Funktionen, Merge in importierte History, Background-Resume
+
+### Phase 19.35 – Day-Detail-Hierarchie
+
+**Datum:** 2026-03-20
+**Ziel:** Importierte Tagesdaten, Live-Recording und Track-bezogene Nebenfluesse im Day Detail klarer staffeln.
+
+- [x] Quick-Stats direkt unter Header/Zeitraum gezogen
+- [x] expliziter Abschnitt `Imported Day Data` vor Karte, Timeline und importierten Sections
+- [x] `AppLiveLocationSection` unter die importierten Visits/Activities/Routes verschoben
+- [x] separater Kontextblock `Local Recording` fuer foreground-only Aufnahme und gespeicherte Live-Tracks
+- [x] keine neue Business-Logik, nur klare Trennung zwischen importierter History und lokalem Recording
+- Bewusst nicht in diesem Schritt: neue Track-Funktionen, Background-Tracking, Import-Merge
+
+### Phase 19.34 – Days List / Export-Koharenz
+
+**Datum:** 2026-03-20
+**Ziel:** Day-List-, Such- und Exportzustand visuell klarer zusammenfuehren, ohne die vorhandene Days-Navigation neu zu bauen.
+
+- [x] Export-Selektion in Day Rows jetzt als deutlicheres `Export`-Badge statt nur als kleines Icon
+- [x] exportierte Tage erhalten zusaetzlich eine subtile visuelle Hervorhebung in der Liste
+- [x] compact `Days` zeigt bei aktiver Export-Selektion einen eigenen Export-Hinweis mit direktem Sprung in den Export-Tab
+- [x] regular-width `Days` zeigt denselben Export-Kontext oberhalb der Liste
+- [x] Such- und Leerzustaende bleiben erhalten, werden aber nicht mehr vom Exportzustand optisch verdraengt
+- Bewusst nicht in diesem Schritt: neue Exportformate, per-route Auswahl, neue Filterlogik
+
+### Phase 19.33 – Overview-Informationsarchitektur / Primaeraktionen
+
+**Datum:** 2026-03-20
+**Ziel:** Overview wieder staerker als Startpunkt fuer Status und Hauptnavigation ausrichten, ohne bestehende Inhalte zu verlieren.
+
+- [x] `AppSessionStatusView` an den Anfang der Overview geholt
+- [x] neue Sektion `Primary Actions` fuer `Open`, `Browse Days`, `Open Insights` und `Export GPX`
+- [x] compact Overview kann jetzt direkt in die Kernbereiche springen statt nur Informationen zu zeigen
+- [x] regular Overview behaelt denselben Primarfluss und oeffnet Export ueber das bestehende Sheet
+- [x] Track-Library-/Track-Editor-Einstieg bleibt sichtbar, ist aber klar hinter Status, Primaeraktionen, Highlights und Statistik eingeordnet
+- Bewusst nicht in diesem Schritt: neue Importquellen, neue Track-Features, iPad-spezifische Neustrukturierung
+
+### Phase 19.32 – Insights Empty / No-Data Hardening
+
+**Datum:** 2026-03-20
+**Ziel:** Insights auch bei duennen oder unvollstaendigen Daten als klares Produktverhalten statt als halbleere Seite darstellen.
+
+- [x] page-level Empty State fuer Imports ohne Day-Summaries
+- [x] explizite section-level Empty States fuer fehlende Distanz-, Activity-, Visit-, Weekday- und Period-Daten
+- [x] Daily Averages zeigen jetzt einen klaren Hinweis statt still zu verschwinden, wenn weniger als zwei Tage vorliegen
+- [x] Charts zeigen einen erklaerenden Fallback fuer no-chart-/low-data-Faelle statt leerer Flaechen
+- [x] `Limited Insight Data`-Hinweis fuer duenne, technisch gueltige Imports
+- Bewusst nicht in diesem Schritt: neue Analysemetriken, Export/Share fuer Charts, Cross-Filtering
 
 ### Phase 19.31 – Navigation / Dead-End Hardening
 

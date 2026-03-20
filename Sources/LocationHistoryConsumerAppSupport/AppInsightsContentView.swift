@@ -5,13 +5,19 @@ import LocationHistoryConsumer
 import Charts
 #endif
 
+// MARK: - Insights Content View
+
+enum ActivityMetric: String, CaseIterable {
+    case count = "Count"
+    case distance = "Distance"
+}
+
 struct AppInsightsContentView: View {
     @EnvironmentObject private var preferences: AppPreferences
     let insights: ExportInsights
     let daySummaries: [DaySummary]
     let onDayTap: ((String) -> Void)?
     @State private var activityMetric: ActivityMetric = .count
-    @State private var topDayMetric: InsightsTopDayMetric = .events
 
     private static let chartDateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -33,7 +39,7 @@ struct AppInsightsContentView: View {
     }
 
     private var weekdayStats: [WeekdayStat] {
-        guard daySummaries.count >= InsightsChartSupport.minimumDaysForWeekdayChart else { return [] }
+        guard daySummaries.count >= 3 else { return [] }
         var buckets: [Int: (total: Int, count: Int)] = [:]
         for summary in daySummaries {
             guard let date = Self.chartDateFormatter.date(from: summary.date) else { continue }
@@ -51,317 +57,178 @@ struct AppInsightsContentView: View {
         }
     }
 
-    private var availableActivityMetrics: [ActivityMetric] {
-        InsightsChartSupport.availableActivityMetrics(for: insights.activityBreakdown)
+    private var hasDayData: Bool {
+        !daySummaries.isEmpty
     }
 
     private var hasDistanceData: Bool {
-        InsightsChartSupport.hasDistanceData(in: daySummaries)
+        daySummaries.contains(where: { $0.totalPathDistanceM > 0 })
     }
 
-    private var displayedActivityMetric: ActivityMetric {
-        availableActivityMetrics.contains(activityMetric) ? activityMetric : availableActivityMetrics.first ?? .count
+    private var canShowDailyAverages: Bool {
+        daySummaries.count >= 2
     }
 
-    private var availableTopDayMetrics: [InsightsTopDayMetric] {
-        InsightsTopDaysPresentation.availableMetrics(for: daySummaries)
+    private var hasWeekdayData: Bool {
+        !weekdayStats.isEmpty
     }
 
-    private var displayedTopDayMetric: InsightsTopDayMetric {
-        availableTopDayMetrics.contains(topDayMetric) ? topDayMetric : availableTopDayMetrics.first ?? .events
+    private var shouldShowDenseDistanceAxis: Bool {
+        daySummaries.count <= 12
     }
 
-    private var topDays: [DaySummary] {
-        InsightsTopDaysPresentation.topDays(from: daySummaries, by: displayedTopDayMetric)
+    private var activityMetricAxisLabel: String {
+        activityMetric == .distance ? distanceAxisLabel(unit: preferences.distanceUnit) : "Activity Count"
     }
 
-    private var overviewState: InsightsOverviewState {
-        InsightsChartSupport.overviewState(
-            dayCount: daySummaries.count,
-            hasDistanceData: hasDistanceData,
-            hasActivityData: !insights.activityBreakdown.isEmpty,
-            hasVisitData: !insights.visitTypeBreakdown.isEmpty,
-            hasPeriodData: !insights.periodBreakdown.isEmpty
-        )
-    }
-
-    private var daySummaryLookup: [String: DaySummary] {
-        Dictionary(uniqueKeysWithValues: daySummaries.map { ($0.date, $0) })
-    }
-
-    private var highlightItems: [InsightsHighlightItem] {
-        var items: [InsightsHighlightItem] = []
-        if let busiest = insights.busiestDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "busiest",
-                    title: "Busiest Day",
-                    icon: "flame.fill",
-                    color: .orange,
-                    highlight: busiest,
-                    summary: daySummaryLookup[busiest.date],
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        if let mostVisits = insights.mostVisitsDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "visits",
-                    title: "Most Visits",
-                    icon: "mappin.circle.fill",
-                    color: .blue,
-                    highlight: mostVisits,
-                    summary: daySummaryLookup[mostVisits.date],
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        if let mostRoutes = insights.mostRoutesDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "routes",
-                    title: "Most Routes",
-                    icon: "location.north.circle.fill",
-                    color: .green,
-                    highlight: mostRoutes,
-                    summary: daySummaryLookup[mostRoutes.date],
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        if let longest = insights.longestDistanceDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "distance",
-                    title: "Longest Distance",
-                    icon: "road.lanes",
-                    color: .purple,
-                    highlight: longest,
-                    summary: daySummaryLookup[longest.date],
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        return items
+    private var hasAnyMeaningfulInsightSection: Bool {
+        hasDistanceData ||
+        canShowDailyAverages ||
+        !insights.activityBreakdown.isEmpty ||
+        !insights.visitTypeBreakdown.isEmpty ||
+        hasWeekdayData ||
+        !insights.periodBreakdown.isEmpty
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            switch overviewState {
-            case .noDays:
-                overviewEmptyState(overviewState)
-            case .sparseHistory:
-                overviewEmptyState(overviewState)
-                insightsSections
-            case .ready:
-                insightsSections
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var insightsSections: some View {
-        if !insights.activeFilterDescriptions.isEmpty {
-            insightSection("Active Filters", icon: "line.3.horizontal.decrease.circle.fill") {
-                activeFiltersCard(insights.activeFilterDescriptions)
-            }
-        }
-
-        if !highlightItems.isEmpty {
-            insightSection("Highlights", icon: "sparkles") {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12)], spacing: 12) {
-                    ForEach(highlightItems) { item in
-                        highlightCard(item)
-                    }
+        if !hasDayData {
+            pageEmptyState(
+                title: "No Insights Yet",
+                message: "This import contains no day entries, so there is nothing meaningful to analyze yet.",
+                systemImage: "chart.line.text.clipboard"
+            )
+        } else {
+            VStack(alignment: .leading, spacing: 24) {
+                if !hasAnyMeaningfulInsightSection {
+                    insightsEmptyCard(
+                        title: "Limited Insight Data",
+                        message: "The import loaded correctly, but it does not contain enough structured data for the current insight views yet.",
+                        systemImage: "chart.bar.xaxis"
+                    )
                 }
-            }
-        }
 
-        if !topDays.isEmpty {
-            insightSection("Top Days", icon: "list.number") {
-                if availableTopDayMetrics.count > 1 {
-                    Picker("", selection: $topDayMetric) {
-                        ForEach(availableTopDayMetrics, id: \.self) { metric in
-                            Text(metric.rawValue).tag(metric)
+                insightSection("Distance Over Time", icon: "chart.bar.fill") {
+                    #if canImport(Charts)
+                    if hasDistanceData {
+                        distanceChart
+                        if onDayTap != nil {
+                            sectionHint("Tap a bar to open the corresponding day.", systemImage: "hand.tap")
                         }
+                        Text("Route distances only")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    } else {
+                        insightsEmptyCard(
+                            title: "No Route Distances",
+                            message: "This import does not contain route distance data that could be plotted over time.",
+                            systemImage: "road.lanes"
+                        )
                     }
-                    .pickerStyle(.segmented)
-                }
-
-                VStack(spacing: 10) {
-                    ForEach(Array(topDays.enumerated()), id: \.element.date) { index, summary in
-                        topDayRow(summary, rank: index + 1, metric: displayedTopDayMetric)
-                    }
-                }
-
-                Text(
-                    InsightsTopDaysPresentation.sectionMessage(
-                        metric: displayedTopDayMetric,
-                        canNavigateToDay: onDayTap != nil
+                    #else
+                    insightsEmptyCard(
+                        title: "Charts Unavailable",
+                        message: "This platform build does not include chart rendering for the distance timeline.",
+                        systemImage: "chart.bar"
                     )
-                )
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-            }
-        }
-
-        // Distance Over Time
-        #if canImport(Charts)
-        if !daySummaries.isEmpty {
-            insightSection("Distance Over Time", icon: "chart.bar.fill") {
-                if hasDistanceData {
-                    distanceChart
-                } else {
-                    chartEmptyState(
-                        title: "No Distance Data",
-                        message: InsightsChartSupport.distanceEmptyMessage(),
-                        systemImage: "road.lanes"
-                    )
+                    #endif
                 }
-                Text(InsightsChartSupport.distanceSectionMessage(hasDays: !daySummaries.isEmpty, canNavigateToDay: onDayTap != nil))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        #endif
 
-        // Daily Averages (only meaningful with multiple days)
-        insightSection("Daily Averages", icon: "chart.bar.fill") {
-            if let message = InsightsChartSupport.dailyAveragesSectionMessage(dayCount: daySummaries.count) {
-                chartEmptyState(
-                    title: "Daily Averages Not Ready",
-                    message: message,
-                    systemImage: "calendar.badge.clock"
-                )
-            } else {
-                let avg = insights.averagesPerDay
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
-                    avgCard(String(format: "%.1f", avg.avgVisitsPerDay), label: "Visits / Day", icon: "mappin.and.ellipse", color: .blue)
-                    avgCard(String(format: "%.1f", avg.avgActivitiesPerDay), label: "Activities / Day", icon: "figure.walk", color: .green)
-                    avgCard(String(format: "%.1f", avg.avgPathsPerDay), label: "Routes / Day", icon: "location.north.line", color: .orange)
-                    avgCard(formatDistance(avg.avgDistancePerDayM, unit: preferences.distanceUnit), label: "Distance / Day", icon: "road.lanes", color: .purple)
-                }
-            }
-        }
-
-        // Activity Types
-        insightSection("Activity Types", icon: "figure.walk") {
-            if insights.activityBreakdown.isEmpty {
-                chartEmptyState(
-                    title: "No Activity Breakdown",
-                    message: InsightsChartSupport.activitySectionEmptyMessage(),
-                    systemImage: "figure.walk"
-                )
-            } else {
-                #if canImport(Charts)
-                if availableActivityMetrics.count > 1 {
-                    Picker("", selection: $activityMetric) {
-                        ForEach(availableActivityMetrics, id: \.self) { m in
-                            Text(m.rawValue).tag(m)
+                insightSection("Daily Averages", icon: "chart.bar.fill") {
+                    if canShowDailyAverages {
+                        let avg = insights.averagesPerDay
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
+                            avgCard(String(format: "%.1f", avg.avgVisitsPerDay), label: "Visits / Day", icon: "mappin.and.ellipse", color: .blue)
+                            avgCard(String(format: "%.1f", avg.avgActivitiesPerDay), label: "Activities / Day", icon: "figure.walk", color: .green)
+                            avgCard(String(format: "%.1f", avg.avgPathsPerDay), label: "Routes / Day", icon: "location.north.line", color: .orange)
+                            avgCard(formatDistance(avg.avgDistancePerDayM, unit: preferences.distanceUnit), label: "Distance / Day", icon: "road.lanes", color: .purple)
                         }
+                    } else {
+                        insightsEmptyCard(
+                            title: "Need More Than One Day",
+                            message: "Daily averages become meaningful once the import contains at least two different days.",
+                            systemImage: "calendar.badge.plus"
+                        )
                     }
-                    .pickerStyle(.segmented)
-                    .padding(.bottom, 4)
                 }
-                activityTypeChart(metric: displayedActivityMetric)
-                if availableActivityMetrics.count == 1 {
-                    Text("Distance mode appears when exported activity totals include route distance.")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-                #endif
-                ForEach(Array(insights.activityBreakdown.enumerated()), id: \.offset) { _, item in
-                    activityBreakdownCard(item)
-                }
-            }
-        }
 
-        // Visit Types
-        insightSection("Visit Types", icon: "mappin.and.ellipse") {
-            if insights.visitTypeBreakdown.isEmpty {
-                chartEmptyState(
-                    title: "No Visit Breakdown",
-                    message: InsightsChartSupport.visitSectionEmptyMessage(),
-                    systemImage: "mappin.and.ellipse"
-                )
-            } else {
-                #if canImport(Charts)
-                visitTypeChart
-                Text("Counts by semantic visit type.")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                #endif
-                ForEach(Array(insights.visitTypeBreakdown.enumerated()), id: \.offset) { _, item in
-                    visitTypeRow(item)
+                insightSection("Activity Types", icon: "figure.walk") {
+                    if !insights.activityBreakdown.isEmpty {
+                        #if canImport(Charts)
+                        Picker("", selection: $activityMetric) {
+                            ForEach(ActivityMetric.allCases, id: \.self) { m in
+                                Text(m.rawValue).tag(m)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.bottom, 4)
+                        activityTypeChart
+                        sectionHint("Compare activities by \(activityMetric == .distance ? "covered distance" : "entry count").")
+                        #endif
+                        ForEach(Array(insights.activityBreakdown.enumerated()), id: \.offset) { _, item in
+                            activityBreakdownCard(item)
+                        }
+                    } else {
+                        insightsEmptyCard(
+                            title: "No Activity Breakdown",
+                            message: "No activity entries were found that could be summarized by type, distance or duration.",
+                            systemImage: "figure.walk.motion"
+                        )
+                    }
                 }
-            }
-        }
 
-        // By Day of Week
-        #if canImport(Charts)
-        if !daySummaries.isEmpty {
-            insightSection("By Day of Week", icon: "chart.bar") {
-                if let message = InsightsChartSupport.weekdaySectionMessage(dayCount: daySummaries.count, bucketCount: weekdayStats.count) {
-                    chartEmptyState(
-                        title: "Weekday Pattern Not Ready",
-                        message: message,
-                        systemImage: "calendar.badge.clock"
+                insightSection("Visit Types", icon: "mappin.and.ellipse") {
+                    if !insights.visitTypeBreakdown.isEmpty {
+                        #if canImport(Charts)
+                        visitTypeChart
+                        #endif
+                        ForEach(Array(insights.visitTypeBreakdown.enumerated()), id: \.offset) { _, item in
+                            visitTypeRow(item)
+                        }
+                    } else {
+                        insightsEmptyCard(
+                            title: "No Visit Types",
+                            message: "This import does not contain visit data that can be grouped into semantic place types.",
+                            systemImage: "mappin.slash"
+                        )
+                    }
+                }
+
+                insightSection("By Day of Week", icon: "chart.bar") {
+                    #if canImport(Charts)
+                    if hasWeekdayData {
+                        weekdayChart
+                        sectionHint("Average visit and activity events per weekday across the imported days.")
+                    } else {
+                        insightsEmptyCard(
+                            title: "Need More Day Coverage",
+                            message: "A weekday pattern is only shown once at least three separate day summaries are available.",
+                            systemImage: "calendar"
+                        )
+                    }
+                    #else
+                    insightsEmptyCard(
+                        title: "Charts Unavailable",
+                        message: "This platform build does not include chart rendering for the weekday view.",
+                        systemImage: "chart.bar"
                     )
-                } else {
-                    weekdayChart
-                    Text("Average visits plus activities per weekday.")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    #endif
+                }
+
+                insightSection("Period Breakdown", icon: "calendar.badge.clock") {
+                    if !insights.periodBreakdown.isEmpty {
+                        ForEach(Array(insights.periodBreakdown.enumerated()), id: \.offset) { _, item in
+                            periodRow(item)
+                        }
+                    } else {
+                        insightsEmptyCard(
+                            title: "No Period Stats",
+                            message: "This export does not include aggregated month or year period statistics.",
+                            systemImage: "calendar.badge.exclamationmark"
+                        )
+                    }
                 }
             }
         }
-        #endif
-
-        // Period Breakdown
-        insightSection("Period Breakdown", icon: "calendar.badge.clock") {
-            if insights.periodBreakdown.isEmpty {
-                chartEmptyState(
-                    title: "No Period Breakdown",
-                    message: InsightsChartSupport.periodSectionEmptyMessage(),
-                    systemImage: "calendar.badge.clock"
-                )
-            } else {
-                ForEach(Array(insights.periodBreakdown.enumerated()), id: \.offset) { _, item in
-                    periodRow(item)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func chartEmptyState(title: String, message: String, systemImage: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(title, systemImage: systemImage)
-                .font(.subheadline.weight(.semibold))
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color.secondary.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-    }
-
-    @ViewBuilder
-    private func overviewEmptyState(_ state: InsightsOverviewState) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(state.title, systemImage: state.systemImage)
-                .font(.subheadline.weight(.semibold))
-            Text(state.message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color.secondary.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     @ViewBuilder
@@ -378,88 +245,51 @@ struct AppInsightsContentView: View {
     }
 
     @ViewBuilder
-    private func highlightCard(_ item: InsightsHighlightItem) -> some View {
-        Group {
-            if let onDayTap {
-                Button {
-                    onDayTap(item.date)
-                } label: {
-                    InsightsHighlightCardView(item: item, isInteractive: true)
-                }
-                .buttonStyle(.plain)
-            } else {
-                InsightsHighlightCardView(item: item, isInteractive: false)
-            }
+    private func pageEmptyState(title: String, message: String, systemImage: String) -> some View {
+        VStack(spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.system(size: 36))
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.headline)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
+        .frame(maxWidth: .infinity, minHeight: 240)
+        .padding(24)
     }
 
     @ViewBuilder
-    private func activeFiltersCard(_ filters: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("These insights reflect the current filtered export, not the full history file.")
-                .font(.caption)
+    private func insightsEmptyCard(title: String, message: String, systemImage: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: systemImage)
                 .foregroundStyle(.secondary)
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 8)], spacing: 8) {
-                ForEach(filters, id: \.self) { filter in
-                    Text(filter)
-                        .font(.caption.weight(.medium))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(Color.orange.opacity(0.08))
-                        .clipShape(Capsule())
-                }
+                .font(.subheadline)
+                .padding(.top, 1)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+            Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color.orange.opacity(0.06))
+        .background(Color.secondary.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     @ViewBuilder
-    private func topDayRow(_ summary: DaySummary, rank: Int, metric: InsightsTopDayMetric) -> some View {
-        let presentation = InsightsCardPresentation.topDayRow(
-            summary: summary,
-            rank: rank,
-            metric: metric,
-            unit: preferences.distanceUnit
-        )
-
-        Group {
-            if let onDayTap {
-                Button {
-                    onDayTap(summary.date)
-                } label: {
-                    InsightsTopDayRowView(
-                        presentation: presentation,
-                        accent: topDayMetricColor(metric),
-                        isInteractive: true
-                    )
-                }
-                .buttonStyle(.plain)
-            } else {
-                InsightsTopDayRowView(
-                    presentation: presentation,
-                    accent: topDayMetricColor(metric),
-                    isInteractive: false
-                )
-            }
-        }
-    }
-
-    private func topDayMetricColor(_ metric: InsightsTopDayMetric) -> Color {
-        switch metric {
-        case .events:
-            return .orange
-        case .visits:
-            return .blue
-        case .routes:
-            return .green
-        case .distance:
-            return .purple
-        }
+    private func sectionHint(_ text: String, systemImage: String = "info.circle") -> some View {
+        Label(text, systemImage: systemImage)
+            .font(.caption)
+            .foregroundStyle(.secondary)
     }
 
     @ViewBuilder
@@ -581,8 +411,9 @@ struct AppInsightsContentView: View {
                 }
             }
         }
-        .chartXAxis {
-            distanceChartXAxis
+        .chartXAxis(shouldShowDenseDistanceAxis ? .automatic : .hidden)
+        .chartYAxis {
+            AxisMarks(position: .leading)
         }
         .chartYAxisLabel(distanceAxisLabel(unit: preferences.distanceUnit), alignment: .trailing)
         .chartOverlay { proxy in
@@ -593,44 +424,23 @@ struct AppInsightsContentView: View {
                     .onTapGesture { location in
                         guard let onDayTap else { return }
                         let x = location.x - geometry.frame(in: .local).minX
-                        guard let tappedDate: Date = proxy.value(atX: x),
-                              let iso = InsightsChartSupport.nearestDayISODate(to: tappedDate, in: daySummaries.map(\.date)) else {
-                            return
+                        if let tappedDate: Date = proxy.value(atX: x) {
+                            let iso = Self.chartDateFormatter.string(from: tappedDate)
+                            if daySummaries.contains(where: { $0.date == iso }) {
+                                onDayTap(iso)
+                            }
                         }
-                        onDayTap(iso)
                     }
             }
         }
-        .frame(height: 170)
-    }
-
-    @AxisContentBuilder
-    private var distanceChartXAxis: some AxisContent {
-        if daySummaries.count <= 7 {
-            AxisMarks(values: .stride(by: .day)) { value in
-                AxisGridLine()
-                AxisTick()
-                AxisValueLabel(format: .dateTime.month(.abbreviated).day())
-            }
-        } else if daySummaries.count <= 31 {
-            AxisMarks(values: .stride(by: .weekOfMonth)) { value in
-                AxisGridLine()
-                AxisTick()
-                AxisValueLabel(format: .dateTime.month(.abbreviated).day())
-            }
-        } else {
-            AxisMarks(values: .stride(by: .month)) { value in
-                AxisGridLine()
-                AxisTick()
-                AxisValueLabel(format: .dateTime.month(.abbreviated))
-            }
-        }
+        .frame(height: 150)
     }
 
     @ViewBuilder
-    private func activityTypeChart(metric: ActivityMetric) -> some View {
+    private var activityTypeChart: some View {
         let items = insights.activityBreakdown
-        let showDistance = metric == .distance
+        let hasDistance = items.contains(where: { $0.totalDistanceKM > 0 })
+        let showDistance = activityMetric == .distance && hasDistance
         Chart {
             ForEach(items, id: \.activityType) { item in
                 let xVal = showDistance ? distanceValue(item.totalDistanceKM * 1000, unit: preferences.distanceUnit) : Double(item.count)
@@ -650,8 +460,8 @@ struct AppInsightsContentView: View {
         .chartXAxis {
             AxisMarks(position: .bottom)
         }
-        .chartXAxisLabel(showDistance ? distanceAxisLabel(unit: preferences.distanceUnit) : "count")
-        .frame(height: CGFloat(max(items.count, 1)) * 44 + 18)
+        .chartXAxisLabel(activityMetricAxisLabel, alignment: .trailing)
+        .frame(height: CGFloat(max(items.count, 1)) * 40 + 8)
     }
 
     @ViewBuilder
@@ -676,8 +486,8 @@ struct AppInsightsContentView: View {
             .chartXAxis {
                 AxisMarks(position: .bottom)
             }
-            .chartXAxisLabel("count")
-            .frame(height: CGFloat(max(insights.visitTypeBreakdown.count, 1)) * 44 + 18)
+            .chartXAxisLabel("Visit Count", alignment: .trailing)
+            .frame(height: CGFloat(max(insights.visitTypeBreakdown.count, 1)) * 40 + 8)
         }
     }
 
@@ -698,8 +508,11 @@ struct AppInsightsContentView: View {
                 }
             }
         }
-        .chartYAxisLabel("avg events", alignment: .trailing)
-        .frame(height: 130)
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+        .chartYAxisLabel("Avg events", alignment: .trailing)
+        .frame(height: 110)
         .padding(.bottom, 2)
     }
     #endif

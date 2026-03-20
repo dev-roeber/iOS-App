@@ -11,23 +11,17 @@ struct AppDayRow: View {
     var isSelectedForExport: Bool = false
 
     var body: some View {
-        let presentation = DaySummaryRowPresentationBuilder.presentation(
-            for: summary,
-            unit: preferences.distanceUnit,
-            context: .list
-        )
-
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(presentation.weekdayText)
+                Text(AppDateDisplay.weekday(summary.date))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
                 HStack(spacing: 4) {
                     if isSelectedForExport {
-                        Label(DayListPresentation.exportBadgeTitle, systemImage: "square.and.arrow.up.circle.fill")
+                        Label("Export", systemImage: "square.and.arrow.up")
                             .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundColor(.accentColor)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
                             .background(Color.accentColor.opacity(0.12))
@@ -40,17 +34,33 @@ struct AppDayRow: View {
                     }
                 }
             }
-            Text(presentation.dateText)
+            Text(AppDateDisplay.mediumDate(summary.date))
                 .font(.headline)
-            Text(presentation.subtitle)
+            if summary.hasContent {
+                HStack(spacing: 12) {
+                    Label("\(summary.visitCount)", systemImage: "mappin.and.ellipse")
+                    Label("\(summary.activityCount)", systemImage: "figure.walk")
+                    Label("\(summary.pathCount)", systemImage: "location.north.line")
+                    if summary.totalPathDistanceM > 0 {
+                        Label(formatDistance(summary.totalPathDistanceM, unit: preferences.distanceUnit), systemImage: "ruler")
+                    }
+                }
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            DaySummaryMetricChipsView(metrics: presentation.metrics)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(summary.visitCount) Visits, \(summary.activityCount) Activities, \(summary.pathCount) Routes")
+            } else {
+                Label("No recorded entries", systemImage: "tray")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("No recorded entries for this day")
+            }
         }
         .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(isSelectedForExport ? Color.accentColor.opacity(0.06) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .opacity(summary.hasContent ? 1 : 0.72)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(presentation.accessibilityLabel)
     }
 }
 
@@ -58,53 +68,37 @@ struct AppDayRow: View {
 
 public struct AppDayListView: View {
     let summaries: [DaySummary]
-    let totalSummaryCount: Int
-    let searchQuery: String
+    let selectedForExportDates: Set<String>
     @Binding var selectedDate: String?
-    let exportSelection: ExportSelectionState
-    var onOpenExport: (() -> Void)? = nil
+    @Binding var searchText: String
 
     public init(
         summaries: [DaySummary],
-        totalSummaryCount: Int? = nil,
-        searchQuery: String = "",
+        selectedForExportDates: Set<String> = [],
         selectedDate: Binding<String?>,
-        exportSelection: ExportSelectionState = ExportSelectionState(),
-        onOpenExport: (() -> Void)? = nil
+        searchText: Binding<String> = .constant("")
     ) {
         self.summaries = summaries
-        self.totalSummaryCount = totalSummaryCount ?? summaries.count
-        self.searchQuery = searchQuery
+        self.selectedForExportDates = selectedForExportDates
         self._selectedDate = selectedDate
-        self.exportSelection = exportSelection
-        self.onOpenExport = onOpenExport
+        self._searchText = searchText
     }
 
     public var body: some View {
-        if totalSummaryCount == 0 {
+        let filteredSummaries = AppDaySearch.filter(summaries, query: searchText)
+        if summaries.isEmpty {
             AppDayListEmptyView()
-        } else if summaries.isEmpty {
-            AppDaySearchEmptyView(
-                query: searchQuery,
-                exportSelectionCount: exportSelection.count
-            )
         } else {
-            let groups = groupByMonth(summaries)
+            let groups = groupByMonth(filteredSummaries)
             List(selection: $selectedDate) {
-                Section {
-                    DayListExportSelectionCard(
-                        selectionCount: exportSelection.count,
-                        onOpenExport: onOpenExport
-                    )
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .listRowSeparator(.hidden)
+                if !selectedForExportDates.isEmpty {
+                    exportStatusSection
                 }
-
                 if groups.count == 1 {
-                    ForEach(summaries, id: \.date) { summary in
+                    ForEach(filteredSummaries, id: \.date) { summary in
                         AppDayRow(
                             summary: summary,
-                            isSelectedForExport: exportSelection.isSelected(summary.date)
+                            isSelectedForExport: selectedForExportDates.contains(summary.date)
                         )
                         .tag(summary.date)
                         .disabled(!summary.hasContent)
@@ -115,15 +109,51 @@ public struct AppDayListView: View {
                             ForEach(group.summaries, id: \.date) { summary in
                                 AppDayRow(
                                     summary: summary,
-                                    isSelectedForExport: exportSelection.isSelected(summary.date)
+                                    isSelectedForExport: selectedForExportDates.contains(summary.date)
                                 )
-                                .tag(summary.date)
-                                .disabled(!summary.hasContent)
+                                    .tag(summary.date)
+                                    .disabled(!summary.hasContent)
                             }
                         }
                     }
                 }
             }
+            .overlay {
+                if !summaries.isEmpty && filteredSummaries.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.largeTitle)
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                        Text("No Results")
+                            .font(.headline)
+                        Text("No days match \"\(searchText)\".")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(24)
+                }
+            }
+        }
+    }
+
+    private var exportStatusSection: some View {
+        Section {
+            HStack(spacing: 10) {
+                Image(systemName: "square.and.arrow.up")
+                    .foregroundColor(.accentColor)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(selectedForExportDates.count) day\(selectedForExportDates.count == 1 ? "" : "s") selected for export")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Export markers stay visible directly in the list.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .padding(.vertical, 4)
         }
     }
 }
@@ -147,56 +177,6 @@ struct AppDayListEmptyView: View {
         .accessibilityElement(children: .combine)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
-    }
-}
-
-struct AppDaySearchEmptyView: View {
-    let query: String
-    let exportSelectionCount: Int
-
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "magnifyingglass")
-                .font(.largeTitle)
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            Text("No Results")
-                .font(.headline)
-            Text(DayListPresentation.searchEmptyMessage(query: query, exportSelectionCount: exportSelectionCount))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
-    }
-}
-
-struct DayListExportSelectionCard: View {
-    let selectionCount: Int
-    var onOpenExport: (() -> Void)? = nil
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Label(DayListPresentation.exportSelectionTitle(count: selectionCount), systemImage: "square.and.arrow.up")
-                    .font(.subheadline.weight(.semibold))
-                Text(DayListPresentation.exportSelectionMessage(count: selectionCount))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            if let onOpenExport {
-                Button(DayListPresentation.exportButtonTitle, action: onOpenExport)
-                    .buttonStyle(.bordered)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color.accentColor.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

@@ -1,10 +1,10 @@
 # APP Feature Inventory
 
-Last analysis: 2026-03-19
+Last analysis: 2026-03-20
 
 Repos in scope:
 - `LocationHistory2GPX-iOS`: verified in this workspace
-- `LH2GPXWrapper`: not available in this workspace during this audit; no wrapper-only features are claimed below
+- `LH2GPXWrapper`: available in this workspace, but this inventory still only claims features that are verifiable from the core repo itself
 
 Governance:
 - Only document what is verifiable in repo/app.
@@ -50,14 +50,15 @@ Not present:
 ## 3. Overview / Dashboard
 
 Present:
-- import-status card and active export filters lead the overview before highlights and totals
-- compact layout overview exposes a dedicated `Go To` block for `Days`, `Insights` and `Export`
-- overview screen with statistics cards for days, visits, activities and routes, framed explicitly as imported history
+- overview screen with statistics cards for days, visits, activities and routes
+- overview starts with a source/status card and a dedicated `Primary Actions` section
 - optional date-range header when days exist
 - optional total-distance summary card when distance data exists
 - highlight cards for busiest day and longest-distance day
+- active-filter banner when export filters are present in metadata
 - source/status card with optional technical disclosure details
-- overview entry card for the saved-tracks library as a separate `Local Tools` block after imported-history content
+- primary action cards can jump directly into file import, day browsing, insights and export
+- overview entry card for the `Saved Live Tracks` local library
 
 Not present:
 - dedicated onboarding dashboard state distinct from the import-first root
@@ -68,15 +69,14 @@ Not present:
 Present:
 - sorted day list derived from export days
 - month grouping when multiple months are present
-- compact search by date string
-- list-level export-selection summary card in compact and regular day lists
+- search on compact and regular day lists by date, formatted date, weekday and month text
 - day rows show weekday, formatted date, visit/activity/route counts and optional distance
-- export-marked days carry a visible `Export` badge
 - no-content days stay visible in the list, but show a dedicated `No recorded entries` hint
-- search empty state explains when selected export days still remain after clearing the query
 - no-content days are not treated as normal detail targets in compact or regular navigation
 - compact list can show highlight icons for busiest/longest day
-- day rows support export-selection badge state in grouped and ungrouped layouts
+- day rows support export-selection badge state and subtle highlight treatment in grouped and ungrouped layouts
+- compact and regular day lists show an explicit export-context banner when selected days exist
+- compact `Days` can jump back to the current day when the already selected tab is tapped again on iPhone
 - regular-width list supports selection-driven detail display
 
 Not present:
@@ -89,12 +89,13 @@ Present:
 - weekday/date header
 - derived day time range when timed entries exist
 - quick stats for visits, activities, routes and optional distance
+- explicit separation between imported day data and local live-recording utilities
 - structured sections for visits, activities and routes
 - colored cards for visit/activity/route items
 - empty states for `Select a Day`, `No Day Entries` and `Nothing Recorded`
 - day timeline/Gantt visualization for visits and activities
 - day detail is only entered for contentful days; empty calendar days remain list-only
-- live recording section can appear inside day detail on supported platforms, including direct access to saved tracks
+- live recording section can appear inside day detail on supported platforms
 
 Not present:
 - inline editing of imported visits / activities / routes
@@ -120,20 +121,15 @@ Not present:
 ## 7. Insights / Statistiken / Diagramme
 
 Present:
-- dedicated top-level empty state when an export has no day summaries
 - distance-over-time chart when distance data exists
-- distance-over-time section keeps a dedicated no-distance explanation instead of disappearing
-- distance-over-time bars can navigate to the nearest matching day when day navigation is wired in
-- sparse one-day exports explain that comparative insights are still limited
-- daily averages section shows a readiness explanation when fewer than two days exist
+- daily averages cards when at least two days exist
 - activity-type breakdown cards
-- activity-type section shows an explicit empty state when no aggregated activity totals exist
-- activity-type chart with `Count` / `Distance` toggle only when distance data exists
+- activity-type chart with `Count` / `Distance` toggle
 - visit-type chart and list
-- visit-type section shows an explicit empty state when no semantic visit categories exist
-- weekday chart with explicit low-data explanation when too few days or weekdays are present
-- period breakdown section shows an explicit empty state when export stats contain no periods
+- weekday chart when enough day data exists
 - period breakdown cards when period stats exist
+- explicit empty-state/fallback messaging for no-days, low-data and section-unavailable insight cases
+- visible chart hints/labels for tap navigation, selected metric context and weekday averages
 - insights are built from decoded stats with day-level fallbacks where implemented
 
 Not present:
@@ -162,12 +158,13 @@ Present:
 - dedicated `Export` tab on compact layout
 - export sheet entry on regular width
 - multi-day selection with `Select All` / `Deselect All`
+- saved live tracks can be selected in the same export flow
 - system `fileExporter` flow
-- GPX generation from selected days
-- suggested export filename preview based on selected days
-- explicit export-selection status card before the day list
-- disabled export button with reason-specific helper copy when nothing is selected or no selected day has routes
-- mixed selections explain when only part of the chosen days will contribute GPX routes
+- GPX generation from selected imported days and selected saved live tracks
+- suggested export filename based on selected days
+- export summary card with selected-day count, route-day count, distance total and filename preview
+- disabled export button when nothing is selected or no selected day has routes
+- explicit disabled-reason messaging and clearer marking of days without GPX route data
 
 Bewusst deaktiviert, aber vorhanden:
 - `ExportFormat` enum exists as an extension point for additional formats
