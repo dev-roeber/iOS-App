@@ -1,4 +1,5 @@
 import Foundation
+import LocationHistoryConsumer
 #if canImport(SwiftUI)
 import SwiftUI
 #endif
@@ -138,7 +139,9 @@ enum RecordedTrackEditorPresentation {
         if index > 0 {
             let previous = draft.points[index - 1]
             let current = draft.points[index]
-            let meters = distanceMeters(from: previous, to: current)
+            let a = LocationCoordinate2D(latitude: previous.latitude, longitude: previous.longitude)
+            let b = LocationCoordinate2D(latitude: current.latitude, longitude: current.longitude)
+            let meters = a.distance(to: b)
             return "\(formatDistance(meters, unit: unit)) from previous"
         }
 
@@ -148,19 +151,10 @@ enum RecordedTrackEditorPresentation {
 
         let current = draft.points[index]
         let next = draft.points[index + 1]
-        let meters = distanceMeters(from: current, to: next)
+        let a = LocationCoordinate2D(latitude: current.latitude, longitude: current.longitude)
+        let b = LocationCoordinate2D(latitude: next.latitude, longitude: next.longitude)
+        let meters = a.distance(to: b)
         return "\(formatDistance(meters, unit: unit)) to next"
-    }
-
-    private static func distanceMeters(from lhs: RecordedTrackPoint, to rhs: RecordedTrackPoint) -> Double {
-        let earthRadiusM = 6_371_000.0
-        let dLat = (rhs.latitude - lhs.latitude) * .pi / 180
-        let dLon = (rhs.longitude - lhs.longitude) * .pi / 180
-        let a = sin(dLat / 2) * sin(dLat / 2)
-            + cos(lhs.latitude * .pi / 180) * cos(rhs.latitude * .pi / 180)
-            * sin(dLon / 2) * sin(dLon / 2)
-        let c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return earthRadiusM * c
     }
 }
 

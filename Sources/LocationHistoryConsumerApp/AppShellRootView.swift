@@ -158,7 +158,7 @@ struct AppShellRootView: View {
         }
 
         do {
-            let content = try AppContentLoader.loadImportedContent(from: url)
+            let content = try await AppContentLoader.loadImportedContent(from: url)
             ImportBookmarkStore.save(url: url)
             session.show(content: content)
         } catch {

@@ -49,25 +49,21 @@ public struct GPXWaypoint: Equatable {
     }
 }
 
-/// Builds GPX 1.1 documents from `Day` arrays.
+/// A builder for GPX 1.1 format XML strings.
 ///
-/// Only `Path` entries that carry at least one `PathPoint` are exported as GPX tracks.
+/// See: http://www.topografix.com/GPX/1/1/
 public enum GPXBuilder {
-
-    // MARK: - Public API
-
-    /// Builds a GPX 1.1 string from the supplied days.
+    /// Builds a GPX XML string for the given export days and tracks.
     ///
-    /// - Parameter days: One or more `Day` values from the app export.
-    ///   Days are output in the order supplied; sort before calling if needed.
+    /// - Parameters:
+    ///   - days: One or more `Day` values from the app export.
+    ///     Days are output in the order supplied; sort before calling if needed.
+    ///   - additionalTracks: Optional tracks to include.
+    ///   - mode: The export mode.
     /// - Returns: A well-formed GPX 1.1 XML string (UTF-8).
-    public static func build(from days: [Day], mode: ExportMode = .tracks) -> String {
-        build(from: days, additionalTracks: [], mode: mode)
-    }
-
     public static func build(
         from days: [Day],
-        additionalTracks: [GPXTrack],
+        additionalTracks: [GPXTrack] = [],
         mode: ExportMode = .tracks
     ) -> String {
         var lines: [String] = []
@@ -99,10 +95,10 @@ public enum GPXBuilder {
         if mode.includesTracks {
             for day in days {
                 for (pathIndex, path) in day.paths.enumerated() {
-                    let validPoints = path.points.filter { _ in true }
+                    let validPoints = path.points
                     guard !validPoints.isEmpty else { continue }
 
-                    let trackName = trackTitle(date: day.date, activityType: path.activityType, index: pathIndex)
+                    let trackName = ExportUtils.trackTitle(date: day.date, activityType: path.activityType, index: pathIndex)
                     appendTrack(
                         GPXTrack(
                             name: trackName,
@@ -129,9 +125,9 @@ public enum GPXBuilder {
         guard !track.points.isEmpty else { return }
 
         lines.append("  <trk>")
-        lines.append("    <name>\(xmlEscape(track.name))</name>")
+        lines.append("    <name>\(ExportUtils.xmlEscape(track.name))</name>")
         if let type = track.type, !type.isEmpty {
-            lines.append("    <type>\(xmlEscape(type))</type>")
+            lines.append("    <type>\(ExportUtils.xmlEscape(type))</type>")
         }
         lines.append("    <trkseg>")
         for point in track.points {
@@ -140,7 +136,7 @@ public enum GPXBuilder {
             if let time = point.time {
                 lines.append("""
                         <trkpt lat="\(latStr)" lon="\(lonStr)">
-                          <time>\(xmlEscape(time))</time>
+                          <time>\(ExportUtils.xmlEscape(time))</time>
                         </trkpt>
                     """)
             } else {
@@ -155,15 +151,15 @@ public enum GPXBuilder {
         let latStr = String(format: "%.8f", waypoint.latitude)
         let lonStr = String(format: "%.8f", waypoint.longitude)
         lines.append(#"  <wpt lat="\#(latStr)" lon="\#(lonStr)">"#)
-        lines.append("    <name>\(xmlEscape(waypoint.name))</name>")
+        lines.append("    <name>\(ExportUtils.xmlEscape(waypoint.name))</name>")
         if let type = waypoint.type, !type.isEmpty {
-            lines.append("    <type>\(xmlEscape(type))</type>")
+            lines.append("    <type>\(ExportUtils.xmlEscape(type))</type>")
         }
         if let description = waypoint.description, !description.isEmpty {
-            lines.append("    <desc>\(xmlEscape(description))</desc>")
+            lines.append("    <desc>\(ExportUtils.xmlEscape(description))</desc>")
         }
         if let time = waypoint.time, !time.isEmpty {
-            lines.append("    <time>\(xmlEscape(time))</time>")
+            lines.append("    <time>\(ExportUtils.xmlEscape(time))</time>")
         }
         lines.append("  </wpt>")
     }
@@ -186,22 +182,5 @@ public enum GPXBuilder {
             }
             return "lh2gpx-\(first)_to_\(last).gpx"
         }
-    }
-
-    // MARK: - Private Helpers
-
-    private static func trackTitle(date: String, activityType: String?, index: Int) -> String {
-        let typePart = activityType.map { " – \($0.capitalized)" } ?? ""
-        let indexSuffix = index > 0 ? " (\(index + 1))" : ""
-        return "\(date)\(typePart)\(indexSuffix)"
-    }
-
-    private static func xmlEscape(_ string: String) -> String {
-        string
-            .replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;")
-            .replacingOccurrences(of: "\"", with: "&quot;")
-            .replacingOccurrences(of: "'", with: "&apos;")
     }
 }

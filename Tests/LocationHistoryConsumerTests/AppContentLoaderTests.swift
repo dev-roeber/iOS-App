@@ -6,7 +6,7 @@ final class AppContentLoaderTests: XCTestCase {
 
     // MARK: - Format detection: Google Location History (array root)
 
-    func testImportsGoogleTimelineJsonDirectly() throws {
+    func testImportsGoogleTimelineJsonDirectly() async throws {
         // Google Timeline JSON (array root) can now be imported directly —
         // the app converts it to AppExport on the fly.
         let googleTimelineJson = """
@@ -29,29 +29,34 @@ final class AppContentLoaderTests: XCTestCase {
         let url = try writeTemp(json: googleTimelineJson, filename: "location-history.json")
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let content = try AppContentLoader.loadImportedContent(from: url)
+        let content = try await AppContentLoader.loadImportedContent(from: url)
         XCTAssertFalse(content.daySummaries.isEmpty, "Should convert and load Google Timeline JSON")
     }
 
-    func testRejectsMinimalJsonArrayWithUnsupportedFormatError() throws {
+    func testRejectsMinimalJsonArrayWithUnsupportedFormatError() async throws {
         // Any JSON array root (even empty) should be rejected with unsupportedFormat.
         let url = try writeTemp(json: "[]", filename: "empty-array.json")
         defer { try? FileManager.default.removeItem(at: url) }
 
-        XCTAssertThrowsError(try AppContentLoader.loadImportedContent(from: url)) { error in
-            guard case AppContentLoaderError.unsupportedFormat = error else {
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: url)
+            XCTFail("Expected unsupportedFormat error")
+        } catch let error as AppContentLoaderError {
+            guard case .unsupportedFormat = error else {
                 XCTFail("Expected unsupportedFormat but got: \(error)")
                 return
             }
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
         }
     }
 
-    func testUnsupportedFormatErrorDescriptionMentionsRequiredTool() throws {
+    func testUnsupportedFormatErrorDescriptionMentionsRequiredTool() async throws {
         let url = try writeTemp(json: "[{}]", filename: "location-history.json")
         defer { try? FileManager.default.removeItem(at: url) }
 
         do {
-            _ = try AppContentLoader.loadImportedContent(from: url)
+            _ = try await AppContentLoader.loadImportedContent(from: url)
             XCTFail("Expected unsupportedFormat error")
         } catch let error as AppContentLoaderError {
             let description = try XCTUnwrap(error.errorDescription)
@@ -59,31 +64,38 @@ final class AppContentLoaderTests: XCTestCase {
                 description.contains("LocationHistory2GPX"),
                 "Error description should mention the required tool. Got: \(description)"
             )
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
         }
     }
 
     // MARK: - Format detection: unknown JSON object
 
-    func testRejectsUnknownJsonObjectWithDecodeFailedError() throws {
+    func testRejectsUnknownJsonObjectWithDecodeFailedError() async throws {
         // A JSON object without schema_version must fail with decodeFailed (not unsupportedFormat).
         let url = try writeTemp(json: #"{"foo": "bar"}"#, filename: "unknown.json")
         defer { try? FileManager.default.removeItem(at: url) }
 
-        XCTAssertThrowsError(try AppContentLoader.loadImportedContent(from: url)) { error in
-            guard case AppContentLoaderError.decodeFailed = error else {
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: url)
+            XCTFail("Expected decodeFailed error")
+        } catch let error as AppContentLoaderError {
+            guard case .decodeFailed = error else {
                 XCTFail("Expected decodeFailed but got: \(error)")
                 return
             }
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
         }
     }
 
 
-    func testDecodeFailedErrorDescriptionMentionsRequiredTool() throws {
+    func testDecodeFailedErrorDescriptionMentionsRequiredTool() async throws {
         let url = try writeTemp(json: #"{"foo": "bar"}"#, filename: "unknown.json")
         defer { try? FileManager.default.removeItem(at: url) }
 
         do {
-            _ = try AppContentLoader.loadImportedContent(from: url)
+            _ = try await AppContentLoader.loadImportedContent(from: url)
             XCTFail("Expected decodeFailed error")
         } catch let error as AppContentLoaderError {
             let description = try XCTUnwrap(error.errorDescription)
@@ -91,6 +103,8 @@ final class AppContentLoaderTests: XCTestCase {
                 description.contains("LocationHistory2GPX"),
                 "Error description should mention the required tool. Got: \(description)"
             )
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
         }
     }
 
@@ -117,12 +131,12 @@ final class AppContentLoaderTests: XCTestCase {
         XCTAssertEqual(error.userFacingTitle, "No export found in ZIP")
     }
 
-    func testJsonNotFoundInZipDescriptionMentionsSupportedZipContents() throws {
+    func testJsonNotFoundInZipDescriptionMentionsSupportedZipContents() async throws {
         let zipURL = try makeZip(entries: ["readme.txt": Data("hello".utf8)])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
         do {
-            _ = try AppContentLoader.loadImportedContent(from: zipURL)
+            _ = try await AppContentLoader.loadImportedContent(from: zipURL)
             XCTFail("Expected jsonNotFoundInZip error")
         } catch let error as AppContentLoaderError {
             let description = try XCTUnwrap(error.errorDescription)
@@ -130,47 +144,59 @@ final class AppContentLoaderTests: XCTestCase {
                 description.contains("Google Timeline"),
                 "Error description should mention supported ZIP contents. Got: \(description)"
             )
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
         }
     }
 
     // MARK: - ZIP Import: error cases
 
-    func testZipWithInvalidContent_throwsFileReadFailed() throws {
+    func testZipWithInvalidContent_throwsFileReadFailed() async throws {
         // A file with .zip extension that is not a valid ZIP archive → fileReadFailed
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("invalid.zip")
         try Data("not a zip file at all".utf8).write(to: url)
         defer { try? FileManager.default.removeItem(at: url) }
 
-        XCTAssertThrowsError(try AppContentLoader.loadImportedContent(from: url)) { error in
-            guard case AppContentLoaderError.fileReadFailed = error else {
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: url)
+            XCTFail("Expected fileReadFailed error")
+        } catch let error as AppContentLoaderError {
+            guard case .fileReadFailed = error else {
                 XCTFail("Expected fileReadFailed but got: \(error)")
                 return
             }
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
         }
     }
 
-    func testZipWithNoAppExportJson_throwsJsonNotFoundInZip() throws {
+    func testZipWithNoAppExportJson_throwsJsonNotFoundInZip() async throws {
         // A valid ZIP that contains no app_export.json → jsonNotFoundInZip
         let zipURL = try makeZip(entries: ["readme.txt": Data("hello".utf8)])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        XCTAssertThrowsError(try AppContentLoader.loadImportedContent(from: zipURL)) { error in
-            guard case AppContentLoaderError.jsonNotFoundInZip(let name) = error else {
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: zipURL)
+            XCTFail("Expected jsonNotFoundInZip error")
+        } catch let error as AppContentLoaderError {
+            guard case .jsonNotFoundInZip(let name) = error else {
                 XCTFail("Expected jsonNotFoundInZip but got: \(error)")
                 return
             }
             XCTAssertTrue(name.hasSuffix(".zip"), "Error should reference the zip filename: \(name)")
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
         }
     }
 
-    func testJsonNotFoundInZipErrorDescriptionMentionsSingleSupportedJson() throws {
+    func testJsonNotFoundInZipErrorDescriptionMentionsSingleSupportedJson() async throws {
         // ZIP with an invalid JSON object (no valid LH2GPX export) → jsonNotFoundInZip.
         // Description must explain the supported single-entry rule.
         let zipURL = try makeZip(entries: ["other.json": Data("{}".utf8)])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
         do {
-            _ = try AppContentLoader.loadImportedContent(from: zipURL)
+            _ = try await AppContentLoader.loadImportedContent(from: zipURL)
             XCTFail("Expected jsonNotFoundInZip error")
         } catch let error as AppContentLoaderError {
             let description = try XCTUnwrap(error.errorDescription)
@@ -178,19 +204,21 @@ final class AppContentLoaderTests: XCTestCase {
                 description.contains("exactly one"),
                 "Error description should explain the expected ZIP contents. Got: \(description)"
             )
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
         }
     }
 
     // MARK: - ZIP Import: success cases
 
-    func testZipWithAppExportAtRoot_loadsSuccessfully() throws {
+    func testZipWithAppExportAtRoot_loadsSuccessfully() async throws {
         // Valid ZIP with app_export.json at root → loads successfully
         let fixtureURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
         let jsonData = try Data(contentsOf: fixtureURL)
         let zipURL = try makeZip(entries: ["app_export.json": jsonData])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        let content = try await AppContentLoader.loadImportedContent(from: zipURL)
         XCTAssertFalse(content.daySummaries.isEmpty, "Should have loaded day summaries from ZIP")
         guard case .importedFile(let filename) = content.source else {
             XCTFail("Expected importedFile source")
@@ -199,18 +227,18 @@ final class AppContentLoaderTests: XCTestCase {
         XCTAssertTrue(filename.hasSuffix(".zip"), "Source filename should be the ZIP: \(filename)")
     }
 
-    func testZipWithAppExportInSubdirectory_loadsSuccessfully() throws {
+    func testZipWithAppExportInSubdirectory_loadsSuccessfully() async throws {
         // Valid ZIP with app_export.json nested inside a subdirectory
         let fixtureURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
         let jsonData = try Data(contentsOf: fixtureURL)
         let zipURL = try makeZip(entries: ["export/app_export.json": jsonData])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        let content = try await AppContentLoader.loadImportedContent(from: zipURL)
         XCTAssertFalse(content.daySummaries.isEmpty, "Should have loaded day summaries from nested ZIP entry")
     }
 
-    func testZipWithGoogleTimelineFormat_convertsSuccessfully() throws {
+    func testZipWithGoogleTimelineFormat_convertsSuccessfully() async throws {
         // ZIP containing a Google Timeline JSON array → converted and loaded.
         // Previously this threw; now the app handles Google Timeline ZIPs directly.
         let googleJson = Data("""
@@ -220,17 +248,16 @@ final class AppContentLoaderTests: XCTestCase {
         let zipURL = try makeZip(entries: ["app_export.json": googleJson])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        XCTAssertNoThrow(try AppContentLoader.loadImportedContent(from: zipURL),
-                         "Google Timeline ZIP should now be converted and loaded")
+        _ = try await AppContentLoader.loadImportedContent(from: zipURL)
     }
 
     // MARK: - ZIP Import: Google Timeline conversion
 
-    func testZipWithGoogleTimelineJson_convertsAndLoads() throws {
+    func testZipWithGoogleTimelineJson_convertsAndLoads() async throws {
         let zipURL = try makeZip(entries: ["location-history.json": minimalGoogleTimelineData()])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        let content = try await AppContentLoader.loadImportedContent(from: zipURL)
         XCTAssertFalse(content.daySummaries.isEmpty, "Should convert Google Timeline and produce day summaries")
         guard case .importedFile(let filename) = content.source else {
             XCTFail("Expected importedFile source"); return
@@ -238,15 +265,15 @@ final class AppContentLoaderTests: XCTestCase {
         XCTAssertTrue(filename.hasSuffix(".zip"))
     }
 
-    func testZipWithGoogleTimelineInSubdirectory_convertsAndLoads() throws {
+    func testZipWithGoogleTimelineInSubdirectory_convertsAndLoads() async throws {
         let zipURL = try makeZip(entries: ["Takeout/Location History/location-history.json": minimalGoogleTimelineData()])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        let content = try await AppContentLoader.loadImportedContent(from: zipURL)
         XCTAssertFalse(content.daySummaries.isEmpty, "Should find and convert Google Timeline nested in subdirectory")
     }
 
-    func testZipWithGoogleTimelineAllEntryTypes_convertsSuccessfully() throws {
+    func testZipWithGoogleTimelineAllEntryTypes_convertsSuccessfully() async throws {
         let data = Data("""
         [
           {
@@ -283,7 +310,7 @@ final class AppContentLoaderTests: XCTestCase {
         let zipURL = try makeZip(entries: ["location-history.json": data])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        let content = try await AppContentLoader.loadImportedContent(from: zipURL)
         let day = try XCTUnwrap(content.daySummaries.first)
         XCTAssertEqual(day.date, "2024-05-01")
         XCTAssertEqual(day.visitCount, 1)
@@ -291,32 +318,36 @@ final class AppContentLoaderTests: XCTestCase {
         XCTAssertEqual(day.pathCount, 1)
     }
 
-    func testZipWithMultipleGoogleTimelines_prefersLocationHistoryJson() throws {
+    func testZipWithMultipleGoogleTimelines_prefersLocationHistoryJson() async throws {
         let zipURL = try makeZip(entries: [
             "location-history.json": minimalGoogleTimelineData(),
             "other-timeline.json": minimalGoogleTimelineData()
         ])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        XCTAssertNoThrow(try AppContentLoader.loadImportedContent(from: zipURL),
-                         "Should prefer location-history.json when multiple timelines present")
+        _ = try await AppContentLoader.loadImportedContent(from: zipURL)
     }
 
-    func testZipWithMultipleGoogleTimelines_noPreferred_throwsMultipleExports() throws {
+    func testZipWithMultipleGoogleTimelines_noPreferred_throwsMultipleExports() async throws {
         let zipURL = try makeZip(entries: [
             "timeline_a.json": minimalGoogleTimelineData(),
             "timeline_b.json": minimalGoogleTimelineData()
         ])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        XCTAssertThrowsError(try AppContentLoader.loadImportedContent(from: zipURL)) { error in
-            guard case AppContentLoaderError.multipleExportsInZip = error else {
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: zipURL)
+            XCTFail("Expected multipleExportsInZip error")
+        } catch let error as AppContentLoaderError {
+            guard case .multipleExportsInZip = error else {
                 XCTFail("Expected multipleExportsInZip but got: \(error)"); return
             }
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
         }
     }
 
-    func testZipWithLh2gpxExportTakesPrecedenceOverGoogleTimeline() throws {
+    func testZipWithLh2gpxExportTakesPrecedenceOverGoogleTimeline() async throws {
         // If a ZIP contains both a valid LH2GPX export and a Google Timeline,
         // the LH2GPX export must be used (no conversion needed).
         let fixtureURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
@@ -327,25 +358,25 @@ final class AppContentLoaderTests: XCTestCase {
         ])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        let content = try await AppContentLoader.loadImportedContent(from: zipURL)
         // The LH2GPX fixture has more days than our minimal timeline stub.
         XCTAssertTrue(content.daySummaries.count > 1, "Should have loaded the LH2GPX export, not the minimal stub")
     }
 
     // MARK: - ZIP Import: filename-agnostic loading
 
-    func testZipWithValidExportButCustomFilename_loadsSuccessfully() throws {
+    func testZipWithValidExportButCustomFilename_loadsSuccessfully() async throws {
         // Valid LH2GPX export stored under a non-standard filename → still loads.
         let fixtureURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
         let jsonData = try Data(contentsOf: fixtureURL)
         let zipURL = try makeZip(entries: ["my_backup.json": jsonData])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        let content = try await AppContentLoader.loadImportedContent(from: zipURL)
         XCTAssertFalse(content.daySummaries.isEmpty, "Should load export regardless of filename")
     }
 
-    func testZipWithOneValidAndOneInvalidJson_loadsTheValidOne() throws {
+    func testZipWithOneValidAndOneInvalidJson_loadsTheValidOne() async throws {
         // One valid export + one invalid JSON → loads the valid one without error.
         let fixtureURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
         let jsonData = try Data(contentsOf: fixtureURL)
@@ -355,11 +386,11 @@ final class AppContentLoaderTests: XCTestCase {
         ])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        let content = try await AppContentLoader.loadImportedContent(from: zipURL)
         XCTAssertFalse(content.daySummaries.isEmpty, "Should load the valid export")
     }
 
-    func testZipWithMultipleValidExports_prefersAppExportJson() throws {
+    func testZipWithMultipleValidExports_prefersAppExportJson() async throws {
         // Multiple valid exports: one named app_export.json → that one is preferred.
         let fixtureURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
         let jsonData = try Data(contentsOf: fixtureURL)
@@ -369,11 +400,10 @@ final class AppContentLoaderTests: XCTestCase {
         ])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        // Should not throw – the root-level app_export.json is preferred.
-        XCTAssertNoThrow(try AppContentLoader.loadImportedContent(from: zipURL))
+        _ = try await AppContentLoader.loadImportedContent(from: zipURL)
     }
 
-    func testZipWithMultipleValidExports_noPreferredName_throwsMultipleExportsInZip() throws {
+    func testZipWithMultipleValidExports_noPreferredName_throwsMultipleExportsInZip() async throws {
         // Multiple valid exports, none named app_export.json → multipleExportsInZip.
         let fixtureURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
         let jsonData = try Data(contentsOf: fixtureURL)
@@ -383,11 +413,16 @@ final class AppContentLoaderTests: XCTestCase {
         ])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        XCTAssertThrowsError(try AppContentLoader.loadImportedContent(from: zipURL)) { error in
-            guard case AppContentLoaderError.multipleExportsInZip = error else {
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: zipURL)
+            XCTFail("Expected multipleExportsInZip error")
+        } catch let error as AppContentLoaderError {
+            guard case .multipleExportsInZip = error else {
                 XCTFail("Expected multipleExportsInZip but got: \(error)")
                 return
             }
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
         }
     }
 
@@ -405,7 +440,7 @@ final class AppContentLoaderTests: XCTestCase {
         )
     }
 
-    func testZipIgnoresMacosxResourceForks() throws {
+    func testZipIgnoresMacosxResourceForks() async throws {
         // __MACOSX/ entries must be ignored even if they have .json extension.
         let fixtureURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
         let jsonData = try Data(contentsOf: fixtureURL)
@@ -415,25 +450,25 @@ final class AppContentLoaderTests: XCTestCase {
         ])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
-        let content = try AppContentLoader.loadImportedContent(from: zipURL)
+        let content = try await AppContentLoader.loadImportedContent(from: zipURL)
         XCTAssertFalse(content.daySummaries.isEmpty, "Should load without being confused by __MACOSX entry")
     }
 
-    func testRealLocationHistoryZipOnDesktop() throws {
+    func testRealLocationHistoryZipOnDesktop() async throws {
         let url = URL(fileURLWithPath: "/Users/sebastian/Desktop/location-history.zip")
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw XCTSkip("location-history.zip not on Desktop")
         }
-        let content = try AppContentLoader.loadImportedContent(from: url)
+        let content = try await AppContentLoader.loadImportedContent(from: url)
         XCTAssertGreaterThan(content.daySummaries.count, 0, "Should load days from real Google Timeline ZIP")
     }
 
-    func testRealLocationHistoryJsonOnDesktop() throws {
+    func testRealLocationHistoryJsonOnDesktop() async throws {
         let url = URL(fileURLWithPath: "/Users/sebastian/Desktop/location-history.json")
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw XCTSkip("location-history.json not on Desktop")
         }
-        let content = try AppContentLoader.loadImportedContent(from: url)
+        let content = try await AppContentLoader.loadImportedContent(from: url)
         XCTAssertGreaterThan(content.daySummaries.count, 0, "Should load days from real Google Timeline JSON")
     }
 
@@ -476,7 +511,7 @@ final class AppContentLoaderTests: XCTestCase {
         for (path, data) in entries {
             let entryData = data
             try archive.addEntry(with: path, type: .file, uncompressedSize: UInt32(entryData.count)) { position, size in
-                entryData.subdata(in: position..<(position + size))
+                entryData.subdata(in: Int(position)..<Int(position) + size)
             }
         }
         return zipURL

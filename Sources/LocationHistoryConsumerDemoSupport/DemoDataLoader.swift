@@ -17,8 +17,8 @@ public enum DemoDataLoader {
         )
     }
 
-    public static func loadImportedContent(from url: URL) throws -> AppSessionContent {
-        try AppContentLoader.loadImportedContent(from: url)
+    public static func loadImportedContent(from url: URL) async throws -> AppSessionContent {
+        try await AppContentLoader.loadImportedContent(from: url)
     }
 
     public static func fixtureURL(named name: String) throws -> URL {

@@ -14,11 +14,11 @@ public enum KMLBuilder {
         if mode.includesWaypoints {
             for waypoint in ExportWaypointExtractor.waypoints(from: days) {
                 lines.append("    <Placemark>")
-                lines.append("      <name>\(xmlEscape(waypoint.name))</name>")
+                lines.append("      <name>\(ExportUtils.xmlEscape(waypoint.name))</name>")
                 if let detail = waypoint.detail, !detail.isEmpty {
-                    lines.append("      <description>\(xmlEscape(detail))</description>")
+                    lines.append("      <description>\(ExportUtils.xmlEscape(detail))</description>")
                 } else {
-                    lines.append("      <description>\(xmlEscape(waypoint.category))</description>")
+                    lines.append("      <description>\(ExportUtils.xmlEscape(waypoint.category))</description>")
                 }
                 lines.append("      <Point>")
                 lines.append("        <coordinates>\(coordinateString(waypoint.longitude)),\(coordinateString(waypoint.latitude))</coordinates>")
@@ -30,18 +30,18 @@ public enum KMLBuilder {
         if mode.includesTracks {
             for day in days {
                 for (pathIndex, path) in day.paths.enumerated() {
-                    let validPoints = path.points.filter { _ in true }
+                    let validPoints = path.points
                     guard !validPoints.isEmpty else { continue }
 
-                    let trackName = trackTitle(date: day.date, activityType: path.activityType, index: pathIndex)
+                    let trackName = ExportUtils.trackTitle(date: day.date, activityType: path.activityType, index: pathIndex)
                     let coordinates = validPoints
                         .map { "\(coordinateString($0.lon)),\(coordinateString($0.lat))" }
                         .joined(separator: " ")
 
                     lines.append("    <Placemark>")
-                    lines.append("      <name>\(xmlEscape(trackName))</name>")
+                    lines.append("      <name>\(ExportUtils.xmlEscape(trackName))</name>")
                     if let type = path.activityType, !type.isEmpty {
-                        lines.append("      <description>\(xmlEscape(type))</description>")
+                        lines.append("      <description>\(ExportUtils.xmlEscape(type))</description>")
                     }
                     lines.append("      <LineString>")
                     lines.append("        <tessellate>1</tessellate>")
@@ -57,22 +57,7 @@ public enum KMLBuilder {
         return lines.joined(separator: "\n")
     }
 
-    private static func trackTitle(date: String, activityType: String?, index: Int) -> String {
-        let typePart = activityType.map { " – \($0.capitalized)" } ?? ""
-        let indexSuffix = index > 0 ? " (\(index + 1))" : ""
-        return "\(date)\(typePart)\(indexSuffix)"
-    }
-
     private static func coordinateString(_ value: Double) -> String {
         String(format: "%.8f", value)
-    }
-
-    private static func xmlEscape(_ string: String) -> String {
-        string
-            .replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;")
-            .replacingOccurrences(of: "\"", with: "&quot;")
-            .replacingOccurrences(of: "'", with: "&apos;")
     }
 }

@@ -252,7 +252,9 @@ public final class AppPreferences: ObservableObject {
     }
 
     @Published public var liveLocationServerUploadBearerToken: String {
-        didSet { userDefaults.set(liveLocationServerUploadBearerToken, forKey: Keys.liveTrackingServerUploadBearerToken) }
+        didSet {
+            try? KeychainHelper.save(key: Keys.liveTrackingServerUploadBearerToken, value: liveLocationServerUploadBearerToken)
+        }
     }
 
     @Published public var liveTrackingUploadBatch: AppLiveTrackingUploadBatchPreference {
@@ -327,7 +329,19 @@ public final class AppPreferences: ObservableObject {
         self.sendsLiveLocationToServer = userDefaults.object(forKey: Keys.liveTrackingServerUploadEnabled) as? Bool ?? false
         self.liveLocationServerUploadURLString = userDefaults.string(forKey: Keys.liveTrackingServerUploadURL)
             ?? LiveLocationServerUploadConfiguration.defaultTestEndpointURLString
-        self.liveLocationServerUploadBearerToken = userDefaults.string(forKey: Keys.liveTrackingServerUploadBearerToken) ?? ""
+
+        // Load token from Keychain. If not present, try migration from UserDefaults.
+        if let keychainToken = KeychainHelper.get(key: Keys.liveTrackingServerUploadBearerToken) {
+            self.liveLocationServerUploadBearerToken = keychainToken
+        } else if let legacyToken = userDefaults.string(forKey: Keys.liveTrackingServerUploadBearerToken) {
+            self.liveLocationServerUploadBearerToken = legacyToken
+            // Migrate to Keychain
+            try? KeychainHelper.save(key: Keys.liveTrackingServerUploadBearerToken, value: legacyToken)
+            userDefaults.removeObject(forKey: Keys.liveTrackingServerUploadBearerToken)
+        } else {
+            self.liveLocationServerUploadBearerToken = ""
+        }
+
         self.liveTrackingUploadBatch = Self.loadEnum(
             AppLiveTrackingUploadBatchPreference.self,
             key: Keys.liveTrackingUploadBatch,
@@ -347,6 +361,7 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.liveTrackingServerUploadEnabled)
         userDefaults.removeObject(forKey: Keys.liveTrackingServerUploadURL)
         userDefaults.removeObject(forKey: Keys.liveTrackingServerUploadBearerToken)
+        KeychainHelper.delete(key: Keys.liveTrackingServerUploadBearerToken)
         userDefaults.removeObject(forKey: Keys.liveTrackingUploadBatch)
 
         distanceUnit = .metric

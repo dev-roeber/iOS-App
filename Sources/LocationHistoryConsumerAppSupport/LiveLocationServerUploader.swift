@@ -4,7 +4,7 @@ import FoundationNetworking
 #endif
 
 public struct LiveLocationServerUploadConfiguration: Equatable {
-    public static let defaultTestEndpointURLString = "http://178.104.51.78:8080/live-location"
+    public static let defaultTestEndpointURLString = "https://178-104-51-78.sslip.io/live-location"
 
     public var isEnabled: Bool
     public var endpointURLString: String
@@ -28,10 +28,14 @@ public struct LiveLocationServerUploadConfiguration: Equatable {
         guard !trimmed.isEmpty, let url = URL(string: trimmed) else {
             return nil
         }
-        guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http" else {
+        guard let scheme = url.scheme?.lowercased() else {
             return nil
         }
-        return url
+        // Enforce https unless it's a localhost endpoint (e.g. for development)
+        if let host = url.host?.lowercased(), host == "localhost" || host == "127.0.0.1" {
+            return (scheme == "https" || scheme == "http") ? url : nil
+        }
+        return scheme == "https" ? url : nil
     }
 
     public var trimmedBearerToken: String? {

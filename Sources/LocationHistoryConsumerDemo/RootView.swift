@@ -95,7 +95,7 @@ struct RootView: View {
         }
 
         do {
-            session.show(content: try DemoDataLoader.loadImportedContent(from: url))
+            session.show(content: try await DemoDataLoader.loadImportedContent(from: url))
         } catch {
             session.showFailure(
                 title: "Import failed",

@@ -39,7 +39,7 @@ final class SavedTracksPresentationTests: XCTestCase {
         XCTAssertFalse(presentation.title.contains("T07:15:00Z"))
         XCTAssertNotNil(presentation.timeRangeText)
         XCTAssertFalse(presentation.timeRangeText?.contains("T07:15:00Z") == true)
-        XCTAssertTrue(presentation.timeRangeText?.contains("-") == true)
+        XCTAssertTrue(presentation.timeRangeText?.contains("–") == true)
         XCTAssertEqual(presentation.metrics.map { $0.text }, ["29.5 km", "32 min", "14 points"])
         XCTAssertTrue(presentation.accessibilityLabel.contains("29.5 km distance"))
     }

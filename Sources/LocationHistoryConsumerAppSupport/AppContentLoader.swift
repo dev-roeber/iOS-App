@@ -52,12 +52,14 @@ public enum AppContentLoader {
     public static let defaultDemoFixtureName = "golden_app_export_sample_small"
 
     /// Loads a user-imported file (`.json` or `.zip`) from the given URL.
-    public static func loadImportedContent(from url: URL) throws -> AppSessionContent {
-        if url.pathExtension.lowercased() == "zip" {
-            return try loadZipContent(from: url)
-        }
-        let export = try decodeFile(at: url, sourceName: url.lastPathComponent)
-        return AppSessionContent(export: export, source: .importedFile(filename: url.lastPathComponent))
+    public static func loadImportedContent(from url: URL) async throws -> AppSessionContent {
+        return try await Task.detached(priority: .userInitiated) {
+            if url.pathExtension.lowercased() == "zip" {
+                return try loadZipContent(from: url)
+            }
+            let export = try decodeFile(at: url, sourceName: url.lastPathComponent)
+            return AppSessionContent(export: export, source: .importedFile(filename: url.lastPathComponent))
+        }.value
     }
 
     /// Maximum uncompressed size (256 MB) for a single ZIP entry.

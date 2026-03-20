@@ -71,7 +71,7 @@ final class MapPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.legendItems.map { $0.isOverflow }, [false, false])
         XCTAssertEqual(
             presentation.note,
-            "Pins show imported visits and lines show imported route geometry. Walking dominates the plotted movement. 1 visit is omitted because coordinates are missing or too short."
+            "Pins show imported visits and lines show imported route paths. Walking dominates the plotted movement. 1 visit is omitted because coordinates are missing or too short."
         )
     }
 
@@ -112,7 +112,7 @@ final class MapPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.legendItems.map { $0.title }, ["Cycling", "Walking"])
         XCTAssertEqual(
             presentation.note,
-            "Preview uses exportable route geometry from 2 imported days and 1 saved track. Cycling contributes the strongest visible route context."
+            "Preview uses exportable route paths from 2 imported days and 1 saved track. Cycling contributes the strongest visible route context."
         )
     }
 

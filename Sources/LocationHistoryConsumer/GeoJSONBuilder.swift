@@ -12,16 +12,19 @@ public enum GeoJSONBuilder {
                         "type": "LineString",
                         "coordinates": coordinates
                     ]
-                    var properties: [String: Any] = [
-                        "name": trackTitle(date: day.date, activityType: path.activityType, index: pathIndex),
-                        "geometry_kind": "track"
-                    ]
-                    if let activityType = path.activityType, !activityType.isEmpty {
-                        properties["activity_type"] = activityType
-                    }
-                    if let distanceM = path.distanceM {
-                        properties["distance_m"] = distanceM
-                    }
+                    let properties: [String: Any] = {
+                        var props: [String: Any] = [
+                            "name": ExportUtils.trackTitle(date: day.date, activityType: path.activityType, index: pathIndex),
+                            "geometry_kind": "track"
+                        ]
+                        if let activityType = path.activityType, !activityType.isEmpty {
+                            props["activity_type"] = activityType
+                        }
+                        if let distanceM = path.distanceM {
+                            props["distance_m"] = distanceM
+                        }
+                        return props
+                    }()
 
                     features.append([
                         "type": "Feature",
@@ -69,11 +72,5 @@ public enum GeoJSONBuilder {
         }
 
         return text
-    }
-
-    private static func trackTitle(date: String, activityType: String?, index: Int) -> String {
-        let typePart = activityType.map { " – \($0.capitalized)" } ?? ""
-        let indexSuffix = index > 0 ? " (\(index + 1))" : ""
-        return "\(date)\(typePart)\(indexSuffix)"
     }
 }

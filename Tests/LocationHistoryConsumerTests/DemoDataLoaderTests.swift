@@ -20,30 +20,36 @@ final class DemoDataLoaderTests: XCTestCase {
         }
     }
 
-    func testLoadsImportedAppExportFile() throws {
+    func testLoadsImportedAppExportFile() async throws {
         let sourceURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
         let importedURL = try copyFixtureToTemporaryFile(named: "imported_app_export.json", from: sourceURL)
 
-        let content = try DemoDataLoader.loadImportedContent(from: importedURL)
+        let content = try await DemoDataLoader.loadImportedContent(from: importedURL)
 
         XCTAssertEqual(content.overview.schemaVersion, "1.0")
         XCTAssertEqual(content.daySummaries.map(\.date), ["2024-05-01", "2024-05-02"])
         XCTAssertEqual(content.source, .importedFile(filename: "imported_app_export.json"))
     }
 
-    func testImportedInvalidJSONFailsClearly() throws {
+    func testImportedInvalidJSONFailsClearly() async throws {
         let invalidURL = try temporaryFileURL(named: "broken_app_export.json")
         try Data("{".utf8).write(to: invalidURL)
 
-        XCTAssertThrowsError(try DemoDataLoader.loadImportedContent(from: invalidURL)) { error in
+        do {
+            _ = try await DemoDataLoader.loadImportedContent(from: invalidURL)
+            XCTFail("Expected error")
+        } catch {
             XCTAssertEqual(error.localizedDescription, "'broken_app_export.json' could not be decoded. The file may have been created with an incompatible version of the LocationHistory2GPX tool.")
         }
     }
 
-    func testMissingImportedFileFailsClearly() throws {
+    func testMissingImportedFileFailsClearly() async throws {
         let missingURL = temporaryDirectoryURL().appendingPathComponent("missing_app_export.json")
 
-        XCTAssertThrowsError(try DemoDataLoader.loadImportedContent(from: missingURL)) { error in
+        do {
+            _ = try await DemoDataLoader.loadImportedContent(from: missingURL)
+            XCTFail("Expected error")
+        } catch {
             XCTAssertEqual(error.localizedDescription, "'missing_app_export.json' could not be read. The file may be corrupted or inaccessible.")
         }
     }

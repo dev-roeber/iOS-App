@@ -1,4 +1,5 @@
 import Foundation
+import LocationHistoryConsumer
 
 struct RecordedTrackEditorDraft: Equatable {
     let originalTrack: RecordedTrack
@@ -151,29 +152,10 @@ struct RecordedTrackEditorDraft: Equatable {
 
         var total = 0.0
         for pair in zip(points, points.dropFirst()) {
-            total += meters(
-                fromLatitude: pair.0.latitude,
-                fromLongitude: pair.0.longitude,
-                toLatitude: pair.1.latitude,
-                toLongitude: pair.1.longitude
-            )
+            let a = LocationCoordinate2D(latitude: pair.0.latitude, longitude: pair.0.longitude)
+            let b = LocationCoordinate2D(latitude: pair.1.latitude, longitude: pair.1.longitude)
+            total += a.distance(to: b)
         }
         return total
-    }
-
-    private func meters(
-        fromLatitude lat1: Double,
-        fromLongitude lon1: Double,
-        toLatitude lat2: Double,
-        toLongitude lon2: Double
-    ) -> Double {
-        let earthRadiusM = 6_371_000.0
-        let dLat = (lat2 - lat1) * .pi / 180
-        let dLon = (lon2 - lon1) * .pi / 180
-        let a = sin(dLat / 2) * sin(dLat / 2)
-            + cos(lat1 * .pi / 180) * cos(lat2 * .pi / 180)
-            * sin(dLon / 2) * sin(dLon / 2)
-        let c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return earthRadiusM * c
     }
 }

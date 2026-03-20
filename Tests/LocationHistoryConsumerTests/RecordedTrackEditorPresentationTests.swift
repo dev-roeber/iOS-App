@@ -13,7 +13,7 @@ final class RecordedTrackEditorPresentationTests: XCTestCase {
         XCTAssertFalse(presentation.title.contains("2026-03-19"))
         XCTAssertTrue(presentation.title.contains("2026"))
         XCTAssertNotNil(presentation.timeRangeText)
-        XCTAssertTrue(presentation.timeRangeText?.contains("-") == true)
+        XCTAssertTrue(presentation.timeRangeText?.contains("–") == true)
         XCTAssertEqual(presentation.metrics.map { $0.text }, ["3 points", "1.3 km", "20 min"])
         XCTAssertNil(presentation.validationMessage)
     }

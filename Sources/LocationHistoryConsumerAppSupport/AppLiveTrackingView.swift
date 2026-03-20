@@ -1,6 +1,7 @@
 #if canImport(SwiftUI) && canImport(MapKit)
 import SwiftUI
 import MapKit
+import LocationHistoryConsumer
 
 @available(iOS 17.0, macOS 14.0, *)
 public struct AppLiveTrackingView: View {
@@ -386,23 +387,15 @@ public struct AppLiveTrackingView: View {
         guard points.count >= 2 else { return "0 m" }
         var total = 0.0
         for i in 1..<points.count {
-            let a = points[i - 1]
-            let b = points[i]
-            total += haversineM(lat1: a.latitude, lon1: a.longitude, lat2: b.latitude, lon2: b.longitude)
+            let a = LocationCoordinate2D(latitude: points[i-1].latitude, longitude: points[i-1].longitude)
+            let b = LocationCoordinate2D(latitude: points[i].latitude, longitude: points[i].longitude)
+            total += a.distance(to: b)
         }
         if preferences.distanceUnit == .imperial {
             let miles = total / 1609.344
             return miles < 0.1 ? String(format: "%.0f ft", total * 3.28084) : String(format: "%.2f mi", miles)
         }
         return total < 1000 ? String(format: "%.0f m", total) : String(format: "%.2f km", total / 1000)
-    }
-
-    private func haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
-        let R = 6_371_000.0
-        let φ1 = lat1 * .pi / 180, φ2 = lat2 * .pi / 180
-        let Δφ = (lat2 - lat1) * .pi / 180, Δλ = (lon2 - lon1) * .pi / 180
-        let a = sin(Δφ / 2) * sin(Δφ / 2) + cos(φ1) * cos(φ2) * sin(Δλ / 2) * sin(Δλ / 2)
-        return R * 2 * atan2(sqrt(a), sqrt(1 - a))
     }
 
     private func centerOnCurrentLocation() {

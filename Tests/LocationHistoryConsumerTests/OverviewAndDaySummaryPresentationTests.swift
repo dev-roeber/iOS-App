@@ -26,9 +26,9 @@ final class OverviewAndDaySummaryPresentationTests: XCTestCase {
         let presentation = OverviewPresentation.section(overview: overview, daySummaries: summaries)
 
         XCTAssertTrue(presentation.subtitle.contains("2024"))
-        XCTAssertTrue(presentation.subtitle.contains("2 contentful days"))
+        XCTAssertTrue(presentation.subtitle.contains("2 active days"))
         XCTAssertEqual(presentation.stats.first(where: { $0.id == "days" })?.note, "2 with recorded entries")
-        XCTAssertEqual(presentation.stats.first(where: { $0.id == "visits" })?.note, "0.5 per contentful day")
+        XCTAssertEqual(presentation.stats.first(where: { $0.id == "visits" })?.note, "0.5 per active day")
         XCTAssertEqual(presentation.stats.first(where: { $0.id == "routes" })?.note, "1 exportable · 3 pts")
     }
 
