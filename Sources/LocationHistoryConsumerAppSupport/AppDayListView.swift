@@ -19,7 +19,7 @@ struct AppDayRow: View {
                 Spacer()
                 HStack(spacing: 4) {
                     if isSelectedForExport {
-                        Label("Export", systemImage: "square.and.arrow.up")
+                        Label(t("Export"), systemImage: "square.and.arrow.up")
                             .font(.caption2.weight(.semibold))
                             .foregroundColor(.accentColor)
                             .padding(.horizontal, 6)
@@ -48,12 +48,16 @@ struct AppDayRow: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(summary.visitCount) Visits, \(summary.activityCount) Activities, \(summary.pathCount) Routes")
+                .accessibilityLabel([
+                    visitCountText(summary.visitCount),
+                    activityCountText(summary.activityCount),
+                    routeCountText(summary.pathCount)
+                ].joined(separator: ", "))
             } else {
-                Label("No recorded entries", systemImage: "tray")
+                Label(t("No recorded entries"), systemImage: "tray")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .accessibilityLabel("No recorded entries for this day")
+                    .accessibilityLabel(t("No recorded entries for this day"))
             }
         }
         .padding(.vertical, 4)
@@ -62,11 +66,34 @@ struct AppDayRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .opacity(summary.hasContent ? 1 : 0.72)
     }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+
+    private func visitCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Besuch" : "Besuche")"
+            : "\(count) \(count == 1 ? "Visit" : "Visits")"
+    }
+
+    private func activityCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Aktivität" : "Aktivitäten")"
+            : "\(count) \(count == 1 ? "Activity" : "Activities")"
+    }
+
+    private func routeCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Route" : "Routen")"
+            : "\(count) \(count == 1 ? "Route" : "Routes")"
+    }
 }
 
 // MARK: - Day List (Selection-based, for regular layout)
 
 public struct AppDayListView: View {
+    @EnvironmentObject private var preferences: AppPreferences
     let summaries: [DaySummary]
     let selectedForExportDates: Set<String>
     @Binding var selectedDate: String?
@@ -125,9 +152,9 @@ public struct AppDayListView: View {
                             .font(.largeTitle)
                             .foregroundStyle(.secondary)
                             .accessibilityHidden(true)
-                        Text("No Results")
+                        Text(t("No Results"))
                             .font(.headline)
-                        Text("No days match \"\(searchText)\".")
+                        Text(tf("No days match \"%@\".", searchText))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -145,9 +172,9 @@ public struct AppDayListView: View {
                 Image(systemName: "square.and.arrow.up")
                     .foregroundColor(.accentColor)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(selectedForExportDates.count) day\(selectedForExportDates.count == 1 ? "" : "s") selected for export")
+                    Text(exportSelectionText)
                         .font(.subheadline.weight(.semibold))
-                    Text("Export markers stay visible directly in the list.")
+                    Text(t("Export markers stay visible directly in the list."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -156,20 +183,37 @@ public struct AppDayListView: View {
             .padding(.vertical, 4)
         }
     }
+
+    private var exportSelectionText: String {
+        if preferences.appLanguage.isGerman {
+            return "\(selectedForExportDates.count) \(selectedForExportDates.count == 1 ? "Tag" : "Tage") für den Export ausgewählt"
+        }
+        return "\(selectedForExportDates.count) day\(selectedForExportDates.count == 1 ? "" : "s") selected for export"
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+
+    private func tf(_ englishFormat: String, _ arguments: CVarArg...) -> String {
+        preferences.localized(format: englishFormat, arguments: arguments)
+    }
 }
 
 // MARK: - Day List Empty
 
 struct AppDayListEmptyView: View {
+    @EnvironmentObject private var preferences: AppPreferences
+
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "calendar.badge.exclamationmark")
                 .font(.largeTitle)
                 .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
-            Text("No Days")
+            Text(t("No Days"))
                 .font(.headline)
-            Text("This export does not contain any day entries.")
+            Text(t("This export does not contain any day entries."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -177,6 +221,10 @@ struct AppDayListEmptyView: View {
         .accessibilityElement(children: .combine)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(24)
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
     }
 }
 

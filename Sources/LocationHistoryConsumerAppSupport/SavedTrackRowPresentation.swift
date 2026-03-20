@@ -20,7 +20,8 @@ struct SavedTrackRowPresentation: Equatable {
 enum SavedTrackPresentation {
     static func row(
         for track: RecordedTrack,
-        unit: AppDistanceUnitPreference
+        unit: AppDistanceUnitPreference,
+        language: AppLanguagePreference = .english
     ) -> SavedTrackRowPresentation {
         let title = AppDateDisplay.abbreviatedDate(track.startedAt)
         let timeRange = AppTimeDisplay.timeRange(start: track.startedAt, end: track.endedAt)
@@ -34,7 +35,7 @@ enum SavedTrackPresentation {
                     id: "distance",
                     icon: "ruler",
                     text: distanceText,
-                    accessibilityLabel: "\(distanceText) distance"
+                    accessibilityLabel: language.isGerman ? "\(distanceText) Strecke" : "\(distanceText) distance"
                 )
             )
         }
@@ -49,7 +50,12 @@ enum SavedTrackPresentation {
             )
         }
         if track.pointCount > 0 {
-            let pointText = "\(track.pointCount) \(track.pointCount == 1 ? "point" : "points")"
+            let pointText: String
+            if language.isGerman {
+                pointText = "\(track.pointCount) \(track.pointCount == 1 ? "Punkt" : "Punkte")"
+            } else {
+                pointText = "\(track.pointCount) \(track.pointCount == 1 ? "point" : "points")"
+            }
             metrics.append(
                 SavedTrackMetricPresentation(
                     id: "points",

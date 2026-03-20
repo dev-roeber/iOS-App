@@ -68,6 +68,10 @@ public struct AppExportView: View {
         preferences.localized(english)
     }
 
+    private func tf(_ englishFormat: String, _ arguments: CVarArg...) -> String {
+        preferences.localized(format: englishFormat, arguments: arguments)
+    }
+
     public var body: some View {
         if session.daySummaries.isEmpty && liveLocation.recordedTracks.isEmpty {
             emptyState
@@ -121,11 +125,11 @@ public struct AppExportView: View {
             exportDocument = nil
         }
         #endif
-        .alert("Export Failed", isPresented: Binding(
+        .alert(t("Export Failed"), isPresented: Binding(
             get: { exportError != nil },
             set: { if !$0 { exportError = nil } }
         )) {
-            Button("OK", role: .cancel) { exportError = nil }
+            Button(t("OK"), role: .cancel) { exportError = nil }
         } message: {
             Text(exportError ?? "")
         }
@@ -245,15 +249,15 @@ public struct AppExportView: View {
                     .font(.subheadline.weight(.medium))
                 HStack(spacing: 10) {
                     if summary.visitCount > 0 {
-                        Label("\(summary.visitCount) visit\(summary.visitCount == 1 ? "" : "s")", systemImage: "mappin.and.ellipse")
+                        Label(visitCountText(summary.visitCount), systemImage: "mappin.and.ellipse")
                             .foregroundStyle(.secondary)
                     }
                     if summary.activityCount > 0 {
-                        Label("\(summary.activityCount) activit\(summary.activityCount == 1 ? "y" : "ies")", systemImage: "figure.walk")
+                        Label(activityCountText(summary.activityCount), systemImage: "figure.walk")
                             .foregroundStyle(.secondary)
                     }
                     if hasRoutes {
-                        Label("\(summary.pathCount) route\(summary.pathCount == 1 ? "" : "s")", systemImage: "location.north.line")
+                        Label(routeCountText(summary.pathCount), systemImage: "location.north.line")
                             .foregroundStyle(.secondary)
                     }
                     if summary.totalPathDistanceM > 0 {
@@ -261,7 +265,7 @@ public struct AppExportView: View {
                             .foregroundStyle(.secondary)
                     }
                     if !hasRoutes && summary.visitCount == 0 && summary.activityCount == 0 {
-                        Label("No map content", systemImage: "exclamationmark.circle")
+                        Label(t("No map content"), systemImage: "exclamationmark.circle")
                         .foregroundStyle(.tertiary)
                     }
                 }
@@ -275,8 +279,8 @@ public struct AppExportView: View {
         .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(AppDateDisplay.mediumDate(summary.date)), \(summary.pathCount) routes")
-        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityLabel("\(AppDateDisplay.mediumDate(summary.date)), \(routeCountText(summary.pathCount))")
+        .accessibilityValue(isSelected ? t("Selected") : t("Not selected"))
         .accessibilityAddTraits(.isButton)
     }
 
@@ -292,7 +296,7 @@ public struct AppExportView: View {
                 Text(savedTrackTitle(track))
                     .font(.subheadline.weight(.medium))
                 HStack(spacing: 10) {
-                    Label("\(track.pointCount) points", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+                    Label(pointCountText(track.pointCount), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                         .foregroundStyle(.secondary)
                     Label(formatDistance(track.distanceM, unit: preferences.distanceUnit), systemImage: "ruler")
                         .foregroundStyle(.secondary)
@@ -309,8 +313,8 @@ public struct AppExportView: View {
         .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(savedTrackTitle(track)), \(track.pointCount) points")
-        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityLabel("\(savedTrackTitle(track)), \(pointCountText(track.pointCount))")
+        .accessibilityValue(isSelected ? t("Selected") : t("Not selected"))
         .accessibilityAddTraits(.isButton)
     }
 
@@ -336,7 +340,8 @@ public struct AppExportView: View {
                             recordedTracks: liveLocation.recordedTracks,
                             format: selectedFormat,
                             queryFilter: effectiveQueryFilter,
-                            mode: selectedMode
+                            mode: selectedMode,
+                            language: preferences.appLanguage
                         ))
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -358,18 +363,18 @@ public struct AppExportView: View {
                 if snapshot.selectedSourceCount > 0 {
                     HStack(spacing: 10) {
                         exportSummaryBadge(
-                            title: "\(snapshot.selectedSourceCount) \(snapshot.selectedSourceCount == 1 ? "source" : "sources")",
+                            title: sourceCountText(snapshot.selectedSourceCount),
                             systemImage: "tray.full"
                         )
                         if snapshot.routeCount > 0 {
                             exportSummaryBadge(
-                                title: "\(snapshot.routeCount) \(snapshot.routeCount == 1 ? "route" : "routes")",
+                                title: routeCountText(snapshot.routeCount),
                                 systemImage: "location.north.line"
                             )
                         }
                         if snapshot.waypointCount > 0 {
                             exportSummaryBadge(
-                                title: "\(snapshot.waypointCount) \(snapshot.waypointCount == 1 ? "waypoint" : "waypoints")",
+                                title: waypointCountText(snapshot.waypointCount),
                                 systemImage: "mappin.and.ellipse"
                             )
                         }
@@ -393,7 +398,7 @@ public struct AppExportView: View {
                 if !activeFilterDescriptions.isEmpty {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Label("Local export filters are active", systemImage: "line.3.horizontal.decrease.circle.fill")
+                            Label(t("Local export filters are active"), systemImage: "line.3.horizontal.decrease.circle.fill")
                                 .font(.subheadline.weight(.medium))
                                 .foregroundStyle(.orange)
                             Text(activeFilterDescriptions.joined(separator: " · "))
@@ -401,13 +406,13 @@ public struct AppExportView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Button("Clear") {
+                        Button(t("Clear")) {
                             resetLocalFilters()
                         }
                         .font(.caption.weight(.medium))
                     }
                 } else {
-                    Text("Limit imported history by date window or maximum accuracy. Saved Live Tracks stay unaffected by these local export filters.")
+                    Text(t("Limit imported history by date window or maximum accuracy. Saved Live Tracks stay unaffected by these local export filters."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -415,11 +420,11 @@ public struct AppExportView: View {
                 if !dateOptions.isEmpty {
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("From")
+                            Text(t("From"))
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(.secondary)
-                            Picker("From", selection: $selectedFromDate) {
-                                Text("Any").tag("")
+                            Picker(t("From"), selection: $selectedFromDate) {
+                                Text(t("Any")).tag("")
                                 ForEach(dateOptions, id: \.self) { date in
                                     Text(AppDateDisplay.mediumDate(date)).tag(date)
                                 }
@@ -428,11 +433,11 @@ public struct AppExportView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("To")
+                            Text(t("To"))
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(.secondary)
-                            Picker("To", selection: $selectedToDate) {
-                                Text("Any").tag("")
+                            Picker(t("To"), selection: $selectedToDate) {
+                                Text(t("Any")).tag("")
                                 ForEach(dateOptions, id: \.self) { date in
                                     Text(AppDateDisplay.mediumDate(date)).tag(date)
                                 }
@@ -443,19 +448,19 @@ public struct AppExportView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Maximum accuracy")
+                    Text(t("Maximum accuracy"))
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
-                    Picker("Maximum accuracy", selection: $selectedAccuracyFilter) {
+                    Picker(t("Maximum accuracy"), selection: $selectedAccuracyFilter) {
                         ForEach(ExportAccuracyFilterOption.allCases) { option in
-                            Text(option.rawValue).tag(option)
+                            Text(t(option.rawValue)).tag(option)
                         }
                     }
                     .pickerStyle(.segmented)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Required imported content")
+                    Text(t("Required imported content"))
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                     filterChipRow {
@@ -472,7 +477,7 @@ public struct AppExportView: View {
 
                 if !availableActivityTypes.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Activity types")
+                        Text(t("Activity types"))
                             .font(.caption.weight(.medium))
                             .foregroundStyle(.secondary)
                         filterChipRow {
@@ -489,42 +494,42 @@ public struct AppExportView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Area filter")
+                    Text(t("Area filter"))
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
-                    Picker("Area filter", selection: $selectedAreaFilter) {
+                    Picker(t("Area filter"), selection: $selectedAreaFilter) {
                         ForEach(ExportAreaFilterOption.allCases) { option in
-                            Text(option.rawValue).tag(option)
+                            Text(t(option.rawValue)).tag(option)
                         }
                     }
                     .pickerStyle(.segmented)
 
                     switch selectedAreaFilter {
                     case .none:
-                        Text("Optional area filters affect imported history only. Saved Live Tracks always keep their full recorded geometry.")
+                        Text(t("Optional area filters affect imported history only. Saved Live Tracks always keep their full recorded geometry."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     case .bounds:
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Enter latitude and longitude bounds. Values are combined with any upstream export filters.")
+                            Text(t("Enter latitude and longitude bounds. Values are combined with any upstream export filters."))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             HStack(spacing: 12) {
-                                TextField("Min lat", text: $boundsMinLat)
+                                TextField(t("Min lat"), text: $boundsMinLat)
                                     .textFieldStyle(.roundedBorder)
-                                TextField("Max lat", text: $boundsMaxLat)
+                                TextField(t("Max lat"), text: $boundsMaxLat)
                                     .textFieldStyle(.roundedBorder)
                             }
                             HStack(spacing: 12) {
-                                TextField("Min lon", text: $boundsMinLon)
+                                TextField(t("Min lon"), text: $boundsMinLon)
                                     .textFieldStyle(.roundedBorder)
-                                TextField("Max lon", text: $boundsMaxLon)
+                                TextField(t("Max lon"), text: $boundsMaxLon)
                                     .textFieldStyle(.roundedBorder)
                             }
                         }
                     case .polygon:
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Enter one `lat,lon` pair per line. At least three vertices are required.")
+                            Text(t("Enter one `lat,lon` pair per line. At least three vertices are required."))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             TextEditor(text: $polygonCoordinatesText)
@@ -545,7 +550,7 @@ public struct AppExportView: View {
                 }
 
                 if filteredSummaries.isEmpty {
-                    Label("The current imported-history filters hide all day rows. Saved Live Tracks can still be exported separately.", systemImage: "line.3.horizontal.decrease.circle")
+                    Label(t("The current imported-history filters hide all day rows. Saved Live Tracks can still be exported separately."), systemImage: "line.3.horizontal.decrease.circle")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -563,7 +568,12 @@ public struct AppExportView: View {
             queryFilter: effectiveQueryFilter,
             mode: selectedMode
         )
-        let presentation = MapPresentation.exportPreview(previewData, unit: preferences.distanceUnit, mode: selectedMode)
+        let presentation = MapPresentation.exportPreview(
+            previewData,
+            unit: preferences.distanceUnit,
+            mode: selectedMode,
+            language: preferences.appLanguage
+        )
 
         Section(t("Preview")) {
             VStack(alignment: .leading, spacing: 12) {
@@ -571,13 +581,13 @@ public struct AppExportView: View {
                     if #available(iOS 17.0, macOS 14.0, *) {
                         AppExportPreviewMapView(previewData: previewData)
                     } else {
-                        Label("Map preview requires a newer Apple platform version, but the export summary below still reflects the current selection.", systemImage: "map")
+                        Label(t("Map preview requires a newer Apple platform version, but the export summary below still reflects the current selection."), systemImage: "map")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                     MapSectionSupplementaryView(presentation: presentation)
                 } else {
-                    Label("The current selection has no routes with exportable geometry to preview.", systemImage: "map")
+                    Label(t("The current selection has no routes with exportable geometry to preview."), systemImage: "map")
                         .font(.subheadline.weight(.medium))
                     Text(ExportPresentation.helperMessage(
                         importedExport: session.content?.export,
@@ -585,7 +595,8 @@ public struct AppExportView: View {
                         recordedTracks: liveLocation.recordedTracks,
                         format: selectedFormat,
                         queryFilter: effectiveQueryFilter,
-                        mode: selectedMode
+                        mode: selectedMode,
+                        language: preferences.appLanguage
                     ))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -603,7 +614,7 @@ public struct AppExportView: View {
                 if ExportFormat.allCases.count > 1 {
                     Picker(t("Format"), selection: $selectedFormat) {
                         ForEach(ExportFormat.allCases) { format in
-                            Label(format.rawValue, systemImage: format.systemImage).tag(format)
+                            Label(t(format.rawValue), systemImage: format.systemImage).tag(format)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -612,9 +623,9 @@ public struct AppExportView: View {
                         Image(systemName: selectedFormat.systemImage)
                             .foregroundColor(.accentColor)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(selectedFormat.rawValue)
+                            Text(t(selectedFormat.rawValue))
                                 .font(.subheadline.weight(.medium))
-                            Text(selectedFormat.description)
+                            Text(t(selectedFormat.description))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -624,7 +635,7 @@ public struct AppExportView: View {
 
                 Picker(t("Mode"), selection: $selectedMode) {
                     ForEach(ExportMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Text(t(mode.rawValue)).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -638,7 +649,8 @@ public struct AppExportView: View {
                             summaries: summaries,
                             recordedTracks: liveLocation.recordedTracks,
                             format: selectedFormat,
-                            mode: selectedMode
+                            mode: selectedMode,
+                            language: preferences.appLanguage
                         ),
                         systemImage: "doc"
                     )
@@ -653,7 +665,8 @@ public struct AppExportView: View {
                             recordedTracks: liveLocation.recordedTracks,
                             format: selectedFormat,
                             queryFilter: effectiveQueryFilter,
-                            mode: selectedMode
+                            mode: selectedMode,
+                            language: preferences.appLanguage
                         ),
                         systemImage: "info.circle"
                     )
@@ -681,7 +694,8 @@ public struct AppExportView: View {
                     recordedTracks: liveLocation.recordedTracks,
                     format: selectedFormat,
                     queryFilter: effectiveQueryFilter,
-                    mode: selectedMode
+                    mode: selectedMode,
+                    language: preferences.appLanguage
                 ),
                 systemImage: "square.and.arrow.up"
             )
@@ -748,15 +762,21 @@ public struct AppExportView: View {
 
     private func selectionSummaryTitle(snapshot: ExportSelectionSnapshot) -> String {
         if snapshot.selectedSourceCount == 0 {
-            return "Select content for export"
+            return preferences.appLanguage.isGerman ? "Inhalt für den Export auswählen" : "Select content for export"
         }
         if snapshot.selectedDayCount > 0 && snapshot.selectedRecordedTrackCount == 0 {
-            return "\(snapshot.selectedDayCount) imported day\(snapshot.selectedDayCount == 1 ? "" : "s") selected"
+            return preferences.appLanguage.isGerman
+                ? "\(snapshot.selectedDayCount) importierte \(snapshot.selectedDayCount == 1 ? "Tag" : "Tage") ausgewählt"
+                : "\(snapshot.selectedDayCount) imported day\(snapshot.selectedDayCount == 1 ? "" : "s") selected"
         }
         if snapshot.selectedDayCount == 0 {
-            return "\(snapshot.selectedRecordedTrackCount) saved live track\(snapshot.selectedRecordedTrackCount == 1 ? "" : "s") selected"
+            return preferences.appLanguage.isGerman
+                ? "\(snapshot.selectedRecordedTrackCount) gespeicherte \(snapshot.selectedRecordedTrackCount == 1 ? "Live-Track" : "Live-Tracks") ausgewählt"
+                : "\(snapshot.selectedRecordedTrackCount) saved live track\(snapshot.selectedRecordedTrackCount == 1 ? "" : "s") selected"
         }
-        return "\(snapshot.selectedDayCount) imported day\(snapshot.selectedDayCount == 1 ? "" : "s") + \(snapshot.selectedRecordedTrackCount) saved live track\(snapshot.selectedRecordedTrackCount == 1 ? "" : "s") selected"
+        return preferences.appLanguage.isGerman
+            ? "\(snapshot.selectedDayCount) importierte \(snapshot.selectedDayCount == 1 ? "Tag" : "Tage") + \(snapshot.selectedRecordedTrackCount) gespeicherte \(snapshot.selectedRecordedTrackCount == 1 ? "Live-Track" : "Live-Tracks") ausgewählt"
+            : "\(snapshot.selectedDayCount) imported day\(snapshot.selectedDayCount == 1 ? "" : "s") + \(snapshot.selectedRecordedTrackCount) saved live track\(snapshot.selectedRecordedTrackCount == 1 ? "" : "s") selected"
     }
 
     @ViewBuilder
@@ -778,7 +798,8 @@ public struct AppExportView: View {
                 recordedTracks: liveLocation.recordedTracks,
                 format: selectedFormat,
                 queryFilter: effectiveQueryFilter,
-                mode: selectedMode
+                mode: selectedMode,
+                language: preferences.appLanguage
             )
             return
         }
@@ -791,7 +812,7 @@ public struct AppExportView: View {
         )
 
         guard !exportDays.isEmpty else {
-            exportError = "The current selection contains no exportable route geometry."
+            exportError = t("The current selection contains no exportable route geometry.")
             return
         }
 
@@ -1138,7 +1159,7 @@ public struct AppExportView: View {
 
     private func savedTrackTitle(_ track: RecordedTrack) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.locale = preferences.appLocale
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: track.startedAt)
@@ -1147,10 +1168,46 @@ public struct AppExportView: View {
     private func captureModeLabel(for track: RecordedTrack) -> String {
         switch track.captureMode {
         case .foregroundWhileInUse:
-            return "Foreground recording"
+            return t("Foreground recording")
         case .backgroundAlways:
-            return "Background recording"
+            return t("Background recording")
         }
+    }
+
+    private func visitCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Besuch" : "Besuche")"
+            : "\(count) visit\(count == 1 ? "" : "s")"
+    }
+
+    private func activityCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Aktivität" : "Aktivitäten")"
+            : "\(count) activit\(count == 1 ? "y" : "ies")"
+    }
+
+    private func routeCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Route" : "Routen")"
+            : "\(count) route\(count == 1 ? "" : "s")"
+    }
+
+    private func pointCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Punkt" : "Punkte")"
+            : "\(count) point\(count == 1 ? "" : "s")"
+    }
+
+    private func sourceCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Quelle" : "Quellen")"
+            : "\(count) source\(count == 1 ? "" : "s")"
+    }
+
+    private func waypointCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Wegpunkt" : "Wegpunkte")"
+            : "\(count) waypoint\(count == 1 ? "" : "s")"
     }
 }
 

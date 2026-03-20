@@ -48,7 +48,7 @@ struct AppExportPreviewMapView: View {
                         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .padding(8)
-                .accessibilityLabel(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map")
+                .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
             }
             .accessibilityLabel(mapAccessibilityLabel)
         }
@@ -60,7 +60,14 @@ struct AppExportPreviewMapView: View {
         let points = previewData.pathOverlays.reduce(0) { partialResult, overlay in
             partialResult + overlay.coordinates.count
         }
+        if preferences.appLanguage.isGerman {
+            return "Vorschaukarte mit \(routes) \(routes == 1 ? "Route" : "Routen"), \(waypoints) \(waypoints == 1 ? "Wegpunkt" : "Wegpunkten") und \(points) eingezeichneten Routenpunkten"
+        }
         return "Preview map with \(routes) \(routes == 1 ? "route" : "routes"), \(waypoints) \(waypoints == 1 ? "waypoint" : "waypoints"), and \(points) plotted route points"
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
     }
 }
 #endif

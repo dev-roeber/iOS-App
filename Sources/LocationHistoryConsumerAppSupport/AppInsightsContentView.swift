@@ -50,7 +50,9 @@ struct AppInsightsContentView: View {
         }
         // Mon(2)..Sat(7), Sun(1) last
         let order = [2, 3, 4, 5, 6, 7, 1]
-        let names = [1: "Sun", 2: "Mon", 3: "Tue", 4: "Wed", 5: "Thu", 6: "Fri", 7: "Sat"]
+        let names = preferences.appLanguage.isGerman
+            ? [1: "So", 2: "Mo", 3: "Di", 4: "Mi", 5: "Do", 6: "Fr", 7: "Sa"]
+            : [1: "Sun", 2: "Mon", 3: "Tue", 4: "Wed", 5: "Thu", 6: "Fri", 7: "Sat"]
         return order.compactMap { wd in
             guard let b = buckets[wd], b.count > 0 else { return nil }
             return WeekdayStat(id: wd, name: names[wd]!, avgEvents: Double(b.total) / Double(b.count))
@@ -78,7 +80,7 @@ struct AppInsightsContentView: View {
     }
 
     private var activityMetricAxisLabel: String {
-        activityMetric == .distance ? distanceAxisLabel(unit: preferences.distanceUnit) : "Activity Count"
+        activityMetric == .distance ? distanceAxisLabel(unit: preferences.distanceUnit) : t("Activity Count")
     }
 
     private var hasAnyMeaningfulInsightSection: Bool {
@@ -93,90 +95,90 @@ struct AppInsightsContentView: View {
     var body: some View {
         if !hasDayData {
             pageEmptyState(
-                title: "No Insights Yet",
-                message: "This import contains no day entries, so there is nothing meaningful to analyze yet.",
+                title: t("No Insights Yet"),
+                message: t("This import contains no day entries, so there is nothing meaningful to analyze yet."),
                 systemImage: "chart.line.text.clipboard"
             )
         } else {
             VStack(alignment: .leading, spacing: 24) {
                 if !hasAnyMeaningfulInsightSection {
                     insightsEmptyCard(
-                        title: "Limited Insight Data",
-                        message: "The import loaded correctly, but it does not contain enough structured data for the current insight views yet.",
+                        title: t("Limited Insight Data"),
+                        message: t("The import loaded correctly, but it does not contain enough structured data for the current insight views yet."),
                         systemImage: "chart.bar.xaxis"
                     )
                 }
 
-                insightSection("Distance Over Time", icon: "chart.bar.fill") {
+                insightSection(t("Distance Over Time"), icon: "chart.bar.fill") {
                     #if canImport(Charts)
                     if hasDistanceData {
                         distanceChart
                         if onDayTap != nil {
-                            sectionHint("Tap a bar to open the corresponding day.", systemImage: "hand.tap")
+                            sectionHint(t("Tap a bar to open the corresponding day."), systemImage: "hand.tap")
                         }
-                        Text("Route distances only")
+                        Text(t("Route distances only"))
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     } else {
                         insightsEmptyCard(
-                            title: "No Route Distances",
-                            message: "This import does not contain route distance data that could be plotted over time.",
+                            title: t("No Route Distances"),
+                            message: t("This import does not contain route distance data that could be plotted over time."),
                             systemImage: "road.lanes"
                         )
                     }
                     #else
                     insightsEmptyCard(
-                        title: "Charts Unavailable",
-                        message: "This platform build does not include chart rendering for the distance timeline.",
+                        title: t("Charts Unavailable"),
+                        message: t("This platform build does not include chart rendering for the distance timeline."),
                         systemImage: "chart.bar"
                     )
                     #endif
                 }
 
-                insightSection("Daily Averages", icon: "chart.bar.fill") {
+                insightSection(t("Daily Averages"), icon: "chart.bar.fill") {
                     if canShowDailyAverages {
                         let avg = insights.averagesPerDay
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
-                            avgCard(String(format: "%.1f", avg.avgVisitsPerDay), label: "Visits / Day", icon: "mappin.and.ellipse", color: .blue)
-                            avgCard(String(format: "%.1f", avg.avgActivitiesPerDay), label: "Activities / Day", icon: "figure.walk", color: .green)
-                            avgCard(String(format: "%.1f", avg.avgPathsPerDay), label: "Routes / Day", icon: "location.north.line", color: .orange)
-                            avgCard(formatDistance(avg.avgDistancePerDayM, unit: preferences.distanceUnit), label: "Distance / Day", icon: "road.lanes", color: .purple)
+                            avgCard(String(format: "%.1f", avg.avgVisitsPerDay), label: t("Visits / Day"), icon: "mappin.and.ellipse", color: .blue)
+                            avgCard(String(format: "%.1f", avg.avgActivitiesPerDay), label: t("Activities / Day"), icon: "figure.walk", color: .green)
+                            avgCard(String(format: "%.1f", avg.avgPathsPerDay), label: t("Routes / Day"), icon: "location.north.line", color: .orange)
+                            avgCard(formatDistance(avg.avgDistancePerDayM, unit: preferences.distanceUnit), label: t("Distance / Day"), icon: "road.lanes", color: .purple)
                         }
                     } else {
                         insightsEmptyCard(
-                            title: "Need More Than One Day",
-                            message: "Daily averages become meaningful once the import contains at least two different days.",
+                            title: t("Need More Than One Day"),
+                            message: t("Daily averages become meaningful once the import contains at least two different days."),
                             systemImage: "calendar.badge.plus"
                         )
                     }
                 }
 
-                insightSection("Activity Types", icon: "figure.walk") {
+                insightSection(t("Activity Types"), icon: "figure.walk") {
                     if !insights.activityBreakdown.isEmpty {
                         #if canImport(Charts)
                         Picker("", selection: $activityMetric) {
                             ForEach(ActivityMetric.allCases, id: \.self) { m in
-                                Text(m.rawValue).tag(m)
+                                Text(t(m.rawValue)).tag(m)
                             }
                         }
                         .pickerStyle(.segmented)
                         .padding(.bottom, 4)
                         activityTypeChart
-                        sectionHint("Compare activities by \(activityMetric == .distance ? "covered distance" : "entry count").")
+                        sectionHint(activityMetric == .distance ? t("Compare activities by covered distance.") : t("Compare activities by entry count."))
                         #endif
                         ForEach(Array(insights.activityBreakdown.enumerated()), id: \.offset) { _, item in
                             activityBreakdownCard(item)
                         }
                     } else {
                         insightsEmptyCard(
-                            title: "No Activity Breakdown",
-                            message: "No activity entries were found that could be summarized by type, distance or duration.",
+                            title: t("No Activity Breakdown"),
+                            message: t("No activity entries were found that could be summarized by type, distance or duration."),
                             systemImage: "figure.walk.motion"
                         )
                     }
                 }
 
-                insightSection("Visit Types", icon: "mappin.and.ellipse") {
+                insightSection(t("Visit Types"), icon: "mappin.and.ellipse") {
                     if !insights.visitTypeBreakdown.isEmpty {
                         #if canImport(Charts)
                         visitTypeChart
@@ -186,43 +188,43 @@ struct AppInsightsContentView: View {
                         }
                     } else {
                         insightsEmptyCard(
-                            title: "No Visit Types",
-                            message: "This import does not contain visit data that can be grouped into semantic place types.",
+                            title: t("No Visit Types"),
+                            message: t("This import does not contain visit data that can be grouped into semantic place types."),
                             systemImage: "mappin.slash"
                         )
                     }
                 }
 
-                insightSection("By Day of Week", icon: "chart.bar") {
+                insightSection(t("By Day of Week"), icon: "chart.bar") {
                     #if canImport(Charts)
                     if hasWeekdayData {
                         weekdayChart
-                        sectionHint("Average visit and activity events per weekday across the imported days.")
+                        sectionHint(t("Average visit and activity events per weekday across the imported days."))
                     } else {
                         insightsEmptyCard(
-                            title: "Need More Day Coverage",
-                            message: "A weekday pattern is only shown once at least three separate day summaries are available.",
+                            title: t("Need More Day Coverage"),
+                            message: t("A weekday pattern is only shown once at least three separate day summaries are available."),
                             systemImage: "calendar"
                         )
                     }
                     #else
                     insightsEmptyCard(
-                        title: "Charts Unavailable",
-                        message: "This platform build does not include chart rendering for the weekday view.",
+                        title: t("Charts Unavailable"),
+                        message: t("This platform build does not include chart rendering for the weekday view."),
                         systemImage: "chart.bar"
                     )
                     #endif
                 }
 
-                insightSection("Period Breakdown", icon: "calendar.badge.clock") {
+                insightSection(t("Period Breakdown"), icon: "calendar.badge.clock") {
                     if !insights.periodBreakdown.isEmpty {
                         ForEach(Array(insights.periodBreakdown.enumerated()), id: \.offset) { _, item in
                             periodRow(item)
                         }
                     } else {
                         insightsEmptyCard(
-                            title: "No Period Stats",
-                            message: "This export does not include aggregated month or year period statistics.",
+                            title: t("No Period Stats"),
+                            message: t("This export does not include aggregated month or year period statistics."),
                             systemImage: "calendar.badge.exclamationmark"
                         )
                     }
@@ -321,7 +323,7 @@ struct AppInsightsContentView: View {
                 Image(systemName: iconForActivityType(item.activityType))
                     .foregroundColor(color)
                     .font(.subheadline)
-                Text(displayNameForActivityType(item.activityType))
+                Text(t(displayNameForActivityType(item.activityType)))
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Text("\(item.count)×")
@@ -358,7 +360,7 @@ struct AppInsightsContentView: View {
             Image(systemName: iconForVisitType(item.semanticType))
                 .foregroundColor(.blue)
                 .frame(width: 24)
-            Text(item.semanticType.capitalized)
+            Text(t(item.semanticType.capitalized))
                 .font(.subheadline)
             Spacer()
             Text("\(item.count)")
@@ -379,8 +381,8 @@ struct AppInsightsContentView: View {
             Text(item.label)
                 .font(.subheadline.weight(.medium))
             HStack(spacing: 16) {
-                Label("\(item.days) days", systemImage: "calendar")
-                Label("\(item.visits) visits", systemImage: "mappin.and.ellipse")
+                Label(dayCountText(item.days), systemImage: "calendar")
+                Label(visitCountText(item.visits), systemImage: "mappin.and.ellipse")
                 if item.distanceM > 0 {
                     Label(formatDistance(item.distanceM, unit: preferences.distanceUnit), systemImage: "ruler")
                 }
@@ -445,8 +447,8 @@ struct AppInsightsContentView: View {
             ForEach(items, id: \.activityType) { item in
                 let xVal = showDistance ? distanceValue(item.totalDistanceKM * 1000, unit: preferences.distanceUnit) : Double(item.count)
                 BarMark(
-                    x: .value(showDistance ? distanceAxisLabel(unit: preferences.distanceUnit) : "Count", xVal),
-                    y: .value("Type", item.activityType.capitalized)
+                    x: .value(showDistance ? distanceAxisLabel(unit: preferences.distanceUnit) : t("Count"), xVal),
+                    y: .value(t("Type"), t(item.activityType.capitalized))
                 )
                 .foregroundStyle(Color.green)
                 .cornerRadius(4)
@@ -471,8 +473,8 @@ struct AppInsightsContentView: View {
             Chart {
                 ForEach(insights.visitTypeBreakdown, id: \.semanticType) { item in
                     BarMark(
-                        x: .value("Count", item.count),
-                        y: .value("Type", item.semanticType.capitalized)
+                        x: .value(t("Count"), item.count),
+                        y: .value(t("Type"), t(item.semanticType.capitalized))
                     )
                     .foregroundStyle(Color.blue)
                     .cornerRadius(4)
@@ -486,7 +488,7 @@ struct AppInsightsContentView: View {
             .chartXAxis {
                 AxisMarks(position: .bottom)
             }
-            .chartXAxisLabel("Visit Count", alignment: .trailing)
+            .chartXAxisLabel(t("Visit Count"), alignment: .trailing)
             .frame(height: CGFloat(max(insights.visitTypeBreakdown.count, 1)) * 40 + 8)
         }
     }
@@ -496,8 +498,8 @@ struct AppInsightsContentView: View {
         Chart {
             ForEach(weekdayStats) { stat in
                 BarMark(
-                    x: .value("Day", stat.name),
-                    y: .value("Avg", stat.avgEvents)
+                    x: .value(t("Day"), stat.name),
+                    y: .value(t("Avg"), stat.avgEvents)
                 )
                 .foregroundStyle(Color.indigo)
                 .cornerRadius(4)
@@ -511,7 +513,7 @@ struct AppInsightsContentView: View {
         .chartYAxis {
             AxisMarks(position: .leading)
         }
-        .chartYAxisLabel("Avg events", alignment: .trailing)
+        .chartYAxisLabel(t("Avg events"), alignment: .trailing)
         .frame(height: 110)
         .padding(.bottom, 2)
     }
@@ -519,11 +521,27 @@ struct AppInsightsContentView: View {
 
     private func formatDuration(_ hours: Double) -> String {
         if hours < 1 {
-            return String(format: "%.0f min", hours * 60)
+            return preferences.appLanguage.isGerman ? String(format: "%.0f Min.", hours * 60) : String(format: "%.0f min", hours * 60)
         }
         let h = Int(hours)
         let m = Int((hours - Double(h)) * 60)
         return m > 0 ? "\(h)h \(m)m" : "\(h)h"
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+
+    private func dayCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Tag" : "Tage")"
+            : "\(count) \(count == 1 ? "day" : "days")"
+    }
+
+    private func visitCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Besuch" : "Besuche")"
+            : "\(count) \(count == 1 ? "visit" : "visits")"
     }
 }
 

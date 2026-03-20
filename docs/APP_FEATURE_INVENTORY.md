@@ -168,6 +168,7 @@ Present:
 - live-recording detail preference for movement/time capture density
 - toggle for allowing background live recording
 - app-language preference with `English` / `Deutsch`
+- broad UI localization across shell, options, status UI, day list/detail, saved-track library/editor, live-recording and large parts of export/insights
 - toggle for optional live-location server upload
 - configurable server URL and optional bearer token for live-location upload
 - reset-to-defaults action

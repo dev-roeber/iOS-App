@@ -154,7 +154,8 @@ enum MapPresentation {
     static func exportPreview(
         _ previewData: ExportPreviewData,
         unit: AppDistanceUnitPreference,
-        mode: ExportMode
+        mode: ExportMode,
+        language: AppLanguagePreference = .english
     ) -> MapSectionPresentation {
         let routeCount = previewData.pathOverlays.count
         let waypointCount = previewData.waypointAnnotations.count
@@ -172,8 +173,8 @@ enum MapPresentation {
                 MapMetricPresentation(
                     id: "sources",
                     icon: "tray.full",
-                    text: "\(sourceCount) \(sourceCount == 1 ? "source" : "sources")",
-                    accessibilityLabel: "\(sourceCount) selected \(sourceCount == 1 ? "source" : "sources") in the preview"
+                    text: language.isGerman ? "\(sourceCount) \(sourceCount == 1 ? "Quelle" : "Quellen")" : "\(sourceCount) \(sourceCount == 1 ? "source" : "sources")",
+                    accessibilityLabel: language.isGerman ? "\(sourceCount) ausgewählte \(sourceCount == 1 ? "Quelle" : "Quellen") in der Vorschau" : "\(sourceCount) selected \(sourceCount == 1 ? "source" : "sources") in the preview"
                 )
             )
         }
@@ -182,8 +183,8 @@ enum MapPresentation {
                 MapMetricPresentation(
                     id: "routes",
                     icon: "location.north.line",
-                    text: "\(routeCount) \(routeCount == 1 ? "route" : "routes")",
-                    accessibilityLabel: "\(routeCount) preview \(routeCount == 1 ? "route" : "routes")"
+                    text: language.isGerman ? "\(routeCount) \(routeCount == 1 ? "Route" : "Routen")" : "\(routeCount) \(routeCount == 1 ? "route" : "routes")",
+                    accessibilityLabel: language.isGerman ? "\(routeCount) Vorschau-\(routeCount == 1 ? "Route" : "Routen")" : "\(routeCount) preview \(routeCount == 1 ? "route" : "routes")"
                 )
             )
         }
@@ -192,8 +193,8 @@ enum MapPresentation {
                 MapMetricPresentation(
                     id: "waypoints",
                     icon: "mappin.and.ellipse",
-                    text: "\(waypointCount) \(waypointCount == 1 ? "waypoint" : "waypoints")",
-                    accessibilityLabel: "\(waypointCount) preview \(waypointCount == 1 ? "waypoint" : "waypoints")"
+                    text: language.isGerman ? "\(waypointCount) \(waypointCount == 1 ? "Wegpunkt" : "Wegpunkte")" : "\(waypointCount) \(waypointCount == 1 ? "waypoint" : "waypoints")",
+                    accessibilityLabel: language.isGerman ? "\(waypointCount) Vorschau-\(waypointCount == 1 ? "Wegpunkt" : "Wegpunkte")" : "\(waypointCount) preview \(waypointCount == 1 ? "waypoint" : "waypoints")"
                 )
             )
         }
@@ -203,7 +204,7 @@ enum MapPresentation {
                     id: "points",
                     icon: "point.3.filled.connected.trianglepath.dotted",
                     text: "\(pointCount) pts",
-                    accessibilityLabel: "\(pointCount) route points in the preview"
+                    accessibilityLabel: language.isGerman ? "\(pointCount) Routenpunkte in der Vorschau" : "\(pointCount) route points in the preview"
                 )
             )
         }
@@ -213,7 +214,7 @@ enum MapPresentation {
                     id: "distance",
                     icon: "ruler",
                     text: formatDistance(plottedDistance, unit: unit),
-                    accessibilityLabel: "\(formatDistance(plottedDistance, unit: unit)) of preview distance"
+                    accessibilityLabel: language.isGerman ? "\(formatDistance(plottedDistance, unit: unit)) Vorschau-Strecke" : "\(formatDistance(plottedDistance, unit: unit)) of preview distance"
                 )
             )
         }
@@ -225,17 +226,21 @@ enum MapPresentation {
         )
         var sourceParts: [String] = []
         if previewData.importedDayCount > 0 {
-            sourceParts.append("\(previewData.importedDayCount) imported \(previewData.importedDayCount == 1 ? "day" : "days")")
+            sourceParts.append(language.isGerman ? "\(previewData.importedDayCount) importierte \(previewData.importedDayCount == 1 ? "Tag" : "Tage")" : "\(previewData.importedDayCount) imported \(previewData.importedDayCount == 1 ? "day" : "days")")
         }
         if previewData.savedTrackCount > 0 {
-            sourceParts.append("\(previewData.savedTrackCount) saved \(previewData.savedTrackCount == 1 ? "track" : "tracks")")
+            sourceParts.append(language.isGerman ? "\(previewData.savedTrackCount) gespeicherte \(previewData.savedTrackCount == 1 ? "Track" : "Tracks")" : "\(previewData.savedTrackCount) saved \(previewData.savedTrackCount == 1 ? "track" : "tracks")")
         }
 
         var note = sourceParts.isEmpty
             ? nil
-            : "Preview uses exportable \(mode == .waypoints ? "waypoint locations" : mode == .tracks ? "route geometry" : "route geometry and waypoint locations") from \(sourceParts.joined(separator: " and "))."
+            : (language.isGerman
+                ? "Die Vorschau nutzt exportierbare \(mode == .waypoints ? "Wegpunkt-Positionen" : mode == .tracks ? "Routengeometrie" : "Routengeometrie und Wegpunkt-Positionen") aus \(sourceParts.joined(separator: " und "))."
+                : "Preview uses exportable \(mode == .waypoints ? "waypoint locations" : mode == .tracks ? "route geometry" : "route geometry and waypoint locations") from \(sourceParts.joined(separator: " and ")).")
         if let dominantMode {
-            let dominantSentence = "\(dominantMode) contributes the strongest visible route context."
+            let dominantSentence = language.isGerman
+                ? "\(dominantMode) liefert den stärksten sichtbaren Routenkontext."
+                : "\(dominantMode) contributes the strongest visible route context."
             note = note.map { "\($0) \(dominantSentence)" } ?? dominantSentence
         }
 
@@ -244,7 +249,8 @@ enum MapPresentation {
             legendItems: routeLegendItems(
                 from: previewData.pathOverlays.map {
                     RouteModeSource(activityType: $0.activityType, distanceM: $0.distanceM)
-                }
+                },
+                language: language
             ),
             note: note
         )
@@ -263,7 +269,7 @@ enum MapPresentation {
         return displayNameForActivityType(best.activityType, default: "Routes")
     }
 
-    private static func routeLegendItems(from routes: [RouteModeSource]) -> [MapLegendItemPresentation] {
+    private static func routeLegendItems(from routes: [RouteModeSource], language: AppLanguagePreference = .english) -> [MapLegendItemPresentation] {
         let totals = aggregatedRouteModes(from: routes)
         guard !totals.isEmpty else {
             return []
@@ -284,7 +290,7 @@ enum MapPresentation {
             items.append(
                 MapLegendItemPresentation(
                     id: "overflow",
-                    title: "+\(overflowCount) more",
+                    title: language.isGerman ? "+\(overflowCount) weitere" : "+\(overflowCount) more",
                     activityType: nil,
                     isOverflow: true
                 )
@@ -327,6 +333,7 @@ enum MapPresentation {
 
 #if canImport(SwiftUI)
 struct MapSectionSupplementaryView: View {
+    @EnvironmentObject private var preferences: AppPreferences
     let presentation: MapSectionPresentation
 
     var body: some View {
@@ -341,7 +348,7 @@ struct MapSectionSupplementaryView: View {
 
             if !presentation.legendItems.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Legend")
+                    Text(t("Legend"))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
 
@@ -359,6 +366,10 @@ struct MapSectionSupplementaryView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
     }
 }
 
@@ -385,6 +396,7 @@ private struct MapMetricChipView: View {
 }
 
 private struct MapLegendChipView: View {
+    @EnvironmentObject private var preferences: AppPreferences
     let item: MapLegendItemPresentation
 
     var body: some View {
@@ -409,7 +421,7 @@ private struct MapLegendChipView: View {
         .background(Color.secondary.opacity(0.06))
         .clipShape(Capsule())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(item.isOverflow ? item.title : "Legend item: \(item.title)")
+        .accessibilityLabel(item.isOverflow ? item.title : (preferences.appLanguage.isGerman ? "Legendeneintrag: \(item.title)" : "Legend item: \(item.title)"))
     }
 }
 

@@ -43,20 +43,20 @@ public struct AppDayDetailView: View {
                 contentView(detail)
             } else {
                 emptyDayState(
-                    "Nothing Recorded",
-                    message: "This day has no visits, activities or paths in the export.",
+                    t("Nothing Recorded"),
+                    message: t("This day has no visits, activities or paths in the export."),
                     recovery: onBackToOverview
                 )
             }
         } else if hasDays {
             emptyDayState(
-                "Select a Day",
-                message: "Choose a day from the list to view details."
+                t("Select a Day"),
+                message: t("Choose a day from the list to view details.")
             )
         } else {
             emptyDayState(
-                "No Day Entries",
-                message: "Import a file with day entries to view details."
+                t("No Day Entries"),
+                message: t("Import a file with day entries to view details.")
             )
         }
     }
@@ -75,24 +75,24 @@ public struct AppDayDetailView: View {
 
             let dayDistance = detail.paths.reduce(0.0) { $0 + ($1.distanceM ?? 0) }
             HStack(spacing: 12) {
-                quickStat("\(detail.visits.count)", label: "Visits", icon: "mappin.and.ellipse", color: .blue)
-                quickStat("\(detail.activities.count)", label: "Activities", icon: "figure.walk", color: .green)
-                quickStat("\(detail.paths.count)", label: "Routes", icon: "location.north.line", color: .orange)
+                quickStat("\(detail.visits.count)", label: t("Visits"), icon: "mappin.and.ellipse", color: .blue)
+                quickStat("\(detail.activities.count)", label: t("Activities"), icon: "figure.walk", color: .green)
+                quickStat("\(detail.paths.count)", label: t("Routes"), icon: "location.north.line", color: .orange)
                 if dayDistance > 0 {
-                    quickStat(formatDistance(dayDistance, unit: preferences.distanceUnit), label: "Distance", icon: "road.lanes", color: .purple)
+                    quickStat(formatDistance(dayDistance, unit: preferences.distanceUnit), label: t("Distance"), icon: "road.lanes", color: .purple)
                 }
             }
 
             detailContextHeader(
-                "Imported Day Data",
-                message: "Map, timeline and entry cards below come from the currently imported history file."
+                t("Imported Day Data"),
+                message: t("Map, timeline and entry cards below come from the currently imported history file.")
             )
 
             #if canImport(MapKit)
             if #available(iOS 17.0, macOS 14.0, *) {
                 AppDayMapView(mapData: DayMapDataExtractor.mapData(from: detail))
             } else {
-                Label("Map view requires iOS 17 or later.", systemImage: "map")
+                Label(t("Map view requires iOS 17 or later."), systemImage: "map")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -102,7 +102,7 @@ public struct AppDayDetailView: View {
             DayTimelineView(detail: detail)
 
             if !detail.visits.isEmpty {
-                detailSection("Visits", icon: "mappin.and.ellipse", count: detail.visits.count) {
+                detailSection(t("Visits"), icon: "mappin.and.ellipse", count: detail.visits.count) {
                     ForEach(Array(detail.visits.enumerated()), id: \.offset) { _, visit in
                         visitCard(visit)
                     }
@@ -110,7 +110,7 @@ public struct AppDayDetailView: View {
             }
 
             if !detail.activities.isEmpty {
-                detailSection("Activities", icon: "figure.walk", count: detail.activities.count) {
+                detailSection(t("Activities"), icon: "figure.walk", count: detail.activities.count) {
                     ForEach(Array(detail.activities.enumerated()), id: \.offset) { _, activity in
                         activityCard(activity)
                     }
@@ -118,7 +118,7 @@ public struct AppDayDetailView: View {
             }
 
             if !detail.paths.isEmpty {
-                detailSection("Routes", icon: "location.north.line", count: detail.paths.count) {
+                detailSection(t("Routes"), icon: "location.north.line", count: detail.paths.count) {
                     ForEach(Array(detail.paths.enumerated()), id: \.offset) { _, path in
                         pathCard(path)
                     }
@@ -127,8 +127,8 @@ public struct AppDayDetailView: View {
 
             if let liveLocation {
                 detailContextHeader(
-                    "Local Recording",
-                    message: "Live location and saved live tracks stay separate from the imported day data above."
+                    t("Local Recording"),
+                    message: t("Live location and saved live tracks stay separate from the imported day data above.")
                 )
                 AppLiveLocationSection(
                     liveLocation: liveLocation,
@@ -183,7 +183,7 @@ public struct AppDayDetailView: View {
                 Image(systemName: iconForVisitType(visit.semanticType))
                     .foregroundColor(CardAccent.visit)
                     .font(.subheadline)
-                Text(visit.semanticType?.capitalized ?? "Visit")
+                Text(t(visit.semanticType?.capitalized ?? "Visit"))
                     .font(.subheadline.weight(.medium))
             }
             if let start = visit.startTime, let end = visit.endTime {
@@ -224,11 +224,11 @@ public struct AppDayDetailView: View {
                 Image(systemName: iconForActivityType(path.activityType))
                     .foregroundColor(CardAccent.path)
                     .font(.subheadline)
-                Text(displayNameForActivityType(path.activityType, default: "Route"))
+                Text(t(displayNameForActivityType(path.activityType, default: "Route")))
                     .font(.subheadline.weight(.medium))
             }
             HStack(spacing: 12) {
-                Label("\(path.pointCount) points", systemImage: "location.north.line")
+                Label(pointCountText(path.pointCount), systemImage: "location.north.line")
                 if let dist = path.distanceM {
                     Label(formatDistance(dist, unit: preferences.distanceUnit), systemImage: "ruler")
                 }
@@ -286,7 +286,7 @@ public struct AppDayDetailView: View {
                 .multilineTextAlignment(.center)
             if let recovery {
                 Button(action: recovery) {
-                    Label("Back to Overview", systemImage: "chevron.backward")
+                    Label(t("Back to Overview"), systemImage: "chevron.backward")
                 }
                 .buttonStyle(.bordered)
                 .padding(.top, 4)
@@ -294,11 +294,22 @@ public struct AppDayDetailView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 240)
     }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+
+    private func pointCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) \(count == 1 ? "Punkt" : "Punkte")"
+            : "\(count) \(count == 1 ? "point" : "points")"
+    }
 }
 
 // MARK: - Day Timeline
 
 private struct DayTimelineView: View {
+    @EnvironmentObject private var preferences: AppPreferences
     let detail: DayDetailViewState
 
     private static let isoParser = ISO8601DateFormatter()
@@ -339,27 +350,31 @@ private struct DayTimelineView: View {
         let to   = bounds.map { AppTimeDisplay.time($0.end) } ?? ""
         var parts: [String] = []
         if !visitSlots.isEmpty {
-            parts.append("\(visitSlots.count) visit\(visitSlots.count == 1 ? "" : "s")")
+            parts.append(countedText(visitSlots.count, englishSingular: "visit", englishPlural: "visits", germanSingular: "Besuch", germanPlural: "Besuche"))
         }
         if !activitySlots.isEmpty {
-            parts.append("\(activitySlots.count) \(activitySlots.count == 1 ? "activity" : "activities")")
+            parts.append(countedText(activitySlots.count, englishSingular: "activity", englishPlural: "activities", germanSingular: "Aktivität", germanPlural: "Aktivitäten"))
         }
-        if !from.isEmpty { parts.append("from \(from) to \(to)") }
-        return "Day timeline: \(parts.joined(separator: ", "))"
+        if !from.isEmpty {
+            parts.append(preferences.appLanguage.isGerman ? "von \(from) bis \(to)" : "from \(from) to \(to)")
+        }
+        return preferences.appLanguage.isGerman
+            ? "Tageszeitachse: \(parts.joined(separator: ", "))"
+            : "Day timeline: \(parts.joined(separator: ", "))"
     }
 
     var body: some View {
         if let b = bounds {
             let span = b.end.timeIntervalSince(b.start)
             VStack(alignment: .leading, spacing: 8) {
-                Label("Timeline", systemImage: "clock.arrow.2.circlepath")
+                Label(t("Timeline"), systemImage: "clock.arrow.2.circlepath")
                     .font(.headline)
                 VStack(alignment: .leading, spacing: 6) {
                     if !visitSlots.isEmpty {
-                        timelineRow(slots: visitSlots, color: CardAccent.visit, label: "Visits", bounds: b, span: span)
+                        timelineRow(slots: visitSlots, color: CardAccent.visit, label: t("Visits"), bounds: b, span: span)
                     }
                     if !activitySlots.isEmpty {
-                        timelineRow(slots: activitySlots, color: CardAccent.activity, label: "Activities", bounds: b, span: span)
+                        timelineRow(slots: activitySlots, color: CardAccent.activity, label: t("Activities"), bounds: b, span: span)
                     }
                 }
                 HStack {
@@ -402,6 +417,17 @@ private struct DayTimelineView: View {
             }
             .frame(height: 16)
         }
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+
+    private func countedText(_ count: Int, englishSingular: String, englishPlural: String, germanSingular: String, germanPlural: String) -> String {
+        if preferences.appLanguage.isGerman {
+            return "\(count) \(count == 1 ? germanSingular : germanPlural)"
+        }
+        return "\(count) \(count == 1 ? englishSingular : englishPlural)"
     }
 }
 

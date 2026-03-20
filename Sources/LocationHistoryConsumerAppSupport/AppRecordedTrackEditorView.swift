@@ -23,41 +23,41 @@ struct AppRecordedTrackEditorView: View {
             mapSection
             pointsSection
         }
-        .navigationTitle("Edit Saved Track")
+        .navigationTitle(t("Edit Saved Track"))
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Done") {
+                Button(t("Done")) {
                     dismiss()
                 }
             }
             ToolbarItemGroup(placement: .primaryAction) {
                 if draft.isModified {
-                    Button("Reset") {
+                    Button(t("Reset")) {
                         draft.reset()
                     }
                 }
-                Button("Save") {
+                Button(t("Save")) {
                     saveTrack()
                 }
                 .disabled(draft.savedTrack == nil || !draft.isModified)
             }
             ToolbarItem(placement: .destructiveAction) {
-                Button("Delete", role: .destructive) {
+                Button(t("Delete"), role: .destructive) {
                     isShowingDeleteConfirmation = true
                 }
             }
         }
         .confirmationDialog(
-            "Delete saved track?",
+            t("Delete saved track?"),
             isPresented: $isShowingDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Delete Track", role: .destructive) {
+            Button(t("Delete Track"), role: .destructive) {
                 liveLocation.deleteRecordedTrack(id: draft.originalTrack.id)
                 dismiss()
             }
         } message: {
-            Text("This removes the saved track from local storage.")
+            Text(t("This removes the saved track from local storage."))
         }
         .task {
             centerMapOnTrack()
@@ -68,12 +68,12 @@ struct AppRecordedTrackEditorView: View {
     }
 
     private var summarySection: some View {
-        Section("Summary") {
-            LabeledContent("Date", value: AppDateDisplay.longDate(draft.dayKey))
-            LabeledContent("Started", value: AppDateDisplay.abbreviatedDateTime(draft.startedAt))
-            LabeledContent("Ended", value: AppDateDisplay.abbreviatedDateTime(draft.endedAt))
-            LabeledContent("Points", value: "\(draft.pointCount)")
-            LabeledContent("Distance", value: formatDistance(draft.distanceM, unit: preferences.distanceUnit))
+        Section(t("Summary")) {
+            LabeledContent(t("Date"), value: AppDateDisplay.longDate(draft.dayKey))
+            LabeledContent(t("Started"), value: AppDateDisplay.abbreviatedDateTime(draft.startedAt))
+            LabeledContent(t("Ended"), value: AppDateDisplay.abbreviatedDateTime(draft.endedAt))
+            LabeledContent(t("Points"), value: "\(draft.pointCount)")
+            LabeledContent(t("Distance"), value: formatDistance(draft.distanceM, unit: preferences.distanceUnit))
             if let message = draft.validationMessage {
                 Label(message, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
@@ -84,11 +84,11 @@ struct AppRecordedTrackEditorView: View {
 
     @ViewBuilder
     private var mapSection: some View {
-        Section("Map Preview") {
+        Section(t("Map Preview")) {
             Map(position: $mapPosition) {
                 if let first = draft.points.first {
                     Marker(
-                        "Start",
+                        t("Start"),
                         coordinate: CLLocationCoordinate2D(
                             latitude: first.latitude,
                             longitude: first.longitude
@@ -99,7 +99,7 @@ struct AppRecordedTrackEditorView: View {
 
                 if let last = draft.points.last {
                     Marker(
-                        "End",
+                        t("End"),
                         coordinate: CLLocationCoordinate2D(
                             latitude: last.latitude,
                             longitude: last.longitude
@@ -121,11 +121,11 @@ struct AppRecordedTrackEditorView: View {
     }
 
     private var pointsSection: some View {
-        Section("Points") {
+        Section(t("Points")) {
             ForEach(Array(draft.points.enumerated()), id: \.offset) { index, point in
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text("Point \(index + 1)")
+                        Text(pointLabel(index + 1))
                             .font(.subheadline.weight(.semibold))
                         Spacer()
                         Text(AppTimeDisplay.time(point.timestamp))
@@ -134,21 +134,21 @@ struct AppRecordedTrackEditorView: View {
                     }
 
                     TextField(
-                        "Latitude",
+                        t("Latitude"),
                         value: latitudeBinding(for: index),
                         format: .number.precision(.fractionLength(0...6))
                     )
                     .textFieldStyle(.roundedBorder)
 
                     TextField(
-                        "Longitude",
+                        t("Longitude"),
                         value: longitudeBinding(for: index),
                         format: .number.precision(.fractionLength(0...6))
                     )
                     .textFieldStyle(.roundedBorder)
 
                     TextField(
-                        "Accuracy (m)",
+                        t("Accuracy (m)"),
                         value: accuracyBinding(for: index),
                         format: .number.precision(.fractionLength(0...1))
                     )
@@ -159,7 +159,7 @@ struct AppRecordedTrackEditorView: View {
                             Button {
                                 draft.insertMidpoint(after: index)
                             } label: {
-                                Label("Insert Midpoint", systemImage: "plus")
+                                Label(t("Insert Midpoint"), systemImage: "plus")
                             }
                             .buttonStyle(.bordered)
                         }
@@ -169,7 +169,7 @@ struct AppRecordedTrackEditorView: View {
                         Button(role: .destructive) {
                             draft.deletePoints(at: IndexSet(integer: index))
                         } label: {
-                            Label("Delete", systemImage: "trash")
+                            Label(t("Delete"), systemImage: "trash")
                         }
                         .buttonStyle(.bordered)
                     }
@@ -244,6 +244,14 @@ struct AppRecordedTrackEditorView: View {
                 longitudeDelta: max((maxLon - minLon) * 1.4, 0.005)
             )
         )
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+
+    private func pointLabel(_ index: Int) -> String {
+        preferences.localized(format: "Point %d", arguments: [index])
     }
 }
 #endif

@@ -5,6 +5,7 @@ import LocationHistoryConsumer
 // MARK: - Overview Section
 
 public struct AppOverviewSection: View {
+    @EnvironmentObject private var preferences: AppPreferences
     let overview: ExportOverview
     let daySummaries: [DaySummary]
     var onDaysTap: (() -> Void)? = nil
@@ -29,12 +30,13 @@ public struct AppOverviewSection: View {
     public var body: some View {
         let presentation = OverviewPresentation.section(
             overview: overview,
-            daySummaries: daySummaries
+            daySummaries: daySummaries,
+            language: preferences.appLanguage
         )
 
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Imported History")
+                Text(t("Imported History"))
                     .font(.title3.weight(.semibold))
                 Text(presentation.subtitle)
                     .font(.caption)
@@ -77,7 +79,7 @@ public struct AppOverviewSection: View {
                 .foregroundColor(stat.color.swiftUIColor)
             Text(stat.value)
                 .font(.title2.weight(.bold).monospacedDigit())
-            Text(stat.label)
+            Text(t(stat.label))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             if let note = stat.note {
@@ -99,6 +101,10 @@ public struct AppOverviewSection: View {
         .padding(.horizontal, 10)
         .background(stat.color.swiftUIColor.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
     }
 }
 

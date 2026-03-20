@@ -27,7 +27,8 @@ struct OverviewSectionPresentation: Equatable {
 enum OverviewPresentation {
     static func section(
         overview: ExportOverview,
-        daySummaries: [DaySummary]
+        daySummaries: [DaySummary],
+        language: AppLanguagePreference = .english
     ) -> OverviewSectionPresentation {
         let contentfulDays = daySummaries.filter(\.hasContent)
         let contentfulDayCount = contentfulDays.count
@@ -37,26 +38,36 @@ enum OverviewPresentation {
         let subtitle: String
         if let firstDate = daySummaries.map(\.date).min(),
            let lastDate = daySummaries.map(\.date).max() {
-            subtitle = "\(AppDateDisplay.mediumDate(firstDate)) - \(AppDateDisplay.mediumDate(lastDate)) · \(contentfulDayCount) contentful \(contentfulDayCount == 1 ? "day" : "days")"
+            if language.isGerman {
+                subtitle = "\(AppDateDisplay.mediumDate(firstDate)) - \(AppDateDisplay.mediumDate(lastDate)) · \(contentfulDayCount) \(contentfulDayCount == 1 ? "inhaltlicher Tag" : "inhaltliche Tage")"
+            } else {
+                subtitle = "\(AppDateDisplay.mediumDate(firstDate)) - \(AppDateDisplay.mediumDate(lastDate)) · \(contentfulDayCount) contentful \(contentfulDayCount == 1 ? "day" : "days")"
+            }
         } else {
-            subtitle = "Core totals from the currently loaded export."
+            subtitle = language.isGerman
+                ? "Kernsummen des aktuell geladenen Exports."
+                : "Core totals from the currently loaded export."
         }
 
         let visitsNote = averageNote(
             total: overview.totalVisitCount,
             days: contentfulDayCount,
-            suffix: "per contentful day"
+            suffix: language.isGerman ? "pro inhaltlichem Tag" : "per contentful day"
         )
         let activitiesNote = averageNote(
             total: overview.totalActivityCount,
             days: contentfulDayCount,
-            suffix: "per contentful day"
+            suffix: language.isGerman ? "pro inhaltlichem Tag" : "per contentful day"
         )
         let routesNote: String?
         if totalExportableRoutes > 0 {
-            routesNote = "\(totalExportableRoutes) exportable · \(totalPathPoints) pts"
+            routesNote = language.isGerman
+                ? "\(totalExportableRoutes) exportierbar · \(totalPathPoints) Pkt."
+                : "\(totalExportableRoutes) exportable · \(totalPathPoints) pts"
         } else if overview.totalPathCount > 0 {
-            routesNote = "\(overview.totalPathCount) recorded, none exportable"
+            routesNote = language.isGerman
+                ? "\(overview.totalPathCount) erfasst, nichts exportierbar"
+                : "\(overview.totalPathCount) recorded, none exportable"
         } else {
             routesNote = nil
         }
@@ -70,7 +81,11 @@ enum OverviewPresentation {
                     label: "Days",
                     icon: "calendar",
                     color: .blue,
-                    note: contentfulDayCount > 0 ? "\(contentfulDayCount) with recorded entries" : nil
+                    note: contentfulDayCount > 0
+                        ? (language.isGerman
+                            ? "\(contentfulDayCount) mit erfassten Einträgen"
+                            : "\(contentfulDayCount) with recorded entries")
+                        : nil
                 ),
                 OverviewStatPresentation(
                     id: "visits",

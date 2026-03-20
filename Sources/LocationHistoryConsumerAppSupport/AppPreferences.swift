@@ -241,6 +241,10 @@ public final class AppPreferences: ObservableObject {
         appLanguage.localized(english)
     }
 
+    public func localized(format englishFormat: String, arguments: [CVarArg]) -> String {
+        appLanguage.localized(format: englishFormat, arguments: arguments)
+    }
+
     public init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
         self.distanceUnit = Self.loadEnum(

@@ -28,6 +28,7 @@
 ### Sprache / Lokalisierung
 - Optionen bieten jetzt eine Sprachwahl zwischen Englisch und Deutsch
 - Shell-, Optionen-, Live-Recording-, Import-Entry- und zentrale Export-Oberflaechen reagieren jetzt auf die Sprachwahl
+- Day List, Day Detail, Statuskarten, Saved-Live-Track-Library/-Editor, Karten-Hinweise und grosse Teile von Insights/Export reagieren jetzt ebenfalls auf die Sprachwahl
 - noch nicht uebersetzte Strings fallen bewusst auf Englisch zurueck, statt fehlerhafte Platzhalter zu zeigen
 
 ### Insights / Empty-State Hardening

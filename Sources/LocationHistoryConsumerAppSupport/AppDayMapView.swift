@@ -27,7 +27,7 @@ public struct AppDayMapView: View {
                             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                     .padding(8)
-                    .accessibilityLabel(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map")
+                    .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
                 }
                 .accessibilityLabel(mapAccessibilityLabel)
         }
@@ -36,6 +36,14 @@ public struct AppDayMapView: View {
     private var mapAccessibilityLabel: String {
         let visits = mapData.visitAnnotations.count
         let paths = mapData.pathOverlays.count
+        if preferences.appLanguage.isGerman {
+            switch (visits, paths) {
+            case (0, 0): return "Karte"
+            case (_, 0): return "Karte mit \(visits) \(visits == 1 ? "Besuch" : "Besuchen")"
+            case (0, _): return "Karte mit \(paths) \(paths == 1 ? "Route" : "Routen")"
+            default: return "Karte mit \(visits) \(visits == 1 ? "Besuch" : "Besuchen") und \(paths) \(paths == 1 ? "Route" : "Routen")"
+            }
+        }
         switch (visits, paths) {
         case (0, 0): return "Map"
         case (_, 0): return "Map with \(visits) \(visits == 1 ? "visit" : "visits")"
@@ -65,7 +73,7 @@ public struct AppDayMapView: View {
 
             ForEach(Array(mapData.visitAnnotations.enumerated()), id: \.offset) { _, visit in
                 Marker(
-                    displayNameForVisitType(visit.semanticType, default: "Visit"),
+                    t(displayNameForVisitType(visit.semanticType, default: "Visit")),
                     coordinate: CLLocationCoordinate2D(
                         latitude: visit.coordinate.lat,
                         longitude: visit.coordinate.lon
@@ -75,6 +83,10 @@ public struct AppDayMapView: View {
             }
         }
         .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
     }
 }
 #endif

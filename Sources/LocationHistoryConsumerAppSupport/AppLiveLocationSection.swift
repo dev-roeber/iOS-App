@@ -55,7 +55,7 @@ public struct AppLiveLocationSection: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(t("Upload status"), systemImage: liveLocation.isUploadingToServer ? "arrow.triangle.2.circlepath.circle.fill" : "network")
                         .font(.caption.weight(.semibold))
-                    Text(statusMessage)
+                    Text(localizedUploadStatus(statusMessage))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -68,8 +68,8 @@ public struct AppLiveLocationSection: View {
             savedTracksSection
 
             Text(liveLocation.prefersBackgroundTracking
-                ? "Completed live tracks are saved when you switch recording off. Background recording still depends on Always Allow permission and does not auto-resume after app relaunch."
-                : "Completed live tracks are saved when you switch recording off. No automatic resume runs after app relaunch.")
+                ? t("Completed live tracks are saved when you switch recording off. Background recording still depends on Always Allow permission and does not auto-resume after app relaunch.")
+                : t("Completed live tracks are saved when you switch recording off. No automatic resume runs after app relaunch."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -91,7 +91,7 @@ public struct AppLiveLocationSection: View {
 
     private var statusCard: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Label(liveLocation.permissionTitle, systemImage: statusSymbolName)
+            Label(t(liveLocation.permissionTitle), systemImage: statusSymbolName)
                 .font(.subheadline.weight(.medium))
             Text(t(liveLocation.permissionMessage))
                 .font(.caption)
@@ -107,7 +107,7 @@ public struct AppLiveLocationSection: View {
         Map(position: $mapPosition) {
             if let currentLocation = liveLocation.currentLocation {
                 Marker(
-                    "Current Location",
+                    t("Current Location"),
                     coordinate: CLLocationCoordinate2D(
                         latitude: currentLocation.latitude,
                         longitude: currentLocation.longitude
@@ -174,21 +174,22 @@ public struct AppLiveLocationSection: View {
                 SavedTrackSummaryContentView(
                     presentation: SavedTrackPresentation.row(
                         for: latestTrack,
-                        unit: preferences.distanceUnit
+                        unit: preferences.distanceUnit,
+                        language: preferences.appLanguage
                     )
                 )
-                Text(SavedTracksPresentation.liveListMessage)
+                Text(t(SavedTracksPresentation.liveListMessage))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Record a short local track, switch Record off, then open the Saved Tracks library to edit points, insert midpoints or delete a finished track.")
+                Text(t("Record a short local track, switch Record off, then open the Saved Tracks library to edit points, insert midpoints or delete a finished track."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             if let onOpenSavedTracksLibrary {
                 Button(action: onOpenSavedTracksLibrary) {
-                    Label(SavedTracksPresentation.libraryButtonTitle, systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+                    Label(t(SavedTracksPresentation.libraryButtonTitle), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -226,6 +227,43 @@ public struct AppLiveLocationSection: View {
             ),
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         ))
+    }
+
+    private func localizedUploadStatus(_ message: String) -> String {
+        if !preferences.appLanguage.isGerman {
+            return message
+        }
+        if message == "Server upload is enabled, but the URL is invalid." {
+            return t(message)
+        }
+        if let endpoint = messageBody(after: "Server upload ready for ", in: message), endpoint.hasSuffix(".") {
+            return "Server-Upload bereit für \(endpoint)"
+        }
+        if let body = messageBody(after: "Uploading ", in: message), let separator = body.range(of: " point") {
+            let count = body[..<separator.lowerBound]
+            if let endpointRange = body.range(of: " to ") {
+                let endpoint = body[endpointRange.upperBound...].dropLast()
+                return "Lade \(count) \(count == "1" ? "Punkt" : "Punkte") zu \(endpoint) hoch."
+            }
+        }
+        if let body = messageBody(after: "Last upload sent ", in: message), let separator = body.range(of: " point") {
+            let count = body[..<separator.lowerBound]
+            if let endpointRange = body.range(of: " to ") {
+                let endpoint = body[endpointRange.upperBound...].dropLast()
+                return "Letzter Upload hat \(count) \(count == "1" ? "Punkt" : "Punkte") an \(endpoint) gesendet."
+            }
+        }
+        if let error = messageBody(after: "Server upload failed: ", in: message) {
+            return "Server-Upload fehlgeschlagen: \(error)"
+        }
+        return t(message)
+    }
+
+    private func messageBody(after prefix: String, in message: String) -> String? {
+        guard message.hasPrefix(prefix) else {
+            return nil
+        }
+        return String(message.dropFirst(prefix.count))
     }
 }
 #endif

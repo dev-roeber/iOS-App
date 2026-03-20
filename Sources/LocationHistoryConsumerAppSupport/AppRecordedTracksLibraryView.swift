@@ -20,7 +20,7 @@ struct AppRecordedTracksLibraryView: View {
                 tracksSection
             }
         }
-        .navigationTitle("Saved Live Tracks")
+        .navigationTitle(t("Saved Live Tracks"))
         .navigationDestination(for: RecordedTrack.self) { track in
             AppRecordedTrackEditorView(track: track, liveLocation: liveLocation)
         }
@@ -29,15 +29,15 @@ struct AppRecordedTracksLibraryView: View {
     private var summarySection: some View {
         Section {
             VStack(alignment: .leading, spacing: 10) {
-                Label("Saved Live Tracks", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+                Label(t("Saved Live Tracks"), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                     .font(.headline)
-                Text("This local track library is separate from imported history. Open any saved live track to edit points, insert midpoints or remove it from local storage.")
+                Text(t("This local track library is separate from imported history. Open any saved live track to edit points, insert midpoints or remove it from local storage."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 HStack(spacing: 8) {
                     librarySummaryBadge(
-                        title: "\(liveLocation.recordedTracks.count) saved",
+                        title: savedCountText(liveLocation.recordedTracks.count),
                         systemImage: "tray.full"
                     )
                     if let latestTrack = liveLocation.recordedTracks.first {
@@ -50,13 +50,14 @@ struct AppRecordedTracksLibraryView: View {
 
                 if let latestTrack = liveLocation.recordedTracks.first {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(SavedTracksPresentation.latestTrackLabel)
+                        Text(t(SavedTracksPresentation.latestTrackLabel))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
                         SavedTrackSummaryContentView(
                             presentation: SavedTrackPresentation.row(
                                 for: latestTrack,
-                                unit: preferences.distanceUnit
+                                unit: preferences.distanceUnit,
+                                language: preferences.appLanguage
                             )
                         )
                     }
@@ -69,9 +70,9 @@ struct AppRecordedTracksLibraryView: View {
     private var emptyStateSection: some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
-                Text("No saved live tracks yet.")
+                Text(t("No saved live tracks yet."))
                     .font(.subheadline.weight(.semibold))
-                Text("Go to any day, open Local Recording, record a short track and switch Record off. The finished track will appear here.")
+                Text(t("Go to any day, open Local Recording, record a short track and switch Record off. The finished track will appear here."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -80,13 +81,14 @@ struct AppRecordedTracksLibraryView: View {
     }
 
     private var tracksSection: some View {
-        Section("Saved Live Tracks") {
+        Section(t("Saved Live Tracks")) {
             ForEach(liveLocation.recordedTracks) { track in
                 NavigationLink(value: track) {
                     SavedTrackSummaryContentView(
                         presentation: SavedTrackPresentation.row(
                             for: track,
-                            unit: preferences.distanceUnit
+                            unit: preferences.distanceUnit,
+                            language: preferences.appLanguage
                         )
                     )
                 }
@@ -102,6 +104,16 @@ struct AppRecordedTracksLibraryView: View {
             .padding(.vertical, 6)
             .background(Color.secondary.opacity(0.08))
             .clipShape(Capsule())
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+
+    private func savedCountText(_ count: Int) -> String {
+        preferences.appLanguage.isGerman
+            ? "\(count) gespeichert"
+            : "\(count) saved"
     }
 }
 #endif

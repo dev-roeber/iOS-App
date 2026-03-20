@@ -5,6 +5,7 @@ import LocationHistoryConsumer
 // MARK: - Session Status
 
 public struct AppSessionStatusView: View {
+    @EnvironmentObject private var preferences: AppPreferences
     let summary: AppSourceSummary
     let message: AppUserMessage?
     let isLoading: Bool
@@ -29,7 +30,7 @@ public struct AppSessionStatusView: View {
                 HStack(spacing: 10) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Loading...")
+                    Text(t("Loading..."))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -37,13 +38,17 @@ public struct AppSessionStatusView: View {
 
             if !isLoading && !hasDays && summary.dayCountText != nil {
                 Label(
-                    "This export contains no day entries.",
+                    t("This export contains no day entries."),
                     systemImage: "calendar.badge.exclamationmark"
                 )
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
     }
 }
 
@@ -61,36 +66,36 @@ public struct AppSourceSummaryCard: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(summary.stateTitle)
+                Text(t(summary.stateTitle))
                     .font(.headline)
                 Spacer()
-                Text(summary.statusText)
+                Text(t(summary.statusText))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            summaryRow("Source", value: summary.sourceValue, icon: "doc")
+            summaryRow(t(summary.sourceLabel), value: summary.sourceValue, icon: "doc")
 
             let hasDetails = summary.schemaVersion != nil || summary.inputFormat != nil || summary.exportedAt != nil || summary.dayCountText != nil
             if hasDetails && preferences.showsTechnicalImportDetails {
                 DisclosureGroup(isExpanded: $isExpanded) {
                     VStack(alignment: .leading, spacing: 10) {
                         if let v = summary.schemaVersion {
-                            summaryRow("Schema", value: v, icon: "number")
+                            summaryRow(t("Schema"), value: v, icon: "number")
                         }
                         if let v = summary.inputFormat {
-                            summaryRow("Format", value: v, icon: "square.grid.2x2")
+                            summaryRow(t("Format"), value: t(v), icon: "square.grid.2x2")
                         }
                         if let v = summary.exportedAt {
-                            summaryRow("Exported", value: v, icon: "clock")
+                            summaryRow(t("Exported"), value: v, icon: "clock")
                         }
                         if let v = summary.dayCountText {
-                            summaryRow("Days", value: v, icon: "calendar")
+                            summaryRow(t("Days"), value: localizeDayCountText(v), icon: "calendar")
                         }
                     }
                     .padding(.top, 6)
                 } label: {
-                    Text("Technical Details")
+                    Text(t("Technical Details"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -100,6 +105,18 @@ public struct AppSourceSummaryCard: View {
         .padding(14)
         .background(Color.secondary.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+
+    private func localizeDayCountText(_ text: String) -> String {
+        guard preferences.appLanguage.isGerman,
+              let count = Int(text.split(separator: " ").first ?? "") else {
+            return text
+        }
+        return "\(count) \(count == 1 ? "Tag" : "Tage")"
     }
 
     @ViewBuilder
@@ -123,6 +140,7 @@ public struct AppSourceSummaryCard: View {
 // MARK: - Message Card
 
 public struct AppMessageCard: View {
+    @EnvironmentObject private var preferences: AppPreferences
     let message: AppUserMessage
 
     public init(message: AppUserMessage) {
@@ -132,11 +150,11 @@ public struct AppMessageCard: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Label(
-                message.title,
+                t(message.title),
                 systemImage: message.kind == .error ? "exclamationmark.triangle" : "info.circle"
             )
             .font(.subheadline.weight(.semibold))
-            Text(message.message)
+            Text(t(message.message))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -151,6 +169,10 @@ public struct AppMessageCard: View {
         case .info: return Color.accentColor.opacity(0.12)
         case .error: return Color.red.opacity(0.12)
         }
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
     }
 }
 
