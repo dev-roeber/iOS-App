@@ -2,20 +2,73 @@
 
 ## Aktueller Stand (2026-03-20)
 
-### Abgeschlossen
+### Repo-Truth-Zusammenfassung
 Lokaler iPhone-Betrieb wurde zuletzt auf Apple-Hardware real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
-Lokale Produktweiterentwicklung: Phasen 19.10–19.38 abgeschlossen.
-Die frueher als `20.1` und `20.2` gefuehrten lokalen Produktschritte werden ab diesem Stand logisch als `19.29` und `19.30` gefuehrt.
+Der fruehere 19.x-UI-/UX-Block ist abgeschlossen, aber die Produktarbeit ist lokal **nicht** komplett beendet.
+Seitdem sind zusaetzlich Live-Tracking-Einstellungen, optionales Background-Recording im Codepfad, aktive `KML`-Exports, eine sichtbare Export-Vorschaukarte und erste lokale Export-Filter umgesetzt worden.
+Offen bleiben mehrere groessere Folgepakete. `NEXT_STEPS.md` bildet deshalb wieder echte lokale Arbeit ab statt nur geparkte Apple-Themen.
+
+### Fertige Punkte (repo-wahr abgeschlossen)
+
+- Import von LH2GPX-`app_export.json`/`.zip` sowie Google-Timeline-`location-history.json`/`.zip`
+- Overview, Days, Day Detail, Insights und Export als produktnahe App-Shell
+- Suche in compact und regular `Days`
+- Re-Select-Verhalten fuer `Days` auf iPhone: erneutes Tab-Tippen fuehrt zum aktuellen Tag
+- stabile Sheet-Praesentation fuer Optionen / Export / Saved Live Tracks im Actions-Menue
+- eigene `Saved Live Tracks`-Library plus Editor fuer gespeicherte lokale Tracks
+- aktuelle Position auf der Karte anzeigen
+- Live-Recording mit lokalen Einstellungen fuer Accuracy-Filter und Recording-Detail
+- GPX-Export fuer importierte History und gespeicherte Live-Tracks
+- KML-Export als aktives zweites Format
+- sichtbare Export-Vorschaukarte direkt auf der Export-Seite
+- lokale Export-Filter fuer importierte History nach Datumsfenster und maximaler Genauigkeit
+- Day-List-/Overview-/Insights-/Export-Politur aus den Phasen 19.31–19.38
+
+### Teilweise umgesetzt / bewusst noch nicht vollstaendig
+
+- **Background-Live-Tracking**
+  Codepfad, Permissions-Upgrade und Wrapper-Deklaration sind vorhanden.
+  Was noch fehlt: reale Apple-Hardware-Verifikation, Edge-Case-Pruefung fuer Suspend/Resume und saubere Dokumentation eines echten Device-Durchlaufs.
+- **Export-Funktionalitaet**
+  GPX + KML + Preview + Saved-Live-Tracks + Date/Accuracy-Filter sind aktiv.
+  Was noch fehlt: CSV/GeoJSON/KMZ, Exportmodi, Waypoints, polygon-/bounding-box-Filter-UI, per-route Auswahl.
+- **Live-Track-Oberflaeche**
+  Library und Editor existieren als eigener lokaler Bereich.
+  Was noch fehlt: Entscheidung, ob daraus ein eigener Haupt-Tab / primaerer App-Bereich werden soll.
+- **Track-Editor**
+  Punkteditor fuer gespeicherte Live-Tracks ist vorhanden.
+  Was noch fehlt: Bearbeitung importierter Historie oder exportierter Daten.
+- **Deduplizierung / Bereinigung**
+  Live-Recorder und Export-Sanitizer deduplizieren bzw. filtern bereits Teilaspekte.
+  Was noch fehlt: breitere Import-/Export-Bereinigung fuer History-Daten.
+- **Highlights / Insights-Ausbau**
+  Basissystem ist vorhanden und die wichtigsten Leerseiten sind gehaertet.
+  Was noch fehlt: weitere inhaltliche Highlights und gezielte neue Insight-Module.
+- **Versionierung**
+  Contract-/Schema-Versionierung ist sauber.
+  Was noch fehlt: eine explizit dokumentierte, einheitliche App-/Release-Versionierungsstrategie ueber Core + Wrapper hinaus.
+- **Optionen-Bug-Verifikation**
+  Die Code-Haertung fuer `Options`-Sheet-Kollisionen ist drin.
+  Was noch fehlt: frische Device-Verifikation, dass der konkrete Nutzerfehler wirklich weg ist.
+
+### Geplante Punkte (noch nicht umgesetzt)
+
+- Standort an Server eigener Wahl senden (ein-/ausschaltbar)
+- Waypoint-vs-Track-Exportmodi
+- weitere Exportformate wie CSV, GeoJSON, KMZ
+- Polygon-/Bounding-Box-Filter als echte UI
+- tiefergehende Konkurrenz-/Feature-Recherche ausserhalb des Repos
 
 ### Aktiver lokaler Fokus
-Der lokale 19.x-UI-/UX-/Informationsarchitektur-Fokus ist fuer den aktuellen Scope abgeschlossen.
-Phase 20 bleibt wieder ausschliesslich fuer Apple-/ASC-/TestFlight-/externe Distribution geparkt. Export- und Live-Recording-Unterbau bleiben vorhanden, sind aber bewusst nicht der naechste lokale Implementierungsfokus.
-Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt unberuehrt.
 
-### Keine weiteren aktiven lokalen 19.x-Phasen
+Der sinnvolle lokale Fokus liegt jetzt nicht mehr auf allgemeiner 19.x-Politur, sondern auf klar abgegrenzten Ausbaupaketen:
 
-Die aktuelle lokale Produktarbeit unter 19.x ist abgeschlossen.
-Naechste dokumentierte Themen liegen nur noch in den geparkten Apple-/Distribution-Phasen 20/21 sowie in Hardware-Verifikation ausserhalb dieses Linux-Hosts.
+1. Export-Filter vervollstaendigen
+2. weitere Exportformate / Exportmodi
+3. Server-Upload als separater Networking-Block
+4. Background-Recording auf echter Apple-Hardware verifizieren und haerten
+
+Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt fuer spaetere Folgearbeit reserviert.
 
 ### Phase 19.38 – Export-UX-Politur
 
