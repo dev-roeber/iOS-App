@@ -19,7 +19,7 @@ public struct AppHeatmapView: View {
         ZStack {
             Map(position: $mapPosition) {
                 ForEach(heatCells) { cell in
-                    MapCircle(center: cell.coordinate, radius: CLLocationDistance(cell.radius))
+                    MapPolygon(coordinates: cell.polygonPoints)
                         .foregroundStyle(cell.color.opacity(cell.opacity))
                 }
             }
@@ -124,14 +124,26 @@ public struct AppHeatmapView: View {
             case 0.6..<0.8: color = .yellow
             default: color = .red
             }
-            let lat = Double(key.latBin) * step + step / 2
-            let lon = Double(key.lonBin) * step + step / 2
+            
+            let minLat = Double(key.latBin) * step
+            let maxLat = minLat + step
+            let minLon = Double(key.lonBin) * step
+            let maxLon = minLon + step
+            
+            let polygonPoints = [
+                CLLocationCoordinate2D(latitude: minLat, longitude: minLon),
+                CLLocationCoordinate2D(latitude: maxLat, longitude: minLon),
+                CLLocationCoordinate2D(latitude: maxLat, longitude: maxLon),
+                CLLocationCoordinate2D(latitude: minLat, longitude: maxLon),
+                CLLocationCoordinate2D(latitude: minLat, longitude: minLon)
+            ]
+            
             let cell = HeatCell(
                 id: key,
-                coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                coordinate: CLLocationCoordinate2D(latitude: minLat + step / 2, longitude: minLon + step / 2),
+                polygonPoints: polygonPoints,
                 count: count,
-                opacity: min(0.15 + normalized * 0.65, 0.8),
-                radius: 300 + normalized * 400,
+                opacity: min(0.25 + normalized * 0.55, 0.8),
                 color: color
             )
             cells.append(cell)
@@ -142,7 +154,7 @@ public struct AppHeatmapView: View {
 
 // MARK: - Supporting Types
 
-fileprivate let heatmapGridStep = 0.005
+fileprivate let heatmapGridStep = 0.01
 
 fileprivate struct GridKey: Hashable, Equatable {
     let latBin: Int
@@ -157,9 +169,9 @@ fileprivate struct GridKey: Hashable, Equatable {
 fileprivate struct HeatCell: Identifiable {
     let id: GridKey
     let coordinate: CLLocationCoordinate2D
+    let polygonPoints: [CLLocationCoordinate2D]
     let count: Int
     let opacity: Double
-    let radius: Double
     let color: Color
 }
 

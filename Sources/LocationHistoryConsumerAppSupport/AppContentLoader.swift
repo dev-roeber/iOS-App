@@ -8,6 +8,7 @@ public enum AppContentLoaderError: LocalizedError {
     case fileReadFailed(String)
     case unsupportedFormat(String)
     case decodeFailed(String)
+    case fileTooLarge(String)
     case jsonNotFoundInZip(String)
     case multipleExportsInZip(String)
 
@@ -21,6 +22,8 @@ public enum AppContentLoaderError: LocalizedError {
             return "Unsupported file format"
         case .decodeFailed:
             return "File could not be opened"
+        case .fileTooLarge:
+            return "File too large"
         case .jsonNotFoundInZip:
             return "No export found in ZIP"
         case .multipleExportsInZip:
@@ -38,6 +41,8 @@ public enum AppContentLoaderError: LocalizedError {
             return "'\(name)' is not a supported location history format. Open an LH2GPX app_export.json or .zip from the LocationHistory2GPX tool, or a Google Timeline location-history.json or .zip."
         case let .decodeFailed(name):
             return "'\(name)' could not be decoded. The file may have been created with an incompatible version of the LocationHistory2GPX tool."
+        case let .fileTooLarge(name):
+            return "'\(name)' exceeds the 256 MB limit for JSON imports."
         case let .jsonNotFoundInZip(name):
             return "'\(name)' does not contain a supported location history export. The ZIP must contain exactly one compatible LH2GPX export JSON or one Google Timeline JSON such as location-history.json."
         case let .multipleExportsInZip(name):
@@ -62,9 +67,9 @@ public enum AppContentLoader {
         }.value
     }
 
-    /// Maximum uncompressed size (256 MB) for a single ZIP entry.
-    /// Guards against ZIP-bomb style inputs while staying well above any realistic export size.
-    private static let maxUncompressedEntrySize = 256 * 1024 * 1024
+    /// Maximum size (256 MB) for a JSON file or single ZIP entry.
+    /// Guards against ZIP-bomb style inputs and OOM while staying well above any realistic export size.
+    private static let maxSupportedFileSizeBytes: Int64 = 256 * 1024 * 1024
 
     private static func loadZipContent(from url: URL) throws -> AppSessionContent {
         let zipName = url.lastPathComponent
@@ -145,7 +150,7 @@ public enum AppContentLoader {
 
     private static func isJsonCandidate(_ entry: Entry) -> Bool {
         guard entry.type == .file else { return false }
-        guard entry.uncompressedSize <= maxUncompressedEntrySize else { return false }
+        guard entry.uncompressedSize <= maxSupportedFileSizeBytes else { return false }
         let path = entry.path
         guard !path.hasPrefix("__MACOSX/"), !path.contains("/__MACOSX/") else { return false }
         let filename = (path as NSString).lastPathComponent
@@ -162,6 +167,13 @@ public enum AppContentLoader {
     }
 
     private static func decodeFile(at url: URL, sourceName: String) throws -> AppExport {
+        // Size check before loading into memory
+        if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+           let size = attributes[.size] as? Int64,
+           size > maxSupportedFileSizeBytes {
+            throw AppContentLoaderError.fileTooLarge(sourceName)
+        }
+
         let data: Data
         do {
             data = try Data(contentsOf: url)

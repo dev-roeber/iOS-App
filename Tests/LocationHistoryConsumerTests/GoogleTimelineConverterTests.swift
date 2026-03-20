@@ -36,4 +36,39 @@ final class GoogleTimelineConverterTests: XCTestCase {
         XCTAssertEqual(result.data.days.count, 1)
         XCTAssertEqual(result.data.days.first?.date, "2024-03-20")
     }
+
+    func testHandlesEmptyArray() throws {
+        let data = "[]".data(using: .utf8)!
+        do {
+            _ = try GoogleTimelineConverter.convert(data: data)
+            XCTFail("Should throw notGoogleTimeline for empty array if it can't find any valid entries")
+        } catch {
+            // Success
+        }
+    }
+
+    func testSkipsEntriesWithMissingFields() throws {
+        // Entries missing visit/activity are filtered out, but if no valid entries remain, it currently throws
+        let json = """
+        [
+            { "startTime": "2024-03-20T10:00:00Z" },
+            { "visit": { "topCandidate": { "placeLocation": "geo:1,1" } } }
+        ]
+        """
+        let data = json.data(using: .utf8)!
+        do {
+            _ = try GoogleTimelineConverter.convert(data: data)
+            XCTFail("Should throw if no valid entries were found")
+        } catch {
+            // Success
+        }
+    }
+
+    func testDetectsValidGoogleTimelineFormat() {
+        let validJSON = "[{\"startTime\": \"2024-01-01T00:00:00Z\"}]".data(using: .utf8)!
+        XCTAssertTrue(GoogleTimelineConverter.isGoogleTimeline(validJSON))
+
+        let invalidJSON = "{\"foo\": \"bar\"}".data(using: .utf8)!
+        XCTAssertFalse(GoogleTimelineConverter.isGoogleTimeline(invalidJSON))
+    }
 }

@@ -360,6 +360,14 @@ public final class LiveLocationFeatureModel: ObservableObject {
                 horizontalAccuracyM: $0.horizontalAccuracyM
             )
         })
+
+        // Implement queue limit: discard oldest if we exceed 10,000 points.
+        let maxQueueSize = 10_000
+        if pendingUploadPoints.count > maxQueueSize {
+            let overflow = pendingUploadPoints.count - maxQueueSize
+            pendingUploadPoints.removeFirst(overflow)
+        }
+
         pendingUploadPointCount = pendingUploadPoints.count
         schedulePendingUploadIfNeeded()
     }

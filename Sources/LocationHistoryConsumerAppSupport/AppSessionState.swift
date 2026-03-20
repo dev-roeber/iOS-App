@@ -45,21 +45,28 @@ public struct AppSourceSummary: Equatable {
     public let statusText: String
 }
 
-public struct AppSessionContent {
+public final class AppSessionContent {
     public let export: AppExport
-    public let overview: ExportOverview
-    public let daySummaries: [DaySummary]
-    public let insights: ExportInsights
+    public private(set) lazy var overview: ExportOverview = {
+        AppExportQueries.overview(from: export)
+    }()
+    public private(set) lazy var daySummaries: [DaySummary] = {
+        AppExportQueries.daySummaries(from: export)
+    }()
+    public private(set) lazy var insights: ExportInsights = {
+        AppExportQueries.insights(from: export)
+    }()
     public let selectedDate: String?
     public let source: AppContentSource
 
     public init(export: AppExport, source: AppContentSource) {
         self.export = export
-        self.overview = AppExportQueries.overview(from: export)
-        self.daySummaries = AppExportQueries.daySummaries(from: export)
-        self.insights = AppExportQueries.insights(from: export)
-        self.selectedDate = self.daySummaries.first(where: \.hasContent)?.date ?? self.daySummaries.first?.date
         self.source = source
+        
+        // Eagerly compute selectedDate based on first contentful day or fallback to first day.
+        let summaries = AppExportQueries.daySummaries(from: export)
+        self.daySummaries = summaries
+        self.selectedDate = summaries.first(where: \.hasContent)?.date ?? summaries.first?.date
     }
 
     public func detail(for date: String?) -> DayDetailViewState? {
