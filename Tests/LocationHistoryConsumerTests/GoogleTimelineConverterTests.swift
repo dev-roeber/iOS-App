@@ -41,26 +41,32 @@ final class GoogleTimelineConverterTests: XCTestCase {
         let data = "[]".data(using: .utf8)!
         do {
             _ = try GoogleTimelineConverter.convert(data: data)
-            XCTFail("Should throw notGoogleTimeline for empty array if it can't find any valid entries")
+            XCTFail("Should throw notGoogleTimeline for empty array")
+        } catch let error as GoogleTimelineConverter.ConversionError {
+            XCTAssertEqual(error, .notGoogleTimeline)
         } catch {
-            // Success
+            XCTFail("Expected ConversionError.notGoogleTimeline but got: \(error)")
         }
     }
 
     func testSkipsEntriesWithMissingFields() throws {
-        // Entries missing visit/activity are filtered out, but if no valid entries remain, it currently throws
+        // Entries missing visit/activity/path are filtered out.
+        // If an entry has a valid startTime but no content, it's skipped during buildExportDict.
+        // If NO entry has a parseable startTime, it throws notGoogleTimeline.
         let json = """
         [
-            { "startTime": "2024-03-20T10:00:00Z" },
-            { "visit": { "topCandidate": { "placeLocation": "geo:1,1" } } }
+            { "startTime": "invalid-date" },
+            { "someOtherField": "data" }
         ]
         """
         let data = json.data(using: .utf8)!
         do {
             _ = try GoogleTimelineConverter.convert(data: data)
-            XCTFail("Should throw if no valid entries were found")
+            XCTFail("Should throw if no valid entries with startTime were found")
+        } catch let error as GoogleTimelineConverter.ConversionError {
+            XCTAssertEqual(error, .notGoogleTimeline)
         } catch {
-            // Success
+            XCTFail("Expected ConversionError.notGoogleTimeline but got: \(error)")
         }
     }
 

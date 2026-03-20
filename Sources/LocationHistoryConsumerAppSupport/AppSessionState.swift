@@ -65,8 +65,10 @@ public final class AppSessionContent {
         
         // Eagerly compute selectedDate based on first contentful day or fallback to first day.
         let summaries = AppExportQueries.daySummaries(from: export)
-        self.daySummaries = summaries
         self.selectedDate = summaries.first(where: \.hasContent)?.date ?? summaries.first?.date
+        
+        // Now that all non-lazy stored properties are initialized, we can populate the lazy storage.
+        self.daySummaries = summaries
     }
 
     public func detail(for date: String?) -> DayDetailViewState? {
