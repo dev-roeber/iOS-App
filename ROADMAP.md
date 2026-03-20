@@ -21,7 +21,7 @@ Offen bleiben mehrere groessere Folgepakete. `NEXT_STEPS.md` bildet deshalb wied
 - GPX-Export fuer importierte History und gespeicherte Live-Tracks
 - KML-Export als aktives zweites Format
 - sichtbare Export-Vorschaukarte direkt auf der Export-Seite
-- lokale Export-Filter fuer importierte History nach Datumsfenster und maximaler Genauigkeit
+- lokale Export-Filter fuer importierte History nach Datumsfenster, maximaler Genauigkeit, erforderlichem Inhalt und Aktivitaetstyp
 - Day-List-/Overview-/Insights-/Export-Politur aus den Phasen 19.31–19.38
 
 ### Teilweise umgesetzt / bewusst noch nicht vollstaendig
@@ -30,7 +30,7 @@ Offen bleiben mehrere groessere Folgepakete. `NEXT_STEPS.md` bildet deshalb wied
   Codepfad, Permissions-Upgrade und Wrapper-Deklaration sind vorhanden.
   Was noch fehlt: reale Apple-Hardware-Verifikation, Edge-Case-Pruefung fuer Suspend/Resume und saubere Dokumentation eines echten Device-Durchlaufs.
 - **Export-Funktionalitaet**
-  GPX + KML + Preview + Saved-Live-Tracks + Date/Accuracy-Filter sind aktiv.
+  GPX + KML + Preview + Saved-Live-Tracks + Date/Accuracy/Content/Activity-Filter sind aktiv.
   Was noch fehlt: CSV/GeoJSON/KMZ, Exportmodi, Waypoints, polygon-/bounding-box-Filter-UI, per-route Auswahl.
 - **Live-Track-Oberflaeche**
   Library und Editor existieren als eigener lokaler Bereich.

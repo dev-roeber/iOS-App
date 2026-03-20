@@ -179,7 +179,7 @@ Present:
 - export sheet entry on regular width
 - multi-day selection with `Select All` / `Deselect All`
 - saved live tracks can be selected in the same export flow
-- local export filters for imported history by date window and maximum accuracy
+- local export filters for imported history by date window, maximum accuracy, required content and activity type
 - export preview map for the current selection with route metrics and legend summary
 - system `fileExporter` flow
 - GPX and KML generation from selected imported days and selected saved live tracks

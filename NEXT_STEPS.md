@@ -8,12 +8,12 @@ Status: **teilweise umgesetzt**
 
 Bereits drin:
 - lokale Filter fuer importierte History nach `From`, `To` und `Max accuracy`
+- explizite `Has ...`- und `Activity type`-Filter als Nutzeroberflaeche
 - Filter wirken auf Export-Day-Liste, Preview und den eigentlichen Export
 - Saved Live Tracks bleiben bewusst ungefiltert
 
 Fehlt noch:
 - UI fuer Polygon-/Bounding-Box-Filter
-- Activity-/Content-Filter als explizite Nutzeroberflaeche statt nur Query-Unterbau
 - klare Nutzererklaerung, welche Filter nur importierte History und welche auch Saved Live Tracks betreffen
 
 ## 2. Phase 19.40 – Weitere Exportformate

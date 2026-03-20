@@ -35,6 +35,8 @@ public struct AppExportView: View {
     @State private var selectedFromDate: String = ""
     @State private var selectedToDate: String = ""
     @State private var selectedAccuracyFilter: ExportAccuracyFilterOption = .any
+    @State private var selectedContentRequirements: Set<AppExportContentRequirement> = []
+    @State private var selectedActivityTypes: Set<String> = []
     @State private var isExporting = false
     @State private var exportDocument: ExportDocument?
     @State private var exportError: String?
@@ -120,6 +122,12 @@ public struct AppExportView: View {
             pruneInvalidImportedDaySelection(summaries: filteredSummaries)
         }
         .onChange(of: selectedAccuracyFilter) { _, _ in
+            pruneInvalidImportedDaySelection(summaries: filteredSummaries)
+        }
+        .onChange(of: selectedContentRequirements) { _, _ in
+            pruneInvalidImportedDaySelection(summaries: filteredSummaries)
+        }
+        .onChange(of: selectedActivityTypes) { _, _ in
             pruneInvalidImportedDaySelection(summaries: filteredSummaries)
         }
         .onChange(of: session.content?.sourceSummary) { _, _ in
@@ -389,6 +397,40 @@ public struct AppExportView: View {
                     .pickerStyle(.segmented)
                 }
 
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Required imported content")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    filterChipRow {
+                        ForEach(AppExportContentRequirement.allCases, id: \.self) { requirement in
+                            filterChip(
+                                title: contentRequirementTitle(requirement),
+                                isSelected: selectedContentRequirements.contains(requirement)
+                            ) {
+                                toggleContentRequirement(requirement)
+                            }
+                        }
+                    }
+                }
+
+                if !availableActivityTypes.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Activity types")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                        filterChipRow {
+                            ForEach(availableActivityTypes, id: \.self) { activityType in
+                                filterChip(
+                                    title: activityTypeTitle(activityType),
+                                    isSelected: selectedActivityTypes.contains(activityType)
+                                ) {
+                                    toggleActivityType(activityType)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if filteredSummaries.isEmpty {
                     Label("The current imported-history filters hide all day rows. Saved Live Tracks can still be exported separately.", systemImage: "line.3.horizontal.decrease.circle")
                         .font(.caption)
@@ -651,15 +693,24 @@ public struct AppExportView: View {
         session.daySummaries.map(\.date).sorted()
     }
 
+    private var availableActivityTypes: [String] {
+        guard let export = session.content?.export else {
+            return []
+        }
+        return AppExportQueries.overview(from: export).statsActivityTypes
+    }
+
     private var effectiveQueryFilter: AppExportQueryFilter? {
         guard hasImportedExport else {
             return nil
         }
 
         let baseFilter = session.content.map { AppExportQueryFilter(exportFilters: $0.export.meta.filters) } ?? AppExportQueryFilter()
-        let fromDate = selectedFromDate.isEmpty ? baseFilter.fromDate : selectedFromDate
-        let toDate = selectedToDate.isEmpty ? baseFilter.toDate : selectedToDate
-        let maxAccuracyM = selectedAccuracyFilter.maxAccuracyM ?? baseFilter.maxAccuracyM
+        let fromDate = mergedLowerBound(base: baseFilter.fromDate, local: selectedFromDate)
+        let toDate = mergedUpperBound(base: baseFilter.toDate, local: selectedToDate)
+        let maxAccuracyM = mergedMaxAccuracy(base: baseFilter.maxAccuracyM, local: selectedAccuracyFilter.maxAccuracyM)
+        let requiredContent = baseFilter.requiredContent.union(selectedContentRequirements)
+        let activityTypes = mergedActivityTypes(base: baseFilter.activityTypes, local: selectedActivityTypes)
 
         let merged = AppExportQueryFilter(
             fromDate: fromDate,
@@ -669,9 +720,9 @@ public struct AppExportView: View {
             weekday: baseFilter.weekday,
             limit: baseFilter.limit,
             days: baseFilter.days,
-            requiredContent: baseFilter.requiredContent,
+            requiredContent: requiredContent,
             maxAccuracyM: maxAccuracyM,
-            activityTypes: baseFilter.activityTypes,
+            activityTypes: activityTypes,
             minGapMin: baseFilter.minGapMin,
             spatialFilter: baseFilter.spatialFilter
         )
@@ -690,6 +741,12 @@ public struct AppExportView: View {
         if let maxAccuracyM = selectedAccuracyFilter.maxAccuracyM {
             descriptions.append("Max accuracy: \(Int(maxAccuracyM))m")
         }
+        if !selectedContentRequirements.isEmpty {
+            descriptions.append("Has: \(selectedContentRequirements.map(contentRequirementTitle).sorted().joined(separator: ", "))")
+        }
+        if !selectedActivityTypes.isEmpty {
+            descriptions.append("Activity types: \(selectedActivityTypes.map(activityTypeTitle).sorted().joined(separator: ", "))")
+        }
         return descriptions
     }
 
@@ -697,6 +754,8 @@ public struct AppExportView: View {
         selectedFromDate = ""
         selectedToDate = ""
         selectedAccuracyFilter = .any
+        selectedContentRequirements = []
+        selectedActivityTypes = []
     }
 
     private func normalizeDateFilterBounds() {
@@ -712,6 +771,107 @@ public struct AppExportView: View {
         for date in invalidDates {
             session.exportSelection.toggle(date)
         }
+    }
+
+    private func mergedLowerBound(base: String?, local: String) -> String? {
+        guard !local.isEmpty else {
+            return base
+        }
+        guard let base else {
+            return local
+        }
+        return max(base, local)
+    }
+
+    private func mergedUpperBound(base: String?, local: String) -> String? {
+        guard !local.isEmpty else {
+            return base
+        }
+        guard let base else {
+            return local
+        }
+        return min(base, local)
+    }
+
+    private func mergedMaxAccuracy(base: Double?, local: Double?) -> Double? {
+        switch (base, local) {
+        case let (base?, local?):
+            return min(base, local)
+        case let (base?, nil):
+            return base
+        case let (nil, local?):
+            return local
+        case (nil, nil):
+            return nil
+        }
+    }
+
+    private func mergedActivityTypes(base: Set<String>, local: Set<String>) -> Set<String> {
+        if base.isEmpty {
+            return local
+        }
+        if local.isEmpty {
+            return base
+        }
+        return base.intersection(local)
+    }
+
+    private func toggleContentRequirement(_ requirement: AppExportContentRequirement) {
+        if selectedContentRequirements.contains(requirement) {
+            selectedContentRequirements.remove(requirement)
+        } else {
+            selectedContentRequirements.insert(requirement)
+        }
+    }
+
+    private func toggleActivityType(_ activityType: String) {
+        if selectedActivityTypes.contains(activityType) {
+            selectedActivityTypes.remove(activityType)
+        } else {
+            selectedActivityTypes.insert(activityType)
+        }
+    }
+
+    private func contentRequirementTitle(_ requirement: AppExportContentRequirement) -> String {
+        switch requirement {
+        case .visits:
+            return "Visits"
+        case .activities:
+            return "Activities"
+        case .paths:
+            return "Routes"
+        }
+    }
+
+    private func activityTypeTitle(_ activityType: String) -> String {
+        activityType.capitalized
+    }
+
+    @ViewBuilder
+    private func filterChipRow<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 8)], spacing: 8) {
+            content()
+        }
+    }
+
+    @ViewBuilder
+    private func filterChip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.caption)
+                Text(title)
+                    .font(.caption.weight(.medium))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(isSelected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.08))
+            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private func savedTrackTitle(_ track: RecordedTrack) -> String {

@@ -77,6 +77,76 @@ final class ExportSelectionContentTests: XCTestCase {
         XCTAssertEqual(exportedDays[0].paths[0].points.count, 2)
     }
 
+    func testExportDaysApplyActivityTypeFilterToImportedHistoryOnly() {
+        let export = exportWith(days: """
+        {
+          "date":"2024-05-01",
+          "visits":[],
+          "activities":[],
+          "paths":[
+            {
+              "activity_type":"WALKING",
+              "distance_m":700,
+              "points":[
+                {"lat":48.0,"lon":11.0,"time":"2024-05-01T08:00:00Z","accuracy_m":10},
+                {"lat":48.001,"lon":11.001,"time":"2024-05-01T08:10:00Z","accuracy_m":8}
+              ]
+            }
+          ]
+        }
+        """)
+        let savedTrack = makeRecordedTrack(dayKey: "2024-05-03")
+
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+        selection.toggleRecordedTrack(savedTrack.id)
+
+        let exportedDays = ExportSelectionContent.exportDays(
+            importedExport: export,
+            selection: selection,
+            recordedTracks: [savedTrack],
+            queryFilter: AppExportQueryFilter(activityTypes: ["CYCLING"])
+        )
+
+        XCTAssertEqual(exportedDays.count, 1)
+        XCTAssertEqual(exportedDays[0].date, "2024-05-03")
+    }
+
+    func testExportDaysApplyRequiredContentFilterToImportedHistoryOnly() {
+        let export = exportWith(days: """
+        {
+          "date":"2024-05-01",
+          "visits":[],
+          "activities":[],
+          "paths":[
+            {
+              "activity_type":"WALKING",
+              "distance_m":700,
+              "points":[
+                {"lat":48.0,"lon":11.0,"time":"2024-05-01T08:00:00Z","accuracy_m":10},
+                {"lat":48.001,"lon":11.001,"time":"2024-05-01T08:10:00Z","accuracy_m":8}
+              ]
+            }
+          ]
+        }
+        """)
+        let savedTrack = makeRecordedTrack(dayKey: "2024-05-03")
+
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+        selection.toggleRecordedTrack(savedTrack.id)
+
+        let exportedDays = ExportSelectionContent.exportDays(
+            importedExport: export,
+            selection: selection,
+            recordedTracks: [savedTrack],
+            queryFilter: AppExportQueryFilter(requiredContent: [.visits])
+        )
+
+        XCTAssertEqual(exportedDays.count, 1)
+        XCTAssertEqual(exportedDays[0].date, "2024-05-03")
+    }
+
     private func exportWith(days jsonDays: String) -> AppExport {
         let json = """
         {
