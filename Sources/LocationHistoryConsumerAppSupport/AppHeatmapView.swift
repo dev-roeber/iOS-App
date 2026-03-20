@@ -21,7 +21,6 @@ public struct AppHeatmapView: View {
                 ForEach(heatCells) { cell in
                     MapCircle(center: cell.coordinate, radius: CLLocationDistance(cell.radius))
                         .foregroundStyle(cell.color.opacity(cell.opacity))
-                        .stroke(Color.clear, lineWidth: 0)
                 }
             }
             .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
@@ -50,8 +49,9 @@ public struct AppHeatmapView: View {
 
     private func buildHeatmap() async {
         isBuilding = true
+        let snapshot = export
         let cells = await Task.detached(priority: .userInitiated) {
-            Self.computeHeatCells(from: export)
+            Self.computeHeatCells(from: snapshot)
         }.value
         heatCells = cells
         if let first = cells.max(by: { $0.count < $1.count }) {
@@ -63,8 +63,7 @@ public struct AppHeatmapView: View {
         isBuilding = false
     }
 
-    // Gittergrösse: ~0.005° ≈ 500m
-    private static let gridStep = 0.005
+    // Gittergrösse: ~0.005° ≈ 500m — Konstante liegt als fileprivate heatmapGridStep auf File-Ebene
 
     private static func computeHeatCells(from export: AppExport) -> [HeatCell] {
         var grid: [GridKey: Int] = [:]
@@ -112,7 +111,10 @@ public struct AppHeatmapView: View {
         guard !grid.isEmpty else { return [] }
         let maxCount = Double(grid.values.max() ?? 1)
 
-        return grid.map { key, count in
+        let step = heatmapGridStep
+        var cells: [HeatCell] = []
+        cells.reserveCapacity(grid.count)
+        for (key, count) in grid {
             let normalized = Double(count) / maxCount
             let color: Color
             switch normalized {
@@ -122,36 +124,37 @@ public struct AppHeatmapView: View {
             case 0.6..<0.8: color = .yellow
             default: color = .red
             }
-            return HeatCell(
+            let lat = Double(key.latBin) * step + step / 2
+            let lon = Double(key.lonBin) * step + step / 2
+            let cell = HeatCell(
                 id: key,
-                coordinate: CLLocationCoordinate2D(
-                    latitude: key.latBin * gridStep + gridStep / 2,
-                    longitude: key.lonBin * gridStep + gridStep / 2
-                ),
+                coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon),
                 count: count,
                 opacity: min(0.15 + normalized * 0.65, 0.8),
                 radius: 300 + normalized * 400,
                 color: color
             )
+            cells.append(cell)
         }
-        .filter { $0.count > 0 }
+        return cells
     }
 }
 
 // MARK: - Supporting Types
 
-private struct GridKey: Hashable, Equatable {
+fileprivate let heatmapGridStep = 0.005
+
+fileprivate struct GridKey: Hashable, Equatable {
     let latBin: Int
     let lonBin: Int
 
     init(lat: Double, lon: Double) {
-        let step = AppHeatmapView.gridStep
-        self.latBin = Int(floor(lat / step))
-        self.lonBin = Int(floor(lon / step))
+        self.latBin = Int(floor(lat / heatmapGridStep))
+        self.lonBin = Int(floor(lon / heatmapGridStep))
     }
 }
 
-struct HeatCell: Identifiable {
+fileprivate struct HeatCell: Identifiable {
     let id: GridKey
     let coordinate: CLLocationCoordinate2D
     let count: Int
