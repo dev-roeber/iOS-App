@@ -13,17 +13,20 @@ public struct AppDayDetailView: View {
     let hasDays: Bool
     let onBackToOverview: (() -> Void)?
     let liveLocation: LiveLocationFeatureModel?
+    let onOpenSavedTracks: (() -> Void)?
 
     public init(
         detail: DayDetailViewState?,
         hasDays: Bool,
         onBackToOverview: (() -> Void)? = nil,
-        liveLocation: LiveLocationFeatureModel? = nil
+        liveLocation: LiveLocationFeatureModel? = nil,
+        onOpenSavedTracks: (() -> Void)? = nil
     ) {
         self.detail = detail
         self.hasDays = hasDays
         self.onBackToOverview = onBackToOverview
         self.liveLocation = liveLocation
+        self.onOpenSavedTracks = onOpenSavedTracks
     }
 
     init(detail: DayDetailViewState) {
@@ -31,6 +34,7 @@ public struct AppDayDetailView: View {
         self.hasDays = true
         self.onBackToOverview = nil
         self.liveLocation = nil
+        self.onOpenSavedTracks = nil
     }
 
     public var body: some View {
@@ -126,7 +130,10 @@ public struct AppDayDetailView: View {
                     "Local Recording",
                     message: "Live location and saved live tracks stay separate from the imported day data above."
                 )
-                AppLiveLocationSection(liveLocation: liveLocation)
+                AppLiveLocationSection(
+                    liveLocation: liveLocation,
+                    onOpenSavedTracksLibrary: onOpenSavedTracks
+                )
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

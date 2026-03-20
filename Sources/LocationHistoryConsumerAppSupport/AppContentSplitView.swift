@@ -106,7 +106,8 @@ public struct AppContentSplitView: View {
                             AppDayDetailView(
                                 detail: session.content?.detail(for: date),
                                 hasDays: true,
-                                liveLocation: liveLocation
+                                liveLocation: liveLocation,
+                                onOpenSavedTracks: { presentSheet(.tracksLibrary) }
                             )
                             .padding()
                         }
@@ -382,7 +383,18 @@ public struct AppContentSplitView: View {
                             selectedTab = 3
                         }
                     }
-                } else if session.hasDays {
+                }
+
+                overviewActionButton(
+                    title: "Saved Live Tracks",
+                    subtitle: "Open the separate local track library and edit finished recordings there.",
+                    icon: "point.topleft.down.curvedto.point.bottomright.up",
+                    color: .mint
+                ) {
+                    presentSheet(.tracksLibrary)
+                }
+
+                if horizontalSizeClass != .compact, session.hasDays {
                     overviewActionButton(
                         title: "Export GPX",
                         subtitle: "Open the export sheet for the current imported history.",
@@ -580,7 +592,8 @@ public struct AppContentSplitView: View {
                         detail: detail,
                         hasDays: true,
                         onBackToOverview: { session.selectDay(nil) },
-                        liveLocation: liveLocation
+                        liveLocation: liveLocation,
+                        onOpenSavedTracks: { presentSheet(.tracksLibrary) }
                     )
                 }
                 .padding()
@@ -624,6 +637,12 @@ public struct AppContentSplitView: View {
                 presentSheet(.options)
             } label: {
                 Label("Options", systemImage: "slider.horizontal.3")
+            }
+            Divider()
+            Button {
+                presentSheet(.tracksLibrary)
+            } label: {
+                Label("Saved Live Tracks", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
             }
             if session.hasDays && horizontalSizeClass != .compact {
                 Divider()

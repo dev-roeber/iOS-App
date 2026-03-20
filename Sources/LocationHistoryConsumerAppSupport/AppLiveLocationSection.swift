@@ -8,10 +8,14 @@ public struct AppLiveLocationSection: View {
     @ObservedObject private var liveLocation: LiveLocationFeatureModel
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var hasSeededMap = false
-    @State private var selectedRecordedTrack: RecordedTrack?
+    private let onOpenSavedTracksLibrary: (() -> Void)?
 
-    public init(liveLocation: LiveLocationFeatureModel) {
+    public init(
+        liveLocation: LiveLocationFeatureModel,
+        onOpenSavedTracksLibrary: (() -> Void)? = nil
+    ) {
         self._liveLocation = ObservedObject(wrappedValue: liveLocation)
+        self.onOpenSavedTracksLibrary = onOpenSavedTracksLibrary
     }
 
     public var body: some View {
@@ -54,11 +58,6 @@ public struct AppLiveLocationSection: View {
         .onChange(of: liveLocation.currentLocation?.timestamp) { _, _ in
             guard !hasSeededMap else { return }
             centerOnCurrentLocation()
-        }
-        .sheet(item: $selectedRecordedTrack) { track in
-            NavigationStack {
-                AppRecordedTrackEditorView(track: track, liveLocation: liveLocation)
-            }
         }
     }
 
@@ -134,10 +133,11 @@ public struct AppLiveLocationSection: View {
         .background(Color.secondary.opacity(0.05))
     }
 
-    private var savedTracksList: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    @ViewBuilder
+    private var savedTracksSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Saved Live Tracks")
+                Label("Saved Live Tracks", systemImage: "slider.horizontal.3")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Text("\(liveLocation.recordedTracks.count)")
@@ -149,53 +149,34 @@ public struct AppLiveLocationSection: View {
                     .clipShape(Capsule())
             }
 
-            Text("Tap a saved live track to edit points or clean up local-only recordings.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            ForEach(liveLocation.recordedTracks) { track in
-                Button {
-                    selectedRecordedTrack = track
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
-                            .foregroundColor(.green)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(savedTrackTitle(track))
-                                .font(.subheadline)
-                                .foregroundStyle(.primary)
-                            Text("\(track.pointCount) points · \(formatDistance(track.distanceM, unit: preferences.distanceUnit))")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "slider.horizontal.3")
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 2)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var savedTracksSection: some View {
-        if liveLocation.recordedTracks.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                Label("Saved Live Tracks", systemImage: "slider.horizontal.3")
-                    .font(.subheadline.weight(.semibold))
-                Text("Record a short local track, switch Record off, then open the saved live track here to edit points, insert midpoints or delete it.")
+            if let latestTrack = liveLocation.recordedTracks.first {
+                SavedTrackSummaryContentView(
+                    presentation: SavedTrackPresentation.row(
+                        for: latestTrack,
+                        unit: preferences.distanceUnit
+                    )
+                )
+                Text(SavedTracksPresentation.liveListMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Record a short local track, switch Record off, then open the Saved Tracks library to edit points, insert midpoints or delete a finished track.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(Color.secondary.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        } else {
-            savedTracksList
+
+            if let onOpenSavedTracksLibrary {
+                Button(action: onOpenSavedTracksLibrary) {
+                    Label(SavedTracksPresentation.libraryButtonTitle, systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.secondary.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private var statusSymbolName: String {
@@ -224,14 +205,6 @@ public struct AppLiveLocationSection: View {
             ),
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         ))
-    }
-
-    private func savedTrackTitle(_ track: RecordedTrack) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: track.startedAt)
     }
 }
 #endif

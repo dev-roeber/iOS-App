@@ -28,12 +28,39 @@ struct AppRecordedTracksLibraryView: View {
 
     private var summarySection: some View {
         Section {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 10) {
                 Label("Saved Live Tracks", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                     .font(.headline)
                 Text("This local track library is separate from imported history. Open any saved live track to edit points, insert midpoints or remove it from local storage.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                HStack(spacing: 8) {
+                    librarySummaryBadge(
+                        title: "\(liveLocation.recordedTracks.count) saved",
+                        systemImage: "tray.full"
+                    )
+                    if let latestTrack = liveLocation.recordedTracks.first {
+                        librarySummaryBadge(
+                            title: AppDateDisplay.abbreviatedDate(latestTrack.startedAt),
+                            systemImage: "clock"
+                        )
+                    }
+                }
+
+                if let latestTrack = liveLocation.recordedTracks.first {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(SavedTracksPresentation.latestTrackLabel)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        SavedTrackSummaryContentView(
+                            presentation: SavedTrackPresentation.row(
+                                for: latestTrack,
+                                unit: preferences.distanceUnit
+                            )
+                        )
+                    }
+                }
             }
             .padding(.vertical, 4)
         }
@@ -56,24 +83,25 @@ struct AppRecordedTracksLibraryView: View {
         Section("Saved Live Tracks") {
             ForEach(liveLocation.recordedTracks) { track in
                 NavigationLink(value: track) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(savedTrackTitle(track))
-                            .font(.subheadline.weight(.semibold))
-                        Text("\(track.pointCount) points · \(formatDistance(track.distanceM, unit: preferences.distanceUnit))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    SavedTrackSummaryContentView(
+                        presentation: SavedTrackPresentation.row(
+                            for: track,
+                            unit: preferences.distanceUnit
+                        )
+                    )
                 }
             }
         }
     }
 
-    private func savedTrackTitle(_ track: RecordedTrack) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: track.startedAt)
+    private func librarySummaryBadge(title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.secondary.opacity(0.08))
+            .clipShape(Capsule())
     }
 }
 #endif

@@ -20,6 +20,7 @@ Present:
 - regular-width layout uses `NavigationSplitView` with a day list and a detail pane
 - regular-width day detail exposes an explicit `Overview` return action above the selected day
 - modal sheets exist for `Options`, `Export` (regular width) and the recorded-tracks library
+- the recorded-tracks library is directly reachable from Overview, the shared `Actions` menu and the live-recording area in day detail
 - a separate SwiftUI demo app exists beside the product shell
 
 Not present:
@@ -58,6 +59,7 @@ Present:
 - active-filter banner when export filters are present in metadata
 - source/status card with optional technical disclosure details
 - primary action cards can jump directly into file import, day browsing, insights and export
+- primary actions include a direct jump into the separate `Saved Live Tracks` local library
 - overview entry card for the `Saved Live Tracks` local library
 
 Not present:
@@ -117,6 +119,21 @@ Not present:
 - offline tile packs
 - heatmap layer in the app UI
 - manual map filters / overlay toggles beyond the base style toggle
+
+## 6a. Local Recording / Saved Live Tracks
+
+Present:
+- foreground-only live recording with current-position marker and live polyline
+- permission/status card and record toggle inside day detail
+- completed recordings are persisted as separate local `Saved Live Tracks`
+- dedicated recorded-tracks library page with summary, latest-track preview and editor navigation
+- saved-track editor supports point editing, midpoint insertion and delete
+- live-recording area links into the separate library instead of duplicating a second inline editor flow
+
+Not present:
+- background live tracking
+- auto-resume of in-progress recordings after relaunch
+- merging saved live tracks back into imported history
 
 ## 7. Insights / Statistiken / Diagramme
 
