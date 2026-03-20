@@ -179,6 +179,7 @@ Present:
 - export sheet entry on regular width
 - multi-day selection with `Select All` / `Deselect All`
 - saved live tracks can be selected in the same export flow
+- local export filters for imported history by date window and maximum accuracy
 - export preview map for the current selection with route metrics and legend summary
 - system `fileExporter` flow
 - GPX and KML generation from selected imported days and selected saved live tracks
@@ -192,6 +193,7 @@ Bewusst deaktiviert, aber vorhanden:
 
 Not present:
 - active CSV, GeoJSON or KMZ export in the app UI
+- local export UI for polygon/bounding-box filters
 - per-route selection inside a day
 - waypoint export for visits / activities
 - cloud sync, server upload or account-backed sharing

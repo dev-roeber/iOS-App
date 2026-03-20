@@ -173,6 +173,7 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - bietet Demo-Daten als sekundaeren Fallback
 - Export-Flow zeigt jetzt Auswahlstatus, Disabled-Gruende und den vorgeschlagenen Dateinamen passend zum aktiven Exportformat vor dem fileExporter-Dialog
 - Export-Flow zeigt jetzt eine sichtbare Vorschaukarte und schaltet `GPX` und `KML` als aktive Dateiformate frei
+- Export-Flow bietet jetzt lokale Filter fuer importierte History nach Datumsfenster und maximaler Genauigkeit; gespeicherte Live-Tracks bleiben davon bewusst unberuehrt
 - Import-Persistenz-Code (Security-Scoped Bookmark) vorhanden; Auto-Restore aktuell bewusst deaktiviert (Phase 19.5) – Start immer manuell ueber Import oder Demo
 - Live-Track-Persistenz separat in einem dedizierten Recorded-Track-Store; kein Draft-Resume
 - bleibt offline-only; die neue Live-Recording-Logik bleibt lokal und klar vom Import-/Query-Layer getrennt

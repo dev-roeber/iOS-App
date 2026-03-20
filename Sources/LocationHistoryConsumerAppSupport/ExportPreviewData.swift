@@ -17,12 +17,14 @@ enum ExportPreviewDataBuilder {
     static func previewData(
         importedExport: AppExport?,
         selection: ExportSelectionState,
-        recordedTracks: [RecordedTrack]
+        recordedTracks: [RecordedTrack],
+        queryFilter: AppExportQueryFilter? = nil
     ) -> ExportPreviewData {
         let exportDays = ExportSelectionContent.exportDays(
             importedExport: importedExport,
             selection: selection,
-            recordedTracks: recordedTracks
+            recordedTracks: recordedTracks,
+            queryFilter: queryFilter
         )
 
         let pathOverlays = exportDays.flatMap { day in

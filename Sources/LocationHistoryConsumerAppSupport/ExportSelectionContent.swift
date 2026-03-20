@@ -56,11 +56,13 @@ enum ExportSelectionContent {
     static func exportDays(
         importedExport: AppExport?,
         selection: ExportSelectionState,
-        recordedTracks: [RecordedTrack]
+        recordedTracks: [RecordedTrack],
+        queryFilter: AppExportQueryFilter? = nil
     ) -> [Day] {
         let importedDays = selectedImportedDays(
             in: importedExport,
-            selection: selection
+            selection: selection,
+            queryFilter: queryFilter
         )
         let liveTrackDays = selectedRecordedTrackDays(
             recordedTracks: recordedTracks,
@@ -89,13 +91,14 @@ enum ExportSelectionContent {
 
     private static func selectedImportedDays(
         in export: AppExport?,
-        selection: ExportSelectionState
+        selection: ExportSelectionState,
+        queryFilter: AppExportQueryFilter?
     ) -> [Day] {
         guard let export else {
             return []
         }
 
-        return AppExportQueries.days(in: export)
+        return AppExportQueries.days(in: export, applying: queryFilter)
             .filter { selection.isSelected($0.date) }
             .compactMap(ExportRouteSanitizer.sanitizedDay)
     }

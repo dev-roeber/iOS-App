@@ -5,11 +5,36 @@ import LocationHistoryConsumer
 import UniformTypeIdentifiers
 #endif
 
+private enum ExportAccuracyFilterOption: String, Identifiable, CaseIterable {
+    case any = "Any Accuracy"
+    case m25 = "25 m"
+    case m50 = "50 m"
+    case m100 = "100 m"
+
+    var id: String { rawValue }
+
+    var maxAccuracyM: Double? {
+        switch self {
+        case .any:
+            return nil
+        case .m25:
+            return 25
+        case .m50:
+            return 50
+        case .m100:
+            return 100
+        }
+    }
+}
+
 public struct AppExportView: View {
     @EnvironmentObject private var preferences: AppPreferences
     @Binding var session: AppSessionState
     @ObservedObject private var liveLocation: LiveLocationFeatureModel
     @State private var selectedFormat: ExportFormat = .gpx
+    @State private var selectedFromDate: String = ""
+    @State private var selectedToDate: String = ""
+    @State private var selectedAccuracyFilter: ExportAccuracyFilterOption = .any
     @State private var isExporting = false
     @State private var exportDocument: ExportDocument?
     @State private var exportError: String?
@@ -23,11 +48,10 @@ public struct AppExportView: View {
     }
 
     public var body: some View {
-        let summaries = session.daySummaries
-        if summaries.isEmpty && liveLocation.recordedTracks.isEmpty {
+        if session.daySummaries.isEmpty && liveLocation.recordedTracks.isEmpty {
             emptyState
         } else {
-            exportContent(summaries: summaries)
+            exportContent(summaries: filteredSummaries)
         }
     }
 
@@ -38,6 +62,10 @@ public struct AppExportView: View {
         VStack(spacing: 0) {
             List {
                 selectionSummarySection(selection: selection, summaries: summaries)
+
+                if hasImportedExport {
+                    filterSection
+                }
 
                 if !selection.isEmpty {
                     previewSection(selection: selection, summaries: summaries)
@@ -82,6 +110,20 @@ public struct AppExportView: View {
         }
         .onChange(of: liveLocation.recordedTracks) { _, tracks in
             pruneInvalidRecordedTrackSelection(validTracks: tracks)
+        }
+        .onChange(of: selectedFromDate) { _, _ in
+            normalizeDateFilterBounds()
+            pruneInvalidImportedDaySelection(summaries: filteredSummaries)
+        }
+        .onChange(of: selectedToDate) { _, _ in
+            normalizeDateFilterBounds()
+            pruneInvalidImportedDaySelection(summaries: filteredSummaries)
+        }
+        .onChange(of: selectedAccuracyFilter) { _, _ in
+            pruneInvalidImportedDaySelection(summaries: filteredSummaries)
+        }
+        .onChange(of: session.content?.sourceSummary) { _, _ in
+            resetLocalFilters()
         }
     }
 
@@ -280,11 +322,90 @@ public struct AppExportView: View {
     }
 
     @ViewBuilder
+    private var filterSection: some View {
+        Section("Filter Imported History") {
+            VStack(alignment: .leading, spacing: 12) {
+                if !activeFilterDescriptions.isEmpty {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("Local export filters are active", systemImage: "line.3.horizontal.decrease.circle.fill")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.orange)
+                            Text(activeFilterDescriptions.joined(separator: " · "))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Clear") {
+                            resetLocalFilters()
+                        }
+                        .font(.caption.weight(.medium))
+                    }
+                } else {
+                    Text("Limit imported history by date window or maximum accuracy. Saved Live Tracks stay unaffected by these local export filters.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if !dateOptions.isEmpty {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("From")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
+                            Picker("From", selection: $selectedFromDate) {
+                                Text("Any").tag("")
+                                ForEach(dateOptions, id: \.self) { date in
+                                    Text(AppDateDisplay.mediumDate(date)).tag(date)
+                                }
+                            }
+                            .labelsHidden()
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("To")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
+                            Picker("To", selection: $selectedToDate) {
+                                Text("Any").tag("")
+                                ForEach(dateOptions, id: \.self) { date in
+                                    Text(AppDateDisplay.mediumDate(date)).tag(date)
+                                }
+                            }
+                            .labelsHidden()
+                        }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Maximum accuracy")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    Picker("Maximum accuracy", selection: $selectedAccuracyFilter) {
+                        ForEach(ExportAccuracyFilterOption.allCases) { option in
+                            Text(option.rawValue).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                if filteredSummaries.isEmpty {
+                    Label("The current imported-history filters hide all day rows. Saved Live Tracks can still be exported separately.", systemImage: "line.3.horizontal.decrease.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    @ViewBuilder
     private func previewSection(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
         let previewData = ExportPreviewDataBuilder.previewData(
             importedExport: session.content?.export,
             selection: selection,
-            recordedTracks: liveLocation.recordedTracks
+            recordedTracks: liveLocation.recordedTracks,
+            queryFilter: effectiveQueryFilter
         )
         let presentation = MapPresentation.exportPreview(previewData, unit: preferences.distanceUnit)
 
@@ -480,7 +601,8 @@ public struct AppExportView: View {
         let exportDays = ExportSelectionContent.exportDays(
             importedExport: session.content?.export,
             selection: selection,
-            recordedTracks: liveLocation.recordedTracks
+            recordedTracks: liveLocation.recordedTracks,
+            queryFilter: effectiveQueryFilter
         )
 
         guard !exportDays.isEmpty else {
@@ -511,6 +633,84 @@ public struct AppExportView: View {
         let invalidIDs = session.exportSelection.selectedRecordedTrackIDs.subtracting(validIDs)
         for id in invalidIDs {
             session.exportSelection.toggleRecordedTrack(id)
+        }
+    }
+
+    private var hasImportedExport: Bool {
+        session.content?.export != nil
+    }
+
+    private var filteredSummaries: [DaySummary] {
+        guard let export = session.content?.export else {
+            return []
+        }
+        return AppExportQueries.daySummaries(from: export, applying: effectiveQueryFilter)
+    }
+
+    private var dateOptions: [String] {
+        session.daySummaries.map(\.date).sorted()
+    }
+
+    private var effectiveQueryFilter: AppExportQueryFilter? {
+        guard hasImportedExport else {
+            return nil
+        }
+
+        let baseFilter = session.content.map { AppExportQueryFilter(exportFilters: $0.export.meta.filters) } ?? AppExportQueryFilter()
+        let fromDate = selectedFromDate.isEmpty ? baseFilter.fromDate : selectedFromDate
+        let toDate = selectedToDate.isEmpty ? baseFilter.toDate : selectedToDate
+        let maxAccuracyM = selectedAccuracyFilter.maxAccuracyM ?? baseFilter.maxAccuracyM
+
+        let merged = AppExportQueryFilter(
+            fromDate: fromDate,
+            toDate: toDate,
+            year: baseFilter.year,
+            month: baseFilter.month,
+            weekday: baseFilter.weekday,
+            limit: baseFilter.limit,
+            days: baseFilter.days,
+            requiredContent: baseFilter.requiredContent,
+            maxAccuracyM: maxAccuracyM,
+            activityTypes: baseFilter.activityTypes,
+            minGapMin: baseFilter.minGapMin,
+            spatialFilter: baseFilter.spatialFilter
+        )
+
+        return merged
+    }
+
+    private var activeFilterDescriptions: [String] {
+        var descriptions: [String] = []
+        if !selectedFromDate.isEmpty {
+            descriptions.append("From: \(selectedFromDate)")
+        }
+        if !selectedToDate.isEmpty {
+            descriptions.append("To: \(selectedToDate)")
+        }
+        if let maxAccuracyM = selectedAccuracyFilter.maxAccuracyM {
+            descriptions.append("Max accuracy: \(Int(maxAccuracyM))m")
+        }
+        return descriptions
+    }
+
+    private func resetLocalFilters() {
+        selectedFromDate = ""
+        selectedToDate = ""
+        selectedAccuracyFilter = .any
+    }
+
+    private func normalizeDateFilterBounds() {
+        guard !selectedFromDate.isEmpty, !selectedToDate.isEmpty, selectedFromDate > selectedToDate else {
+            return
+        }
+        selectedToDate = selectedFromDate
+    }
+
+    private func pruneInvalidImportedDaySelection(summaries: [DaySummary]) {
+        let validDates = Set(summaries.map(\.date))
+        let invalidDates = session.exportSelection.selectedDates.subtracting(validDates)
+        for date in invalidDates {
+            session.exportSelection.toggle(date)
         }
     }
 

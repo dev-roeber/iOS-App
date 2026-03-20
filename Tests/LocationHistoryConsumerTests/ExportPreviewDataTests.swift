@@ -68,6 +68,39 @@ final class ExportPreviewDataTests: XCTestCase {
         XCTAssertNil(preview.fittedRegion)
     }
 
+    func testPreviewDataAppliesQueryFilterToImportedDaysOnly() {
+        let export = exportWith(days: """
+        {
+          "date":"2024-05-01",
+          "visits":[],
+          "activities":[],
+          "paths":[
+            {"activity_type":"WALKING","distance_m":700,"points":[
+              {"lat":48.0,"lon":11.0,"accuracy_m":10},
+              {"lat":48.001,"lon":11.001,"accuracy_m":60}
+            ]}
+          ]
+        }
+        """)
+        let savedTrack = makeRecordedTrack(dayKey: "2024-05-03")
+
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+        selection.toggleRecordedTrack(savedTrack.id)
+
+        let preview = ExportPreviewDataBuilder.previewData(
+            importedExport: export,
+            selection: selection,
+            recordedTracks: [savedTrack],
+            queryFilter: AppExportQueryFilter(maxAccuracyM: 25)
+        )
+
+        XCTAssertTrue(preview.hasMapContent)
+        XCTAssertEqual(preview.importedDayCount, 1)
+        XCTAssertEqual(preview.savedTrackCount, 1)
+        XCTAssertEqual(preview.pathOverlays.count, 1)
+    }
+
     private func exportWith(days jsonDays: String) -> AppExport {
         let json = """
         {
