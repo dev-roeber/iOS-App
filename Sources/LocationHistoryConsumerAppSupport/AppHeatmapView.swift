@@ -208,13 +208,13 @@ final class AppHeatmapModel {
 
 // MARK: - Supporting Types
 
-fileprivate struct WeightedPoint {
+struct WeightedPoint {
     let lat: Double
     let lon: Double
     let weight: Int
 }
 
-fileprivate struct HeatCell: Identifiable {
+struct HeatCell: Identifiable {
     let id: Int64
     let polygonPoints: [CLLocationCoordinate2D]
     let opacity: Double
