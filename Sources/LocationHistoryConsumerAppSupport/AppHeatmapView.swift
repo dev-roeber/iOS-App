@@ -3,8 +3,8 @@ import SwiftUI
 import MapKit
 import LocationHistoryConsumer
 
-/// A professional-grade heatmap that adapts its resolution to the map's zoom level
-/// and uses spatial pre-processing for near-instant re-calculation.
+/// A professional-grade heatmap that uses Level-Of-Detail (LOD) pre-computation
+/// and Viewport-Culling for 60FPS rendering of massive datasets.
 @available(iOS 17.0, macOS 14.0, *)
 public struct AppHeatmapView: View {
     private let export: AppExport
@@ -23,29 +23,32 @@ public struct AppHeatmapView: View {
     public var body: some View {
         ZStack {
             Map(position: $mapPosition) {
-                // Use MapPolygon for high-performance vector rendering of grid cells.
-                // We use id: \.id to ensure SwiftUI can efficiently track changes.
-                ForEach(model.heatCells) { cell in
-                    MapPolygon(coordinates: cell.polygonPoints)
+                // Use MapCircle with overlapping radii for a smooth, organic heatmap look.
+                // The cells are already viewport-culled, so SwiftUI only renders what is strictly necessary.
+                ForEach(model.visibleCells) { cell in
+                    MapCircle(center: cell.coordinate, radius: cell.radius)
                         .foregroundStyle(cell.color.opacity(cell.opacity))
                 }
             }
             .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
             .ignoresSafeArea(edges: .top)
-            .onMapCameraChange(frequency: .continuous) { context in
-                // High-precision reactive updates:
-                // When the user zooms, we re-calculate the binning at the new resolution.
+            .onMapCameraChange(frequency: .onEnd) { context in
+                // High-performance reactive updates:
+                // We use 'onEnd' or a debounced continuous update to slice the pre-computed grid.
                 model.updateForRegion(context.region)
             }
+            .onMapCameraChange(frequency: .continuous) { context in
+                model.debounceUpdateForRegion(context.region)
+            }
 
-            // Status indicator for background computation
+            // Status indicator for background pre-computation
             if model.isCalculating {
                 VStack {
                     Spacer()
                     HStack(spacing: 8) {
                         ProgressView()
                             .controlSize(.small)
-                        Text("Optimizing heatmap…")
+                        Text("Pre-computing LOD clusters…")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
@@ -58,109 +61,181 @@ public struct AppHeatmapView: View {
             }
         }
         .navigationTitle("Heatmap")
-        .animation(.default, value: model.heatCells.count)
+        .animation(.easeInOut(duration: 0.3), value: model.visibleCells.count)
         .onAppear {
             if isFirstLoad {
-                centerOnData()
+                model.startPrecomputation()
                 isFirstLoad = false
             }
         }
-    }
-
-    private func centerOnData() {
-        // Initial positioning based on the most frequent cluster
-        if let best = model.primaryCoordinate {
-            mapPosition = .region(MKCoordinateRegion(
-                center: best,
-                span: MKCoordinateSpan(latitudeDelta: 1.5, longitudeDelta: 1.5)
-            ))
+        .onChange(of: model.initialCenter) { _, newCenter in
+            if let center = newCenter {
+                mapPosition = .region(MKCoordinateRegion(
+                    center: center,
+                    span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
+                ))
+            }
         }
+    }
+}
+
+// MARK: - Level of Detail (LOD)
+
+enum HeatmapLOD: CaseIterable {
+    case macro      // Whole country/continent
+    case low        // State/Region
+    case medium     // City
+    case high       // Neighborhood/Street
+    
+    var step: Double {
+        switch self {
+        case .macro: return 0.25     // ~25km
+        case .low: return 0.05       // ~5km
+        case .medium: return 0.01    // ~1km
+        case .high: return 0.002     // ~200m
+        }
+    }
+    
+    var baseRadius: Double {
+        switch self {
+        case .macro: return 20000
+        case .low: return 4000
+        case .medium: return 800
+        case .high: return 180
+        }
+    }
+    
+    static func optimalLOD(for spanDelta: Double) -> HeatmapLOD {
+        if spanDelta > 5.0 { return .macro }
+        if spanDelta > 1.0 { return .low }
+        if spanDelta > 0.1 { return .medium }
+        return .high
     }
 }
 
 // MARK: - ViewModel
 
 @available(iOS 17.0, macOS 14.0, *)
-@Observable
-@MainActor
+@Observable @MainActor
 final class AppHeatmapModel {
-    // Current visible result
-    var heatCells: [HeatCell] = []
+    // Current visible result (viewport culled)
+    var visibleCells: [HeatCell] = []
     var isCalculating = false
-    var primaryCoordinate: CLLocationCoordinate2D?
+    var initialCenter: CLLocationCoordinate2D?
 
-    // Pre-processed data for fast iteration
-    private let allPoints: [WeightedPoint]
-    private var lastCalculationWorkItem: Task<Void, Never>?
-    private var lastCalculatedSpan: Double = 0
+    // Pre-processed data
+    private let export: AppExport
+    // The pre-computed dictionaries for each LOD. Key is the packed Int64.
+    private var lodGrids: [HeatmapLOD: [Int64: HeatCell]] = [:]
+    
+    private var lastRegion: MKCoordinateRegion?
+    private var updateTask: Task<Void, Never>?
 
     init(export: AppExport) {
-        // Step 1: Pre-process the tree-like AppExport into a flat, weighted array.
-        // This is done once at init to make subsequent binning O(N).
-        var points: [WeightedPoint] = []
-        for day in export.data.days {
-            for v in day.visits {
-                if let lat = v.lat, let lon = v.lon {
-                    points.append(WeightedPoint(lat: lat, lon: lon, weight: 3))
+        self.export = export
+    }
+
+    func startPrecomputation() {
+        guard lodGrids.isEmpty, !isCalculating else { return }
+        isCalculating = true
+        let snapshot = export
+        
+        Task.detached(priority: .userInitiated) {
+            // 1. Flatten all coordinates
+            var points: [WeightedPoint] = []
+            for day in snapshot.data.days {
+                for v in day.visits {
+                    if let lat = v.lat, let lon = v.lon {
+                        points.append(WeightedPoint(lat: lat, lon: lon, weight: 3))
+                    }
+                }
+                for p in day.paths {
+                    for pt in p.points {
+                        points.append(WeightedPoint(lat: pt.lat, lon: pt.lon, weight: 1))
+                    }
+                }
+                for a in day.activities {
+                    if let lat = a.startLat, let lon = a.startLon {
+                        points.append(WeightedPoint(lat: lat, lon: lon, weight: 1))
+                    }
                 }
             }
-            for p in day.paths {
-                for pt in p.points {
-                    points.append(WeightedPoint(lat: pt.lat, lon: pt.lon, weight: 1))
-                }
+            
+            // 2. Pre-compute grids for all LODs
+            var generatedGrids: [HeatmapLOD: [Int64: HeatCell]] = [:]
+            for lod in HeatmapLOD.allCases {
+                generatedGrids[lod] = Self.computeGrid(for: points, lod: lod)
             }
-            for a in day.activities {
-                if let lat = a.startLat, let lon = a.startLon {
-                    points.append(WeightedPoint(lat: lat, lon: lon, weight: 1))
+            
+            // 3. Find center based on highest density in the medium LOD
+            var centerCoord: CLLocationCoordinate2D?
+            if let mediumGrid = generatedGrids[.medium],
+               let denseCell = mediumGrid.values.max(by: { $0.count < $1.count }) {
+                centerCoord = denseCell.coordinate
+            } else if let first = points.first {
+                centerCoord = CLLocationCoordinate2D(latitude: first.lat, longitude: first.lon)
+            }
+            
+            await MainActor.run {
+                self.lodGrids = generatedGrids
+                self.initialCenter = centerCoord
+                self.isCalculating = false
+                if let region = self.lastRegion {
+                    self.performCulling(region: region)
                 }
             }
         }
-        self.allPoints = points
-        
-        // Initial "dumb" average for centering
-        if let first = points.first {
-            self.primaryCoordinate = CLLocationCoordinate2D(latitude: first.lat, longitude: first.lon)
+    }
+
+    func debounceUpdateForRegion(_ region: MKCoordinateRegion) {
+        // Light debouncing for continuous scrolling
+        self.lastRegion = region
+        updateTask?.cancel()
+        updateTask = Task {
+            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            guard !Task.isCancelled else { return }
+            performCulling(region: region)
         }
     }
 
     func updateForRegion(_ region: MKCoordinateRegion) {
-        // Debouncing / Thresholding:
-        // Only re-calculate if the zoom level (span) changed significantly (e.g. > 20%).
-        let spanDelta = abs(region.span.latitudeDelta - lastCalculatedSpan) / max(0.0001, lastCalculatedSpan)
-        guard spanDelta > 0.2 || heatCells.isEmpty else { return }
+        updateTask?.cancel()
+        self.lastRegion = region
+        performCulling(region: region)
+    }
+    
+    private func performCulling(region: MKCoordinateRegion) {
+        guard !lodGrids.isEmpty else { return }
+        let lod = HeatmapLOD.optimalLOD(for: region.span.latitudeDelta)
+        guard let fullGrid = lodGrids[lod] else { return }
         
-        lastCalculationWorkItem?.cancel()
-        lastCalculationWorkItem = Task {
-            isCalculating = true
-            
-            // Adaptive Grid Size:
-            // High zoom -> small cells (0.001°), Low zoom -> large cells (0.1°)
-            let step = calculateOptimalStep(for: region.span.latitudeDelta)
-            let result = await Task.detached(priority: .userInitiated) {
-                Self.binPoints(self.allPoints, step: step)
-            }.value
-            
-            if !Task.isCancelled {
-                self.heatCells = result
-                self.lastCalculatedSpan = region.span.latitudeDelta
-                self.isCalculating = false
+        // Define bounding box with a 20% overdraw margin so circles don't pop in
+        let marginLat = region.span.latitudeDelta * 0.2
+        let marginLon = region.span.longitudeDelta * 0.2
+        let minLat = region.center.latitude - (region.span.latitudeDelta / 2) - marginLat
+        let maxLat = region.center.latitude + (region.span.latitudeDelta / 2) + marginLat
+        let minLon = region.center.longitude - (region.span.longitudeDelta / 2) - marginLon
+        let maxLon = region.center.longitude + (region.span.longitudeDelta / 2) + marginLon
+        
+        // Culling: Only map cells that fall within the bounding box
+        var culled: [HeatCell] = []
+        // We iterate over the pre-computed grid. For typical viewports this yields a few hundred cells.
+        for cell in fullGrid.values {
+            if cell.coordinate.latitude >= minLat && cell.coordinate.latitude <= maxLat &&
+               cell.coordinate.longitude >= minLon && cell.coordinate.longitude <= maxLon {
+                culled.append(cell)
             }
         }
-    }
-
-    private func calculateOptimalStep(for span: Double) -> Double {
-        // Heuristic: target ~100-500 cells on screen for perfect balance of detail vs performance
-        if span < 0.05 { return 0.001 }  // High zoom: ~100m grid
-        if span < 0.5  { return 0.005 }  // Med zoom: ~500m grid
-        if span < 5.0  { return 0.02  }  // Low zoom: ~2km grid
-        return 0.1                       // Bird's eye: ~10km grid
-    }
-
-    nonisolated private static func binPoints(_ points: [WeightedPoint], step: Double) -> [HeatCell] {
-        var grid: [Int64: Int] = [:]
         
-        // Use an Int64 bit-packed key for maximum dictionary performance
-        // (latBin in high 32 bits, lonBin in low 32 bits)
+        // Sort to ensure "hotter" cells draw on top
+        culled.sort { $0.count < $1.count }
+        self.visibleCells = culled
+    }
+
+    nonisolated private static func computeGrid(for points: [WeightedPoint], lod: HeatmapLOD) -> [Int64: HeatCell] {
+        var grid: [Int64: Int] = [:]
+        let step = lod.step
+        
         for p in points {
             let latBin = Int32(floor(p.lat / step))
             let lonBin = Int32(floor(p.lon / step))
@@ -168,41 +243,46 @@ final class AppHeatmapModel {
             grid[key, default: 0] += p.weight
         }
 
-        guard !grid.isEmpty else { return [] }
+        guard !grid.isEmpty else { return [:] }
         let maxCount = Double(grid.values.max() ?? 1)
         
-        return grid.map { key, count in
+        var result: [Int64: HeatCell] = [:]
+        result.reserveCapacity(grid.count)
+        
+        for (key, count) in grid {
             let latBin = Int32(key >> 32)
             let lonBin = Int32(truncatingIfNeeded: key)
             
             let normalized = Double(count) / maxCount
+            
+            // "Stunning Visuals" Color Gradient: Deep blue -> Cyan -> Green -> Yellow -> Bright Red
             let color: Color
             switch normalized {
-            case 0..<0.2: color = .blue
-            case 0.2..<0.4: color = .cyan
-            case 0.4..<0.6: color = .green
-            case 0.6..<0.8: color = .yellow
-            default: color = .red
+            case 0..<0.15: color = Color(red: 0.0, green: 0.2, blue: 0.8) // Deep Blue
+            case 0.15..<0.35: color = Color(red: 0.0, green: 0.8, blue: 0.8) // Cyan
+            case 0.35..<0.6: color = Color(red: 0.2, green: 0.8, blue: 0.2) // Green
+            case 0.6..<0.85: color = Color(red: 1.0, green: 0.8, blue: 0.0) // Yellow
+            default: color = Color(red: 1.0, green: 0.2, blue: 0.2) // Red
             }
             
-            let minLat = Double(latBin) * step
-            let maxLat = minLat + step
-            let minLon = Double(lonBin) * step
-            let maxLon = minLon + step
+            let centerLat = (Double(latBin) * step) + (step / 2.0)
+            let centerLon = (Double(lonBin) * step) + (step / 2.0)
             
-            return HeatCell(
+            // Overlapping radii: The radius is slightly larger than the step size to blend adjacent cells
+            // Hotter cells get slightly larger radii to create a blooming effect
+            let radiusMultiplier = 1.2 + (normalized * 0.5)
+            
+            result[key] = HeatCell(
                 id: key,
-                polygonPoints: [
-                    CLLocationCoordinate2D(latitude: minLat, longitude: minLon),
-                    CLLocationCoordinate2D(latitude: maxLat, longitude: minLon),
-                    CLLocationCoordinate2D(latitude: maxLat, longitude: maxLon),
-                    CLLocationCoordinate2D(latitude: minLat, longitude: maxLon),
-                    CLLocationCoordinate2D(latitude: minLat, longitude: minLon)
-                ],
-                opacity: 0.3 + normalized * 0.5,
+                coordinate: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
+                radius: lod.baseRadius * radiusMultiplier,
+                count: count,
+                opacity: 0.35 + (normalized * 0.5),
                 color: color
             )
         }
+        
+        return result
     }
 }
 
@@ -216,7 +296,9 @@ struct WeightedPoint {
 
 struct HeatCell: Identifiable {
     let id: Int64
-    let polygonPoints: [CLLocationCoordinate2D]
+    let coordinate: CLLocationCoordinate2D
+    let radius: Double
+    let count: Int
     let opacity: Double
     let color: Color
 }
