@@ -30,13 +30,14 @@ Bereits drin:
 - der Heatmap-Startzustand zoomt jetzt auf die vorhandenen Daten statt nur auf einen generischen Mittelpunkt
 - Heatmap Visual & Performance Batch 2 hat den Renderer auf geglaettete aggregierte Polygon-Zellen umgestellt, per-LOD sichtbare Elemente gedeckelt und viewport-basiertes Caching fuer ruhigere Zoom-/Pan-Reaktionen eingebaut
 - Heatmap Color / Contrast / Opacity Batch 3 hat die Farbpallette, Intensitaetskurve und die interne Slider-Kennlinie fuer Deckkraft sichtbar verstaerkt, damit mittlere/hohe Dichte bei 100 % deutlich deckender und waermer erscheint
+- der spaetere UI-Polish-/Heatmap-Detail-Batch hebt nun auch niedrige und mittlere Dichte im Detailzoom sichtbar frueher an und macht duenne Daten farbiger und weniger blass
 - kleine dedizierte Heatmap-Regressionstests fuer LOD-Aggregation, viewport-begrenzte Zellselektion sowie Intensitaets-/Opacity-/Palette-Mapping sind jetzt vorhanden
 - Heatmap ist jetzt in README, ROADMAP und Feature-Inventar repo-wahr dokumentiert
 - echter iPhone-15-Pro-Max-AX-Snapshot aus dem Wrapper zeigt `Heatmap` bei geladenem Import im Uebersichtsbildschirm sichtbar und erreichbar verdrahtet
 
 Fehlt noch:
 - echtes Oeffnen des Heatmap-Sheets auf Apple-Hardware
-- visuelle Apple-Verifikation des neuen Polygon-/Aggregations-Renderers inklusive des kraeftigeren Batch-3-Farb-/Kontrast-Mappings auf echter Apple-Hardware
+- visuelle Apple-Verifikation des neuen Polygon-/Aggregations-Renderers inklusive des kraeftigeren Batch-3-Farb-/Kontrast-Mappings und des spaeteren Detail-Visibility-Polish auf echter Apple-Hardware
 - Performance-Nachweis fuer groessere Imports auf Apple-Hardware
 
 ## 3. Phase 19.53 – Apple-CLI-Tests auf aktuellem Core-Stand stabilisieren

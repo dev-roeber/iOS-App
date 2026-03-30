@@ -501,6 +501,13 @@ struct AppInsightsContentView: View {
                 .font(.title3.weight(.semibold))
             content()
         }
+        .padding(16)
+        .background(Color.secondary.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+        )
     }
 
     private var activeFilterBanner: some View {

@@ -258,40 +258,50 @@ public struct AppLiveTrackingView: View {
     }
 
     private var quickActionRow: some View {
-        HStack(spacing: 10) {
-            Button(action: centerOnCurrentLocation) {
-                Label(t("Center Map"), systemImage: "location.fill")
-                    .frame(maxWidth: .infinity)
+        ViewThatFits(in: .vertical) {
+            HStack(spacing: 10) {
+                quickActionButtons
+            }
+            VStack(spacing: 10) {
+                quickActionButtons
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var quickActionButtons: some View {
+        Button(action: centerOnCurrentLocation) {
+            Label(t("Center Map"), systemImage: "location.fill")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .disabled(liveLocation.currentLocation == nil)
+
+        if shouldShowUploadSection {
+            Button(action: {
+                if liveLocation.isUploadPaused {
+                    liveLocation.setUploadPaused(false)
+                } else {
+                    liveLocation.setUploadPaused(true)
+                }
+            }) {
+                Label(
+                    liveLocation.isUploadPaused ? t("Resume Uploads") : t("Pause Uploads"),
+                    systemImage: liveLocation.isUploadPaused ? "play.fill" : "pause.fill"
+                )
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
-            .disabled(liveLocation.currentLocation == nil)
+            .disabled(!liveLocation.canPauseUploads)
+        }
 
-            if shouldShowUploadSection {
-                Button(action: {
-                    if liveLocation.isUploadPaused {
-                        liveLocation.setUploadPaused(false)
-                    } else {
-                        liveLocation.setUploadPaused(true)
-                    }
-                }) {
-                    Label(
-                        liveLocation.isUploadPaused ? t("Resume Uploads") : t("Pause Uploads"),
-                        systemImage: liveLocation.isUploadPaused ? "play.fill" : "pause.fill"
-                    )
+        if liveLocation.pendingUploadPointCount > 0 {
+            Button(action: { liveLocation.flushPendingUploads() }) {
+                Label(t("Flush Queue"), systemImage: "arrow.up.circle.fill")
                     .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .disabled(!liveLocation.canPauseUploads)
             }
-
-            if liveLocation.pendingUploadPointCount > 0 {
-                Button(action: { liveLocation.flushPendingUploads() }) {
-                    Label(t("Flush Queue"), systemImage: "arrow.up.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!liveLocation.canFlushPendingUploads)
-            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!liveLocation.canFlushPendingUploads)
         }
     }
 
@@ -661,8 +671,16 @@ private extension View {
     func cardChrome() -> some View {
         self
             .padding(16)
-            .background(Color.secondary.opacity(0.055))
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color.secondary.opacity(0.055))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.primary.opacity(0.055), lineWidth: 1)
+            )
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: Color.black.opacity(0.06), radius: 12, y: 4)
     }
 }
 

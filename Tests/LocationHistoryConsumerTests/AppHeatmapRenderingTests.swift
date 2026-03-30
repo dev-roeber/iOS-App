@@ -42,8 +42,8 @@ final class AppHeatmapRenderingTests: XCTestCase {
         let mid = HeatmapVisualStyle.displayIntensity(for: 0.5)
         let high = HeatmapVisualStyle.displayIntensity(for: 0.9)
 
-        XCTAssertGreaterThan(low, 0.15)
-        XCTAssertGreaterThan(mid, 0.55)
+        XCTAssertGreaterThan(low, 0.24)
+        XCTAssertGreaterThan(mid, 0.68)
         XCTAssertGreaterThan(high, 0.9)
         XCTAssertLessThan(low, mid)
         XCTAssertLessThan(mid, high)
@@ -63,8 +63,24 @@ final class AppHeatmapRenderingTests: XCTestCase {
             lod: .high
         )
 
-        XCTAssertGreaterThan(full, 0.8)
+        XCTAssertGreaterThan(full, 0.85)
         XCTAssertGreaterThan(full, reduced)
+    }
+
+    func testHighDetailOpacityKeepsSparseCellsVisible() {
+        let sparse = HeatmapVisualStyle.effectiveOpacity(
+            cellOpacity: 0.30,
+            normalizedIntensity: 0.05,
+            overlayOpacity: 0.84,
+            lod: .high
+        )
+
+        XCTAssertGreaterThan(sparse, 0.14)
+    }
+
+    func testHighDetailLodUsesLowerVisibilityThresholdThanLowLod() {
+        XCTAssertLessThan(HeatmapLOD.high.minimumNormalizedIntensity, HeatmapLOD.low.minimumNormalizedIntensity)
+        XCTAssertLessThan(HeatmapLOD.high.precomputationVisibilityFactor, HeatmapLOD.low.precomputationVisibilityFactor)
     }
 
     func testPaletteWarmsAsDensityIncreases() {
@@ -75,6 +91,7 @@ final class AppHeatmapRenderingTests: XCTestCase {
         XCTAssertGreaterThan(mid.green, low.green)
         XCTAssertGreaterThan(high.red, mid.red)
         XCTAssertLessThan(high.blue, mid.blue)
+        XCTAssertGreaterThan(low.blue, 0.75)
     }
 
     // MARK: - HeatmapMode enum

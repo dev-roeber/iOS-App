@@ -8,6 +8,7 @@ Der Audit-Block vom 2026-03-30 ist in dieser Revision eingearbeitet: Heatmap, `L
 Diese ROADMAP trennt ab hier explizit zwischen `fertig`, `implementiert aber noch nicht voll verifiziert` und `noch nicht umgesetzt`.
 Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Commits fruehere Zwischenstaende ueberholt haben, gilt der aktuelle Kopfblock als massgeblicher Repo-Truth.
 Der Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 ist im Code umgesetzt und in dieser ROADMAP als repo-wahrer Produktstand eingearbeitet; fuer diesen Batch liegen auf diesem Linux-Server gezielte `swift test --filter Live|Insight|Day|Upload`-Laeufe vor, aber kein neuer Apple-UI-Nachweis.
+Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem die Heatmap-Detailsichtbarkeit sowie kleine visuelle Kanten in `Live`, `Insights` und `Days`; auf diesem Linux-Server liegen dazu gruene `Live`-/`Insight`-Laeufe und `git diff --check` vor, aber kein neuer Apple-Heatmap-Nachweis.
 
 ### Repo-wahr abgeschlossen
 
@@ -37,6 +38,7 @@ Der Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 ist im Code umgesetzt und 
   Heatmap UX Batch 1 hat die Darstellung auf mittleren/grossen Zoomstufen beruhigt und kleine lokale Controls fuer Deckkraft, Radius und `Auf Daten zoomen` hinzugefuegt.
   Heatmap Visual & Performance Batch 2 hat danach auf geglaettete aggregierte Polygon-Zellen, viewport-basierte Zellselektion, per-LOD begrenzte sichtbare Elemente und einen wiederverwendbaren Viewport-Cache umgestellt, um den sichtbaren Kreis-/Stempel-Look zu reduzieren und Pan/Zoom ruhiger zu machen.
   Heatmap Color / Contrast / Opacity Batch 3 hat danach die Farbpalette von harten Stufen auf weich interpolierte Gradient-Stops umgestellt, mittlere/hohe Dichte per Intensitaets-Mapping sichtbar angehoben und die 100-%-Deckkraft ueber eine staerkere High-End-Kennlinie auf einen wirklich volleren Sichtbarkeitsmodus gemappt.
+  Der UI-Polish-/Heatmap-Detail-Batch hat danach die Detailsichtbarkeit weiter angehoben: niedrigere Detailschwellen, fruehere Farbe bei duennen Daten, mehr sichtbare Low-/Mid-Density im Detailzoom und etwas klarere Legenden-/Opacity-Abstimmung.
   Kleine dedizierte Heatmap-Regressionstests fuer Aggregation, viewport-begrenzte Zellselektion und das neue Intensitaets-/Opacity-/Palette-Mapping sind jetzt vorhanden.
   Offen bleibt die visuelle/performance-seitige Apple-Verifikation dieses neuen Renderers samt Batch-3-Farbwirkung auf echter Hardware.
 - **`Live`-Tab**
@@ -75,8 +77,8 @@ Der Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 ist im Code umgesetzt und 
 
 ### Reihenfolge der naechsten offenen Bloecke
 
-1. dedizierten iPhone-UI-Check fuer den deutlich umgebauten `Live`-Tab, die Upload-Zustaende und die neue `Days`-Default-Sortierung fahren und dokumentieren
-2. kurzen echten iPhone-Heatmap-Check fuer den neuen Aggregations-/Polygon-Renderer inklusive Batch-3-Farb-/Kontrast-Mapping fahren und visuelle/performance-seitige Befunde dokumentieren
+1. kurzen echten iPhone-Heatmap-Check fuer den neuen Aggregations-/Polygon-Renderer inklusive Batch-3-Farb-/Kontrast-Mapping und des spaeteren Detail-Visibility-Polish fahren und visuelle/performance-seitige Befunde dokumentieren
+2. dedizierten iPhone-UI-Check fuer den deutlich umgebauten `Live`-Tab, die Upload-Zustaende und die neue `Days`-Default-Sortierung fahren und dokumentieren
 3. Background-Recording auf echtem iPhone verifizieren und im Runbook belegen
 4. Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren und dokumentieren
 5. optionalen Server-Upload end-to-end auf Device pruefen; Apple-Review-/Privacy-Einordnung fuer den Upload-Pfad weiter klaeren
