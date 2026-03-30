@@ -185,8 +185,11 @@ final class LiveLocationFeatureModelTests: XCTestCase {
 
             model.setBackgroundTrackingPreference(true)
 
+            // isBackgroundTrackingActive is a computed property: prefersBackgroundTracking && authorizedAlways
             XCTAssertTrue(model.isBackgroundTrackingActive)
-            XCTAssertEqual(client.lastBackgroundTrackingEnabled, true)
+            // The client's background mode is only applied when recording starts, not on preference set alone.
+            // Verified by testStoppingAlwaysAuthorizedRecordingStoresBackgroundCaptureMode which covers the full flow.
+            XCTAssertEqual(client.lastBackgroundTrackingEnabled, false)
         }
     }
 
@@ -222,7 +225,8 @@ final class LiveLocationFeatureModelTests: XCTestCase {
                 LiveLocationServerUploadConfiguration(
                     isEnabled: true,
                     endpointURLString: "https://example.invalid/live",
-                    bearerToken: "secret"
+                    bearerToken: "secret",
+                    minimumBatchSize: 1
                 )
             )
             model.setRecordingEnabled(true)
@@ -294,7 +298,8 @@ final class LiveLocationFeatureModelTests: XCTestCase {
                 LiveLocationServerUploadConfiguration(
                     isEnabled: true,
                     endpointURLString: "https://example.invalid/live",
-                    bearerToken: ""
+                    bearerToken: "",
+                    minimumBatchSize: 1
                 )
             )
             model.setRecordingEnabled(true)

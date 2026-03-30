@@ -136,7 +136,7 @@ struct AppShellRootView: View {
                 return
             }
             session.beginLoading()
-            loadImportedFile(at: url)
+            Task { await loadImportedFile(at: url) }
         case let .failure(error):
             if isUserCancelled(error) {
                 return
@@ -149,7 +149,8 @@ struct AppShellRootView: View {
         }
     }
 
-    private func loadImportedFile(at url: URL) {
+    @MainActor
+    private func loadImportedFile(at url: URL) async {
         let accessedSecurityScope = url.startAccessingSecurityScopedResource()
         defer {
             if accessedSecurityScope {

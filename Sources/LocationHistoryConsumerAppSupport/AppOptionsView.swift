@@ -53,14 +53,16 @@ public struct AppOptionsView: View {
 
                 if preferences.sendsLiveLocationToServer {
                     TextField(t("Server URL"), text: $preferences.liveLocationServerUploadURLString)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
                         #if os(iOS)
+                        .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
                         #endif
+                        .autocorrectionDisabled()
 
                     TextField(t("Bearer Token (optional)"), text: $preferences.liveLocationServerUploadBearerToken)
+                        #if os(iOS)
                         .textInputAutocapitalization(.never)
+                        #endif
                         .autocorrectionDisabled()
                 }
 
