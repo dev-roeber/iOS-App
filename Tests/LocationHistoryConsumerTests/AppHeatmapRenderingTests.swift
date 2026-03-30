@@ -1,4 +1,5 @@
 import XCTest
+import SwiftUI
 import MapKit
 import LocationHistoryConsumer
 @testable import LocationHistoryConsumerAppSupport
