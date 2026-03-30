@@ -496,18 +496,19 @@ struct AppInsightsContentView: View {
         icon: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             Label(title, systemImage: icon)
                 .font(.title3.weight(.semibold))
             content()
         }
-        .padding(16)
-        .background(Color.secondary.opacity(0.055))
+        .padding(18)
+        .background(Color.secondary.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
+        .shadow(color: Color.black.opacity(0.04), radius: 10, y: 3)
     }
 
     private var activeFilterBanner: some View {

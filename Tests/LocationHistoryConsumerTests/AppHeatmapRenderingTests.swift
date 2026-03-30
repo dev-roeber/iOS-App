@@ -42,9 +42,9 @@ final class AppHeatmapRenderingTests: XCTestCase {
         let mid = HeatmapVisualStyle.displayIntensity(for: 0.5)
         let high = HeatmapVisualStyle.displayIntensity(for: 0.9)
 
-        XCTAssertGreaterThan(low, 0.24)
+        XCTAssertGreaterThan(low, 0.26)
         XCTAssertGreaterThan(mid, 0.68)
-        XCTAssertGreaterThan(high, 0.9)
+        XCTAssertGreaterThan(high, 0.95)
         XCTAssertLessThan(low, mid)
         XCTAssertLessThan(mid, high)
     }
@@ -78,6 +78,16 @@ final class AppHeatmapRenderingTests: XCTestCase {
         XCTAssertGreaterThan(sparse, 0.14)
     }
 
+    func testHighDetailColorPositionAdvancesSparseCellsFurtherThanLowDetail() {
+        let sparseHigh = HeatmapVisualStyle.colorPosition(for: 0.08, lod: .high)
+        let sparseLow = HeatmapVisualStyle.colorPosition(for: 0.08, lod: .low)
+        let mid = HeatmapVisualStyle.colorPosition(for: 0.45, lod: .high)
+
+        XCTAssertGreaterThan(sparseHigh, sparseLow)
+        XCTAssertGreaterThan(sparseHigh, 0.24)
+        XCTAssertGreaterThan(mid, sparseHigh)
+    }
+
     func testHighDetailLodUsesLowerVisibilityThresholdThanLowLod() {
         XCTAssertLessThan(HeatmapLOD.high.minimumNormalizedIntensity, HeatmapLOD.low.minimumNormalizedIntensity)
         XCTAssertLessThan(HeatmapLOD.high.precomputationVisibilityFactor, HeatmapLOD.low.precomputationVisibilityFactor)
@@ -91,7 +101,8 @@ final class AppHeatmapRenderingTests: XCTestCase {
         XCTAssertGreaterThan(mid.green, low.green)
         XCTAssertGreaterThan(high.red, mid.red)
         XCTAssertLessThan(high.blue, mid.blue)
-        XCTAssertGreaterThan(low.blue, 0.75)
+        XCTAssertGreaterThan(low.blue, 0.80)
+        XCTAssertGreaterThan(mid.green, 0.80)
     }
 
     // MARK: - HeatmapMode enum

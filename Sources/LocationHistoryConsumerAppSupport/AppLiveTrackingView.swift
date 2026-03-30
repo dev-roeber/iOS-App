@@ -673,14 +673,14 @@ private extension View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(Color.secondary.opacity(0.055))
+                    .fill(Color.secondary.opacity(0.062))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(Color.primary.opacity(0.055), lineWidth: 1)
+                    .stroke(Color.primary.opacity(0.07), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .shadow(color: Color.black.opacity(0.06), radius: 12, y: 4)
+            .shadow(color: Color.black.opacity(0.08), radius: 14, y: 5)
     }
 }
 

@@ -63,12 +63,12 @@ struct AppDayRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .padding(.horizontal, 11)
         .background(rowBackground)
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(isSelectedForExport ? Color.accentColor.opacity(0.16) : Color.primary.opacity(summary.hasContent ? 0.0 : 0.05), lineWidth: 1)
+                .stroke(isSelectedForExport ? Color.accentColor.opacity(0.20) : Color.primary.opacity(summary.hasContent ? 0.035 : 0.05), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .opacity(summary.hasContent ? 1 : 0.72)
@@ -79,7 +79,7 @@ struct AppDayRow: View {
             return Color.accentColor.opacity(0.06)
         }
         if summary.hasContent {
-            return .clear
+            return Color.secondary.opacity(0.018)
         }
         return Color.secondary.opacity(0.035)
     }

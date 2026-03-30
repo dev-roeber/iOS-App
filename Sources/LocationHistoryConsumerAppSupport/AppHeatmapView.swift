@@ -207,10 +207,10 @@ public struct AppHeatmapView: View {
 
             LinearGradient(
                 colors: [
-                    HeatmapPalette.color(for: 0.08).opacity(0.62),
-                    HeatmapPalette.color(for: 0.22).opacity(0.70),
-                    HeatmapPalette.color(for: 0.50).opacity(0.80),
-                    HeatmapPalette.color(for: 0.78).opacity(0.88),
+                    HeatmapPalette.color(for: 0.06).opacity(0.64),
+                    HeatmapPalette.color(for: 0.18).opacity(0.74),
+                    HeatmapPalette.color(for: 0.38).opacity(0.82),
+                    HeatmapPalette.color(for: 0.66).opacity(0.90),
                     HeatmapPalette.color(for: 0.98).opacity(0.94),
                 ],
                 startPoint: .leading,
@@ -355,8 +355,8 @@ enum HeatmapLOD: CaseIterable {
         switch self {
         case .macro: return 0.09
         case .low: return 0.032
-        case .medium: return 0.012
-        case .high: return 0.006
+        case .medium: return 0.010
+        case .high: return 0.0045
         }
     }
 
@@ -386,8 +386,8 @@ enum HeatmapLOD: CaseIterable {
         switch self {
         case .macro: return 0.45
         case .low: return 0.40
-        case .medium: return 0.32
-        case .high: return 0.24
+        case .medium: return 0.28
+        case .high: return 0.18
         }
     }
 
@@ -1098,8 +1098,8 @@ enum HeatmapGridBuilder {
             gridKey: key,
             coordinate: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
             count: max(Int(count.rounded()), 1),
-            opacity: 0.22 + (displayIntensity * 0.74),
-            color: HeatmapPalette.color(for: displayIntensity),
+            opacity: 0.24 + (displayIntensity * 0.72),
+            color: HeatmapPalette.color(for: HeatmapVisualStyle.colorPosition(for: normalized, lod: lod)),
             lod: lod,
             normalizedIntensity: normalized,
             cellSpan: cellSpan
@@ -1122,12 +1122,14 @@ enum HeatmapGridBuilder {
 
 enum HeatmapPalette {
     static let gradientStops: [(position: Double, color: HeatmapRGB)] = [
-        (0.00, HeatmapRGB(red: 0.07, green: 0.24, blue: 0.78)),
-        (0.10, HeatmapRGB(red: 0.06, green: 0.46, blue: 0.95)),
-        (0.24, HeatmapRGB(red: 0.00, green: 0.74, blue: 0.98)),
-        (0.42, HeatmapRGB(red: 0.00, green: 0.90, blue: 0.76)),
-        (0.62, HeatmapRGB(red: 0.99, green: 0.84, blue: 0.20)),
-        (0.82, HeatmapRGB(red: 1.00, green: 0.47, blue: 0.09)),
+        (0.00, HeatmapRGB(red: 0.16, green: 0.14, blue: 0.72)),
+        (0.08, HeatmapRGB(red: 0.09, green: 0.31, blue: 0.90)),
+        (0.18, HeatmapRGB(red: 0.02, green: 0.55, blue: 0.98)),
+        (0.32, HeatmapRGB(red: 0.00, green: 0.78, blue: 0.96)),
+        (0.46, HeatmapRGB(red: 0.00, green: 0.92, blue: 0.82)),
+        (0.60, HeatmapRGB(red: 0.50, green: 0.96, blue: 0.34)),
+        (0.74, HeatmapRGB(red: 0.98, green: 0.88, blue: 0.16)),
+        (0.88, HeatmapRGB(red: 1.00, green: 0.52, blue: 0.10)),
         (1.00, HeatmapRGB(red: 0.96, green: 0.10, blue: 0.16)),
     ]
 
@@ -1183,10 +1185,31 @@ enum HeatmapVisualStyle {
         let clamped = min(max(normalized, 0.0), 1.0)
         // Detail view should feel alive even with sparse tracks, so low and mid
         // intensities are lifted earlier while hotspots still separate cleanly.
-        let liftedLow = pow(clamped, 0.52)
-        let colorLift = pow(clamped, 0.78)
-        let hotspotBoost = pow(clamped, 1.5)
-        let value = (liftedLow * 0.58) + (colorLift * 0.26) + (hotspotBoost * 0.28) + (clamped * 0.10)
+        let liftedLow = pow(clamped, 0.50)
+        let colorLift = pow(clamped, 0.72)
+        let hotspotBoost = pow(clamped, 1.45)
+        let value = (liftedLow * 0.50) + (colorLift * 0.30) + (hotspotBoost * 0.28) + (clamped * 0.10)
+        return min(max(value, 0.0), 1.0)
+    }
+
+    nonisolated static func colorPosition(for normalized: Double, lod: HeatmapLOD) -> Double {
+        let clamped = min(max(normalized, 0.0), 1.0)
+        let display = displayIntensity(for: clamped)
+        let lowHueLift = pow(clamped, 0.38)
+        let midHueLift = pow(clamped, 0.62)
+        let warmLift = pow(clamped, 1.2)
+        let detailBias: Double
+        switch lod {
+        case .macro:
+            detailBias = 0.0
+        case .low:
+            detailBias = 0.04
+        case .medium:
+            detailBias = 0.09
+        case .high:
+            detailBias = 0.14
+        }
+        let value = (lowHueLift * 0.42) + (midHueLift * 0.24) + (display * 0.24) + (warmLift * 0.14) + ((1.0 - clamped) * detailBias)
         return min(max(value, 0.0), 1.0)
     }
 
@@ -1211,11 +1234,11 @@ enum HeatmapVisualStyle {
         case .macro:
             detailBoost = 0.98
         case .low:
-            detailBoost = 1.04
+            detailBoost = 1.06
         case .medium:
-            detailBoost = 1.12 + ((1.0 - displayIntensity) * 0.06)
+            detailBoost = 1.16 + ((1.0 - displayIntensity) * 0.08)
         case .high:
-            detailBoost = 1.20 + ((1.0 - displayIntensity) * 0.10)
+            detailBoost = 1.24 + ((1.0 - displayIntensity) * 0.14)
         }
         let value = cellOpacity * controlOpacity * lod.overlayOpacityMultiplier * emphasis * detailBoost
         return min(max(value, 0.08), 0.96)

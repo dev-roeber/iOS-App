@@ -36,7 +36,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
 - die `Live`-Seite mit klarer Map-/Recording-/Upload-/Library-Hierarchie, Status-Chips, Quick Actions und erweiterten Live-Metriken wie aktueller Geschwindigkeit, Durchschnittsgeschwindigkeit, letzter Teilstrecke und Update-Alter fuehren
 - den optionalen Server-Upload mit Queue-/Failure-/Last-Success-Status, Pause/Resume und manuellem Flush sichtbar und robust in der Live-UI fuehren
 - die `Insights`-Seite ueber segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`), KPI-Karten, Highlight-Karten, `Top Days` und Monatstrends deutlich tiefer aufbereiten
-- fuer importierte History auf iOS 17+/macOS 14+ ein eigenes Heatmap-Sheet mit Deckkraft-Regler, Radius-Presets, `Auf Daten zoomen`, kleiner Dichte-Legende, geglaettetem viewport-/LOD-basiertem Aggregations-Rendering sowie sichtbar kraeftigerer Detaildarstellung fuer niedrige und mittlere Dichte oeffnen (implementiert, aber noch nicht separat Apple-/Performance-verifiziert)
+- fuer importierte History auf iOS 17+/macOS 14+ ein eigenes Heatmap-Sheet mit Deckkraft-Regler, Radius-Presets, `Auf Daten zoomen`, kleiner Dichte-Legende, geglaettetem viewport-/LOD-basiertem Aggregations-Rendering sowie frueheren Farbwechseln und sichtbar kraeftigerer Detaildarstellung fuer niedrige und mittlere Dichte oeffnen (implementiert, aber noch nicht separat Apple-/Performance-verifiziert)
 - importierte History und gespeicherte Live-Tracks lokal als `GPX`, `KML` oder `GeoJSON` exportieren
 - zwischen `Tracks`, `Waypoints` und `Both` als Exportmodus wechseln
 - importierte History lokal nach Datum, Genauigkeit, Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon fuer den Export filtern
@@ -188,7 +188,7 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - konsistente Leer-/Fehler-/Ladezustaende mit SF Symbols und klaren Texten
 - ein zentrales Actions-Menue in der Toolbar fuehrt Import, Demo, Optionen und Clear
 - das Actions-Menue kann auf unterstuetzten Apple-Plattformen zusaetzlich ein eigenes Heatmap-Sheet fuer importierte History mit lokalen Darstellungsreglern, geglaettetem viewport-basiert aggregiertem Dichte-Rendering und verstaerktem Farb-/Kontrast-Mapping oeffnen
-- Heatmap-Detailzoom zeigt jetzt auch bei duennen Daten deutlich frueher Farbe und weniger blasse Flaechen, ohne den bestehenden LOD-/Viewport-Ansatz aufzugeben
+- Heatmap-Detailzoom zeigt jetzt auch bei duennen Daten deutlich frueher Farbe, mehr Hue-Unterschiede im Low-/Mid-Bereich und weniger blasse Flaechen, ohne den bestehenden LOD-/Viewport-Ansatz aufzugeben
 - die Insights-Seite bietet jetzt segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) mit KPI-Karten, Highlight-Karten, `Top Days`, Monatstrends, Wochentags- und Aktivitaetsauswertungen
 - startet mit lokalem JSON-/ZIP-Import als primaerem Einstieg
 - bietet Demo-Daten als sekundaeren Fallback
