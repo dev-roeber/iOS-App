@@ -11,7 +11,7 @@ struct AppDayRow: View {
     var isSelectedForExport: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text(AppDateDisplay.weekday(summary.date))
                     .font(.subheadline)
@@ -63,11 +63,25 @@ struct AppDayRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .background(isSelectedForExport ? Color.accentColor.opacity(0.06) : Color.clear)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(rowBackground)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(isSelectedForExport ? Color.accentColor.opacity(0.16) : Color.primary.opacity(summary.hasContent ? 0.0 : 0.05), lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .opacity(summary.hasContent ? 1 : 0.72)
+    }
+
+    private var rowBackground: Color {
+        if isSelectedForExport {
+            return Color.accentColor.opacity(0.06)
+        }
+        if summary.hasContent {
+            return .clear
+        }
+        return Color.secondary.opacity(0.035)
     }
 
     private func t(_ english: String) -> String {
