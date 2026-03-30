@@ -8,7 +8,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
 - keine allgemeine Producer-Pipeline oder Takeout-Aufbereitung fuer Google-Rohdaten
 - keine CSV-/KMZ-Erzeugung und keine allgemeine Producer-Exportpipeline
 - keine fertige Produkt-App in diesem Schritt
-- offline-first als Standardverhalten, ohne Analytics-Tracking oder Cloud-Sync; optionaler nutzergesteuerter Live-Punkt-Upload ist jetzt vorhanden
+- offline-first als Standardverhalten, ohne Analytics-Tracking oder Cloud-Sync; optionaler nutzergesteuerter Live-Punkt-Upload ist vorhanden
 
 ## Contract-Herkunft
 
@@ -30,7 +30,9 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
 - die App-Shell import-first mit klarerem Quellen-/Statusbereich und Reset-/Replace-Fluss fuehren
 - Live-Location auf der Karte anzeigen und als getrennten Live-Track lokal aufzeichnen; optional auch im Background weiterfuehren, wenn der Nutzer das lokal aktiviert und `Always Allow` gewaehrt
 - aufgezeichnete Live-Tracks getrennt von importierter History lokal persistieren (save on stop, ohne Auto-Resume)
-- lokale App-Optionen fuer Distanz-Einheit, Kartenstil, Start-Tab, Sprache, technische Importdetails und optionalen Server-Upload speichern
+- lokale App-Optionen fuer Distanz-Einheit, Kartenstil, Start-Tab, Sprache, technische Importdetails, optionalen Server-Upload und dessen Upload-Batching speichern
+- auf compact iPhone-Layouts unter iOS 17+ einen dedizierten `Live`-Tab fuer Live-Location und Live-Recording anzeigen
+- fuer importierte History auf iOS 17+/macOS 14+ ein eigenes Heatmap-Sheet oeffnen (implementiert, aber noch nicht separat Apple-/Performance-verifiziert)
 - importierte History und gespeicherte Live-Tracks lokal als `GPX`, `KML` oder `GeoJSON` exportieren
 - zwischen `Tracks`, `Waypoints` und `Both` als Exportmodus wechseln
 - importierte History lokal nach Datum, Genauigkeit, Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon fuer den Export filtern
@@ -158,7 +160,7 @@ Die Demo-Shell ist nur ein lokaler Harness fuer die Query-Schicht:
 ## Produkt-UI
 
 Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
-- adaptives Layout: iPhone nutzt `TabView` (`Overview`, `Days`, `Insights`, `Export`), regular width nutzt `NavigationSplitView` mit Day-Liste und Detail-Pane
+- adaptives Layout: iPhone nutzt `TabView` (`Overview`, `Days`, `Insights`, `Export` und unter iOS 17+ `Live`), regular width nutzt `NavigationSplitView` mit Day-Liste und Detail-Pane
 - no-content-Tage bleiben in `Days` sichtbar, werden aber nicht mehr wie normale Detailziele behandelt
 - Day-Liste fuehrt jetzt mit einem kleinen Export-Statusblock; exportmarkierte Tage tragen ein klares `Export`-Badge
 - Such-Empty-States in `Days` verschweigen vorhandene GPX-Markierungen nicht mehr
@@ -177,13 +179,14 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - VoiceOver-Accessibility: semantische Labels, Gruppierung, dekorative Icons ausgeblendet
 - konsistente Leer-/Fehler-/Ladezustaende mit SF Symbols und klaren Texten
 - ein zentrales Actions-Menue in der Toolbar fuehrt Import, Demo, Optionen und Clear
+- das Actions-Menue kann auf unterstuetzten Apple-Plattformen zusaetzlich ein eigenes Heatmap-Sheet fuer importierte History oeffnen
 - startet mit lokalem JSON-/ZIP-Import als primaerem Einstieg
 - bietet Demo-Daten als sekundaeren Fallback
 - Export-Flow zeigt jetzt Auswahlstatus, Disabled-Gruende und den vorgeschlagenen Dateinamen passend zum aktiven Exportformat vor dem fileExporter-Dialog
 - Export-Flow zeigt jetzt eine sichtbare Vorschaukarte fuer Routen und Waypoints und schaltet `GPX`, `KML` und `GeoJSON` als aktive Dateiformate frei
 - Export-Flow bietet jetzt lokale Filter fuer importierte History nach Datumsfenster, maximaler Genauigkeit, erforderlichem Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon; gespeicherte Live-Tracks bleiben davon bewusst unberuehrt
 - Export-Flow bietet jetzt die Modi `Tracks`, `Waypoints` und `Both`; Waypoints werden aus importierten Visits sowie Activity-Start/-End-Koordinaten erzeugt
-- Import-Persistenz-Code (Security-Scoped Bookmark) vorhanden; Auto-Restore aktuell bewusst deaktiviert (Phase 19.5) – Start immer manuell ueber Import oder Demo
+- Import-Persistenz-Code (Security-Scoped Bookmark) ist vorhanden; die Core-App-Shell haelt Auto-Restore weiterhin bewusst geparkt, waehrend der separate Wrapper `restoreBookmarkedFile()` beim Start wieder aufruft
 - Live-Track-Persistenz separat in einem dedizierten Recorded-Track-Store; kein Draft-Resume
 - bleibt standardmaessig lokal/offline-first; optionaler Server-Upload betrifft nur akzeptierte Live-Recording-Punkte und bleibt klar vom Import-/Query-Layer getrennt
 
@@ -209,6 +212,7 @@ Stand 2026-03-17 ist auf einer realen macOS-/Xcode-Maschine ehrlich verifiziert:
 Stand 2026-03-17 ist noch offen:
 - ein separat protokollierter foreground-Lauf exakt ueber `Product > Run` in Xcode, falls genau dieser IDE-spezifische Weg regressionskritisch wird
 - Live-Location-/Permission-Flow inklusive optionaler `Always Allow`-Erweiterung fuer Background-Recording in einer separat dokumentierten Apple-UI-Session (Simulator oder echtes iPhone)
+- Heatmap-Sheet, dedizierter `Live`-Tab sowie Upload-Batching/Upload-Status stammen aus spaeteren 2026-03-20-Commits und sind auf Apple-Hardware noch nicht separat verifiziert
 
 Zusatz fuer diese konkrete Maschine: mit aktivem `/Library/Developer/CommandLineTools` schlug ein nacktes `swift test` an `no such module 'XCTest'` fehl. Der gruene Testlauf wurde ehrlich mit `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` erreicht.
 

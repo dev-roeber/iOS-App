@@ -4,3 +4,5 @@ DerivedData/
 .swiftpm/
 # Package.resolved is intentionally tracked (committed) for reproducible builds.
 .DS_Store
+lazygit
+lazygit.tar.gz

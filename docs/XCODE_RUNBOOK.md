@@ -200,7 +200,8 @@ Stand 2026-03-17 wurde auf einer echten macOS-/Xcode-Maschine Folgendes real gep
 - `xcodebuild -list` erkannte unter anderem die Schemes `LocationHistoryConsumerApp` und `LocationHistoryConsumerDemo`
 - `xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build` lief erfolgreich durch
 - das gebaute Binary `.../Build/Products/Debug/LocationHistoryConsumerApp` liess sich bauen und fuer die echte UI-Session starten; der foreground-App-Launch ist seit Phase 13 ueber `scripts/run_app_shell_macos.sh` standardisiert
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` lief mit 28 Tests gruen durch
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` lief fuer den damaligen Snapshot erfolgreich; dieser historische Lauf umfasste 28 Tests
+- dieser historische Apple-Testlauf ist nicht der aktuelle Repo-Stand: die frische Linux-Verifikation vom 2026-03-30 zaehlt 217 ausgefuehrte Tests, 2 Skips und 14 Failures; ein neuer Xcode-Testlauf war auf diesem Linux-Host nicht moeglich
 - echte interaktive Apple-UI-Laeufe wurden erfolgreich gegen die produktnahe App-Shell ausgefuehrt:
   - sichtbarer import-first Startscreen
   - `Load Demo Data`
@@ -227,4 +228,5 @@ Nicht separat als eigener Nachweis festgehalten:
 - keine Signierung, keine Distribution, keine Entitlements-Arbeit
 - kein Sync und keine Cloud-/Server-Anteile
 - keine hardware-verifizierte Background-Recording-Session und kein Auto-Resume laufender Live-Tracks
+- keine frische Apple-Verifikation fuer das spaeter hinzugekommene Heatmap-Sheet, den dedizierten `Live`-Tab oder Upload-Batching/Upload-Status
 - Apple-Verifikation ersetzt nicht `swift test`, und `swift test` ersetzt keinen echten Apple-UI-Lauf

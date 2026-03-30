@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-03-20
+Last analysis: 2026-03-30
 
 Repos in scope:
 - `LocationHistory2GPX-iOS`: verified in this workspace
@@ -15,11 +15,11 @@ Governance:
 Present:
 - Import-first root screen when no content is loaded
 - shared toolbar `Actions` menu for primary app commands
-- compact layout uses `TabView` with `Overview`, `Days`, `Insights` and `Export`
-- compact tabs each run inside their own `NavigationStack`
+- compact layout uses `TabView` with `Overview`, `Days`, `Insights`, `Export` and on iOS 17+ `Live`
+- compact tabs each run inside their own `NavigationStack`, including the optional `Live` tab on iOS 17+
 - regular-width layout uses `NavigationSplitView` with a day list and a detail pane
 - regular-width day detail exposes an explicit `Overview` return action above the selected day
-- modal sheets exist for `Options`, `Export` (regular width) and the recorded-tracks library
+- modal sheets exist for `Options`, `Export` (regular width), `Heatmap` and the recorded-tracks library
 - the recorded-tracks library is directly reachable from Overview, the shared `Actions` menu and the live-recording area in day detail
 - a separate SwiftUI demo app exists beside the product shell
 
@@ -114,10 +114,11 @@ Present:
 - map style toggle between standard and satellite hybrid
 - live-location map with current-position marker and live polyline while recording
 - recenter button for live-location map
+- dedicated `Heatmap` sheet for imported history on iOS 17+/macOS 14+ with precomputed LOD clusters and viewport culling
 
 Not present:
 - offline tile packs
-- heatmap layer in the app UI
+- persistent heatmap overlay toggle inside the day-detail map
 - manual map filters / overlay toggles beyond the base style toggle
 
 ## 6a. Local Recording / Saved Live Tracks
@@ -171,6 +172,7 @@ Present:
 - broad UI localization across shell, options, status UI, day list/detail, saved-track library/editor, live-recording and large parts of export/insights
 - toggle for optional live-location server upload
 - configurable server URL and optional bearer token for live-location upload
+- upload-batch preference for `Every Point`, `Every 5 Points`, `Every 15 Points` or `Every 30 Points`
 - reset-to-defaults action
 - privacy info section clarifying local storage by default, optional server upload and optional background live recording after `Always Allow`
 
