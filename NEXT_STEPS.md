@@ -12,13 +12,14 @@ Bereits drin:
 - Heatmap-UX Batch 1 hat die Darstellung fuer mittlere/grosse Zoomstufen beruhigt und die Heatmap bei herausgezoomter Karte weniger flaechig dominant gemacht
 - das Heatmap-Sheet bietet jetzt lokale Display-Controls fuer Deckkraft, Radius-Presets, `Auf Daten zoomen` und eine kleine Dichte-Legende
 - der Heatmap-Startzustand zoomt jetzt auf die vorhandenen Daten statt nur auf einen generischen Mittelpunkt
+- Heatmap Visual & Performance Batch 2 hat den Renderer auf geglaettete aggregierte Polygon-Zellen umgestellt, per-LOD sichtbare Elemente gedeckelt und viewport-basiertes Caching fuer ruhigere Zoom-/Pan-Reaktionen eingebaut
+- kleine dedizierte Heatmap-Regressionstests fuer LOD-Aggregation und viewport-begrenzte Zellselektion sind jetzt vorhanden
 - Heatmap ist jetzt in README, ROADMAP und Feature-Inventar repo-wahr dokumentiert
 - echter iPhone-15-Pro-Max-AX-Snapshot aus dem Wrapper zeigt `Heatmap` bei geladenem Import im Uebersichtsbildschirm sichtbar und erreichbar verdrahtet
 
 Fehlt noch:
-- dedizierte Testabdeckung fuer Heatmap-Modell/Logik
 - echtes Oeffnen des Heatmap-Sheets auf Apple-Hardware
-- visuelle Apple-Verifikation auf echter Apple-Hardware
+- visuelle Apple-Verifikation des neuen Polygon-/Aggregations-Renderers auf echter Apple-Hardware
 - Performance-Nachweis fuer groessere Imports auf Apple-Hardware
 
 ## 2. Phase 19.52 – Apple-CLI-Tests auf aktuellem Core-Stand stabilisieren
@@ -27,8 +28,8 @@ Status: **geschlossen (Apple Stabilization Batch 2, 2026-03-30)**
 
 Erledigt:
 - macOS-Build-Fehler behoben (iOS-only Guards, Availability-Guards, async-Fix)
-- `swift test` laeuft auf macOS durch: 222 Tests, 0 Failures
-- `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'` laeuft auf macOS durch: 222 Tests, 0 Failures
+- `swift test` laeuft auf macOS durch: 224 Tests, 0 Failures
+- `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'` laeuft auf macOS durch: 224 Tests, 0 Failures
 - Die 3 bekannten Problemfaelle sauber klassifiziert:
   - `testAcceptedSamplesUploadToConfiguredServer`: Test-Drift – minimumBatchSize=5 blockierte 1-Punkt-Test; Test auf minimumBatchSize=1 korrigiert, jetzt gruen
   - `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives`: Test-Drift – gleiche Batch-Ursache; Test korrigiert, jetzt gruen
