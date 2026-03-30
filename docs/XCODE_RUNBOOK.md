@@ -222,6 +222,12 @@ Stand 2026-03-17 wurde auf einer echten macOS-/Xcode-Maschine Folgendes real gep
   - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build`: BUILD SUCCEEDED
   - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 227 Tests, 0 Failures
   - dabei wurden die Farbpalette, die Intensitaetskurve und die interne 100-%-Deckkraft-Kennlinie der Heatmap sichtbar verstaerkt; LOD, viewport-basierte Zellselektion und Cache-Struktur blieben bestehen, und ein neuer Apple-Device-Lauf fuer das Sheet selbst fand in diesem Batch bewusst nicht statt
+- der anschliessende Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 wurde auf diesem Linux-Server nur gezielt abgesichert:
+  - `swift test --filter Live`: gruen
+  - `swift test --filter Insight`: gruen
+  - `swift test --filter Day`: gruen
+  - `swift test --filter Upload`: gruen
+  - dabei wurden die Live-Seite, Upload-Zustaende, die Insights-Informationsarchitektur und die Default-Sortierung von `Days` funktional ausgebaut; ein neuer Apple-CLI- oder Apple-UI-Lauf fuer genau diese Batch-Aenderungen fand bewusst noch nicht statt
 - fuer den anschliessenden Device-End-to-End-Block am 2026-03-30 wurde zusaetzlich ein echtes iPhone verwendet:
   - Geraet: `iPhone 15 Pro Max` (`iPhone16,2`), iOS `26.3 (23D127)`, via USB verfuegbar, entsperrt, Developer Mode aktiv
   - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -allowProvisioningUpdates -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'id=00008130-00163D0A0461401C' -only-testing:LH2GPXWrapperUITests`: echter Device-Lauf

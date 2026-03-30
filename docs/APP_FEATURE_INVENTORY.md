@@ -69,7 +69,7 @@ Not present:
 ## 4. Days / Day List
 
 Present:
-- sorted day list derived from export days
+- day list is repo-wahr sorted newest-first (`neu -> alt`) derived from export days
 - month grouping when multiple months are present
 - search on compact and regular day lists by date, formatted date, weekday and month text
 - day rows show weekday, formatted date, visit/activity/route counts and optional distance
@@ -125,11 +125,15 @@ Not present:
 
 Present:
 - live recording with current-position marker and live polyline
+- dedicated `Live` tab on compact iOS 17+ with separate cards for map, recording, upload, saved tracks and advanced options
+- status chips for recording state, foreground/background state, upload state and queued points
+- quick actions for centering the live map, pausing/resuming uploads, manually flushing the upload queue and opening the saved-track library
+- live stats include accuracy, duration, points, distance, current speed, average speed, last segment and update age
 - live-recording options can change accepted accuracy and capture density for the local recorder
 - background live recording can be enabled in local settings and becomes active when the app has `Always Allow` authorization
 - accepted live-recording points can optionally be sent to a user-configured HTTP(S) endpoint with an optional bearer token
 - permission/status card and record toggle inside day detail
-- live-recording area can show the current server-upload status when upload is enabled
+- upload area can show ready, invalid-endpoint, paused, uploading, retry-pending, queued, last-success and last-failure states when server upload is enabled
 - completed recordings are persisted as separate local `Saved Live Tracks`
 - dedicated recorded-tracks library page with summary, latest-track preview and editor navigation
 - saved-track editor supports point editing, midpoint insertion and delete
@@ -142,6 +146,11 @@ Not present:
 ## 7. Insights / Statistiken / Diagramme
 
 Present:
+- segmented insight surface with `Overview`, `Patterns` and `Breakdowns`
+- KPI summary cards for loaded days, total distance, average distance/day and active months
+- highlight cards for busiest day, most visits, most routes and longest distance
+- top-days module with switchable ranking metrics
+- monthly-trends module with switchable metrics derived from visible days
 - distance-over-time chart when distance data exists
 - daily averages cards when at least two days exist
 - activity-type breakdown cards

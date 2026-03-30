@@ -7,17 +7,22 @@ Die letzte real belegte Apple-/Device-Verifikation bleibt der 2026-03-17 auf mac
 Der Audit-Block vom 2026-03-30 ist in dieser Revision eingearbeitet: Heatmap, `Live`-Tab, Upload-Batching, Wrapper-Auto-Restore, Default-Endpunkt und Teststatus sind jetzt dokumentarisch an den aktuellen Code angeglichen.
 Diese ROADMAP trennt ab hier explizit zwischen `fertig`, `implementiert aber noch nicht voll verifiziert` und `noch nicht umgesetzt`.
 Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Commits fruehere Zwischenstaende ueberholt haben, gilt der aktuelle Kopfblock als massgeblicher Repo-Truth.
+Der Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 ist im Code umgesetzt und in dieser ROADMAP als repo-wahrer Produktstand eingearbeitet; fuer diesen Batch liegen auf diesem Linux-Server gezielte `swift test --filter Live|Insight|Day|Upload`-Laeufe vor, aber kein neuer Apple-UI-Nachweis.
 
 ### Repo-wahr abgeschlossen
 
 - Import von LH2GPX-`app_export.json`/`.zip` sowie Google-Timeline-`location-history.json`/`.zip`
 - Overview, Days, Day Detail, Insights und Export als produktnahe App-Shell
 - Suche in compact und regular `Days`
+- `Days` standardmaessig absteigend (`neu -> alt`) inklusive neuer contentful-first Initialauswahl/Fallbacks
 - Re-Select-Verhalten fuer `Days` auf iPhone: erneutes Tab-Tippen fuehrt zum aktuellen Tag
 - stabile Sheet-Praesentation fuer Optionen, Export, Heatmap und `Saved Live Tracks`
 - eigene `Saved Live Tracks`-Library plus Editor fuer gespeicherte lokale Tracks
 - aktuelle Position auf der Karte anzeigen
 - Live-Recording mit lokalen Einstellungen fuer Accuracy-Filter und Recording-Detail
+- Live-Tracking-Oberflaeche mit klarer Recording-/Upload-/Library-Hierarchie, erweiterten Stat-Karten und Quick Actions fuer Zentrieren, Pause/Resume der Uploads und manuellen Queue-Flush
+- optionaler Server-Upload mit Queue-/Failure-/Last-Success-Status, Pause/Resume und manuellem Flush
+- segmentierte Insights-Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) mit KPI-Karten, Highlight-Karten, `Top Days` und Monatstrends
 - GPX-, KML- und GeoJSON-Export fuer importierte History und gespeicherte Live-Tracks
 - Exportmodi fuer `Tracks`, `Waypoints` und `Both`
 - Waypoint-Export aus importierten Visits sowie Activity-Start/-End-Koordinaten
@@ -36,6 +41,7 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
   Offen bleibt die visuelle/performance-seitige Apple-Verifikation dieses neuen Renderers samt Batch-3-Farbwirkung auf echter Hardware.
 - **`Live`-Tab**
   Der dedizierte 5. Tab fuer compact iOS 17+ ist implementiert und jetzt dokumentiert.
+  Der Batch vom 2026-03-30 hat den Tab inhaltlich deutlich ausgebaut (moderne Karten-/Card-Hierarchie, Quick Actions, mehr Live-Metriken, Upload-Zustaende).
   Offen bleiben echte iPhone-UX-/Device-Nachweise fuer diesen Pfad.
 - **Background-Live-Tracking**
   Codepfad, Permissions-Upgrade und Wrapper-Deklaration sind vorhanden.
@@ -44,8 +50,11 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
   Die Core-App-Shell haelt Auto-Restore bewusst geparkt, der Wrapper ruft `restoreBookmarkedFile()` beim Start wieder auf.
   Offen bleibt eine frische Device-Verifikation fuer den reaktivierten Wrapper-Pfad.
 - **Server-Upload**
-  HTTPS-Upload, Bearer-Token, Retry-on-next-sample und Upload-Batching sind implementiert.
+  HTTPS-Upload, Bearer-Token, Retry-on-next-sample, Upload-Batching, Queue-/Failure-/Last-Success-Status, Pause/Resume und manueller Flush sind implementiert.
   Offen bleiben End-to-End-Device-Verifikation sowie finale Review-/Privacy-Einordnung auf Apple-Seite.
+- **Insights / Days UX**
+  Die Insights-Seite ist deutlich ausgebaut und `Days` ist jetzt repo-wahr `neu -> alt` sortiert.
+  Offen bleiben frische Apple-UI-Nachweise fuer die neue Informationsarchitektur, Chart-Lesbarkeit und das aktualisierte Day-Navigationsverhalten auf echter Hardware.
 - **Linux-/Apple-Teststatus**
   Apple Stabilization Batch 2, Heatmap Visual & Performance Batch 2 und Heatmap Color / Contrast / Opacity Batch 3: macOS-Build-Fehler bleiben behoben, `swift test` und `xcodebuild test` laufen auf macOS jetzt beide mit 227 Tests und 0 Failures durch.
   Die 3 bekannten Problemfaelle sind als Test-Drift klassifiziert und behoben:
@@ -59,18 +68,19 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
 
 - weitere Exportformate wie CSV oder KMZ
 - per-route Auswahl innerhalb eines Tages
-- deutlich mehr Insight-Module und Insight-Tiefe
+- weitere Insight-Arbeit ueber den aktuellen Batch hinaus, z. B. zeitraumbezogene Filter, Cross-Filtering oder Share-/Export-Pfade fuer Insights
 - waehlbarer angezeigter Zeitraum fuer Overview/Insights
 - breitere Lokalisierungsabdeckung und eine strengere Lokalisierungspruefung
 - Cloud-/Sync- oder Account-Features
 
 ### Reihenfolge der naechsten offenen Bloecke
 
-1. kurzen echten iPhone-Heatmap-Check fuer den neuen Aggregations-/Polygon-Renderer inklusive Batch-3-Farb-/Kontrast-Mapping fahren und visuelle/performance-seitige Befunde dokumentieren
-2. Background-Recording auf echtem iPhone verifizieren und im Runbook belegen
-3. Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren und dokumentieren
-4. optionalen Server-Upload end-to-end auf Device pruefen; Apple-Review-/Privacy-Einordnung fuer den Upload-Pfad weiter klaeren
-5. erst danach weitere neue Feature-Arbeit (Insights-Ausbau, CSV/KMZ, Zeitraumsauswahl)
+1. dedizierten iPhone-UI-Check fuer den deutlich umgebauten `Live`-Tab, die Upload-Zustaende und die neue `Days`-Default-Sortierung fahren und dokumentieren
+2. kurzen echten iPhone-Heatmap-Check fuer den neuen Aggregations-/Polygon-Renderer inklusive Batch-3-Farb-/Kontrast-Mapping fahren und visuelle/performance-seitige Befunde dokumentieren
+3. Background-Recording auf echtem iPhone verifizieren und im Runbook belegen
+4. Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren und dokumentieren
+5. optionalen Server-Upload end-to-end auf Device pruefen; Apple-Review-/Privacy-Einordnung fuer den Upload-Pfad weiter klaeren
+6. erst danach weitere neue Feature-Arbeit (weiterer Insights-Ausbau, CSV/KMZ, Zeitraumsauswahl)
 
 Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt fuer spaetere Folgearbeit reserviert.
 

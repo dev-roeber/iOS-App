@@ -115,11 +115,13 @@ public struct AppDayListView: View {
     }
 
     public var body: some View {
-        let filteredSummaries = AppDaySearch.filter(summaries, query: searchText)
+        let filteredSummaries = DaySummaryDisplayOrdering.newestFirst(
+            AppDaySearch.filter(summaries, query: searchText)
+        )
         if summaries.isEmpty {
             AppDayListEmptyView()
         } else {
-            let groups = groupByMonth(filteredSummaries)
+            let groups = groupByMonth(filteredSummaries, locale: preferences.appLocale)
             List(selection: $selectedDate) {
                 if !selectedForExportDates.isEmpty {
                     exportStatusSection

@@ -332,6 +332,80 @@ final class LiveLocationFeatureModelTests: XCTestCase {
         }
     }
 
+    func testPausedUploadQueuesPointsWithoutSendingUntilResumed() async {
+        let client = await MainActor.run { TestLiveLocationClient(authorization: .authorizedWhenInUse) }
+        let store = InMemoryRecordedTrackStore()
+        let uploader = TestLiveLocationServerUploader()
+        let model = await MainActor.run { () -> LiveLocationFeatureModel in
+            let model = LiveLocationFeatureModel(client: client, store: store, uploader: uploader)
+            model.setServerUploadConfiguration(
+                LiveLocationServerUploadConfiguration(
+                    isEnabled: true,
+                    endpointURLString: "https://example.invalid/live",
+                    bearerToken: "",
+                    minimumBatchSize: 1
+                )
+            )
+            model.setUploadPaused(true)
+            model.setRecordingEnabled(true)
+            return model
+        }
+
+        await MainActor.run {
+            client.emit(samples: [
+                sample(offsetSeconds: 0, latitude: 52.52, longitude: 13.40, accuracy: 6),
+            ])
+        }
+
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        await MainActor.run {
+            XCTAssertEqual(model.pendingUploadPointCount, 1)
+            XCTAssertTrue(model.isUploadPaused)
+            XCTAssertTrue(uploader.requests.isEmpty)
+
+            model.setUploadPaused(false)
+        }
+
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(uploader.requests.count, 1)
+    }
+
+    func testManualFlushUploadsBelowBatchThreshold() async {
+        let client = await MainActor.run { TestLiveLocationClient(authorization: .authorizedWhenInUse) }
+        let store = InMemoryRecordedTrackStore()
+        let uploader = TestLiveLocationServerUploader()
+        let uploaded = expectation(description: "manual flush upload")
+        uploader.onUpload = { uploaded.fulfill() }
+        let model = await MainActor.run { () -> LiveLocationFeatureModel in
+            let model = LiveLocationFeatureModel(client: client, store: store, uploader: uploader)
+            model.setServerUploadConfiguration(
+                LiveLocationServerUploadConfiguration(
+                    isEnabled: true,
+                    endpointURLString: "https://example.invalid/live",
+                    bearerToken: "",
+                    minimumBatchSize: 5
+                )
+            )
+            model.setRecordingEnabled(true)
+            client.emit(samples: [
+                sample(offsetSeconds: 0, latitude: 52.52, longitude: 13.40, accuracy: 6),
+                sample(offsetSeconds: 12, latitude: 52.5203, longitude: 13.4003, accuracy: 6),
+            ])
+            return model
+        }
+
+        await MainActor.run {
+            XCTAssertEqual(model.pendingUploadPointCount, 2)
+            XCTAssertTrue(uploader.requests.isEmpty)
+            model.flushPendingUploads()
+        }
+
+        XCTAssertEqual(XCTWaiter.wait(for: [uploaded], timeout: 1.0), .completed)
+        XCTAssertEqual(uploader.requests.first?.request.points.count, 2)
+    }
+
     private func sample(offsetSeconds: TimeInterval, latitude: Double, longitude: Double, accuracy: Double) -> LiveLocationSample {
         LiveLocationSample(
             latitude: latitude,

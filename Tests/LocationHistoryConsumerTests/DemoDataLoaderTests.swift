@@ -10,7 +10,7 @@ final class DemoDataLoaderTests: XCTestCase {
         XCTAssertEqual(content.overview.inputFormat, "records")
         XCTAssertEqual(content.overview.dayCount, 2)
         XCTAssertEqual(content.daySummaries.map(\.date), ["2024-05-01", "2024-05-02"])
-        XCTAssertEqual(content.selectedDate, "2024-05-01")
+        XCTAssertEqual(content.selectedDate, "2024-05-02")
         XCTAssertEqual(content.source, .demoFixture(name: DemoDataLoader.defaultFixtureName))
     }
 

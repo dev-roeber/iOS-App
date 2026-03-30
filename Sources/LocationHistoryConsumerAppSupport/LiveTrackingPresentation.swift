@@ -1,0 +1,90 @@
+import Foundation
+import LocationHistoryConsumer
+
+struct LiveTrackingMetricSnapshot: Equatable {
+    let totalDistanceM: Double
+    let currentSpeedKMH: Double?
+    let averageSpeedKMH: Double?
+    let lastSegmentDistanceM: Double?
+    let lastSampleDate: Date?
+    let lastUpdateAge: TimeInterval?
+}
+
+enum LiveTrackingPresentation {
+    static func metrics(
+        points: [RecordedTrackPoint],
+        currentLocation: LiveLocationSample?,
+        referenceDate: Date,
+        recordingDuration: TimeInterval
+    ) -> LiveTrackingMetricSnapshot {
+        let totalDistanceM = totalDistance(points: points)
+        let currentSpeedKMH = currentSpeed(points: points)
+        let averageSpeedKMH = averageSpeed(
+            distanceM: totalDistanceM,
+            duration: recordingDuration
+        )
+        let lastSegmentDistanceM = segmentDistance(points: points.suffix(2))
+        let lastSampleDate = latestSampleDate(points: points, currentLocation: currentLocation)
+        let lastUpdateAge = lastSampleDate.map { max(0, referenceDate.timeIntervalSince($0)) }
+
+        return LiveTrackingMetricSnapshot(
+            totalDistanceM: totalDistanceM,
+            currentSpeedKMH: currentSpeedKMH,
+            averageSpeedKMH: averageSpeedKMH,
+            lastSegmentDistanceM: lastSegmentDistanceM,
+            lastSampleDate: lastSampleDate,
+            lastUpdateAge: lastUpdateAge
+        )
+    }
+
+    private static func totalDistance(points: [RecordedTrackPoint]) -> Double {
+        guard points.count >= 2 else { return 0 }
+        var total = 0.0
+        for index in 1..<points.count {
+            total += segmentDistance(points: [points[index - 1], points[index]]) ?? 0
+        }
+        return total
+    }
+
+    private static func currentSpeed(points: [RecordedTrackPoint]) -> Double? {
+        guard points.count >= 2 else { return nil }
+        let latestPoints = Array(points.suffix(2))
+        guard let distanceM = segmentDistance(points: latestPoints) else {
+            return nil
+        }
+        let duration = latestPoints[1].timestamp.timeIntervalSince(latestPoints[0].timestamp)
+        guard duration > 0 else { return nil }
+        return (distanceM / duration) * 3.6
+    }
+
+    private static func averageSpeed(distanceM: Double, duration: TimeInterval) -> Double? {
+        guard duration > 0, distanceM > 0 else { return nil }
+        return (distanceM / duration) * 3.6
+    }
+
+    private static func latestSampleDate(
+        points: [RecordedTrackPoint],
+        currentLocation: LiveLocationSample?
+    ) -> Date? {
+        switch (points.last?.timestamp, currentLocation?.timestamp) {
+        case let (pointDate?, currentDate?):
+            return pointDate >= currentDate ? pointDate : currentDate
+        case let (pointDate?, nil):
+            return pointDate
+        case let (nil, currentDate?):
+            return currentDate
+        case (nil, nil):
+            return nil
+        }
+    }
+
+    private static func segmentDistance<S: Sequence>(points: S) -> Double? where S.Element == RecordedTrackPoint {
+        let segment = Array(points)
+        guard segment.count == 2 else {
+            return nil
+        }
+        let a = LocationCoordinate2D(latitude: segment[0].latitude, longitude: segment[0].longitude)
+        let b = LocationCoordinate2D(latitude: segment[1].latitude, longitude: segment[1].longitude)
+        return a.distance(to: b)
+    }
+}
