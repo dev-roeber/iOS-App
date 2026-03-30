@@ -18,7 +18,7 @@ final class DayDetailPresentationTests: XCTestCase {
         XCTAssertNotNil(result)
         XCTAssertFalse(result?.contains("T") ?? true)
         XCTAssertFalse(result?.contains("Z") ?? true)
-        XCTAssertTrue(result?.contains(" - ") ?? false)
+        XCTAssertTrue(result?.contains(" – ") ?? false)
     }
 
     func testVisitPresentationUsesUnknownPlaceFallbackAndNote() throws {

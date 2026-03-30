@@ -43,11 +43,13 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
   HTTPS-Upload, Bearer-Token, Retry-on-next-sample und Upload-Batching sind implementiert.
   Offen bleiben End-to-End-Device-Verifikation sowie finale Review-/Privacy-Einordnung auf Apple-Seite.
 - **Linux-/Apple-Teststatus**
-  Apple Stabilization Batch 1 (2026-03-30): macOS-Build-Fehler behoben, `swift test` und `xcodebuild test` laufen auf macOS durch und enden beide mit 222 Tests und 2 verbleibenden Failures.
+  Apple Stabilization Batch 2 (2026-03-30): macOS-Build-Fehler bleiben behoben, `swift test` und `xcodebuild test` laufen auf macOS jetzt beide mit 222 Tests und 0 Failures durch.
   Die 3 bekannten Problemfaelle sind als Test-Drift klassifiziert und behoben:
   `testAcceptedSamplesUploadToConfiguredServer` und `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives` scheiterten an minimumBatchSize=5 (nicht Plattform), Tests auf minimumBatchSize=1 gesetzt;
   `testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized` prueft jetzt korrektes Verhalten (Client-Config beim Recording-Start, nicht bei Preference-Aenderung).
-  Verbleibend offen sind `AppPreferencesTests.testStoredValuesAreLoaded` (UserDefaults-vs-Keychain-Testsetup) und `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings` (Test erwartet `" - "`, Code liefert `" – "`). Diese beiden roten Tests wurden in Batch 1 bewusst nicht mit veraendert.
+  Batch 2 hat die 2 verbliebenen Test-vs-Code-Widersprueche repo-wahr aufgeloest:
+  `AppPreferencesTests.testStoredValuesAreLoaded` folgt jetzt dem Keychain-first-Produktverhalten,
+  `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings` folgt jetzt der im Produktcode konsistent genutzten Gedankenstrich-Formatierung.
 
 ### Noch nicht umgesetzt
 
@@ -60,12 +62,11 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
 
 ### Reihenfolge der naechsten offenen Bloecke
 
-1. verbleibende 2 rote Apple-/SwiftPM-Tests sauber bereinigen oder explizit neu klassifizieren, bevor neue Feature-Arbeit wieder aufgenommen wird
-2. Heatmap-Testabdeckung und Apple-Visual-/Performance-Nachweis nachziehen
-3. Background-Recording auf echtem iPhone verifizieren und im Runbook belegen
-4. Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren und dokumentieren
-5. optionalen Server-Upload end-to-end auf Device pruefen; Apple-Review-/Privacy-Einordnung fuer den Upload-Pfad weiter klaeren
-6. erst danach weitere neue Feature-Arbeit (Insights-Ausbau, CSV/KMZ, Zeitraumsauswahl)
+1. Heatmap-Testabdeckung und Apple-Visual-/Performance-Nachweis nachziehen
+2. Background-Recording auf echtem iPhone verifizieren und im Runbook belegen
+3. Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren und dokumentieren
+4. optionalen Server-Upload end-to-end auf Device pruefen; Apple-Review-/Privacy-Einordnung fuer den Upload-Pfad weiter klaeren
+5. erst danach weitere neue Feature-Arbeit (Insights-Ausbau, CSV/KMZ, Zeitraumsauswahl)
 
 Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt fuer spaetere Folgearbeit reserviert.
 

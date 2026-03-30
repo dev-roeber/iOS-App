@@ -210,8 +210,8 @@ Stand 2026-03-17 ist auf einer realen macOS-/Xcode-Maschine ehrlich verifiziert:
 
 Stand 2026-03-30 ist auf diesem aktuellen Mac-Repo-Stand per CLI erneut geprueft:
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build`: BUILD SUCCEEDED
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 222 Tests, 2 Failures
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test`: 222 Tests, 2 Failures
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 222 Tests, 0 Failures
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test`: 222 Tests, 0 Failures
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`: BUILD SUCCEEDED
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' -only-testing:LH2GPXWrapperTests test`: TEST SUCCEEDED
 - ein manueller Xcode-Start auf dem verbundenen iPhone bleibt fuer diesen Batch ein positiver Teilbefund, ist aber bewusst getrennt von den CLI-Build-/Test-Ergebnissen zu lesen
@@ -221,9 +221,9 @@ Stand 2026-03-17 ist noch offen:
 - Live-Location-/Permission-Flow inklusive optionaler `Always Allow`-Erweiterung fuer Background-Recording in einer separat dokumentierten Apple-UI-Session (Simulator oder echtes iPhone)
 - Heatmap-Sheet, dedizierter `Live`-Tab sowie Upload-Batching/Upload-Status stammen aus spaeteren 2026-03-20-Commits und sind auf Apple-Hardware noch nicht separat verifiziert
 
-Auf dem aktuellen Repo-Stand bleiben nach den Batch-1-Fixes 2 rote SwiftPM-/macOS-Tests offen:
-- `AppPreferencesTests.testStoredValuesAreLoaded`: rot; Test schreibt den Bearer-Token nur in `UserDefaults`, der Code liest auf Apple zuerst aus dem Keychain-Pfad
-- `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`: rot; der Test erwartet `" - "`, der aktuelle Code formatiert mit einem Gedankenstrich `" – "`
+Die zuletzt 2 roten SwiftPM-/macOS-Tests sind auf dem aktuellen Repo-Stand in Batch 2 geklaert:
+- `AppPreferencesTests.testStoredValuesAreLoaded`: gruen; Test-Setup folgt jetzt dem Keychain-first-Produktverhalten
+- `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`: gruen; Testerwartung folgt jetzt der im UI konsistent verwendeten Gedankenstrich-Formatierung
 
 Zusatz fuer diese konkrete Maschine: mit aktivem `/Library/Developer/CommandLineTools` schlug ein nacktes `swift test` an `no such module 'XCTest'` fehl. Die aktuellen Apple-CLI-Laeufe wurden deshalb ehrlich mit `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` gefahren.
 

@@ -16,24 +16,20 @@ Fehlt noch:
 - visuelle Apple-Verifikation auf echter Apple-Hardware
 - Performance-Nachweis fuer groessere Imports auf Apple-Hardware
 
-## 2. Phase 19.52 – Linux-Failures klassifizieren und auf Apple/macOS gegenpruefen
+## 2. Phase 19.52 – Apple-CLI-Tests auf aktuellem Core-Stand stabilisieren
 
-Status: **teilweise geschlossen (Apple Stabilization Batch 1, 2026-03-30)**
+Status: **geschlossen (Apple Stabilization Batch 2, 2026-03-30)**
 
-Erledigt in Apple Stabilization Batch 1:
+Erledigt:
 - macOS-Build-Fehler behoben (iOS-only Guards, Availability-Guards, async-Fix)
-- `swift test` laeuft auf macOS durch: 222 Tests, 2 Failures
-- `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'` laeuft auf macOS durch: 222 Tests, 2 Failures
+- `swift test` laeuft auf macOS durch: 222 Tests, 0 Failures
+- `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'` laeuft auf macOS durch: 222 Tests, 0 Failures
 - Die 3 bekannten Problemfaelle sauber klassifiziert:
   - `testAcceptedSamplesUploadToConfiguredServer`: Test-Drift – minimumBatchSize=5 blockierte 1-Punkt-Test; Test auf minimumBatchSize=1 korrigiert, jetzt gruen
   - `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives`: Test-Drift – gleiche Batch-Ursache; Test korrigiert, jetzt gruen
   - `testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized`: Test-Drift – Client-Konfiguration erfolgt erst beim Recording-Start, nicht bei Preference-Aenderung allein; Test an korrektes Verhalten angepasst, jetzt gruen
-
-Verbleibende offene Failures (weiterhin rot, ausserhalb dieses Batch-Scope):
-- `AppPreferencesTests.testStoredValuesAreLoaded`: Test schreibt den Bearer-Token nur in `UserDefaults`, der Apple-Code liest zuerst den Keychain-Pfad
-- `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`: Test erwartet `" - "`, der aktuelle Code formatiert mit `" – "`
-
-Diese beiden verbleibenden Failures sind nach dem aktuellen Batch nicht behoben und muessen vor weiterer Feature-Arbeit sauber bereinigt oder explizit neu klassifiziert werden.
+- `AppPreferencesTests.testStoredValuesAreLoaded`: Test an Keychain-first-Produktverhalten angepasst, jetzt gruen
+- `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`: Test an die konsistente Gedankenstrich-Formatierung des Produktcodes angepasst, jetzt gruen
 
 ## 3. Phase 19.53 – Background-Recording auf echtem iPhone verifizieren
 

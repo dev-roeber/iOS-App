@@ -2,6 +2,7 @@ import XCTest
 @testable import LocationHistoryConsumerAppSupport
 
 final class AppPreferencesTests: XCTestCase {
+    private let bearerTokenKey = "app.preferences.liveTrackingServerUploadBearerToken"
     private var defaults: UserDefaults!
     private var suiteName: String!
 
@@ -10,9 +11,11 @@ final class AppPreferencesTests: XCTestCase {
         suiteName = "AppPreferencesTests-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
         defaults.removePersistentDomain(forName: suiteName)
+        KeychainHelper.delete(key: bearerTokenKey)
     }
 
     override func tearDown() {
+        KeychainHelper.delete(key: bearerTokenKey)
         defaults.removePersistentDomain(forName: suiteName)
         defaults = nil
         suiteName = nil
@@ -53,7 +56,7 @@ final class AppPreferencesTests: XCTestCase {
         defaults.set(true, forKey: "app.preferences.liveTrackingBackground")
         defaults.set(true, forKey: "app.preferences.liveTrackingServerUploadEnabled")
         defaults.set("https://example.invalid/live", forKey: "app.preferences.liveTrackingServerUploadURL")
-        defaults.set("secret", forKey: "app.preferences.liveTrackingServerUploadBearerToken")
+        try? KeychainHelper.save(key: bearerTokenKey, value: "secret")
 
         MainActor.assumeIsolated {
             let preferences = AppPreferences(userDefaults: defaults)
