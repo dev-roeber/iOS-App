@@ -75,8 +75,7 @@ public final class SystemLiveLocationClient: NSObject, LiveLocationClient {
     }
 }
 
-@MainActor
-extension SystemLiveLocationClient: CLLocationManagerDelegate {
+extension SystemLiveLocationClient: @MainActor CLLocationManagerDelegate {
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         onAuthorizationChange?(authorization)
     }
