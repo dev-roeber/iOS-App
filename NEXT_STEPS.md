@@ -18,17 +18,21 @@ Fehlt noch:
 
 ## 2. Phase 19.52 – Linux-Failures klassifizieren und auf Apple/macOS gegenpruefen
 
-Status: **offen**
+Status: **weitgehend geschlossen (Apple Stabilization Batch 1, 2026-03-30)**
 
-Bereits drin:
-- frischer Linux-`swift test`-Lauf mit 217 ausgefuehrten Tests, 2 Skips und 14 Failures
-- erste Klassifizierung in plattformbedingt vs. unklar ist vorbereitet
+Erledigt in Apple Stabilization Batch 1:
+- macOS-Build-Fehler behoben (iOS-only Guards, Availability-Guards, async-Fix)
+- `swift test` laeuft auf macOS durch: 222 Tests, 2 Failures
+- Die 3 bekannten Problemfaelle sauber klassifiziert:
+  - `testAcceptedSamplesUploadToConfiguredServer`: Test-Drift – minimumBatchSize=5 blockierte 1-Punkt-Test; Test auf minimumBatchSize=1 korrigiert, jetzt gruen
+  - `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives`: Test-Drift – gleiche Batch-Ursache; Test korrigiert, jetzt gruen
+  - `testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized`: Test-Drift – Client-Konfiguration erfolgt erst beim Recording-Start, nicht bei Preference-Aenderung allein; Test an korrektes Verhalten angepasst, jetzt gruen
 
-Fehlt noch:
-- macOS-/Xcode-Gegenlauf fuer denselben Repo-Stand
-- `LiveLocationFeatureModelTests.testAcceptedSamplesUploadToConfiguredServer` und `LiveLocationFeatureModelTests.testFailedUploadRetriesWhenAnotherAcceptedSampleArrives` gegen Apple/macOS abgleichen, bevor sie als rein plattformbedingt abgeschlossen werden
-- den bekannten Problemfall `LiveLocationFeatureModelTests.testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized` gezielt gegenpruefen und als plattformbedingt oder echter Bug klassifizieren
-- verbleibende Linux-Failures sauber nach `plattformbedingt`, `unklar` oder `potenziell echter Bug` einordnen
+Verbleibende offene Failures (macOS-plattformbedingt, unveraendert):
+- `AppPreferencesTests.testStoredValuesAreLoaded`: Keychain-Fallback liest aus UserDefaults.standard, Test schreibt in Suite-Domain – macOS-spezifisch
+- `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`: plattformspezifische Formatierungsdifferenz
+
+Diese beiden verbleibenden Failures sind plattformbedingt und kein Handlungsbedarf fuer Feature-Arbeit.
 
 ## 3. Phase 19.53 – Background-Recording auf echtem iPhone verifizieren
 

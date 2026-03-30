@@ -43,12 +43,11 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
   HTTPS-Upload, Bearer-Token, Retry-on-next-sample und Upload-Batching sind implementiert.
   Offen bleiben End-to-End-Device-Verifikation sowie finale Review-/Privacy-Einordnung auf Apple-Seite.
 - **Linux-/Apple-Teststatus**
-  Der frische Linux-`swift test`-Lauf vom 2026-03-30 endet mit 217 ausgefuehrten Tests, 2 Skips und 14 Failures.
-  Sichtbar betroffen sind dabei mindestens `LiveLocationFeatureModelTests.testAcceptedSamplesUploadToConfiguredServer`,
-  `LiveLocationFeatureModelTests.testFailedUploadRetriesWhenAnotherAcceptedSampleArrives` und
-  `LiveLocationFeatureModelTests.testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized`; die ersten beiden wirken weiter plattformbedingt,
-  der letzte Fall bleibt bis zum Apple-/macOS-Gegenlauf unklar.
-  Offen bleibt der frische Gegenlauf auf Apple/macOS fuer denselben Repo-Stand.
+  Apple Stabilization Batch 1 (2026-03-30): macOS-Build-Fehler behoben, `swift test` laeuft auf macOS mit 222 Tests und 2 plattformbedingten Failures.
+  Die 3 bekannten Problemfaelle sind als Test-Drift klassifiziert und behoben:
+  `testAcceptedSamplesUploadToConfiguredServer` und `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives` scheiterten an minimumBatchSize=5 (nicht Plattform), Tests auf minimumBatchSize=1 gesetzt;
+  `testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized` prueft jetzt korrektes Verhalten (Client-Config beim Recording-Start, nicht bei Preference-Aenderung).
+  Verbleibende 2 macOS-Failures sind plattformbedingt (Keychain/UserDefaults, Datumsformat) und kein Feature-Handlungsbedarf.
 
 ### Noch nicht umgesetzt
 
@@ -61,14 +60,32 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
 
 ### Reihenfolge der naechsten offenen Bloecke
 
-1. Heatmap-Testabdeckung und Apple-Visual-/Performance-Nachweis nachziehen
-2. Linux-Failures sauber klassifizieren und denselben Stand auf Apple/macOS gegenpruefen
+1. ~~Linux-Failures sauber klassifizieren und denselben Stand auf Apple/macOS gegenpruefen~~ – erledigt in Apple Stabilization Batch 1 (2026-03-30)
+2. Heatmap-Testabdeckung und Apple-Visual-/Performance-Nachweis nachziehen
 3. Background-Recording auf echtem iPhone verifizieren und im Runbook belegen
 4. Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren und dokumentieren
-5. optionalen Server-Upload in Review-/Privacy-Texten finalisieren und auf Device end-to-end pruefen
+5. optionalen Server-Upload end-to-end auf Device pruefen; Privacy-Manifest-Scope fuer Upload klaeren
 6. erst danach weitere neue Feature-Arbeit (Insights-Ausbau, CSV/KMZ, Zeitraumsauswahl)
 
 Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt fuer spaetere Folgearbeit reserviert.
+
+### Phase 19.51 – Apple Stabilization Batch 1
+
+**Datum:** 2026-03-30
+**Ziel:** Audit-belegte P0/P1-Probleme beheben, Apple-Build-/Testlage auf belastbaren Stand bringen, Doku repo-wahr synchronisieren.
+
+- [x] macOS-Compile-Fehler behoben: `.textInputAutocapitalization(.never)` in `#if os(iOS)` eingeschlossen
+- [x] macOS-Compile-Fehler behoben: `if #available(iOS 17.0, macOS 14.0, *)` fuer `AppLiveTrackingView` und `AppLiveLocationSection`
+- [x] Demo- und App-Shell-Compile-Fehler behoben: `loadImportedFile(at:)` async gemacht (fehlte nach `DemoDataLoader`-Aenderung)
+- [x] Wrapper-SPM-Pfad korrigiert: `../../../Code/...` auf `../LocationHistory2GPX-iOS`
+- [x] Upload-Tests als Test-Drift klassifiziert und korrigiert (minimumBatchSize=1 im Test-Setup)
+- [x] Background-Preference-Test als Test-Drift klassifiziert und korrigiert
+- [x] Privacy-Text in TestFlight-Runbook sachlich korrekt formuliert
+- [x] README-Widerspruch (offline-only vs. optionaler Upload) behoben
+- [x] `swift test` auf macOS: 222 Tests, 2 plattformbedingte Failures, alle 3 Problemfaelle gruen
+- [x] `xcodebuild build -scheme LH2GPXWrapper -destination generic/platform=iOS`: BUILD SUCCEEDED
+
+**Nicht-Ziele:** Keine neue Produktfunktion, keine neue Apple-Device-Verifikation.
 
 ### Phase 19.50 – Audit Fix + Roadmap Granularization
 

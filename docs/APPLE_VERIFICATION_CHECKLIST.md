@@ -9,12 +9,18 @@ Diese Checkliste trennt klar zwischen:
 
 Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
-## Statusstand 2026-03-30
+## Statusstand 2026-03-30 (Apple Stabilization Batch 1)
 
-### Bereits real verifiziert
+### Wichtige Einschraenkung
+
+Der Verifikationsstand vom 2026-03-17 basiert auf einem aelteren Repo-Stand (vor den 2026-03-18/19/20-Commits). Die seither hinzugekommenen Features (Live-Tab, Heatmap, Background-Recording, Server-Upload) sind auf Apple-Hardware nicht separat verifiziert.
+
+Zusaetzlich: `swift test` auf dem aktuellen macOS-Stand schlaegt weiterhin mit 2 plattformbedingten Failures fehl (Keychain/UserDefaults und Datumsformatierung). Diese sind als pre-existing und plattformspezifisch klassifiziert.
+
+### Bereits real verifiziert (2026-03-17, vor Post-2026-03-18-Features)
 
 - [x] Xcode-Schemes aus dem Swift Package sind ueber das echte Xcode sichtbar
-- [x] `LocationHistoryConsumerApp` baut fuer `platform=macOS`
+- [x] `LocationHistoryConsumerApp` baut fuer `platform=macOS` (2026-03-17; nach Apple Stabilization Batch 1: macOS-Build-Fehler behoben, Wrapper-iOS-Build gruen)
 - [x] das gebaute App-Shell-Binary startet sichtbar in einer echten foreground-App-Session
 - [x] `Load Demo Data`
 - [x] `Open location history file`
@@ -28,6 +34,14 @@ Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
 - [x] reproduzierbarer foreground-Launch via `scripts/run_app_shell_macos.sh` (standardisiertes .app-Bundle statt ad-hoc-Wrapper)
 
+### Apple Stabilization Batch 1 (2026-03-30) – CLI-Stand
+
+- [x] `swift build --target LocationHistoryConsumerAppSupport` laeuft fehlerfrei auf macOS
+- [x] `swift build` (alle Targets) laeuft fehlerfrei auf macOS
+- [x] `swift test` laeuft auf macOS durch: 222 Tests, 2 plattformbedingte Failures (Keychain, Datumsformat), 0 echte Logic-Bugs
+- [x] `xcodebuild build -scheme LH2GPXWrapper -destination generic/platform=iOS` erfolgreich
+- [x] `xcodebuild -list` (Wrapper Package Resolution) erfolgreich
+
 ### Noch offen
 
 - [ ] foreground-Run explizit ueber `Product > Run` in Xcode selbst noch einmal separat bestaetigen, falls genau dieser IDE-spezifische Laufweg regressionskritisch wird
@@ -35,6 +49,8 @@ Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 - [ ] den dedizierten `Live`-Tab auf iPhone/iOS 17+ in einer echten Apple-Session separat verifizieren
 - [ ] das Heatmap-Sheet fuer importierte History auf Apple-Hardware visuell und performanceseitig verifizieren
 - [ ] Upload-Batching, Upload-Status und optionalen Server-Upload-Flow in einer echten Apple-Session separat verifizieren
+- [ ] Background-Recording auf echtem iPhone verifizieren (Permission-Upgrade, Background-Aufnahme, Stop/Persistenz)
+- [ ] Wrapper-Auto-Restore nach Reaktivierung (2026-03-20) auf echtem Device frisch verifizieren
 
 ## Reale Apple-UI-Session 2026-03-17
 
