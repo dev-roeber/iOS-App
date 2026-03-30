@@ -15,7 +15,7 @@ Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
 Der Verifikationsstand vom 2026-03-17 basiert auf einem aelteren Repo-Stand (vor den 2026-03-18/19/20-Commits). Die seither hinzugekommenen Features (Live-Tab, Heatmap, Background-Recording, Server-Upload) sind auf Apple-Hardware nicht separat verifiziert.
 
-Zusaetzlich: `swift test` auf dem aktuellen macOS-Stand schlaegt weiterhin mit 2 plattformbedingten Failures fehl (Keychain/UserDefaults und Datumsformatierung). Diese sind als pre-existing und plattformspezifisch klassifiziert.
+Zusaetzlich: `swift test` und `xcodebuild test` auf dem aktuellen macOS-Stand enden weiterhin mit denselben 2 roten Tests. Diese sind fuer Batch 1 bewusst offen geblieben und duerfen nicht als "gruen" oder "plattformbedingt erledigt" dokumentiert werden.
 
 ### Bereits real verifiziert (2026-03-17, vor Post-2026-03-18-Features)
 
@@ -38,9 +38,12 @@ Zusaetzlich: `swift test` auf dem aktuellen macOS-Stand schlaegt weiterhin mit 2
 
 - [x] `swift build --target LocationHistoryConsumerAppSupport` laeuft fehlerfrei auf macOS
 - [x] `swift build` (alle Targets) laeuft fehlerfrei auf macOS
-- [x] `swift test` laeuft auf macOS durch: 222 Tests, 2 plattformbedingte Failures (Keychain, Datumsformat), 0 echte Logic-Bugs
+- [x] `swift test` laeuft auf macOS durch: 222 Tests, 2 rote Tests bleiben offen
+- [x] `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'` laeuft auf macOS durch: 222 Tests, dieselben 2 roten Tests
 - [x] `xcodebuild build -scheme LH2GPXWrapper -destination generic/platform=iOS` erfolgreich
 - [x] `xcodebuild -list` (Wrapper Package Resolution) erfolgreich
+- [x] `xcodebuild test -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' -only-testing:LH2GPXWrapperTests` erfolgreich
+- [x] manueller Xcode-Start auf dem verbundenen iPhone liegt als separater positiver Teilbefund vor; er ersetzt keine CLI-Aussage
 
 ### Noch offen
 
@@ -51,6 +54,9 @@ Zusaetzlich: `swift test` auf dem aktuellen macOS-Stand schlaegt weiterhin mit 2
 - [ ] Upload-Batching, Upload-Status und optionalen Server-Upload-Flow in einer echten Apple-Session separat verifizieren
 - [ ] Background-Recording auf echtem iPhone verifizieren (Permission-Upgrade, Background-Aufnahme, Stop/Persistenz)
 - [ ] Wrapper-Auto-Restore nach Reaktivierung (2026-03-20) auf echtem Device frisch verifizieren
+- [ ] die 2 verbleibenden roten macOS-/SwiftPM-Tests sauber bereinigen oder explizit ausserhalb des Apple-Stabilization-Batchs nachziehen:
+  `AppPreferencesTests.testStoredValuesAreLoaded` und
+  `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`
 
 ## Reale Apple-UI-Session 2026-03-17
 

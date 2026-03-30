@@ -201,7 +201,16 @@ Stand 2026-03-17 wurde auf einer echten macOS-/Xcode-Maschine Folgendes real gep
 - `xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build` lief erfolgreich durch
 - das gebaute Binary `.../Build/Products/Debug/LocationHistoryConsumerApp` liess sich bauen und fuer die echte UI-Session starten; der foreground-App-Launch ist seit Phase 13 ueber `scripts/run_app_shell_macos.sh` standardisiert
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` lief fuer den damaligen Snapshot erfolgreich; dieser historische Lauf umfasste 28 Tests
-- dieser historische Apple-Testlauf ist nicht der aktuelle Repo-Stand: die frische Linux-Verifikation vom 2026-03-30 zaehlt 217 ausgefuehrte Tests, 2 Skips und 14 Failures; ein neuer Xcode-Testlauf war auf diesem Linux-Host nicht moeglich
+- fuer den aktuellen Repo-Stand wurde am 2026-03-30 auf diesem Mac neu geprueft:
+  - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build`: BUILD SUCCEEDED
+  - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 222 Tests, 2 Failures
+  - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test`: 222 Tests, 2 Failures
+  - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`: BUILD SUCCEEDED
+  - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' -only-testing:LH2GPXWrapperTests test`: TEST SUCCEEDED
+- aktuell offen bleiben 2 rote Tests:
+  - `AppPreferencesTests.testStoredValuesAreLoaded`
+  - `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`
+- ein manueller Xcode-Start auf dem verbundenen iPhone bleibt fuer diesen Batch ein positiver Teilbefund, wird hier aber bewusst getrennt von den CLI-Build-/Testresultaten gefuehrt
 - echte interaktive Apple-UI-Laeufe wurden erfolgreich gegen die produktnahe App-Shell ausgefuehrt:
   - sichtbarer import-first Startscreen
   - `Load Demo Data`

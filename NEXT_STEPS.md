@@ -18,21 +18,22 @@ Fehlt noch:
 
 ## 2. Phase 19.52 – Linux-Failures klassifizieren und auf Apple/macOS gegenpruefen
 
-Status: **weitgehend geschlossen (Apple Stabilization Batch 1, 2026-03-30)**
+Status: **teilweise geschlossen (Apple Stabilization Batch 1, 2026-03-30)**
 
 Erledigt in Apple Stabilization Batch 1:
 - macOS-Build-Fehler behoben (iOS-only Guards, Availability-Guards, async-Fix)
 - `swift test` laeuft auf macOS durch: 222 Tests, 2 Failures
+- `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'` laeuft auf macOS durch: 222 Tests, 2 Failures
 - Die 3 bekannten Problemfaelle sauber klassifiziert:
   - `testAcceptedSamplesUploadToConfiguredServer`: Test-Drift – minimumBatchSize=5 blockierte 1-Punkt-Test; Test auf minimumBatchSize=1 korrigiert, jetzt gruen
   - `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives`: Test-Drift – gleiche Batch-Ursache; Test korrigiert, jetzt gruen
   - `testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized`: Test-Drift – Client-Konfiguration erfolgt erst beim Recording-Start, nicht bei Preference-Aenderung allein; Test an korrektes Verhalten angepasst, jetzt gruen
 
-Verbleibende offene Failures (macOS-plattformbedingt, unveraendert):
-- `AppPreferencesTests.testStoredValuesAreLoaded`: Keychain-Fallback liest aus UserDefaults.standard, Test schreibt in Suite-Domain – macOS-spezifisch
-- `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`: plattformspezifische Formatierungsdifferenz
+Verbleibende offene Failures (weiterhin rot, ausserhalb dieses Batch-Scope):
+- `AppPreferencesTests.testStoredValuesAreLoaded`: Test schreibt den Bearer-Token nur in `UserDefaults`, der Apple-Code liest zuerst den Keychain-Pfad
+- `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`: Test erwartet `" - "`, der aktuelle Code formatiert mit `" – "`
 
-Diese beiden verbleibenden Failures sind plattformbedingt und kein Handlungsbedarf fuer Feature-Arbeit.
+Diese beiden verbleibenden Failures sind nach dem aktuellen Batch nicht behoben und muessen vor weiterer Feature-Arbeit sauber bereinigt oder explizit neu klassifiziert werden.
 
 ## 3. Phase 19.53 – Background-Recording auf echtem iPhone verifizieren
 
@@ -73,7 +74,7 @@ Bereits drin:
 
 Fehlt noch:
 - End-to-End-Device-Verifikation mit echtem HTTPS-Endpunkt
-- finale Review-/Privacy-Texte fuer den optionalen Upload-Pfad
+- Apple-Review-/Privacy-Einordnung fuer den optionalen Upload-Pfad ueber die jetzt korrigierten lokalen Texte hinaus
 - Entscheidung, ob Privacy-Dokumentation ueber den aktuellen Manifest-/Runbook-Stand hinaus erweitert werden muss
 
 ## 6. Phase 19.56 – Erst danach weitere Feature-Arbeit

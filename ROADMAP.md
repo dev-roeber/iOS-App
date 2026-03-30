@@ -43,11 +43,11 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
   HTTPS-Upload, Bearer-Token, Retry-on-next-sample und Upload-Batching sind implementiert.
   Offen bleiben End-to-End-Device-Verifikation sowie finale Review-/Privacy-Einordnung auf Apple-Seite.
 - **Linux-/Apple-Teststatus**
-  Apple Stabilization Batch 1 (2026-03-30): macOS-Build-Fehler behoben, `swift test` laeuft auf macOS mit 222 Tests und 2 plattformbedingten Failures.
+  Apple Stabilization Batch 1 (2026-03-30): macOS-Build-Fehler behoben, `swift test` und `xcodebuild test` laufen auf macOS durch und enden beide mit 222 Tests und 2 verbleibenden Failures.
   Die 3 bekannten Problemfaelle sind als Test-Drift klassifiziert und behoben:
   `testAcceptedSamplesUploadToConfiguredServer` und `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives` scheiterten an minimumBatchSize=5 (nicht Plattform), Tests auf minimumBatchSize=1 gesetzt;
   `testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized` prueft jetzt korrektes Verhalten (Client-Config beim Recording-Start, nicht bei Preference-Aenderung).
-  Verbleibende 2 macOS-Failures sind plattformbedingt (Keychain/UserDefaults, Datumsformat) und kein Feature-Handlungsbedarf.
+  Verbleibend offen sind `AppPreferencesTests.testStoredValuesAreLoaded` (UserDefaults-vs-Keychain-Testsetup) und `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings` (Test erwartet `" - "`, Code liefert `" – "`). Diese beiden roten Tests wurden in Batch 1 bewusst nicht mit veraendert.
 
 ### Noch nicht umgesetzt
 
@@ -60,11 +60,11 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
 
 ### Reihenfolge der naechsten offenen Bloecke
 
-1. ~~Linux-Failures sauber klassifizieren und denselben Stand auf Apple/macOS gegenpruefen~~ – erledigt in Apple Stabilization Batch 1 (2026-03-30)
+1. verbleibende 2 rote Apple-/SwiftPM-Tests sauber bereinigen oder explizit neu klassifizieren, bevor neue Feature-Arbeit wieder aufgenommen wird
 2. Heatmap-Testabdeckung und Apple-Visual-/Performance-Nachweis nachziehen
 3. Background-Recording auf echtem iPhone verifizieren und im Runbook belegen
 4. Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren und dokumentieren
-5. optionalen Server-Upload end-to-end auf Device pruefen; Privacy-Manifest-Scope fuer Upload klaeren
+5. optionalen Server-Upload end-to-end auf Device pruefen; Apple-Review-/Privacy-Einordnung fuer den Upload-Pfad weiter klaeren
 6. erst danach weitere neue Feature-Arbeit (Insights-Ausbau, CSV/KMZ, Zeitraumsauswahl)
 
 Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt fuer spaetere Folgearbeit reserviert.
@@ -82,8 +82,10 @@ Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. 
 - [x] Background-Preference-Test als Test-Drift klassifiziert und korrigiert
 - [x] Privacy-Text in TestFlight-Runbook sachlich korrekt formuliert
 - [x] README-Widerspruch (offline-only vs. optionaler Upload) behoben
-- [x] `swift test` auf macOS: 222 Tests, 2 plattformbedingte Failures, alle 3 Problemfaelle gruen
+- [x] `swift test` auf macOS: 222 Tests, 2 verbleibende rote Tests ausserhalb dieses Batch-Scope, alle 3 audit-relevanten Problemfaelle gruen
+- [x] `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'`: 222 Tests, dieselben 2 verbleibenden roten Tests
 - [x] `xcodebuild build -scheme LH2GPXWrapper -destination generic/platform=iOS`: BUILD SUCCEEDED
+- [x] `xcodebuild test -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' -only-testing:LH2GPXWrapperTests`: TEST SUCCEEDED
 
 **Nicht-Ziele:** Keine neue Produktfunktion, keine neue Apple-Device-Verifikation.
 
