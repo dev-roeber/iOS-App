@@ -110,6 +110,8 @@ Auf Apple-Plattformen kann die lokale Demo-Harness danach ueber das Swift Packag
 
 Zusaetzlich gibt es jetzt eine kleine produktnahe App-Shell `LocationHistoryConsumerApp`. Sie startet leerer und import-zentriert, arbeitet standardmaessig offline-first und ist noch keine fertige Produkt-App. Der optionale nutzergesteuerte Server-Upload akzeptierter Live-Recording-Punkte ist separat konfigurierbar und standardmaessig deaktiviert. Unter Linux ist nur der nicht-UI-Teil ueber `swift test` ehrlich verifizierbar.
 
+Auf dem aktuellen Linux-Server laeuft `swift test` repo-wahr wieder gruen: `217` Tests, `2` Skips, `0` Failures. Apple-only Heatmap-Renderingstests werden auf non-Apple-Plattformen korrekt ausgeklammert.
+
 Die aktuelle Apple-/Xcode-nahe Vorbereitung ist bewusst klein und jetzt in `docs/XCODE_RUNBOOK.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md` und der historischen Vorbereitungsnotiz `docs/XCODE_APP_PREPARATION.md` beschrieben. Es gibt weiterhin absichtlich kein aufgeblasenes `.xcodeproj`.
 
 Fuer einen reproduzierbaren foreground-Start der App-Shell auf macOS:

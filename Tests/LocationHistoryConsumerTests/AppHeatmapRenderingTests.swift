@@ -1,4 +1,6 @@
 import XCTest
+
+#if canImport(SwiftUI) && canImport(MapKit)
 import SwiftUI
 import MapKit
 import LocationHistoryConsumer
@@ -324,3 +326,4 @@ final class AppHeatmapRenderingTests: XCTestCase {
         return try! JSONDecoder().decode(AppExport.self, from: data)
     }
 }
+#endif

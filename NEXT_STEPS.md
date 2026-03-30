@@ -31,6 +31,8 @@ Erledigt:
 - macOS-Build-Fehler behoben (iOS-only Guards, Availability-Guards, async-Fix)
 - `swift test` laeuft auf macOS durch: 224 Tests, 0 Failures
 - `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'` laeuft auf macOS durch: 224 Tests, 0 Failures
+- `swift test` laeuft auf dem aktuellen Linux-Server wieder durch: 217 Tests, 2 Skips, 0 Failures
+- Apple-only Heatmap-Renderingstests sind fuer non-Apple-Plattformen korrekt gegated und blockieren den Linux-Lauf nicht mehr
 - Die 3 bekannten Problemfaelle sauber klassifiziert:
   - `testAcceptedSamplesUploadToConfiguredServer`: Test-Drift – minimumBatchSize=5 blockierte 1-Punkt-Test; Test auf minimumBatchSize=1 korrigiert, jetzt gruen
   - `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives`: Test-Drift – gleiche Batch-Ursache; Test korrigiert, jetzt gruen
