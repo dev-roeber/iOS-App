@@ -156,11 +156,11 @@ public struct AppHeatmapView: View {
 
             LinearGradient(
                 colors: [
-                    HeatmapPalette.color(for: 0.06).opacity(0.45),
-                    HeatmapPalette.color(for: 0.24).opacity(0.56),
-                    HeatmapPalette.color(for: 0.5).opacity(0.68),
-                    HeatmapPalette.color(for: 0.78).opacity(0.8),
-                    HeatmapPalette.color(for: 0.98).opacity(0.9),
+                    HeatmapPalette.color(for: 0.04).opacity(0.48),
+                    HeatmapPalette.color(for: 0.22).opacity(0.58),
+                    HeatmapPalette.color(for: 0.5).opacity(0.70),
+                    HeatmapPalette.color(for: 0.78).opacity(0.82),
+                    HeatmapPalette.color(for: 0.98).opacity(0.92),
                 ],
                 startPoint: .leading,
                 endPoint: .trailing
@@ -221,8 +221,8 @@ enum HeatmapLOD: CaseIterable {
         switch self {
         case .macro: return 0.32
         case .low: return 0.08
-        case .medium: return 0.018
-        case .high: return 0.004
+        case .medium: return 0.012
+        case .high: return 0.003
         }
     }
 
@@ -248,17 +248,17 @@ enum HeatmapLOD: CaseIterable {
         switch self {
         case .macro: return 36
         case .low: return 72
-        case .medium: return 132
-        case .high: return 220
+        case .medium: return 160
+        case .high: return 280
         }
     }
 
     var minimumNormalizedIntensity: Double {
         switch self {
         case .macro: return 0.09
-        case .low: return 0.06
-        case .medium: return 0.035
-        case .high: return 0.02
+        case .low: return 0.04
+        case .medium: return 0.025
+        case .high: return 0.015
         }
     }
 
@@ -286,8 +286,8 @@ enum HeatmapLOD: CaseIterable {
 
     static func optimalLOD(for spanDelta: Double) -> HeatmapLOD {
         if spanDelta > 7.5 { return .macro }
-        if spanDelta > 1.6 { return .low }
-        if spanDelta > 0.16 { return .medium }
+        if spanDelta > 1.4 { return .low }
+        if spanDelta > 0.12 { return .medium }
         return .high
     }
 }
@@ -661,12 +661,12 @@ enum HeatmapGridBuilder {
 
 enum HeatmapPalette {
     static let gradientStops: [(position: Double, color: HeatmapRGB)] = [
-        (0.0, HeatmapRGB(red: 0.02, green: 0.18, blue: 0.62)),
-        (0.18, HeatmapRGB(red: 0.0, green: 0.5, blue: 0.86)),
-        (0.4, HeatmapRGB(red: 0.06, green: 0.82, blue: 0.68)),
-        (0.62, HeatmapRGB(red: 0.96, green: 0.82, blue: 0.18)),
-        (0.82, HeatmapRGB(red: 0.98, green: 0.46, blue: 0.12)),
-        (1.0, HeatmapRGB(red: 0.94, green: 0.12, blue: 0.2)),
+        (0.0,  HeatmapRGB(red: 0.04, green: 0.22, blue: 0.72)),
+        (0.16, HeatmapRGB(red: 0.0,  green: 0.52, blue: 0.92)),
+        (0.38, HeatmapRGB(red: 0.0,  green: 0.88, blue: 0.72)),
+        (0.60, HeatmapRGB(red: 0.98, green: 0.86, blue: 0.16)),
+        (0.80, HeatmapRGB(red: 1.0,  green: 0.42, blue: 0.06)),
+        (1.0,  HeatmapRGB(red: 0.96, green: 0.08, blue: 0.14)),
     ]
 
     nonisolated static func rgb(for normalized: Double) -> HeatmapRGB {
@@ -719,9 +719,10 @@ struct HeatmapRGB: Equatable {
 enum HeatmapVisualStyle {
     nonisolated static func displayIntensity(for normalized: Double) -> Double {
         let clamped = min(max(normalized, 0.0), 1.0)
-        let liftedMidtones = pow(clamped, 0.72)
-        let hotspotBoost = pow(clamped, 1.7)
-        let value = (liftedMidtones * 0.78) + (hotspotBoost * 0.3)
+        // Raise the floor more aggressively so sparse areas stay visible
+        let liftedLow = pow(clamped, 0.58)
+        let hotspotBoost = pow(clamped, 1.6)
+        let value = (liftedLow * 0.76) + (hotspotBoost * 0.34)
         return min(max(value, 0.0), 1.0)
     }
 
@@ -741,9 +742,10 @@ enum HeatmapVisualStyle {
         let displayIntensity = displayIntensity(for: normalizedIntensity)
         let controlOpacity = remappedControlOpacity(overlayOpacity)
         let hotspotBoost = pow(displayIntensity, 1.45)
-        let emphasis = 0.72 + (displayIntensity * 0.78) + (hotspotBoost * 0.28)
+        // Raise the base emphasis floor slightly so low-density cells are not invisible
+        let emphasis = 0.82 + (displayIntensity * 0.76) + (hotspotBoost * 0.28)
         let value = cellOpacity * controlOpacity * lod.overlayOpacityMultiplier * emphasis
-        return min(max(value, 0.05), 0.92)
+        return min(max(value, 0.06), 0.92)
     }
 }
 
