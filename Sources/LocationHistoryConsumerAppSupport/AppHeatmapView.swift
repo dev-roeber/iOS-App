@@ -13,7 +13,7 @@ public struct AppHeatmapView: View {
     @State private var model: AppHeatmapModel
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var isFirstLoad = true
-    @State private var overlayOpacity = 0.7
+    @State private var overlayOpacity = 0.80
     @State private var radiusPreset: HeatmapRadiusPreset = .balanced
     @State private var heatmapMode: HeatmapMode = .route
 
@@ -165,7 +165,7 @@ public struct AppHeatmapView: View {
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
-                Slider(value: $overlayOpacity, in: 0.35...1.0)
+                Slider(value: $overlayOpacity, in: 0.15...1.0)
             }
 
             if heatmapMode == .density {
@@ -328,8 +328,8 @@ enum HeatmapLOD: CaseIterable {
         switch self {
         case .macro: return 0.42
         case .low: return 0.5
-        case .medium: return 0.62
-        case .high: return 0.78
+        case .medium: return 0.72
+        case .high: return 0.86
         }
     }
 
@@ -346,8 +346,8 @@ enum HeatmapLOD: CaseIterable {
         switch self {
         case .macro: return 36
         case .low: return 72
-        case .medium: return 160
-        case .high: return 280
+        case .medium: return 240
+        case .high: return 400
         }
     }
 
@@ -355,8 +355,8 @@ enum HeatmapLOD: CaseIterable {
         switch self {
         case .macro: return 0.09
         case .low: return 0.04
-        case .medium: return 0.025
-        case .high: return 0.015
+        case .medium: return 0.018
+        case .high: return 0.010
         }
     }
 
@@ -384,7 +384,7 @@ enum HeatmapLOD: CaseIterable {
 
     static func optimalLOD(for spanDelta: Double) -> HeatmapLOD {
         if spanDelta > 7.5 { return .macro }
-        if spanDelta > 1.4 { return .low }
+        if spanDelta > 1.0 { return .low }
         if spanDelta > 0.12 { return .medium }
         return .high
     }
@@ -401,10 +401,10 @@ enum HeatmapLOD: CaseIterable {
 
     var routeSelectionLimit: Int {
         switch self {
-        case .macro: return 150
-        case .low: return 400
-        case .medium: return 800
-        case .high: return 1200
+        case .macro: return 60
+        case .low: return 150
+        case .medium: return 300
+        case .high: return 500
         }
     }
 }
@@ -475,10 +475,12 @@ struct RoutePath: Identifiable {
 
 // MARK: - Route Path Extractor
 
-/// Reconstructs connected polyline sequences from AppExport path/activity data
-/// and assigns per-chunk corridor intensity from the RouteGrid.
+/// Reconstructs connected polyline sequences from AppExport path/activity data.
+/// Each GPS track is processed as a whole (no chunking) and scored by sampling
+/// multiple grid bins along the track. Frequent routes appear brighter and wider.
 enum RoutePathExtractor {
-    private static let chunkSize = 200
+    /// Maximum rendered points per polyline after downsampling.
+    private static let maxPolylinePoints = 500
 
     /// Extract RoutePaths from the export using the provided intensity grid for scoring.
     nonisolated static func extract(
@@ -490,61 +492,85 @@ enum RoutePathExtractor {
     ) -> [RoutePath] {
         guard let maxCount = grid.values.max(), maxCount > 0 else { return [] }
 
-        var result: [RoutePath] = []
-        result.reserveCapacity(256)
-
-        // Viewport bounds (with padding already embedded in RouteViewportKey)
         let minLat = Double(viewportKey.minLatBin) * step
         let maxLat = Double(viewportKey.maxLatBin + 1) * step
         let minLon = Double(viewportKey.minLonBin) * step
         let maxLon = Double(viewportKey.maxLonBin + 1) * step
 
+        var result: [RoutePath] = []
         var pathID = 0
 
-        func processCLCoords(_ coords: [CLLocationCoordinate2D]) {
-            guard coords.count >= 2 else { return }
-            // Chunk into segments of at most chunkSize points
-            var start = 0
-            while start < coords.count - 1 {
-                let end = min(start + chunkSize, coords.count)
-                let chunk = Array(coords[start..<end])
-                guard chunk.count >= 2 else { break }
+        func processTrack(_ allCoords: [CLLocationCoordinate2D]) {
+            guard allCoords.count >= 2 else { return }
 
-                // Bounding-box cull: skip if chunk lies entirely outside viewport
-                let chunkMinLat = chunk.min(by: { $0.latitude < $1.latitude })!.latitude
-                let chunkMaxLat = chunk.max(by: { $0.latitude < $1.latitude })!.latitude
-                let chunkMinLon = chunk.min(by: { $0.longitude < $1.longitude })!.longitude
-                let chunkMaxLon = chunk.max(by: { $0.longitude < $1.longitude })!.longitude
-
-                if chunkMaxLat < minLat || chunkMinLat > maxLat ||
-                   chunkMaxLon < minLon || chunkMinLon > maxLon {
-                    start = end - 1
-                    continue
-                }
-
-                // Intensity: sample grid at midpoint of chunk
-                let midCoord = chunk[chunk.count / 2]
-                let binLat = Int32(floor(midCoord.latitude / step))
-                let binLon = Int32(floor(midCoord.longitude / step))
-                let bin = RouteGridBuilder.SegBin(lat: binLat, lon: binLon)
-                let count = grid[bin] ?? 0
-                let normalized = count > 0 ? Double(count) / Double(maxCount) : 0.015
-                let displayI = pow(normalized, 0.52)
-                let lineWidth = 1.5 + displayI * 6.5
-
-                result.append(RoutePath(
-                    id: pathID,
-                    coordinates: chunk,
-                    normalizedIntensity: normalized,
-                    coreLineWidth: lineWidth,
-                    color: RoutePalette.color(for: displayI)
-                ))
-                pathID += 1
-                start = end - 1  // overlap by 1 point for continuity
+            // Bounding-box viewport cull
+            var tMinLat = allCoords[0].latitude
+            var tMaxLat = allCoords[0].latitude
+            var tMinLon = allCoords[0].longitude
+            var tMaxLon = allCoords[0].longitude
+            for c in allCoords.dropFirst() {
+                if c.latitude < tMinLat { tMinLat = c.latitude }
+                if c.latitude > tMaxLat { tMaxLat = c.latitude }
+                if c.longitude < tMinLon { tMinLon = c.longitude }
+                if c.longitude > tMaxLon { tMaxLon = c.longitude }
             }
+            guard tMaxLat >= minLat, tMinLat <= maxLat,
+                  tMaxLon >= minLon, tMinLon <= maxLon else { return }
+
+            // Score the whole track by sampling up to 30 bins along its length.
+            // Blend max and average to reward frequently-used corridors robustly.
+            let sampleStep = max(1, allCoords.count / 30)
+            var maxBinCount = 0
+            var totalBinCount = 0
+            var samplesTaken = 0
+            var idx = 0
+            while idx < allCoords.count {
+                let c = allCoords[idx]
+                let bin = RouteGridBuilder.SegBin(
+                    lat: Int32(floor(c.latitude / step)),
+                    lon: Int32(floor(c.longitude / step))
+                )
+                let count = grid[bin] ?? 0
+                if count > maxBinCount { maxBinCount = count }
+                totalBinCount += count
+                samplesTaken += 1
+                idx += sampleStep
+            }
+            let avgCount = samplesTaken > 0 ? Double(totalBinCount) / Double(samplesTaken) : 0
+            let blended = Double(maxBinCount) * 0.6 + avgCount * 0.4
+            let normalized = min(blended / Double(maxCount), 1.0)
+            guard normalized >= 0.02 else { return }
+
+            // Downsample long tracks to limit polyline complexity
+            let coords: [CLLocationCoordinate2D]
+            if allCoords.count > Self.maxPolylinePoints {
+                let decimation = allCoords.count / Self.maxPolylinePoints
+                var sampled: [CLLocationCoordinate2D] = []
+                sampled.reserveCapacity(Self.maxPolylinePoints + 2)
+                var i = 0
+                while i < allCoords.count - 1 {
+                    sampled.append(allCoords[i])
+                    i += decimation
+                }
+                sampled.append(allCoords[allCoords.count - 1])
+                coords = sampled
+            } else {
+                coords = allCoords
+            }
+
+            let displayI = pow(normalized, 0.50)
+            let lineWidth = 1.5 + displayI * 6.5
+            result.append(RoutePath(
+                id: pathID,
+                coordinates: coords,
+                normalizedIntensity: normalized,
+                coreLineWidth: lineWidth,
+                color: RoutePalette.color(for: displayI)
+            ))
+            pathID += 1
         }
 
-        func flatCoordsToCoordArray(_ flats: [Double]) -> [CLLocationCoordinate2D] {
+        func flatToCoords(_ flats: [Double]) -> [CLLocationCoordinate2D] {
             var coords: [CLLocationCoordinate2D] = []
             coords.reserveCapacity(flats.count / 2)
             var i = 0
@@ -558,31 +584,26 @@ enum RoutePathExtractor {
         for day in export.data.days {
             for path in day.paths {
                 if let flats = path.flatCoordinates, flats.count >= 4 {
-                    processCLCoords(flatCoordsToCoordArray(flats))
+                    processTrack(flatToCoords(flats))
                 } else if path.points.count >= 2 {
-                    let coords = path.points.map {
+                    processTrack(path.points.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                    }
-                    processCLCoords(coords)
+                    })
                 }
             }
             for activity in day.activities {
                 if let flats = activity.flatCoordinates, flats.count >= 4 {
-                    processCLCoords(flatCoordsToCoordArray(flats))
+                    processTrack(flatToCoords(flats))
                 }
             }
         }
 
-        // Sort by intensity ascending (so high-intensity paths render on top)
-        result.sort { $0.normalizedIntensity < $1.normalizedIntensity }
-
-        // Cap to per-LOD limit
+        // Keep the most-frequent tracks; render low-to-high so frequent routes draw on top
+        result.sort { $0.normalizedIntensity > $1.normalizedIntensity }
         if result.count > lod.routeSelectionLimit {
-            // keep highest-intensity paths
-            result.sort { $0.normalizedIntensity > $1.normalizedIntensity }
             result = Array(result.prefix(lod.routeSelectionLimit))
-            result.sort { $0.normalizedIntensity < $1.normalizedIntensity }
         }
+        result.sort { $0.normalizedIntensity < $1.normalizedIntensity }
 
         return result
     }
@@ -1158,10 +1179,9 @@ enum HeatmapVisualStyle {
     }
 
     nonisolated static func remappedControlOpacity(_ overlayOpacity: Double) -> Double {
-        let clamped = min(max(overlayOpacity, 0.35), 1.0)
-        let normalized = (clamped - 0.35) / 0.65
-        let highEndBoost = pow(normalized, 0.58)
-        return 0.32 + (highEndBoost * 0.68)
+        let clamped = min(max(overlayOpacity, 0.1), 1.0)
+        // Linear: 15% slider → ~0.24 effective, 100% slider → 1.0 effective
+        return 0.20 + (clamped - 0.1) / 0.9 * 0.80
     }
 
     nonisolated static func effectiveOpacity(
