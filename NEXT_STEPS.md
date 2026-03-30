@@ -9,6 +9,9 @@ Status: **teilweise umgesetzt**
 
 Bereits drin:
 - `AppHeatmapView` ist implementiert und als eigenes Heatmap-Sheet verdrahtet
+- Heatmap-UX Batch 1 hat die Darstellung fuer mittlere/grosse Zoomstufen beruhigt und die Heatmap bei herausgezoomter Karte weniger flaechig dominant gemacht
+- das Heatmap-Sheet bietet jetzt lokale Display-Controls fuer Deckkraft, Radius-Presets, `Auf Daten zoomen` und eine kleine Dichte-Legende
+- der Heatmap-Startzustand zoomt jetzt auf die vorhandenen Daten statt nur auf einen generischen Mittelpunkt
 - Heatmap ist jetzt in README, ROADMAP und Feature-Inventar repo-wahr dokumentiert
 - echter iPhone-15-Pro-Max-AX-Snapshot aus dem Wrapper zeigt `Heatmap` bei geladenem Import im Uebersichtsbildschirm sichtbar und erreichbar verdrahtet
 

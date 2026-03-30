@@ -207,6 +207,11 @@ Stand 2026-03-17 wurde auf einer echten macOS-/Xcode-Maschine Folgendes real gep
   - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test`: 222 Tests, 0 Failures
   - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`: BUILD SUCCEEDED
   - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' -only-testing:LH2GPXWrapperTests test`: TEST SUCCEEDED
+- Heatmap UX Batch 1 (2026-03-30) hat den aktuellen Core-Stand danach erneut per CLI abgesichert:
+  - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test`: 222 Tests, 0 Failures
+  - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build`: BUILD SUCCEEDED
+  - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 222 Tests, 0 Failures
+  - dabei wurden nur Heatmap-UI-/Display-Details geaendert (ruhigere low-zoom Darstellung, lokale Controls fuer Deckkraft/Radius/`Auf Daten zoomen`, kleine Dichte-Legende); kein neuer Apple-Device-Lauf fuer das Sheet selbst
 - fuer den anschliessenden Device-End-to-End-Block am 2026-03-30 wurde zusaetzlich ein echtes iPhone verwendet:
   - Geraet: `iPhone 15 Pro Max` (`iPhone16,2`), iOS `26.3 (23D127)`, via USB verfuegbar, entsperrt, Developer Mode aktiv
   - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -allowProvisioningUpdates -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'id=00008130-00163D0A0461401C' -only-testing:LH2GPXWrapperUITests`: echter Device-Lauf
@@ -244,5 +249,5 @@ Nicht separat als eigener Nachweis festgehalten:
 - keine Signierung, keine Distribution, keine Entitlements-Arbeit
 - kein Sync und keine Cloud-/Server-Anteile
 - keine hardware-verifizierte Background-Recording-Session und kein Auto-Resume laufender Live-Tracks
-- keine frische Apple-Verifikation fuer das spaeter hinzugekommene Heatmap-Sheet, den dedizierten `Live`-Tab oder Upload-Batching/Upload-Status
+- keine frische Apple-Verifikation fuer das spaeter hinzugekommene Heatmap-Sheet inklusive der neuen lokalen UX-Controls, den dedizierten `Live`-Tab oder Upload-Batching/Upload-Status
 - Apple-Verifikation ersetzt nicht `swift test`, und `swift test` ersetzt keinen echten Apple-UI-Lauf

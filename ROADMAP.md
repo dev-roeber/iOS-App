@@ -29,6 +29,7 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
 
 - **Heatmap**
   `AppHeatmapView` und das Heatmap-Sheet sind implementiert und jetzt dokumentiert.
+  Heatmap UX Batch 1 hat die Darstellung auf mittleren/grossen Zoomstufen beruhigt und kleine lokale Controls fuer Deckkraft, Radius und `Auf Daten zoomen` hinzugefuegt.
   Offen bleiben dedizierte Tests sowie visuelle/performance-seitige Apple-Verifikation.
 - **`Live`-Tab**
   Der dedizierte 5. Tab fuer compact iOS 17+ ist implementiert und jetzt dokumentiert.
@@ -62,7 +63,7 @@ Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Com
 
 ### Reihenfolge der naechsten offenen Bloecke
 
-1. Heatmap-Testabdeckung und Apple-Visual-/Performance-Nachweis nachziehen
+1. Heatmap-Apple-Visual-/Performance-Nachweis und danach nur bei Bedarf gezielte kleine Testabdeckung nachziehen
 2. Background-Recording auf echtem iPhone verifizieren und im Runbook belegen
 3. Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren und dokumentieren
 4. optionalen Server-Upload end-to-end auf Device pruefen; Apple-Review-/Privacy-Einordnung fuer den Upload-Pfad weiter klaeren

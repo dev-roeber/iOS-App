@@ -114,12 +114,12 @@ Present:
 - map style toggle between standard and satellite hybrid
 - live-location map with current-position marker and live polyline while recording
 - recenter button for live-location map
-- dedicated `Heatmap` sheet for imported history on iOS 17+/macOS 14+ with precomputed LOD clusters and viewport culling
+- dedicated `Heatmap` sheet for imported history on iOS 17+/macOS 14+ with precomputed LOD clusters, viewport culling, calmer low-zoom rendering, local opacity/radius controls, `fit to data`, and a small density legend
 
 Not present:
 - offline tile packs
 - persistent heatmap overlay toggle inside the day-detail map
-- manual map filters / overlay toggles beyond the base style toggle
+- persistent heatmap display preferences across launches
 
 ## 6a. Local Recording / Saved Live Tracks
 

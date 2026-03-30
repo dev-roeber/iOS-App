@@ -32,7 +32,7 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
 - aufgezeichnete Live-Tracks getrennt von importierter History lokal persistieren (save on stop, ohne Auto-Resume)
 - lokale App-Optionen fuer Distanz-Einheit, Kartenstil, Start-Tab, Sprache, technische Importdetails, optionalen Server-Upload und dessen Upload-Batching speichern
 - auf compact iPhone-Layouts unter iOS 17+ einen dedizierten `Live`-Tab fuer Live-Location und Live-Recording anzeigen
-- fuer importierte History auf iOS 17+/macOS 14+ ein eigenes Heatmap-Sheet oeffnen (implementiert, aber noch nicht separat Apple-/Performance-verifiziert)
+- fuer importierte History auf iOS 17+/macOS 14+ ein eigenes Heatmap-Sheet mit Deckkraft-Regler, Radius-Presets, `Auf Daten zoomen` und kleiner Dichte-Legende oeffnen (implementiert, aber noch nicht separat Apple-/Performance-verifiziert)
 - importierte History und gespeicherte Live-Tracks lokal als `GPX`, `KML` oder `GeoJSON` exportieren
 - zwischen `Tracks`, `Waypoints` und `Both` als Exportmodus wechseln
 - importierte History lokal nach Datum, Genauigkeit, Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon fuer den Export filtern
@@ -179,7 +179,7 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - VoiceOver-Accessibility: semantische Labels, Gruppierung, dekorative Icons ausgeblendet
 - konsistente Leer-/Fehler-/Ladezustaende mit SF Symbols und klaren Texten
 - ein zentrales Actions-Menue in der Toolbar fuehrt Import, Demo, Optionen und Clear
-- das Actions-Menue kann auf unterstuetzten Apple-Plattformen zusaetzlich ein eigenes Heatmap-Sheet fuer importierte History oeffnen
+- das Actions-Menue kann auf unterstuetzten Apple-Plattformen zusaetzlich ein eigenes Heatmap-Sheet fuer importierte History mit lokalen Darstellungsreglern oeffnen
 - startet mit lokalem JSON-/ZIP-Import als primaerem Einstieg
 - bietet Demo-Daten als sekundaeren Fallback
 - Export-Flow zeigt jetzt Auswahlstatus, Disabled-Gruende und den vorgeschlagenen Dateinamen passend zum aktiven Exportformat vor dem fileExporter-Dialog
@@ -219,7 +219,7 @@ Stand 2026-03-30 ist auf diesem aktuellen Mac-Repo-Stand per CLI erneut geprueft
 Stand 2026-03-17 ist noch offen:
 - ein separat protokollierter foreground-Lauf exakt ueber `Product > Run` in Xcode, falls genau dieser IDE-spezifische Weg regressionskritisch wird
 - Live-Location-/Permission-Flow inklusive optionaler `Always Allow`-Erweiterung fuer Background-Recording in einer separat dokumentierten Apple-UI-Session (Simulator oder echtes iPhone)
-- Heatmap-Sheet, dedizierter `Live`-Tab sowie Upload-Batching/Upload-Status stammen aus spaeteren 2026-03-20-Commits und sind auf Apple-Hardware noch nicht separat verifiziert
+- Heatmap-Sheet inklusive der spaeter nachgezogenen Darstellungsregler, dedizierter `Live`-Tab sowie Upload-Batching/Upload-Status sind auf Apple-Hardware noch nicht separat verifiziert
 
 Die zuletzt 2 roten SwiftPM-/macOS-Tests sind auf dem aktuellen Repo-Stand in Batch 2 geklaert:
 - `AppPreferencesTests.testStoredValuesAreLoaded`: gruen; Test-Setup folgt jetzt dem Keychain-first-Produktverhalten
