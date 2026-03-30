@@ -3,8 +3,8 @@ import SwiftUI
 import MapKit
 import LocationHistoryConsumer
 
-/// A professional-grade heatmap that uses Level-Of-Detail (LOD) pre-computation
-/// and Viewport-Culling for 60FPS rendering of massive datasets.
+/// A professional-grade heatmap that uses Level-Of-Detail (LOD) pre-computation,
+/// viewport-bounded bin selection, and smoothed raster cells instead of visible circle stamps.
 @available(iOS 17.0, macOS 14.0, *)
 public struct AppHeatmapView: View {
     private let export: AppExport
@@ -58,7 +58,7 @@ public struct AppHeatmapView: View {
     private var mapView: some View {
         Map(position: $mapPosition) {
             ForEach(model.visibleCells) { cell in
-                MapCircle(center: cell.coordinate, radius: effectiveRadius(for: cell))
+                MapPolygon(coordinates: scaledPolygonCoordinates(for: cell))
                     .foregroundStyle(cell.color.opacity(effectiveOpacity(for: cell)))
             }
         }
@@ -192,14 +192,17 @@ public struct AppHeatmapView: View {
     }
 
     private func effectiveOpacity(for cell: HeatCell) -> Double {
-        let emphasis = 0.6 + (cell.normalizedIntensity * 0.5)
+        let emphasis = 0.55 + (cell.normalizedIntensity * 0.65)
         let value = cell.opacity * overlayOpacity * cell.lod.overlayOpacityMultiplier * emphasis
-        return min(max(value, 0.08), 0.72)
+        return min(max(value, 0.05), 0.74)
     }
 
-    private func effectiveRadius(for cell: HeatCell) -> Double {
-        let value = cell.radius * radiusPreset.scale * cell.lod.overlayRadiusMultiplier
-        return max(value, cell.lod.baseRadius * 0.45)
+    private func scaledPolygonCoordinates(for cell: HeatCell) -> [CLLocationCoordinate2D] {
+        HeatmapGridBuilder.polygonCoordinates(
+            centerLat: cell.coordinate.latitude,
+            centerLon: cell.coordinate.longitude,
+            step: cell.cellSpan * radiusPreset.scale
+        )
     }
 }
 
@@ -213,44 +216,75 @@ enum HeatmapLOD: CaseIterable {
 
     var step: Double {
         switch self {
-        case .macro: return 0.25
-        case .low: return 0.05
-        case .medium: return 0.01
-        case .high: return 0.002
-        }
-    }
-
-    var baseRadius: Double {
-        switch self {
-        case .macro: return 20000
-        case .low: return 4000
-        case .medium: return 800
-        case .high: return 180
+        case .macro: return 0.32
+        case .low: return 0.08
+        case .medium: return 0.018
+        case .high: return 0.004
         }
     }
 
     var overlayOpacityMultiplier: Double {
         switch self {
-        case .macro: return 0.45
-        case .low: return 0.6
-        case .medium: return 0.78
-        case .high: return 0.95
+        case .macro: return 0.42
+        case .low: return 0.5
+        case .medium: return 0.62
+        case .high: return 0.78
         }
     }
 
-    var overlayRadiusMultiplier: Double {
+    var tileSpanMultiplier: Double {
         switch self {
-        case .macro: return 0.55
-        case .low: return 0.72
-        case .medium: return 0.9
-        case .high: return 1.0
+        case .macro: return 1.45
+        case .low: return 1.3
+        case .medium: return 1.16
+        case .high: return 1.04
+        }
+    }
+
+    var selectionLimit: Int {
+        switch self {
+        case .macro: return 36
+        case .low: return 72
+        case .medium: return 132
+        case .high: return 220
+        }
+    }
+
+    var minimumNormalizedIntensity: Double {
+        switch self {
+        case .macro: return 0.09
+        case .low: return 0.06
+        case .medium: return 0.035
+        case .high: return 0.02
+        }
+    }
+
+    var viewportPaddingFactor: Double {
+        switch self {
+        case .macro: return 0.08
+        case .low: return 0.12
+        case .medium: return 0.16
+        case .high: return 0.2
+        }
+    }
+
+    var smoothingKernel: [HeatKernelOffset] {
+        switch self {
+        case .macro:
+            return HeatKernelOffset.gaussian(center: 1.0, edge: 0.65, corner: 0.35)
+        case .low:
+            return HeatKernelOffset.gaussian(center: 1.0, edge: 0.58, corner: 0.25)
+        case .medium:
+            return HeatKernelOffset.gaussian(center: 1.0, edge: 0.42, corner: 0.12)
+        case .high:
+            return HeatKernelOffset.gaussian(center: 1.0, edge: 0.18, corner: 0.04)
         }
     }
 
     static func optimalLOD(for spanDelta: Double) -> HeatmapLOD {
-        if spanDelta > 5.0 { return .macro }
-        if spanDelta > 1.0 { return .low }
-        if spanDelta > 0.1 { return .medium }
+        if spanDelta > 7.5 { return .macro }
+        if spanDelta > 1.6 { return .low }
+        if spanDelta > 0.16 { return .medium }
         return .high
     }
 }
@@ -268,6 +302,7 @@ final class AppHeatmapModel {
 
     private let export: AppExport
     private var lodGrids: [HeatmapLOD: [GridKey: HeatCell]] = [:]
+    private var viewportCache: [HeatmapViewportKey: [HeatCell]] = [:]
 
     private var lastRegion: MKCoordinateRegion?
     private var updateTask: Task<Void, Never>?
@@ -316,7 +351,7 @@ final class AppHeatmapModel {
 
             var generatedGrids: [HeatmapLOD: [GridKey: HeatCell]] = [:]
             for lod in HeatmapLOD.allCases {
-                generatedGrids[lod] = Self.computeGrid(for: points, lod: lod)
+                generatedGrids[lod] = HeatmapGridBuilder.computeGrid(for: points, lod: lod)
             }
 
             let centerCoord: CLLocationCoordinate2D?
@@ -340,6 +375,7 @@ final class AppHeatmapModel {
 
             await MainActor.run {
                 self.lodGrids = completedGrids
+                self.viewportCache = [:]
                 self.initialCenter = centerCoord
                 self.dataRegion = dataRegion
                 self.isCalculating = false
@@ -374,76 +410,15 @@ final class AppHeatmapModel {
         let lod = HeatmapLOD.optimalLOD(for: region.span.latitudeDelta)
         guard let fullGrid = lodGrids[lod] else { return }
 
-        let marginLat = region.span.latitudeDelta * 0.2
-        let marginLon = region.span.longitudeDelta * 0.2
-        let minLat = region.center.latitude - (region.span.latitudeDelta / 2) - marginLat
-        let maxLat = region.center.latitude + (region.span.latitudeDelta / 2) + marginLat
-        let minLon = region.center.longitude - (region.span.longitudeDelta / 2) - marginLon
-        let maxLon = region.center.longitude + (region.span.longitudeDelta / 2) + marginLon
-
-        var culled: [HeatCell] = []
-        for cell in fullGrid.values {
-            if cell.coordinate.latitude >= minLat && cell.coordinate.latitude <= maxLat &&
-                cell.coordinate.longitude >= minLon && cell.coordinate.longitude <= maxLon {
-                culled.append(cell)
-            }
+        let viewportKey = HeatmapViewportKey(region: region, lod: lod)
+        if let cached = viewportCache[viewportKey] {
+            visibleCells = cached
+            return
         }
 
-        culled.sort { $0.count < $1.count }
+        let culled = HeatmapGridBuilder.visibleCells(in: fullGrid, viewportKey: viewportKey)
+        viewportCache[viewportKey] = culled
         visibleCells = culled
-    }
-
-    nonisolated private static func computeGrid(for points: [WeightedPoint], lod: HeatmapLOD) -> [GridKey: HeatCell] {
-        var grid: [GridKey: Int] = [:]
-        let step = lod.step
-
-        for point in points {
-            let latBin = Int32(floor(point.lat / step))
-            let lonBin = Int32(floor(point.lon / step))
-            let key = GridKey(lat: latBin, lon: lonBin)
-            grid[key, default: 0] += point.weight
-        }
-
-        guard !grid.isEmpty else { return [:] }
-        let maxCount = Double(grid.values.max() ?? 1)
-
-        var result: [GridKey: HeatCell] = [:]
-        result.reserveCapacity(grid.count)
-
-        for (key, count) in grid {
-            let normalized = Double(count) / maxCount
-
-            let color: Color
-            switch normalized {
-            case 0..<0.15:
-                color = Color(red: 0.0, green: 0.2, blue: 0.8)
-            case 0.15..<0.35:
-                color = Color(red: 0.0, green: 0.8, blue: 0.8)
-            case 0.35..<0.6:
-                color = Color(red: 0.2, green: 0.8, blue: 0.2)
-            case 0.6..<0.85:
-                color = Color(red: 1.0, green: 0.8, blue: 0.0)
-            default:
-                color = Color(red: 1.0, green: 0.2, blue: 0.2)
-            }
-
-            let centerLat = (Double(key.lat) * step) + (step / 2.0)
-            let centerLon = (Double(key.lon) * step) + (step / 2.0)
-            let radiusMultiplier = 1.2 + (normalized * 0.5)
-
-            result[key] = HeatCell(
-                gridKey: key,
-                coordinate: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
-                radius: lod.baseRadius * radiusMultiplier,
-                count: count,
-                opacity: 0.35 + (normalized * 0.5),
-                color: color,
-                lod: lod,
-                normalizedIntensity: normalized
-            )
-        }
-
-        return result
     }
 
     nonisolated private static func regionThatFits(points: [WeightedPoint]) -> MKCoordinateRegion? {
@@ -500,12 +475,12 @@ struct HeatCell: Identifiable {
     var id: GridKey { gridKey }
     let gridKey: GridKey
     let coordinate: CLLocationCoordinate2D
-    let radius: Double
     let count: Int
     let opacity: Double
     let color: Color
     let lod: HeatmapLOD
     let normalizedIntensity: Double
+    let cellSpan: Double
 }
 
 private enum HeatmapRadiusPreset: String, CaseIterable, Identifiable {
@@ -517,9 +492,9 @@ private enum HeatmapRadiusPreset: String, CaseIterable, Identifiable {
 
     var scale: Double {
         switch self {
-        case .compact: return 0.72
-        case .balanced: return 0.9
-        case .wide: return 1.12
+        case .compact: return 0.88
+        case .balanced: return 1.0
+        case .wide: return 1.14
         }
     }
 
@@ -528,6 +503,173 @@ private enum HeatmapRadiusPreset: String, CaseIterable, Identifiable {
         case .compact: return "Compact"
         case .balanced: return "Standard"
         case .wide: return "Wide"
+        }
+    }
+}
+
+struct HeatKernelOffset {
+    let lat: Int32
+    let lon: Int32
+    let weight: Double
+
+    static func gaussian(center: Double, edge: Double, corner: Double) -> [HeatKernelOffset] {
+        [
+            HeatKernelOffset(lat: -1, lon: -1, weight: corner),
+            HeatKernelOffset(lat: -1, lon: 0, weight: edge),
+            HeatKernelOffset(lat: -1, lon: 1, weight: corner),
+            HeatKernelOffset(lat: 0, lon: -1, weight: edge),
+            HeatKernelOffset(lat: 0, lon: 0, weight: center),
+            HeatKernelOffset(lat: 0, lon: 1, weight: edge),
+            HeatKernelOffset(lat: 1, lon: -1, weight: corner),
+            HeatKernelOffset(lat: 1, lon: 0, weight: edge),
+            HeatKernelOffset(lat: 1, lon: 1, weight: corner),
+        ]
+    }
+}
+
+struct HeatmapViewportKey: Hashable {
+    let lod: HeatmapLOD
+    let minLatBin: Int32
+    let maxLatBin: Int32
+    let minLonBin: Int32
+    let maxLonBin: Int32
+
+    init(region: MKCoordinateRegion, lod: HeatmapLOD) {
+        self.lod = lod
+
+        let latPadding = region.span.latitudeDelta * lod.viewportPaddingFactor
+        let lonPadding = region.span.longitudeDelta * lod.viewportPaddingFactor
+        let minLat = region.center.latitude - (region.span.latitudeDelta / 2.0) - latPadding
+        let maxLat = region.center.latitude + (region.span.latitudeDelta / 2.0) + latPadding
+        let minLon = region.center.longitude - (region.span.longitudeDelta / 2.0) - lonPadding
+        let maxLon = region.center.longitude + (region.span.longitudeDelta / 2.0) + lonPadding
+
+        let step = lod.step
+        self.minLatBin = Int32(floor(minLat / step))
+        self.maxLatBin = Int32(floor(maxLat / step))
+        self.minLonBin = Int32(floor(minLon / step))
+        self.maxLonBin = Int32(floor(maxLon / step))
+    }
+}
+
+enum HeatmapGridBuilder {
+    nonisolated static func computeGrid(for points: [WeightedPoint], lod: HeatmapLOD) -> [GridKey: HeatCell] {
+        var grid: [GridKey: Double] = [:]
+        let step = lod.step
+
+        for point in points {
+            let latBin = Int32(floor(point.lat / step))
+            let lonBin = Int32(floor(point.lon / step))
+            let key = GridKey(lat: latBin, lon: lonBin)
+            grid[key, default: 0] += Double(point.weight)
+        }
+
+        guard !grid.isEmpty else { return [:] }
+
+        var smoothed: [GridKey: Double] = [:]
+        smoothed.reserveCapacity(grid.count * 2)
+        for (key, count) in grid {
+            for offset in lod.smoothingKernel {
+                let neighbor = GridKey(lat: key.lat + offset.lat, lon: key.lon + offset.lon)
+                smoothed[neighbor, default: 0] += count * offset.weight
+            }
+        }
+
+        guard let maxCount = smoothed.values.max(), maxCount > 0 else { return [:] }
+
+        var result: [GridKey: HeatCell] = [:]
+        result.reserveCapacity(smoothed.count)
+
+        for (key, count) in smoothed {
+            let normalized = count / maxCount
+            guard normalized >= lod.minimumNormalizedIntensity * 0.45 else { continue }
+
+            let cell = makeCell(for: key, count: count, normalized: normalized, lod: lod)
+            result[key] = cell
+        }
+
+        return result
+    }
+
+    nonisolated static func visibleCells(in grid: [GridKey: HeatCell], viewportKey: HeatmapViewportKey) -> [HeatCell] {
+        var visible: [HeatCell] = []
+        visible.reserveCapacity(min(viewportKey.lod.selectionLimit * 2, 256))
+
+        for lat in viewportKey.minLatBin...viewportKey.maxLatBin {
+            for lon in viewportKey.minLonBin...viewportKey.maxLonBin {
+                if let cell = grid[GridKey(lat: lat, lon: lon)],
+                   cell.normalizedIntensity >= viewportKey.lod.minimumNormalizedIntensity {
+                    visible.append(cell)
+                }
+            }
+        }
+
+        if visible.isEmpty {
+            return []
+        }
+
+        visible.sort {
+            if $0.normalizedIntensity == $1.normalizedIntensity {
+                return $0.count > $1.count
+            }
+            return $0.normalizedIntensity > $1.normalizedIntensity
+        }
+
+        if visible.count > viewportKey.lod.selectionLimit {
+            visible = Array(visible.prefix(viewportKey.lod.selectionLimit))
+        }
+
+        visible.sort { $0.normalizedIntensity < $1.normalizedIntensity }
+        return visible
+    }
+
+    nonisolated private static func makeCell(for key: GridKey, count: Double, normalized: Double, lod: HeatmapLOD) -> HeatCell {
+        let step = lod.step
+        let centerLat = (Double(key.lat) * step) + (step / 2.0)
+        let centerLon = (Double(key.lon) * step) + (step / 2.0)
+        let cellSpan = step * lod.tileSpanMultiplier
+
+        return HeatCell(
+            gridKey: key,
+            coordinate: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
+            count: max(Int(count.rounded()), 1),
+            opacity: 0.12 + (normalized * 0.52),
+            color: HeatmapPalette.color(for: normalized),
+            lod: lod,
+            normalizedIntensity: normalized,
+            cellSpan: cellSpan
+        )
+    }
+
+    nonisolated static func polygonCoordinates(centerLat: Double, centerLon: Double, step: Double) -> [CLLocationCoordinate2D] {
+        let halfLat = step / 2.0
+        let halfLon = step / 2.0
+
+        return [
+            CLLocationCoordinate2D(latitude: centerLat - halfLat, longitude: centerLon - halfLon),
+            CLLocationCoordinate2D(latitude: centerLat - halfLat, longitude: centerLon + halfLon),
+            CLLocationCoordinate2D(latitude: centerLat + halfLat, longitude: centerLon + halfLon),
+            CLLocationCoordinate2D(latitude: centerLat + halfLat, longitude: centerLon - halfLon),
+            CLLocationCoordinate2D(latitude: centerLat - halfLat, longitude: centerLon - halfLon),
+        ]
+    }
+}
+
+enum HeatmapPalette {
+    nonisolated static func color(for normalized: Double) -> Color {
+        switch normalized {
+        case 0..<0.12:
+            return Color(red: 0.08, green: 0.22, blue: 0.58)
+        case 0.12..<0.28:
+            return Color(red: 0.05, green: 0.5, blue: 0.72)
+        case 0.28..<0.5:
+            return Color(red: 0.05, green: 0.68, blue: 0.56)
+        case 0.5..<0.72:
+            return Color(red: 0.54, green: 0.74, blue: 0.17)
+        case 0.72..<0.88:
+            return Color(red: 0.92, green: 0.63, blue: 0.12)
+        default:
+            return Color(red: 0.9, green: 0.23, blue: 0.18)
         }
     }
 }
