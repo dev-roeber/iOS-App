@@ -174,14 +174,74 @@ final class AppHeatmapRenderingTests: XCTestCase {
     }
 
     func testRoutePaletteIsClearlyDistinctFromDensityPalette() {
-        // Route palette should have strong green/cyan at low end (not blue like density)
-        let routeLow = RoutePalette.rgb(for: 0.05)
-        let densityLow = HeatmapPalette.rgb(for: 0.05)
+        // Route palette: indigo/violet at low end, white/warm at high end.
+        // Density palette: blue at low end, red at high end.
+        let routeLow  = RoutePalette.rgb(for: 0.05)
+        let routeHigh = RoutePalette.rgb(for: 1.0)
+        let densityLow  = HeatmapPalette.rgb(for: 0.05)
+        let densityHigh = HeatmapPalette.rgb(for: 1.0)
 
-        // Route low-end: more green/cyan
-        XCTAssertGreaterThan(routeLow.green, densityLow.green)
-        // Density low-end: more blue
-        XCTAssertGreaterThan(densityLow.blue, routeLow.green * 0.3)
+        // Route low-end is indigo: notable red component distinguishes it from pure-blue density low.
+        XCTAssertGreaterThan(routeLow.red, densityLow.red,
+            "Route low-end should have more red (indigo) than density low-end (pure blue)")
+        // Route high-end converges to white (all channels high); density high-end is red-dominant.
+        XCTAssertGreaterThan(routeHigh.green, densityHigh.green,
+            "Route high-end (white/warm) should have more green than density high-end (red)")
+        XCTAssertGreaterThan(routeHigh.blue, densityHigh.blue,
+            "Route high-end (white) should have more blue than density high-end (red)")
+        // Density low-end retains strong blue
+        XCTAssertGreaterThan(densityLow.blue, densityLow.red)
+    }
+
+    // MARK: - RoutePathExtractor
+
+    func testRoutePathExtractorProducesConnectedSequencesFromPaths() {
+        let export = makeExportWithPaths()
+        let step = HeatmapLOD.high.routeSegmentStep
+        let grid = RouteGridBuilder.computeGrid(for: export, step: step)
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 52.52, longitude: 13.405),
+            span: MKCoordinateSpan(latitudeDelta: 0.25, longitudeDelta: 0.25)
+        )
+        let viewportKey = RouteViewportKey(region: region, lod: .high)
+
+        let paths = RoutePathExtractor.extract(
+            from: export,
+            grid: grid,
+            step: step,
+            lod: .high,
+            viewportKey: viewportKey
+        )
+
+        XCTAssertFalse(paths.isEmpty, "Extractor should produce at least one RoutePath from path data")
+        // Each RoutePath must have at least 2 coordinates (otherwise MapPolyline would fail)
+        XCTAssertTrue(paths.allSatisfy { $0.coordinates.count >= 2 },
+            "Every extracted RoutePath must have at least 2 coordinates")
+    }
+
+    func testRoutePathExtractorGlowWidthIsThreeCoreWidth() {
+        let export = makeExportWithPaths()
+        let step = HeatmapLOD.medium.routeSegmentStep
+        let grid = RouteGridBuilder.computeGrid(for: export, step: step)
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 52.52, longitude: 13.405),
+            span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
+        )
+        let viewportKey = RouteViewportKey(region: region, lod: .medium)
+
+        let paths = RoutePathExtractor.extract(
+            from: export,
+            grid: grid,
+            step: step,
+            lod: .medium,
+            viewportKey: viewportKey
+        )
+
+        guard !paths.isEmpty else { return }
+        for path in paths {
+            XCTAssertEqual(path.glowLineWidth, path.coreLineWidth * 3.0, accuracy: 0.001,
+                "Glow width must be exactly 3× the core width for each RoutePath")
+        }
     }
 
     // MARK: - Helpers

@@ -56,6 +56,7 @@ public struct AppHeatmapView: View {
         }
         .animation(.easeInOut(duration: 0.25), value: model.visibleCells.count)
         .animation(.easeInOut(duration: 0.25), value: model.visibleRouteSegments.count)
+        .animation(.easeInOut(duration: 0.25), value: model.visibleRoutePaths.count)
         .onAppear {
             if isFirstLoad {
                 model.startPrecomputation()
@@ -86,16 +87,25 @@ public struct AppHeatmapView: View {
                         .foregroundStyle(cell.color.opacity(effectiveOpacity(for: cell)))
                 }
             } else {
-                ForEach(model.visibleRouteSegments) { seg in
-                    MapPolyline(coordinates: seg.coordinates)
+                // Glow underlayer: wide, semi-transparent bloom
+                ForEach(model.visibleRoutePaths) { path in
+                    MapPolyline(coordinates: path.coordinates)
                         .stroke(
-                            seg.color.opacity(routeEffectiveOpacity(for: seg)),
-                            lineWidth: seg.lineWidth
+                            path.color.opacity(routeGlowOpacity(for: path)),
+                            lineWidth: path.glowLineWidth
+                        )
+                }
+                // Core layer: bright, narrower line on top
+                ForEach(model.visibleRoutePaths) { path in
+                    MapPolyline(coordinates: path.coordinates)
+                        .stroke(
+                            path.color.opacity(routeCoreOpacity(for: path)),
+                            lineWidth: path.coreLineWidth
                         )
                 }
             }
         }
-        .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
+        .mapStyle(routeMapStyle)
         .ignoresSafeArea(edges: .top)
         .onMapCameraChange(frequency: .onEnd) { context in
             model.updateForRegion(context.region)
@@ -103,6 +113,13 @@ public struct AppHeatmapView: View {
         .onMapCameraChange(frequency: .continuous) { context in
             model.debounceUpdateForRegion(context.region)
         }
+    }
+
+    /// Dark map style for route mode (satellite imagery gives best contrast for glowing lines).
+    /// Standard map for density mode; hybrid if user prefers hybrid.
+    private var routeMapStyle: MapStyle {
+        if preferences.preferredMapStyle.isHybrid { return .hybrid }
+        return heatmapMode == .route ? .imagery() : .standard()
     }
 
     @ViewBuilder
@@ -283,6 +300,20 @@ public struct AppHeatmapView: View {
         return min(max(base * control, 0.18), 0.96)
     }
 
+    /// Glow (underlayer): wide, low opacity bloom for luminous halo effect.
+    private func routeGlowOpacity(for path: RoutePath) -> Double {
+        let control = HeatmapVisualStyle.remappedControlOpacity(overlayOpacity)
+        let base = 0.20 + path.normalizedIntensity * 0.15
+        return min(max(base * control, 0.08), 0.38)
+    }
+
+    /// Core (top layer): bright narrow line at higher opacity.
+    private func routeCoreOpacity(for path: RoutePath) -> Double {
+        let control = HeatmapVisualStyle.remappedControlOpacity(overlayOpacity)
+        let base = 0.62 + path.normalizedIntensity * 0.34
+        return min(max(base * control, 0.22), 0.96)
+    }
+
     private func scaledPolygonCoordinates(for cell: HeatCell) -> [CLLocationCoordinate2D] {
         HeatmapGridBuilder.polygonCoordinates(
             centerLat: cell.coordinate.latitude,
@@ -397,15 +428,15 @@ enum HeatmapLOD: CaseIterable {
 // MARK: - Route Palette
 
 enum RoutePalette {
-    // Cyan → Teal → Green → Yellow-Green → Orange → Deep-Orange
-    // Clearly distinct from the density heatmap (blue→cyan→yellow→red)
+    // Deep indigo/blue → cyan → bright white/warm-yellow
+    // Designed for dark-map rendering: luminous, high-contrast, Strava-style
     static let gradientStops: [(position: Double, color: HeatmapRGB)] = [
-        (0.00, HeatmapRGB(red: 0.0,  green: 0.70, blue: 0.85)),  // cyan
-        (0.20, HeatmapRGB(red: 0.0,  green: 0.82, blue: 0.62)),  // teal-green
-        (0.45, HeatmapRGB(red: 0.18, green: 0.88, blue: 0.18)),  // bright green
-        (0.68, HeatmapRGB(red: 0.82, green: 0.88, blue: 0.08)),  // yellow-green
-        (0.85, HeatmapRGB(red: 1.0,  green: 0.52, blue: 0.04)),  // orange
-        (1.00, HeatmapRGB(red: 0.94, green: 0.18, blue: 0.02)),  // deep red-orange
+        (0.00, HeatmapRGB(red: 0.18, green: 0.12, blue: 0.72)),  // deep indigo
+        (0.20, HeatmapRGB(red: 0.0,  green: 0.48, blue: 0.95)),  // vivid blue
+        (0.42, HeatmapRGB(red: 0.0,  green: 0.85, blue: 0.95)),  // bright cyan
+        (0.65, HeatmapRGB(red: 0.72, green: 0.96, blue: 1.00)),  // ice/light cyan
+        (0.82, HeatmapRGB(red: 1.00, green: 0.95, blue: 0.70)),  // warm white/yellow
+        (1.00, HeatmapRGB(red: 1.00, green: 1.00, blue: 1.00)),  // pure white (hotspot)
     ]
 
     nonisolated static func rgb(for normalized: Double) -> HeatmapRGB {
@@ -438,6 +469,139 @@ struct RouteSegment: Identifiable {
     let normalizedIntensity: Double
     let color: Color
     let lineWidth: Double
+}
+
+// MARK: - Route Path (connected polyline for glow rendering)
+
+/// A connected coordinate sequence extracted directly from path/activity data.
+/// Each RoutePath carries an intensity derived from the RouteGrid corridor frequency.
+struct RoutePath: Identifiable {
+    let id: Int
+    /// Core coordinates for the route line.
+    let coordinates: [CLLocationCoordinate2D]
+    /// 0…1 corridor frequency from the route grid.
+    let normalizedIntensity: Double
+    /// Rendered line width for the core layer (1–8 pt).
+    let coreLineWidth: Double
+    /// Rendered line width for the glow underlayer (3× core).
+    var glowLineWidth: Double { coreLineWidth * 3.0 }
+    /// Core colour (fully saturated).
+    let color: Color
+}
+
+// MARK: - Route Path Extractor
+
+/// Reconstructs connected polyline sequences from AppExport path/activity data
+/// and assigns per-chunk corridor intensity from the RouteGrid.
+enum RoutePathExtractor {
+    private static let chunkSize = 200
+
+    /// Extract RoutePaths from the export using the provided intensity grid for scoring.
+    nonisolated static func extract(
+        from export: AppExport,
+        grid: [RouteGridBuilder.SegBin: Int],
+        step: Double,
+        lod: HeatmapLOD,
+        viewportKey: RouteViewportKey
+    ) -> [RoutePath] {
+        guard let maxCount = grid.values.max(), maxCount > 0 else { return [] }
+
+        var result: [RoutePath] = []
+        result.reserveCapacity(256)
+
+        // Viewport bounds (with padding already embedded in RouteViewportKey)
+        let minLat = Double(viewportKey.minLatBin) * step
+        let maxLat = Double(viewportKey.maxLatBin + 1) * step
+        let minLon = Double(viewportKey.minLonBin) * step
+        let maxLon = Double(viewportKey.maxLonBin + 1) * step
+
+        var pathID = 0
+
+        func processCLCoords(_ coords: [CLLocationCoordinate2D]) {
+            guard coords.count >= 2 else { return }
+            // Chunk into segments of at most chunkSize points
+            var start = 0
+            while start < coords.count - 1 {
+                let end = min(start + chunkSize, coords.count)
+                let chunk = Array(coords[start..<end])
+                guard chunk.count >= 2 else { break }
+
+                // Bounding-box cull: skip if chunk lies entirely outside viewport
+                let chunkMinLat = chunk.min(by: { $0.latitude < $1.latitude })!.latitude
+                let chunkMaxLat = chunk.max(by: { $0.latitude < $1.latitude })!.latitude
+                let chunkMinLon = chunk.min(by: { $0.longitude < $1.longitude })!.longitude
+                let chunkMaxLon = chunk.max(by: { $0.longitude < $1.longitude })!.longitude
+
+                if chunkMaxLat < minLat || chunkMinLat > maxLat ||
+                   chunkMaxLon < minLon || chunkMinLon > maxLon {
+                    start = end - 1
+                    continue
+                }
+
+                // Intensity: sample grid at midpoint of chunk
+                let midCoord = chunk[chunk.count / 2]
+                let binLat = Int32(floor(midCoord.latitude / step))
+                let binLon = Int32(floor(midCoord.longitude / step))
+                let bin = RouteGridBuilder.SegBin(lat: binLat, lon: binLon)
+                let count = grid[bin] ?? 0
+                let normalized = count > 0 ? Double(count) / Double(maxCount) : 0.015
+                let displayI = pow(normalized, 0.52)
+                let lineWidth = 1.5 + displayI * 6.5
+
+                result.append(RoutePath(
+                    id: pathID,
+                    coordinates: chunk,
+                    normalizedIntensity: normalized,
+                    coreLineWidth: lineWidth,
+                    color: RoutePalette.color(for: displayI)
+                ))
+                pathID += 1
+                start = end - 1  // overlap by 1 point for continuity
+            }
+        }
+
+        func flatCoordsToCoordArray(_ flats: [Double]) -> [CLLocationCoordinate2D] {
+            var coords: [CLLocationCoordinate2D] = []
+            coords.reserveCapacity(flats.count / 2)
+            var i = 0
+            while i + 1 < flats.count {
+                coords.append(CLLocationCoordinate2D(latitude: flats[i], longitude: flats[i + 1]))
+                i += 2
+            }
+            return coords
+        }
+
+        for day in export.data.days {
+            for path in day.paths {
+                if let flats = path.flatCoordinates, flats.count >= 4 {
+                    processCLCoords(flatCoordsToCoordArray(flats))
+                } else if path.points.count >= 2 {
+                    let coords = path.points.map {
+                        CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                    }
+                    processCLCoords(coords)
+                }
+            }
+            for activity in day.activities {
+                if let flats = activity.flatCoordinates, flats.count >= 4 {
+                    processCLCoords(flatCoordsToCoordArray(flats))
+                }
+            }
+        }
+
+        // Sort by intensity ascending (so high-intensity paths render on top)
+        result.sort { $0.normalizedIntensity < $1.normalizedIntensity }
+
+        // Cap to per-LOD limit
+        if result.count > lod.routeSelectionLimit {
+            // keep highest-intensity paths
+            result.sort { $0.normalizedIntensity > $1.normalizedIntensity }
+            result = Array(result.prefix(lod.routeSelectionLimit))
+            result.sort { $0.normalizedIntensity < $1.normalizedIntensity }
+        }
+
+        return result
+    }
 }
 
 // MARK: - Route Grid Builder
@@ -593,6 +757,7 @@ struct RouteViewportKey: Hashable {
 final class AppHeatmapModel {
     var visibleCells: [HeatCell] = []
     var visibleRouteSegments: [RouteSegment] = []
+    var visibleRoutePaths: [RoutePath] = []
     var isCalculating = false
     var initialCenter: CLLocationCoordinate2D?
     var dataRegion: MKCoordinateRegion?
@@ -604,6 +769,7 @@ final class AppHeatmapModel {
     private var routeGrids: [HeatmapLOD: [RouteGridBuilder.SegBin: Int]] = [:]
     private var viewportCache: [HeatmapViewportKey: [HeatCell]] = [:]
     private var routeViewportCache: [RouteViewportKey: [RouteSegment]] = [:]
+    private var routePathCache: [RouteViewportKey: [RoutePath]] = [:]
 
     private var updateTask: Task<Void, Never>?
 
@@ -689,6 +855,7 @@ final class AppHeatmapModel {
                 self.routeGrids = completedRouteGrids
                 self.viewportCache = [:]
                 self.routeViewportCache = [:]
+                self.routePathCache = [:]
                 self.initialCenter = centerCoord
                 self.dataRegion = dataRegion
                 self.isCalculating = false
@@ -737,6 +904,8 @@ final class AppHeatmapModel {
         // Route
         if let routeGrid = routeGrids[lod] {
             let routeKey = RouteViewportKey(region: region, lod: lod)
+
+            // Legacy segment cache (kept for existing RouteGridBuilder path)
             if let cached = routeViewportCache[routeKey] {
                 visibleRouteSegments = cached
             } else {
@@ -748,6 +917,21 @@ final class AppHeatmapModel {
                 )
                 routeViewportCache[routeKey] = segs
                 visibleRouteSegments = segs
+            }
+
+            // Connected path cache (new glow-rendering pipeline)
+            if let cachedPaths = routePathCache[routeKey] {
+                visibleRoutePaths = cachedPaths
+            } else {
+                let paths = RoutePathExtractor.extract(
+                    from: export,
+                    grid: routeGrid,
+                    step: lod.routeSegmentStep,
+                    lod: lod,
+                    viewportKey: routeKey
+                )
+                routePathCache[routeKey] = paths
+                visibleRoutePaths = paths
             }
         }
     }
