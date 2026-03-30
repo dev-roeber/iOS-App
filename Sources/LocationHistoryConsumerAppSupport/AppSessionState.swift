@@ -63,9 +63,9 @@ public final class AppSessionContent {
         self.export = export
         self.source = source
         
-        // Eagerly compute selectedDate based on first contentful day or fallback to first day.
+        // Eagerly compute selectedDate based on the newest contentful day.
         let summaries = AppExportQueries.daySummaries(from: export)
-        self.selectedDate = summaries.first(where: \.hasContent)?.date ?? summaries.first?.date
+        self.selectedDate = summaries.last(where: \.hasContent)?.date ?? summaries.last?.date
         
         // Now that all non-lazy stored properties are initialized, we can populate the lazy storage.
         self.daySummaries = summaries
@@ -305,7 +305,7 @@ public struct AppSessionState {
         if daySummaries.contains(where: { $0.date == date }) {
             selectedDate = date
         } else {
-            selectedDate = daySummaries.first?.date
+            selectedDate = daySummaries.last?.date
         }
     }
 
@@ -322,7 +322,7 @@ public struct AppSessionState {
             return
         }
 
-        selectedDate = daySummaries.first(where: \.hasContent)?.date ?? daySummaries.first?.date
+        selectedDate = daySummaries.last(where: \.hasContent)?.date ?? daySummaries.last?.date
         sanitizeSelectionIfContentEmpty()
     }
 

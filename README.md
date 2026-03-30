@@ -32,6 +32,10 @@ Minimales separates iOS-Consumer-Repo fuer den stabilen App-Export von `Location
 - aufgezeichnete Live-Tracks getrennt von importierter History lokal persistieren (save on stop, ohne Auto-Resume)
 - lokale App-Optionen fuer Distanz-Einheit, Kartenstil, Start-Tab, Sprache, technische Importdetails, optionalen Server-Upload und dessen Upload-Batching speichern
 - auf compact iPhone-Layouts unter iOS 17+ einen dedizierten `Live`-Tab fuer Live-Location und Live-Recording anzeigen
+- die `Days`-Liste repo-wahr standardmaessig absteigend (`neu -> alt`) anzeigen; Monatssortierung, Suche und Navigation bleiben dabei erhalten
+- die `Live`-Seite mit klarer Map-/Recording-/Upload-/Library-Hierarchie, Status-Chips, Quick Actions und erweiterten Live-Metriken wie aktueller Geschwindigkeit, Durchschnittsgeschwindigkeit, letzter Teilstrecke und Update-Alter fuehren
+- den optionalen Server-Upload mit Queue-/Failure-/Last-Success-Status, Pause/Resume und manuellem Flush sichtbar und robust in der Live-UI fuehren
+- die `Insights`-Seite ueber segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`), KPI-Karten, Highlight-Karten, `Top Days` und Monatstrends deutlich tiefer aufbereiten
 - fuer importierte History auf iOS 17+/macOS 14+ ein eigenes Heatmap-Sheet mit Deckkraft-Regler, Radius-Presets, `Auf Daten zoomen`, kleiner Dichte-Legende, geglaettetem viewport-/LOD-basiertem Aggregations-Rendering sowie staerkerem Farb-/Kontrast-Mapping fuer mittlere und hohe Dichte oeffnen (implementiert, aber noch nicht separat Apple-/Performance-verifiziert)
 - importierte History und gespeicherte Live-Tracks lokal als `GPX`, `KML` oder `GeoJSON` exportieren
 - zwischen `Tracks`, `Waypoints` und `Both` als Exportmodus wechseln
@@ -110,7 +114,7 @@ Auf Apple-Plattformen kann die lokale Demo-Harness danach ueber das Swift Packag
 
 Zusaetzlich gibt es jetzt eine kleine produktnahe App-Shell `LocationHistoryConsumerApp`. Sie startet leerer und import-zentriert, arbeitet standardmaessig offline-first und ist noch keine fertige Produkt-App. Der optionale nutzergesteuerte Server-Upload akzeptierter Live-Recording-Punkte ist separat konfigurierbar und standardmaessig deaktiviert. Unter Linux ist nur der nicht-UI-Teil ueber `swift test` ehrlich verifizierbar.
 
-Auf dem aktuellen Linux-Server laeuft `swift test` repo-wahr wieder gruen: `217` Tests, `2` Skips, `0` Failures. Apple-only Heatmap-Renderingstests werden auf non-Apple-Plattformen korrekt ausgeklammert.
+Auf dem aktuellen Linux-Server bleibt der non-Apple-Testpfad fuer dieses Repo der ehrliche Mindestnachweis. Fuer den aktuellen Live-/Upload-/Insights-/Days-Batch wurden gezielt `swift test --filter Live`, `swift test --filter Insight`, `swift test --filter Day` und `swift test --filter Upload` ausgefuehrt; diese Teilmengen sind auf diesem Server gruen. Apple-only Heatmap-Renderingstests werden auf non-Apple-Plattformen korrekt ausgeklammert.
 
 Die aktuelle Apple-/Xcode-nahe Vorbereitung ist bewusst klein und jetzt in `docs/XCODE_RUNBOOK.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md` und der historischen Vorbereitungsnotiz `docs/XCODE_APP_PREPARATION.md` beschrieben. Es gibt weiterhin absichtlich kein aufgeblasenes `.xcodeproj`.
 
@@ -164,6 +168,7 @@ Die Demo-Shell ist nur ein lokaler Harness fuer die Query-Schicht:
 Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - adaptives Layout: iPhone nutzt `TabView` (`Overview`, `Days`, `Insights`, `Export` und unter iOS 17+ `Live`), regular width nutzt `NavigationSplitView` mit Day-Liste und Detail-Pane
 - no-content-Tage bleiben in `Days` sichtbar, werden aber nicht mehr wie normale Detailziele behandelt
+- `Days` ist standardmaessig `neu -> alt` sortiert; initiale Auswahl und Fallbacks bevorzugen den neuesten inhaltshaltigen Tag
 - Day-Liste fuehrt jetzt mit einem kleinen Export-Statusblock; exportmarkierte Tage tragen ein klares `Export`-Badge
 - Such-Empty-States in `Days` verschweigen vorhandene GPX-Markierungen nicht mehr
 - Overview-Dashboard fuehrt mit Import-Status, optionalen Export-Filtern und einem kompakten `Go To`-Block fuer `Days`, `Insights` und `Export`
@@ -174,7 +179,8 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - Insights-Charts zeigen chart-spezifische Low-Data-Hinweise, robustere Day-Tap-Navigation und lesbarere Achsen
 - regular-width Detailansicht bietet einen expliziten Rueckweg zur `Overview`
 - Karten-MVP: MapKit-Ansicht im Day-Detail mit Pfad-Polylines und Visit-Markern (iOS 17+)
-- Live-Recording-Sektion im Day-Detail: manueller Ein/Aus-Schalter, Permission-State, aktueller Standort, Live-Polyline
+- Live-Recording-Sektion im Day-Detail und dedizierter `Live`-Tab: manueller Ein/Aus-Schalter, Permission-State, aktueller Standort, Live-Polyline, klarere Recording-/Upload-Hierarchie, Status-Chips und Quick Actions
+- Live-Tracking zeigt jetzt zusaetzlich aktuelle Geschwindigkeit, Durchschnittsgeschwindigkeit, letzte Teilstrecke, Update-Alter, Distanz, Dauer, Punktzahl und Genauigkeit als sichtbare Stat-Karten
 - Recorded-Track-Persistenz getrennt von importierter History; Speicherung erst beim Stoppen der Aufnahme
 - Saved-Tracks-Library mit getrenntem `Edit Track`-Zugang fuer gespeicherte Live-Tracks als separater `Local Tools`-Nebenfluss
 - Optionen-Seite fuer lokale Darstellung/Steuerung: Distanz-Einheit, Start-Tab, Kartenstil, Sprache, technische Importdetails und optionaler Server-Upload
@@ -182,6 +188,7 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - konsistente Leer-/Fehler-/Ladezustaende mit SF Symbols und klaren Texten
 - ein zentrales Actions-Menue in der Toolbar fuehrt Import, Demo, Optionen und Clear
 - das Actions-Menue kann auf unterstuetzten Apple-Plattformen zusaetzlich ein eigenes Heatmap-Sheet fuer importierte History mit lokalen Darstellungsreglern, geglaettetem viewport-basiert aggregiertem Dichte-Rendering und verstaerktem Farb-/Kontrast-Mapping oeffnen
+- die Insights-Seite bietet jetzt segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) mit KPI-Karten, Highlight-Karten, `Top Days`, Monatstrends, Wochentags- und Aktivitaetsauswertungen
 - startet mit lokalem JSON-/ZIP-Import als primaerem Einstieg
 - bietet Demo-Daten als sekundaeren Fallback
 - Export-Flow zeigt jetzt Auswahlstatus, Disabled-Gruende und den vorgeschlagenen Dateinamen passend zum aktiven Exportformat vor dem fileExporter-Dialog
@@ -217,6 +224,13 @@ Stand 2026-03-30 ist auf diesem aktuellen Mac-Repo-Stand per CLI erneut geprueft
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`: BUILD SUCCEEDED
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' -only-testing:LH2GPXWrapperTests test`: TEST SUCCEEDED
 - ein manueller Xcode-Start auf dem verbundenen iPhone bleibt fuer diesen Batch ein positiver Teilbefund, ist aber bewusst getrennt von den CLI-Build-/Test-Ergebnissen zu lesen
+
+Stand 2026-03-30 fuer den hier dokumentierten Live-/Upload-/Insights-/Days-Batch ist auf diesem Linux-Server nur gezielt verifiziert:
+- `swift test --filter Live`
+- `swift test --filter Insight`
+- `swift test --filter Day`
+- `swift test --filter Upload`
+- fuer die deutlich umgebauten Live-/Insights-Oberflaechen sowie die neue absteigende Day-Default-Sortierung existiert in diesem Batch bewusst kein frischer Apple-UI-Nachweis
 
 Stand 2026-03-17 ist noch offen:
 - ein separat protokollierter foreground-Lauf exakt ueber `Product > Run` in Xcode, falls genau dieser IDE-spezifische Weg regressionskritisch wird

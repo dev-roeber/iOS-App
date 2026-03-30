@@ -273,7 +273,7 @@ struct MonthGroup: Identifiable {
     var id: String { key }
 }
 
-func groupByMonth(_ summaries: [DaySummary]) -> [MonthGroup] {
+func groupByMonth(_ summaries: [DaySummary], locale: Locale = .autoupdatingCurrent) -> [MonthGroup] {
     var groups: [(key: String, summaries: [DaySummary])] = []
     var currentKey: String?
     var currentSummaries: [DaySummary] = []
@@ -297,7 +297,7 @@ func groupByMonth(_ summaries: [DaySummary]) -> [MonthGroup] {
     return groups.map { group in
         MonthGroup(
             key: group.key,
-            title: AppDateDisplay.monthYear(group.summaries[0].date),
+            title: AppDateDisplay.monthYear(group.summaries[0].date, locale: locale),
             summaries: group.summaries
         )
     }

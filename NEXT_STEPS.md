@@ -3,7 +3,23 @@
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Audit-/Doku-Sync aus Phase 19.50 ist in diesem Batch geschlossen und steht deshalb nicht mehr als offener Punkt hier.
 
-## 1. Phase 19.51 – Heatmap testen und auf Apple verifizieren
+## 1. Phase 19.51 – Live / Upload / Insights / Days auf Apple verifizieren
+
+Status: **teilweise umgesetzt**
+
+Bereits drin:
+- `Days` ist jetzt repo-wahr standardmaessig `neu -> alt` sortiert; Initialauswahl und Fallbacks bevorzugen den neuesten inhaltshaltigen Tag
+- der dedizierte `Live`-Tab wurde visuell und funktional deutlich ausgebaut: klarere Map-/Recording-/Upload-/Library-Hierarchie, Status-Chips, Quick Actions und mehr Live-Metriken
+- der optionale Server-Upload zeigt jetzt Queue-, Failure- und Last-Success-Zustaende und unterstuetzt Pause/Resume sowie manuellen Queue-Flush
+- die Insights-Seite bietet jetzt segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) sowie KPI-Karten, Highlight-Karten, `Top Days` und Monatstrends
+- gezielte Linux-Verifikation fuer diesen Batch liegt vor: `swift test --filter Live`, `Insight`, `Day`, `Upload`
+
+Fehlt noch:
+- frische Apple-UI-Verifikation fuer den neuen `Live`-Tab inklusive Upload-Zustaenden, Quick Actions und groesserem Stat-Set
+- frische Apple-UI-Verifikation fuer die neue `Insights`-Informationsarchitektur und Chart-Lesbarkeit
+- frische Apple-UI-Verifikation fuer die absteigende `Days`-Default-Sortierung im echten iPhone-/macOS-Flow
+
+## 2. Phase 19.52 – Heatmap testen und auf Apple verifizieren
 
 Status: **teilweise umgesetzt**
 
@@ -23,7 +39,7 @@ Fehlt noch:
 - visuelle Apple-Verifikation des neuen Polygon-/Aggregations-Renderers inklusive des kraeftigeren Batch-3-Farb-/Kontrast-Mappings auf echter Apple-Hardware
 - Performance-Nachweis fuer groessere Imports auf Apple-Hardware
 
-## 2. Phase 19.52 – Apple-CLI-Tests auf aktuellem Core-Stand stabilisieren
+## 3. Phase 19.53 – Apple-CLI-Tests auf aktuellem Core-Stand stabilisieren
 
 Status: **geschlossen (Apple Stabilization Batch 2, 2026-03-30)**
 
@@ -40,7 +56,7 @@ Erledigt:
 - `AppPreferencesTests.testStoredValuesAreLoaded`: Test an Keychain-first-Produktverhalten angepasst, jetzt gruen
 - `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`: Test an die konsistente Gedankenstrich-Formatierung des Produktcodes angepasst, jetzt gruen
 
-## 3. Phase 19.53 – Background-Recording auf echtem iPhone verifizieren
+## 4. Phase 19.54 – Background-Recording auf echtem iPhone verifizieren
 
 Status: **teilweise umgesetzt**
 
@@ -54,7 +70,7 @@ Fehlt noch:
 - echte Device-Verifikation fuer Permission-Upgrade, laufende Aufnahme im Hintergrund und Stop-/Persistenzverhalten
 - separater dokumentierter Nachweis im Apple-/Wrapper-Runbook
 
-## 4. Phase 19.54 – Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren
+## 5. Phase 19.55 – Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren
 
 Status: **teilweise umgesetzt**
 
@@ -68,7 +84,7 @@ Fehlt noch:
 - kontrollierte Device-Verifikation fuer den seit 2026-03-20 wieder aktiven Restore-Pfad
 - dokumentierter Nachweis fuer positiven Restore, Datei-fehlt-Fallback und Clear-nach-Restore
 
-## 5. Phase 19.55 – Server-Upload / Review / Privacy finalisieren
+## 6. Phase 19.56 – Server-Upload / Review / Privacy finalisieren
 
 Status: **teilweise umgesetzt**
 
@@ -77,6 +93,7 @@ Bereits drin:
 - optionaler Bearer-Token
 - Retry-on-next-sample
 - Upload-Batching
+- Pause/Resume, manueller Flush sowie Queue-/Failure-/Last-Success-Status
 - repo-wahre Review-/Runbook-Wording-Basis
 
 Fehlt noch:
@@ -84,13 +101,13 @@ Fehlt noch:
 - Apple-Review-/Privacy-Einordnung fuer den optionalen Upload-Pfad ueber die jetzt korrigierten lokalen Texte hinaus
 - Entscheidung, ob Privacy-Dokumentation ueber den aktuellen Manifest-/Runbook-Stand hinaus erweitert werden muss
 
-## 6. Phase 19.56 – Erst danach weitere Feature-Arbeit
+## 7. Phase 19.57 – Erst danach weitere Feature-Arbeit
 
 Status: **bewusst nachgelagert**
 
 Kommt erst nach den Verifikations- und Wahrheitsthemen oben:
 - weitere Exportformate wie `CSV` oder `KMZ`
-- mehr Insight-Module und Zeitraumsauswahl
+- weiterer Insights-Ausbau ueber den aktuellen Batch hinaus sowie Zeitraumsauswahl
 - breitere Lokalisierungsabdeckung
 
 Contract-Files werden weiterhin ausschliesslich vom Producer-Repo aus aktualisiert.

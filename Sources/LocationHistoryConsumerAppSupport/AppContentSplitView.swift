@@ -33,7 +33,9 @@ public struct AppContentSplitView: View {
     }
 
     private var filteredDaySummaries: [DaySummary] {
-        AppDaySearch.filter(session.daySummaries, query: daySearchText)
+        DaySummaryDisplayOrdering.newestFirst(
+            AppDaySearch.filter(session.daySummaries, query: daySearchText)
+        )
     }
 
     private enum PresentedSheet: String, Identifiable {
@@ -221,7 +223,7 @@ public struct AppContentSplitView: View {
 
     private var compactDayList: some View {
         let summaries = filteredDaySummaries
-        let groups = groupByMonth(summaries)
+        let groups = groupByMonth(summaries, locale: preferences.appLocale)
         return List {
             if session.exportSelection.count > 0 {
                 Section {
@@ -244,8 +246,8 @@ public struct AppContentSplitView: View {
                     .padding(.vertical, 4)
                 }
             }
-            if groups.count == 1 {
-                ForEach(groups[0].summaries, id: \.date) { summary in
+                if groups.count == 1 {
+                    ForEach(groups[0].summaries, id: \.date) { summary in
                     if summary.hasContent {
                         NavigationLink(value: summary.date) {
                             AppDayRow(summary: summary, highlightIcons: highlightIconsFor(summary.date), isSelectedForExport: session.exportSelection.isSelected(summary.date))
@@ -297,7 +299,7 @@ public struct AppContentSplitView: View {
     private var regularSplitView: some View {
         NavigationSplitView {
             AppDayListView(
-                summaries: session.daySummaries,
+                summaries: DaySummaryDisplayOrdering.newestFirst(session.daySummaries),
                 selectedForExportDates: session.exportSelection.selectedDates,
                 selectedDate: Binding(
                     get: { session.selectedDate },

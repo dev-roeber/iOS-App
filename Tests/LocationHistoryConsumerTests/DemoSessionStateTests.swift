@@ -3,7 +3,7 @@ import LocationHistoryConsumer
 @testable import LocationHistoryConsumerAppSupport
 
 final class AppSessionStateTests: XCTestCase {
-    func testShowingContentSelectsFirstDayAndBuildsSourceDescription() throws {
+    func testShowingContentSelectsNewestDayAndBuildsSourceDescription() throws {
         var state = AppSessionState()
         let content = try loadDemoContent(
             fixtureName: "golden_app_export_sample_small.json",
@@ -15,7 +15,7 @@ final class AppSessionStateTests: XCTestCase {
 
         XCTAssertFalse(state.isLoading)
         XCTAssertTrue(state.hasLoadedContent)
-        XCTAssertEqual(state.selectedDate, "2024-05-01")
+        XCTAssertEqual(state.selectedDate, "2024-05-02")
         XCTAssertEqual(state.sourceDescription, "Demo fixture: golden_app_export_sample_small.json")
         XCTAssertEqual(state.message?.title, "Demo data ready")
         XCTAssertEqual(state.presentationState, .demoLoaded)
@@ -24,7 +24,7 @@ final class AppSessionStateTests: XCTestCase {
         XCTAssertEqual(state.sourceSummary.schemaVersion, "1.0")
     }
 
-    func testSelectionFallsBackToFirstKnownDayAndResetsOnReload() throws {
+    func testSelectionFallsBackToNewestKnownDayAndResetsOnReload() throws {
         var state = AppSessionState()
         let content = try loadDemoContent(
             fixtureName: "golden_app_export_sample_small.json",
@@ -36,10 +36,10 @@ final class AppSessionStateTests: XCTestCase {
         XCTAssertEqual(state.selectedDate, "2024-05-02")
 
         state.selectDay("2099-01-01")
-        XCTAssertEqual(state.selectedDate, "2024-05-01")
+        XCTAssertEqual(state.selectedDate, "2024-05-02")
 
         state.show(content: content)
-        XCTAssertEqual(state.selectedDate, "2024-05-01")
+        XCTAssertEqual(state.selectedDate, "2024-05-02")
         XCTAssertEqual(state.sourceDescription, "Imported file: imported_app_export.json")
         XCTAssertEqual(state.presentationState, .importedLoaded)
     }
@@ -86,7 +86,7 @@ final class AppSessionStateTests: XCTestCase {
 
         XCTAssertFalse(state.isLoading)
         XCTAssertTrue(state.hasLoadedContent)
-        XCTAssertEqual(state.selectedDate, "2024-05-01")
+        XCTAssertEqual(state.selectedDate, "2024-05-02")
         XCTAssertEqual(state.message?.title, "Import failed")
         XCTAssertEqual(state.message?.kind, .error)
         XCTAssertEqual(state.sourceDescription, "Imported file: imported_app_export.json")

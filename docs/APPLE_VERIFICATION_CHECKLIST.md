@@ -48,6 +48,14 @@ Heatmap Color / Contrast / Opacity Batch 3 (2026-03-30) hat danach nur die visue
 - drei kleine Logiktests fuer Intensitaets-Lift, High-End-Opacity und waermer werdende Palette
 - auch fuer diese Farb-/Kontrast-Aenderungen existiert in diesem Batch bewusst kein neuer Apple-Device-Nachweis; der Heatmap-Device-Status bleibt offen
 
+Der spaetere Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 hat zusaetzlich produktnahe UI-/State-Aenderungen gebracht:
+
+- `Days` sortiert jetzt standardmaessig `neu -> alt`
+- der dedizierte `Live`-Tab wurde mit neuer Kartenhierarchie, Status-Chips, Quick Actions und mehr Live-Metriken deutlich ausgebaut
+- der optionale Server-Upload zeigt jetzt Queue-, Failure- und Last-Success-Zustaende sowie Pause/Resume und manuellen Flush
+- die Insights-Seite bietet jetzt segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) mit KPI-Karten, Highlight-Karten, `Top Days` und Monatstrends
+- fuer diesen Batch liegen auf dem Linux-Server nur gezielte `swift test --filter Live|Insight|Day|Upload`-Laeufe vor; ein neuer Apple-Device-Nachweis existiert dafuer bewusst noch nicht
+
 ### Bereits real verifiziert (2026-03-17, vor Post-2026-03-18-Features)
 
 - [x] Xcode-Schemes aus dem Swift Package sind ueber das echte Xcode sichtbar
@@ -83,6 +91,9 @@ Heatmap Color / Contrast / Opacity Batch 3 (2026-03-30) hat danach nur die visue
 - [ ] Live-Location-/Permission-Flow inklusive optionaler `Always Allow`-Erweiterung fuer Background-Recording in einer echten Apple-UI-Session verifizieren und separat protokollieren
 - [ ] den dedizierten `Live`-Tab auf iPhone/iOS 17+ funktional verifizieren; Sichtbarkeit im realen AX-Snapshot ist belegt, echte Interaktion noch nicht
 - [ ] das Heatmap-Sheet fuer importierte History auf Apple-Hardware visuell und performanceseitig verifizieren; der Einstieg ist im realen AX-Snapshot sichtbar, das Sheet selbst noch nicht geoefnet, und die spaeter hinzugekommenen UX-Controls, der neue Aggregations-/Polygon-Renderer sowie das Batch-3-Farb-/Kontrast-Mapping sind auf Device ebenfalls noch nicht separat bestaetigt
+- [ ] die neue `Days`-Default-Sortierung (`neu -> alt`) in compact und regular auf Apple-Hardware funktional bestaetigen
+- [ ] den deutlich ausgebauten `Live`-Tab auf Apple-Hardware funktional bestaetigen, inklusive Status-Chips, Quick Actions und erweitertem Stat-Set
+- [ ] die neue segmentierte Insights-Oberflaeche (`Overview`, `Patterns`, `Breakdowns`) auf Apple-Hardware auf Lesbarkeit und Navigation pruefen
 - [ ] Upload-Batching, Upload-Status und optionalen Server-Upload-Flow in einer echten Apple-Session separat verifizieren
 - [ ] Background-Recording auf echtem iPhone verifizieren (Permission-Upgrade, Background-Aufnahme, Stop/Persistenz)
 - [ ] Wrapper-Auto-Restore nach Reaktivierung (2026-03-20) kontrolliert mit Positiv-, Datei-fehlt- und Clear-Pfad auf echtem Device nachweisen; ein spontaner positiver Restore-Befund liegt jetzt vor
