@@ -8,8 +8,8 @@ enum HeatmapMode: String, CaseIterable, Identifiable {
 
     var labelKey: String {
         switch self {
-        case .route: return "Routes"
-        case .density: return "Density"
+        case .route: return "Routen"
+        case .density: return "Dichte"
         }
     }
 }
