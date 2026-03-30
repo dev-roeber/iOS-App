@@ -1,8 +1,36 @@
 # NEXT_STEPS
 
-Abgeleitet aus der Roadmap. Nur die konkret naechsten offenen Schritte, repo-wahr und nach aktuellem Code-Stand priorisiert.
+Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
+Der Audit-/Doku-Sync aus Phase 19.50 ist in diesem Batch geschlossen und steht deshalb nicht mehr als offener Punkt hier.
 
-## 1. Phase 19.43 – Background-Recording auf echter Apple-Hardware haerten
+## 1. Phase 19.51 – Heatmap testen und auf Apple verifizieren
+
+Status: **teilweise umgesetzt**
+
+Bereits drin:
+- `AppHeatmapView` ist implementiert und als eigenes Heatmap-Sheet verdrahtet
+- Heatmap ist jetzt in README, ROADMAP und Feature-Inventar repo-wahr dokumentiert
+
+Fehlt noch:
+- dedizierte Testabdeckung fuer Heatmap-Modell/Logik
+- visuelle Apple-Verifikation auf echter Apple-Hardware
+- Performance-Nachweis fuer groessere Imports auf Apple-Hardware
+
+## 2. Phase 19.52 – Linux-Failures klassifizieren und auf Apple/macOS gegenpruefen
+
+Status: **offen**
+
+Bereits drin:
+- frischer Linux-`swift test`-Lauf mit 217 ausgefuehrten Tests, 2 Skips und 14 Failures
+- erste Klassifizierung in plattformbedingt vs. unklar ist vorbereitet
+
+Fehlt noch:
+- macOS-/Xcode-Gegenlauf fuer denselben Repo-Stand
+- `LiveLocationFeatureModelTests.testAcceptedSamplesUploadToConfiguredServer` und `LiveLocationFeatureModelTests.testFailedUploadRetriesWhenAnotherAcceptedSampleArrives` gegen Apple/macOS abgleichen, bevor sie als rein plattformbedingt abgeschlossen werden
+- den bekannten Problemfall `LiveLocationFeatureModelTests.testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized` gezielt gegenpruefen und als plattformbedingt oder echter Bug klassifizieren
+- verbleibende Linux-Failures sauber nach `plattformbedingt`, `unklar` oder `potenziell echter Bug` einordnen
+
+## 3. Phase 19.53 – Background-Recording auf echtem iPhone verifizieren
 
 Status: **teilweise umgesetzt**
 
@@ -14,84 +42,43 @@ Bereits drin:
 Fehlt noch:
 - echte Device-Verifikation fuer Permission-Upgrade, laufende Aufnahme im Hintergrund und Stop-/Persistenzverhalten
 - separater dokumentierter Nachweis im Apple-/Wrapper-Runbook
-- Korrektur verbleibender Produkttexte, falls der reale Device-Flow noch Unterschiede zeigt
 
-## 2. Phase 19.44 – Live-Tracks-Oberflaeche final einordnen
-
-Status: **teilweise umgesetzt**
-
-Bereits drin:
-- dedizierte `Saved Live Tracks`-Library
-- Editor fuer gespeicherte Tracks
-- Export-Unterstuetzung fuer Saved Live Tracks
-
-Fehlt noch:
-- Produktentscheidung, ob `Saved Live Tracks` nur ein lokaler Nebenfluss bleibt oder einen eigenen primaeren App-Bereich bekommt
-- falls eigener Bereich gewuenscht: Einstieg, Navigation und Informationsarchitektur entsprechend anpassen
-
-## 3. Phase 19.45 – Deduplizierung / Bereinigung
+## 4. Phase 19.54 – Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren
 
 Status: **teilweise umgesetzt**
 
 Bereits drin:
-- Live-Recorder dedupliziert und filtert nach Genauigkeit / Mindestbewegung
-- Export-Sanitizer entfernt doppelte aufeinanderfolgende Pfadpunkte
+- Core-App-Shell haelt Auto-Restore bewusst geparkt
+- Wrapper ruft `restoreBookmarkedFile()` beim Start wieder auf
+- README und Runbooks beschreiben den Status jetzt repo-wahr
 
 Fehlt noch:
-- breitere Bereinigung fuer importierte History vor Export
-- klarere Produktentscheidung, wie aggressiv History-Daten bereinigt werden duerfen
+- frische Device-Verifikation fuer den seit 2026-03-20 wieder aktiven Restore-Pfad
+- dokumentierter Nachweis fuer positiven Restore, Datei-fehlt-Fallback und Clear-nach-Restore
 
-## 4. Phase 19.46 – Highlights / Insights / Zeitraumsauswahl
-
-Status: **geplant**
-
-Fehlt noch:
-- mehr Highlights in Overview und Insights
-- deutlich mehr Insight-Module
-- waehlbarer angezeigter Zeitraum fuer Overview/Insights statt nur passiver Date-Range-Anzeige
-
-## 5. Phase 19.47 – Sprache / Lokalisierung
+## 5. Phase 19.55 – Server-Upload / Review / Privacy finalisieren
 
 Status: **teilweise umgesetzt**
 
 Bereits drin:
-- Sprachwahl `English` / `Deutsch` in den Optionen
-- deutsche Abdeckung fuer Shell-, Optionen-, Import-Entry-, Live-Recording- und zentrale Exportflaechen
-- englischer Fallback fuer noch nicht portierte Strings
+- HTTPS-Endpunktvalidierung
+- optionaler Bearer-Token
+- Retry-on-next-sample
+- Upload-Batching
+- repo-wahre Review-/Runbook-Wording-Basis
 
 Fehlt noch:
-- breitere Lokalisierungsabdeckung der restlichen UI-Texte
-- belastbare Lokalisierungsstrategie fuer Core + Wrapper
-- frische Sichtpruefung auf Apple-Hardware, dass keine unportierten Kernflaechen uebersehen wurden
+- End-to-End-Device-Verifikation mit echtem HTTPS-Endpunkt
+- finale Review-/Privacy-Texte fuer den optionalen Upload-Pfad
+- Entscheidung, ob Privacy-Dokumentation ueber den aktuellen Manifest-/Runbook-Stand hinaus erweitert werden muss
 
-## 6. Phase 19.48 – Heatmap
+## 6. Phase 19.56 – Erst danach weitere Feature-Arbeit
 
-Status: **geplant**
+Status: **bewusst nachgelagert**
 
-Fehlt noch:
-- Produktentscheidung fuer Heatmap-Scope und Datenbasis
-- UI-/Map-Integration ohne bestehende Route-/Waypoint-Vorschau zu verwaessern
-
-## 7. Phase 19.49 – Weitere Exportformate nach GeoJSON
-
-Status: **geplant**
-
-Fehlt noch:
-- Priorisierung zwischen `CSV` und `KMZ`
-- saubere Einhaengung in den bestehenden Exportmodus statt eines unklaren Formatwachstums
-
-## 8. Phase 20 – Apple / ASC / TestFlight / externe Distribution
-
-Status: **bewusst geparkt**
-
-- bleibt ausserhalb des aktuellen Linux-Hosts
-- braucht Apple-Hardware, Signierungskontext und reale Distribution statt lokaler Repo-Arbeit
-
-## 9. Phase 21 – spaetere Folgearbeit
-
-Status: **bewusst unberuehrt**
-
-- weitergehende Konkurrenz-/Feature-Recherche
-- groessere Produktentscheidungen jenseits des aktuellen lokalen Ausbaupfads
+Kommt erst nach den Verifikations- und Wahrheitsthemen oben:
+- weitere Exportformate wie `CSV` oder `KMZ`
+- mehr Insight-Module und Zeitraumsauswahl
+- breitere Lokalisierungsabdeckung
 
 Contract-Files werden weiterhin ausschliesslich vom Producer-Repo aus aktualisiert.

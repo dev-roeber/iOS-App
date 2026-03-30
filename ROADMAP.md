@@ -1,83 +1,87 @@
 # ROADMAP
 
-## Aktueller Stand (2026-03-20)
+## Aktueller Stand (2026-03-30)
 
 ### Repo-Truth-Zusammenfassung
-Lokaler iPhone-Betrieb wurde zuletzt auf Apple-Hardware real verifiziert (iPhone 15 Pro Max, iPhone 12 Pro Max, 2026-03-17).
-Der fruehere 19.x-UI-/UX-Block ist abgeschlossen, aber die Produktarbeit ist lokal **nicht** komplett beendet.
-Seitdem sind zusaetzlich Live-Tracking-Einstellungen, optionales Background-Recording im Codepfad, aktive `KML`-/`GeoJSON`-Exports, eine sichtbare Export-Vorschaukarte, echte lokale Area-Filter, Exportmodi fuer `Tracks` / `Waypoints` / `Both`, optionaler Server-Upload fuer akzeptierte Live-Punkte und eine erste Deutsch/Englisch-Sprachumschaltung umgesetzt worden.
-Offen bleiben mehrere groessere Folgepakete. `NEXT_STEPS.md` bildet deshalb wieder echte lokale Arbeit ab statt nur geparkte Apple-Themen.
+Die letzte real belegte Apple-/Device-Verifikation bleibt der 2026-03-17 auf macOS/Xcode sowie iPhone 15 Pro Max und iPhone 12 Pro Max.
+Der Audit-Block vom 2026-03-30 ist in dieser Revision eingearbeitet: Heatmap, `Live`-Tab, Upload-Batching, Wrapper-Auto-Restore, Default-Endpunkt und Teststatus sind jetzt dokumentarisch an den aktuellen Code angeglichen.
+Diese ROADMAP trennt ab hier explizit zwischen `fertig`, `implementiert aber noch nicht voll verifiziert` und `noch nicht umgesetzt`.
+Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Commits fruehere Zwischenstaende ueberholt haben, gilt der aktuelle Kopfblock als massgeblicher Repo-Truth.
 
-### Fertige Punkte (repo-wahr abgeschlossen)
+### Repo-wahr abgeschlossen
 
 - Import von LH2GPX-`app_export.json`/`.zip` sowie Google-Timeline-`location-history.json`/`.zip`
 - Overview, Days, Day Detail, Insights und Export als produktnahe App-Shell
 - Suche in compact und regular `Days`
 - Re-Select-Verhalten fuer `Days` auf iPhone: erneutes Tab-Tippen fuehrt zum aktuellen Tag
-- stabile Sheet-Praesentation fuer Optionen / Export / Saved Live Tracks im Actions-Menue
+- stabile Sheet-Praesentation fuer Optionen, Export, Heatmap und `Saved Live Tracks`
 - eigene `Saved Live Tracks`-Library plus Editor fuer gespeicherte lokale Tracks
 - aktuelle Position auf der Karte anzeigen
 - Live-Recording mit lokalen Einstellungen fuer Accuracy-Filter und Recording-Detail
-- optionaler Server-Upload fuer akzeptierte Live-Recording-Punkte inklusive URL-/Bearer-Token-Konfiguration und Retry-on-next-sample
-- GPX-Export fuer importierte History und gespeicherte Live-Tracks
-- KML-Export als aktives zweites Format
-- GeoJSON-Export als aktives drittes Format
+- GPX-, KML- und GeoJSON-Export fuer importierte History und gespeicherte Live-Tracks
 - Exportmodi fuer `Tracks`, `Waypoints` und `Both`
 - Waypoint-Export aus importierten Visits sowie Activity-Start/-End-Koordinaten
 - sichtbare Export-Vorschaukarte direkt auf der Export-Seite
 - lokale Export-Filter fuer importierte History nach Datumsfenster, maximaler Genauigkeit, erforderlichem Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon
-- Sprachwahl `English` / `Deutsch` in den Optionen mit deutscher Abdeckung fuer Shell-, Optionen-, Live-Recording-, Import-Entry- und zentrale Exportflaechen
-- Day-List-/Overview-/Insights-/Export-Politur aus den Phasen 19.31–19.38
+- Sprachwahl `English` / `Deutsch` in den Optionen mit sichtbarer deutscher Abdeckung fuer Shell-, Optionen-, Live-Recording-, Import-Entry- und zentrale Exportflaechen
 
-### Teilweise umgesetzt / bewusst noch nicht vollstaendig
+### Implementiert, aber noch nicht voll verifiziert
 
+- **Heatmap**
+  `AppHeatmapView` und das Heatmap-Sheet sind implementiert und jetzt dokumentiert.
+  Offen bleiben dedizierte Tests sowie visuelle/performance-seitige Apple-Verifikation.
+- **`Live`-Tab**
+  Der dedizierte 5. Tab fuer compact iOS 17+ ist implementiert und jetzt dokumentiert.
+  Offen bleiben echte iPhone-UX-/Device-Nachweise fuer diesen Pfad.
 - **Background-Live-Tracking**
   Codepfad, Permissions-Upgrade und Wrapper-Deklaration sind vorhanden.
-  Was noch fehlt: reale Apple-Hardware-Verifikation, Edge-Case-Pruefung fuer Suspend/Resume und saubere Dokumentation eines echten Device-Durchlaufs.
-- **Export-Funktionalitaet**
-  GPX + KML + GeoJSON + Preview + Saved-Live-Tracks + Date/Accuracy/Content/Activity/Area-Filter sind aktiv.
-  Was noch fehlt: CSV/KMZ, per-route Auswahl und ggf. weitere Exportzielvarianten.
-- **Live-Track-Oberflaeche**
-  Library und Editor existieren als eigener lokaler Bereich.
-  Was noch fehlt: Entscheidung, ob daraus ein eigener Haupt-Tab / primaerer App-Bereich werden soll.
-- **Track-Editor**
-  Punkteditor fuer gespeicherte Live-Tracks ist vorhanden.
-  Was noch fehlt: Bearbeitung importierter Historie oder exportierter Daten.
-- **Deduplizierung / Bereinigung**
-  Live-Recorder und Export-Sanitizer deduplizieren bzw. filtern bereits Teilaspekte.
-  Was noch fehlt: breitere Import-/Export-Bereinigung fuer History-Daten.
-- **Highlights / Insights-Ausbau**
-  Basissystem ist vorhanden und die wichtigsten Leerseiten sind gehaertet.
-  Was noch fehlt: weitere inhaltliche Highlights und gezielte neue Insight-Module.
-- **Sprache / Lokalisierung**
-  Deutsch/Englisch-Auswahl ist vorhanden und deckt zentrale Shell-, Optionen-, Import-, Live-Recording- und Exportflaechen ab.
-  Was noch fehlt: breitere Abdeckung der restlichen UI-Strings, konsistente Lokalisierungsstrategie fuer Core + Wrapper und frische Device-Sichtpruefung.
-- **Versionierung**
-  Contract-/Schema-Versionierung ist sauber.
-  Was noch fehlt: eine explizit dokumentierte, einheitliche App-/Release-Versionierungsstrategie ueber Core + Wrapper hinaus.
-- **Optionen-Bug-Verifikation**
-  Die Code-Haertung fuer `Options`-Sheet-Kollisionen ist drin.
-  Was noch fehlt: frische Device-Verifikation, dass der konkrete Nutzerfehler wirklich weg ist.
+  Offen bleiben reale Apple-Hardware-Verifikation, Suspend/Resume-Kantenfaelle und ein sauber protokollierter Device-Durchlauf.
+- **Auto-Restore im Wrapper**
+  Die Core-App-Shell haelt Auto-Restore bewusst geparkt, der Wrapper ruft `restoreBookmarkedFile()` beim Start wieder auf.
+  Offen bleibt eine frische Device-Verifikation fuer den reaktivierten Wrapper-Pfad.
+- **Server-Upload**
+  HTTPS-Upload, Bearer-Token, Retry-on-next-sample und Upload-Batching sind implementiert.
+  Offen bleiben End-to-End-Device-Verifikation sowie finale Review-/Privacy-Einordnung auf Apple-Seite.
+- **Linux-/Apple-Teststatus**
+  Der frische Linux-`swift test`-Lauf vom 2026-03-30 endet mit 217 ausgefuehrten Tests, 2 Skips und 14 Failures.
+  Sichtbar betroffen sind dabei mindestens `LiveLocationFeatureModelTests.testAcceptedSamplesUploadToConfiguredServer`,
+  `LiveLocationFeatureModelTests.testFailedUploadRetriesWhenAnotherAcceptedSampleArrives` und
+  `LiveLocationFeatureModelTests.testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized`; die ersten beiden wirken weiter plattformbedingt,
+  der letzte Fall bleibt bis zum Apple-/macOS-Gegenlauf unklar.
+  Offen bleibt der frische Gegenlauf auf Apple/macOS fuer denselben Repo-Stand.
 
-### Geplante Punkte (noch nicht umgesetzt)
+### Noch nicht umgesetzt
 
 - weitere Exportformate wie CSV oder KMZ
-- tiefergehende Konkurrenz-/Feature-Recherche ausserhalb des Repos
-- weitere Highlights in Overview/Insights
+- per-route Auswahl innerhalb eines Tages
 - deutlich mehr Insight-Module und Insight-Tiefe
 - waehlbarer angezeigter Zeitraum fuer Overview/Insights
-- Heatmap
+- breitere Lokalisierungsabdeckung und eine strengere Lokalisierungspruefung
+- Cloud-/Sync- oder Account-Features
 
-### Aktiver lokaler Fokus
+### Reihenfolge der naechsten offenen Bloecke
 
-Der sinnvolle lokale Fokus liegt jetzt nicht mehr auf allgemeiner 19.x-Politur, sondern auf klar abgegrenzten Ausbaupaketen:
-
-1. Background-Recording auf echter Apple-Hardware verifizieren und haerten
-2. Live-Track-Oberflaeche und Datenbereinigung weiter schaerfen
-3. spaetere Produktausbaustufen fuer Highlights, Insights, Zeitraum und Heatmap sauber schneiden
-4. breitere Lokalisierungsabdeckung und weitere Exportformate nach GeoJSON sinnvoll schneiden
+1. Heatmap-Testabdeckung und Apple-Visual-/Performance-Nachweis nachziehen
+2. Linux-Failures sauber klassifizieren und denselben Stand auf Apple/macOS gegenpruefen
+3. Background-Recording auf echtem iPhone verifizieren und im Runbook belegen
+4. Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren und dokumentieren
+5. optionalen Server-Upload in Review-/Privacy-Texten finalisieren und auf Device end-to-end pruefen
+6. erst danach weitere neue Feature-Arbeit (Insights-Ausbau, CSV/KMZ, Zeitraumsauswahl)
 
 Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt fuer spaetere Folgearbeit reserviert.
+
+### Phase 19.50 – Audit Fix + Roadmap Granularization
+
+**Datum:** 2026-03-30
+**Ziel:** Audit vom 2026-03-30 in repo-wahre Doku, Roadmap und Verifikationsaussagen ueberfuehren, ohne neue Produktfeatures zu bauen.
+
+- [x] Audit-Datei gesichert und gegen den aktuellen Repo-Stand abgeglichen
+- [x] README, ROADMAP, NEXT_STEPS, Feature-Inventar und Runbooks auf Heatmap, `Live`-Tab, Upload-Batching und Wrapper-Auto-Restore synchronisiert
+- [x] Default-Endpunkt in der Doku auf `https://178-104-51-78.sslip.io/live-location` korrigiert
+- [x] Test-/Verifikationsstatus von historischem Xcode-Stand gegen den aktuellen Linux-Stand abgegrenzt
+- [x] Core- und Wrapper-ROADMAP/NEXT_STEPS wieder inhaltlich synchronisiert
+
+**Nicht-Ziele:** Keine neue Produktfunktion, keine neue Apple-Behauptung ohne Nachweis, keine kosmetischen Feature-Claims.
 
 ### Phase 19.41 – Exportmodi / Waypoints vs Tracks
 
@@ -711,7 +715,7 @@ Bleibt geparkt bis Developer-Account-Zugang und tatsaechliche Durchfuehrung moeg
 
 **Betroffene Dateien:** `Sources/LocationHistoryConsumerAppSupport/` (neue Map-Views), ggf. `Sources/LocationHistoryConsumer/Queries/` (Coordinate-Helper).
 
-**Nicht-Ziele:** Keine Heatmap. Kein Replay/Animation. Keine eigene Tile-Engine. Kein Offline-Map-Cache.
+**Nicht-Ziele:** In dieser damaligen Phase keine Heatmap. Kein Replay/Animation. Keine eigene Tile-Engine. Kein Offline-Map-Cache.
 
 ---
 
@@ -825,6 +829,8 @@ Bleibt geparkt bis Developer-Account-Zugang und tatsaechliche Durchfuehrung moeg
 **Problem vorher:** App startete automatisch mit zuletzt importierter Datei. Auf iPhone fuehrte das zu einem eingeschraenkten, schwer vorhersehbaren Einstiegspunkt. Nutzer landete direkt in der Navigation ohne sichtbaren Ausgangspunkt.
 
 **Jetzt:** Jeder App-Start beginnt mit dem manuellen Einstieg (Open location history file / Load Demo Data). Persistenz-Logik ist vollstaendig erhalten und kann jederzeit wieder aktiviert werden.
+
+**Spaeterer Repo-Truth:** Diese Phase bleibt als historischer Zwischenstand korrekt, ist aber nicht mehr der aktuelle Gesamtstatus. Die Core-App-Shell haelt Auto-Restore weiter geparkt, der Wrapper hat `restoreBookmarkedFile()` am 2026-03-20 wieder aktiviert und braucht dafuer eine frische Device-Verifikation.
 
 **Tests:** swift test gruen (70/70). xcodebuild build im Wrapper-Repo BUILD SUCCEEDED.
 

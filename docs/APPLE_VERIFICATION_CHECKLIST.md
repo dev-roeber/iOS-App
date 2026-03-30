@@ -9,7 +9,7 @@ Diese Checkliste trennt klar zwischen:
 
 Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
-## Statusstand 2026-03-20
+## Statusstand 2026-03-30
 
 ### Bereits real verifiziert
 
@@ -32,6 +32,9 @@ Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
 - [ ] foreground-Run explizit ueber `Product > Run` in Xcode selbst noch einmal separat bestaetigen, falls genau dieser IDE-spezifische Laufweg regressionskritisch wird
 - [ ] Live-Location-/Permission-Flow inklusive optionaler `Always Allow`-Erweiterung fuer Background-Recording in einer echten Apple-UI-Session verifizieren und separat protokollieren
+- [ ] den dedizierten `Live`-Tab auf iPhone/iOS 17+ in einer echten Apple-Session separat verifizieren
+- [ ] das Heatmap-Sheet fuer importierte History auf Apple-Hardware visuell und performanceseitig verifizieren
+- [ ] Upload-Batching, Upload-Status und optionalen Server-Upload-Flow in einer echten Apple-Session separat verifizieren
 
 ## Reale Apple-UI-Session 2026-03-17
 
@@ -41,6 +44,7 @@ Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 - Swift unter echtem Xcode: `Apple Swift version 6.2.4`
 - Apple-CLI-Schritte wurden weiterhin explizit mit `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` gefahren
 - fuer die echte interaktive UI-Verifikation wurde das gebaute SwiftPM-App-Binary als foreground-App gestartet; seit Phase 13 ist dieser Schritt ueber `scripts/run_app_shell_macos.sh` standardisiert (baut, wrapped in minimales .app-Bundle, startet per `open`)
+- diese Session predatiert spaetere 2026-03-20-Features wie Heatmap-Sheet, dedizierten `Live`-Tab und Upload-Batching; dafuer existiert hier absichtlich noch kein Apple-Haken
 - verifizierte UI-Dateien:
   - Demo: gebuendelte `golden_app_export_sample_small.json`
   - gueltiger Import: lokale Kopie von `Fixtures/contract/golden_app_export_sample_small.json`
