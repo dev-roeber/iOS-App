@@ -9,15 +9,13 @@ Diese Checkliste trennt klar zwischen:
 
 Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
-## Statusstand 2026-03-31
+## Statusstand 2026-03-30 (Apple Device Verification Batch 1)
 
 ### Wichtige Einschraenkung
 
 Der Verifikationsstand vom 2026-03-17 basiert auf einem aelteren Repo-Stand (vor den 2026-03-18/19/20-Commits). Die seither hinzugekommenen Features (Live-Tab, Heatmap, Background-Recording, Server-Upload) sind auf Apple-Hardware nicht separat verifiziert.
 
-Der frische Host-Nachweis dieses Audits ist Linux-only: `swift test` lief am 2026-03-31 mit `228` Tests, `2` Skips und `0` Failures. `xcodebuild` ist auf diesem Linux-Host nicht verfuegbar; aus diesem Audit stammen deshalb keine neuen Apple-CLI- oder Device-Claims.
-
-Die Apple-CLI-/Device-Nachweise vom 2026-03-30 bleiben als historische Nachweise dokumentiert. Diese Gruen-Aussagen gelten nur fuer die damals protokollierten CLI-Builds/-Tests; sie ersetzen weiterhin keine frische Device-End-to-End-Verifikation der spaeter hinzugekommenen Features.
+Batch 2 hat den Apple-CLI-Stand fuer den aktuellen Repo-Stand auf macOS auf gruen gezogen. Diese Gruen-Aussage gilt nur fuer die dokumentierten CLI-Builds/-Tests; sie ersetzt weiterhin keine frische Device-End-to-End-Verifikation der spaeter hinzugekommenen Features.
 
 Apple Device Verification Batch 1 (2026-03-30) hat zusaetzlich einen echten iPhone-Teilbefund geliefert:
 
@@ -75,12 +73,12 @@ Der spaetere Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 hat zusaetzlich p
 
 - [x] reproduzierbarer foreground-Launch via `scripts/run_app_shell_macos.sh` (standardisiertes .app-Bundle statt ad-hoc-Wrapper)
 
-### Historischer Apple-CLI-Stand (2026-03-30)
+### Apple Stabilization Batch 2 (2026-03-30) – CLI-Stand
 
 - [x] `swift build --target LocationHistoryConsumerAppSupport` laeuft fehlerfrei auf macOS
 - [x] `swift build` (alle Targets) laeuft fehlerfrei auf macOS
-- [x] `swift test` lief auf macOS durch: 224 Tests, 0 Failures
-- [x] `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'` lief auf macOS durch: 224 Tests, 0 Failures
+- [x] `swift test` laeuft auf macOS durch: 224 Tests, 0 Failures
+- [x] `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'` laeuft auf macOS durch: 224 Tests, 0 Failures
 - [x] `xcodebuild build -scheme LH2GPXWrapper -destination generic/platform=iOS` erfolgreich
 - [x] `xcodebuild -list` (Wrapper Package Resolution) erfolgreich
 - [x] `xcodebuild test -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' -only-testing:LH2GPXWrapperTests` erfolgreich
@@ -89,7 +87,6 @@ Der spaetere Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 hat zusaetzlich p
 
 ### Noch offen
 
-- [ ] frischen Apple-CLI-Gegenlauf fuer den aktuellen konsolidierten Repo-Stand auf einem Apple-Host nachziehen; auf diesem Linux-Host nicht moeglich
 - [ ] foreground-Run explizit ueber `Product > Run` in Xcode selbst noch einmal separat bestaetigen, falls genau dieser IDE-spezifische Laufweg regressionskritisch wird
 - [ ] Live-Location-/Permission-Flow inklusive optionaler `Always Allow`-Erweiterung fuer Background-Recording in einer echten Apple-UI-Session verifizieren und separat protokollieren
 - [ ] den dedizierten `Live`-Tab auf iPhone/iOS 17+ funktional verifizieren; Sichtbarkeit im realen AX-Snapshot ist belegt, echte Interaktion noch nicht
