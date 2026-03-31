@@ -831,7 +831,7 @@ struct AppInsightsContentView: View {
                 let rawValue = stat.averageValue
                 let plottedValue = weekdayMetric == .distance ? distanceValue(rawValue, unit: preferences.distanceUnit) : rawValue
                 BarMark(
-                    x: .value(t("Day"), stat.name),
+                    x: .value(t("Day"), stat.label),
                     y: .value(weekdayAxisLabel(for: weekdayMetric), plottedValue)
                 )
                 .foregroundStyle(Color.indigo.gradient)
