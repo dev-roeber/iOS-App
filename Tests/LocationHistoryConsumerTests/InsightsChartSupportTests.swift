@@ -18,15 +18,15 @@ final class InsightsChartSupportTests: XCTestCase {
     func testDistanceMessagesDifferentiateNavigationAndMissingData() {
         XCTAssertEqual(
             InsightsChartSupport.distanceSectionMessage(hasDays: true, canNavigateToDay: true),
-            "Route distances only. Tap a bar to open that day."
+            "Route distance with recorded-trace fallback. Tap a bar to open that day."
         )
         XCTAssertEqual(
             InsightsChartSupport.distanceSectionMessage(hasDays: true, canNavigateToDay: false),
-            "Route distances only."
+            "Route distance with recorded-trace fallback."
         )
         XCTAssertEqual(
             InsightsChartSupport.distanceEmptyMessage(),
-            "No route distance data is available for these days."
+            "No route distance or recorded trace data is available for these days."
         )
     }
 
@@ -108,5 +108,55 @@ final class InsightsChartSupportTests: XCTestCase {
         )
 
         XCTAssertEqual(result, "2024-05-03")
+    }
+
+    func testWeekdayMetricsAndStatsReflectDistanceAndRoutes() {
+        let summaries = [
+            DaySummary(date: "2024-05-06", visitCount: 1, activityCount: 1, pathCount: 2, totalPathPointCount: 6, totalPathDistanceM: 2400, hasContent: true),
+            DaySummary(date: "2024-05-13", visitCount: 0, activityCount: 1, pathCount: 1, totalPathPointCount: 3, totalPathDistanceM: 1200, hasContent: true),
+            DaySummary(date: "2024-05-07", visitCount: 2, activityCount: 0, pathCount: 0, totalPathPointCount: 0, totalPathDistanceM: 0, hasContent: true),
+        ]
+
+        XCTAssertEqual(
+            InsightsChartSupport.availableWeekdayMetrics(for: summaries),
+            [.events, .routes, .distance]
+        )
+
+        let weekdayDistance = InsightsChartSupport.weekdayStats(
+            from: summaries,
+            metric: .distance,
+            locale: Locale(identifier: "en")
+        )
+        let weekdayRoutes = InsightsChartSupport.weekdayStats(
+            from: summaries,
+            metric: .routes,
+            locale: Locale(identifier: "en")
+        )
+
+        guard let firstWeekdayDistance = weekdayDistance.first,
+              let firstWeekdayRoutes = weekdayRoutes.first else {
+            XCTFail("Expected weekday stats for Monday")
+            return
+        }
+
+        XCTAssertEqual(firstWeekdayDistance.label, "Mon")
+        XCTAssertEqual(firstWeekdayDistance.sampleCount, 2)
+        XCTAssertEqual(firstWeekdayDistance.averageValue, 1800, accuracy: 0.001)
+        XCTAssertEqual(firstWeekdayRoutes.averageValue, 1.5, accuracy: 0.001)
+    }
+
+    func testPeriodMetricsExposeDaysEventsAndDistance() {
+        let items = [
+            PeriodBreakdownItem(label: "2024-01", year: 2024, month: 1, days: 2, visits: 3, activities: 1, paths: 2, distanceM: 1800),
+            PeriodBreakdownItem(label: "2024-02", year: 2024, month: 2, days: 1, visits: 0, activities: 1, paths: 0, distanceM: 0),
+        ]
+
+        XCTAssertEqual(
+            InsightsChartSupport.availablePeriodMetrics(for: items),
+            [.days, .events, .distance]
+        )
+        XCTAssertEqual(InsightsChartSupport.periodMetricValue(for: items[0], metric: .days), 2)
+        XCTAssertEqual(InsightsChartSupport.periodMetricValue(for: items[0], metric: .events), 6)
+        XCTAssertEqual(InsightsChartSupport.periodMetricValue(for: items[0], metric: .distance), 1800, accuracy: 0.001)
     }
 }

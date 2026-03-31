@@ -15,15 +15,9 @@ struct AppInsightsContentView: View {
     @State private var activityMetric: ActivityMetric = .count
     @State private var topDayMetric: InsightsTopDayMetric = .events
     @State private var trendMetric: InsightsTrendMetric = .distance
+    @State private var weekdayMetric: InsightsWeekdayMetric = .events
+    @State private var periodMetric: InsightsPeriodMetric = .events
     @State private var surfaceMode: InsightsSurfaceMode = .overview
-
-    private static let chartDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        return formatter
-    }()
 
     init(
         insights: ExportInsights,
@@ -41,41 +35,24 @@ struct AppInsightsContentView: View {
         case breakdowns = "Breakdowns"
     }
 
-    private struct WeekdayStat: Identifiable, Equatable {
-        let id: Int
-        let name: String
-        let avgEvents: Double
-    }
-
-    private var weekdayStats: [WeekdayStat] {
-        guard daySummaries.count >= 3 else { return [] }
-        var buckets: [Int: (total: Int, count: Int)] = [:]
-
-        for summary in daySummaries {
-            guard let date = Self.chartDateFormatter.date(from: summary.date) else { continue }
-            let weekday = Calendar.current.component(.weekday, from: date)
-            let eventCount = summary.visitCount + summary.activityCount + summary.pathCount
-            let existing = buckets[weekday] ?? (total: 0, count: 0)
-            buckets[weekday] = (total: existing.total + eventCount, count: existing.count + 1)
-        }
-
-        let order = [2, 3, 4, 5, 6, 7, 1]
-        let names = preferences.appLanguage.isGerman
-            ? [1: "So", 2: "Mo", 3: "Di", 4: "Mi", 5: "Do", 6: "Fr", 7: "Sa"]
-            : [1: "Sun", 2: "Mon", 3: "Tue", 4: "Wed", 5: "Thu", 6: "Fri", 7: "Sat"]
-
-        return order.compactMap { weekday in
-            guard let bucket = buckets[weekday], bucket.count > 0 else { return nil }
-            return WeekdayStat(
-                id: weekday,
-                name: names[weekday] ?? "\(weekday)",
-                avgEvents: Double(bucket.total) / Double(bucket.count)
-            )
-        }
-    }
-
     private var trendItems: [InsightsMonthlyTrendItem] {
         InsightsMonthlyTrendPresentation.items(from: daySummaries, locale: preferences.appLocale)
+    }
+
+    private var availableWeekdayMetrics: [InsightsWeekdayMetric] {
+        InsightsChartSupport.availableWeekdayMetrics(for: daySummaries)
+    }
+
+    private var weekdayStats: [InsightsWeekdayMetricStat] {
+        InsightsChartSupport.weekdayStats(
+            from: daySummaries,
+            metric: weekdayMetric,
+            locale: preferences.appLocale
+        )
+    }
+
+    private var availablePeriodMetrics: [InsightsPeriodMetric] {
+        InsightsChartSupport.availablePeriodMetrics(for: insights.periodBreakdown)
     }
 
     private var availableTopDayMetrics: [InsightsTopDayMetric] {
@@ -98,7 +75,7 @@ struct AppInsightsContentView: View {
             InsightsSummaryCard(
                 title: t("Total Distance"),
                 value: formatDistance(insights.totalDistanceM, unit: preferences.distanceUnit),
-                subtitle: t("Imported route distance"),
+                subtitle: t("Route distance with trace fallback"),
                 icon: "road.lanes",
                 color: .purple
             ),
@@ -231,6 +208,12 @@ struct AppInsightsContentView: View {
                 if let firstTrendMetric = InsightsMonthlyTrendPresentation.availableMetrics(for: trendItems).first {
                     trendMetric = firstTrendMetric
                 }
+                if let firstWeekdayMetric = availableWeekdayMetrics.first {
+                    weekdayMetric = firstWeekdayMetric
+                }
+                if let firstPeriodMetric = availablePeriodMetrics.first {
+                    periodMetric = firstPeriodMetric
+                }
             }
         }
     }
@@ -353,11 +336,18 @@ struct AppInsightsContentView: View {
         insightSection(t("By Day of Week"), icon: "chart.bar") {
             #if canImport(Charts)
             if !weekdayStats.isEmpty {
+                Picker("", selection: $weekdayMetric) {
+                    ForEach(availableWeekdayMetrics, id: \.self) { metric in
+                        Text(t(metric.rawValue)).tag(metric)
+                    }
+                }
+                .pickerStyle(.segmented)
+
                 weekdayChart
                 if let message = InsightsChartSupport.weekdaySectionMessage(dayCount: daySummaries.count, bucketCount: weekdayStats.count) {
                     sectionHint(t(message))
                 } else {
-                    sectionHint(t("Average visit and activity events per weekday across the imported days."))
+                    sectionHint(t(InsightsChartSupport.weekdaySectionHint(for: weekdayMetric)))
                 }
             } else {
                 insightsEmptyCard(
@@ -425,6 +415,18 @@ struct AppInsightsContentView: View {
 
         insightSection(t("Period Breakdown"), icon: "calendar.badge.clock") {
             if !insights.periodBreakdown.isEmpty {
+                #if canImport(Charts)
+                Picker("", selection: $periodMetric) {
+                    ForEach(availablePeriodMetrics, id: \.self) { metric in
+                        Text(t(metric.rawValue)).tag(metric)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                periodBreakdownChart
+                sectionHint(t(InsightsChartSupport.periodSectionHint(for: periodMetric)))
+                #endif
+
                 ForEach(Array(insights.periodBreakdown.enumerated()), id: \.offset) { _, item in
                     periodRow(item)
                 }
@@ -692,7 +694,7 @@ struct AppInsightsContentView: View {
     private var distanceChart: some View {
         Chart {
             ForEach(daySummaries, id: \.date) { summary in
-                if let date = Self.chartDateFormatter.date(from: summary.date) {
+                if let date = insightsChartDateFormatter.date(from: summary.date) {
                     BarMark(
                         x: .value("Date", date, unit: .day),
                         y: .value(distanceAxisLabel(unit: preferences.distanceUnit), distanceValue(summary.totalPathDistanceM, unit: preferences.distanceUnit))
@@ -750,6 +752,31 @@ struct AppInsightsContentView: View {
         .frame(height: 220)
     }
 
+    private var periodBreakdownChart: some View {
+        Chart {
+            ForEach(insights.periodBreakdown, id: \.label) { item in
+                let rawValue = InsightsChartSupport.periodMetricValue(for: item, metric: periodMetric)
+                let plottedValue = periodMetric == .distance ? distanceValue(rawValue, unit: preferences.distanceUnit) : rawValue
+                BarMark(
+                    x: .value(periodAxisLabel(for: periodMetric), plottedValue),
+                    y: .value(t("Period"), item.label)
+                )
+                .foregroundStyle(periodAccentColor(for: periodMetric).gradient)
+                .cornerRadius(4)
+                .annotation(position: .trailing) {
+                    Text(periodMetric == .distance ? formatDistance(rawValue, unit: preferences.distanceUnit) : "\(Int(rawValue))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .chartXAxis {
+            AxisMarks(position: .bottom)
+        }
+        .chartXAxisLabel(periodAxisLabel(for: periodMetric), alignment: .trailing)
+        .frame(height: CGFloat(max(insights.periodBreakdown.count, 1)) * 42 + 12)
+    }
+
     private var activityTypeChart: some View {
         Chart {
             ForEach(insights.activityBreakdown, id: \.activityType) { item in
@@ -801,14 +828,20 @@ struct AppInsightsContentView: View {
     private var weekdayChart: some View {
         Chart {
             ForEach(weekdayStats) { stat in
+                let rawValue = stat.averageValue
+                let plottedValue = weekdayMetric == .distance ? distanceValue(rawValue, unit: preferences.distanceUnit) : rawValue
                 BarMark(
                     x: .value(t("Day"), stat.name),
-                    y: .value(t("Avg"), stat.avgEvents)
+                    y: .value(weekdayAxisLabel(for: weekdayMetric), plottedValue)
                 )
                 .foregroundStyle(Color.indigo.gradient)
                 .cornerRadius(4)
                 .annotation(position: .top) {
-                    Text(String(format: "%.1f", stat.avgEvents))
+                    Text(
+                        weekdayMetric == .distance
+                            ? formatDistance(rawValue, unit: preferences.distanceUnit)
+                            : String(format: "%.1f", rawValue)
+                    )
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -817,7 +850,7 @@ struct AppInsightsContentView: View {
         .chartYAxis {
             AxisMarks(position: .leading)
         }
-        .chartYAxisLabel(t("Avg events"), alignment: .trailing)
+        .chartYAxisLabel(weekdayAxisLabel(for: weekdayMetric), alignment: .trailing)
         .frame(height: 150)
     }
     #endif
@@ -848,6 +881,39 @@ struct AppInsightsContentView: View {
         }
     }
 
+    private func weekdayAxisLabel(for metric: InsightsWeekdayMetric) -> String {
+        switch metric {
+        case .events:
+            return t("Avg events")
+        case .routes:
+            return t("Avg routes")
+        case .distance:
+            return distanceAxisLabel(unit: preferences.distanceUnit)
+        }
+    }
+
+    private func periodAxisLabel(for metric: InsightsPeriodMetric) -> String {
+        switch metric {
+        case .days:
+            return t("Days")
+        case .events:
+            return t("Events")
+        case .distance:
+            return distanceAxisLabel(unit: preferences.distanceUnit)
+        }
+    }
+
+    private func periodAccentColor(for metric: InsightsPeriodMetric) -> Color {
+        switch metric {
+        case .days:
+            return .orange
+        case .events:
+            return .blue
+        case .distance:
+            return .purple
+        }
+    }
+
     private func axisLabel(for metric: InsightsTrendMetric) -> String {
         switch metric {
         case .distance:
@@ -872,6 +938,10 @@ struct AppInsightsContentView: View {
 
     private func t(_ english: String) -> String {
         preferences.localized(english)
+    }
+
+    private var insightsChartDateFormatter: DateFormatter {
+        Self.chartDateFormatter
     }
 
     private func dayCountText(_ count: Int) -> String {
@@ -901,6 +971,16 @@ private struct InsightsSummaryCard: Identifiable {
     let color: Color
 
     var id: String { title }
+}
+
+private extension AppInsightsContentView {
+    static let chartDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
 }
 
 #endif

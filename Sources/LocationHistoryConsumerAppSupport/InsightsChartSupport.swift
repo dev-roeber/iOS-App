@@ -6,6 +6,27 @@ enum ActivityMetric: String, CaseIterable {
     case distance = "Distance"
 }
 
+enum InsightsWeekdayMetric: String, CaseIterable {
+    case events = "Events"
+    case routes = "Routes"
+    case distance = "Distance"
+}
+
+enum InsightsPeriodMetric: String, CaseIterable {
+    case days = "Days"
+    case events = "Events"
+    case distance = "Distance"
+}
+
+struct InsightsWeekdayMetricStat: Identifiable, Equatable {
+    let weekday: Int
+    let label: String
+    let averageValue: Double
+    let sampleCount: Int
+
+    var id: Int { weekday }
+}
+
 enum InsightsOverviewState: Equatable {
     case noDays
     case sparseHistory(dayCount: Int)
@@ -56,6 +77,98 @@ enum InsightsChartSupport {
         items.contains(where: { $0.totalDistanceKM > 0 }) ? [.count, .distance] : [.count]
     }
 
+    static func availableWeekdayMetrics(for daySummaries: [DaySummary]) -> [InsightsWeekdayMetric] {
+        var metrics: [InsightsWeekdayMetric] = []
+        if daySummaries.contains(where: { ($0.visitCount + $0.activityCount + $0.pathCount) > 0 }) {
+            metrics.append(.events)
+        }
+        if daySummaries.contains(where: { $0.pathCount > 0 }) {
+            metrics.append(.routes)
+        }
+        if hasDistanceData(in: daySummaries) {
+            metrics.append(.distance)
+        }
+        return metrics
+    }
+
+    static func weekdayStats(
+        from daySummaries: [DaySummary],
+        metric: InsightsWeekdayMetric,
+        locale: Locale
+    ) -> [InsightsWeekdayMetricStat] {
+        guard daySummaries.count >= minimumDaysForWeekdayChart else { return [] }
+
+        var buckets: [Int: (total: Double, count: Int)] = [:]
+        for summary in daySummaries {
+            guard let date = isoDateFormatter.date(from: summary.date) else { continue }
+            let weekday = weekdayFor(date: date)
+            let existing = buckets[weekday] ?? (total: 0, count: 0)
+            buckets[weekday] = (
+                total: existing.total + weekdayMetricValue(for: summary, metric: metric),
+                count: existing.count + 1
+            )
+        }
+
+        let order = [2, 3, 4, 5, 6, 7, 1]
+        let names = weekdayNames(locale: locale)
+        return order.compactMap { weekday in
+            guard let bucket = buckets[weekday], bucket.count > 0 else { return nil }
+            return InsightsWeekdayMetricStat(
+                weekday: weekday,
+                label: names[weekday] ?? "\(weekday)",
+                averageValue: bucket.total / Double(bucket.count),
+                sampleCount: bucket.count
+            )
+        }
+    }
+
+    static func weekdaySectionHint(for metric: InsightsWeekdayMetric) -> String {
+        switch metric {
+        case .events:
+            return "Average visit and activity events per weekday across the imported days."
+        case .routes:
+            return "Average recorded routes per weekday across the imported days."
+        case .distance:
+            return "Average visible route distance per weekday, using recorded trace geometry when imported route totals are missing."
+        }
+    }
+
+    static func availablePeriodMetrics(for items: [PeriodBreakdownItem]) -> [InsightsPeriodMetric] {
+        var metrics: [InsightsPeriodMetric] = []
+        if items.contains(where: { $0.days > 0 }) {
+            metrics.append(.days)
+        }
+        if items.contains(where: { ($0.visits + $0.activities + $0.paths) > 0 }) {
+            metrics.append(.events)
+        }
+        if items.contains(where: { $0.distanceM > 0 }) {
+            metrics.append(.distance)
+        }
+        return metrics
+    }
+
+    static func periodMetricValue(for item: PeriodBreakdownItem, metric: InsightsPeriodMetric) -> Double {
+        switch metric {
+        case .days:
+            return Double(item.days)
+        case .events:
+            return Double(item.visits + item.activities + item.paths)
+        case .distance:
+            return item.distanceM
+        }
+    }
+
+    static func periodSectionHint(for metric: InsightsPeriodMetric) -> String {
+        switch metric {
+        case .days:
+            return "Compare how many imported days contribute to each visible period."
+        case .events:
+            return "Compare the combined visit, activity and route volume across visible periods."
+        case .distance:
+            return "Compare visible route distance by period, using recorded trace geometry when imported route totals are missing."
+        }
+    }
+
     static func overviewState(
         dayCount: Int,
         hasDistanceData: Bool,
@@ -76,13 +189,13 @@ enum InsightsChartSupport {
             return "No day summaries are available for this chart."
         }
         if canNavigateToDay {
-            return "Route distances only. Tap a bar to open that day."
+            return "Route distance with recorded-trace fallback. Tap a bar to open that day."
         }
-        return "Route distances only."
+        return "Route distance with recorded-trace fallback."
     }
 
     static func distanceEmptyMessage() -> String {
-        "No route distance data is available for these days."
+        "No route distance or recorded trace data is available for these days."
     }
 
     static func weekdaySectionMessage(dayCount: Int, bucketCount: Int) -> String? {
@@ -129,4 +242,28 @@ enum InsightsChartSupport {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter
     }()
+
+    private static func weekdayMetricValue(for summary: DaySummary, metric: InsightsWeekdayMetric) -> Double {
+        switch metric {
+        case .events:
+            return Double(summary.visitCount + summary.activityCount + summary.pathCount)
+        case .routes:
+            return Double(summary.pathCount)
+        case .distance:
+            return summary.totalPathDistanceM
+        }
+    }
+
+    private static func weekdayFor(date: Date) -> Int {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+        return calendar.component(.weekday, from: date)
+    }
+
+    private static func weekdayNames(locale: Locale) -> [Int: String] {
+        if locale.identifier.lowercased().hasPrefix("de") {
+            return [1: "So", 2: "Mo", 3: "Di", 4: "Mi", 5: "Do", 6: "Fr", 7: "Sa"]
+        }
+        return [1: "Sun", 2: "Mon", 3: "Tue", 4: "Wed", 5: "Thu", 6: "Fri", 7: "Sat"]
+    }
 }

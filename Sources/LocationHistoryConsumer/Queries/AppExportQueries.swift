@@ -381,7 +381,7 @@ public enum AppExportQueries {
             activityCount: day.activities.count,
             pathCount: day.paths.count,
             totalPathPointCount: day.paths.reduce(0) { $0 + $1.points.count },
-            totalPathDistanceM: day.paths.reduce(0) { $0 + ($1.distanceM ?? 0) },
+            totalPathDistanceM: effectiveDistance(for: day),
             hasContent: !day.visits.isEmpty || !day.activities.isEmpty || !day.paths.isEmpty,
             exportablePathCount: ExportRouteSanitizer.exportablePathCount(in: day)
         )
@@ -408,7 +408,7 @@ public enum AppExportQueries {
                 let type = normalizedActivityType(activity.activityType)
                 var aggregate = aggregates[type, default: ActivityAggregate()]
                 aggregate.count += 1
-                aggregate.totalDistanceKM += (activity.distanceM ?? 0) / 1000
+                aggregate.totalDistanceKM += effectiveDistance(for: activity) / 1000
 
                 if let durationH = durationHours(start: activity.startTime, end: activity.endTime) {
                     aggregate.totalDurationH += durationH
@@ -476,7 +476,7 @@ public enum AppExportQueries {
             aggregate.visits += day.visits.count
             aggregate.activities += day.activities.count
             aggregate.paths += day.paths.count
-            aggregate.distanceM += day.paths.reduce(0) { $0 + ($1.distanceM ?? 0) }
+            aggregate.distanceM += effectiveDistance(for: day)
             aggregates[label] = aggregate
         }
 
@@ -609,6 +609,77 @@ public enum AppExportQueries {
             coordinates.append(ExportCoordinate(lat: endLat, lon: endLon))
         }
         return coordinates
+    }
+
+    private static func effectiveDistance(for day: Day) -> Double {
+        let pathDistance = day.paths.reduce(0.0) { partialResult, path in
+            partialResult + effectiveDistance(for: path)
+        }
+        guard pathDistance <= 0 else {
+            return pathDistance
+        }
+
+        return day.activities.reduce(0.0) { partialResult, activity in
+            partialResult + effectiveDistance(for: activity)
+        }
+    }
+
+    private static func effectiveDistance(for path: Path) -> Double {
+        if let distanceM = path.distanceM, distanceM > 0 {
+            return distanceM
+        }
+
+        let pointCoordinates = path.points.map { ExportCoordinate(lat: $0.lat, lon: $0.lon) }
+        if pointCoordinates.count >= 2 {
+            return polylineDistance(for: pointCoordinates)
+        }
+
+        guard let flatCoordinates = path.flatCoordinates, flatCoordinates.count >= 4 else {
+            return 0
+        }
+        return polylineDistance(
+            for: stride(from: 0, to: flatCoordinates.count - 1, by: 2).map {
+                ExportCoordinate(lat: flatCoordinates[$0], lon: flatCoordinates[$0 + 1])
+            }
+        )
+    }
+
+    private static func effectiveDistance(for activity: Activity) -> Double {
+        if let distanceM = activity.distanceM, distanceM > 0 {
+            return distanceM
+        }
+
+        guard let flatCoordinates = activity.flatCoordinates, flatCoordinates.count >= 4 else {
+            return 0
+        }
+        return polylineDistance(
+            for: stride(from: 0, to: flatCoordinates.count - 1, by: 2).map {
+                ExportCoordinate(lat: flatCoordinates[$0], lon: flatCoordinates[$0 + 1])
+            }
+        )
+    }
+
+    private static func polylineDistance(for coordinates: [ExportCoordinate]) -> Double {
+        guard coordinates.count >= 2 else {
+            return 0
+        }
+
+        return zip(coordinates, coordinates.dropFirst()).reduce(0.0) { partialResult, pair in
+            partialResult + haversineDistance(from: pair.0, to: pair.1)
+        }
+    }
+
+    private static func haversineDistance(from start: ExportCoordinate, to end: ExportCoordinate) -> Double {
+        let earthRadiusM = 6_371_000.0
+        let startLat = start.lat * .pi / 180
+        let endLat = end.lat * .pi / 180
+        let deltaLat = (end.lat - start.lat) * .pi / 180
+        let deltaLon = (end.lon - start.lon) * .pi / 180
+
+        let a = sin(deltaLat / 2) * sin(deltaLat / 2) +
+            cos(startLat) * cos(endLat) * sin(deltaLon / 2) * sin(deltaLon / 2)
+        let c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return earthRadiusM * c
     }
 
     private static func durationHours(start: String?, end: String?) -> Double? {

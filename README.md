@@ -177,6 +177,7 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - Day-Detail priorisiert importierte Tageshistorie, Kartenkontext und Timeline; lokale Live-Recording-/Track-Werkzeuge bleiben als sekundaerer Block getrennt
 - Insights-Tab zeigt jetzt Top-Level- und Section-Empty-States fuer no-days-, sparse- und no-chart-Faelle statt leerer Flaechen
 - Insights-Charts zeigen chart-spezifische Low-Data-Hinweise, robustere Day-Tap-Navigation und lesbarere Achsen
+- Insights-Distanzmetriken nutzen bevorzugt importierte Routendistanzen und fallen, wenn diese fehlen, kontrolliert auf vorhandene Pfad-/Trace-Geometrie statt auf `0 m` zurueck
 - regular-width Detailansicht bietet einen expliziten Rueckweg zur `Overview`
 - Karten-MVP: MapKit-Ansicht im Day-Detail mit Pfad-Polylines und Visit-Markern (iOS 17+)
 - Live-Recording-Sektion im Day-Detail und dedizierter `Live`-Tab: manueller Ein/Aus-Schalter, Permission-State, aktueller Standort, Live-Polyline, klarere Recording-/Upload-Hierarchie, Status-Chips und Quick Actions
@@ -189,7 +190,7 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - ein zentrales Actions-Menue in der Toolbar fuehrt Import, Demo, Optionen und Clear
 - das Actions-Menue kann auf unterstuetzten Apple-Plattformen zusaetzlich ein eigenes Heatmap-Sheet fuer importierte History mit lokalen Darstellungsreglern, geglaettetem viewport-basiert aggregiertem Dichte-Rendering und verstaerktem Farb-/Kontrast-Mapping oeffnen
 - Heatmap-Detailzoom zeigt jetzt auch bei duennen Daten deutlich frueher Farbe, mehr Hue-Unterschiede im Low-/Mid-Bereich und weniger blasse Flaechen, ohne den bestehenden LOD-/Viewport-Ansatz aufzugeben
-- die Insights-Seite bietet jetzt segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) mit KPI-Karten, Highlight-Karten, `Top Days`, Monatstrends, Wochentags- und Aktivitaetsauswertungen
+- die Insights-Seite bietet jetzt segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) mit KPI-Karten, Highlight-Karten, `Top Days`, Monatstrends, Wochentags- und Aktivitaetsauswertungen; Wochentage und Perioden koennen belastbar zwischen Ereignissen, Routen und Distanz umgeschaltet werden
 - startet mit lokalem JSON-/ZIP-Import als primaerem Einstieg
 - bietet Demo-Daten als sekundaeren Fallback
 - Export-Flow zeigt jetzt Auswahlstatus, Disabled-Gruende und den vorgeschlagenen Dateinamen passend zum aktiven Exportformat vor dem fileExporter-Dialog

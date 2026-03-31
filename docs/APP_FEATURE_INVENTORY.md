@@ -151,13 +151,13 @@ Present:
 - highlight cards for busiest day, most visits, most routes and longest distance
 - top-days module with switchable ranking metrics
 - monthly-trends module with switchable metrics derived from visible days
-- distance-over-time chart when distance data exists
+- distance-over-time chart when distance data exists; prefers imported route totals and otherwise falls back to recorded path/trace geometry where verifiable
 - daily averages cards when at least two days exist
 - activity-type breakdown cards
 - activity-type chart with `Count` / `Distance` toggle
 - visit-type chart and list
-- weekday chart when enough day data exists
-- period breakdown cards when period stats exist
+- weekday chart when enough day data exists, with switchable `Events` / `Routes` / `Distance` metrics
+- period breakdown cards and chart when period stats exist, with switchable `Days` / `Events` / `Distance` metrics
 - explicit empty-state/fallback messaging for no-days, low-data and section-unavailable insight cases
 - visible chart hints/labels for tap navigation, selected metric context and weekday averages
 - insights are built from decoded stats with day-level fallbacks where implemented
