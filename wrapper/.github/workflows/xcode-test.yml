@@ -12,21 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The Wrapper project uses a local Swift package reference at
-      # ../../../Code/LocationHistory2GPX-iOS (relative to .xcodeproj).
-      # On the GitHub Actions runner (home = /Users/runner), the default
-      # workspace is /Users/runner/work/LH2GPXWrapper/LH2GPXWrapper, so
-      # three levels up lands at /Users/runner — matching $HOME exactly.
-      - name: Checkout Core Package
-        run: |
-          mkdir -p "$HOME/Code"
-          git clone --depth 1 \
-            https://github.com/dev-roeber/LocationHistory2GPX-iOS.git \
-            "$HOME/Code/LocationHistory2GPX-iOS"
+      # In the monorepo the Core Swift Package lives at the repo root.
+      # The Xcode project at wrapper/LH2GPXWrapper.xcodeproj references it
+      # via relativePath = "../.." which resolves to the repo root.
+      # No separate clone of the Core package is needed.
 
       - name: Run Tests
         run: |
           xcodebuild test \
-            -project LH2GPXWrapper.xcodeproj \
+            -project wrapper/LH2GPXWrapper.xcodeproj \
             -scheme LH2GPXWrapper \
             -destination 'platform=iOS Simulator,OS=latest,name=iPhone 17'

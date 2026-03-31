@@ -4,7 +4,7 @@ import FoundationNetworking
 #endif
 
 public struct LiveLocationServerUploadConfiguration: Equatable {
-    public static let defaultTestEndpointURLString = "https://178-104-51-78.sslip.io/live-location"
+    public static let defaultTestEndpointURLString = ""
 
     public var isEnabled: Bool
     public var endpointURLString: String

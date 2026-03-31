@@ -2,6 +2,17 @@
 
 ## 2026-03-31
 
+### Monorepo-Migration + Testendpunkt-Bereinigung
+
+- `wrapper/` via `git subtree` als Teil des Monorepos eingefuehrt; `LH2GPXWrapper` lebt jetzt unter `wrapper/` im Monorepo-Root
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`: lokale SPM-Referenz von `../LocationHistory2GPX-iOS` auf `../..` (Monorepo-Root) umgestellt
+- `wrapper/.github/workflows/xcode-test.yml`: separater Core-Clone entfernt, Pfad auf `-project wrapper/LH2GPXWrapper.xcodeproj` aktualisiert
+- `wrapper/README.md`, `wrapper/docs/LOCAL_IPHONE_RUNBOOK.md`, `wrapper/docs/TESTFLIGHT_RUNBOOK.md`: alle `xcodebuild`-Pfade und Verzeichniswechsel auf Monorepo-Layout aktualisiert
+- `Sources/LocationHistoryConsumerAppSupport/LiveLocationServerUploader.swift`: hart kodierter Testendpunkt `https://178-104-51-78.sslip.io/live-location` entfernt; `defaultTestEndpointURLString` ist jetzt `""` (kein Produktstandard-Testserver)
+- `Sources/LocationHistoryConsumerAppSupport/AppOptionsView.swift`: `LabeledContent("Test Endpoint", ...)` und dazugehoeriger Footer-Hinweis auf den Testserver entfernt
+- `Sources/LocationHistoryConsumerAppSupport/AppLanguageSupport.swift`: veraltete Uebersetzungen fuer `"Test Endpoint"` und den sslip.io-Footer-Hinweis entfernt; neuer kompakter Footer-String ergaenzt
+- `swift test`: `228` Tests, `2` Skips, `0` Failures
+
 ### 4-Repo Status Documentation
 
 - README-Rolle des Repos von zu kleinem Consumer-/Demo-Wording auf den realen Stand als eigentliche iOS-Produkt-UI korrigiert

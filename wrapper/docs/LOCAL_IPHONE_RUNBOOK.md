@@ -1,6 +1,6 @@
 # Lokaler iPhone-Betrieb – Runbook
 
-Stand: 2026-03-31
+Stand: 2026-03-31 (Monorepo-Migration)
 
 ---
 
@@ -8,6 +8,10 @@ Stand: 2026-03-31
 
 Die App lokal auf echten iPhones und im Simulator reproduzierbar starten, testen und verifizieren.
 Dieses Runbook ersetzt keine App-Store-Einreichung – es dient dem lokalen Entwicklungs- und Verifikationsbetrieb.
+
+**Monorepo-Hinweis:** Das Wrapper-Projekt liegt jetzt unter `wrapper/` im Monorepo-Root
+(`LocationHistory2GPX-Monorepo`). Alle `xcodebuild`-Aufrufe verwenden deshalb
+`-project wrapper/LH2GPXWrapper.xcodeproj` vom Monorepo-Root aus.
 
 Wichtig fuer diesen Audit: auf dem aktuellen Linux-Host ist `xcodebuild` nicht verfuegbar. Die Apple-/Simulator-/Device-Befunde unten bleiben deshalb historische Nachweise vom 2026-03-17 beziehungsweise 2026-03-30 und wurden in diesem Audit nicht frisch wiederholt.
 
@@ -38,16 +42,16 @@ Verifizierung auf iPhone 12 Pro Max und iPhone 15 Pro Max ist nur auf echtem Ger
 ### Simulator starten (CLI)
 
 ```bash
-cd ~/Desktop/Github-ios/LH2GPXWrapper
+cd ~/repos/LocationHistory2GPX-Monorepo
 
 # Build + Launch im Simulator
-xcodebuild -project LH2GPXWrapper.xcodeproj \
+xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj \
   -scheme LH2GPXWrapper \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' \
   build
 
 # Alternativ: kleinstes verfuegbares Geraet (iPhone 16e)
-xcodebuild -project LH2GPXWrapper.xcodeproj \
+xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj \
   -scheme LH2GPXWrapper \
   -destination 'platform=iOS Simulator,name=iPhone 16e,OS=latest' \
   build
@@ -63,7 +67,7 @@ xcrun simctl list devices available | grep -E "iOS 26" -A 30 | grep iPhone
 
 ```bash
 xcodebuild test \
-  -project LH2GPXWrapper.xcodeproj \
+  -project wrapper/LH2GPXWrapper.xcodeproj \
   -scheme LH2GPXWrapper \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' \
   -only-testing:LH2GPXWrapperTests
@@ -95,7 +99,7 @@ xcodebuild test \
 
 ### Deploy per Xcode (empfohlen)
 
-1. `LH2GPXWrapper.xcodeproj` in Xcode oeffnen
+1. `wrapper/LH2GPXWrapper.xcodeproj` in Xcode oeffnen
 2. Scheme `LH2GPXWrapper` waehlen
 3. Zielgeraet (iPhone 15 Pro Max oder iPhone 12 Pro Max) auswaehlen
 4. Product > Run
@@ -103,9 +107,9 @@ xcodebuild test \
 ### Deploy per CLI
 
 ```bash
-cd ~/Desktop/Github-ios/LH2GPXWrapper
+cd ~/repos/LocationHistory2GPX-Monorepo
 
-xcodebuild -project LH2GPXWrapper.xcodeproj \
+xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj \
   -scheme LH2GPXWrapper \
   -destination 'platform=iOS,name=<Geraetename>' \
   build
@@ -138,7 +142,7 @@ xcrun xctrace list devices 2>/dev/null | grep -v "Simulator"
 
 **Apple Device Verification Batch 1 (2026-03-30, echtes iPhone):**
 - Geraet: `iPhone 15 Pro Max` (`iPhone16,2`), iOS `26.3 (23D127)`, per USB verbunden, entsperrt, Developer Mode aktiv
-- `xcodebuild test -allowProvisioningUpdates -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'id=00008130-00163D0A0461401C' -only-testing:LH2GPXWrapperUITests` lief real gegen dieses Geraet
+- historischer Befehlspfad (vor Monorepo-Migration): `xcodebuild test -allowProvisioningUpdates -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'id=00008130-00163D0A0461401C' -only-testing:LH2GPXWrapperUITests` lief real gegen dieses Geraet
 - `LH2GPXWrapperUITestsLaunchTests.testLaunch` lief auf dem echten iPhone erfolgreich durch
 - `LH2GPXWrapperUITests.testAppStoreScreenshots` scheiterte inhaltlich: statt leerem Import-State war bereits ein wiederhergestellter Import aktiv, daher fehlte der erwartete `Demo Data`-Button
 - der zugehoerige Accessibility-Snapshot zeigte:
@@ -216,7 +220,7 @@ Auf **jedem Geraet** folgenden Flow pruefen und Ergebnis nachtragen:
 ## iPad
 
 iPad-Betrieb kommt bewusst spaeter.
-Screenshots fuer ASC sind bereits erstellt (`docs/appstore-screenshots/ipad/`).
+Screenshots fuer ASC sind bereits erstellt (`wrapper/docs/appstore-screenshots/ipad/`).
 Produktiver iPad-Run-Fokus: nachgelagert nach iPhone-Verifikation.
 
 ---
@@ -225,7 +229,7 @@ Produktiver iPad-Run-Fokus: nachgelagert nach iPhone-Verifikation.
 
 | Dokument | Inhalt |
 |----------|--------|
-| `docs/TESTFLIGHT_RUNBOOK.md` | App Store Connect / TestFlight (bewusst geparkt bis ASC-Zugang) |
-| `docs/appstore-screenshots/` | Screenshots fuer ASC (lokal erstellt, 2026-03-17) |
-| Core-Repo `docs/XCODE_RUNBOOK.md` | Xcode-Runbook fuer das Swift Package |
-| Core-Repo `docs/APPLE_VERIFICATION_CHECKLIST.md` | Verifikations-Gates |
+| `wrapper/docs/TESTFLIGHT_RUNBOOK.md` | App Store Connect / TestFlight (bewusst geparkt bis ASC-Zugang) |
+| `wrapper/docs/appstore-screenshots/` | Screenshots fuer ASC (lokal erstellt, 2026-03-17) |
+| `docs/XCODE_RUNBOOK.md` (Root) | Xcode-Runbook fuer das Swift Package |
+| `docs/APPLE_VERIFICATION_CHECKLIST.md` (Root) | Verifikations-Gates |

@@ -105,10 +105,12 @@ xcrun simctl list devices available "iOS 26.3" | grep "iPhone 17 Pro Max\|iPad P
 ### Screenshots reproduzieren (UI-Test)
 
 ```bash
+cd ~/repos/LocationHistory2GPX-Monorepo
+
 # iPhone 17 Pro Max
 # In LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift: deviceFolder = "iphone" (Standard)
 xcodebuild test \
-  -project LH2GPXWrapper.xcodeproj \
+  -project wrapper/LH2GPXWrapper.xcodeproj \
   -scheme LH2GPXWrapper \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' \
   -only-testing:LH2GPXWrapperUITests/LH2GPXWrapperUITests/testAppStoreScreenshots
@@ -116,15 +118,15 @@ xcodebuild test \
 # iPad Pro 13-inch
 # In LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift: deviceFolder auf "ipad" aendern
 xcodebuild test \
-  -project LH2GPXWrapper.xcodeproj \
+  -project wrapper/LH2GPXWrapper.xcodeproj \
   -scheme LH2GPXWrapper \
   -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M5),OS=latest' \
   -only-testing:LH2GPXWrapperUITests/LH2GPXWrapperUITests/testAppStoreScreenshots
 
 # Output liegt in /tmp/lh2gpx_screenshots/{iphone,ipad}/
 # Danach kopieren:
-cp /tmp/lh2gpx_screenshots/iphone/*.png docs/appstore-screenshots/iphone/
-cp /tmp/lh2gpx_screenshots/ipad/*.png docs/appstore-screenshots/ipad/
+cp /tmp/lh2gpx_screenshots/iphone/*.png wrapper/docs/appstore-screenshots/iphone/
+cp /tmp/lh2gpx_screenshots/ipad/*.png wrapper/docs/appstore-screenshots/ipad/
 ```
 
 ### Screenshot-Screens
@@ -139,10 +141,10 @@ cp /tmp/lh2gpx_screenshots/ipad/*.png docs/appstore-screenshots/ipad/
 ## Archive-Build (lokal reproduzierbar)
 
 ```bash
-cd ~/Desktop/Github-ios/LH2GPXWrapper
+cd ~/repos/LocationHistory2GPX-Monorepo
 
 xcodebuild archive \
-  -project LH2GPXWrapper.xcodeproj \
+  -project wrapper/LH2GPXWrapper.xcodeproj \
   -scheme LH2GPXWrapper \
   -destination 'generic/platform=iOS' \
   -archivePath ~/Desktop/LH2GPXWrapper.xcarchive

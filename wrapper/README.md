@@ -2,30 +2,37 @@
 
 Xcode-Wrapper-Projekt fuer die iOS-App von LocationHistory2GPX.
 
-## Rolle dieses Repos
+**Monorepo-Hinweis:** Dieses Verzeichnis (`wrapper/`) ist Teil des Monorepos
+`LocationHistory2GPX-Monorepo`. Der Core Swift Package liegt im Monorepo-Root.
+Das Xcode-Projekt referenziert den Core per `relativePath = "../.."`.
+
+## Rolle dieses Verzeichnisses
 
 - Xcode-Projekt (.xcodeproj) fuer die fertige iOS-App
-- bindet das Core-/Consumer-Repo `LocationHistory2GPX-iOS` als lokales Swift Package ein
+- bindet das Core-Swift-Package aus dem Monorepo-Root als lokales Swift Package ein
 - liefert Bundle-Metadaten, App-Icon, Privacy-Manifest und Signing-Konfiguration
 - ist der Weg zu Geraetedeploy, TestFlight und App Store
+- ist bewusst nicht die fachliche Truth-Quelle fuer Parsing-/Export-/Importlogik; diese bleibt im Root-Package
 
-## Zwei-Repo-Architektur
+## Monorepo-Architektur
 
-| Aspekt | Core-Repo (`LocationHistory2GPX-iOS`) | Wrapper-Repo (`LH2GPXWrapper`) |
-|--------|----------------------------------------|-------------------------------|
-| Pfad | workspace-lokaler Checkout des Core-Repos | workspace-lokaler Checkout des Wrapper-Repos |
+| Aspekt | Core (Monorepo-Root) | Wrapper (`wrapper/`) |
+|--------|----------------------|---------------------|
+| Pfad | `/` (Repo-Root, `Package.swift`) | `wrapper/` |
 | Inhalt | Swift Package: Decoder, Queries, AppSupport, DemoSupport | Xcode-Projekt: App-Target, Bundle-Config, Assets |
-| Build | `swift build` / `swift test` | `xcodebuild` / Xcode IDE |
+| Build | `swift build` / `swift test` im Root | `xcodebuild` mit `-project wrapper/LH2GPXWrapper.xcodeproj` |
 | Tests | Unit-Tests via SwiftPM | Xcode-Unit- und UI-Tests |
-| Abhaengigkeit | keins (eigenstaendig) | haengt vom Core-Repo ab (lokale SPM-Referenz) |
+| Abhaengigkeit | eigenstaendig | haengt vom Core ab (lokale SPM-Referenz `../..`) |
 
 ## SPM-Abhaengigkeit
 
-Das Xcode-Projekt referenziert das Core-Repo als lokales Swift Package:
+Das Xcode-Projekt referenziert den Core als lokales Swift Package:
 
 ```
-../LocationHistory2GPX-iOS
+../..
 ```
+
+(relativ zum `wrapper/`-Verzeichnis; zeigt auf den Monorepo-Root mit `Package.swift`)
 
 Genutzte Produkte:
 - `LocationHistoryConsumerAppSupport` – Produkt-UI (NavigationSplitView, Dashboard, Day-Detail, Map), Session, Loader, Bookmark-Persistenz, Live-Recording-Domain
@@ -44,14 +51,16 @@ Genutzte Produkte:
 ## Lokaler Build
 
 In Xcode:
-1. `LH2GPXWrapper.xcodeproj` oeffnen
+1. `wrapper/LH2GPXWrapper.xcodeproj` oeffnen
 2. Scheme `LH2GPXWrapper` waehlen
 3. Zielgeraet oder Simulator waehlen
 4. Product > Run
 
 Per CLI:
 ```bash
-xcodebuild -project LH2GPXWrapper.xcodeproj \
+cd ~/repos/LocationHistory2GPX-Monorepo
+
+xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj \
   -scheme LH2GPXWrapper \
   -destination 'generic/platform=iOS' \
   build

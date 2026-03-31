@@ -212,7 +212,7 @@
 			mainGroup = 9E7516E02F69096F00E212A7;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				9E7517132F690B6700E212A7 /* XCLocalSwiftPackageReference "../../../Code/LocationHistory2GPX-iOS" */,
+				9E7517132F690B6700E212A7 /* XCLocalSwiftPackageReference "../.." */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9E7516EA2F69096F00E212A7 /* Products */;
@@ -610,9 +610,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		9E7517132F690B6700E212A7 /* XCLocalSwiftPackageReference "../LocationHistory2GPX-iOS" */ = {
+		9E7517132F690B6700E212A7 /* XCLocalSwiftPackageReference "../.." */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = "../LocationHistory2GPX-iOS";
+			relativePath = "../..";
 		};
 /* End XCLocalSwiftPackageReference section */
 

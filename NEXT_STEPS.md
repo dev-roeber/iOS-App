@@ -89,9 +89,9 @@ Bereits drin:
 - Upload-Batching
 - Pause/Resume, manueller Flush sowie Queue-/Failure-/Last-Success-Status
 - repo-wahre Review-/Runbook-Wording-Basis ohne finale Apple-Freigabeclaims
+- hart kodierte Test-Server-IP entfernt: `defaultTestEndpointURLString` ist jetzt `""`, kein sslip.io-Default mehr
 
 Fehlt noch:
-- die hart kodierte Test-Server-IP in `Sources/LocationHistoryConsumerAppSupport/LiveLocationServerUploader.swift` entfernen; Testserver/Testwerte duerfen nicht Produktstandard bleiben
 - End-to-End-Device-Verifikation mit echtem HTTPS-Endpunkt
 - Apple-Review-/Privacy-Einordnung fuer den optionalen Upload-Pfad ueber die jetzt korrigierten lokalen Texte hinaus
 - Entscheidung, ob Privacy-Dokumentation ueber den aktuellen Manifest-/Runbook-Stand hinaus erweitert werden muss

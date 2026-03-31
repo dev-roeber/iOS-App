@@ -54,6 +54,7 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
   Offen bleibt eine frische Device-Verifikation fuer den reaktivierten Wrapper-Pfad.
 - **Server-Upload**
   HTTPS-Upload, Bearer-Token, Retry-on-next-sample, Upload-Batching, Queue-/Failure-/Last-Success-Status, Pause/Resume und manueller Flush sind implementiert.
+  Hart kodierter Testendpunkt (`sslip.io`) entfernt: `defaultTestEndpointURLString` ist jetzt `""`.
   Offen bleiben End-to-End-Device-Verifikation sowie finale Review-/Privacy-Einordnung auf Apple-Seite.
 - **Insights / Days UX**
   Die Insights-Seite ist deutlich ausgebaut und `Days` ist jetzt repo-wahr `neu -> alt` sortiert.

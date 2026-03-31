@@ -72,11 +72,10 @@ public struct AppOptionsView: View {
                     }
                 }
 
-                LabeledContent(t("Test Endpoint"), value: LiveLocationServerUploadConfiguration.defaultTestEndpointURLString)
             } header: {
                 Text(t("Language and Upload"))
             } footer: {
-                Text(t("Accepted live-recording points only. Use an HTTP(S) endpoint you control. The default test endpoint is prefilled with this server IP and can be changed at any time."))
+                Text(t("Accepted live-recording points only. Use an HTTP(S) endpoint you control."))
             }
 
             Section {
