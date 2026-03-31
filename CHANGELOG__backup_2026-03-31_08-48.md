@@ -2,12 +2,6 @@
 
 ## 2026-03-31
 
-### 4-Repo Status Documentation
-
-- README-Rolle des Repos von zu kleinem Consumer-/Demo-Wording auf den realen Stand als eigentliche iOS-Produkt-UI korrigiert
-- offener Produktpunkt fuer den hart kodierten Testendpunkt in `Sources/LocationHistoryConsumerAppSupport/LiveLocationServerUploader.swift` jetzt explizit in README, `NEXT_STEPS.md` und neuem Status-Audit dokumentiert; keine Code-Aenderung
-- neue timestamped Status-/Audit-Dateien `audits/AUDIT_IOS_STATE_2026-03-31_08-48.md` und `audits/AUDIT_4REPO_MASTER_2026-03-31_08-48.md` halten den aktuellen Repo- und Cross-Repo-Stand repo-wahr fest
-
 ### Repo-Truth Deep Audit / Doc Sync
 
 - repo-weite Deep-Audit-Synchronisierung gegen den tatsaechlichen Stand von Code, Tests und Host-Umgebung; veraltete Testzahlen in den aktuellen Truth-Bloecken auf den frischen Linux-Nachweis `228` Tests, `2` Skips, `0` Failures umgestellt
