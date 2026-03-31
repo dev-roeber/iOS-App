@@ -1,15 +1,14 @@
 # ROADMAP
 
-## Aktueller Stand (2026-03-31)
+## Aktueller Stand (2026-03-30)
 
 ### Repo-Truth-Zusammenfassung
-Die letzte real belegte Apple-/Device-Verifikation bleibt der dokumentierte Apple-Stand vom 2026-03-17 beziehungsweise 2026-03-30; in diesem Audit wurde kein neuer Apple-Host-Lauf vorgetaeuscht.
-Der Audit-Block vom 2026-03-31 ist in dieser Revision eingearbeitet: Heatmap, `Live`-Tab, Upload-Batching, Wrapper-Auto-Restore, Default-Endpunkt und Teststatus sind jetzt dokumentarisch an den aktuellen Code angeglichen.
+Die letzte real belegte Apple-/Device-Verifikation bleibt der 2026-03-17 auf macOS/Xcode sowie iPhone 15 Pro Max und iPhone 12 Pro Max.
+Der Audit-Block vom 2026-03-30 ist in dieser Revision eingearbeitet: Heatmap, `Live`-Tab, Upload-Batching, Wrapper-Auto-Restore, Default-Endpunkt und Teststatus sind jetzt dokumentarisch an den aktuellen Code angeglichen.
 Diese ROADMAP trennt ab hier explizit zwischen `fertig`, `implementiert aber noch nicht voll verifiziert` und `noch nicht umgesetzt`.
 Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Commits fruehere Zwischenstaende ueberholt haben, gilt der aktuelle Kopfblock als massgeblicher Repo-Truth.
-Der frische Host-Nachweis dieses Audits ist Linux-only: `swift test` lief am 2026-03-31 mit `228` Tests, `2` Skips und `0` Failures, `git diff --check` ist sauber, und `xcodebuild` ist auf diesem Host nicht verfuegbar.
-Der Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 ist im Code umgesetzt und in dieser ROADMAP als repo-wahrer Produktstand eingearbeitet; fuer diesen Batch liegen auf Linux gezielte Teilnachweise vor, aber kein neuer Apple-UI-Nachweis.
-Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem die Heatmap-Detailsichtbarkeit sowie kleine visuelle Kanten in `Live`, `Insights` und `Days`; auf diesem Linux-Host liegen dazu nur nicht-Apple-Nachweise vor.
+Der Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 ist im Code umgesetzt und in dieser ROADMAP als repo-wahrer Produktstand eingearbeitet; fuer diesen Batch liegen auf diesem Linux-Server gezielte `swift test --filter Live|Insight|Day|Upload`-Laeufe vor, aber kein neuer Apple-UI-Nachweis.
+Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem die Heatmap-Detailsichtbarkeit sowie kleine visuelle Kanten in `Live`, `Insights` und `Days`; auf diesem Linux-Server liegen dazu gruene `Live`-/`Insight`-Laeufe und `git diff --check` vor, aber kein neuer Apple-Heatmap-Nachweis.
 
 ### Repo-wahr abgeschlossen
 
@@ -59,15 +58,13 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
   Die Insights-Seite ist deutlich ausgebaut und `Days` ist jetzt repo-wahr `neu -> alt` sortiert.
   Offen bleiben frische Apple-UI-Nachweise fuer die neue Informationsarchitektur, Chart-Lesbarkeit und das aktualisierte Day-Navigationsverhalten auf echter Hardware.
 - **Linux-/Apple-Teststatus**
-  Historische Apple-Nachweise vom 2026-03-30 bleiben dokumentiert, gelten aber nicht als frischer Gegenlauf fuer diesen Audit.
-  Der aktuelle Linux-Mindestnachweis dieses Audits ist `swift test` mit `228` Tests, `2` Skips und `0` Failures; `git diff --check` ist sauber.
+  Apple Stabilization Batch 2, Heatmap Visual & Performance Batch 2 und Heatmap Color / Contrast / Opacity Batch 3: macOS-Build-Fehler bleiben behoben, `swift test` und `xcodebuild test` laufen auf macOS jetzt beide mit 227 Tests und 0 Failures durch.
   Die 3 bekannten Problemfaelle sind als Test-Drift klassifiziert und behoben:
   `testAcceptedSamplesUploadToConfiguredServer` und `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives` scheiterten an minimumBatchSize=5 (nicht Plattform), Tests auf minimumBatchSize=1 gesetzt;
   `testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized` prueft jetzt korrektes Verhalten (Client-Config beim Recording-Start, nicht bei Preference-Aenderung).
   Batch 2 hat die 2 verbliebenen Test-vs-Code-Widersprueche repo-wahr aufgeloest:
   `AppPreferencesTests.testStoredValuesAreLoaded` folgt jetzt dem Keychain-first-Produktverhalten,
   `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings` folgt jetzt der im Produktcode konsistent genutzten Gedankenstrich-Formatierung.
-  Ein frischer Apple-CLI-Rerun fuer den aktuellen Stand bleibt offen, weil `xcodebuild` auf diesem Linux-Host nicht vorhanden ist.
 
 ### Noch nicht umgesetzt
 
@@ -1043,7 +1040,7 @@ Bleibt geparkt bis Developer-Account-Zugang und tatsaechliche Durchfuehrung moeg
 
 **Definition of Done:** TestFlight-Build an Tester verteilt. App Store Metadaten vollstaendig. Keine Review-Guideline-Verstoesse bekannt.
 
-**Historischer lokaler Nachweis (2026-03-17):** `xcodebuild archive` erfolgreich (v1.0, Build 1). `PrivacyInfo.xcprivacy` war vorhanden und dokumentierte lokal sichtbar kein Tracking plus UserDefaults CA92.1. Die damalige Review-Notiz war nur eine lokale Arbeitsbewertung und kein belastbarer Apple-Freigabeclaim. App Icon ersetzt (Map-Pin + LH2GPX, kein Gradient-Placeholder mehr). Screenshot-Simulator-Workflow dokumentiert. TestFlight-Runbook in `docs/TESTFLIGHT_RUNBOOK.md` im Wrapper-Repo.
+**Lokal verifiziert (2026-03-17):** `xcodebuild archive` erfolgreich (v1.0, Build 1). PrivacyInfo.xcprivacy konform. Review-Guidelines geprueft: konform. App Icon ersetzt (Map-Pin + LH2GPX, kein Gradient-Placeholder mehr). Screenshot-Simulator-Workflow dokumentiert. TestFlight-Runbook in `docs/TESTFLIGHT_RUNBOOK.md` im Wrapper-Repo.
 
 **Lokal abgeschlossen (2026-03-17):** Screenshots via UI-Test erstellt (iPhone 17 Pro Max + iPad Pro 13" M5, iOS 26.3.1). Liegen in `docs/appstore-screenshots/` im Wrapper-Repo.
 

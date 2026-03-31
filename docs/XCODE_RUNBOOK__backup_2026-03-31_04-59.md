@@ -10,7 +10,7 @@ Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 - `LocationHistoryConsumerAppSupport` bleibt app-nahe Session-/State-/Composition-Schicht
 - `LocationHistoryConsumerApp` bleibt die produktnaehere App-Shell fuer lokalen JSON-/ZIP-Import
 
-Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmentierte `Insights`, gespeicherte lokale Live-Tracks und optionalen nutzergesteuerten Upload akzeptierter Live-Recording-Punkte. Weiterhin nicht Teil dieses Runbooks sind Producer-Logik, Cloud-/Account-Sync fuer importierte History und unbewiesene Apple-Review-Claims.
+Keine Maps, keine Persistenz, keine Suche, kein Sync und keine Producer-Logik in Swift.
 
 ## Voraussetzungen
 
@@ -191,15 +191,6 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 
 ## Reale Verifikation in dieser Phase
 
-Frischer Host-Truth dieses Audits (2026-03-31):
-
-- Linux-Host mit Swift 5.9
-- `swift test`: 228 Tests, 2 Skips, 0 Failures
-- `git diff --check`: sauber
-- `xcodebuild`: auf diesem Host nicht verfuegbar
-
-Die nachfolgenden Apple-/Xcode-Bloecke bleiben historische Nachweise von Apple-Hosts und wurden in diesem Audit nicht neu ausgefuehrt.
-
 Stand 2026-03-17 wurde auf einer echten macOS-/Xcode-Maschine Folgendes real geprueft:
 
 - Host: macOS 15.7
@@ -272,7 +263,7 @@ Nicht separat als eigener Nachweis festgehalten:
 
 - kein `.xcodeproj`, nur Swift Package
 - keine Signierung, keine Distribution, keine Entitlements-Arbeit
-- kein Cloud-/Account-Sync fuer importierte History; optionaler Server-Upload bleibt davon getrennt und ist hier nicht neu auf Apple-Hardware verifiziert
+- kein Sync und keine Cloud-/Server-Anteile
 - keine hardware-verifizierte Background-Recording-Session und kein Auto-Resume laufender Live-Tracks
 - keine frische Apple-Verifikation fuer das spaeter hinzugekommene Heatmap-Sheet inklusive der neuen lokalen UX-Controls und des spaeter nachgezogenen Aggregations-/Polygon-Renderers, den dedizierten `Live`-Tab oder Upload-Batching/Upload-Status
 - Apple-Verifikation ersetzt nicht `swift test`, und `swift test` ersetzt keinen echten Apple-UI-Lauf

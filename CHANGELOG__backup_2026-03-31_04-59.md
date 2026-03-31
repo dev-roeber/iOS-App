@@ -2,14 +2,6 @@
 
 ## 2026-03-31
 
-### Repo-Truth Deep Audit / Doc Sync
-
-- repo-weite Deep-Audit-Synchronisierung gegen den tatsaechlichen Stand von Code, Tests und Host-Umgebung; veraltete Testzahlen in den aktuellen Truth-Bloecken auf den frischen Linux-Nachweis `228` Tests, `2` Skips, `0` Failures umgestellt
-- historische Apple-/Xcode-/Device-Nachweise vom 2026-03-17 und 2026-03-30 explizit als historische Nachweise markiert; fuer den aktuellen Audit-Host wird jetzt klar festgehalten, dass `xcodebuild` auf diesem Linux-Server nicht verfuegbar ist
-- `README.md`, `ROADMAP.md`, `NEXT_STEPS.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md`, `docs/CONTRACT.md`, `docs/XCODE_APP_PREPARATION.md` und `docs/XCODE_RUNBOOK.md` repo-wahr auf `offline-first + optionaler nutzergesteuerter Upload`, offene Apple-Verifikation und aktuelle Audit-Grenzen geglaettet
-
-## 2026-03-31
-
 ### Insights Distance Hotfix + Patterns / Breakdowns Quick Batch
 
 - `Sources/LocationHistoryConsumer/Queries/AppExportQueries.swift`: `Gesamtstrecke` und `Durchschnittsstrecke / Tag` im Insights-Stack jetzt repo-wahr aus importierten Routendistanzen berechnet; wenn diese fehlen, faellt die Aggregation gezielt auf vorhandene Pfadgeometrie (`points` / `flatCoordinates`) und erst danach auf belastbare Aktivitaets-Trace-Geometrie zurueck statt auf `0 m`

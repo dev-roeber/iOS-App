@@ -34,21 +34,21 @@ Alternativ kann das Verzeichnis in Xcode geoeffnet werden. Die produktnahe App-S
 - SwiftUI-basierte Demo- und App-Shell-Targets sind im Swift Package getrennt vorhanden.
 - `LocationHistoryConsumerApp` ist import-first und als spaetere Apple-Produkt-App-Huelle positioniert.
 - Gemeinsame app-nahe Session-/Import-Logik ist in `LocationHistoryConsumerAppSupport` gekapselt statt in Demo-Views.
-- Das Repo bleibt offline-first und konsumiert den eingefrorenen Consumer-Contract; lokal unterstuetzt die App inzwischen LH2GPX-`app_export.json`-/`.zip`-Import sowie den begrenzten Google-Timeline-Import. Optionaler nutzergesteuerter Upload betrifft nur akzeptierte Live-Recording-Punkte und ist standardmaessig deaktiviert.
+- Das Repo bleibt offline-only und konsumiert den eingefrorenen Consumer-Contract; lokal unterstuetzt die App inzwischen LH2GPX-`app_export.json`-/`.zip`-Import sowie den begrenzten Google-Timeline-Import.
 
 ## Was bewusst noch nicht vorbereitet ist
 
 - kein `.xcodeproj`
 - kein signierter Apple-App-Build
 - keine `Info.plist`-/Bundle-/Icon-/Entitlement-Ausarbeitung
-- kein Cloud-/Account-Sync fuer importierte History; optionaler Server-Upload ist separat, standardmaessig deaktiviert und in diesem Audit nicht neu auf Apple-Hardware verifiziert
+- keine Cloud-/Server-Funktionen
 - keine hardware-verifizierte Background-Recording-Session oder Auto-Resume laufender Live-Tracks
 
 ## Lokale Verifikation
 
 Unter Linux ist ehrlich verifiziert:
 
-- `swift test` (`228` Tests, `2` Skips, `0` Failures am 2026-03-31)
+- `swift test`
 - Linux-Build der SwiftPM-Targets
 - Linux-Fallback-Mains der Apple-UI-nahen Executables
 
@@ -58,7 +58,6 @@ Unter Linux ist nicht verifiziert:
 - echter iOS-/macOS-SwiftUI-Lauf
 - `fileImporter` auf Apple-Plattformen
 - Signierung, Sandbox, Bundle-Metadaten
-- jeder neue `xcodebuild`-Nachweis fuer den aktuellen Repo-Stand, weil `xcodebuild` auf diesem Host nicht vorhanden ist
 
 Stand 2026-03-17 ist auf einer echten macOS-/Xcode-Maschine zusaetzlich verifiziert:
 
@@ -82,4 +81,4 @@ Wenn eine echte Apple-Validierung moeglich ist, sollte der naechste kleine Schri
 1. `Package.swift` in Xcode oeffnen
 2. `LocationHistoryConsumerApp` als Apple-App-Shell pruefen
 3. minimale Apple-Bundle-Metadaten nur dann ergänzen, wenn sie fuer einen echten lokalen Run noetig sind
-4. weiterhin keine neue Apple-/Review-Behauptung ohne echten Apple-Host-Nachweis einfuehren
+4. weiterhin keine Persistenz-, Maps- oder Sync-Ausweitung vorziehen

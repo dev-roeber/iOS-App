@@ -1,18 +1,18 @@
 # NEXT_STEPS
 
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
-Der Audit-/Doku-Sync aus Phase 19.50 ist in diesem Batch geschlossen und steht deshalb nicht mehr als offener Punkt hier.
+Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 
 ## 1. Phase 19.51 – Live / Upload / Insights / Days auf Apple verifizieren
 
 Status: **teilweise umgesetzt**
 
 Bereits drin:
-- `Days` ist jetzt repo-wahr standardmaessig `neu -> alt` sortiert; Initialauswahl und Fallbacks bevorzugen den neuesten inhaltshaltigen Tag
+- `Days` ist repo-wahr standardmaessig `neu -> alt` sortiert; Initialauswahl und Fallbacks bevorzugen den neuesten inhaltshaltigen Tag
 - der dedizierte `Live`-Tab wurde visuell und funktional deutlich ausgebaut: klarere Map-/Recording-/Upload-/Library-Hierarchie, Status-Chips, Quick Actions und mehr Live-Metriken
-- der optionale Server-Upload zeigt jetzt Queue-, Failure- und Last-Success-Zustaende und unterstuetzt Pause/Resume sowie manuellen Queue-Flush
-- die Insights-Seite bietet jetzt segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) sowie KPI-Karten, Highlight-Karten, `Top Days` und Monatstrends
-- gezielte Linux-Verifikation fuer diesen Batch liegt vor: `swift test --filter Live`, `Insight`, `Day`, `Upload`
+- der optionale Server-Upload zeigt Queue-, Failure- und Last-Success-Zustaende und unterstuetzt Pause/Resume sowie manuellen Queue-Flush
+- die Insights-Seite bietet segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) sowie KPI-Karten, Highlight-Karten, `Top Days`, Monatstrends und umschaltbare Distanz-/Route-/Event-Muster
+- gezielte Linux-Teilverifikation fuer diese Bereiche liegt vor; der frische Gesamtlauf auf diesem Host ist `swift test` mit `228` Tests, `2` Skips und `0` Failures
 
 Fehlt noch:
 - frische Apple-UI-Verifikation fuer den neuen `Live`-Tab inklusive Upload-Zustaenden, Quick Actions und groesserem Stat-Set
@@ -25,37 +25,30 @@ Status: **teilweise umgesetzt**
 
 Bereits drin:
 - `AppHeatmapView` ist implementiert und als eigenes Heatmap-Sheet verdrahtet
-- Heatmap-UX Batch 1 hat die Darstellung fuer mittlere/grosse Zoomstufen beruhigt und die Heatmap bei herausgezoomter Karte weniger flaechig dominant gemacht
-- das Heatmap-Sheet bietet jetzt lokale Display-Controls fuer Deckkraft, Radius-Presets, `Auf Daten zoomen` und eine kleine Dichte-Legende
-- der Heatmap-Startzustand zoomt jetzt auf die vorhandenen Daten statt nur auf einen generischen Mittelpunkt
-- Heatmap Visual & Performance Batch 2 hat den Renderer auf geglaettete aggregierte Polygon-Zellen umgestellt, per-LOD sichtbare Elemente gedeckelt und viewport-basiertes Caching fuer ruhigere Zoom-/Pan-Reaktionen eingebaut
-- Heatmap Color / Contrast / Opacity Batch 3 hat die Farbpallette, Intensitaetskurve und die interne Slider-Kennlinie fuer Deckkraft sichtbar verstaerkt, damit mittlere/hohe Dichte bei 100 % deutlich deckender und waermer erscheint
-- der spaetere UI-Polish-/Heatmap-Detail-Batch hebt nun auch niedrige und mittlere Dichte im Detailzoom sichtbar frueher an und macht duenne Daten farbiger und weniger blass
-- kleine dedizierte Heatmap-Regressionstests fuer LOD-Aggregation, viewport-begrenzte Zellselektion sowie Intensitaets-/Opacity-/Palette-Mapping sind jetzt vorhanden
-- Heatmap ist jetzt in README, ROADMAP und Feature-Inventar repo-wahr dokumentiert
-- echter iPhone-15-Pro-Max-AX-Snapshot aus dem Wrapper zeigt `Heatmap` bei geladenem Import im Uebersichtsbildschirm sichtbar und erreichbar verdrahtet
+- das Heatmap-Sheet bietet lokale Display-Controls fuer Deckkraft, Radius-Presets, `Auf Daten zoomen` und eine kleine Dichte-Legende
+- der Renderer nutzt geglaettete aggregierte Polygon-Zellen, viewport-basierte Zellselektion und wiederverwendbares LOD-/Viewport-Caching
+- die spaeteren Detail-Visibility-Polishes machen niedrige und mittlere Dichte frueher sichtbar und farbiger, ohne die LOD-/Viewport-Architektur aufzugeben
+- kleine dedizierte Heatmap-Regressionstests fuer LOD-Aggregation, viewport-begrenzte Zellselektion sowie Intensitaets-/Opacity-/Palette-Mapping sind vorhanden
+- ein echter iPhone-15-Pro-Max-AX-Snapshot aus dem Wrapper zeigt `Heatmap` bei geladenem Import sichtbar verdrahtet
 
 Fehlt noch:
 - echtes Oeffnen des Heatmap-Sheets auf Apple-Hardware
-- visuelle Apple-Verifikation des neuen Polygon-/Aggregations-Renderers inklusive des kraeftigeren Batch-3-Farb-/Kontrast-Mappings und des spaeteren Detail-Visibility-Polish auf echter Apple-Hardware
+- visuelle Apple-Verifikation des neuen Polygon-/Aggregations-Renderers inklusive der spaeteren Detail-Visibility-Polishes auf echter Apple-Hardware
 - Performance-Nachweis fuer groessere Imports auf Apple-Hardware
 
-## 3. Phase 19.53 – Apple-CLI-Tests auf aktuellem Core-Stand stabilisieren
+## 3. Phase 19.53 – Frischen Apple-CLI-Gegenlauf fuer den aktuellen Stand nachziehen
 
-Status: **geschlossen (Apple Stabilization Batch 2, 2026-03-30)**
+Status: **offen**
 
-Erledigt:
-- macOS-Build-Fehler behoben (iOS-only Guards, Availability-Guards, async-Fix)
-- `swift test` laeuft auf macOS durch: 224 Tests, 0 Failures
-- `xcodebuild test -scheme LocationHistoryConsumer-Package -destination 'platform=macOS'` laeuft auf macOS durch: 224 Tests, 0 Failures
-- `swift test` laeuft auf dem aktuellen Linux-Server wieder durch: 217 Tests, 2 Skips, 0 Failures
-- Apple-only Heatmap-Renderingstests sind fuer non-Apple-Plattformen korrekt gegated und blockieren den Linux-Lauf nicht mehr
-- Die 3 bekannten Problemfaelle sauber klassifiziert:
-  - `testAcceptedSamplesUploadToConfiguredServer`: Test-Drift – minimumBatchSize=5 blockierte 1-Punkt-Test; Test auf minimumBatchSize=1 korrigiert, jetzt gruen
-  - `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives`: Test-Drift – gleiche Batch-Ursache; Test korrigiert, jetzt gruen
-  - `testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized`: Test-Drift – Client-Konfiguration erfolgt erst beim Recording-Start, nicht bei Preference-Aenderung allein; Test an korrektes Verhalten angepasst, jetzt gruen
-- `AppPreferencesTests.testStoredValuesAreLoaded`: Test an Keychain-first-Produktverhalten angepasst, jetzt gruen
-- `DayDetailPresentationTests.testTimeRangeFormattingAvoidsRawISOStrings`: Test an die konsistente Gedankenstrich-Formatierung des Produktcodes angepasst, jetzt gruen
+Bereits drin:
+- historische Apple-CLI-Nachweise fuer 2026-03-30 sind dokumentiert
+- der frische Linux-Mindestnachweis auf diesem Host ist `swift test`: `228` Tests, `2` Skips und `0` Failures
+- Apple-only Heatmap-Renderingstests sind fuer non-Apple-Plattformen korrekt gegated und blockieren den Linux-Lauf nicht
+- die frueheren Test-vs-Code-Drifts (`minimumBatchSize`, Keychain-first, Gedankenstrich-Formatierung) sind repo-wahr bereinigt
+
+Fehlt noch:
+- frischer `xcodebuild`-Gegenlauf fuer genau diesen konsolidierten Repo-Stand; auf diesem Linux-Server derzeit nicht moeglich
+- aktualisierter Apple-CLI-Nachweis fuer Core (`LocationHistoryConsumerApp` / `LocationHistoryConsumer-Package`) und Wrapper (`LH2GPXWrapper`) auf einem Apple-Host
 
 ## 4. Phase 19.54 – Background-Recording auf echtem iPhone verifizieren
 
@@ -77,8 +70,8 @@ Status: **teilweise umgesetzt**
 
 Bereits drin:
 - Core-App-Shell haelt Auto-Restore bewusst geparkt
-- Wrapper ruft `restoreBookmarkedFile()` beim Start wieder auf
-- README und Runbooks beschreiben den Status jetzt repo-wahr
+- der Wrapper ruft `restoreBookmarkedFile()` beim Start wieder auf
+- README und Runbooks beschreiben den Status repo-wahr
 - echter iPhone-15-Pro-Max-Lauf zeigte beim App-Start bereits wiederhergestellte Quelle `Imported file: location-history.zip`
 
 Fehlt noch:
@@ -95,7 +88,7 @@ Bereits drin:
 - Retry-on-next-sample
 - Upload-Batching
 - Pause/Resume, manueller Flush sowie Queue-/Failure-/Last-Success-Status
-- repo-wahre Review-/Runbook-Wording-Basis
+- repo-wahre Review-/Runbook-Wording-Basis ohne finale Apple-Freigabeclaims
 
 Fehlt noch:
 - End-to-End-Device-Verifikation mit echtem HTTPS-Endpunkt
