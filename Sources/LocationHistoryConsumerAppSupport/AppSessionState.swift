@@ -46,6 +46,15 @@ public struct AppSourceSummary: Equatable {
 }
 
 public final class AppSessionContent {
+    private struct ProjectionCacheKey: Hashable {
+        let filter: AppExportQueryFilter?
+    }
+
+    private struct DayDetailCacheKey: Hashable {
+        let date: String
+        let filter: AppExportQueryFilter?
+    }
+
     public let export: AppExport
     public private(set) lazy var overview: ExportOverview = {
         AppExportQueries.overview(from: export)
@@ -58,6 +67,10 @@ public final class AppSessionContent {
     }()
     public let selectedDate: String?
     public let source: AppContentSource
+    private var filteredOverviewCache: [ProjectionCacheKey: ExportOverview] = [:]
+    private var filteredDaySummariesCache: [ProjectionCacheKey: [DaySummary]] = [:]
+    private var filteredInsightsCache: [ProjectionCacheKey: ExportInsights] = [:]
+    private var dayDetailCache: [DayDetailCacheKey: DayDetailViewState] = [:]
 
     public init(export: AppExport, source: AppContentSource) {
         self.export = export
@@ -71,11 +84,67 @@ public final class AppSessionContent {
         self.daySummaries = summaries
     }
 
-    public func detail(for date: String?) -> DayDetailViewState? {
+    public func overview(applying filter: AppExportQueryFilter?) -> ExportOverview {
+        guard let filter else {
+            return overview
+        }
+
+        let key = ProjectionCacheKey(filter: filter)
+        if let cached = filteredOverviewCache[key] {
+            return cached
+        }
+
+        let projected = AppExportQueries.overview(from: export, applying: filter)
+        filteredOverviewCache[key] = projected
+        return projected
+    }
+
+    public func daySummaries(applying filter: AppExportQueryFilter?) -> [DaySummary] {
+        guard let filter else {
+            return daySummaries
+        }
+
+        let key = ProjectionCacheKey(filter: filter)
+        if let cached = filteredDaySummariesCache[key] {
+            return cached
+        }
+
+        let projected = AppExportQueries.daySummaries(from: export, applying: filter)
+        filteredDaySummariesCache[key] = projected
+        return projected
+    }
+
+    public func insights(applying filter: AppExportQueryFilter?) -> ExportInsights {
+        guard let filter else {
+            return insights
+        }
+
+        let key = ProjectionCacheKey(filter: filter)
+        if let cached = filteredInsightsCache[key] {
+            return cached
+        }
+
+        let projected = AppExportQueries.insights(from: export, applying: filter)
+        filteredInsightsCache[key] = projected
+        return projected
+    }
+
+    public func detail(for date: String?, applying filter: AppExportQueryFilter? = nil) -> DayDetailViewState? {
         guard let date else {
             return nil
         }
-        return AppExportQueries.dayDetail(for: date, in: export)
+
+        let key = DayDetailCacheKey(date: date, filter: filter)
+        if let cached = dayDetailCache[key] {
+            return cached
+        }
+
+        guard let detail = AppExportQueries.dayDetail(for: date, in: export, applying: filter) else {
+            return nil
+        }
+
+        dayDetailCache[key] = detail
+        return detail
     }
 }
 

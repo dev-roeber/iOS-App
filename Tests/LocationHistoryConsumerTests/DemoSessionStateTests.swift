@@ -57,6 +57,27 @@ final class AppSessionStateTests: XCTestCase {
         XCTAssertNil(state.activeDrilldownFilter)
     }
 
+    func testSessionContentProvidesFilteredProjectionVariants() throws {
+        let content = try loadDemoContent(
+            fixtureName: "golden_app_export_sample_small.json",
+            source: .importedFile(filename: "imported_app_export.json")
+        )
+        let filter = AppExportQueryFilter(fromDate: "2024-05-02", toDate: "2024-05-02")
+
+        let filteredOverview = content.overview(applying: filter)
+        let filteredSummaries = content.daySummaries(applying: filter)
+        let filteredInsights = content.insights(applying: filter)
+        let filteredDetail = content.detail(for: "2024-05-02", applying: filter)
+        let excludedDetail = content.detail(for: "2024-05-01", applying: filter)
+
+        XCTAssertEqual(filteredOverview.dayCount, 1)
+        XCTAssertEqual(filteredSummaries.map(\.date), ["2024-05-02"])
+        XCTAssertEqual(filteredInsights.dateRange?.firstDate, "2024-05-02")
+        XCTAssertEqual(filteredInsights.dateRange?.lastDate, "2024-05-02")
+        XCTAssertEqual(filteredDetail?.date, "2024-05-02")
+        XCTAssertNil(excludedDetail)
+    }
+
     func testSelectDayForDisplayClearsEmptyDaySelection() throws {
         var state = AppSessionState()
         state.show(content: makeContent(exportWith(days: """

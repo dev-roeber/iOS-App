@@ -37,7 +37,7 @@ public struct ExportCoordinateBounds: Equatable, Hashable {
     }
 }
 
-public indirect enum ExportSpatialFilter: Equatable {
+public indirect enum ExportSpatialFilter: Equatable, Hashable {
     case bounds(ExportCoordinateBounds)
     case polygon([ExportCoordinate])
     case all([ExportSpatialFilter])
@@ -80,7 +80,7 @@ public indirect enum ExportSpatialFilter: Equatable {
     }
 }
 
-public struct AppExportQueryFilter: Equatable {
+public struct AppExportQueryFilter: Equatable, Hashable {
     public let fromDate: String?
     public let toDate: String?
     public let year: Int?

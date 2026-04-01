@@ -81,24 +81,15 @@ public struct AppContentSplitView: View {
     }
 
     private var projectedOverview: ExportOverview? {
-        guard let export = session.content?.export else {
-            return nil
-        }
-        return AppExportQueries.overview(from: export, applying: projectedQueryFilter)
+        session.content?.overview(applying: projectedQueryFilter)
     }
 
     private var projectedDaySummaries: [DaySummary] {
-        guard let export = session.content?.export else {
-            return []
-        }
-        return AppExportQueries.daySummaries(from: export, applying: projectedQueryFilter)
+        session.content?.daySummaries(applying: projectedQueryFilter) ?? []
     }
 
     private var projectedInsights: ExportInsights? {
-        guard let export = session.content?.export else {
-            return nil
-        }
-        return AppExportQueries.insights(from: export, applying: projectedQueryFilter)
+        session.content?.insights(applying: projectedQueryFilter)
     }
 
     private var localizedProjectedFilterDescriptions: [String] {
