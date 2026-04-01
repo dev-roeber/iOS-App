@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 2026-04-01
+
+### DE Localisation – Analytics / Insights / Overview / Custom-Range (Truth-Sync aus iOS)
+
+Diese Einträge dokumentieren die Localisation-Arbeit, die im historischen Split-Repo `LocationHistory2GPX-iOS` auf `main` gemergt wurde. Der Core-Code liegt im Monorepo-Root; die Commits wurden dort auf `main` entwickelt und sind hier zur Vollständigkeit festgehalten.
+
+- `AppLanguageSupport.swift`: DE-Übersetzungen für Analytics-Preset-Chips, Range-Description-Keys, alle KPI-Labels und KPI-Notes, Custom-Date-Range-Sheet-Strings, Overlap-Map-Strings, Filter-Picker-Labels, Map-Meldungen und Empty/Sparse-States ergänzt; 3 Duplikat-Schlüssel beseitigt (verhinderten RuntimeFatal); alle 309 Tests grün, 2 Skips, 0 Failures
+- `AppCustomDateRangeSheet.swift`: `@EnvironmentObject preferences` ergänzt; alle 9 user-facing Strings über `preferences.localized(_:)` – kein EN-Hardcode mehr
+- `AppOverlapMapView.swift`: alle UI-Strings (map-style-switch, exportierbare-Routen-Hinweis, No-Route-Geometry, Tag/Track-Zähler-Chips) über privaten `t(_:)`-Helper
+
+### DE Localisation Finish – Format-Strings + Monatsnamen
+
+- `CustomDateRangeValidator.chipLabel(from:to:)`: neuer optionaler `locale`-Parameter (Default `.current`); Monatsnamen via `DateFormatter.shortMonthSymbols` statt hardkodiertem EN-Array; Tests übergeben `locale: Locale(identifier: "en_US")` für stabile Assertions
+- `AppInsightsContentView`: fünf EN-Hardcodes ersetzt – `"of N total"`, `"N events"`, EN-Wochentagsnamen-Dictionary und `"N day/days"` über `t()` bzw. `localizedWeekdayName(_:)`; alle 309 Tests grün, 2 Skips, 0 Failures
+
+### DE Localisation Final – rangeDescription Composite Strings
+
+- `AppLanguagePreference.localized(_:pluralFmt:count:)`: neue Hilfsmethode für Singular/Plural-Format-Keys; 14 neue DE Format-String-Einträge für alle `rangeDescription`-Presets; Singular/Plural je Preset korrekt abgedeckt
+- `AnalyticsDateRangeBuilder.rangeDescription(_:activeDays:)`: optionaler `language`-Parameter (Default `.english`); alle Preset-Fälle nutzen Format-String-Lookup mit korrekter Singular/Plural-Logik; kein hardkodierter `day`/`days`-Suffix mehr
+- `OverviewPresentation.rangeKPIs(from:range:language:)`: reicht `language` an `rangeDescription` weiter; `rangeNote` ab Erzeugung lokalisiert
+- `AppInsightsContentView`: alle drei `rangeKPIs`-Aufrufe mit `language: preferences.appLanguage`; `"active"` und `"%.0f%% active days"` über `t()` lokalisiert
+- 10 neue Tests (EN/DE, Singular/Plural, alle Presets, Default-Language-Guard); alle 319 Tests grün, 2 Skips, 0 Failures
+
+### InsightsChartSupport rangeNote Format-String Refactor + DE Localisation
+
+- `InsightsChartSupport.distanceSectionMessage`, `.monthlyTrendSectionHint` und `.weekdaySectionHint`: je ein optionaler `language`-Parameter (Default `.english`); Basis-Strings und `"Showing %@."`-Suffix durch Format-String-Lookup statt EN-Hardcode
+- `AppInsightsContentView`: alle drei Aufrufstellen auf `language: preferences.appLanguage` umgestellt; `t()`-Wrapper entfernt (Methoden liefern fertig lokalisierte Strings)
+- `AppGermanTranslations.values`: `"Showing %@."` → `"Zeige %@."` ergänzt
+- 6 neue Tests (EN/DE, mit/ohne rangeNote, alle drei Methoden); alle 325 Tests grün, 2 Skips, 0 Failures
+
 ## 2026-03-31
 
 ### Monorepo Truth-Sync Docs

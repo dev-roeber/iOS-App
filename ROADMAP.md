@@ -30,7 +30,7 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 - Waypoint-Export aus importierten Visits sowie Activity-Start/-End-Koordinaten
 - sichtbare Export-Vorschaukarte direkt auf der Export-Seite
 - lokale Export-Filter fuer importierte History nach Datumsfenster, maximaler Genauigkeit, erforderlichem Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon
-- Sprachwahl `English` / `Deutsch` in den Optionen mit sichtbarer deutscher Abdeckung fuer Shell-, Optionen-, Live-Recording-, Import-Entry- und zentrale Exportflaechen
+- Sprachwahl `English` / `Deutsch` in den Optionen; breite DE-Abdeckung fuer Shell-, Optionen-, Live-Recording-, Import-Entry-, Export- und Analytics/Insights/Overview-Oberflaechen inkl. Format-Strings, Monatsnamen, rangeDescription-Singular/Plural, Custom-Date-Range-Sheet, Overlap-Map und InsightsChartSupport-Hints (Stand 2026-04-01: 325 Tests gruen, 2 Skips, 0 Failures)
 
 ### Implementiert, aber noch nicht voll verifiziert
 
