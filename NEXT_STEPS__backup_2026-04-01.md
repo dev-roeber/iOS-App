@@ -125,11 +125,8 @@ Bereits drin (2026-04-01 InsightsChartSupport rangeNote-Lokalisierung):
 - 6 neue Tests; alle 325 Tests gruen, 2 Skips, 0 Failures
 
 Fehlt noch:
+- weitere Exportformate wie `CSV` oder `KMZ`
 - frische Apple-UI-Verifikation fuer Range-Picker, Custom-Datumsbereich-Sheet und Overlap-Karte auf echtem iPhone
 - vollstaendige Lokalisierungsabdeckung aller verbleibenden EN-Strings (Rest-Abdeckung)
-- View-seitige Verdrahtung der neuen State-Felder: `historyDateRangeFilter`-Chip/Banner in Views, Favoriten-Swipe-Action in DayRow, Drilldown-Handler in AppContentSplitView, Chart-Share-Button in InsightsCardView (alle State-Typen sind fertig, Views nicht veraendert)
-- Chart-Share per ImageRenderer auf Apple-Host verifizieren
-- CSV in AppExportView verdrahten (CSVDocument/CSVBuilder vorhanden, fileExporter-Case fehlt noch)
-- KMZ-Export
 
 Contract-Files werden weiterhin ausschliesslich vom Producer-Repo aus aktualisiert.

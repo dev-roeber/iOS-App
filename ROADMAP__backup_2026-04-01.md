@@ -25,20 +25,12 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 - Live-Tracking-Oberflaeche mit klarer Recording-/Upload-/Library-Hierarchie, erweiterten Stat-Karten und Quick Actions fuer Zentrieren, Pause/Resume der Uploads und manuellen Queue-Flush
 - optionaler Server-Upload mit Queue-/Failure-/Last-Success-Status, Pause/Resume und manuellem Flush
 - segmentierte Insights-Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) mit KPI-Karten, Highlight-Karten, `Top Days` und Monatstrends
-- GPX-, KML-, GeoJSON- und **CSV**-Export fuer importierte History und gespeicherte Live-Tracks
+- GPX-, KML- und GeoJSON-Export fuer importierte History und gespeicherte Live-Tracks
 - Exportmodi fuer `Tracks`, `Waypoints` und `Both`
 - Waypoint-Export aus importierten Visits sowie Activity-Start/-End-Koordinaten
 - sichtbare Export-Vorschaukarte direkt auf der Export-Seite
 - lokale Export-Filter fuer importierte History nach Datumsfenster, maximaler Genauigkeit, erforderlichem Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon
-- **per-route Auswahl** innerhalb eines Tages (`ExportSelectionState.routeSelections`; implizit alle Routen wenn keine explizite Auswahl)
-- **globaler Zeitraumfilter** (`HistoryDateRangeFilter`): Presets + Custom + Reset; shared in `AppSessionState`
-- **Recent Files** (`RecentFilesStore`): bis zu 10 Eintraege, Stale-Pruefung, Migration von altem Single-Bookmark
-- **Auto-Restore-Option** (`AppPreferences.autoRestoreLastImport`, Default `false`)
-- **Tage-Favoriten** (`DayFavoritesStore`): Stern-Marking, Persistenz, `DayListFilterChip.favorites`
-- **Days-Filterchips** (`DayListFilter`): Favorites / Has Visits / Has Routes / Has Distance / Exportable; AND-Logik mit Suche kombinierbar
-- **Insights-Drilldown** (`InsightsDrilldown`): `filterDaysToDate`, `filterDaysToDateRange`, `prefillExportForDate`, `prefillExportForDateRange`; `activeDrilldownFilter` in `AppSessionState`
-- **Chart-Share-Payload** (`ChartShareHelper`): UI-freier Payload-Builder; Dateiname-Format; ImageRenderer-Integration auf Apple-Host (nicht auf Linux verifizierbar)
-- Sprachwahl `English` / `Deutsch` in den Optionen; breite DE-Abdeckung fuer Shell-, Optionen-, Live-Recording-, Import-Entry-, Export- und Analytics/Insights/Overview-Oberflaechen inkl. Format-Strings, Monatsnamen, rangeDescription-Singular/Plural, Custom-Date-Range-Sheet, Overlap-Map und InsightsChartSupport-Hints (Stand 2026-04-01: 316 Tests gruen, 2 Skips, 0 Failures)
+- Sprachwahl `English` / `Deutsch` in den Optionen; breite DE-Abdeckung fuer Shell-, Optionen-, Live-Recording-, Import-Entry-, Export- und Analytics/Insights/Overview-Oberflaechen inkl. Format-Strings, Monatsnamen, rangeDescription-Singular/Plural, Custom-Date-Range-Sheet, Overlap-Map und InsightsChartSupport-Hints (Stand 2026-04-01: 325 Tests gruen, 2 Skips, 0 Failures)
 
 ### Implementiert, aber noch nicht voll verifiziert
 
@@ -80,9 +72,10 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 
 ### Noch nicht umgesetzt
 
-- KMZ-Export
-- weitere Insight-Arbeit: zeitraumbezogene Filter-UI in Views noch nicht verdrahtet (State vorhanden), Cross-Filtering und Chart-Share-ImageRenderer-Integration auf Apple-Host noch offen
-- waehlbarer angezeigter Zeitraum fuer Overview/Insights (State vorhanden, UI-Verdrahtung offen)
+- weitere Exportformate wie CSV oder KMZ
+- per-route Auswahl innerhalb eines Tages
+- weitere Insight-Arbeit ueber den aktuellen Batch hinaus, z. B. zeitraumbezogene Filter, Cross-Filtering oder Share-/Export-Pfade fuer Insights
+- waehlbarer angezeigter Zeitraum fuer Overview/Insights
 - breitere Lokalisierungsabdeckung und eine strengere Lokalisierungspruefung
 - Cloud-/Sync- oder Account-Features
 

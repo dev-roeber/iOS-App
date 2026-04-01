@@ -108,6 +108,11 @@ public struct AppSessionState {
     public private(set) var message: AppUserMessage?
     /// App-wide export selection. Cleared automatically on new import or content clear.
     public var exportSelection: ExportSelectionState = ExportSelectionState()
+    /// App-wide date range filter applied across Days, Insights and Export tabs.
+    public var historyDateRangeFilter: HistoryDateRangeFilter = .default
+    /// Active drilldown action originating from the Insights tab.
+    /// Set when a user taps a drilldown target in Insights; cleared by the receiving tab.
+    public var activeDrilldownFilter: InsightsDrilldownAction?
 
     public init(
         isLoading: Bool = false,

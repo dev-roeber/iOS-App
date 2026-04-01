@@ -37,17 +37,9 @@ Integriertes Monorepo fuer Core Swift Package und Xcode Wrapper der `LocationHis
 - den optionalen Server-Upload mit Queue-/Failure-/Last-Success-Status, Pause/Resume und manuellem Flush sichtbar und robust in der Live-UI fuehren
 - die `Insights`-Seite ueber segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`), KPI-Karten, Highlight-Karten, `Top Days` und Monatstrends deutlich tiefer aufbereiten
 - fuer importierte History auf iOS 17+/macOS 14+ ein eigenes Heatmap-Sheet mit Deckkraft-Regler, Radius-Presets, `Auf Daten zoomen`, kleiner Dichte-Legende, geglaettetem viewport-/LOD-basiertem Aggregations-Rendering sowie frueheren Farbwechseln und sichtbar kraeftigerer Detaildarstellung fuer niedrige und mittlere Dichte oeffnen (implementiert, aber noch nicht separat Apple-/Performance-verifiziert)
-- importierte History und gespeicherte Live-Tracks lokal als `GPX`, `KML`, `GeoJSON` oder `CSV` exportieren
+- importierte History und gespeicherte Live-Tracks lokal als `GPX`, `KML` oder `GeoJSON` exportieren
 - zwischen `Tracks`, `Waypoints` und `Both` als Exportmodus wechseln
 - importierte History lokal nach Datum, Genauigkeit, Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon fuer den Export filtern
-- Exportauswahl pro Route im Day-Detail (per-route selection, Rückwärtskompatibel: ohne explizite Auswahl alle Routen)
-- app-weiten Zeitraumfilter (Presets: 7 d / 30 d / 90 d / dieses Jahr / Custom) der Days, Insights und Export synchronisiert
-- zuletzt importierte Dateien als Recent-Files-Liste speichern und daraus erneut öffnen
-- Auto-Restore der zuletzt importierten Datei beim Start (opt-in, Standard aus)
-- Tage als Favoriten markieren (Stern) und per Filterchip filtern
-- Days-Filterchips kombinierbar: Favorites, Has Visits, Has Routes, Has Distance, Exportable
-- Insights-Drilldown: tappbare Targets in Karten navigieren direkt zur Day-Liste oder füllen den Export vor
-- Chart-Share-Payload für Insights-Karten (ImageRenderer auf Apple-Host, nicht auf Linux verifizierbar)
 - akzeptierte Live-Recording-Punkte optional an einen frei konfigurierbaren HTTP(S)-Endpunkt mit optionalem Bearer-Token senden
 - Shell-, Optionen-, Live-Recording- und zentrale Exportoberflaechen auf Deutsch oder Englisch anzeigen
 - eine minimale lokale SwiftUI-Demo-Shell mit fixer Golden-Fixture bereitstellen
@@ -63,7 +55,7 @@ Integriertes Monorepo fuer Core Swift Package und Xcode Wrapper der `LocationHis
 - `trips_index.json` konsumieren
 - Auto-Resume eines laufenden Live-Tracks nach App-Neustart
 - Mergen aufgezeichneter Live-Tracks in importierte Originaldaten
-- KMZ-Export
+- CSV-/KMZ-Export
 
 ## Bekannte offene Produktpunkte
 

@@ -1,28 +1,5 @@
 # CHANGELOG
 
-## [Unreleased] – 2026-04-01
-
-### Feature Batch – Range / Insights / Export / Import-Comfort / Days-Polish
-
-**9 neue Features in 3 Phasen:**
-
-#### Phase A – Range + Import-Comfort
-1. **Globaler Zeitraumfilter** (`HistoryDateRangeFilter.swift`): Presets (7 d / 30 d / 90 d / dieses Jahr / Custom) + Validator; shared State in `AppSessionState.historyDateRangeFilter`; `fromDateString`/`toDateString` für `AppExportQueryFilter`-Integration; `chipLabel` für UI-Chip
-2. **Recent Files / Import-Historie** (`RecentFilesStore.swift`): bis zu 10 Einträge (neueste zuerst), Deduplizierung, Stale-Prüfung, Migration von altem `lastImportedFileBookmark`-Key; `add/remove/clear/resolveURL`
-3. **Auto-Restore als Option** (`AppPreferences.autoRestoreLastImport`): neuer Key `app.preferences.autoRestoreLastImport`, Default `false`; in `AppPreferences.reset()` bereinigt
-
-#### Phase B – Export + Day-Level Power Features
-4. **Per-Route Auswahl im Day Detail** (`ExportSelectionState`): `routeSelections: [String: Set<Int>]`; `toggleRoute/clearRouteSelection/isRouteSelected/effectiveRouteIndices`; `clearAll()` räumt Route-Selections mit auf; `hasExplicitRouteSelection`/`explicitRouteSelectionCount` für Summary
-5. **CSV-Export** (`CSVBuilder.swift`, `CSVDocument.swift`): Header (16 Felder), Zeilen für Visit/Activity/Route/Empty-Day; RFC 4180 Escaping; `ExportFormat.csv` mit `.tablecells` Icon; `CSVDocument` als SwiftUI FileDocument
-6. **Days-Filterchips** (`DayListFilter.swift`): `DayListFilterChip` (favorites/hasVisits/hasRoutes/hasDistance/exportable); `DayListFilter` mit AND-Logik; `passes(summary:isFavorited:)`
-7. **Favoriten/Pinning** (`DayFavoritesStore.swift`): `add/remove/toggle/contains/clear` via UserDefaults; Key `app.dayFavorites`
-
-#### Phase C – Insights Drilldown + Chart Share
-8. **Insights-Drilldown** (`InsightsDrilldown.swift`): `InsightsDrilldownAction` (filterDays/filterDaysToDate/filterDaysToDateRange/prefillExportForDate/prefillExportForDateRange); `InsightsDrilldownTarget` mit Factory-Helpers; `AppSessionState.activeDrilldownFilter`
-9. **Chart Share Helper** (`ChartShareHelper.swift`): `ChartSharePayload` + `InsightsCardType`; Dateiname-Format `LocationHistory_Insights_<type>_[<range>_]<date>.png`; UI-frei, testbar; Hinweis: ImageRenderer nur auf Apple-Host
-
-**Tests:** 8 neue Test-Files (316 Tests, 2 Skips, 0 Failures)
-
 ## 2026-04-01
 
 ### DE Localisation – Analytics / Insights / Overview / Custom-Range (Truth-Sync aus iOS)

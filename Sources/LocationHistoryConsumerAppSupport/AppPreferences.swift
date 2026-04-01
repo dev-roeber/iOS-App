@@ -207,6 +207,7 @@ public final class AppPreferences: ObservableObject {
         static let liveTrackingServerUploadURL = "app.preferences.liveTrackingServerUploadURL"
         static let liveTrackingServerUploadBearerToken = "app.preferences.liveTrackingServerUploadBearerToken"
         static let liveTrackingUploadBatch = "app.preferences.liveTrackingUploadBatch"
+        static let autoRestoreLastImport = "app.preferences.autoRestoreLastImport"
     }
 
     private let userDefaults: UserDefaults
@@ -259,6 +260,12 @@ public final class AppPreferences: ObservableObject {
 
     @Published public var liveTrackingUploadBatch: AppLiveTrackingUploadBatchPreference {
         didSet { userDefaults.set(liveTrackingUploadBatch.rawValue, forKey: Keys.liveTrackingUploadBatch) }
+    }
+
+    /// When `true`, the app attempts to re-open the most recently imported file on launch.
+    /// Defaults to `false` (opt-in behaviour).
+    @Published public var autoRestoreLastImport: Bool {
+        didSet { userDefaults.set(autoRestoreLastImport, forKey: Keys.autoRestoreLastImport) }
     }
 
     public var liveTrackRecorderConfiguration: LiveTrackRecorderConfiguration {
@@ -347,6 +354,7 @@ public final class AppPreferences: ObservableObject {
             key: Keys.liveTrackingUploadBatch,
             from: userDefaults
         ) ?? .small
+        self.autoRestoreLastImport = userDefaults.object(forKey: Keys.autoRestoreLastImport) as? Bool ?? false
     }
 
     public func reset() {
@@ -363,6 +371,7 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.liveTrackingServerUploadBearerToken)
         KeychainHelper.delete(key: Keys.liveTrackingServerUploadBearerToken)
         userDefaults.removeObject(forKey: Keys.liveTrackingUploadBatch)
+        userDefaults.removeObject(forKey: Keys.autoRestoreLastImport)
 
         distanceUnit = .metric
         startTab = .overview
@@ -376,6 +385,7 @@ public final class AppPreferences: ObservableObject {
         liveLocationServerUploadURLString = LiveLocationServerUploadConfiguration.defaultTestEndpointURLString
         liveLocationServerUploadBearerToken = ""
         liveTrackingUploadBatch = .small
+        autoRestoreLastImport = false
     }
 
     private static func loadEnum<T: RawRepresentable>(
