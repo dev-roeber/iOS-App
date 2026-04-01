@@ -1,4 +1,4 @@
-# Codex Agent – Projektprofil: LocationHistory2GPX-iOS
+# Codex Agent – Projektprofil: LocationHistory2GPX-Monorepo
 
 ## Projektrolle
 
