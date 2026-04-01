@@ -1,10 +1,9 @@
 # APP Feature Inventory
 
-Last analysis: 2026-03-30
+Last analysis: 2026-04-01
 
 Repos in scope:
-- `LocationHistory2GPX-iOS`: verified in this workspace
-- `LH2GPXWrapper`: available in this workspace, but this inventory still only claims features that are verifiable from the core repo itself
+- `LocationHistory2GPX-Monorepo`: verified in this workspace
 
 Governance:
 - Only document what is verifiable in repo/app.
@@ -14,6 +13,7 @@ Governance:
 
 Present:
 - Import-first root screen when no content is loaded
+- import-first root can show a visible recent-files list with reopen, remove-entry and clear-history actions
 - shared toolbar `Actions` menu for primary app commands
 - compact layout uses `TabView` with `Overview`, `Days`, `Insights`, `Export` and on iOS 17+ `Live`
 - compact tabs each run inside their own `NavigationStack`, including the optional `Live` tab on iOS 17+
@@ -26,7 +26,6 @@ Present:
 Not present:
 - dedicated onboarding flow or walkthrough
 - custom bottom-sheet navigation model
-- recent-files or import-history navigation
 
 ## 2. Import-Funktionen
 
@@ -38,13 +37,12 @@ Present:
 - user-facing import error titles for unsupported format, unreadable file, decode failure, empty ZIP and multiple exports in ZIP
 - bundled demo fixture can be loaded as fallback
 - imported file bookmark is saved after a successful import
-
-Bewusst deaktiviert, aber vorhanden:
-- `ImportBookmarkStore.restore()` exists as underlaying auto-restore mechanism
-- bookmark persistence remains in code, but startup does not auto-restore the previous import
+- recent files are persisted after successful imports and exposed in the empty import-first state
+- recent-file reopen removes stale or unavailable entries instead of surfacing raw bookmark failures
+- auto-restore of the last import exists as an opt-in startup path controlled by `AppPreferences.autoRestoreLastImport`
+- missing or stale last-import bookmarks are skipped gracefully during auto-restore
 
 Not present:
-- automatic restore of the last import on app launch
 - drag-and-drop import UI
 - multi-file import UI
 
@@ -52,6 +50,8 @@ Not present:
 
 Present:
 - overview screen with statistics cards for days, visits, activities and routes
+- visible global time-range control for `All Time`, preset ranges and custom ranges
+- localized active-range display plus reset-to-all-time action
 - overview starts with a source/status card and a dedicated `Primary Actions` section
 - optional date-range header when days exist
 - optional total-distance summary card when distance data exists
@@ -160,6 +160,7 @@ Present:
 - period breakdown cards and chart when period stats exist, with switchable `Days` / `Events` / `Distance` metrics
 - explicit empty-state/fallback messaging for no-days, low-data and section-unavailable insight cases
 - visible chart hints/labels for tap navigation, selected metric context and weekday averages
+- visible global time-range control reusing the shared app session filter
 - insights are built from decoded stats with day-level fallbacks where implemented
 
 Not present:
@@ -179,6 +180,7 @@ Present:
 - toggle for allowing background live recording
 - app-language preference with `English` / `Deutsch`
 - broad UI localization across shell, options, status UI, day list/detail, saved-track library/editor, live-recording and large parts of export/insights
+- toggle for restoring the last import on launch
 - toggle for optional live-location server upload
 - configurable server URL and optional bearer token for live-location upload
 - upload-batch preference for `Every Point`, `Every 5 Points`, `Every 15 Points` or `Every 30 Points`
@@ -197,11 +199,12 @@ Present:
 - export sheet entry on regular width
 - multi-day selection with `Select All` / `Deselect All`
 - saved live tracks can be selected in the same export flow
+- visible global time-range section clarifies that export uses the active app-wide range before local export filters
 - local export filters for imported history by date window, maximum accuracy, required content, activity type, bounding box and polygon
 - export mode picker for `Tracks`, `Waypoints` and `Both`
 - export preview map for the current selection with route and waypoint context
 - system `fileExporter` flow
-- GPX, KML and GeoJSON generation from selected imported days and selected saved live tracks
+- GPX, KML, GeoJSON and CSV generation from selected imported days and selected saved live tracks
 - waypoint export from imported visits plus activity start/end coordinates
 - suggested export filename based on selected days, saved tracks and the active format
 - export summary card with selected source count, route/waypoint count, distance total and filename preview
@@ -212,7 +215,7 @@ Bewusst deaktiviert, aber vorhanden:
 - export architecture can still grow beyond the active `GPX`/`KML`/`GeoJSON` formats
 
 Not present:
-- active CSV or KMZ export in the app UI
+- KMZ export in the app UI
 - per-route selection inside a day
 - cloud sync or account-backed sharing
 
@@ -253,7 +256,6 @@ Not present:
 ## 12. Noch bewusst deaktivierte, aber vorhandene Unterbauten
 
 Present as underlaying code, but not active as product behavior:
-- import bookmark restore infrastructure exists, but auto-restore on launch is parked
 - recorded live tracks persist after recording stops, but there is no draft resume for an in-progress recording
 - export architecture can grow beyond GPX/KML, but further formats are still inactive
 
@@ -272,9 +274,8 @@ Present:
 - `effectiveRange: ClosedRange<Date>?`, `fromDateString`/`toDateString` für AppExportQueryFilter
 - `chipLabel` für UI-Chip-Darstellung; `reset()` zurück auf .all
 - In `AppSessionState.historyDateRangeFilter` als shared State
-
-Not yet wired in views:
-- Chip/Banner in Days/Insights/Export-Views (State vorhanden, Views nicht verändert)
+- sichtbare Verdrahtung in `Overview`, `Insights` und `Export` ueber `AppHistoryDateRangeControl`
+- lokalisierte aktive Bereichsanzeige, Reset und Custom-Range-Sheet ohne neue parallele Range-Logik in Views
 
 ### A2. Recent Files / Import-Historie
 Present:
@@ -282,17 +283,15 @@ Present:
 - `RecentFileEntry`: id/displayName/bookmarkData/lastOpenedAt, Codable, Identifiable
 - Deduplizierung nach displayName; neueste zuerst; max. 10 Einträge
 - Migration von altem `lastImportedFileBookmark`-Key beim ersten `load`-Aufruf
-
-Not yet wired in views:
-- Recent-Files-Liste im Import-Root (State vorhanden, Views nicht verändert)
+- sichtbare Recent-Files-Liste im Import-Root mit `Open Again`, Entfernen einzelner Eintraege und `Clear History`
+- stale oder fehlende Bookmarks werden im UI freundlich behandelt und aus der Historie entfernt
 
 ### A3. Auto-Restore als Option
 Present:
 - `AppPreferences.autoRestoreLastImport: Bool` (Key: `app.preferences.autoRestoreLastImport`, Default: false)
 - in `reset()` bereinigt
-
-Not yet wired:
-- Auto-Restore-Logik beim App-Start; Toggle in AppOptionsView
+- Toggle in `AppOptionsView`
+- opt-in Restore-Pfad beim App-Start ueber den vorhandenen Bookmark-Unterbau
 
 ### B1. Per-Route Auswahl im Day Detail
 Present:
@@ -310,9 +309,7 @@ Present:
 - `ExportFormat.csv` mit `.tablecells` Icon, `"csv"` Dateiendung
 - `CSVBuilder.build(from:[Day]) -> String`: Header (16 Felder), visit/activity/route/empty-Rows; RFC 4180 Escaping
 - `CSVDocument` (SwiftUI FileDocument) für `.fileExporter`-Integration
-
-Not yet wired:
-- CSV-Case in AppExportView (fileExporter, Readiness, Helpertext) noch offen
+- CSV ist in `AppExportView` ueber den bestehenden fileExporter-Flow aktiv verdrahtet
 
 ### B3. Days-Filterchips
 Present:

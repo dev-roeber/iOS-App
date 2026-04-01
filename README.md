@@ -41,7 +41,7 @@ Integriertes Monorepo fuer Core Swift Package und Xcode Wrapper der `LocationHis
 - zwischen `Tracks`, `Waypoints` und `Both` als Exportmodus wechseln
 - importierte History lokal nach Datum, Genauigkeit, Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon fuer den Export filtern
 - Exportauswahl pro Route im Day-Detail (per-route selection, Rückwärtskompatibel: ohne explizite Auswahl alle Routen)
-- app-weiten Zeitraumfilter (Presets: 7 d / 30 d / 90 d / dieses Jahr / Custom) der Days, Insights und Export synchronisiert
+- app-weiten Zeitraumfilter (Presets: 7 d / 30 d / 90 d / dieses Jahr / Custom) fuer Overview, Insights und Export sichtbar und synchronisiert
 - zuletzt importierte Dateien als Recent-Files-Liste speichern und daraus erneut öffnen
 - Auto-Restore der zuletzt importierten Datei beim Start (opt-in, Standard aus)
 - Tage als Favoriten markieren (Stern) und per Filterchip filtern
@@ -198,7 +198,7 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - Live-Tracking zeigt jetzt zusaetzlich aktuelle Geschwindigkeit, Durchschnittsgeschwindigkeit, letzte Teilstrecke, Update-Alter, Distanz, Dauer, Punktzahl und Genauigkeit als sichtbare Stat-Karten
 - Recorded-Track-Persistenz getrennt von importierter History; Speicherung erst beim Stoppen der Aufnahme
 - Saved-Tracks-Library mit getrenntem `Edit Track`-Zugang fuer gespeicherte Live-Tracks als separater `Local Tools`-Nebenfluss
-- Optionen-Seite fuer lokale Darstellung/Steuerung: Distanz-Einheit, Start-Tab, Kartenstil, Sprache, technische Importdetails und optionaler Server-Upload
+- Optionen-Seite fuer lokale Darstellung/Steuerung: Distanz-Einheit, Start-Tab, Kartenstil, Sprache, technische Importdetails, Auto-Restore des letzten Imports und optionaler Server-Upload
 - VoiceOver-Accessibility: semantische Labels, Gruppierung, dekorative Icons ausgeblendet
 - konsistente Leer-/Fehler-/Ladezustaende mit SF Symbols und klaren Texten
 - ein zentrales Actions-Menue in der Toolbar fuehrt Import, Demo, Optionen und Clear
@@ -209,9 +209,9 @@ Die Produkt-UI ist die primaere Inhaltsdarstellung dieses Repos:
 - bietet Demo-Daten als sekundaeren Fallback
 - Export-Flow zeigt jetzt Auswahlstatus, Disabled-Gruende und den vorgeschlagenen Dateinamen passend zum aktiven Exportformat vor dem fileExporter-Dialog
 - Export-Flow zeigt jetzt eine sichtbare Vorschaukarte fuer Routen und Waypoints und schaltet `GPX`, `KML` und `GeoJSON` als aktive Dateiformate frei
-- Export-Flow bietet jetzt lokale Filter fuer importierte History nach Datumsfenster, maximaler Genauigkeit, erforderlichem Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon; gespeicherte Live-Tracks bleiben davon bewusst unberuehrt
+- Export-Flow bietet jetzt lokale Filter fuer importierte History nach Datumsfenster, maximaler Genauigkeit, erforderlichem Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon; zusaetzlich wird der aktive app-weite Zeitraum sichtbar angezeigt und vor lokalen Exportfiltern angewendet; gespeicherte Live-Tracks bleiben davon bewusst unberuehrt
 - Export-Flow bietet jetzt die Modi `Tracks`, `Waypoints` und `Both`; Waypoints werden aus importierten Visits sowie Activity-Start/-End-Koordinaten erzeugt
-- Import-Persistenz-Code (Security-Scoped Bookmark) ist vorhanden; die Core-App-Shell haelt Auto-Restore weiterhin bewusst geparkt, waehrend der separate Wrapper `restoreBookmarkedFile()` beim Start wieder aufruft
+- Import-Persistenz-Code (Security-Scoped Bookmark) ist vorhanden; die App-Shell fuehrt eine sichtbare Recent-Files-Liste, speichert den letzten erfolgreichen Import und kann ihn beim Start optional automatisch wiederherstellen; fehlende oder stale Dateien werden dabei ohne rohe Nutzerfehler uebersprungen
 - Live-Track-Persistenz separat in einem dedizierten Recorded-Track-Store; kein Draft-Resume
 - bleibt standardmaessig lokal/offline-first; optionaler Server-Upload betrifft nur akzeptierte Live-Recording-Punkte und bleibt klar vom Import-/Query-Layer getrennt
 
@@ -237,12 +237,12 @@ Historisch belegt fuer einen Apple-Host am 2026-03-30:
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build`: BUILD SUCCEEDED
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 224 Tests, 0 Failures
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test`: 224 Tests, 0 Failures
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`: BUILD SUCCEEDED
-- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' -only-testing:LH2GPXWrapperTests test`: TEST SUCCEEDED
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Desktop/GitHub\\ REPO/LocationHistory2GPX-Monorepo/wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`: BUILD SUCCEEDED
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project /Users/sebastian/Desktop/GitHub\\ REPO/LocationHistory2GPX-Monorepo/wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=latest' -only-testing:LH2GPXWrapperTests test`: TEST SUCCEEDED
 - ein manueller Xcode-Start auf dem verbundenen iPhone bleibt fuer diesen Batch ein positiver Teilbefund, ist aber bewusst getrennt von den CLI-Build-/Test-Ergebnissen zu lesen
 
-Frisch auf diesem Linux-Host verifiziert (2026-03-31):
-- `swift test`: 228 Tests, 2 Skips, 0 Failures
+Frisch auf diesem Linux-Host verifiziert (2026-04-01):
+- `swift test`: Executed 343 tests, with 0 failures (0 unexpected)
 - `git diff --check`: sauber
 - `xcodebuild`: auf diesem Host nicht verfuegbar, deshalb kein neuer Apple-CLI-Rerun
 

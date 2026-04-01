@@ -1,13 +1,13 @@
 # ROADMAP
 
-## Aktueller Stand (2026-03-31)
+## Aktueller Stand (2026-04-01)
 
 ### Repo-Truth-Zusammenfassung
 Die letzte real belegte Apple-/Device-Verifikation bleibt der dokumentierte Apple-Stand vom 2026-03-17 beziehungsweise 2026-03-30; in diesem Audit wurde kein neuer Apple-Host-Lauf vorgetaeuscht.
-Der Audit-Block vom 2026-03-31 ist in dieser Revision eingearbeitet: Heatmap, `Live`-Tab, Upload-Batching, Wrapper-Auto-Restore, Default-Endpunkt und Teststatus sind jetzt dokumentarisch an den aktuellen Code angeglichen.
+Der Audit-Block vom 2026-04-01 ist in dieser Revision eingearbeitet: sichtbare Zeitraumfilter-Verdrahtung, Recent Files, Auto-Restore, Heatmap-Teststabilisierung und Teststatus sind jetzt dokumentarisch an den aktuellen Code angeglichen.
 Diese ROADMAP trennt ab hier explizit zwischen `fertig`, `implementiert aber noch nicht voll verifiziert` und `noch nicht umgesetzt`.
 Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Commits fruehere Zwischenstaende ueberholt haben, gilt der aktuelle Kopfblock als massgeblicher Repo-Truth.
-Der frische Host-Nachweis dieses Audits ist Linux-only: `swift test` lief am 2026-03-31 mit `228` Tests, `2` Skips und `0` Failures, `git diff --check` ist sauber, und `xcodebuild` ist auf diesem Host nicht verfuegbar.
+Der frische Host-Nachweis dieses Audits ist Linux-only: `swift test` lief am 2026-04-01 mit `Executed 343 tests, with 0 failures (0 unexpected)`, `git diff --check` ist sauber, und `xcodebuild` ist auf diesem Host nicht verfuegbar.
 Der Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 ist im Code umgesetzt und in dieser ROADMAP als repo-wahrer Produktstand eingearbeitet; fuer diesen Batch liegen auf Linux gezielte Teilnachweise vor, aber kein neuer Apple-UI-Nachweis.
 Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem die Heatmap-Detailsichtbarkeit sowie kleine visuelle Kanten in `Live`, `Insights` und `Days`; auf diesem Linux-Host liegen dazu nur nicht-Apple-Nachweise vor.
 
@@ -31,14 +31,14 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 - sichtbare Export-Vorschaukarte direkt auf der Export-Seite
 - lokale Export-Filter fuer importierte History nach Datumsfenster, maximaler Genauigkeit, erforderlichem Inhalt, Aktivitaetstyp sowie Bounding Box oder Polygon
 - **per-route Auswahl** innerhalb eines Tages (`ExportSelectionState.routeSelections`; implizit alle Routen wenn keine explizite Auswahl)
-- **globaler Zeitraumfilter** (`HistoryDateRangeFilter`): Presets + Custom + Reset; shared in `AppSessionState`
-- **Recent Files** (`RecentFilesStore`): bis zu 10 Eintraege, Stale-Pruefung, Migration von altem Single-Bookmark
-- **Auto-Restore-Option** (`AppPreferences.autoRestoreLastImport`, Default `false`)
+- **globaler Zeitraumfilter** (`HistoryDateRangeFilter`): Presets + Custom + Reset; sichtbar in `Overview`, `Insights` und `Export` verdrahtet
+- **Recent Files** (`RecentFilesStore`): bis zu 10 Eintraege, Stale-Pruefung, Reopen/Remove/Clear im import-first Startzustand
+- **Auto-Restore-Option** (`AppPreferences.autoRestoreLastImport`, Default `false`): sichtbarer Toggle plus opt-in Restore beim App-Start
 - **Tage-Favoriten** (`DayFavoritesStore`): Stern-Marking, Persistenz, `DayListFilterChip.favorites`
 - **Days-Filterchips** (`DayListFilter`): Favorites / Has Visits / Has Routes / Has Distance / Exportable; AND-Logik mit Suche kombinierbar
 - **Insights-Drilldown** (`InsightsDrilldown`): `filterDaysToDate`, `filterDaysToDateRange`, `prefillExportForDate`, `prefillExportForDateRange`; `activeDrilldownFilter` in `AppSessionState`
 - **Chart-Share-Payload** (`ChartShareHelper`): UI-freier Payload-Builder; Dateiname-Format; ImageRenderer-Integration auf Apple-Host (nicht auf Linux verifizierbar)
-- Sprachwahl `English` / `Deutsch` in den Optionen; breite DE-Abdeckung fuer Shell-, Optionen-, Live-Recording-, Import-Entry-, Export- und Analytics/Insights/Overview-Oberflaechen inkl. Format-Strings, Monatsnamen, rangeDescription-Singular/Plural, Custom-Date-Range-Sheet, Overlap-Map und InsightsChartSupport-Hints (Stand 2026-04-01: 316 Tests gruen, 2 Skips, 0 Failures)
+- Sprachwahl `English` / `Deutsch` in den Optionen; breite DE-Abdeckung fuer Shell-, Optionen-, Live-Recording-, Import-Entry-, Export- und Analytics/Insights/Overview-Oberflaechen inkl. Format-Strings, Monatsnamen, rangeDescription-Singular/Plural, Custom-Date-Range-Sheet, Overlap-Map, Recent Files, Auto-Restore und InsightsChartSupport-Hints (Stand 2026-04-01: `swift test` -> `Executed 343 tests, with 0 failures (0 unexpected)`)
 
 ### Implementiert, aber noch nicht voll verifiziert
 
@@ -57,19 +57,19 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 - **Background-Live-Tracking**
   Codepfad, Permissions-Upgrade und Wrapper-Deklaration sind vorhanden.
   Offen bleiben reale Apple-Hardware-Verifikation, Suspend/Resume-Kantenfaelle und ein sauber protokollierter Device-Durchlauf.
-- **Auto-Restore im Wrapper**
-  Die Core-App-Shell haelt Auto-Restore bewusst geparkt, der Wrapper ruft `restoreBookmarkedFile()` beim Start wieder auf.
-  Offen bleibt eine frische Device-Verifikation fuer den reaktivierten Wrapper-Pfad.
+- **Auto-Restore / Recent Files**
+  Recent Files und der opt-in Restore-Pfad sind jetzt in der App-Shell sichtbar verdrahtet.
+  Offen bleibt eine frische Device-Verifikation fuer Reopen, Clear History und den Restore-beim-Start-Pfad.
 - **Server-Upload**
   HTTPS-Upload, Bearer-Token, Retry-on-next-sample, Upload-Batching, Queue-/Failure-/Last-Success-Status, Pause/Resume und manueller Flush sind implementiert.
   Hart kodierter Testendpunkt (`sslip.io`) entfernt: `defaultTestEndpointURLString` ist jetzt `""`.
   Offen bleiben End-to-End-Device-Verifikation sowie finale Review-/Privacy-Einordnung auf Apple-Seite.
 - **Insights / Days UX**
   Die Insights-Seite ist deutlich ausgebaut und `Days` ist jetzt repo-wahr `neu -> alt` sortiert.
-  Offen bleiben frische Apple-UI-Nachweise fuer die neue Informationsarchitektur, Chart-Lesbarkeit und das aktualisierte Day-Navigationsverhalten auf echter Hardware.
+  Offen bleiben frische Apple-UI-Nachweise fuer die neue Informationsarchitektur, Chart-Lesbarkeit, den jetzt sichtbaren Zeitraumfilter in `Overview`/`Insights`/`Export` und das aktualisierte Day-Navigationsverhalten auf echter Hardware.
 - **Linux-/Apple-Teststatus**
   Historische Apple-Nachweise vom 2026-03-30 bleiben dokumentiert, gelten aber nicht als frischer Gegenlauf fuer diesen Audit.
-  Der aktuelle Linux-Mindestnachweis dieses Audits ist `swift test` mit `228` Tests, `2` Skips und `0` Failures; `git diff --check` ist sauber.
+  Der aktuelle Linux-Mindestnachweis dieses Audits ist `swift test` mit `Executed 343 tests, with 0 failures (0 unexpected)`; `git diff --check` ist sauber.
   Die 3 bekannten Problemfaelle sind als Test-Drift klassifiziert und behoben:
   `testAcceptedSamplesUploadToConfiguredServer` und `testFailedUploadRetriesWhenAnotherAcceptedSampleArrives` scheiterten an minimumBatchSize=5 (nicht Plattform), Tests auf minimumBatchSize=1 gesetzt;
   `testBackgroundPreferenceActivatesClientWhenAlwaysAuthorized` prueft jetzt korrektes Verhalten (Client-Config beim Recording-Start, nicht bei Preference-Aenderung).
@@ -81,8 +81,8 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 ### Noch nicht umgesetzt
 
 - KMZ-Export
-- weitere Insight-Arbeit: zeitraumbezogene Filter-UI in Views noch nicht verdrahtet (State vorhanden), Cross-Filtering und Chart-Share-ImageRenderer-Integration auf Apple-Host noch offen
-- waehlbarer angezeigter Zeitraum fuer Overview/Insights (State vorhanden, UI-Verdrahtung offen)
+- weitere Insight-Arbeit: Cross-Filtering und Chart-Share-ImageRenderer-Integration auf Apple-Host noch offen
+- globale Zeitraumfilter-Verdrahtung fuer `Days` bleibt offen; aktuell sichtbar verdrahtet sind `Overview`, `Insights` und `Export`
 - breitere Lokalisierungsabdeckung und eine strengere Lokalisierungspruefung
 - Cloud-/Sync- oder Account-Features
 
@@ -91,9 +91,9 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 1. kurzen echten iPhone-Heatmap-Check fuer den neuen Aggregations-/Polygon-Renderer inklusive Batch-3-Farb-/Kontrast-Mapping und des spaeteren Detail-Visibility-Polish fahren und visuelle/performance-seitige Befunde dokumentieren
 2. dedizierten iPhone-UI-Check fuer den deutlich umgebauten `Live`-Tab, die Upload-Zustaende und die neue `Days`-Default-Sortierung fahren und dokumentieren
 3. Background-Recording auf echtem iPhone verifizieren und im Runbook belegen
-4. Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren und dokumentieren
+4. Auto-Restore / Recent Files auf echtem iPhone erneut verifizieren und dokumentieren
 5. optionalen Server-Upload end-to-end auf Device pruefen; Apple-Review-/Privacy-Einordnung fuer den Upload-Pfad weiter klaeren
-6. erst danach weitere neue Feature-Arbeit (weiterer Insights-Ausbau, CSV/KMZ, Zeitraumsauswahl)
+6. erst danach weitere neue Feature-Arbeit (weiterer Insights-Ausbau, KMZ, `Days`-seitige Zeitraumsauswahl)
 
 Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt fuer spaetere Folgearbeit reserviert.
 
@@ -313,8 +313,8 @@ Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. 
 
 ### Persistenz-Status
 Auto-Restore (ImportBookmarkStore) ist technisch implementiert und funktioniert korrekt (Phase 15).
-Aktuell bewusst deaktiviert (Phase 19.5): App startet immer manuell (Open / Demo). Kein automatisches Wiederherstellen der letzten Datei.
-Reaktivierung moeglich sobald iPhone-Flow gefestigt und Nutzerwert klar.
+Aktuell repo-wahr aktivierbar: die App startet weiterhin manuell, solange `Restore Last Import on Launch` deaktiviert bleibt; bei aktivem Toggle wird der letzte erfolgreiche Import opt-in automatisch wiederhergestellt.
+Recent Files sind im import-first Startzustand sichtbar und koennen dort erneut geoeffnet, einzeln entfernt oder komplett geleert werden.
 Recorded Live-Tracks sind jetzt separat aktiv: save-on-stop in einem dedizierten Store, ohne Draft-Persistenz und ohne Auto-Resume.
 
 ### Phase 19.21b – Google Timeline JSON direkt importierbar

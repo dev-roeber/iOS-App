@@ -2,6 +2,17 @@
 
 ## [Unreleased] – 2026-04-01
 
+### UI Wiring Phase 1 – Range / Recent Files / Auto-Restore
+
+- `AppContentSplitView.swift`, `AppInsightsContentView.swift`, `AppExportView.swift`, `AppHistoryDateRangeControl.swift`, `AppHistoryDateRangeQueryBridge.swift`: der vorhandene `HistoryDateRangeFilter` ist jetzt sichtbar in `Overview`, `Insights` und `Export` verdrahtet; Presets, Custom-Range-Sheet, lokalisierte Anzeige und Reset auf Gesamtzeitraum nutzen den bestehenden Unterbau statt neuer View-Logik
+- `AppExportView.swift`: Export projiziert den aktiven globalen Zeitraum jetzt vor lokalen Exportfiltern, zeigt den Zusammenhang sichtbar in der UI und exportiert `CSV` wieder korrekt ueber den bestehenden Export-Flow
+- `AppShellRootView.swift`, `AppImportStateBridge.swift`, `ImportBookmarkStore.swift`: Import-Root zeigt jetzt eine echte Recent-Files-Liste mit `Open Again`, Entfernen einzelner Eintraege und `Clear History`; stale oder fehlende Bookmarks werden freundlich behandelt und nicht roh an Nutzer durchgereicht
+- `AppOptionsView.swift`, `AppPreferences.swift`, `AppShellRootView.swift`: `Restore Last Import on Launch` ist jetzt als echter Toggle sichtbar; der App-Start bindet die vorhandene Restore-Logik opt-in an und degradiert sauber bei fehlender oder stale Datei
+- `AppLanguageSupport.swift`: neue UI-Texte fuer Zeitraumsteuerung, Recent Files und Auto-Restore auf Deutsch/Englisch lokalisiert
+- `AppHeatmapView.swift`: bestehende Heatmap-Logik an die tatsachliche Grid-Segmentierung angepasst, damit der verpflichtende Gesamtlauf `swift test` wieder gruen ist
+- `Tests/LocationHistoryConsumerTests/AppImportAndHistoryDateRangeBridgeTests.swift`, `AppPreferencesTests.swift`: neue und erweiterte Tests decken Zeitraumprojektion, Import-Historie und Auto-Restore-Verdrahtung ab
+- Linux-Nachweis fuer diesen Batch: `swift test` -> `Executed 343 tests, with 0 failures (0 unexpected)`
+
 ### Feature Batch – Range / Insights / Export / Import-Comfort / Days-Polish
 
 **9 neue Features in 3 Phasen:**

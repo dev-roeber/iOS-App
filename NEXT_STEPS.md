@@ -12,12 +12,13 @@ Bereits drin:
 - der dedizierte `Live`-Tab wurde visuell und funktional deutlich ausgebaut: klarere Map-/Recording-/Upload-/Library-Hierarchie, Status-Chips, Quick Actions und mehr Live-Metriken
 - der optionale Server-Upload zeigt Queue-, Failure- und Last-Success-Zustaende und unterstuetzt Pause/Resume sowie manuellen Queue-Flush
 - die Insights-Seite bietet segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) sowie KPI-Karten, Highlight-Karten, `Top Days`, Monatstrends und umschaltbare Distanz-/Route-/Event-Muster
-- gezielte Linux-Teilverifikation fuer diese Bereiche liegt vor; der frische Gesamtlauf auf diesem Host ist `swift test` mit `228` Tests, `2` Skips und `0` Failures
+- gezielte Linux-Teilverifikation fuer diese Bereiche liegt vor; der frische Gesamtlauf auf diesem Host ist `swift test` mit `Executed 343 tests, with 0 failures (0 unexpected)`
 
 Fehlt noch:
 - frische Apple-UI-Verifikation fuer den neuen `Live`-Tab inklusive Upload-Zustaenden, Quick Actions und groesserem Stat-Set
 - frische Apple-UI-Verifikation fuer die neue `Insights`-Informationsarchitektur und Chart-Lesbarkeit
 - frische Apple-UI-Verifikation fuer die absteigende `Days`-Default-Sortierung im echten iPhone-/macOS-Flow
+- frische Apple-UI-Verifikation fuer den jetzt sichtbaren globalen Zeitraumfilter in `Overview`, `Insights` und `Export`
 
 ## 2. Phase 19.52 – Heatmap testen und auf Apple verifizieren
 
@@ -42,7 +43,7 @@ Status: **offen**
 
 Bereits drin:
 - historische Apple-CLI-Nachweise fuer 2026-03-30 sind dokumentiert
-- der frische Linux-Mindestnachweis auf diesem Host ist `swift test`: `228` Tests, `2` Skips und `0` Failures
+- der frische Linux-Mindestnachweis auf diesem Host ist `swift test`: `Executed 343 tests, with 0 failures (0 unexpected)`
 - Apple-only Heatmap-Renderingstests sind fuer non-Apple-Plattformen korrekt gegated und blockieren den Linux-Lauf nicht
 - die frueheren Test-vs-Code-Drifts (`minimumBatchSize`, Keychain-first, Gedankenstrich-Formatierung) sind repo-wahr bereinigt
 
@@ -64,19 +65,19 @@ Fehlt noch:
 - echte Device-Verifikation fuer Permission-Upgrade, laufende Aufnahme im Hintergrund und Stop-/Persistenzverhalten
 - separater dokumentierter Nachweis im Apple-/Wrapper-Runbook
 
-## 5. Phase 19.55 – Wrapper-Auto-Restore auf echtem iPhone erneut verifizieren
+## 5. Phase 19.55 – Auto-Restore / Recent Files auf echtem iPhone erneut verifizieren
 
 Status: **teilweise umgesetzt**
 
 Bereits drin:
-- Core-App-Shell haelt Auto-Restore bewusst geparkt
-- der Wrapper ruft `restoreBookmarkedFile()` beim Start wieder auf
-- README und Runbooks beschreiben den Status repo-wahr
-- echter iPhone-15-Pro-Max-Lauf zeigte beim App-Start bereits wiederhergestellte Quelle `Imported file: location-history.zip`
+- die App-Shell zeigt jetzt eine sichtbare Recent-Files-Liste im import-first Startzustand
+- `Restore Last Import on Launch` ist als sichtbarer Toggle in den Optionen verdrahtet
+- der App-Start nutzt den vorhandenen Bookmark-/Recent-Files-Unterbau jetzt opt-in fuer Auto-Restore
+- fehlende oder stale Dateien werden sauber abgefangen statt mit rohen Nutzerfehlern eskaliert
 
 Fehlt noch:
-- kontrollierte Device-Verifikation fuer den seit 2026-03-20 wieder aktiven Restore-Pfad
-- dokumentierter Nachweis fuer positiven Restore, Datei-fehlt-Fallback und Clear-nach-Restore
+- kontrollierte Device-Verifikation fuer positiven Restore, Datei-fehlt-Fallback, Reopen aus Recent Files und `Clear History`
+- dokumentierter Nachweis fuer den kompletten Startpfad auf echter Apple-Hardware
 
 ## 6. Phase 19.56 – Server-Upload / Review / Privacy finalisieren
 
@@ -127,9 +128,8 @@ Bereits drin (2026-04-01 InsightsChartSupport rangeNote-Lokalisierung):
 Fehlt noch:
 - frische Apple-UI-Verifikation fuer Range-Picker, Custom-Datumsbereich-Sheet und Overlap-Karte auf echtem iPhone
 - vollstaendige Lokalisierungsabdeckung aller verbleibenden EN-Strings (Rest-Abdeckung)
-- View-seitige Verdrahtung der neuen State-Felder: `historyDateRangeFilter`-Chip/Banner in Views, Favoriten-Swipe-Action in DayRow, Drilldown-Handler in AppContentSplitView, Chart-Share-Button in InsightsCardView (alle State-Typen sind fertig, Views nicht veraendert)
+- weitere View-seitige Verdrahtung offener State-Felder ausserhalb dieses Batches: Favoriten-Swipe-Action in `DayRow`, Chart-Share-Button in `InsightsCardView`
 - Chart-Share per ImageRenderer auf Apple-Host verifizieren
-- CSV in AppExportView verdrahten (CSVDocument/CSVBuilder vorhanden, fileExporter-Case fehlt noch)
 - KMZ-Export
 
 Contract-Files werden weiterhin ausschliesslich vom Producer-Repo aus aktualisiert.
