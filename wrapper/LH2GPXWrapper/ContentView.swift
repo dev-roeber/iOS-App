@@ -4,9 +4,15 @@ import LocationHistoryConsumerDemoSupport
 import UniformTypeIdentifiers
 
 struct ContentView: View {
+    private enum LaunchArgument {
+        static let uiTesting = "LH2GPX_UI_TESTING"
+        static let resetPersistence = "LH2GPX_RESET_PERSISTENCE"
+    }
+
     @State private var session = AppSessionState()
     @State private var isImportingFile = false
     @State private var isShowingOptions = false
+    @State private var hasPreparedLaunchState = false
     @StateObject private var liveLocation = LiveLocationFeatureModel()
     @StateObject private var preferences = AppPreferences()
 
@@ -61,6 +67,7 @@ struct ContentView: View {
             }
         }
         .task {
+            await prepareLaunchStateIfNeeded()
             restoreBookmarkedFile()
         }
     }
@@ -168,9 +175,27 @@ struct ContentView: View {
         session.clearContent()
     }
 
+    @MainActor
+    private func prepareLaunchStateIfNeeded() async {
+        guard !hasPreparedLaunchState else { return }
+        hasPreparedLaunchState = true
+
+        guard launchArguments.contains(LaunchArgument.uiTesting),
+              launchArguments.contains(LaunchArgument.resetPersistence) else {
+            return
+        }
+
+        ImportBookmarkStore.clear()
+        RecentFilesStore.clear()
+        preferences.reset()
+        session.clearContent()
+    }
+
     private func restoreBookmarkedFile() {
         guard !session.hasLoadedContent, !session.isLoading else { return }
-        guard let url = ImportBookmarkStore.restore() else { return }
+        guard let url = AppImportStateBridge.restoreLastImportIfEnabled(
+            autoRestoreEnabled: preferences.autoRestoreLastImport
+        ) else { return }
         session.beginLoading()
         Task {
             let accessedSecurityScope = url.startAccessingSecurityScopedResource()
@@ -220,6 +245,7 @@ struct ContentView: View {
             do {
                 let content = try await AppContentLoader.loadImportedContent(from: url)
                 ImportBookmarkStore.save(url: url)
+                _ = RecentFilesStore.add(url: url)
                 session.show(content: content)
             } catch {
                 session.showFailure(
@@ -229,5 +255,9 @@ struct ContentView: View {
                 )
             }
         }
+    }
+
+    private var launchArguments: Set<String> {
+        Set(ProcessInfo.processInfo.arguments)
     }
 }

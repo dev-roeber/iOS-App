@@ -8,6 +8,10 @@
 import XCTest
 
 final class LH2GPXWrapperUITestsLaunchTests: XCTestCase {
+    private enum LaunchArgument {
+        static let uiTesting = "LH2GPX_UI_TESTING"
+        static let resetPersistence = "LH2GPX_RESET_PERSISTENCE"
+    }
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
@@ -20,10 +24,10 @@ final class LH2GPXWrapperUITestsLaunchTests: XCTestCase {
     @MainActor
     func testLaunch() throws {
         let app = XCUIApplication()
+        app.launchArguments += [LaunchArgument.uiTesting, LaunchArgument.resetPersistence]
         app.launch()
 
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
+        XCTAssertTrue(app.buttons["Load Demo Data"].waitForExistence(timeout: 5))
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"

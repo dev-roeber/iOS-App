@@ -219,6 +219,7 @@ public struct AppExportView: View {
                     .onTapGesture {
                         session.exportSelection.toggle(summary.date)
                     }
+                    .accessibilityIdentifier("export.day.row")
             }
         } header: {
             HStack {
@@ -229,11 +230,13 @@ public struct AppExportView: View {
                         session.exportSelection.clearAllDays()
                     }
                     .font(.subheadline)
+                    .accessibilityIdentifier("export.days.deselectAll")
                 } else {
                     Button(t("Select All")) {
                         session.exportSelection.selectAll(from: summaries.map(\.date))
                     }
                     .font(.subheadline)
+                    .accessibilityIdentifier("export.days.selectAll")
                 }
             }
         }
@@ -765,6 +768,7 @@ public struct AppExportView: View {
         }
         .buttonStyle(.borderedProminent)
         .disabled(!isExportReady(selection: selection, summaries: summaries))
+        .accessibilityIdentifier("export.action.primary")
     }
 
     private var emptyState: some View {

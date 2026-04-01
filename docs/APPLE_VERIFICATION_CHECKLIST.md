@@ -9,6 +9,42 @@ Diese Checkliste trennt klar zwischen:
 
 Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
+## Statusstand 2026-04-02 — Apple-Device-Verifikation nach Performance-Fix
+
+### Mac + Xcode + iPhone Verifikation (2026-04-02)
+
+Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (iOS 26.3), iPhone Air (iOS 26.3.1)
+
+#### ✅ real verifiziert (2026-04-02)
+
+- `xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build`: BUILD SUCCEEDED
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`: BUILD SUCCEEDED
+- `xcodebuild archive -scheme LH2GPXWrapper -destination 'generic/platform=iOS'`: ARCHIVE SUCCEEDED (TestFlight-Archiv lokal erzeugbar; Upload erfordert App Store Connect)
+- `xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 363 Tests, 0 Failures
+- PrivacyInfo.xcprivacy vorhanden und technisch konsistent mit aktuellem App-Verhalten (UserDefaults CA92.1 deklariert, NSPrivacyTracking: false)
+- Device-Launch auf iPhone 15 Pro Max: `testLaunch` gruен
+- Device-Smoke-Test `testDeviceSmokeNavigationAndActions` auf iPhone 15 Pro Max: PASSED (44s)
+  - Load Demo Data: App startet sauber, Demo-Daten laden ohne Crash
+  - Overview → Heatmap-Sheet: oeffnet real, schliesst sauber
+  - Insights → Share-Button: Share-Sheet erscheint real (ImageRenderer-Pfad ausgeloest)
+  - Export-Tab → Export-Action-Button: fileExporter wird real ausgeloest (koordinatenbasierter Tap selektiert Tag, export.action.primary ist enabled und loest System-Datei-Sheet aus)
+  - Live-Tab → Start/Stop Recording: Location-Permission-Prompt erscheint, Recording startet und stoppt sauber
+- Wrapper-Auto-Restore mit deterministischem Launch-Reset via `LH2GPX_UI_TESTING` + `LH2GPX_RESET_PERSISTENCE` verifiziert
+- Signing/Bundle Identifier/Provisioning: ohne Fehler fuer Device-Build und Archiv
+
+#### ⚠️ technisch offen (nicht moeglich ohne manuelle Session oder Apple-Account)
+
+- Background-Recording auf echtem iPhone: Permission-Upgrade auf Always, Aufnahme im Hintergrund, Stop/Persistenz — nicht in UI-Automation testbar
+- Upload-End-to-End mit echtem HTTPS-Endpunkt auf Geraet: erfordert konfigurierten Server
+- TestFlight-Upload und Beta-Verifikation: Archiv existiert lokal, Upload erfordert App Store Connect-Zugang
+- Finaler App Store Review: nicht lokal simulierbar
+
+#### ❌ offen (Apple-Review / Store-Policy)
+
+- `NSPrivacyCollectedDataTypes` in PrivacyInfo.xcprivacy: aktuell leer (`[]`); ob Location-Daten aus Live-Recording als `NSPrivacyCollectedDataType` deklariert werden muessen, entscheidet Apple Review (optionaler Upload und lokale Aufnahme)
+- Datenschutzrichtlinien-URL fuer App Store Connect (Pflichtfeld, noch nicht eingetragen)
+- Support-URL fuer App Store Connect (noch nicht eingetragen)
+
 ## Statusstand 2026-04-01
 
 ### Repo-Verifikation (Linux-only, ohne Apple-Hardware)

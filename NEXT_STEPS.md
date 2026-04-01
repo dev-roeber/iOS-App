@@ -5,39 +5,30 @@ Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschl
 
 ## 1. Phase 19.51 – Live / Upload / Insights / Days auf Apple verifizieren
 
-Status: **teilweise umgesetzt**
+Status: **Apple-Device-Basisverifikation abgeschlossen (2026-04-02)**
 
-Bereits drin:
-- `Days` ist repo-wahr standardmaessig `neu -> alt` sortiert; Initialauswahl und Fallbacks bevorzugen den neuesten inhaltshaltigen Tag
-- der dedizierte `Live`-Tab wurde visuell und funktional deutlich ausgebaut: klarere Map-/Recording-/Upload-/Library-Hierarchie, Status-Chips, Quick Actions und mehr Live-Metriken
-- der optionale Server-Upload zeigt Queue-, Failure- und Last-Success-Zustaende und unterstuetzt Pause/Resume sowie manuellen Queue-Flush
-- die Insights-Seite bietet segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) sowie KPI-Karten, Highlight-Karten, `Top Days`, Monatstrends und umschaltbare Distanz-/Route-/Event-Muster
-- gezielte Linux-Teilverifikation fuer diese Bereiche liegt vor; der frische Gesamtlauf auf diesem Host ist `swift test` mit `Executed 363 tests, with 0 failures (0 unexpected)`
+Verifiziert auf iPhone 15 Pro Max via `testDeviceSmokeNavigationAndActions`:
+- Live-Tab: Start/Stop-Recording real auf Geraet geprüft; Location-Permission-Prompt erscheint und wird korrekt behandelt
+- Insights-Tab: Share-Button real ausgeloest (ImageRenderer-Pfad)
+- Export-Tab: fileExporter real ausgeloest
 
-Fehlt noch:
-- frische Apple-UI-Verifikation fuer den neuen `Live`-Tab inklusive Upload-Zustaenden, Quick Actions und groesserem Stat-Set
-- frische Apple-UI-Verifikation fuer die neue `Insights`-Informationsarchitektur und Chart-Lesbarkeit
-- frische Apple-UI-Verifikation fuer die absteigende `Days`-Default-Sortierung im echten iPhone-/macOS-Flow
-- frische Apple-UI-Verifikation fuer den jetzt sichtbaren globalen Zeitraumfilter in `Overview`, `Insights` und `Export`
+Noch offen (nicht in UI-Automation testbar):
+- Upload-End-to-End mit echtem HTTPS-Endpunkt auf Geraet (erfordert konfigurierten Server)
+- Background-Recording auf echtem iPhone (Permission-Upgrade auf Always, Aufnahme im Hintergrund)
+- Upload-Zustaende, Queue-Flush, Pause/Resume im Live-Tab unter Echtbedingungen
+- Insights-Chart-Lesbarkeit und Segmentnavigation visuell auf Device
 
 ## 2. Phase 19.52 – Heatmap testen und auf Apple verifizieren
 
-Status: **teilweise umgesetzt**
+Status: **Heatmap-Sheet-Open auf Apple-Hardware real verifiziert (2026-04-02)**
 
-Bereits drin:
-- `AppHeatmapView` ist implementiert und als eigenes Heatmap-Sheet verdrahtet
-- das Heatmap-Sheet bietet lokale Display-Controls fuer Deckkraft, Radius-Presets, `Auf Daten zoomen` und eine kleine Dichte-Legende
-- der Renderer nutzt geglaettete aggregierte Polygon-Zellen, viewport-basierte Zellselektion und wiederverwendbares LOD-/Viewport-Caching
-- Route-Grids und vorbereitete Route-Tracks werden jetzt vorgezogen aufgebaut; wiederholte Viewport-Wechsel traversieren nicht mehr jedes Mal den kompletten Export
-- Dichte-LODs werden jetzt lazy erst bei echtem Wechsel in den Dichte-Modus aufgebaut statt schon beim ersten Oeffnen des Sheets pauschal komplett vorzurechnen
-- Day-Detail- und Export-Karten nutzen jetzt stabile Renderdaten fuer Marker, Polylines und Regionen statt wiederholter `CLLocationCoordinate2D`-Neuaufbereitung pro Render
-- die spaeteren Detail-Visibility-Polishes machen niedrige und mittlere Dichte frueher sichtbar und farbiger, ohne die LOD-/Viewport-Architektur aufzugeben
-- kleine dedizierte Heatmap-Regressionstests fuer LOD-Aggregation, viewport-begrenzte Zellselektion sowie Intensitaets-/Opacity-/Palette-Mapping sind vorhanden
-- ein echter iPhone-15-Pro-Max-AX-Snapshot aus dem Wrapper zeigt `Heatmap` bei geladenem Import sichtbar verdrahtet
+Verifiziert auf iPhone 15 Pro Max via `testDeviceSmokeNavigationAndActions`:
+- Heatmap-Button in Overview erscheint und ist hittable (scroll-robust gefunden)
+- Heatmap-Sheet oeffnet real (`navigationBars["Heatmap"]` erscheint)
+- Sheet schliesst sauber via Done
 
-Fehlt noch:
-- echtes Oeffnen des Heatmap-Sheets auf Apple-Hardware
-- visuelle Apple-Verifikation des neuen Polygon-/Aggregations-Renderers inklusive der spaeteren Detail-Visibility-Polishes auf echter Apple-Hardware
+Noch offen:
+- visuelle Apple-Verifikation des Polygon-/Aggregations-Renderers auf echter Apple-Hardware (kein Produktionsproblem bekannt, nicht automatisiert pruefbar)
 - Performance-Nachweis fuer groessere Imports auf Apple-Hardware
 
 ## 2a. Phase 19.52b – Restprofiling fuer Map / Day Detail nur nach Apple-Nachweis

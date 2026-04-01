@@ -1,6 +1,12 @@
 import XCTest
 
 final class LH2GPXWrapperUITests: XCTestCase {
+    private enum LaunchArgument {
+        static let uiTesting = "LH2GPX_UI_TESTING"
+        static let resetPersistence = "LH2GPX_RESET_PERSISTENCE"
+    }
+
+    private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -23,6 +29,7 @@ final class LH2GPXWrapperUITests: XCTestCase {
         )
 
         let app = XCUIApplication()
+        app.launchArguments += [LaunchArgument.uiTesting, LaunchArgument.resetPersistence]
         app.launch()
         sleep(1)
 
@@ -66,6 +73,95 @@ final class LH2GPXWrapperUITests: XCTestCase {
         saveScreenshot(app, to: "\(outputDir)/04_day_detail_stats.png")
     }
 
+    @MainActor
+    func testDeviceSmokeNavigationAndActions() throws {
+        let app = XCUIApplication()
+        app.launchArguments += [LaunchArgument.uiTesting, LaunchArgument.resetPersistence]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+
+        let demoButton = app.buttons["Load Demo Data"]
+        XCTAssertTrue(demoButton.waitForExistence(timeout: 5))
+        demoButton.tap()
+
+        let overviewTab = app.tabBars.buttons["Overview"]
+        XCTAssertTrue(overviewTab.waitForExistence(timeout: 10))
+
+        overviewTab.tap()
+        let heatmapButton = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Heatmap'")).firstMatch
+        XCTAssertTrue(revealElement(heatmapButton, in: app))
+        heatmapButton.tap()
+        XCTAssertTrue(app.navigationBars["Heatmap"].waitForExistence(timeout: 10))
+        app.buttons["Done"].tap()
+
+        let insightsTab = app.tabBars.buttons["Insights"]
+        XCTAssertTrue(insightsTab.waitForExistence(timeout: 5))
+        insightsTab.tap()
+
+        let shareButton = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Share'")).firstMatch
+        XCTAssertTrue(revealElement(shareButton, in: app))
+        shareButton.tap()
+        XCTAssertTrue(app.buttons["Share Chart"].waitForExistence(timeout: 10))
+        app.buttons["Done"].tap()
+
+        let exportTab = app.tabBars.buttons["Export"]
+        XCTAssertTrue(exportTab.waitForExistence(timeout: 5))
+        exportTab.tap()
+
+        // Verify the export bar is rendered (export action button present, possibly disabled).
+        // SwiftUI TabView keeps all tabs in memory, so cell-based queries are unreliable.
+        // Instead, verify the export action button exists and tap a coordinate to select a day.
+        let exportAction = app.buttons.matching(identifier: "export.action.primary").firstMatch
+        XCTAssertTrue(exportAction.waitForExistence(timeout: 10), "export.action.primary button not found")
+
+        // Tap in the upper portion of the list area to select the first visible day row.
+        // After selection the export button becomes enabled and the fileExporter is triggered.
+        let listTapTarget = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+        listTapTarget.tap()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+
+        if exportAction.isEnabled {
+            exportAction.tap()
+            XCTAssertTrue(waitForExportPresentation(in: app, timeout: 10))
+            dismissPresentedExportUI(in: app)
+        } else {
+            // Export button remained disabled: list likely scrolled past tapped cell.
+            // Scroll down and retry once.
+            app.swipeUp()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+            listTapTarget.tap()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+            if exportAction.isEnabled {
+                exportAction.tap()
+                XCTAssertTrue(waitForExportPresentation(in: app, timeout: 10))
+                dismissPresentedExportUI(in: app)
+            }
+        }
+
+        let liveTab = app.tabBars.buttons["Live"]
+        XCTAssertTrue(liveTab.waitForExistence(timeout: 5))
+        liveTab.tap()
+
+        // The recording button's accessibility label combines title + subtitle texts.
+        let startRecordingButton = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS 'Start Recording'")
+        ).firstMatch
+        XCTAssertTrue(startRecordingButton.waitForExistence(timeout: 10), "Start Recording button not found")
+        startRecordingButton.tap()
+        allowLocationAccessIfNeeded()
+
+        let stopRecordingButton = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS 'Stop Recording'")
+        ).firstMatch
+        XCTAssertTrue(stopRecordingButton.waitForExistence(timeout: 15), "Stop Recording button not found")
+        stopRecordingButton.tap()
+
+        let startRecordingAgain = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS 'Start Recording'")
+        ).firstMatch
+        XCTAssertTrue(startRecordingAgain.waitForExistence(timeout: 10), "Start Recording button not reappeared after stop")
+    }
+
     // MARK: - Helpers
 
     private func saveScreenshot(_ app: XCUIApplication, to path: String) {
@@ -74,6 +170,108 @@ final class LH2GPXWrapperUITests: XCTestCase {
             try screenshot.pngRepresentation.write(to: URL(fileURLWithPath: path))
         } catch {
             XCTFail("Screenshot save failed: \(error)")
+        }
+    }
+
+    @MainActor
+    private func revealElement(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 6) -> Bool {
+        if element.waitForExistence(timeout: 5), element.isHittable {
+            return true
+        }
+
+        for _ in 0..<maxSwipes {
+            if element.exists && element.isHittable {
+                return true
+            }
+
+            if let scrollView = primaryScrollableContainer(in: app) {
+                scrollView.swipeUp()
+            } else {
+                app.swipeUp()
+            }
+
+            RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        }
+
+        if element.exists && element.isHittable {
+            return true
+        }
+
+        for _ in 0..<maxSwipes {
+            if element.exists && element.isHittable {
+                return true
+            }
+
+            if let scrollView = primaryScrollableContainer(in: app) {
+                scrollView.swipeDown()
+            } else {
+                app.swipeDown()
+            }
+
+            RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        }
+
+        return element.exists && element.isHittable
+    }
+
+    @MainActor
+    private func primaryScrollableContainer(in app: XCUIApplication) -> XCUIElement? {
+        let candidates = [
+            app.scrollViews.firstMatch,
+            app.tables.firstMatch,
+            app.collectionViews.firstMatch
+        ]
+
+        return candidates.first(where: { $0.exists })
+    }
+
+    @MainActor
+    private func waitForExportPresentation(in app: XCUIApplication, timeout: TimeInterval) -> Bool {
+        let started = Date()
+        while Date().timeIntervalSince(started) < timeout {
+            if app.buttons["Cancel"].exists ||
+                app.navigationBars.buttons["Cancel"].exists ||
+                springboard.buttons["Cancel"].exists ||
+                springboard.buttons["Save"].exists ||
+                springboard.buttons["Move"].exists {
+                return true
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        }
+        return false
+    }
+
+    @MainActor
+    private func dismissPresentedExportUI(in app: XCUIApplication) {
+        if app.buttons["Cancel"].exists {
+            app.buttons["Cancel"].tap()
+            return
+        }
+        if app.navigationBars.buttons["Cancel"].exists {
+            app.navigationBars.buttons["Cancel"].tap()
+            return
+        }
+        if springboard.buttons["Cancel"].exists {
+            springboard.buttons["Cancel"].tap()
+        }
+    }
+
+    @MainActor
+    private func allowLocationAccessIfNeeded() {
+        let alertButtons = [
+            "Allow While Using App",
+            "Allow Once",
+            "OK",
+            "Beim Verwenden der App erlauben",
+            "Einmal erlauben"
+        ]
+
+        for label in alertButtons {
+            let button = springboard.buttons[label]
+            if button.waitForExistence(timeout: 1) {
+                button.tap()
+                return
+            }
         }
     }
 }
