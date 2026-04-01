@@ -1105,7 +1105,7 @@ Diese Regeln gelten fuer alle kuenftigen Aenderungen an dieser Roadmap:
 
 6. **App-Phasen duerfen nicht als fertig gelten, solange Gates nicht real nachweisbar sind.** Insbesondere: kein App-Store-Claim ohne echten TestFlight-Build, keine Accessibility-Behauptung ohne Audit, keine Performance-Aussage ohne Messung.
 
-7. **Zwei-Repo-Grenze ehrlich abbilden.** Phasen, die das Wrapper-Repo `LH2GPXWrapper` betreffen, muessen das klar benennen. Dieses Repo bleibt die Library-Quelle.
+7. **Monorepo-Architektur-Grenze ehrlich abbilden.** Phasen, die den `wrapper/`-Bereich betreffen, muessen das klar benennen. Der Core-Root bleibt die Library-Quelle; kein Xcode-spezifischer Code wandert in den Core.
 
 8. **Phase-8-Restpunkt `Produkt-UI` ist nach Phase 17 abgeschlossen.** Der offene Punkt aus Phase 8 wird nicht nachtraeglich abgehakt, sondern durch Phase 17 abgeloest.
 

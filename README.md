@@ -1,6 +1,6 @@
-# LocationHistory2GPX-iOS
+# LocationHistory2GPX-Monorepo
 
-Separates iOS-App-Repo fuer die eigentliche Produkt-UI von `LocationHistory2GPX`.
+Integriertes Monorepo fuer Core Swift Package und Xcode Wrapper der `LocationHistory2GPX`-iOS-App.
 
 ## Rolle dieses Repos
 
