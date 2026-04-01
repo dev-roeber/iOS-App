@@ -12,6 +12,8 @@ public struct AppContentSplitView: View {
     @State private var daysNavigationPath = NavigationPath()
     @State private var selectedTab = 0
     @State private var daySearchText = ""
+    @State private var dayListFilter = DayListFilter.empty
+    @State private var favoritedDayIDs: Set<String> = []
     @State private var presentedSheet: PresentedSheet?
 
     private let onOpen: () -> Void
@@ -33,8 +35,18 @@ public struct AppContentSplitView: View {
     }
 
     private var filteredDaySummaries: [DaySummary] {
-        DaySummaryDisplayOrdering.newestFirst(
-            AppDaySearch.filter(session.daySummaries, query: daySearchText)
+        DayListPresentation.filteredSummaries(
+            session.daySummaries,
+            query: daySearchText,
+            filter: dayListFilter,
+            favorites: favoritedDayIDs
+        )
+    }
+
+    private var availableDayFilterChips: [DayListFilterChip] {
+        DayListPresentation.availableFilterChips(
+            summaries: session.daySummaries,
+            favorites: favoritedDayIDs
         )
     }
 
@@ -200,6 +212,9 @@ public struct AppContentSplitView: View {
                             AppDayDetailView(
                                 detail: session.content?.detail(for: date),
                                 hasDays: true,
+                                exportSelection: $session.exportSelection,
+                                isFavorited: favoritedDayIDs.contains(date),
+                                onToggleFavorite: { toggleFavoriteDay(date) },
                                 liveLocation: liveLocation,
                                 onOpenSavedTracks: { presentSheet(.tracksLibrary) }
                             )
@@ -276,11 +291,14 @@ public struct AppContentSplitView: View {
         .task(id: session.daySummaries) {
             daysNavigationPath = NavigationPath()
             daySearchText = ""
+            dayListFilter.clearAll()
             selectedTab = preferences.startTab.tabIndex
             normalizeDisplayedSelection()
+            refreshFavoriteDays()
         }
         .onAppear {
             selectedTab = preferences.startTab.tabIndex
+            refreshFavoriteDays()
         }
         .onChange(of: preferences.startTab) { newValue in
             selectedTab = newValue.tabIndex
@@ -291,15 +309,20 @@ public struct AppContentSplitView: View {
         let summaries = filteredDaySummaries
         let groups = groupByMonth(summaries, locale: preferences.appLocale)
         return List {
+            if !availableDayFilterChips.isEmpty || dayListFilter.isActive {
+                Section {
+                    AppDayFilterChipsView(filter: $dayListFilter, availableChips: availableDayFilterChips)
+                }
+            }
             if session.exportSelection.count > 0 {
                 Section {
                     HStack(spacing: 10) {
                         Image(systemName: "square.and.arrow.up")
                             .foregroundColor(.accentColor)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("\(session.exportSelection.count) day\(session.exportSelection.count == 1 ? "" : "s") selected for export")
+                            Text(compactExportSelectionTitle)
                                 .font(.subheadline.weight(.semibold))
-                            Text("Open the Export tab to review or save the current GPX selection.")
+                            Text(t("Open the Export tab to review or save the current selection."))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -312,14 +335,14 @@ public struct AppContentSplitView: View {
                     .padding(.vertical, 4)
                 }
             }
-                if groups.count == 1 {
-                    ForEach(groups[0].summaries, id: \.date) { summary in
+            if groups.count == 1, let firstGroup = groups.first {
+                ForEach(firstGroup.summaries, id: \.date) { summary in
                     if summary.hasContent {
                         NavigationLink(value: summary.date) {
-                            AppDayRow(summary: summary, highlightIcons: highlightIconsFor(summary.date), isSelectedForExport: session.exportSelection.isSelected(summary.date))
+                            compactDayRow(summary)
                         }
                     } else {
-                        AppDayRow(summary: summary, highlightIcons: highlightIconsFor(summary.date), isSelectedForExport: session.exportSelection.isSelected(summary.date))
+                        compactDayRow(summary)
                     }
                 }
             } else {
@@ -328,10 +351,10 @@ public struct AppContentSplitView: View {
                         ForEach(group.summaries, id: \.date) { summary in
                             if summary.hasContent {
                                 NavigationLink(value: summary.date) {
-                                    AppDayRow(summary: summary, highlightIcons: highlightIconsFor(summary.date), isSelectedForExport: session.exportSelection.isSelected(summary.date))
+                                    compactDayRow(summary)
                                 }
                             } else {
-                                AppDayRow(summary: summary, highlightIcons: highlightIconsFor(summary.date), isSelectedForExport: session.exportSelection.isSelected(summary.date))
+                                compactDayRow(summary)
                             }
                         }
                     }
@@ -347,9 +370,9 @@ public struct AppContentSplitView: View {
                         .font(.largeTitle)
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
-                    Text(t("No Results"))
+                    Text(dayListFilter.isActive ? t("No Matching Days") : t("No Results"))
                         .font(.headline)
-                    Text("No days match \"\(daySearchText)\".")
+                    Text(compactEmptyStateMessage)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -365,12 +388,16 @@ public struct AppContentSplitView: View {
     private var regularSplitView: some View {
         NavigationSplitView {
             AppDayListView(
-                summaries: DaySummaryDisplayOrdering.newestFirst(session.daySummaries),
+                summaries: session.daySummaries,
                 selectedForExportDates: session.exportSelection.selectedDates,
+                favoriteDayIDs: favoritedDayIDs,
                 selectedDate: Binding(
                     get: { session.selectedDate },
                     set: { session.selectDayForDisplay($0) }
                 ),
+                filter: $dayListFilter,
+                onToggleFavorite: toggleFavoriteDay,
+                highlightIconsForDate: highlightIconsFor,
                 searchText: $daySearchText
             )
             .navigationTitle(t("Days"))
@@ -677,6 +704,64 @@ public struct AppContentSplitView: View {
     }
 
     @ViewBuilder
+    private func compactDayRow(_ summary: DaySummary) -> some View {
+        AppDayRow(
+            summary: summary,
+            highlightIcons: highlightIconsFor(summary.date),
+            isSelectedForExport: session.exportSelection.isSelected(summary.date),
+            isFavorited: favoritedDayIDs.contains(summary.date)
+        )
+        .contextMenu {
+            Button {
+                toggleFavoriteDay(summary.date)
+            } label: {
+                Label(
+                    favoritedDayIDs.contains(summary.date) ? t("Remove Favorite") : t("Add Favorite"),
+                    systemImage: favoritedDayIDs.contains(summary.date) ? "star.slash" : "star"
+                )
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button {
+                toggleFavoriteDay(summary.date)
+            } label: {
+                Label(
+                    favoritedDayIDs.contains(summary.date) ? t("Unfavorite") : t("Favorite"),
+                    systemImage: favoritedDayIDs.contains(summary.date) ? "star.slash.fill" : "star.fill"
+                )
+            }
+            .tint(favoritedDayIDs.contains(summary.date) ? .gray : .yellow)
+        }
+    }
+
+    private var compactEmptyStateMessage: String {
+        let trimmed = daySearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty && dayListFilter.isActive {
+            return preferences.localized(format: "No days match \"%@\" with the current filters.", arguments: [trimmed])
+        }
+        if !trimmed.isEmpty {
+            return preferences.localized(format: "No days match \"%@\".", arguments: [trimmed])
+        }
+        return t("No day matches the active filter chips.")
+    }
+
+    private var compactExportSelectionTitle: String {
+        if preferences.appLanguage.isGerman {
+            return "\(session.exportSelection.count) \(session.exportSelection.count == 1 ? "Tag" : "Tage") für den Export ausgewählt"
+        }
+        return "\(session.exportSelection.count) day\(session.exportSelection.count == 1 ? "" : "s") selected for export"
+    }
+
+    private func refreshFavoriteDays() {
+        favoritedDayIDs = DayFavoritesStore.load()
+    }
+
+    private func toggleFavoriteDay(_ date: String) {
+        _ = DayFavoritesStore.toggle(dayIdentifier: date)
+        refreshFavoriteDays()
+    }
+
+    @ViewBuilder
     private var insightsPaneContent: some View {
         if let insights = projectedInsights {
             AppInsightsContentView(
@@ -720,6 +805,9 @@ public struct AppContentSplitView: View {
                         detail: detail,
                         hasDays: true,
                         onBackToOverview: { session.selectDay(nil) },
+                        exportSelection: $session.exportSelection,
+                        isFavorited: favoritedDayIDs.contains(detail.date),
+                        onToggleFavorite: { toggleFavoriteDay(detail.date) },
                         liveLocation: liveLocation,
                         onOpenSavedTracks: { presentSheet(.tracksLibrary) }
                     )

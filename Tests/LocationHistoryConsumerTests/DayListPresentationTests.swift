@@ -43,11 +43,50 @@ final class DayListPresentationTests: XCTestCase {
 
         XCTAssertEqual(
             DayListPresentation.filteredSummaries(summaries, query: " ").map(\.date),
-            ["2024-05-01", "2024-06-02"]
+            ["2024-06-02", "2024-05-01"]
         )
         XCTAssertEqual(
             DayListPresentation.filteredSummaries(summaries, query: "2024-05").map(\.date),
             ["2024-05-01"]
+        )
+    }
+
+    func testFilteredSummariesCombineSearchFiltersFavoritesAndNewestFirstOrdering() {
+        let summaries = makeSummaries(daysJSON: """
+        [
+          {"date":"2024-05-01","visits":[{"lat":48.0,"lon":11.0,"start_time":"2024-05-01T08:00:00Z","end_time":"2024-05-01T08:30:00Z"}],"activities":[],"paths":[]},
+          {"date":"2024-05-02","visits":[{"lat":48.1,"lon":11.1,"start_time":"2024-05-02T08:00:00Z","end_time":"2024-05-02T08:30:00Z"}],"activities":[],"paths":[]},
+          {"date":"2024-05-03","visits":[],"activities":[],"paths":[{"activity_type":"WALKING","distance_m":900,"points":[{"lat":48.2,"lon":11.2,"time":"2024-05-03T08:00:00Z","accuracy_m":5},{"lat":48.3,"lon":11.3,"time":"2024-05-03T08:20:00Z","accuracy_m":6}]}]}
+        ]
+        """)
+        let filter = DayListFilter(activeChips: [.favorites, .hasVisits])
+
+        XCTAssertEqual(
+            DayListPresentation.filteredSummaries(
+                summaries,
+                query: "2024-05",
+                filter: filter,
+                favorites: ["2024-05-01", "2024-05-02"]
+            ).map(\.date),
+            ["2024-05-02", "2024-05-01"]
+        )
+    }
+
+    func testAvailableFilterChipsOnlyExposeStableOptionsFromVisibleData() {
+        let summaries = makeSummaries(daysJSON: """
+        [
+          {"date":"2024-05-01","visits":[{"lat":48.0,"lon":11.0,"start_time":"2024-05-01T08:00:00Z","end_time":"2024-05-01T08:30:00Z"}],"activities":[],"paths":[]},
+          {"date":"2024-05-02","visits":[],"activities":[],"paths":[{"activity_type":"WALKING","distance_m":900,"points":[{"lat":48.2,"lon":11.2,"time":"2024-05-02T08:00:00Z","accuracy_m":5},{"lat":48.3,"lon":11.3,"time":"2024-05-02T08:20:00Z","accuracy_m":6}]}]}
+        ]
+        """)
+
+        XCTAssertEqual(
+            DayListPresentation.availableFilterChips(summaries: summaries, favorites: ["2024-05-01"]),
+            [.favorites, .hasVisits, .hasRoutes, .hasDistance, .exportable]
+        )
+        XCTAssertEqual(
+            DayListPresentation.availableFilterChips(summaries: summaries, favorites: []),
+            [.hasVisits, .hasRoutes, .hasDistance, .exportable]
         )
     }
 

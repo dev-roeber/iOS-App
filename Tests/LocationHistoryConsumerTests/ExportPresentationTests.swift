@@ -231,6 +231,68 @@ final class ExportPresentationTests: XCTestCase {
         )
     }
 
+    func testCsvReadinessCanUseWaypointContentViaBothModeProjection() {
+        let export = exportWith(days: """
+        {
+          "date":"2024-05-01",
+          "visits":[{"lat":48.0,"lon":11.0,"start_time":"2024-05-01T08:00:00Z","end_time":"2024-05-01T08:30:00Z"}],
+          "activities":[],
+          "paths":[]
+        }
+        """)
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+
+        XCTAssertEqual(
+            ExportPresentation.buttonTitle(
+                importedExport: export,
+                selection: selection,
+                recordedTracks: [],
+                format: .csv,
+                mode: .both
+            ),
+            "Export 1 item as CSV"
+        )
+        XCTAssertEqual(
+            ExportPresentation.filenameMessage(
+                selection: selection,
+                summaries: AppExportQueries.daySummaries(from: export),
+                recordedTracks: [],
+                format: .csv,
+                mode: .both
+            ),
+            "Suggested filename: lh2gpx-2024-05-01-mixed.csv (CSV)."
+        )
+    }
+
+    func testHelperMessageReflectsExplicitRouteSubsetCounts() {
+        let export = exportWith(days: """
+        {
+          "date":"2024-05-01",
+          "visits":[],
+          "activities":[],
+          "paths":[
+            {"activity_type":"WALKING","distance_m":700,"points":[{"lat":48.0,"lon":11.0,"time":"2024-05-01T08:00:00Z","accuracy_m":10},{"lat":48.001,"lon":11.001,"time":"2024-05-01T08:10:00Z","accuracy_m":8}]},
+            {"activity_type":"CYCLING","distance_m":1200,"points":[{"lat":48.01,"lon":11.01,"time":"2024-05-01T09:00:00Z","accuracy_m":6},{"lat":48.02,"lon":11.02,"time":"2024-05-01T09:15:00Z","accuracy_m":5}]}
+          ]
+        }
+        """)
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+        selection.toggleRoute(day: "2024-05-01", routeIndex: 1)
+
+        XCTAssertEqual(
+            ExportPresentation.helperMessage(
+                importedExport: export,
+                selection: selection,
+                recordedTracks: [],
+                format: .gpx,
+                mode: .tracks
+            ),
+            "1 route will be written to the GPX file."
+        )
+    }
+
     private func exportWith(days jsonDays: String) -> AppExport {
         let json = """
         {

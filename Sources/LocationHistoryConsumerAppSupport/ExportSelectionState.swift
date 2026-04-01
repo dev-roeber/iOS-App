@@ -86,6 +86,25 @@ public struct ExportSelectionState: Equatable {
         routeSelections[day] = current
     }
 
+    /// Toggles a specific route index while respecting the implicit "all routes"
+    /// default. When no explicit selection exists yet, `availableRouteIndices`
+    /// becomes the starting selection and the toggled route is removed from or
+    /// added to that set.
+    public mutating func toggleRoute(day: String, routeIndex: Int, availableRouteIndices: Set<Int>) {
+        var current = routeSelections[day] ?? availableRouteIndices
+        if current.contains(routeIndex) {
+            current.remove(routeIndex)
+        } else {
+            current.insert(routeIndex)
+        }
+
+        if current == availableRouteIndices {
+            routeSelections.removeValue(forKey: day)
+        } else {
+            routeSelections[day] = current
+        }
+    }
+
     /// Clears per-route selection for a day, reverting to "all routes" semantics.
     public mutating func clearRouteSelection(day: String) {
         routeSelections.removeValue(forKey: day)

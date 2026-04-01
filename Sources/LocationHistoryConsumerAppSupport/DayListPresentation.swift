@@ -10,12 +10,36 @@ enum DayListPresentation {
         return formatter
     }()
 
-    static func filteredSummaries(_ summaries: [DaySummary], query: String) -> [DaySummary] {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return summaries
+    static func availableFilterChips(
+        summaries: [DaySummary],
+        favorites: Set<String>
+    ) -> [DayListFilterChip] {
+        DayListFilterChip.allCases.filter { chip in
+            switch chip {
+            case .favorites:
+                return summaries.contains { favorites.contains($0.date) }
+            case .hasVisits:
+                return summaries.contains { $0.visitCount > 0 }
+            case .hasRoutes:
+                return summaries.contains { $0.pathCount > 0 }
+            case .hasDistance:
+                return summaries.contains { $0.totalPathDistanceM > 0 }
+            case .exportable:
+                return summaries.contains { $0.exportablePathCount > 0 || $0.visitCount > 0 }
+            }
         }
-        return summaries.filter { $0.date.localizedCaseInsensitiveContains(trimmed) }
+    }
+
+    static func filteredSummaries(
+        _ summaries: [DaySummary],
+        query: String,
+        filter: DayListFilter = .empty,
+        favorites: Set<String> = []
+    ) -> [DaySummary] {
+        DaySummaryDisplayOrdering.newestFirst(
+            AppDaySearch.filter(summaries, query: query)
+                .filter { filter.passes(summary: $0, isFavorited: favorites.contains($0.date)) }
+        )
     }
 
     static func reselectTargetDate(_ summaries: [DaySummary], relativeTo referenceDate: Date) -> String? {

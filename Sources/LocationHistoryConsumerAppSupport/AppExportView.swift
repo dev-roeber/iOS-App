@@ -72,6 +72,10 @@ public struct AppExportView: View {
         preferences.localized(format: englishFormat, arguments: arguments)
     }
 
+    private var effectiveExportMode: ExportMode {
+        selectedFormat == .csv ? .both : selectedMode
+    }
+
     public var body: some View {
         if session.daySummaries.isEmpty && liveLocation.recordedTracks.isEmpty {
             emptyState
@@ -349,8 +353,9 @@ public struct AppExportView: View {
             selection: selection,
             recordedTracks: liveLocation.recordedTracks,
             queryFilter: effectiveQueryFilter,
-            mode: selectedMode
+            mode: effectiveExportMode
         )
+        let distance = selectedDistance(selection: selection, summaries: summaries)
 
         Section {
             VStack(alignment: .leading, spacing: 12) {
@@ -364,7 +369,7 @@ public struct AppExportView: View {
                             recordedTracks: liveLocation.recordedTracks,
                             format: selectedFormat,
                             queryFilter: effectiveQueryFilter,
-                            mode: selectedMode,
+                            mode: effectiveExportMode,
                             language: preferences.appLanguage
                         ))
                         .font(.caption)
@@ -402,9 +407,15 @@ public struct AppExportView: View {
                                 systemImage: "mappin.and.ellipse"
                             )
                         }
-                        if selectedDistance(selection: selection, summaries: summaries) > 0 {
+                        if selection.hasExplicitRouteSelection {
                             exportSummaryBadge(
-                                title: formatDistance(selectedDistance(selection: selection, summaries: summaries), unit: preferences.distanceUnit),
+                                title: customRouteSelectionBadgeTitle(selection.explicitRouteSelectionCount),
+                                systemImage: "line.3.horizontal.decrease.circle"
+                            )
+                        }
+                        if distance > 0 {
+                            exportSummaryBadge(
+                                title: formatDistance(distance, unit: preferences.distanceUnit),
                                 systemImage: "ruler"
                             )
                         }
@@ -602,12 +613,12 @@ public struct AppExportView: View {
             selection: selection,
             recordedTracks: liveLocation.recordedTracks,
             queryFilter: effectiveQueryFilter,
-            mode: selectedMode
+            mode: effectiveExportMode
         )
         let presentation = MapPresentation.exportPreview(
             previewData,
             unit: preferences.distanceUnit,
-            mode: selectedMode,
+            mode: effectiveExportMode,
             language: preferences.appLanguage
         )
 
@@ -631,7 +642,7 @@ public struct AppExportView: View {
                         recordedTracks: liveLocation.recordedTracks,
                         format: selectedFormat,
                         queryFilter: effectiveQueryFilter,
-                        mode: selectedMode,
+                        mode: effectiveExportMode,
                         language: preferences.appLanguage
                     ))
                     .font(.caption)
@@ -669,12 +680,19 @@ public struct AppExportView: View {
                     }
                 }
 
-                Picker(t("Mode"), selection: $selectedMode) {
-                    ForEach(ExportMode.allCases) { mode in
-                        Text(t(mode.rawValue)).tag(mode)
+                if selectedFormat == .csv {
+                    Label(t("CSV always exports the visible table rows for visits, activities and routes."), systemImage: "tablecells")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Picker(t("Mode"), selection: $selectedMode) {
+                        ForEach(ExportMode.allCases) { mode in
+                            Text(t(mode.rawValue)).tag(mode)
+                        }
                     }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
 
                 exportButton(selection: selection, summaries: summaries)
 
@@ -685,7 +703,7 @@ public struct AppExportView: View {
                             summaries: summaries,
                             recordedTracks: liveLocation.recordedTracks,
                             format: selectedFormat,
-                            mode: selectedMode,
+                            mode: effectiveExportMode,
                             language: preferences.appLanguage
                         ),
                         systemImage: "doc"
@@ -701,7 +719,7 @@ public struct AppExportView: View {
                             recordedTracks: liveLocation.recordedTracks,
                             format: selectedFormat,
                             queryFilter: effectiveQueryFilter,
-                            mode: selectedMode,
+                            mode: effectiveExportMode,
                             language: preferences.appLanguage
                         ),
                         systemImage: "info.circle"
@@ -730,7 +748,7 @@ public struct AppExportView: View {
                     recordedTracks: liveLocation.recordedTracks,
                     format: selectedFormat,
                     queryFilter: effectiveQueryFilter,
-                    mode: selectedMode,
+                    mode: effectiveExportMode,
                     language: preferences.appLanguage
                 ),
                 systemImage: "square.and.arrow.up"
@@ -764,7 +782,7 @@ public struct AppExportView: View {
             selection: selection,
             recordedTracks: liveLocation.recordedTracks,
             queryFilter: effectiveQueryFilter,
-            mode: selectedMode
+            mode: effectiveExportMode
         ) {
         case .ready:
             return true
@@ -773,13 +791,16 @@ public struct AppExportView: View {
         }
     }
 
-    private func selectedDistance(selection: ExportSelectionState, summaries: [DaySummary]) -> Double {
-        let dayDistance = summaries
-            .filter { selection.isSelected($0.date) }
-            .reduce(0) { $0 + $1.totalPathDistanceM }
-        let trackDistance = selectedRecordedTracks(selection: selection)
-            .reduce(0) { $0 + $1.distanceM }
-        return dayDistance + trackDistance
+    private func selectedDistance(selection: ExportSelectionState, summaries _: [DaySummary]) -> Double {
+        let exportDays = ExportSelectionContent.exportDays(
+            importedExport: session.content?.export,
+            selection: selection,
+            recordedTracks: liveLocation.recordedTracks,
+            queryFilter: effectiveQueryFilter
+        )
+        return exportDays.reduce(0) { partial, day in
+            partial + day.paths.reduce(0) { $0 + ($1.distanceM ?? 0) }
+        }
     }
 
     private func selectedRecordedTracks(selection: ExportSelectionState) -> [RecordedTrack] {
@@ -792,8 +813,15 @@ public struct AppExportView: View {
             summaries: summaries,
             recordedTracks: liveLocation.recordedTracks,
             format: selectedFormat,
-            mode: selectedMode
+            mode: effectiveExportMode
         )
+    }
+
+    private func customRouteSelectionBadgeTitle(_ explicitDayCount: Int) -> String {
+        if preferences.appLanguage.isGerman {
+            return "\(explicitDayCount) \(explicitDayCount == 1 ? "Tag mit Routenauswahl" : "Tage mit Routenauswahl")"
+        }
+        return "\(explicitDayCount) day\(explicitDayCount == 1 ? "" : "s") with custom routes"
     }
 
     private func selectionSummaryTitle(snapshot: ExportSelectionSnapshot) -> String {
@@ -834,7 +862,7 @@ public struct AppExportView: View {
                 recordedTracks: liveLocation.recordedTracks,
                 format: selectedFormat,
                 queryFilter: effectiveQueryFilter,
-                mode: selectedMode,
+                mode: effectiveExportMode,
                 language: preferences.appLanguage
             )
             return
@@ -855,11 +883,11 @@ public struct AppExportView: View {
         let content: String
         switch selectedFormat {
         case .gpx:
-            content = GPXBuilder.build(from: exportDays, mode: selectedMode)
+            content = GPXBuilder.build(from: exportDays, mode: effectiveExportMode)
         case .kml:
-            content = KMLBuilder.build(from: exportDays, mode: selectedMode)
+            content = KMLBuilder.build(from: exportDays, mode: effectiveExportMode)
         case .geoJSON:
-            content = GeoJSONBuilder.build(from: exportDays, mode: selectedMode)
+            content = GeoJSONBuilder.build(from: exportDays, mode: effectiveExportMode)
         case .csv:
             content = CSVBuilder.build(from: exportDays)
         }

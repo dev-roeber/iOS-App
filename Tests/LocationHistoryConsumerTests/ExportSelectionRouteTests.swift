@@ -20,6 +20,23 @@ final class ExportSelectionRouteTests: XCTestCase {
         XCTAssertFalse(state.isRouteSelected(day: "2024-05-01", routeIndex: 0))
     }
 
+    func testToggleRouteFromImplicitAllRemovesTappedRouteFromExplicitSubset() {
+        var state = ExportSelectionState()
+        state.toggleRoute(day: "2024-05-01", routeIndex: 1, availableRouteIndices: [0, 1, 2])
+
+        XCTAssertEqual(state.effectiveRouteIndices(day: "2024-05-01", allCount: 3), IndexSet([0, 2]))
+        XCTAssertTrue(state.hasExplicitRouteSelection)
+    }
+
+    func testToggleRouteReturnsToImplicitAllWhenSubsetMatchesAllRoutesAgain() {
+        var state = ExportSelectionState()
+        state.toggleRoute(day: "2024-05-01", routeIndex: 1, availableRouteIndices: [0, 1, 2])
+        state.toggleRoute(day: "2024-05-01", routeIndex: 1, availableRouteIndices: [0, 1, 2])
+
+        XCTAssertEqual(state.effectiveRouteIndices(day: "2024-05-01", allCount: 3), IndexSet([0, 1, 2]))
+        XCTAssertFalse(state.hasExplicitRouteSelection)
+    }
+
     func testIsRouteSelectedReturnsTrueByDefaultWhenNoExplicitSelection() {
         let state = ExportSelectionState()
         XCTAssertTrue(state.isRouteSelected(day: "2024-05-01", routeIndex: 0))

@@ -23,7 +23,7 @@ extension UTType {
 /// Used with SwiftUI's `.fileExporter` modifier to let the user save or share
 /// an export file via the system share sheet / Files app.
 struct ExportDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.gpx, .kml, .geoJSON] }
+    static var readableContentTypes: [UTType] { [.gpx, .kml, .geoJSON, .csv] }
 
     let content: String
     let suggestedFilename: String

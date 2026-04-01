@@ -9,6 +9,7 @@ struct AppDayRow: View {
     let summary: DaySummary
     var highlightIcons: [String] = []
     var isSelectedForExport: Bool = false
+    var isFavorited: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -26,6 +27,11 @@ struct AppDayRow: View {
                             .padding(.vertical, 3)
                             .background(Color.accentColor.opacity(0.12))
                             .clipShape(Capsule())
+                    }
+                    if isFavorited {
+                        Image(systemName: "star.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.yellow)
                     }
                     ForEach(highlightIcons, id: \.self) { icon in
                         Image(systemName: icon)
@@ -107,58 +113,139 @@ struct AppDayRow: View {
     }
 }
 
+struct AppDayFilterChipsView: View {
+    @EnvironmentObject private var preferences: AppPreferences
+    @Binding var filter: DayListFilter
+    let availableChips: [DayListFilterChip]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(t("Filter Days"))
+                        .font(.subheadline.weight(.semibold))
+                    Text(t("Combine chips with search while keeping the newest day first."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if filter.isActive {
+                    Button(t("Clear Filters")) {
+                        filter.clearAll()
+                    }
+                    .font(.caption.weight(.medium))
+                }
+            }
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 8)], spacing: 8) {
+                ForEach(availableChips) { chip in
+                    Button {
+                        filter.toggle(chip)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: filter.activeChips.contains(chip) ? "checkmark.circle.fill" : chip.systemImage)
+                                .font(.caption)
+                            Text(chipTitle(chip))
+                                .font(.caption.weight(.medium))
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(filter.activeChips.contains(chip) ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.08))
+                        .foregroundStyle(filter.activeChips.contains(chip) ? Color.accentColor : Color.primary)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func chipTitle(_ chip: DayListFilterChip) -> String {
+        switch chip {
+        case .favorites:
+            return t("Favorites")
+        case .hasVisits:
+            return t("Has Visits")
+        case .hasRoutes:
+            return t("Has Routes")
+        case .hasDistance:
+            return t("Has Distance")
+        case .exportable:
+            return t("Exportable")
+        }
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+}
+
 // MARK: - Day List (Selection-based, for regular layout)
 
 public struct AppDayListView: View {
     @EnvironmentObject private var preferences: AppPreferences
     let summaries: [DaySummary]
     let selectedForExportDates: Set<String>
+    let favoriteDayIDs: Set<String>
     @Binding var selectedDate: String?
+    @Binding var filter: DayListFilter
     @Binding var searchText: String
+    var onToggleFavorite: ((String) -> Void)? = nil
+    var highlightIconsForDate: (String) -> [String] = { _ in [] }
 
     public init(
         summaries: [DaySummary],
         selectedForExportDates: Set<String> = [],
+        favoriteDayIDs: Set<String> = [],
         selectedDate: Binding<String?>,
+        filter: Binding<DayListFilter> = .constant(.empty),
+        onToggleFavorite: ((String) -> Void)? = nil,
+        highlightIconsForDate: @escaping (String) -> [String] = { _ in [] },
         searchText: Binding<String> = .constant("")
     ) {
         self.summaries = summaries
         self.selectedForExportDates = selectedForExportDates
+        self.favoriteDayIDs = favoriteDayIDs
         self._selectedDate = selectedDate
+        self._filter = filter
         self._searchText = searchText
+        self.onToggleFavorite = onToggleFavorite
+        self.highlightIconsForDate = highlightIconsForDate
     }
 
     public var body: some View {
-        let filteredSummaries = DaySummaryDisplayOrdering.newestFirst(
-            AppDaySearch.filter(summaries, query: searchText)
+        let filteredSummaries = DayListPresentation.filteredSummaries(
+            summaries,
+            query: searchText,
+            filter: filter,
+            favorites: favoriteDayIDs
         )
+        let availableChips = DayListPresentation.availableFilterChips(summaries: summaries, favorites: favoriteDayIDs)
         if summaries.isEmpty {
             AppDayListEmptyView()
         } else {
             let groups = groupByMonth(filteredSummaries, locale: preferences.appLocale)
             List(selection: $selectedDate) {
+                if !availableChips.isEmpty || filter.isActive {
+                    Section {
+                        AppDayFilterChipsView(filter: $filter, availableChips: availableChips)
+                    }
+                }
                 if !selectedForExportDates.isEmpty {
                     exportStatusSection
                 }
                 if groups.count == 1 {
                     ForEach(filteredSummaries, id: \.date) { summary in
-                        AppDayRow(
-                            summary: summary,
-                            isSelectedForExport: selectedForExportDates.contains(summary.date)
-                        )
-                        .tag(summary.date)
-                        .disabled(!summary.hasContent)
+                        interactiveRow(for: summary)
                     }
                 } else {
                     ForEach(groups) { group in
                         Section(group.title) {
                             ForEach(group.summaries, id: \.date) { summary in
-                                AppDayRow(
-                                    summary: summary,
-                                    isSelectedForExport: selectedForExportDates.contains(summary.date)
-                                )
-                                    .tag(summary.date)
-                                    .disabled(!summary.hasContent)
+                                interactiveRow(for: summary)
                             }
                         }
                     }
@@ -171,9 +258,9 @@ public struct AppDayListView: View {
                             .font(.largeTitle)
                             .foregroundStyle(.secondary)
                             .accessibilityHidden(true)
-                        Text(t("No Results"))
+                        Text(filter.isActive ? t("No Matching Days") : t("No Results"))
                             .font(.headline)
-                        Text(tf("No days match \"%@\".", searchText))
+                        Text(emptyMessage)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -208,6 +295,53 @@ public struct AppDayListView: View {
             return "\(selectedForExportDates.count) \(selectedForExportDates.count == 1 ? "Tag" : "Tage") für den Export ausgewählt"
         }
         return "\(selectedForExportDates.count) day\(selectedForExportDates.count == 1 ? "" : "s") selected for export"
+    }
+
+    private var emptyMessage: String {
+        if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && filter.isActive {
+            return tf("No days match \"%@\" with the current filters.", searchText)
+        }
+        if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return tf("No days match \"%@\".", searchText)
+        }
+        return t("No day matches the active filter chips.")
+    }
+
+    @ViewBuilder
+    private func interactiveRow(for summary: DaySummary) -> some View {
+        AppDayRow(
+            summary: summary,
+            highlightIcons: highlightIconsForDate(summary.date),
+            isSelectedForExport: selectedForExportDates.contains(summary.date),
+            isFavorited: favoriteDayIDs.contains(summary.date)
+        )
+        .tag(summary.date)
+        .disabled(!summary.hasContent)
+        .contextMenu {
+            if let onToggleFavorite {
+                Button {
+                    onToggleFavorite(summary.date)
+                } label: {
+                    Label(
+                        favoriteDayIDs.contains(summary.date) ? t("Remove Favorite") : t("Add Favorite"),
+                        systemImage: favoriteDayIDs.contains(summary.date) ? "star.slash" : "star"
+                    )
+                }
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if let onToggleFavorite {
+                Button {
+                    onToggleFavorite(summary.date)
+                } label: {
+                    Label(
+                        favoriteDayIDs.contains(summary.date) ? t("Unfavorite") : t("Favorite"),
+                        systemImage: favoriteDayIDs.contains(summary.date) ? "star.slash.fill" : "star.fill"
+                    )
+                }
+                .tint(favoriteDayIDs.contains(summary.date) ? .gray : .yellow)
+            }
+        }
     }
 
     private func t(_ english: String) -> String {

@@ -191,6 +191,48 @@ final class ExportSelectionContentTests: XCTestCase {
         XCTAssertEqual(exportedDays[0].date, "2024-05-03")
     }
 
+    func testExportDaysRespectExplicitRouteSelectionForImportedDay() {
+        let export = exportWith(days: """
+        {
+          "date":"2024-05-01",
+          "visits":[],
+          "activities":[],
+          "paths":[
+            {
+              "activity_type":"WALKING",
+              "distance_m":700,
+              "points":[
+                {"lat":48.0,"lon":11.0,"time":"2024-05-01T08:00:00Z","accuracy_m":10},
+                {"lat":48.001,"lon":11.001,"time":"2024-05-01T08:10:00Z","accuracy_m":8}
+              ]
+            },
+            {
+              "activity_type":"CYCLING",
+              "distance_m":1200,
+              "points":[
+                {"lat":48.01,"lon":11.01,"time":"2024-05-01T09:00:00Z","accuracy_m":6},
+                {"lat":48.02,"lon":11.02,"time":"2024-05-01T09:15:00Z","accuracy_m":5}
+              ]
+            }
+          ]
+        }
+        """)
+
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+        selection.toggleRoute(day: "2024-05-01", routeIndex: 1)
+
+        let exportedDays = ExportSelectionContent.exportDays(
+            importedExport: export,
+            selection: selection,
+            recordedTracks: []
+        )
+
+        XCTAssertEqual(exportedDays.count, 1)
+        XCTAssertEqual(exportedDays[0].paths.count, 1)
+        XCTAssertEqual(exportedDays[0].paths[0].activityType, "CYCLING")
+    }
+
     private func exportWith(days jsonDays: String) -> AppExport {
         let json = """
         {

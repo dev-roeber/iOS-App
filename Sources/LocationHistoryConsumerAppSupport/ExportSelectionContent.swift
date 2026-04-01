@@ -107,6 +107,24 @@ enum ExportSelectionContent {
 
         return AppExportQueries.days(in: export, applying: queryFilter)
             .filter { selection.isSelected($0.date) }
+            .map { applyRouteSelection(to: $0, selection: selection) }
+    }
+
+    private static func applyRouteSelection(to day: Day, selection: ExportSelectionState) -> Day {
+        let effectiveIndices = selection.effectiveRouteIndices(day: day.date, allCount: day.paths.count)
+        guard effectiveIndices.count != day.paths.count else {
+            return day
+        }
+
+        let selectedPaths = day.paths.enumerated().compactMap { index, path in
+            effectiveIndices.contains(index) ? path : nil
+        }
+        return Day(
+            date: day.date,
+            visits: day.visits,
+            activities: day.activities,
+            paths: selectedPaths
+        )
     }
 
     private static func selectedRecordedTrackDays(

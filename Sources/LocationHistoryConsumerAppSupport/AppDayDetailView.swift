@@ -12,6 +12,9 @@ public struct AppDayDetailView: View {
     let detail: DayDetailViewState?
     let hasDays: Bool
     let onBackToOverview: (() -> Void)?
+    @Binding private var exportSelection: ExportSelectionState
+    let isFavorited: Bool
+    let onToggleFavorite: (() -> Void)?
     let liveLocation: LiveLocationFeatureModel?
     let onOpenSavedTracks: (() -> Void)?
 
@@ -19,12 +22,18 @@ public struct AppDayDetailView: View {
         detail: DayDetailViewState?,
         hasDays: Bool,
         onBackToOverview: (() -> Void)? = nil,
+        exportSelection: Binding<ExportSelectionState> = .constant(ExportSelectionState()),
+        isFavorited: Bool = false,
+        onToggleFavorite: (() -> Void)? = nil,
         liveLocation: LiveLocationFeatureModel? = nil,
         onOpenSavedTracks: (() -> Void)? = nil
     ) {
         self.detail = detail
         self.hasDays = hasDays
         self.onBackToOverview = onBackToOverview
+        self._exportSelection = exportSelection
+        self.isFavorited = isFavorited
+        self.onToggleFavorite = onToggleFavorite
         self.liveLocation = liveLocation
         self.onOpenSavedTracks = onOpenSavedTracks
     }
@@ -33,6 +42,9 @@ public struct AppDayDetailView: View {
         self.detail = detail
         self.hasDays = true
         self.onBackToOverview = nil
+        self._exportSelection = .constant(ExportSelectionState())
+        self.isFavorited = false
+        self.onToggleFavorite = nil
         self.liveLocation = nil
         self.onOpenSavedTracks = nil
     }
@@ -83,6 +95,8 @@ public struct AppDayDetailView: View {
                 }
             }
 
+            dayActionsSection(detail)
+
             detailContextHeader(
                 t("Imported Day Data"),
                 message: t("Map, timeline and entry cards below come from the currently imported history file.")
@@ -119,8 +133,14 @@ public struct AppDayDetailView: View {
 
             if !detail.paths.isEmpty {
                 detailSection(t("Routes"), icon: "location.north.line", count: detail.paths.count) {
-                    ForEach(Array(detail.paths.enumerated()), id: \.offset) { _, path in
-                        pathCard(path)
+                    routeSelectionSummary(detail)
+                    ForEach(Array(detail.paths.enumerated()), id: \.offset) { index, path in
+                        pathCard(
+                            path,
+                            dayIdentifier: detail.date,
+                            routeIndex: index,
+                            availableRouteIndices: exportableRouteIndices(for: detail)
+                        )
                     }
                 }
             }
@@ -179,6 +199,76 @@ public struct AppDayDetailView: View {
     }
 
     @ViewBuilder
+    private func dayActionsSection(_ detail: DayDetailViewState) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(t("Day Actions"))
+                .font(.title3.weight(.semibold))
+
+            HStack(spacing: 10) {
+                if let onToggleFavorite {
+                    Button(action: onToggleFavorite) {
+                        Label(
+                            isFavorited ? t("Remove Favorite") : t("Add Favorite"),
+                            systemImage: isFavorited ? "star.slash.fill" : "star.fill"
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(isFavorited ? .gray : .yellow)
+                }
+
+                Button {
+                    exportSelection.toggle(detail.date)
+                } label: {
+                    Label(
+                        exportSelection.isSelected(detail.date) ? t("Remove Day from Export") : t("Add Day to Export"),
+                        systemImage: exportSelection.isSelected(detail.date) ? "square.and.arrow.up.fill" : "square.and.arrow.up"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+
+            if !detail.paths.isEmpty {
+                Text(routeSelectionStatus(detail))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(Color.secondary.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func routeSelectionSummary(_ detail: DayDetailViewState) -> some View {
+        let exportableIndices = exportableRouteIndices(for: detail)
+        if exportableIndices.isEmpty {
+            Label(t("No exportable routes are available for this day."), systemImage: "exclamationmark.circle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } else {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(t("Route Export"), systemImage: "line.3.horizontal.decrease.circle")
+                        .font(.subheadline.weight(.medium))
+                    Text(routeSelectionStatus(detail))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if exportSelection.routeSelections[detail.date] != nil {
+                    Button(t("Reset to All Routes")) {
+                        exportSelection.clearRouteSelection(day: detail.date)
+                    }
+                    .font(.caption.weight(.medium))
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    @ViewBuilder
     private func visitCard(_ visit: DayDetailViewState.VisitItem) -> some View {
         coloredCard(color: CardAccent.visit) {
             HStack(spacing: 6) {
@@ -220,14 +310,51 @@ public struct AppDayDetailView: View {
     }
 
     @ViewBuilder
-    private func pathCard(_ path: DayDetailViewState.PathItem) -> some View {
+    private func pathCard(
+        _ path: DayDetailViewState.PathItem,
+        dayIdentifier: String,
+        routeIndex: Int,
+        availableRouteIndices: Set<Int>
+    ) -> some View {
+        let isExportable = availableRouteIndices.contains(routeIndex)
+        let hasExplicitSelection = exportSelection.routeSelections[dayIdentifier] != nil
+        let isSelected = isExportable && exportSelection.isRouteSelected(day: dayIdentifier, routeIndex: routeIndex)
+
         coloredCard(color: CardAccent.path) {
-            HStack(spacing: 6) {
-                Image(systemName: iconForActivityType(path.activityType))
-                    .foregroundColor(CardAccent.path)
-                    .font(.subheadline)
-                Text(displayNameForActivityType(path.activityType, default: t("Route"), language: preferences.appLanguage))
-                    .font(.subheadline.weight(.medium))
+            HStack(alignment: .top, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: iconForActivityType(path.activityType))
+                        .foregroundColor(CardAccent.path)
+                        .font(.subheadline)
+                    Text(displayNameForActivityType(path.activityType, default: t("Route"), language: preferences.appLanguage))
+                        .font(.subheadline.weight(.medium))
+                }
+                Spacer()
+                if isExportable {
+                    Button {
+                        if !exportSelection.isSelected(dayIdentifier) {
+                            exportSelection.toggle(dayIdentifier)
+                        }
+                        exportSelection.toggleRoute(
+                            day: dayIdentifier,
+                            routeIndex: routeIndex,
+                            availableRouteIndices: availableRouteIndices
+                        )
+                    } label: {
+                        Label(
+                            routeSelectionLabel(isSelected: isSelected, hasExplicitSelection: hasExplicitSelection),
+                            systemImage: isSelected ? "checkmark.circle.fill" : "circle"
+                        )
+                        .labelStyle(.iconOnly)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .accessibilityLabel(routeSelectionLabel(isSelected: isSelected, hasExplicitSelection: hasExplicitSelection))
+                } else {
+                    Image(systemName: "slash.circle")
+                        .foregroundStyle(.tertiary)
+                        .accessibilityLabel(t("Route unavailable for export"))
+                }
             }
             HStack(spacing: 12) {
                 Label(pointCountText(path.pointCount), systemImage: "location.north.line")
@@ -237,6 +364,15 @@ public struct AppDayDetailView: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
+            if isExportable {
+                Text(routeSelectionHint(isSelected: isSelected, hasExplicitSelection: hasExplicitSelection))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(t("This route has no exportable geometry."))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -307,6 +443,76 @@ public struct AppDayDetailView: View {
         preferences.appLanguage.isGerman
             ? "\(count) \(count == 1 ? "Punkt" : "Punkte")"
             : "\(count) \(count == 1 ? "point" : "points")"
+    }
+
+    private func exportableRouteIndices(for detail: DayDetailViewState) -> Set<Int> {
+        Set(
+            detail.paths.enumerated().compactMap { index, path in
+                let rawPath = Path(
+                    startTime: path.startTime,
+                    endTime: path.endTime,
+                    activityType: path.activityType,
+                    distanceM: path.distanceM,
+                    sourceType: "day_detail",
+                    points: path.points.map {
+                        PathPoint(
+                            lat: $0.lat,
+                            lon: $0.lon,
+                            time: $0.time,
+                            accuracyM: $0.accuracyM
+                        )
+                    },
+                    flatCoordinates: nil
+                )
+                return ExportRouteSanitizer.sanitizedPath(rawPath) == nil ? nil : index
+            }
+        )
+    }
+
+    private func routeSelectionStatus(_ detail: DayDetailViewState) -> String {
+        let exportableIndices = exportableRouteIndices(for: detail)
+        guard !exportableIndices.isEmpty else {
+            return t("No exportable routes are available for this day.")
+        }
+
+        if let explicitSelection = exportSelection.routeSelections[detail.date] {
+            let selectedCount = explicitSelection.intersection(exportableIndices).count
+            if preferences.appLanguage.isGerman {
+                return "\(selectedCount) von \(exportableIndices.count) exportierbaren \(exportableIndices.count == 1 ? "Route" : "Routen") ausgewählt. Besuche und Aktivitäten bleiben vom Exportmodus abhängig."
+            }
+            return "\(selectedCount) of \(exportableIndices.count) exportable route\(exportableIndices.count == 1 ? "" : "s") selected. Visits and activities still follow the export mode."
+        }
+
+        if preferences.appLanguage.isGerman {
+            return "Standardmäßig sind alle \(exportableIndices.count) exportierbaren \(exportableIndices.count == 1 ? "Route" : "Routen") enthalten. Tippe auf eine Route, um auf eine benutzerdefinierte Auswahl umzuschalten."
+        }
+        return "All \(exportableIndices.count) exportable route\(exportableIndices.count == 1 ? "" : "s") are included by default. Tap a route to switch to a custom subset."
+    }
+
+    private func routeSelectionLabel(isSelected: Bool, hasExplicitSelection: Bool) -> String {
+        if preferences.appLanguage.isGerman {
+            if hasExplicitSelection {
+                return isSelected ? "Für den Export ausgewählt" : "Nicht für den Export ausgewählt"
+            }
+            return "Standardmäßig im Export enthalten"
+        }
+        if hasExplicitSelection {
+            return isSelected ? "Selected for export" : "Not selected for export"
+        }
+        return "Included by default"
+    }
+
+    private func routeSelectionHint(isSelected: Bool, hasExplicitSelection: Bool) -> String {
+        if preferences.appLanguage.isGerman {
+            if hasExplicitSelection {
+                return isSelected ? "Tippe, um diese Route aus der Exportauswahl zu entfernen." : "Tippe, um diese Route zur Exportauswahl hinzuzufügen."
+            }
+            return "Tippe, um eine benutzerdefinierte Routenauswahl für diesen Tag zu starten."
+        }
+        if hasExplicitSelection {
+            return isSelected ? "Tap to remove this route from the export subset." : "Tap to add this route to the export subset."
+        }
+        return "Tap to start a custom route subset for this day."
     }
 }
 

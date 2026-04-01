@@ -1,4 +1,3 @@
-#if canImport(SwiftUI)
 import Foundation
 import LocationHistoryConsumer
 
@@ -33,4 +32,3 @@ public enum AppDaySearch {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
-#endif
