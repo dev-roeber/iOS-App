@@ -36,6 +36,21 @@ private enum ExportAreaFilterOption: String, Identifiable, CaseIterable {
 }
 
 public struct AppExportView: View {
+    private struct ImportedSelectionPruneTrigger: Equatable {
+        let fromDate: String
+        let toDate: String
+        let accuracyFilter: ExportAccuracyFilterOption
+        let requiredContent: Set<AppExportContentRequirement>
+        let activityTypes: Set<String>
+        let areaFilter: ExportAreaFilterOption
+        let boundsMinLat: String
+        let boundsMaxLat: String
+        let boundsMinLon: String
+        let boundsMaxLon: String
+        let polygonCoordinatesText: String
+        let rangeFilter: HistoryDateRangeFilter
+    }
+
     @EnvironmentObject private var preferences: AppPreferences
     @Binding var session: AppSessionState
     @ObservedObject private var liveLocation: LiveLocationFeatureModel
@@ -186,42 +201,8 @@ public struct AppExportView: View {
             .onChange(of: liveLocation.recordedTracks) { tracks in
                 pruneInvalidRecordedTrackSelection(validTracks: tracks)
             }
-            .onChange(of: selectedFromDate) { _ in
+            .onChange(of: importedSelectionPruneTrigger) { _ in
                 normalizeDateFilterBounds()
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: selectedToDate) { _ in
-                normalizeDateFilterBounds()
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: selectedAccuracyFilter) { _ in
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: selectedContentRequirements) { _ in
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: selectedActivityTypes) { _ in
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: selectedAreaFilter) { _ in
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: boundsMinLat) { _ in
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: boundsMaxLat) { _ in
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: boundsMinLon) { _ in
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: boundsMaxLon) { _ in
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: polygonCoordinatesText) { _ in
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: session.historyDateRangeFilter) { _ in
                 pruneInvalidImportedDaySelection(summaries: filteredSummaries)
             }
             .onChange(of: session.sourceSummary) { _ in
@@ -949,10 +930,7 @@ public struct AppExportView: View {
     }
 
     private var filteredSummaries: [DaySummary] {
-        guard let export = session.content?.export else {
-            return []
-        }
-        return AppExportQueries.daySummaries(from: export, applying: effectiveQueryFilter)
+        session.content?.daySummaries(applying: effectiveQueryFilter) ?? []
     }
 
     private var dateOptions: [String] {
@@ -960,10 +938,24 @@ public struct AppExportView: View {
     }
 
     private var availableActivityTypes: [String] {
-        guard let export = session.content?.export else {
-            return []
-        }
-        return AppExportQueries.overview(from: export, applying: globalRangeQueryFilter).statsActivityTypes
+        session.content?.overview(applying: globalRangeQueryFilter).statsActivityTypes ?? []
+    }
+
+    private var importedSelectionPruneTrigger: ImportedSelectionPruneTrigger {
+        ImportedSelectionPruneTrigger(
+            fromDate: selectedFromDate,
+            toDate: selectedToDate,
+            accuracyFilter: selectedAccuracyFilter,
+            requiredContent: selectedContentRequirements,
+            activityTypes: selectedActivityTypes,
+            areaFilter: selectedAreaFilter,
+            boundsMinLat: boundsMinLat,
+            boundsMaxLat: boundsMaxLat,
+            boundsMinLon: boundsMinLon,
+            boundsMaxLon: boundsMaxLon,
+            polygonCoordinatesText: polygonCoordinatesText,
+            rangeFilter: session.historyDateRangeFilter
+        )
     }
 
     private var baseExportQueryFilter: AppExportQueryFilter? {

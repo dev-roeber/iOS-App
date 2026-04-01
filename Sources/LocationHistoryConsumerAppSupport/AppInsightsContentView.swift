@@ -12,6 +12,15 @@ import Charts
 #endif
 
 struct AppInsightsContentView: View {
+    private struct InsightsDerivedModel {
+        let trendItems: [InsightsMonthlyTrendItem]
+        let availableWeekdayMetrics: [InsightsWeekdayMetric]
+        let availablePeriodMetrics: [InsightsPeriodMetric]
+        let availableTopDayMetrics: [InsightsTopDayMetric]
+        let summaryCards: [InsightsSummaryCard]
+        let highlightItems: [InsightsHighlightItem]
+    }
+
     @EnvironmentObject private var preferences: AppPreferences
 
     let insights: ExportInsights
@@ -30,6 +39,7 @@ struct AppInsightsContentView: View {
     @State private var pendingDrilldownTargets: [InsightsDrilldownTarget] = []
     @State private var shareSheetPayload: InsightsRenderedSharePayload?
     @State private var shareError: String?
+    @State private var derivedModel: InsightsDerivedModel?
 
     init(
         insights: ExportInsights,
@@ -51,12 +61,28 @@ struct AppInsightsContentView: View {
         case breakdowns = "Breakdowns"
     }
 
+    private var resolvedDerivedModel: InsightsDerivedModel {
+        if let derivedModel {
+            return derivedModel
+        }
+
+        let builtTrendItems = InsightsMonthlyTrendPresentation.items(from: daySummaries, locale: preferences.appLocale)
+        return InsightsDerivedModel(
+            trendItems: builtTrendItems,
+            availableWeekdayMetrics: InsightsChartSupport.availableWeekdayMetrics(for: daySummaries),
+            availablePeriodMetrics: InsightsChartSupport.availablePeriodMetrics(for: insights.periodBreakdown),
+            availableTopDayMetrics: InsightsTopDaysPresentation.availableMetrics(for: daySummaries),
+            summaryCards: buildSummaryCards(trendItemCount: builtTrendItems.count),
+            highlightItems: buildHighlightItems()
+        )
+    }
+
     private var trendItems: [InsightsMonthlyTrendItem] {
-        InsightsMonthlyTrendPresentation.items(from: daySummaries, locale: preferences.appLocale)
+        resolvedDerivedModel.trendItems
     }
 
     private var availableWeekdayMetrics: [InsightsWeekdayMetric] {
-        InsightsChartSupport.availableWeekdayMetrics(for: daySummaries)
+        resolvedDerivedModel.availableWeekdayMetrics
     }
 
     private var weekdayStats: [InsightsWeekdayMetricStat] {
@@ -68,11 +94,11 @@ struct AppInsightsContentView: View {
     }
 
     private var availablePeriodMetrics: [InsightsPeriodMetric] {
-        InsightsChartSupport.availablePeriodMetrics(for: insights.periodBreakdown)
+        resolvedDerivedModel.availablePeriodMetrics
     }
 
     private var availableTopDayMetrics: [InsightsTopDayMetric] {
-        InsightsTopDaysPresentation.availableMetrics(for: daySummaries)
+        resolvedDerivedModel.availableTopDayMetrics
     }
 
     private var topDays: [DaySummary] {
@@ -80,95 +106,11 @@ struct AppInsightsContentView: View {
     }
 
     private var summaryCards: [InsightsSummaryCard] {
-        [
-            InsightsSummaryCard(
-                title: t("Days Loaded"),
-                value: "\(daySummaries.count)",
-                subtitle: insights.dateRange.map { "\(AppDateDisplay.mediumDate($0.firstDate)) – \(AppDateDisplay.mediumDate($0.lastDate))" },
-                icon: "calendar",
-                color: .blue
-            ),
-            InsightsSummaryCard(
-                title: t("Total Distance"),
-                value: formatDistance(insights.totalDistanceM, unit: preferences.distanceUnit),
-                subtitle: t("Route distance with trace fallback"),
-                icon: "road.lanes",
-                color: .purple
-            ),
-            InsightsSummaryCard(
-                title: t("Average Distance / Day"),
-                value: formatDistance(insights.averagesPerDay.avgDistancePerDayM, unit: preferences.distanceUnit),
-                subtitle: t("Across visible days"),
-                icon: "chart.line.uptrend.xyaxis",
-                color: .indigo
-            ),
-            InsightsSummaryCard(
-                title: t("Active Months"),
-                value: "\(trendItems.count)",
-                subtitle: t("Months with visible day entries"),
-                icon: "calendar.badge.clock",
-                color: .orange
-            ),
-        ]
+        resolvedDerivedModel.summaryCards
     }
 
     private var highlightItems: [InsightsHighlightItem] {
-        var items: [InsightsHighlightItem] = []
-
-        if let busiestDay = insights.busiestDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "busiest",
-                    title: t("Busiest Day"),
-                    icon: "flame.fill",
-                    color: .orange,
-                    highlight: busiestDay,
-                    summary: daySummaries.first(where: { $0.date == busiestDay.date }),
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        if let mostVisitsDay = insights.mostVisitsDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "visits",
-                    title: t("Most Visits"),
-                    icon: "mappin.and.ellipse",
-                    color: .blue,
-                    highlight: mostVisitsDay,
-                    summary: daySummaries.first(where: { $0.date == mostVisitsDay.date }),
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        if let mostRoutesDay = insights.mostRoutesDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "routes",
-                    title: t("Most Routes"),
-                    icon: "point.topleft.down.curvedto.point.bottomright.up",
-                    color: .green,
-                    highlight: mostRoutesDay,
-                    summary: daySummaries.first(where: { $0.date == mostRoutesDay.date }),
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-        if let longestDistanceDay = insights.longestDistanceDay {
-            items.append(
-                InsightsCardPresentation.highlightItem(
-                    id: "distance",
-                    title: t("Longest Distance"),
-                    icon: "road.lanes",
-                    color: .purple,
-                    highlight: longestDistanceDay,
-                    summary: daySummaries.first(where: { $0.date == longestDistanceDay.date }),
-                    unit: preferences.distanceUnit
-                )
-            )
-        }
-
-        return items
+        resolvedDerivedModel.highlightItems
     }
 
     private var hasAnyMeaningfulInsightSection: Bool {
@@ -220,19 +162,12 @@ struct AppInsightsContentView: View {
                 }
             }
             .onAppear {
-                if let firstTopMetric = availableTopDayMetrics.first {
-                    topDayMetric = firstTopMetric
-                }
-                if let firstTrendMetric = InsightsMonthlyTrendPresentation.availableMetrics(for: trendItems).first {
-                    trendMetric = firstTrendMetric
-                }
-                if let firstWeekdayMetric = availableWeekdayMetrics.first {
-                    weekdayMetric = firstWeekdayMetric
-                }
-                if let firstPeriodMetric = availablePeriodMetrics.first {
-                    periodMetric = firstPeriodMetric
-                }
+                refreshDerivedModel()
             }
+            .onChange(of: insights) { _ in refreshDerivedModel() }
+            .onChange(of: daySummaries) { _ in refreshDerivedModel() }
+            .onChange(of: preferences.distanceUnit) { _ in refreshDerivedModel() }
+            .onChange(of: preferences.appLanguage) { _ in refreshDerivedModel() }
             .confirmationDialog(
                 pendingDrilldownTitle,
                 isPresented: Binding(
@@ -293,6 +228,129 @@ struct AppInsightsContentView: View {
                 Text(shareError ?? "")
             }
         }
+    }
+
+    private func refreshDerivedModel() {
+        let builtTrendItems = InsightsMonthlyTrendPresentation.items(from: daySummaries, locale: preferences.appLocale)
+        let builtTopDayMetrics = InsightsTopDaysPresentation.availableMetrics(for: daySummaries)
+        let builtWeekdayMetrics = InsightsChartSupport.availableWeekdayMetrics(for: daySummaries)
+        let builtPeriodMetrics = InsightsChartSupport.availablePeriodMetrics(for: insights.periodBreakdown)
+        let availableTrendMetrics = InsightsMonthlyTrendPresentation.availableMetrics(for: builtTrendItems)
+
+        derivedModel = InsightsDerivedModel(
+            trendItems: builtTrendItems,
+            availableWeekdayMetrics: builtWeekdayMetrics,
+            availablePeriodMetrics: builtPeriodMetrics,
+            availableTopDayMetrics: builtTopDayMetrics,
+            summaryCards: buildSummaryCards(trendItemCount: builtTrendItems.count),
+            highlightItems: buildHighlightItems()
+        )
+
+        if let firstTopMetric = builtTopDayMetrics.first, !builtTopDayMetrics.contains(topDayMetric) {
+            topDayMetric = firstTopMetric
+        }
+        if let firstTrendMetric = availableTrendMetrics.first,
+           !availableTrendMetrics.contains(trendMetric) {
+            trendMetric = firstTrendMetric
+        }
+        if let firstWeekdayMetric = builtWeekdayMetrics.first, !builtWeekdayMetrics.contains(weekdayMetric) {
+            weekdayMetric = firstWeekdayMetric
+        }
+        if let firstPeriodMetric = builtPeriodMetrics.first, !builtPeriodMetrics.contains(periodMetric) {
+            periodMetric = firstPeriodMetric
+        }
+    }
+
+    private func buildSummaryCards(trendItemCount: Int) -> [InsightsSummaryCard] {
+        [
+            InsightsSummaryCard(
+                title: t("Days Loaded"),
+                value: "\(daySummaries.count)",
+                subtitle: insights.dateRange.map { "\(AppDateDisplay.mediumDate($0.firstDate)) – \(AppDateDisplay.mediumDate($0.lastDate))" },
+                icon: "calendar",
+                color: .blue
+            ),
+            InsightsSummaryCard(
+                title: t("Total Distance"),
+                value: formatDistance(insights.totalDistanceM, unit: preferences.distanceUnit),
+                subtitle: t("Route distance with trace fallback"),
+                icon: "road.lanes",
+                color: .purple
+            ),
+            InsightsSummaryCard(
+                title: t("Average Distance / Day"),
+                value: formatDistance(insights.averagesPerDay.avgDistancePerDayM, unit: preferences.distanceUnit),
+                subtitle: t("Across visible days"),
+                icon: "chart.line.uptrend.xyaxis",
+                color: .indigo
+            ),
+            InsightsSummaryCard(
+                title: t("Active Months"),
+                value: "\(trendItemCount)",
+                subtitle: t("Months with visible day entries"),
+                icon: "calendar.badge.clock",
+                color: .orange
+            ),
+        ]
+    }
+
+    private func buildHighlightItems() -> [InsightsHighlightItem] {
+        var items: [InsightsHighlightItem] = []
+
+        if let busiestDay = insights.busiestDay {
+            items.append(
+                InsightsCardPresentation.highlightItem(
+                    id: "busiest",
+                    title: t("Busiest Day"),
+                    icon: "flame.fill",
+                    color: .orange,
+                    highlight: busiestDay,
+                    summary: daySummaries.first(where: { $0.date == busiestDay.date }),
+                    unit: preferences.distanceUnit
+                )
+            )
+        }
+        if let mostVisitsDay = insights.mostVisitsDay {
+            items.append(
+                InsightsCardPresentation.highlightItem(
+                    id: "visits",
+                    title: t("Most Visits"),
+                    icon: "mappin.and.ellipse",
+                    color: .blue,
+                    highlight: mostVisitsDay,
+                    summary: daySummaries.first(where: { $0.date == mostVisitsDay.date }),
+                    unit: preferences.distanceUnit
+                )
+            )
+        }
+        if let mostRoutesDay = insights.mostRoutesDay {
+            items.append(
+                InsightsCardPresentation.highlightItem(
+                    id: "routes",
+                    title: t("Most Routes"),
+                    icon: "point.topleft.down.curvedto.point.bottomright.up",
+                    color: .green,
+                    highlight: mostRoutesDay,
+                    summary: daySummaries.first(where: { $0.date == mostRoutesDay.date }),
+                    unit: preferences.distanceUnit
+                )
+            )
+        }
+        if let longestDistanceDay = insights.longestDistanceDay {
+            items.append(
+                InsightsCardPresentation.highlightItem(
+                    id: "distance",
+                    title: t("Longest Distance"),
+                    icon: "road.lanes",
+                    color: .purple,
+                    highlight: longestDistanceDay,
+                    summary: daySummaries.first(where: { $0.date == longestDistanceDay.date }),
+                    unit: preferences.distanceUnit
+                )
+            )
+        }
+
+        return items
     }
 
     private var headerSection: some View {
