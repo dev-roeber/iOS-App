@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [Unreleased] – 2026-04-02
+
+### Apple Device Verification – Mac / Xcode / iPhone (post-performance-fix)
+
+- Wrapper `ContentView.swift`: deterministischer Launch-Reset fuer UI-Tests via `LH2GPX_UI_TESTING` + `LH2GPX_RESET_PERSISTENCE` Launch-Arguments; `prepareLaunchStateIfNeeded()` loescht ImportBookmarkStore, RecentFilesStore und AppPreferences vor dem Test-Lauf; `restoreBookmarkedFile()` nutzt jetzt `AppImportStateBridge.restoreLastImportIfEnabled` statt rohem `ImportBookmarkStore.restore()`
+- `LH2GPXWrapperUITestsLaunchTests.swift`: `testLaunch` prueft nach sauberem Reset auf `Load Demo Data`-Erscheinen; Launch-Arguments werden gesetzt
+- `LH2GPXWrapperUITests.swift`: neuer `testDeviceSmokeNavigationAndActions`-Test laeuft auf echtem iPhone durch: Demo-Load, Overview/Heatmap, Insights/Share, Export/fileExporter, Live/Start+Stop-Recording; portrait-Lock, scroll-robuste Elementsuche (`revealElement`), Predicate-Matches fuer kombinierte Button-Label, koordinatenbasierter Zellen-Tap fuer Export-Selektion (SwiftUI-TabView-Cell-Limitation), Location-Permission-Handling
+- `AppExportView.swift`: `accessibilityIdentifier("export.days.selectAll")` / `"export.days.deselectAll"` auf Days-Section-Header-Buttons; `accessibilityIdentifier("export.action.primary")` auf Export-Action-Button; `accessibilityIdentifier("export.day.row")` auf Day-Rows (fuer kuenftige XCUI-Nutzung)
+- Mac-Build, iOS-Build, iOS-Archiv, 363 Package-Tests: alle gruen auf Apple-Host (Xcode 26.3)
+- Device-Smoke auf iPhone 15 Pro Max (iOS 26.3): PASSED — Heatmap-Sheet, ImageRenderer-Share, fileExporter, Live-Recording real verifiziert
+
 ## [Unreleased] – 2026-04-01
 
 ### Performance / Stability Phase 3 – Heatmap / Map / Day Detail / Truth Sync
