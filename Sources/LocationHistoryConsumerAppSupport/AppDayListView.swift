@@ -190,9 +190,11 @@ public struct AppDayListView: View {
     let summaries: [DaySummary]
     let selectedForExportDates: Set<String>
     let favoriteDayIDs: Set<String>
+    let drilldownDescription: String?
     @Binding var selectedDate: String?
     @Binding var filter: DayListFilter
     @Binding var searchText: String
+    var onClearDrilldown: (() -> Void)? = nil
     var onToggleFavorite: ((String) -> Void)? = nil
     var highlightIconsForDate: (String) -> [String] = { _ in [] }
 
@@ -200,8 +202,10 @@ public struct AppDayListView: View {
         summaries: [DaySummary],
         selectedForExportDates: Set<String> = [],
         favoriteDayIDs: Set<String> = [],
+        drilldownDescription: String? = nil,
         selectedDate: Binding<String?>,
         filter: Binding<DayListFilter> = .constant(.empty),
+        onClearDrilldown: (() -> Void)? = nil,
         onToggleFavorite: ((String) -> Void)? = nil,
         highlightIconsForDate: @escaping (String) -> [String] = { _ in [] },
         searchText: Binding<String> = .constant("")
@@ -209,9 +213,11 @@ public struct AppDayListView: View {
         self.summaries = summaries
         self.selectedForExportDates = selectedForExportDates
         self.favoriteDayIDs = favoriteDayIDs
+        self.drilldownDescription = drilldownDescription
         self._selectedDate = selectedDate
         self._filter = filter
         self._searchText = searchText
+        self.onClearDrilldown = onClearDrilldown
         self.onToggleFavorite = onToggleFavorite
         self.highlightIconsForDate = highlightIconsForDate
     }
@@ -229,6 +235,11 @@ public struct AppDayListView: View {
         } else {
             let groups = groupByMonth(filteredSummaries, locale: preferences.appLocale)
             List(selection: $selectedDate) {
+                if let drilldownDescription {
+                    Section {
+                        drilldownBanner(description: drilldownDescription)
+                    }
+                }
                 if !availableChips.isEmpty || filter.isActive {
                     Section {
                         AppDayFilterChipsView(filter: $filter, availableChips: availableChips)
@@ -304,6 +315,9 @@ public struct AppDayListView: View {
         if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return tf("No days match \"%@\".", searchText)
         }
+        if drilldownDescription != nil {
+            return t("No day matches the current drilldown and filter combination.")
+        }
         return t("No day matches the active filter chips.")
     }
 
@@ -342,6 +356,29 @@ public struct AppDayListView: View {
                 .tint(favoriteDayIDs.contains(summary.date) ? .gray : .yellow)
             }
         }
+    }
+
+    @ViewBuilder
+    private func drilldownBanner(description: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "scope")
+                .foregroundStyle(Color.accentColor)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(t("Insights Drilldown"))
+                    .font(.subheadline.weight(.semibold))
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if let onClearDrilldown {
+                Button(t("Reset")) {
+                    onClearDrilldown()
+                }
+                .font(.caption.weight(.medium))
+            }
+        }
+        .padding(.vertical, 4)
     }
 
     private func t(_ english: String) -> String {

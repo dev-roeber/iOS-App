@@ -73,7 +73,7 @@ enum InsightsTopDaysPresentation {
         }
 
         if canNavigateToDay {
-            return "\(basis) Tap a row to open that day."
+            return "\(basis) Tap a row to open drilldown actions for that day."
         }
         return basis
     }

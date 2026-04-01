@@ -44,6 +44,19 @@ final class AppSessionStateTests: XCTestCase {
         XCTAssertEqual(state.presentationState, .importedLoaded)
     }
 
+    func testShowContentClearsActiveInsightsDrilldown() throws {
+        var state = AppSessionState()
+        let content = try loadDemoContent(
+            fixtureName: "golden_app_export_sample_small.json",
+            source: .importedFile(filename: "imported_app_export.json")
+        )
+        state.activeDrilldownFilter = .filterDaysToDate("2024-05-01")
+
+        state.show(content: content)
+
+        XCTAssertNil(state.activeDrilldownFilter)
+    }
+
     func testSelectDayForDisplayClearsEmptyDaySelection() throws {
         var state = AppSessionState()
         state.show(content: makeContent(exportWith(days: """
@@ -122,11 +135,13 @@ final class AppSessionStateTests: XCTestCase {
             source: .importedFile(filename: "imported_app_export.json")
         )
         state.show(content: content)
+        state.activeDrilldownFilter = .filterDaysToDateRange(fromDate: "2024-05-01", toDate: "2024-05-31")
 
         state.clearContent()
 
         XCTAssertFalse(state.hasLoadedContent)
         XCTAssertNil(state.selectedDate)
+        XCTAssertNil(state.activeDrilldownFilter)
         XCTAssertEqual(state.presentationState, .idle)
         XCTAssertEqual(state.message?.title, "No location history loaded")
         XCTAssertEqual(state.sourceSummary.sourceValue, "None")
@@ -135,9 +150,11 @@ final class AppSessionStateTests: XCTestCase {
     func testBeginLoadingThenRestoreFailureClearsLoadingState() {
         // Simulates the restoreBookmarkedFile() path: beginLoading → decode error → showFailure.
         var state = AppSessionState()
+        state.activeDrilldownFilter = .prefillExportForDate("2024-05-01")
         state.beginLoading()
         XCTAssertTrue(state.isLoading)
         XCTAssertEqual(state.presentationState, .loading)
+        XCTAssertNil(state.activeDrilldownFilter)
 
         state.showFailure(
             title: "Unable to restore previous import",

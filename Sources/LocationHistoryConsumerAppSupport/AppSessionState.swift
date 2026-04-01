@@ -279,12 +279,14 @@ public struct AppSessionState {
     public mutating func beginLoading() {
         isLoading = true
         message = nil
+        activeDrilldownFilter = nil
     }
 
     public mutating func show(content: AppSessionContent) {
         self.content = content
         selectedDate = content.selectedDate
         exportSelection.clearAll()
+        activeDrilldownFilter = nil
         isLoading = false
         let title: String
         if content.source == .demoFixture(name: AppContentLoader.defaultDemoFixtureName) {
@@ -352,6 +354,7 @@ public struct AppSessionState {
         content = nil
         selectedDate = nil
         exportSelection.clearAll()
+        activeDrilldownFilter = nil
         message = AppUserMessage(
             kind: .info,
             title: "No location history loaded",

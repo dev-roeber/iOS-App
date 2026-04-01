@@ -83,7 +83,7 @@ final class InsightsTopDaysPresentationTests: XCTestCase {
         )
         XCTAssertEqual(
             InsightsTopDaysPresentation.sectionMessage(metric: .events, canNavigateToDay: true),
-            "Ranked by total visits, activities and routes. Tap a row to open that day."
+            "Ranked by total visits, activities and routes. Tap a row to open drilldown actions for that day."
         )
     }
 }

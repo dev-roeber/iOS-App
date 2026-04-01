@@ -189,7 +189,7 @@ enum InsightsChartSupport {
             return "No day summaries are available for this chart."
         }
         if canNavigateToDay {
-            return "Route distance with recorded-trace fallback. Tap a bar to open that day."
+            return "Route distance with recorded-trace fallback. Tap a bar to open drilldown actions for that day."
         }
         return "Route distance with recorded-trace fallback."
     }

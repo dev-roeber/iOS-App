@@ -36,7 +36,7 @@ public struct AppContentSplitView: View {
 
     private var filteredDaySummaries: [DaySummary] {
         DayListPresentation.filteredSummaries(
-            session.daySummaries,
+            drilldownDaySummaries,
             query: daySearchText,
             filter: dayListFilter,
             favorites: favoritedDayIDs
@@ -45,8 +45,27 @@ public struct AppContentSplitView: View {
 
     private var availableDayFilterChips: [DayListFilterChip] {
         DayListPresentation.availableFilterChips(
-            summaries: session.daySummaries,
+            summaries: drilldownDaySummaries,
             favorites: favoritedDayIDs
+        )
+    }
+
+    private var activeDayDrilldownAction: InsightsDrilldownAction? {
+        InsightsDrilldownBridge.dayListAction(from: session.activeDrilldownFilter)
+    }
+
+    private var drilldownDaySummaries: [DaySummary] {
+        InsightsDrilldownBridge.filteredSummaries(
+            session.daySummaries,
+            applying: activeDayDrilldownAction,
+            favorites: favoritedDayIDs
+        )
+    }
+
+    private var activeDayDrilldownDescription: String? {
+        InsightsDrilldownBridge.description(
+            for: activeDayDrilldownAction,
+            language: preferences.appLanguage
         )
     }
 
@@ -309,6 +328,14 @@ public struct AppContentSplitView: View {
         let summaries = filteredDaySummaries
         let groups = groupByMonth(summaries, locale: preferences.appLocale)
         return List {
+            if let activeDayDrilldownDescription {
+                Section {
+                    drilldownBanner(
+                        description: activeDayDrilldownDescription,
+                        clearAction: clearActiveDayDrilldown
+                    )
+                }
+            }
             if !availableDayFilterChips.isEmpty || dayListFilter.isActive {
                 Section {
                     AppDayFilterChipsView(filter: $dayListFilter, availableChips: availableDayFilterChips)
@@ -388,14 +415,16 @@ public struct AppContentSplitView: View {
     private var regularSplitView: some View {
         NavigationSplitView {
             AppDayListView(
-                summaries: session.daySummaries,
+                summaries: drilldownDaySummaries,
                 selectedForExportDates: session.exportSelection.selectedDates,
                 favoriteDayIDs: favoritedDayIDs,
+                drilldownDescription: activeDayDrilldownDescription,
                 selectedDate: Binding(
                     get: { session.selectedDate },
                     set: { session.selectDayForDisplay($0) }
                 ),
                 filter: $dayListFilter,
+                onClearDrilldown: clearActiveDayDrilldown,
                 onToggleFavorite: toggleFavoriteDay,
                 highlightIconsForDate: highlightIconsFor,
                 searchText: $daySearchText
@@ -742,6 +771,9 @@ public struct AppContentSplitView: View {
         if !trimmed.isEmpty {
             return preferences.localized(format: "No days match \"%@\".", arguments: [trimmed])
         }
+        if activeDayDrilldownDescription != nil {
+            return t("No day matches the current drilldown and filter combination.")
+        }
         return t("No day matches the active filter chips.")
     }
 
@@ -761,6 +793,59 @@ public struct AppContentSplitView: View {
         refreshFavoriteDays()
     }
 
+    private func clearActiveDayDrilldown() {
+        session.activeDrilldownFilter = nil
+    }
+
+    private func applyInsightsDrilldown(_ action: InsightsDrilldownAction) {
+        if let dayAction = InsightsDrilldownBridge.dayListAction(from: action) {
+            session.activeDrilldownFilter = dayAction
+            session.selectDay(nil)
+            daysNavigationPath = NavigationPath()
+            selectedTab = 1
+            return
+        }
+
+        guard let exportAction = InsightsDrilldownBridge.exportAction(from: action) else {
+            return
+        }
+
+        session.activeDrilldownFilter = exportAction
+        session.exportSelection.clearAll()
+        let selectedDates = InsightsDrilldownBridge.prefillDates(
+            for: exportAction,
+            availableDates: session.daySummaries.map(\.date)
+        ).sorted()
+        session.exportSelection.selectAll(from: selectedDates)
+
+        if horizontalSizeClass == .compact {
+            selectedTab = 3
+        } else {
+            presentSheet(.export)
+        }
+    }
+
+    @ViewBuilder
+    private func drilldownBanner(description: String, clearAction: @escaping () -> Void) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "scope")
+                .foregroundStyle(Color.accentColor)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(t("Insights Drilldown"))
+                    .font(.subheadline.weight(.semibold))
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button(t("Reset")) {
+                clearAction()
+            }
+            .font(.caption.weight(.medium))
+        }
+        .padding(.vertical, 4)
+    }
+
     @ViewBuilder
     private var insightsPaneContent: some View {
         if let insights = projectedInsights {
@@ -769,10 +854,7 @@ public struct AppContentSplitView: View {
                 daySummaries: projectedDaySummaries,
                 rangeFilter: $session.historyDateRangeFilter,
                 activeFilterDescriptions: localizedProjectedFilterDescriptions,
-                onDayTap: { date in
-                    daysNavigationPath.append(date)
-                    selectedTab = 1
-                }
+                onDrilldown: applyInsightsDrilldown
             )
         } else {
             VStack(spacing: 12) {

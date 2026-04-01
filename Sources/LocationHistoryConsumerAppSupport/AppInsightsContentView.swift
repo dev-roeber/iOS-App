@@ -1,6 +1,12 @@
 #if canImport(SwiftUI)
 import SwiftUI
 import LocationHistoryConsumer
+#if canImport(AppKit)
+import AppKit
+#endif
+#if canImport(UIKit)
+import UIKit
+#endif
 #if canImport(Charts)
 import Charts
 #endif
@@ -11,7 +17,7 @@ struct AppInsightsContentView: View {
     let insights: ExportInsights
     let daySummaries: [DaySummary]
     let activeFilterDescriptions: [String]
-    let onDayTap: ((String) -> Void)?
+    let onDrilldown: ((InsightsDrilldownAction) -> Void)?
     @Binding private var rangeFilter: HistoryDateRangeFilter
 
     @State private var activityMetric: ActivityMetric = .count
@@ -20,18 +26,22 @@ struct AppInsightsContentView: View {
     @State private var weekdayMetric: InsightsWeekdayMetric = .events
     @State private var periodMetric: InsightsPeriodMetric = .events
     @State private var surfaceMode: InsightsSurfaceMode = .overview
+    @State private var pendingDrilldownTitle = ""
+    @State private var pendingDrilldownTargets: [InsightsDrilldownTarget] = []
+    @State private var shareSheetPayload: InsightsRenderedSharePayload?
+    @State private var shareError: String?
 
     init(
         insights: ExportInsights,
         daySummaries: [DaySummary] = [],
         rangeFilter: Binding<HistoryDateRangeFilter> = .constant(.default),
         activeFilterDescriptions: [String]? = nil,
-        onDayTap: ((String) -> Void)? = nil
+        onDrilldown: ((InsightsDrilldownAction) -> Void)? = nil
     ) {
         self.insights = insights
         self.daySummaries = daySummaries
         self.activeFilterDescriptions = activeFilterDescriptions ?? insights.activeFilterDescriptions
-        self.onDayTap = onDayTap
+        self.onDrilldown = onDrilldown
         self._rangeFilter = rangeFilter
     }
 
@@ -223,6 +233,65 @@ struct AppInsightsContentView: View {
                     periodMetric = firstPeriodMetric
                 }
             }
+            .confirmationDialog(
+                pendingDrilldownTitle,
+                isPresented: Binding(
+                    get: { !pendingDrilldownTargets.isEmpty },
+                    set: { if !$0 { pendingDrilldownTargets = [] } }
+                ),
+                titleVisibility: .visible
+            ) {
+                ForEach(pendingDrilldownTargets) { target in
+                    Button(t(target.label)) {
+                        pendingDrilldownTargets = []
+                        onDrilldown?(target.action)
+                    }
+                }
+                Button(t("Cancel"), role: .cancel) {
+                    pendingDrilldownTargets = []
+                }
+            } message: {
+                Text(t("Choose where to continue with this insight."))
+            }
+            .sheet(item: $shareSheetPayload) { payload in
+                NavigationStack {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text(payload.title)
+                            .font(.headline)
+                        Text(payload.filename)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        ShareLink(item: payload.url) {
+                            Label(t("Share Chart"), systemImage: "square.and.arrow.up")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        Spacer()
+                    }
+                    .padding()
+                    .navigationTitle(t("Share"))
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(t("Done")) {
+                                shareSheetPayload = nil
+                            }
+                        }
+                    }
+                }
+            }
+            .alert(
+                t("Share Failed"),
+                isPresented: Binding(
+                    get: { shareError != nil },
+                    set: { if !$0 { shareError = nil } }
+                )
+            ) {
+                Button(t("OK"), role: .cancel) {
+                    shareError = nil
+                }
+            } message: {
+                Text(shareError ?? "")
+            }
         }
     }
 
@@ -251,12 +320,15 @@ struct AppInsightsContentView: View {
     @ViewBuilder
     private var overviewSections: some View {
         if !highlightItems.isEmpty {
-            insightSection(t("Highlights"), icon: "sparkles") {
+            insightSection(t("Highlights"), icon: "sparkles", shareCardType: .highlights) {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), spacing: 12)], spacing: 12) {
                     ForEach(highlightItems) { item in
-                        if let onDayTap {
+                        if onDrilldown != nil {
                             Button {
-                                onDayTap(item.date)
+                                presentDrilldown(
+                                    title: "\(t("Highlights")) · \(AppDateDisplay.mediumDate(item.date))",
+                                    targets: dayDrilldownTargets(for: item.date)
+                                )
                             } label: {
                                 InsightsHighlightCardView(item: item, isInteractive: true)
                             }
@@ -296,7 +368,7 @@ struct AppInsightsContentView: View {
             #if canImport(Charts)
             if InsightsChartSupport.hasDistanceData(in: daySummaries) {
                 distanceChart
-                sectionHint(t(InsightsChartSupport.distanceSectionMessage(hasDays: true, canNavigateToDay: onDayTap != nil)))
+                sectionHint(t(InsightsChartSupport.distanceSectionMessage(hasDays: true, canNavigateToDay: onDrilldown != nil)))
             } else {
                 insightsEmptyCard(
                     title: t("No Route Distances"),
@@ -313,7 +385,7 @@ struct AppInsightsContentView: View {
             #endif
         }
 
-        insightSection(t("Monthly Trends"), icon: "calendar.badge.clock") {
+        insightSection(t("Monthly Trends"), icon: "calendar.badge.clock", shareCardType: .monthlyTrend) {
             #if canImport(Charts)
             if !trendItems.isEmpty {
                 Picker("", selection: $trendMetric) {
@@ -325,6 +397,7 @@ struct AppInsightsContentView: View {
 
                 monthlyTrendChart
                 sectionHint(t("Spot month-to-month changes in visible route distance, visits, routes or total activity volume."))
+                monthlyTrendRows
             } else {
                 insightsEmptyCard(
                     title: t("No Monthly Trend Yet"),
@@ -341,7 +414,7 @@ struct AppInsightsContentView: View {
             #endif
         }
 
-        insightSection(t("By Day of Week"), icon: "chart.bar") {
+        insightSection(t("By Day of Week"), icon: "chart.bar", shareCardType: .weekdayPattern) {
             #if canImport(Charts)
             if !weekdayStats.isEmpty {
                 Picker("", selection: $weekdayMetric) {
@@ -378,7 +451,7 @@ struct AppInsightsContentView: View {
     private var breakdownSections: some View {
         topDaysSection
 
-        insightSection(t("Activity Types"), icon: "figure.walk") {
+        insightSection(t("Activity Types"), icon: "figure.walk", shareCardType: .activityBreakdown) {
             if !insights.activityBreakdown.isEmpty {
                 #if canImport(Charts)
                 Picker("", selection: $activityMetric) {
@@ -421,7 +494,7 @@ struct AppInsightsContentView: View {
             }
         }
 
-        insightSection(t("Period Breakdown"), icon: "calendar.badge.clock") {
+        insightSection(t("Period Breakdown"), icon: "calendar.badge.clock", shareCardType: .periodBreakdown) {
             if !insights.periodBreakdown.isEmpty {
                 #if canImport(Charts)
                 Picker("", selection: $periodMetric) {
@@ -436,7 +509,16 @@ struct AppInsightsContentView: View {
                 #endif
 
                 ForEach(Array(insights.periodBreakdown.enumerated()), id: \.offset) { _, item in
-                    periodRow(item)
+                    if let targets = periodDrilldownTargets(for: item), onDrilldown != nil {
+                        Button {
+                            presentDrilldown(title: "\(t("Period Breakdown")) · \(item.label)", targets: targets)
+                        } label: {
+                            periodRow(item, isInteractive: true)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        periodRow(item, isInteractive: false)
+                    }
                 }
             } else {
                 insightsEmptyCard(
@@ -450,7 +532,7 @@ struct AppInsightsContentView: View {
 
     @ViewBuilder
     private var topDaysSection: some View {
-        insightSection(t("Top Days"), icon: "list.number") {
+        insightSection(t("Top Days"), icon: "list.number", shareCardType: .topDays) {
             if !topDays.isEmpty {
                 Picker("", selection: $topDayMetric) {
                     ForEach(availableTopDayMetrics, id: \.self) { metric in
@@ -459,7 +541,7 @@ struct AppInsightsContentView: View {
                 }
                 .pickerStyle(.segmented)
 
-                sectionHint(t(InsightsTopDaysPresentation.sectionMessage(metric: topDayMetric, canNavigateToDay: onDayTap != nil)))
+                sectionHint(t(InsightsTopDaysPresentation.sectionMessage(metric: topDayMetric, canNavigateToDay: onDrilldown != nil)))
 
                 VStack(spacing: 10) {
                     ForEach(Array(topDays.enumerated()), id: \.offset) { index, summary in
@@ -470,9 +552,12 @@ struct AppInsightsContentView: View {
                             unit: preferences.distanceUnit
                         )
 
-                        if let onDayTap {
+                        if onDrilldown != nil {
                             Button {
-                                onDayTap(summary.date)
+                                presentDrilldown(
+                                    title: "\(t("Top Days")) · \(AppDateDisplay.mediumDate(summary.date))",
+                                    targets: dayDrilldownTargets(for: summary.date)
+                                )
                             } label: {
                                 InsightsTopDayRowView(
                                     presentation: presentation,
@@ -504,11 +589,29 @@ struct AppInsightsContentView: View {
     private func insightSection<Content: View>(
         _ title: String,
         icon: String,
-        @ViewBuilder content: () -> Content
+        shareCardType: InsightsCardType? = nil,
+        @ViewBuilder content: @escaping () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label(title, systemImage: icon)
-                .font(.title3.weight(.semibold))
+            HStack(alignment: .center) {
+                Label(title, systemImage: icon)
+                    .font(.title3.weight(.semibold))
+                Spacer()
+                if let shareCardType, supportsChartSharing {
+                    Button {
+                        prepareChartShare(
+                            cardType: shareCardType,
+                            title: title,
+                            icon: icon,
+                            content: content()
+                        )
+                    } label: {
+                        Label(t("Share"), systemImage: "square.and.arrow.up")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
             content()
         }
         .padding(18)
@@ -676,11 +779,59 @@ struct AppInsightsContentView: View {
         .padding(.vertical, 4)
     }
 
-    private func periodRow(_ item: PeriodBreakdownItem) -> some View {
+    @ViewBuilder
+    private var monthlyTrendRows: some View {
+        VStack(spacing: 10) {
+            ForEach(trendItems) { item in
+                if let targets = monthlyTrendDrilldownTargets(for: item), onDrilldown != nil {
+                    Button {
+                        presentDrilldown(title: "\(t("Monthly Trends")) · \(item.label)", targets: targets)
+                    } label: {
+                        monthlyTrendRow(item, isInteractive: true)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    monthlyTrendRow(item, isInteractive: false)
+                }
+            }
+        }
+    }
+
+    private func monthlyTrendRow(_ item: InsightsMonthlyTrendItem, isInteractive: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text(item.label)
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                if isInteractive {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Text(InsightsMonthlyTrendPresentation.summary(for: item, metric: trendMetric))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(Color.indigo.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func periodRow(_ item: PeriodBreakdownItem, isInteractive: Bool) -> some View {
         let periodColor = item.distanceM > 0 ? Color.purple : Color.secondary
         return VStack(alignment: .leading, spacing: 6) {
-            Text(item.label)
-                .font(.subheadline.weight(.medium))
+            HStack(spacing: 8) {
+                Text(item.label)
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                if isInteractive {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             HStack(spacing: 16) {
                 Label(dayCountText(item.days), systemImage: "calendar")
                 Label(visitCountText(item.visits), systemImage: "mappin.and.ellipse")
@@ -722,13 +873,16 @@ struct AppInsightsContentView: View {
                     .fill(.clear)
                     .contentShape(Rectangle())
                     .onTapGesture { location in
-                        guard let onDayTap else { return }
+                        guard onDrilldown != nil else { return }
                         let x = location.x - geometry.frame(in: .local).minX
                         guard let tappedDate: Date = proxy.value(atX: x),
                               let nearestDate = InsightsChartSupport.nearestDayISODate(to: tappedDate, in: daySummaries.map(\.date)) else {
                             return
                         }
-                        onDayTap(nearestDate)
+                        presentDrilldown(
+                            title: "\(t("Distance Over Time")) · \(AppDateDisplay.mediumDate(nearestDate))",
+                            targets: dayDrilldownTargets(for: nearestDate)
+                        )
                     }
             }
         }
@@ -863,6 +1017,118 @@ struct AppInsightsContentView: View {
     }
     #endif
 
+    private var supportsChartSharing: Bool {
+        #if os(iOS) || os(macOS)
+        if #available(iOS 16.0, macOS 13.0, *) {
+            return true
+        }
+        #endif
+        return false
+    }
+
+    private func dayDrilldownTargets(for date: String) -> [InsightsDrilldownTarget] {
+        [
+            InsightsDrilldownTarget.showDay(date),
+            InsightsDrilldownTarget.exportDay(date),
+        ]
+    }
+
+    private func monthlyTrendDrilldownTargets(for item: InsightsMonthlyTrendItem) -> [InsightsDrilldownTarget]? {
+        guard let range = InsightsDrilldownBridge.monthDateRange(for: item.monthKey) else {
+            return nil
+        }
+        return dateRangeDrilldownTargets(fromDate: range.fromDate, toDate: range.toDate)
+    }
+
+    private func periodDrilldownTargets(for item: PeriodBreakdownItem) -> [InsightsDrilldownTarget]? {
+        guard let range = InsightsDrilldownBridge.dateRange(for: item) else {
+            return nil
+        }
+        return dateRangeDrilldownTargets(fromDate: range.fromDate, toDate: range.toDate)
+    }
+
+    private func dateRangeDrilldownTargets(fromDate: String, toDate: String) -> [InsightsDrilldownTarget] {
+        [
+            InsightsDrilldownTarget(
+                label: "Show in Days",
+                systemImage: "calendar",
+                action: .filterDaysToDateRange(fromDate: fromDate, toDate: toDate)
+            ),
+            InsightsDrilldownTarget(
+                label: "Export This Period",
+                systemImage: "square.and.arrow.up",
+                action: .prefillExportForDateRange(fromDate: fromDate, toDate: toDate)
+            ),
+        ]
+    }
+
+    private func presentDrilldown(title: String, targets: [InsightsDrilldownTarget]) {
+        guard !targets.isEmpty else {
+            return
+        }
+        pendingDrilldownTitle = title
+        pendingDrilldownTargets = targets
+    }
+
+    private func prepareChartShare<Content: View>(
+        cardType: InsightsCardType,
+        title: String,
+        icon: String,
+        content: Content
+    ) {
+        #if os(iOS) || os(macOS)
+        guard supportsChartSharing else {
+            shareError = t("Chart sharing requires a newer Apple platform version.")
+            return
+        }
+
+        if #available(iOS 16.0, macOS 13.0, *) {
+            let payload = ChartShareHelper.payload(for: cardType, dateRange: rangeFilter)
+            let captureView = InsightsShareCaptureView(
+                title: title,
+                icon: icon,
+                content: content
+            )
+            let renderer = ImageRenderer(content: captureView)
+            renderer.scale = 2
+            guard let pngData = renderedPNGData(from: renderer) else {
+                shareError = t("The chart image could not be rendered on this device.")
+                return
+            }
+
+            do {
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent(payload.suggestedFilename)
+                try pngData.write(to: url, options: .atomic)
+                shareSheetPayload = InsightsRenderedSharePayload(
+                    title: payload.title,
+                    filename: payload.suggestedFilename,
+                    url: url
+                )
+            } catch {
+                shareError = error.localizedDescription
+            }
+        }
+        #endif
+    }
+
+    #if os(iOS) || os(macOS)
+    @available(iOS 16.0, macOS 13.0, *)
+    private func renderedPNGData<Content: View>(from renderer: ImageRenderer<Content>) -> Data? {
+        #if os(iOS)
+        return renderer.uiImage.pngData()
+        #elseif os(macOS)
+        guard let nsImage = renderer.nsImage,
+              let tiffData = nsImage.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData) else {
+            return nil
+        }
+        return bitmap.representation(using: .png, properties: [:])
+        #else
+        return nil
+        #endif
+    }
+    #endif
+
     private func accentColor(for metric: InsightsTopDayMetric) -> Color {
         switch metric {
         case .events:
@@ -989,6 +1255,40 @@ private extension AppInsightsContentView {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter
     }()
+}
+
+private struct InsightsRenderedSharePayload: Identifiable {
+    let id = UUID()
+    let title: String
+    let filename: String
+    let url: URL
+}
+
+private struct InsightsShareCaptureView<Content: View>: View {
+    let title: String
+    let icon: String
+    let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Label(title, systemImage: icon)
+                .font(.title3.weight(.semibold))
+            content
+        }
+        .padding(20)
+        .frame(width: 860, alignment: .leading)
+        .background(backgroundColor)
+    }
+
+    private var backgroundColor: Color {
+        #if os(iOS)
+        return Color(uiColor: .systemBackground)
+        #elseif os(macOS)
+        return Color(nsColor: .windowBackgroundColor)
+        #else
+        return .white
+        #endif
+    }
 }
 
 #endif

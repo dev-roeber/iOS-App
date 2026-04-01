@@ -103,6 +103,10 @@ public struct AppExportView: View {
     @ViewBuilder
     private func exportList(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
         List {
+            if insightsExportDrilldownDescription != nil {
+                insightsDrilldownSection
+            }
+
             selectionSummarySection(selection: selection, summaries: summaries)
 
             if hasImportedExport {
@@ -130,6 +134,29 @@ public struct AppExportView: View {
         #else
         .listStyle(.inset)
         #endif
+    }
+
+    @ViewBuilder
+    private var insightsDrilldownSection: some View {
+        Section {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "scope")
+                    .foregroundStyle(Color.accentColor)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(t("Insights Drilldown"))
+                        .font(.subheadline.weight(.semibold))
+                    Text(insightsExportDrilldownDescription ?? "")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(t("Reset")) {
+                    clearInsightsDrilldown()
+                }
+                .font(.caption.weight(.medium))
+            }
+            .padding(.vertical, 4)
+        }
     }
 
     @ViewBuilder
@@ -914,6 +941,13 @@ public struct AppExportView: View {
         session.content?.export != nil
     }
 
+    private var insightsExportDrilldownDescription: String? {
+        InsightsDrilldownBridge.description(
+            for: InsightsDrilldownBridge.exportAction(from: session.activeDrilldownFilter),
+            language: preferences.appLanguage
+        )
+    }
+
     private var filteredSummaries: [DaySummary] {
         guard let export = session.content?.export else {
             return []
@@ -1009,6 +1043,14 @@ public struct AppExportView: View {
         boundsMinLon = ""
         boundsMaxLon = ""
         polygonCoordinatesText = ""
+    }
+
+    private func clearInsightsDrilldown() {
+        session.activeDrilldownFilter = nil
+        session.exportSelection.clearAllDays()
+        for date in Array(session.exportSelection.routeSelections.keys) {
+            session.exportSelection.clearRouteSelection(day: date)
+        }
     }
 
     private func normalizeDateFilterBounds() {

@@ -18,7 +18,7 @@ final class InsightsChartSupportTests: XCTestCase {
     func testDistanceMessagesDifferentiateNavigationAndMissingData() {
         XCTAssertEqual(
             InsightsChartSupport.distanceSectionMessage(hasDays: true, canNavigateToDay: true),
-            "Route distance with recorded-trace fallback. Tap a bar to open that day."
+            "Route distance with recorded-trace fallback. Tap a bar to open drilldown actions for that day."
         )
         XCTAssertEqual(
             InsightsChartSupport.distanceSectionMessage(hasDays: true, canNavigateToDay: false),
