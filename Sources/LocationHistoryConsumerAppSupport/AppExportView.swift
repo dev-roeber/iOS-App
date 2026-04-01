@@ -102,6 +102,10 @@ public struct AppExportView: View {
             selectionSummarySection(selection: selection, summaries: summaries)
 
             if hasImportedExport {
+                globalRangeSection
+            }
+
+            if hasImportedExport {
                 filterSection
             }
 
@@ -184,6 +188,9 @@ public struct AppExportView: View {
                 pruneInvalidImportedDaySelection(summaries: filteredSummaries)
             }
             .onChange(of: polygonCoordinatesText) { _ in
+                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
+            }
+            .onChange(of: session.historyDateRangeFilter) { _ in
                 pruneInvalidImportedDaySelection(summaries: filteredSummaries)
             }
             .onChange(of: session.sourceSummary) { _ in
@@ -577,6 +584,18 @@ public struct AppExportView: View {
     }
 
     @ViewBuilder
+    private var globalRangeSection: some View {
+        Section {
+            AppHistoryDateRangeControl(
+                filter: $session.historyDateRangeFilter,
+                showsExportHint: true
+            )
+            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    @ViewBuilder
     private func previewSection(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
         let previewData = ExportPreviewDataBuilder.previewData(
             importedExport: session.content?.export,
@@ -841,6 +860,8 @@ public struct AppExportView: View {
             content = KMLBuilder.build(from: exportDays, mode: selectedMode)
         case .geoJSON:
             content = GeoJSONBuilder.build(from: exportDays, mode: selectedMode)
+        case .csv:
+            content = CSVBuilder.build(from: exportDays)
         }
 
         exportDocument = ExportDocument(
@@ -880,7 +901,18 @@ public struct AppExportView: View {
         guard let export = session.content?.export else {
             return []
         }
-        return AppExportQueries.overview(from: export).statsActivityTypes
+        return AppExportQueries.overview(from: export, applying: globalRangeQueryFilter).statsActivityTypes
+    }
+
+    private var baseExportQueryFilter: AppExportQueryFilter? {
+        session.content.map { AppExportQueryFilter(exportFilters: $0.export.meta.filters) }
+    }
+
+    private var globalRangeQueryFilter: AppExportQueryFilter? {
+        AppHistoryDateRangeQueryBridge.mergedFilter(
+            base: baseExportQueryFilter,
+            rangeFilter: session.historyDateRangeFilter
+        )
     }
 
     private var effectiveQueryFilter: AppExportQueryFilter? {
@@ -888,7 +920,7 @@ public struct AppExportView: View {
             return nil
         }
 
-        let baseFilter = session.content.map { AppExportQueryFilter(exportFilters: $0.export.meta.filters) } ?? AppExportQueryFilter()
+        let baseFilter = globalRangeQueryFilter ?? AppExportQueryFilter()
         let fromDate = mergedLowerBound(base: baseFilter.fromDate, local: selectedFromDate)
         let toDate = mergedUpperBound(base: baseFilter.toDate, local: selectedToDate)
         let maxAccuracyM = mergedMaxAccuracy(base: baseFilter.maxAccuracyM, local: selectedAccuracyFilter.maxAccuracyM)
@@ -917,19 +949,19 @@ public struct AppExportView: View {
     private var activeFilterDescriptions: [String] {
         var descriptions: [String] = []
         if !selectedFromDate.isEmpty {
-            descriptions.append("From: \(selectedFromDate)")
+            descriptions.append("\(t("From")): \(selectedFromDate)")
         }
         if !selectedToDate.isEmpty {
-            descriptions.append("To: \(selectedToDate)")
+            descriptions.append("\(t("To")): \(selectedToDate)")
         }
         if let maxAccuracyM = selectedAccuracyFilter.maxAccuracyM {
-            descriptions.append("Max accuracy: \(Int(maxAccuracyM))m")
+            descriptions.append("\(t("Maximum accuracy")): \(Int(maxAccuracyM))m")
         }
         if !selectedContentRequirements.isEmpty {
-            descriptions.append("Has: \(selectedContentRequirements.map(contentRequirementTitle).sorted().joined(separator: ", "))")
+            descriptions.append("\(t("Required imported content")): \(selectedContentRequirements.map(contentRequirementTitle).sorted().joined(separator: ", "))")
         }
         if !selectedActivityTypes.isEmpty {
-            descriptions.append("Activity types: \(selectedActivityTypes.map(activityTypeTitle).sorted().joined(separator: ", "))")
+            descriptions.append("\(t("Activity types")): \(selectedActivityTypes.map(activityTypeTitle).sorted().joined(separator: ", "))")
         }
         if let localAreaFilterDescription {
             descriptions.append(localAreaFilterDescription)
@@ -1088,9 +1120,9 @@ public struct AppExportView: View {
         case .none:
             return nil
         case .bounds:
-            return localSpatialFilter == nil ? nil : "Area: Rectangle"
+            return localSpatialFilter == nil ? nil : "\(t("Area")): \(t("Rectangle"))"
         case .polygon:
-            return localSpatialFilter == nil ? nil : "Area: Custom Shape"
+            return localSpatialFilter == nil ? nil : "\(t("Area")): \(t("Custom Shape"))"
         }
     }
 

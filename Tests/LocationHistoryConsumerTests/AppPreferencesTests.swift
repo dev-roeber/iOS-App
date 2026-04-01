@@ -33,6 +33,7 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.appLanguage, .english)
             XCTAssertEqual(preferences.liveTrackingAccuracy, .balanced)
             XCTAssertEqual(preferences.liveTrackingDetail, .balanced)
+            XCTAssertFalse(preferences.autoRestoreLastImport)
             XCTAssertFalse(preferences.allowsBackgroundLiveTracking)
             XCTAssertFalse(preferences.sendsLiveLocationToServer)
             XCTAssertEqual(
@@ -53,6 +54,7 @@ final class AppPreferencesTests: XCTestCase {
         defaults.set(AppLanguagePreference.german.rawValue, forKey: "app.preferences.appLanguage")
         defaults.set(AppLiveTrackingAccuracyPreference.strict.rawValue, forKey: "app.preferences.liveTrackingAccuracy")
         defaults.set(AppLiveTrackingDetailPreference.detailed.rawValue, forKey: "app.preferences.liveTrackingDetail")
+        defaults.set(true, forKey: "app.preferences.autoRestoreLastImport")
         defaults.set(true, forKey: "app.preferences.liveTrackingBackground")
         defaults.set(true, forKey: "app.preferences.liveTrackingServerUploadEnabled")
         defaults.set("https://example.invalid/live", forKey: "app.preferences.liveTrackingServerUploadURL")
@@ -68,6 +70,7 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.appLanguage, .german)
             XCTAssertEqual(preferences.liveTrackingAccuracy, .strict)
             XCTAssertEqual(preferences.liveTrackingDetail, .detailed)
+            XCTAssertTrue(preferences.autoRestoreLastImport)
             XCTAssertTrue(preferences.allowsBackgroundLiveTracking)
             XCTAssertTrue(preferences.sendsLiveLocationToServer)
             XCTAssertEqual(preferences.liveLocationServerUploadURLString, "https://example.invalid/live")
@@ -87,6 +90,7 @@ final class AppPreferencesTests: XCTestCase {
             preferences.appLanguage = .german
             preferences.liveTrackingAccuracy = .strict
             preferences.liveTrackingDetail = .batterySaver
+            preferences.autoRestoreLastImport = true
             preferences.allowsBackgroundLiveTracking = true
             preferences.sendsLiveLocationToServer = true
             preferences.liveLocationServerUploadURLString = "https://example.invalid/custom"
@@ -101,6 +105,7 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.appLanguage, .english)
             XCTAssertEqual(preferences.liveTrackingAccuracy, .balanced)
             XCTAssertEqual(preferences.liveTrackingDetail, .balanced)
+            XCTAssertFalse(preferences.autoRestoreLastImport)
             XCTAssertFalse(preferences.allowsBackgroundLiveTracking)
             XCTAssertFalse(preferences.sendsLiveLocationToServer)
             XCTAssertEqual(

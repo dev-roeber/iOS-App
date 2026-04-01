@@ -38,6 +38,72 @@ public struct AppContentSplitView: View {
         )
     }
 
+    private var baseQueryFilter: AppExportQueryFilter? {
+        session.content.map { AppExportQueryFilter(exportFilters: $0.export.meta.filters) }
+    }
+
+    private var projectedQueryFilter: AppExportQueryFilter? {
+        AppHistoryDateRangeQueryBridge.mergedFilter(
+            base: baseQueryFilter,
+            rangeFilter: session.historyDateRangeFilter
+        )
+    }
+
+    private var projectedOverview: ExportOverview? {
+        guard let export = session.content?.export else {
+            return nil
+        }
+        return AppExportQueries.overview(from: export, applying: projectedQueryFilter)
+    }
+
+    private var projectedDaySummaries: [DaySummary] {
+        guard let export = session.content?.export else {
+            return []
+        }
+        return AppExportQueries.daySummaries(from: export, applying: projectedQueryFilter)
+    }
+
+    private var projectedInsights: ExportInsights? {
+        guard let export = session.content?.export else {
+            return nil
+        }
+        return AppExportQueries.insights(from: export, applying: projectedQueryFilter)
+    }
+
+    private var localizedProjectedFilterDescriptions: [String] {
+        guard let projectedInsights else {
+            return []
+        }
+
+        return projectedInsights.activeFilterDescriptions.compactMap { description in
+            if session.historyDateRangeFilter.isActive,
+               description.hasPrefix("From: ") || description.hasPrefix("To: ") {
+                return nil
+            }
+
+            if let value = description.split(separator: ":", maxSplits: 1).last,
+               description.hasPrefix("Max accuracy: ") {
+                return "\(t("Maximum accuracy")):\(value)"
+            }
+
+            if let value = description.split(separator: ":", maxSplits: 1).last,
+               description.hasPrefix("Activity types: ") {
+                return "\(t("Activity types")):\(value)"
+            }
+
+            switch description {
+            case "Area: Bounding box":
+                return t("Area: Bounding box")
+            case "Area: Polygon":
+                return t("Area: Polygon")
+            case "Area: Combined filters":
+                return t("Area: Combined filters")
+            default:
+                return description
+            }
+        }
+    }
+
     private enum PresentedSheet: String, Identifiable {
         case export
         case tracksLibrary
@@ -335,7 +401,9 @@ public struct AppContentSplitView: View {
 
             overviewPrimaryActionsSection
 
-            if let range = session.insights?.dateRange {
+            AppHistoryDateRangeControl(filter: $session.historyDateRangeFilter)
+
+            if let range = projectedInsights?.dateRange {
                 HStack(spacing: 8) {
                     Image(systemName: "calendar.circle.fill")
                         .foregroundColor(.accentColor)
@@ -346,7 +414,7 @@ public struct AppContentSplitView: View {
                 }
             }
 
-            if let insights = session.insights, insights.totalDistanceM > 0 {
+            if let insights = projectedInsights, insights.totalDistanceM > 0 {
                 HStack(spacing: 12) {
                     Image(systemName: "road.lanes")
                         .font(.title3)
@@ -365,20 +433,21 @@ public struct AppContentSplitView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
 
-            if let insights = session.insights {
+            if let insights = projectedInsights {
                 overviewHighlights(insights)
             }
 
-            if let overview = session.overview {
+            if let overview = projectedOverview {
                 AppOverviewSection(
                     overview: overview,
+                    daySummaries: projectedDaySummaries,
                     onDaysTap: horizontalSizeClass == .compact ? { selectedTab = 1 } : nil,
                     onInsightsTap: horizontalSizeClass == .compact ? { selectedTab = 2 } : nil
                 )
             }
 
-            if let insights = session.insights, !insights.activeFilterDescriptions.isEmpty {
-                activeFiltersSection(insights.activeFilterDescriptions)
+            if !localizedProjectedFilterDescriptions.isEmpty {
+                activeFiltersSection(localizedProjectedFilterDescriptions)
             }
 
             liveTracksOverviewSection
@@ -609,10 +678,12 @@ public struct AppContentSplitView: View {
 
     @ViewBuilder
     private var insightsPaneContent: some View {
-        if let insights = session.insights {
+        if let insights = projectedInsights {
             AppInsightsContentView(
                 insights: insights,
-                daySummaries: session.daySummaries,
+                daySummaries: projectedDaySummaries,
+                rangeFilter: $session.historyDateRangeFilter,
+                activeFilterDescriptions: localizedProjectedFilterDescriptions,
                 onDayTap: { date in
                     daysNavigationPath.append(date)
                     selectedTab = 1

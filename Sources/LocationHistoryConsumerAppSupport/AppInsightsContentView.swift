@@ -10,7 +10,9 @@ struct AppInsightsContentView: View {
 
     let insights: ExportInsights
     let daySummaries: [DaySummary]
+    let activeFilterDescriptions: [String]
     let onDayTap: ((String) -> Void)?
+    @Binding private var rangeFilter: HistoryDateRangeFilter
 
     @State private var activityMetric: ActivityMetric = .count
     @State private var topDayMetric: InsightsTopDayMetric = .events
@@ -22,11 +24,15 @@ struct AppInsightsContentView: View {
     init(
         insights: ExportInsights,
         daySummaries: [DaySummary] = [],
+        rangeFilter: Binding<HistoryDateRangeFilter> = .constant(.default),
+        activeFilterDescriptions: [String]? = nil,
         onDayTap: ((String) -> Void)? = nil
     ) {
         self.insights = insights
         self.daySummaries = daySummaries
+        self.activeFilterDescriptions = activeFilterDescriptions ?? insights.activeFilterDescriptions
         self.onDayTap = onDayTap
+        self._rangeFilter = rangeFilter
     }
 
     private enum InsightsSurfaceMode: String, CaseIterable {
@@ -177,6 +183,8 @@ struct AppInsightsContentView: View {
             VStack(alignment: .leading, spacing: 22) {
                 headerSection
 
+                AppHistoryDateRangeControl(filter: $rangeFilter)
+
                 if !hasAnyMeaningfulInsightSection {
                     insightsEmptyCard(
                         title: t("Limited Insight Data"),
@@ -228,7 +236,7 @@ struct AppInsightsContentView: View {
                     .foregroundStyle(.secondary)
             }
 
-            if !insights.activeFilterDescriptions.isEmpty {
+            if !activeFilterDescriptions.isEmpty {
                 activeFilterBanner
             }
 
@@ -518,7 +526,7 @@ struct AppInsightsContentView: View {
             Label(t("Active Filters"), systemImage: "line.3.horizontal.decrease.circle.fill")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.orange)
-            Text(insights.activeFilterDescriptions.joined(separator: " · "))
+            Text(activeFilterDescriptions.joined(separator: " · "))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

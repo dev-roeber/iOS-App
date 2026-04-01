@@ -43,6 +43,14 @@ public struct AppOptionsView: View {
             }
 
             Section {
+                Toggle(t("Restore Last Import on Launch"), isOn: $preferences.autoRestoreLastImport)
+            } header: {
+                Text(t("Imports"))
+            } footer: {
+                Text(t("When enabled, the app tries to reopen the last imported file on startup. Missing or stale files are skipped automatically."))
+            }
+
+            Section {
                 Picker(t("App Language"), selection: $preferences.appLanguage) {
                     ForEach(AppLanguagePreference.allCases) { language in
                         Text(t(language.title)).tag(language)

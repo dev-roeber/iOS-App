@@ -11,7 +11,7 @@ public enum ImportBookmarkStore {
     /// Call this while the security-scoped resource is still being accessed.
     /// Returns the bookmark data on success, or nil if bookmark creation fails.
     @discardableResult
-    public static func save(url: URL) -> Data? {
+    public static func save(url: URL, userDefaults: UserDefaults = .standard) -> Data? {
         #if os(macOS) || os(iOS)
         let options: URL.BookmarkCreationOptions
         #if os(macOS)
@@ -23,11 +23,11 @@ public enum ImportBookmarkStore {
         guard let data = try? url.bookmarkData(options: options, includingResourceValuesForKeys: nil, relativeTo: nil) else {
             return nil
         }
-        UserDefaults.standard.set(data, forKey: bookmarkKey)
+        userDefaults.set(data, forKey: bookmarkKey)
         return data
         #else
         let data = Data(url.path.utf8)
-        UserDefaults.standard.set(data, forKey: bookmarkKey)
+        userDefaults.set(data, forKey: bookmarkKey)
         return data
         #endif
     }
@@ -35,8 +35,8 @@ public enum ImportBookmarkStore {
     /// Resolves the stored bookmark and returns the URL.
     /// Automatically refreshes a stale bookmark if possible.
     /// Returns nil if no bookmark is stored, the bookmark is invalid, or the file is gone.
-    public static func restore() -> URL? {
-        guard let data = UserDefaults.standard.data(forKey: bookmarkKey) else {
+    public static func restore(userDefaults: UserDefaults = .standard) -> URL? {
+        guard let data = userDefaults.data(forKey: bookmarkKey) else {
             return nil
         }
 
@@ -50,7 +50,7 @@ public enum ImportBookmarkStore {
 
         var isStale = false
         guard let url = try? URL(resolvingBookmarkData: data, options: resolutionOptions, relativeTo: nil, bookmarkDataIsStale: &isStale) else {
-            clear()
+            clear(userDefaults: userDefaults)
             return nil
         }
 
@@ -63,20 +63,20 @@ public enum ImportBookmarkStore {
             refreshOptions = []
             #endif
             if let refreshed = try? url.bookmarkData(options: refreshOptions, includingResourceValuesForKeys: nil, relativeTo: nil) {
-                UserDefaults.standard.set(refreshed, forKey: bookmarkKey)
+                userDefaults.set(refreshed, forKey: bookmarkKey)
             }
         }
 
         return url
         #else
         guard let path = String(data: data, encoding: .utf8), !path.isEmpty else {
-            clear()
+            clear(userDefaults: userDefaults)
             return nil
         }
 
         let url = URL(fileURLWithPath: path)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            clear()
+            clear(userDefaults: userDefaults)
             return nil
         }
         return url
@@ -84,12 +84,16 @@ public enum ImportBookmarkStore {
     }
 
     /// Removes the stored bookmark.
-    public static func clear() {
-        UserDefaults.standard.removeObject(forKey: bookmarkKey)
+    public static func clear(userDefaults: UserDefaults = .standard) {
+        userDefaults.removeObject(forKey: bookmarkKey)
     }
 
     /// Returns true if a bookmark is currently stored.
     public static var hasStoredBookmark: Bool {
-        UserDefaults.standard.data(forKey: bookmarkKey) != nil
+        hasStoredBookmark(userDefaults: .standard)
+    }
+
+    public static func hasStoredBookmark(userDefaults: UserDefaults = .standard) -> Bool {
+        userDefaults.data(forKey: bookmarkKey) != nil
     }
 }
