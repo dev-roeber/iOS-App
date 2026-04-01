@@ -528,16 +528,18 @@ enum RoutePathExtractor {
 
             // Score the whole track by sampling up to 30 bins along its length.
             // Blend max and average to reward frequently-used corridors robustly.
-            let sampleStep = max(1, allCoords.count / 30)
+            let segmentCount = allCoords.count - 1
+            let sampleStep = max(1, segmentCount / 30)
             var maxBinCount = 0
             var totalBinCount = 0
             var samplesTaken = 0
             var idx = 0
-            while idx < allCoords.count {
-                let c = allCoords[idx]
+            while idx < segmentCount {
+                let c1 = allCoords[idx]
+                let c2 = allCoords[idx + 1]
                 let bin = RouteGridBuilder.SegBin(
-                    lat: Int32(floor(c.latitude / step)),
-                    lon: Int32(floor(c.longitude / step))
+                    lat: Int32(floor(((c1.latitude + c2.latitude) / 2.0) / step)),
+                    lon: Int32(floor(((c1.longitude + c2.longitude) / 2.0) / step))
                 )
                 let count = grid[bin] ?? 0
                 if count > maxBinCount { maxBinCount = count }
@@ -1241,7 +1243,8 @@ enum HeatmapVisualStyle {
             detailBoost = 1.24 + ((1.0 - displayIntensity) * 0.14)
         }
         let value = cellOpacity * controlOpacity * lod.overlayOpacityMultiplier * emphasis * detailBoost
-        return min(max(value, 0.08), 0.96)
+        let maxOpacity = 0.84 + (controlOpacity * 0.14)
+        return min(max(value, 0.08), maxOpacity)
     }
 }
 
