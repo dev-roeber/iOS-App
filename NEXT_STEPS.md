@@ -96,13 +96,33 @@ Fehlt noch:
 - Apple-Review-/Privacy-Einordnung fuer den optionalen Upload-Pfad ueber die jetzt korrigierten lokalen Texte hinaus
 - Entscheidung, ob Privacy-Dokumentation ueber den aktuellen Manifest-/Runbook-Stand hinaus erweitert werden muss
 
-## 7. Phase 19.57 – Erst danach weitere Feature-Arbeit
+## 7. Phase 19.57 – Weiterer Insights-Ausbau + breitere Lokalisierung (teilweise umgesetzt)
 
-Status: **bewusst nachgelagert**
+Status: **teilweise umgesetzt**
 
-Kommt erst nach den Verifikations- und Wahrheitsthemen oben:
+Bereits drin (2026-04-01 DE-Lokalisierung):
+- alle neuen Analytics/Insights/Overview/Custom-Range-Strings vollstaendig auf DE lokalisiert: Preset-Chips, KPI-Labels, KPI-Notes, Custom-Range-Sheet, Overlap-Map-Strings, Filter-Picker, Map-Meldungen, Empty/Sparse-States
+- `AppCustomDateRangeSheet` leitet alle 9 user-facing Strings ueber `preferences.localized(_:)` — kein EN-Hardcode mehr
+- `AppOverlapMapView` leitet alle UI-Strings ueber `t(_:)`
+- 3 Duplikat-Schluessel beseitigt (verhinderten RuntimeFatal); alle 309 Tests gruen
+
+Bereits drin (2026-04-01 DE-Lokalisierung Finish – Format-Strings + Monatsnamen):
+- `CustomDateRangeValidator.chipLabel` lokalisiert: Monatsnamen via `DateFormatter.shortMonthSymbols` mit `locale`-Parameter; kein hardkodiertes EN-Array mehr
+- `AppInsightsContentView`: fuenf EN-Hardcodes entfernt – `"of N total"`, `"N events"`, EN-Wochentagsnamen-Dictionary und `"N day/days"` ueber `t()` bzw. `localizedWeekdayName(_:)` lokalisiert; alle 309 Tests gruen
+
+Bereits drin (2026-04-01 DE-Lokalisierung Final – rangeDescription):
+- `AppLanguagePreference.localized(_:pluralFmt:count:)` – neue Hilfsmethode fuer Singular/Plural-Format-Keys
+- `AnalyticsDateRangeBuilder.rangeDescription` – alle Presets mit Format-String-Lookup und Singular/Plural; kein `day`/`days`-Hardcode mehr
+- `OverviewPresentation.rangeKPIs` – `rangeNote` ab Erzeugung lokalisiert; alle 319 Tests gruen
+
+Bereits drin (2026-04-01 InsightsChartSupport rangeNote-Lokalisierung):
+- `InsightsChartSupport.distanceSectionMessage`, `.monthlyTrendSectionHint` und `.weekdaySectionHint` – optionaler `language`-Parameter; Basis und Suffix aus Dictionary
+- `AppInsightsContentView` – alle drei Aufrufstellen auf `language: preferences.appLanguage`
+- 6 neue Tests; alle 325 Tests gruen, 2 Skips, 0 Failures
+
+Fehlt noch:
 - weitere Exportformate wie `CSV` oder `KMZ`
-- weiterer Insights-Ausbau ueber den aktuellen Batch hinaus sowie Zeitraumsauswahl
-- breitere Lokalisierungsabdeckung
+- frische Apple-UI-Verifikation fuer Range-Picker, Custom-Datumsbereich-Sheet und Overlap-Karte auf echtem iPhone
+- vollstaendige Lokalisierungsabdeckung aller verbleibenden EN-Strings (Rest-Abdeckung)
 
 Contract-Files werden weiterhin ausschliesslich vom Producer-Repo aus aktualisiert.
