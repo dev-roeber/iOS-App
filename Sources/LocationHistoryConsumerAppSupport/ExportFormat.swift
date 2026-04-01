@@ -7,8 +7,9 @@ public enum ExportFormat: String, Identifiable, CaseIterable {
     case gpx = "GPX"
     case kml = "KML"
     case geoJSON = "GeoJSON"
+    case csv = "CSV"
 
-    public static let allCases: [ExportFormat] = [.gpx, .kml, .geoJSON]
+    public static let allCases: [ExportFormat] = [.gpx, .kml, .geoJSON, .csv]
 
     public var id: String { rawValue }
 
@@ -20,6 +21,8 @@ public enum ExportFormat: String, Identifiable, CaseIterable {
             return "kml"
         case .geoJSON:
             return "geojson"
+        case .csv:
+            return "csv"
         }
     }
 
@@ -31,6 +34,8 @@ public enum ExportFormat: String, Identifiable, CaseIterable {
             return "Keyhole Markup Language – useful for Google Earth and other map viewers."
         case .geoJSON:
             return "GeoJSON FeatureCollection – useful for browsers, GIS tools, and developer workflows."
+        case .csv:
+            return "Comma-Separated Values – tabular data compatible with spreadsheet applications."
         }
     }
 
@@ -42,6 +47,8 @@ public enum ExportFormat: String, Identifiable, CaseIterable {
             return "map.fill"
         case .geoJSON:
             return "curlybraces"
+        case .csv:
+            return "tablecells"
         }
     }
 
@@ -54,6 +61,8 @@ public enum ExportFormat: String, Identifiable, CaseIterable {
             return .kml
         case .geoJSON:
             return .geoJSON
+        case .csv:
+            return .csv
         }
     }
     #endif
