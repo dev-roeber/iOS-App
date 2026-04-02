@@ -350,9 +350,32 @@ Present:
 ### C2. Chart Share Helper
 Present:
 - `ChartShareHelper.payload(for:dateRange:) -> ChartSharePayload`
-- `InsightsCardType` mit allen 7 Karten-Typen
+- `InsightsCardType` mit 9 Karten-Typen: `summaryCards`, `highlights`, `topDays`, `monthlyTrend`, `weekdayPattern`, `activityBreakdown`, `periodBreakdown`, `streak`, `periodComparison`
 - Dateiname-Format: `LocationHistory_Insights_<type>_[<range>_]<date>.png`
-- `AppInsightsContentView` rendert auf Apple-Hosts per `ImageRenderer` eine PNG-Datei und zeigt sichtbare Share-Aktionen fuer die wichtigsten Insights-Sektionen
+- `AppInsightsContentView` rendert auf Apple-Hosts per `ImageRenderer` eine PNG-Datei und zeigt sichtbare Share-Aktionen fuer die wichtigsten Insights-Sektionen inkl. der neuen `Activity Streak`- und `Period Comparison`-Sektionen
 
 Not verifiable on Linux:
 - ImageRenderer-Integration und Share-Sheet-Interaktion nur auf Apple-Host verifizierbar
+
+### C3. Activity Streak (Phase B)
+Present:
+- `InsightsStreakStat`: `longestStreakDays`, `longestStreakStart/End`, `recentStreakDays`, `recentStreakStart`, `activeDaysCount`, `totalDaysCount`
+- `InsightsStreakPresentation.streak(from:)`: berechnet Longest- und Recent-Streak rein aus `[DaySummary]`; Recent = Streak endend am letzten aktiven Tag im sichtbaren Zeitraum; Longest = laengste ununterbrochene Folge
+- `sectionHint(dayCount:)` und `noDataMessage()` fuer saubere Empty-States
+- in `AppInsightsContentView` als `Activity Streak`-Sektion im Overview-Tab verdrahtet mit Share-Button
+- kein Drilldown (aggregierter Wert ohne raeumlichen Bezug)
+
+### C4. Period Comparison (Phase B)
+Present:
+- `InsightsPeriodComparisonItem`: `label`, `activeDays`, `events`, `distanceM`
+- `InsightsPeriodComparisonStat`: `current` und `prior` als Paerchen
+- `InsightsPeriodComparisonPresentation.comparison(currentSummaries:allSummaries:rangeFilter:)`: vergleicht den aktiven Zeitraum mit der gleich langen Periode unmittelbar davor; gibt `nil` zurueck wenn kein Range aktiv oder kein `effectiveRange` vorhanden
+- `deltaText(current:prior:)` liefert `"+N%"` / `"-N%"` / `"+∞"` / `"–"`
+- `isPositiveDelta(current:prior:)` fuer Farbindikation
+- in `AppInsightsContentView` als `Period Comparison`-Sektion im Patterns-Tab verdrahtet; Empty-State wenn kein Range aktiv; Share-Button vorhanden
+- `AppInsightsContentView.init` erhaelt `allDaySummaries: [DaySummary] = []`; `AppContentSplitView` uebergibt `session.daySummaries` (ungefiltert) als Vorperiod-Basis
+- kein Drilldown (aggregierter Wert ohne raeumlichen Bezug)
+
+### C5. Active Days Summary Card (Phase B)
+Present:
+- fuenfte Summary-Karte `Active Days` in `AppInsightsContentView.buildSummaryCards`: zeigt `N / M`-Format (aktive vs. geladene Tage) mit Teal-Farbgebung

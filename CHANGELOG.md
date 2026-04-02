@@ -2,6 +2,18 @@
 
 ## [Unreleased] – 2026-04-02
 
+### Feature Batch Phase B – New Insights, Charts und Export-Erweiterung
+
+- `InsightsStreakPresentation.swift` (neu): `InsightsStreakStat` und `InsightsStreakPresentation.streak(from:)` berechnen Longest- und Recent-Streak sowie Active/Total-Day-Counts rein aus `[DaySummary]` ohne View-Logik; `sectionHint(dayCount:)` und `noDataMessage()` liefern saubere Empty-States
+- `InsightsPeriodComparisonPresentation.swift` (neu): `InsightsPeriodComparisonStat` / `InsightsPeriodComparisonItem`; `comparison(currentSummaries:allSummaries:rangeFilter:)` vergleicht aktiven Zeitraum mit gleich langem Vorperiod aus ungefilterter Basis; `deltaText(current:prior:)` und `isPositiveDelta(current:prior:)` fuer Delta-Darstellung; `sectionHint()` / `noRangeMessage()` fuer Empty-States
+- `ChartShareHelper.swift`: `InsightsCardType` um `.streak` und `.periodComparison` erweitert; bestehende `ChartShareHelper.payload(for:dateRange:)` unterstuetzt neue Typen automatisch; Dateiname-Format konsistent
+- `AppInsightsContentView.swift`: neues Init-Argument `allDaySummaries: [DaySummary] = []` fuer Vorperiod-Basis; `InsightsDerivedModel` ergaenzt um `streakStat` und `periodComparisonStat`; `refreshDerivedModel()` berechnet beide neu; `onChange(of: rangeFilter)` ergaenzt damit Period-Comparison bei Range-Aenderung aktualisiert wird; `buildSummaryCards` erhaelt neue Karte `Active Days` (aktive vs. geladene Tage); neue Sektionen: `streakSection` in Overview-Tab, `periodComparisonSection` in Patterns-Tab mit Side-by-side Vergleichsrows (Prior | Current | Delta); `streakCard`- und `periodComparisonRow`-Hilfsviews eingefuehrt
+- `AppContentSplitView.swift`: `AppInsightsContentView`-Aufruf ergaenzt um `allDaySummaries: session.daySummaries`
+- `InsightsStreakPresentationTests.swift` (neu): 10 Tests — Empty-Input, alle-inaktiv, Einzeltag, volle Sequenz, Gap-bricht-Streak, inaktive-in-Range-bricht-Streak, Recent-vs-Longest, Active/Total-Counts, Section-Hint-Schwelle, unsortierte-Eingabe
+- `InsightsPeriodComparisonPresentationTests.swift` (neu): 12 Tests — kein Range → nil, last7d-Range, leere Vorperiod, Delta-Text-Faelle (+/-/0/kein-Prior/Infinity), isPositiveDelta-Faelle, Aggregations-Genauigkeit, Static-Messages
+- `ChartShareHelperTests.swift`: 3 neue Tests fuer `.streak` und `.periodComparison` Filename/Title-Format; bestehender `testAllCardTypesProduceNonEmptyPayloads` deckt neue Typen automatisch ab
+- Linux-Nachweis: `swift test` → `Executed 398 tests, with 2 tests skipped and 0 failures (0 unexpected)`; `git diff --check` sauber
+
 ### Feature Batch Phase A – Days Range Filter + Insights Map Drilldown
 
 - `AppContentSplitView.swift`: `drilldownDaySummaries` basiert jetzt auf `projectedDaySummaries` statt `session.daySummaries`; damit respektiert die `Days`-Tab-Liste denselben globalen Zeitraumfilter wie `Overview`, `Insights` und `Export` — keine separate Range-Logik fuer Days

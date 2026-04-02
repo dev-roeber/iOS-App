@@ -155,7 +155,16 @@ Fehlt noch (bewusst verschoben, erfordert Developer Account):
 
 ## 9. Phase 19.57 – Weiterer Insights-Ausbau + breitere Lokalisierung (teilweise umgesetzt)
 
-Status: **teilweise umgesetzt**
+Status: **teilweise umgesetzt** (Phase B abgeschlossen 2026-04-02)
+
+Bereits drin (2026-04-02 Phase B):
+- `InsightsStreakPresentation`: Longest- und Recent-Streak aus `[DaySummary]`; Active/Total-Day-Counts; in Overview-Tab als `Activity Streak`-Sektion verdrahtet
+- `InsightsPeriodComparisonPresentation`: Vergleich aktiver Zeitraum vs. Vorperiod gleicher Laenge; Delta-Text und Delta-Richtung; in Patterns-Tab als `Period Comparison`-Sektion verdrahtet (wird leer dargestellt wenn kein Range aktiv)
+- `InsightsCardType.streak` und `.periodComparison` in `ChartShareHelper`; Share-Button in beiden neuen Sektionen verdrahtet
+- `AppInsightsContentView`: neues `allDaySummaries`-Argument fuer Vorperiod-Basis; neue `Active Days`-Karte in Summary-Cards
+- Linux-Nachweis: `swift test` → `Executed 398 tests, with 2 tests skipped and 0 failures (0 unexpected)`
+
+Kandidaten B, C, D nicht umgesetzt: B (Weekday Pattern) war bereits vorhanden; C (Time-of-Day) hat keine stundengenaue Basis in DaySummary; D (New Places Trend) hat keine Place-Cluster-Daten in DaySummary.
 
 Bereits drin (2026-04-01 DE-Lokalisierung):
 - alle neuen Analytics/Insights/Overview/Custom-Range-Strings vollstaendig auf DE lokalisiert: Preset-Chips, KPI-Labels, KPI-Notes, Custom-Range-Sheet, Overlap-Map-Strings, Filter-Picker, Map-Meldungen, Empty/Sparse-States

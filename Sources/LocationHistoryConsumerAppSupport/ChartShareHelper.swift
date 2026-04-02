@@ -28,6 +28,8 @@ public enum InsightsCardType: String, CaseIterable {
     case weekdayPattern = "weekdayPattern"
     case activityBreakdown = "activityBreakdown"
     case periodBreakdown = "periodBreakdown"
+    case streak = "streak"
+    case periodComparison = "periodComparison"
 
     public var displayTitle: String {
         switch self {
@@ -38,6 +40,8 @@ public enum InsightsCardType: String, CaseIterable {
         case .weekdayPattern: return "Weekday Pattern"
         case .activityBreakdown: return "Activity Breakdown"
         case .periodBreakdown: return "Period Breakdown"
+        case .streak: return "Activity Streak"
+        case .periodComparison: return "Period Comparison"
         }
     }
 }

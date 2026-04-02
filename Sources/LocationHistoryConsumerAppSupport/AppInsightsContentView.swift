@@ -19,12 +19,17 @@ struct AppInsightsContentView: View {
         let availableTopDayMetrics: [InsightsTopDayMetric]
         let summaryCards: [InsightsSummaryCard]
         let highlightItems: [InsightsHighlightItem]
+        let streakStat: InsightsStreakStat
+        let periodComparisonStat: InsightsPeriodComparisonStat?
     }
 
     @EnvironmentObject private var preferences: AppPreferences
 
     let insights: ExportInsights
     let daySummaries: [DaySummary]
+    /// Full (unfiltered) day summaries used to populate the prior period in Period Comparison.
+    /// Pass `session.daySummaries` (not the range-projected list) here.
+    let allDaySummaries: [DaySummary]
     let activeFilterDescriptions: [String]
     let onDrilldown: ((InsightsDrilldownAction) -> Void)?
     @Binding private var rangeFilter: HistoryDateRangeFilter
@@ -44,12 +49,14 @@ struct AppInsightsContentView: View {
     init(
         insights: ExportInsights,
         daySummaries: [DaySummary] = [],
+        allDaySummaries: [DaySummary] = [],
         rangeFilter: Binding<HistoryDateRangeFilter> = .constant(.default),
         activeFilterDescriptions: [String]? = nil,
         onDrilldown: ((InsightsDrilldownAction) -> Void)? = nil
     ) {
         self.insights = insights
         self.daySummaries = daySummaries
+        self.allDaySummaries = allDaySummaries
         self.activeFilterDescriptions = activeFilterDescriptions ?? insights.activeFilterDescriptions
         self.onDrilldown = onDrilldown
         self._rangeFilter = rangeFilter
@@ -73,7 +80,13 @@ struct AppInsightsContentView: View {
             availablePeriodMetrics: InsightsChartSupport.availablePeriodMetrics(for: insights.periodBreakdown),
             availableTopDayMetrics: InsightsTopDaysPresentation.availableMetrics(for: daySummaries),
             summaryCards: buildSummaryCards(trendItemCount: builtTrendItems.count),
-            highlightItems: buildHighlightItems()
+            highlightItems: buildHighlightItems(),
+            streakStat: InsightsStreakPresentation.streak(from: daySummaries),
+            periodComparisonStat: InsightsPeriodComparisonPresentation.comparison(
+                currentSummaries: daySummaries,
+                allSummaries: allDaySummaries,
+                rangeFilter: rangeFilter
+            )
         )
     }
 
@@ -111,6 +124,14 @@ struct AppInsightsContentView: View {
 
     private var highlightItems: [InsightsHighlightItem] {
         resolvedDerivedModel.highlightItems
+    }
+
+    private var streakStat: InsightsStreakStat {
+        resolvedDerivedModel.streakStat
+    }
+
+    private var periodComparisonStat: InsightsPeriodComparisonStat? {
+        resolvedDerivedModel.periodComparisonStat
     }
 
     private var hasAnyMeaningfulInsightSection: Bool {
@@ -166,6 +187,7 @@ struct AppInsightsContentView: View {
             }
             .onChange(of: insights) { _ in refreshDerivedModel() }
             .onChange(of: daySummaries) { _ in refreshDerivedModel() }
+            .onChange(of: rangeFilter) { _ in refreshDerivedModel() }
             .onChange(of: preferences.distanceUnit) { _ in refreshDerivedModel() }
             .onChange(of: preferences.appLanguage) { _ in refreshDerivedModel() }
             .confirmationDialog(
@@ -243,7 +265,13 @@ struct AppInsightsContentView: View {
             availablePeriodMetrics: builtPeriodMetrics,
             availableTopDayMetrics: builtTopDayMetrics,
             summaryCards: buildSummaryCards(trendItemCount: builtTrendItems.count),
-            highlightItems: buildHighlightItems()
+            highlightItems: buildHighlightItems(),
+            streakStat: InsightsStreakPresentation.streak(from: daySummaries),
+            periodComparisonStat: InsightsPeriodComparisonPresentation.comparison(
+                currentSummaries: daySummaries,
+                allSummaries: allDaySummaries,
+                rangeFilter: rangeFilter
+            )
         )
 
         if let firstTopMetric = builtTopDayMetrics.first, !builtTopDayMetrics.contains(topDayMetric) {
@@ -262,13 +290,21 @@ struct AppInsightsContentView: View {
     }
 
     private func buildSummaryCards(trendItemCount: Int) -> [InsightsSummaryCard] {
-        [
+        let activeDays = daySummaries.filter(\.hasContent).count
+        return [
             InsightsSummaryCard(
                 title: t("Days Loaded"),
                 value: "\(daySummaries.count)",
                 subtitle: insights.dateRange.map { "\(AppDateDisplay.mediumDate($0.firstDate)) – \(AppDateDisplay.mediumDate($0.lastDate))" },
                 icon: "calendar",
                 color: .blue
+            ),
+            InsightsSummaryCard(
+                title: t("Active Days"),
+                value: daySummaries.isEmpty ? "0" : "\(activeDays) / \(daySummaries.count)",
+                subtitle: t("Days with tracked activity"),
+                icon: "checkmark.circle",
+                color: .teal
             ),
             InsightsSummaryCard(
                 title: t("Total Distance"),
@@ -417,6 +453,8 @@ struct AppInsightsContentView: View {
             }
         }
 
+        streakSection
+
         topDaysSection
     }
 
@@ -503,6 +541,8 @@ struct AppInsightsContentView: View {
             )
             #endif
         }
+
+        periodComparisonSection
     }
 
     @ViewBuilder
@@ -586,6 +626,179 @@ struct AppInsightsContentView: View {
                 )
             }
         }
+    }
+
+    @ViewBuilder
+    private var streakSection: some View {
+        insightSection(t("Activity Streak"), icon: "flame.fill", shareCardType: .streak) {
+            if let hint = InsightsChartSupport.dailyAveragesSectionMessage(dayCount: daySummaries.count) {
+                insightsEmptyCard(
+                    title: t("Not Enough Days"),
+                    message: t(hint),
+                    systemImage: "flame"
+                )
+            } else if streakStat.activeDaysCount == 0 {
+                insightsEmptyCard(
+                    title: t("No Active Days"),
+                    message: t(InsightsStreakPresentation.noDataMessage()),
+                    systemImage: "flame"
+                )
+            } else {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                    streakCard(
+                        value: "\(streakStat.recentStreakDays)",
+                        unit: t(streakStat.recentStreakDays == 1 ? "day" : "days"),
+                        label: t("Recent Streak"),
+                        icon: "flame",
+                        color: .orange,
+                        detail: streakStat.recentStreakStart.map { AppDateDisplay.mediumDate($0) }
+                    )
+                    streakCard(
+                        value: "\(streakStat.longestStreakDays)",
+                        unit: t(streakStat.longestStreakDays == 1 ? "day" : "days"),
+                        label: t("Best Streak"),
+                        icon: "trophy",
+                        color: .yellow,
+                        detail: streakDateRangeLabel(start: streakStat.longestStreakStart, end: streakStat.longestStreakEnd)
+                    )
+                }
+                sectionHint(t("Consecutive days with tracked activity in the visible range."))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var periodComparisonSection: some View {
+        insightSection(t("Period Comparison"), icon: "arrow.left.arrow.right", shareCardType: .periodComparison) {
+            if let comparison = periodComparisonStat {
+                periodComparisonRows(comparison)
+                sectionHint(t(InsightsPeriodComparisonPresentation.sectionHint()))
+            } else {
+                insightsEmptyCard(
+                    title: t("No Range Active"),
+                    message: t(InsightsPeriodComparisonPresentation.noRangeMessage()),
+                    systemImage: "arrow.left.arrow.right"
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func periodComparisonRows(_ stat: InsightsPeriodComparisonStat) -> some View {
+        VStack(spacing: 0) {
+            periodComparisonHeader(current: stat.current.label, prior: stat.prior.label)
+            Divider()
+            periodComparisonRow(
+                label: t("Active Days"),
+                icon: "checkmark.circle",
+                current: Double(stat.current.activeDays),
+                prior: Double(stat.prior.activeDays),
+                format: { "\(Int($0))" }
+            )
+            Divider()
+            periodComparisonRow(
+                label: t("Events"),
+                icon: "chart.bar",
+                current: Double(stat.current.events),
+                prior: Double(stat.prior.events),
+                format: { "\(Int($0))" }
+            )
+            Divider()
+            periodComparisonRow(
+                label: t("Distance"),
+                icon: "road.lanes",
+                current: stat.current.distanceM,
+                prior: stat.prior.distanceM,
+                format: { formatDistance($0, unit: preferences.distanceUnit) }
+            )
+        }
+        .background(Color.secondary.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func periodComparisonHeader(current: String, prior: String) -> some View {
+        HStack {
+            Spacer()
+            Text(prior)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            Text(current)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 80, alignment: .trailing)
+            Text(t("Δ"))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 50, alignment: .trailing)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    private func periodComparisonRow(
+        label: String,
+        icon: String,
+        current: Double,
+        prior: Double,
+        format: (Double) -> String
+    ) -> some View {
+        let delta = InsightsPeriodComparisonPresentation.deltaText(current: current, prior: prior)
+        let isPositive = InsightsPeriodComparisonPresentation.isPositiveDelta(current: current, prior: prior)
+        let deltaColor: Color = {
+            guard let positive = isPositive else { return .secondary }
+            return positive ? .green : .red
+        }()
+
+        return HStack {
+            Label(label, systemImage: icon)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(format(prior))
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            Text(format(current))
+                .font(.caption.weight(.semibold).monospacedDigit())
+                .frame(width: 80, alignment: .trailing)
+            Text(delta)
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(deltaColor)
+                .frame(width: 50, alignment: .trailing)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    private func streakCard(value: String, unit: String, label: String, icon: String, color: Color, detail: String?) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(label, systemImage: icon)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(color)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(value)
+                    .font(.title2.weight(.semibold).monospacedDigit())
+                Text(unit)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let detail {
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(color.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private func streakDateRangeLabel(start: String?, end: String?) -> String? {
+        guard let start else { return nil }
+        guard let end, end != start else { return AppDateDisplay.mediumDate(start) }
+        return "\(AppDateDisplay.mediumDate(start)) – \(AppDateDisplay.mediumDate(end))"
     }
 
     @ViewBuilder

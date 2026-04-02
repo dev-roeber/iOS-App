@@ -883,6 +883,7 @@ public struct AppContentSplitView: View {
             AppInsightsContentView(
                 insights: insights,
                 daySummaries: projectedDaySummaries,
+                allDaySummaries: session.daySummaries,
                 rangeFilter: $session.historyDateRangeFilter,
                 activeFilterDescriptions: localizedProjectedFilterDescriptions,
                 onDrilldown: applyInsightsDrilldown

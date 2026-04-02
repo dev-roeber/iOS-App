@@ -85,4 +85,26 @@ final class ChartShareHelperTests: XCTestCase {
             XCTAssertFalse(payload.suggestedFilename.isEmpty)
         }
     }
+
+    // MARK: - New card types: streak and periodComparison
+
+    func testStreakCardTypeFilenameContainsStreak() {
+        let payload = ChartShareHelper.payload(for: .streak)
+        XCTAssertTrue(payload.suggestedFilename.contains("streak"), payload.suggestedFilename)
+    }
+
+    func testPeriodComparisonCardTypeFilenameContainsKey() {
+        let payload = ChartShareHelper.payload(for: .periodComparison)
+        XCTAssertTrue(payload.suggestedFilename.contains("periodComparison"), payload.suggestedFilename)
+    }
+
+    func testStreakAndPeriodComparisonTitlesContainDisplayTitle() {
+        for cardType in [InsightsCardType.streak, .periodComparison] {
+            let payload = ChartShareHelper.payload(for: cardType)
+            XCTAssertTrue(
+                payload.title.contains(cardType.displayTitle),
+                "Title '\(payload.title)' does not contain '\(cardType.displayTitle)'"
+            )
+        }
+    }
 }
