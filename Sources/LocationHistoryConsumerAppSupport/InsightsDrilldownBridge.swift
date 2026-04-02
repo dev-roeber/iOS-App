@@ -14,7 +14,7 @@ enum InsightsDrilldownBridge {
     static func dayListAction(from action: InsightsDrilldownAction?) -> InsightsDrilldownAction? {
         guard let action else { return nil }
         switch action {
-        case .filterDays, .filterDaysToDate, .filterDaysToDateRange:
+        case .filterDays, .filterDaysToDate, .filterDaysToDateRange, .showDayOnMap:
             return action
         case .prefillExportForDate, .prefillExportForDateRange:
             return nil
@@ -26,7 +26,7 @@ enum InsightsDrilldownBridge {
         switch action {
         case .prefillExportForDate, .prefillExportForDateRange:
             return action
-        case .filterDays, .filterDaysToDate, .filterDaysToDateRange:
+        case .filterDays, .filterDaysToDate, .filterDaysToDateRange, .showDayOnMap:
             return nil
         }
     }
@@ -49,6 +49,8 @@ enum InsightsDrilldownBridge {
                 favorites: favorites
             )
         case let .filterDaysToDate(date):
+            return summaries.filter { $0.date == date }
+        case let .showDayOnMap(date):
             return summaries.filter { $0.date == date }
         case let .filterDaysToDateRange(fromDate, toDate):
             return summaries.filter { summary in
@@ -74,7 +76,7 @@ enum InsightsDrilldownBridge {
             return validDates.contains(date) ? [date] : []
         case let .prefillExportForDateRange(fromDate, toDate):
             return Set(availableDates.filter { $0 >= fromDate && $0 <= toDate })
-        case .filterDays, .filterDaysToDate, .filterDaysToDateRange:
+        case .filterDays, .filterDaysToDate, .filterDaysToDateRange, .showDayOnMap:
             return []
         }
     }
@@ -134,6 +136,11 @@ enum InsightsDrilldownBridge {
             return language.isGerman
                 ? "Insights-Drilldown: \(visibleDate) in Tage"
                 : "Insights drilldown: \(visibleDate) in Days"
+        case let .showDayOnMap(date):
+            let visibleDate = localizedMediumDate(date, language: language)
+            return language.isGerman
+                ? "Insights-Drilldown: \(visibleDate) auf Karte"
+                : "Insights drilldown: \(visibleDate) on map"
         case let .filterDaysToDateRange(fromDate, toDate):
             let label = "\(localizedMediumDate(fromDate, language: language)) – \(localizedMediumDate(toDate, language: language))"
             return language.isGerman

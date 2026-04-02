@@ -2,6 +2,19 @@
 
 ## [Unreleased] – 2026-04-02
 
+### Feature Batch Phase A – Days Range Filter + Insights Map Drilldown
+
+- `AppContentSplitView.swift`: `drilldownDaySummaries` basiert jetzt auf `projectedDaySummaries` statt `session.daySummaries`; damit respektiert die `Days`-Tab-Liste denselben globalen Zeitraumfilter wie `Overview`, `Insights` und `Export` — keine separate Range-Logik fuer Days
+- `AppContentSplitView.swift`: `HistoryDateRangeFilterBar` wird im kompakten Days-Tab als sichtbarer Section-Header eingeblendet, wenn ein Zeitraumfilter aktiv ist; im regulaeren Split-View als Toolbar-Item
+- `AppContentSplitView.swift`: Empty-State in der kompakten Days-Liste hat jetzt eine Variante fuer aktiven Zeitraumfilter ohne Treffer (`"No Days in Range"` + Hinweis zum Aendern des Filters)
+- `AppContentSplitView.swift`: `showDayOnMap`-Drilldown navigiert direkt in den Day-Detail-View (mit inline `AppDayMapView`) und setzt Navigation-Path bzw. Selektion
+- `AppDayListView.swift`: neuer optionaler Parameter `isRangeFilterActive: Bool` (default `false`) steuert den Empty-State-Headline und die -Message, wenn keine Tage im gewaehlten Zeitraum liegen
+- `InsightsDrilldown.swift`: neuer `InsightsDrilldownAction.showDayOnMap(String)` fuer Drilldowns mit echtem raeumlichem Datenbezug; neue Factory `InsightsDrilldownTarget.showDayOnMap(_:)` mit Map-Icon; `drilldownTargets(for:)` liefert jetzt drei Targets: `showDay`, `showDayOnMap`, `exportDay` — ohne Fake-Kartenziele fuer aggregierte Werte
+- `InsightsDrilldownBridge.swift`: `dayListAction`, `exportAction`, `filteredSummaries`, `prefillDates` und `description` vollstaendig exhaustiv fuer den neuen `.showDayOnMap`-Fall; `filteredSummaries` filtert auf den genannten Einzeltag; `description` liefert lokalisierte Beschreibungen auf Deutsch/Englisch
+- `UIWiringTests.swift`: `testDrilldownTargetsForDateProducesShowAndExport` → `testDrilldownTargetsForDateProducesShowMapAndExport`; erwartet jetzt 3 Targets; 10 neue Tests fuer Phase-A-Range-Wiring und Map-Drilldown
+- `InsightsDrilldownBridgeTests.swift`: 2 neue Tests fuer `showDayOnMap`-Beschreibung (Deutsch/Englisch) und Bridge-Filterung auf Einzeltag
+- Linux-Nachweis: `swift test` → `Executed 370 tests, with 2 tests skipped and 0 failures (0 unexpected)`; `git diff --check` sauber
+
 ### Linux URLSession Build Fix + UIWiringTests WIP Integration
 
 - `LiveLocationServerUploader.swift`: `HTTPSLiveLocationServerUploader.upload(request:to:bearerToken:)` nutzte `URLSession.data(for:)` (async overload), der auf Linux (Swift 5.9 / FoundationNetworking) nicht verfuegbar ist; ersetzt durch `withCheckedThrowingContinuation` ueber `dataTask(with:completionHandler:)` hinter `#if canImport(FoundationNetworking)`, sodass Apple-Plattformen weiterhin den nativen async-Pfad verwenden

@@ -80,6 +80,9 @@ Present:
 - compact and regular day lists show an explicit export-context banner when selected days exist
 - compact `Days` can jump back to the current day when the already selected tab is tapped again on iPhone
 - regular-width list supports selection-driven detail display
+- **Days tab respects the global history date range filter** (same `historyDateRangeFilter` as Overview/Insights/Export); active filter is shown as a visible `HistoryDateRangeFilterBar` chip in the compact list and a toolbar item in the regular split view
+- empty state when range filter is active and yields no days: `"No Days in Range"` headline with hint to adjust the range
+- search, filter chips, favorites and newest-first ordering apply correctly on the range-projected day list
 
 Not present:
 - favorites, pinning or manual sorting
@@ -335,10 +338,12 @@ Present:
 
 ### C1. Insights-Drilldown
 Present:
-- `InsightsDrilldownAction` (filterDays/filterDaysToDate/filterDaysToDateRange/prefillExportForDate/prefillExportForDateRange)
-- `InsightsDrilldownTarget` mit id/label/systemImage/action; Factory: `showDay`/`exportDay`/`showFavorites`/`showDaysWithRoutes`
+- `InsightsDrilldownAction` (filterDays/filterDaysToDate/filterDaysToDateRange/prefillExportForDate/prefillExportForDateRange/**showDayOnMap**)
+- `InsightsDrilldownTarget` mit id/label/systemImage/action; Factory: `showDay`/`showDayOnMap`/`exportDay`/`showFavorites`/`showDaysWithRoutes`
+- `drilldownTargets(for: date)` liefert jetzt 3 Targets: `showDay`, `showDayOnMap`, `exportDay`
+- `showDayOnMap` navigiert zum Day-Detail-View (inline `AppDayMapView`); nur fuer Drilldowns mit echtem raeumlichem Bezug (Einzeltage mit Kartendaten); keine Fake-Kartenziele fuer aggregierte Werte
 - `AppSessionState.activeDrilldownFilter: InsightsDrilldownAction?`
-- `InsightsDrilldownBridge` trennt Days-/Export-Ziele, baut Datumsbereiche fuer Monate/Perioden und liefert sichtbare Drilldown-Beschreibungen
+- `InsightsDrilldownBridge` trennt Days-/Export-Ziele, behandelt `showDayOnMap` als Day-List-Aktion, baut Datumsbereiche fuer Monate/Perioden und liefert sichtbare Drilldown-Beschreibungen (DE/EN)
 - `AppInsightsContentView` zeigt jetzt sichtbare Drilldown-Aktionen fuer Highlights, `Top Days`, Distanz-Zeitreihe sowie Monats-/Periodenbereiche
 - `AppContentSplitView` und `AppExportView` wenden aktive Drilldowns jetzt sichtbar auf `Days` bzw. `Export` an und bieten Reset
 

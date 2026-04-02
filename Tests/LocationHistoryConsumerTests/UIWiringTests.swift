@@ -83,17 +83,23 @@ final class UIWiringTests: XCTestCase {
 
     // MARK: - InsightsDrilldownTarget factory
 
-    func testDrilldownTargetsForDateProducesShowAndExport() {
+    func testDrilldownTargetsForDateProducesShowMapAndExport() {
         let targets = InsightsDrilldownTarget.drilldownTargets(for: "2024-06-15")
-        XCTAssertEqual(targets.count, 2)
-        // First target navigates to days
+        XCTAssertEqual(targets.count, 3)
+        // First target navigates to days list
         if case let .filterDaysToDate(date) = targets[0].action {
             XCTAssertEqual(date, "2024-06-15")
         } else {
             XCTFail("Expected filterDaysToDate action")
         }
-        // Second target prefills export
-        if case let .prefillExportForDate(date) = targets[1].action {
+        // Second target shows day on map
+        if case let .showDayOnMap(date) = targets[1].action {
+            XCTAssertEqual(date, "2024-06-15")
+        } else {
+            XCTFail("Expected showDayOnMap action")
+        }
+        // Third target prefills export
+        if case let .prefillExportForDate(date) = targets[2].action {
             XCTAssertEqual(date, "2024-06-15")
         } else {
             XCTFail("Expected prefillExportForDate action")
@@ -175,6 +181,109 @@ final class UIWiringTests: XCTestCase {
             XCTAssertFalse(preferences.autoRestoreLastImport)
         }
         defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    // MARK: - Phase A: Days global range filter wiring
+
+    func testDrilldownSummariesRespectActiveRangeFilter() {
+        // When a range filter is active, drilldownDaySummaries should only contain
+        // days within the range. This is verified via the bridge + projection chain.
+        let summaries = [
+            DaySummary.stub(date: "2024-01-10", visitCount: 1),
+            DaySummary.stub(date: "2024-02-15", visitCount: 1),
+            DaySummary.stub(date: "2024-03-20", visitCount: 1),
+        ]
+
+        // Simulate the projection that AppContentSplitView.projectedDaySummaries performs
+        // before passing into InsightsDrilldownBridge.filteredSummaries.
+        let inRange = summaries.filter { $0.date >= "2024-02-01" && $0.date <= "2024-02-28" }
+        let result = InsightsDrilldownBridge.filteredSummaries(inRange, applying: nil, favorites: [])
+        XCTAssertEqual(result.map(\.date), ["2024-02-15"])
+    }
+
+    func testDrilldownSummariesNoRangeFilterShowsAll() {
+        let summaries = [
+            DaySummary.stub(date: "2024-01-10", visitCount: 1),
+            DaySummary.stub(date: "2024-02-15", visitCount: 1),
+        ]
+        let result = InsightsDrilldownBridge.filteredSummaries(summaries, applying: nil, favorites: [])
+        // Without an action, the bridge returns summaries in input order.
+        XCTAssertEqual(Set(result.map(\.date)), Set(["2024-01-10", "2024-02-15"]))
+        XCTAssertEqual(result.count, 2)
+    }
+
+    func testRangeFilterActiveAndSearchYieldsIntersection() {
+        let summaries = [
+            DaySummary.stub(date: "2024-01-10", visitCount: 1),
+            DaySummary.stub(date: "2024-01-15", visitCount: 1),
+        ]
+        // Range filter reduces to Jan 10 only; then text search "2024-01-15" finds nothing.
+        let rangeFiltered = summaries.filter { $0.date == "2024-01-10" }
+        let result = DayListPresentation.filteredSummaries(rangeFiltered, query: "2024-01-15")
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    func testRangeFilterActiveNoMatchesYieldsEmpty() {
+        let summaries = [
+            DaySummary.stub(date: "2024-01-10", visitCount: 1),
+            DaySummary.stub(date: "2024-02-15", visitCount: 1),
+        ]
+        // Range filter for a month with no days yields empty.
+        let rangeFiltered = summaries.filter { $0.date >= "2024-03-01" && $0.date <= "2024-03-31" }
+        let result = DayListPresentation.filteredSummaries(rangeFiltered, query: "")
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    // MARK: - Phase A: showDayOnMap drilldown target
+
+    func testShowDayOnMapTargetHasMapAction() {
+        let target = InsightsDrilldownTarget.showDayOnMap("2024-06-15")
+        if case let .showDayOnMap(date) = target.action {
+            XCTAssertEqual(date, "2024-06-15")
+        } else {
+            XCTFail("Expected showDayOnMap action")
+        }
+        XCTAssertFalse(target.label.isEmpty)
+        XCTAssertFalse(target.systemImage.isEmpty)
+    }
+
+    func testShowDayOnMapIsClassifiedAsDayListAction() {
+        let result = InsightsDrilldownBridge.dayListAction(from: .showDayOnMap("2024-06-15"))
+        XCTAssertNotNil(result)
+        if case let .showDayOnMap(date) = result {
+            XCTAssertEqual(date, "2024-06-15")
+        } else {
+            XCTFail("dayListAction should return the showDayOnMap action unchanged")
+        }
+    }
+
+    func testShowDayOnMapIsNotClassifiedAsExportAction() {
+        XCTAssertNil(InsightsDrilldownBridge.exportAction(from: .showDayOnMap("2024-06-15")))
+    }
+
+    func testShowDayOnMapFiltersSummariesToSingleDay() {
+        let summaries = [
+            DaySummary.stub(date: "2024-05-01", visitCount: 1),
+            DaySummary.stub(date: "2024-05-15", visitCount: 1),
+            DaySummary.stub(date: "2024-06-01", visitCount: 1),
+        ]
+        let result = InsightsDrilldownBridge.filteredSummaries(
+            summaries,
+            applying: .showDayOnMap("2024-05-15"),
+            favorites: []
+        )
+        XCTAssertEqual(result.map(\.date), ["2024-05-15"])
+    }
+
+    func testAggregatedFilterHasNoMapTarget() {
+        // filterDays with favorites chip is an aggregated value — no spatial single-day reference.
+        let result = InsightsDrilldownBridge.dayListAction(
+            from: .filterDays(DayListFilter(activeChips: [.favorites]))
+        )
+        // It passes through as a day filter but is NOT a showDayOnMap action.
+        if case .showDayOnMap = result {
+            XCTFail("Aggregated filter should not yield a showDayOnMap action")
+        }
     }
 }
 

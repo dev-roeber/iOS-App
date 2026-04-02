@@ -191,6 +191,7 @@ public struct AppDayListView: View {
     let selectedForExportDates: Set<String>
     let favoriteDayIDs: Set<String>
     let drilldownDescription: String?
+    let isRangeFilterActive: Bool
     @Binding var selectedDate: String?
     @Binding var filter: DayListFilter
     @Binding var searchText: String
@@ -203,6 +204,7 @@ public struct AppDayListView: View {
         selectedForExportDates: Set<String> = [],
         favoriteDayIDs: Set<String> = [],
         drilldownDescription: String? = nil,
+        isRangeFilterActive: Bool = false,
         selectedDate: Binding<String?>,
         filter: Binding<DayListFilter> = .constant(.empty),
         onClearDrilldown: (() -> Void)? = nil,
@@ -214,6 +216,7 @@ public struct AppDayListView: View {
         self.selectedForExportDates = selectedForExportDates
         self.favoriteDayIDs = favoriteDayIDs
         self.drilldownDescription = drilldownDescription
+        self.isRangeFilterActive = isRangeFilterActive
         self._selectedDate = selectedDate
         self._filter = filter
         self._searchText = searchText
@@ -265,11 +268,11 @@ public struct AppDayListView: View {
             .overlay {
                 if !summaries.isEmpty && filteredSummaries.isEmpty {
                     VStack(spacing: 12) {
-                        Image(systemName: "magnifyingglass")
+                        Image(systemName: isRangeFilterActive && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !filter.isActive ? "calendar.badge.exclamationmark" : "magnifyingglass")
                             .font(.largeTitle)
                             .foregroundStyle(.secondary)
                             .accessibilityHidden(true)
-                        Text(filter.isActive ? t("No Matching Days") : t("No Results"))
+                        Text(emptyHeadline)
                             .font(.headline)
                         Text(emptyMessage)
                             .font(.subheadline)
@@ -308,12 +311,23 @@ public struct AppDayListView: View {
         return "\(selectedForExportDates.count) day\(selectedForExportDates.count == 1 ? "" : "s") selected for export"
     }
 
+    private var emptyHeadline: String {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if isRangeFilterActive && trimmed.isEmpty && !filter.isActive {
+            return t("No Days in Range")
+        }
+        return filter.isActive ? t("No Matching Days") : t("No Results")
+    }
+
     private var emptyMessage: String {
         if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && filter.isActive {
             return tf("No days match \"%@\" with the current filters.", searchText)
         }
         if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return tf("No days match \"%@\".", searchText)
+        }
+        if isRangeFilterActive {
+            return t("No days fall within the selected date range. Change the range to see more days.")
         }
         if drilldownDescription != nil {
             return t("No day matches the current drilldown and filter combination.")

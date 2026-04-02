@@ -56,7 +56,7 @@ public struct AppContentSplitView: View {
 
     private var drilldownDaySummaries: [DaySummary] {
         InsightsDrilldownBridge.filteredSummaries(
-            session.daySummaries,
+            projectedDaySummaries,
             applying: activeDayDrilldownAction,
             favorites: favoritedDayIDs
         )
@@ -328,6 +328,15 @@ public struct AppContentSplitView: View {
                     )
                 }
             }
+            if session.historyDateRangeFilter.isActive {
+                Section {
+                    HStack(spacing: 10) {
+                        HistoryDateRangeFilterBar(filter: $session.historyDateRangeFilter)
+                        Spacer()
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
             if !availableDayFilterChips.isEmpty || dayListFilter.isActive {
                 Section {
                     AppDayFilterChipsView(filter: $dayListFilter, availableChips: availableDayFilterChips)
@@ -385,11 +394,11 @@ public struct AppContentSplitView: View {
                 AppDayListEmptyView()
             } else if summaries.isEmpty {
                 VStack(spacing: 12) {
-                    Image(systemName: "magnifyingglass")
+                    Image(systemName: session.historyDateRangeFilter.isActive ? "calendar.badge.exclamationmark" : "magnifyingglass")
                         .font(.largeTitle)
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
-                    Text(dayListFilter.isActive ? t("No Matching Days") : t("No Results"))
+                    Text(compactEmptyStateHeadline)
                         .font(.headline)
                     Text(compactEmptyStateMessage)
                         .font(.subheadline)
@@ -411,6 +420,7 @@ public struct AppContentSplitView: View {
                 selectedForExportDates: session.exportSelection.selectedDates,
                 favoriteDayIDs: favoritedDayIDs,
                 drilldownDescription: activeDayDrilldownDescription,
+                isRangeFilterActive: session.historyDateRangeFilter.isActive,
                 selectedDate: Binding(
                     get: { session.selectedDate },
                     set: { session.selectDayForDisplay($0) }
@@ -423,6 +433,13 @@ public struct AppContentSplitView: View {
             )
             .navigationTitle(t("Days"))
             .searchable(text: $daySearchText, prompt: t("Search by date, weekday or month"))
+            .toolbar {
+                if session.historyDateRangeFilter.isActive {
+                    ToolbarItem(placement: .status) {
+                        HistoryDateRangeFilterBar(filter: $session.historyDateRangeFilter)
+                    }
+                }
+            }
         } detail: {
             Group {
                 detailPane
@@ -755,6 +772,13 @@ public struct AppContentSplitView: View {
         }
     }
 
+    private var compactEmptyStateHeadline: String {
+        if session.historyDateRangeFilter.isActive && daySearchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !dayListFilter.isActive {
+            return t("No Days in Range")
+        }
+        return dayListFilter.isActive ? t("No Matching Days") : t("No Results")
+    }
+
     private var compactEmptyStateMessage: String {
         let trimmed = daySearchText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty && dayListFilter.isActive {
@@ -762,6 +786,9 @@ public struct AppContentSplitView: View {
         }
         if !trimmed.isEmpty {
             return preferences.localized(format: "No days match \"%@\".", arguments: [trimmed])
+        }
+        if session.historyDateRangeFilter.isActive {
+            return t("No days fall within the selected date range. Change the range above to see more days.")
         }
         if activeDayDrilldownDescription != nil {
             return t("No day matches the current drilldown and filter combination.")
@@ -790,6 +817,18 @@ public struct AppContentSplitView: View {
     }
 
     private func applyInsightsDrilldown(_ action: InsightsDrilldownAction) {
+        // Map drilldown: navigate directly to the day detail so the inline map is immediately visible.
+        if case let .showDayOnMap(date) = action {
+            session.activeDrilldownFilter = action
+            session.selectDayForDisplay(date)
+            daysNavigationPath = NavigationPath()
+            if horizontalSizeClass == .compact {
+                daysNavigationPath.append(date)
+            }
+            selectedTab = 1
+            return
+        }
+
         if let dayAction = InsightsDrilldownBridge.dayListAction(from: action) {
             session.activeDrilldownFilter = dayAction
             session.selectDay(nil)

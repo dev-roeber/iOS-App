@@ -106,6 +106,39 @@ final class InsightsDrilldownBridgeTests: XCTestCase {
         XCTAssertEqual(german, "Insights-Drilldown: Export für \(germanDate)")
     }
 
+    func testDescriptionLocalizesShowDayOnMapDrilldown() {
+        let englishDate = localizedMediumDate("2024-07-04", locale: .init(identifier: "en"))
+        let germanDate = localizedMediumDate("2024-07-04", locale: .init(identifier: "de"))
+
+        let english = InsightsDrilldownBridge.description(
+            for: .showDayOnMap("2024-07-04"),
+            language: .english
+        )
+        let german = InsightsDrilldownBridge.description(
+            for: .showDayOnMap("2024-07-04"),
+            language: .german
+        )
+
+        XCTAssertEqual(english, "Insights drilldown: \(englishDate) on map")
+        XCTAssertEqual(german, "Insights-Drilldown: \(germanDate) auf Karte")
+    }
+
+    func testShowDayOnMapBridgeFiltersToSingleDay() {
+        let summaries = [
+            DaySummary(date: "2024-05-01", visitCount: 1, activityCount: 0, pathCount: 0, totalPathPointCount: 0, totalPathDistanceM: 0, hasContent: true),
+            DaySummary(date: "2024-07-04", visitCount: 2, activityCount: 1, pathCount: 1, totalPathPointCount: 10, totalPathDistanceM: 1500, hasContent: true),
+            DaySummary(date: "2024-08-10", visitCount: 1, activityCount: 0, pathCount: 0, totalPathPointCount: 0, totalPathDistanceM: 0, hasContent: true),
+        ]
+
+        let result = InsightsDrilldownBridge.filteredSummaries(
+            summaries,
+            applying: .showDayOnMap("2024-07-04"),
+            favorites: []
+        )
+
+        XCTAssertEqual(result.map(\.date), ["2024-07-04"])
+    }
+
     private func localizedMediumDate(_ isoDate: String, locale: Locale) -> String {
         let parser = DateFormatter()
         parser.locale = Locale(identifier: "en_US_POSIX")

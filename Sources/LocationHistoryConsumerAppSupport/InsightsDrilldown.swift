@@ -16,6 +16,9 @@ public enum InsightsDrilldownAction: Equatable {
     case prefillExportForDate(String)
     /// Pre-fill the Export tab to include the given ISO-8601 date string range.
     case prefillExportForDateRange(fromDate: String, toDate: String)
+    /// Navigate to the day detail and focus on the map for the given date.
+    /// The day-detail view renders the inline map whenever map data is available.
+    case showDayOnMap(String)
 }
 
 /// A tappable drilldown target displayed in Insights cards.
@@ -70,8 +73,21 @@ public struct InsightsDrilldownTarget: Identifiable {
         )
     }
 
-    /// Convenience pair: navigate to a date in the day list + pre-fill export for that date.
+    /// Drilldown that navigates to a specific day's inline map view.
+    ///
+    /// Only meaningful when the day has spatial data (visits or routes). The day-detail
+    /// view already renders an inline `AppDayMapView` when map data is present, so
+    /// this reuses the existing map infrastructure without adding new map rendering.
+    public static func showDayOnMap(_ date: String) -> InsightsDrilldownTarget {
+        InsightsDrilldownTarget(
+            label: "Show on Map",
+            systemImage: "map",
+            action: .showDayOnMap(date)
+        )
+    }
+
+    /// Convenience triple: navigate to a date in the day list, show it on the map, or pre-fill export.
     public static func drilldownTargets(for date: String) -> [InsightsDrilldownTarget] {
-        [showDay(date), exportDay(date)]
+        [showDay(date), showDayOnMap(date), exportDay(date)]
     }
 }

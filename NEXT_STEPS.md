@@ -3,6 +3,20 @@
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 
+## 0. Feature Batch Phase A – Days Range + Map Drilldown
+
+Status: **✅ abgeschlossen (2026-04-02)**
+
+Umgesetzt:
+- `Days`-Tab respektiert jetzt denselben globalen Zeitraumfilter wie `Overview`, `Insights` und `Export`; keine doppelte Range-Logik
+- sichtbarer Hinweis (`HistoryDateRangeFilterBar`-Chip) im kompakten Days-Tab sowie Toolbar-Item im regulaeren Split-View, wenn ein Zeitraumfilter aktiv ist
+- sauberer Empty-State wenn der Zeitraumfilter aktiv ist und keine Tage im Zeitraum liegen
+- Suche, Chips, Favoriten und newest-first Sortierung arbeiten korrekt auf der range-projizierten Basis
+- `InsightsDrilldownAction.showDayOnMap(String)`: neues Drilldown-Ziel fuer Einzeltag-Drilldowns mit echtem raeumlichem Bezug; navigiert direkt in den Day-Detail-View (dort inline `AppDayMapView`)
+- `drilldownTargets(for:)` liefert jetzt drei Targets: `showDay`, `showDayOnMap`, `exportDay`
+- keine Fake-Kartenziele fuer aggregierte Werte; keine neue Map-Funktion gebaut
+- Linux-Nachweis: `swift test` → `Executed 370 tests, with 2 tests skipped and 0 failures (0 unexpected)`
+
 ## 1. Phase 19.51 – Live / Upload / Insights / Days auf Apple verifizieren
 
 Status: **Apple-Device-Basisverifikation abgeschlossen (2026-04-02)**
