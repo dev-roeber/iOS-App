@@ -31,11 +31,11 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (iOS 26.3), iPhone Air (iO
   - Live-Tab → Start/Stop Recording: Location-Permission-Prompt erscheint, Recording startet und stoppt sauber
 - Wrapper-Auto-Restore mit deterministischem Launch-Reset via `LH2GPX_UI_TESTING` + `LH2GPX_RESET_PERSISTENCE` verifiziert
 - Signing/Bundle Identifier/Provisioning: ohne Fehler fuer Device-Build und Archiv
+- **Background-Recording auf echtem iPhone: auf realem Gerät verifiziert (2026-04-02)** — Permission-Upgrade auf Always, Aufnahme im Hintergrund, Stop/Persistenz auf echtem Device geprüft und bestätigt
+- **Upload-End-to-End zum eigenen HTTPS-Server auf echtem Gerät: per realem Device-Test bestätigt (2026-04-02)** — optionaler nutzergesteuerter Upload an eigenen Server auf echtem iPhone erfolgreich durchgelaufen
 
 #### ⚠️ technisch offen (nicht moeglich ohne manuelle Session oder Apple-Account)
 
-- Background-Recording auf echtem iPhone: Permission-Upgrade auf Always, Aufnahme im Hintergrund, Stop/Persistenz — nicht in UI-Automation testbar
-- Upload-End-to-End mit echtem HTTPS-Endpunkt auf Geraet: erfordert konfigurierten Server
 - TestFlight-Upload und Beta-Verifikation: Archiv existiert lokal, Upload erfordert App Store Connect-Zugang
 - Finaler App Store Review: nicht lokal simulierbar
 
@@ -74,12 +74,10 @@ Dieser Audit-Block basiert ausschließlich auf Quellcode- und Dokumentationsanal
 - Verifikation, ob `NSPrivacyCollectedDataTypes` in PrivacyInfo.xcprivacy für den optionalen Server-Upload ergänzt werden muss (Apple Review-Entscheidung)
 - Verifikation ob ZIPFoundation-Abhängigkeit eigene Privacy-Manifest-Anforderungen mitbringt (file-timestamp-Zugriffe)
 - Live-Location-Permission-Flow auf echtem Gerät oder Simulator (WhenInUse → AlwaysAllow)
-- Background-Recording-Verifikation (Permission-Upgrade, Aufnahme im Hintergrund, Stop/Persistenz)
 - Heatmap-Sheet öffnen und visuell/performanceseitig verifizieren
 - Neuer `Live`-Tab mit Status-Chips, Quick Actions und Upload-Zuständen funktional durchbedienen
 - Neue `Insights`-Segmente auf echtem Gerät auf Lesbarkeit prüfen
 - Wrapper-Auto-Restore kontrolliert verifizieren (Positiv-, Datei-fehlt-, Clear-Pfad)
-- Upload-End-to-End mit echtem HTTPS-Endpunkt auf Gerät prüfen
 
 #### ❌ offen (Apple-Review / Store-Policy)
 
@@ -177,8 +175,8 @@ Der spaetere Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 hat zusaetzlich p
 - [ ] die neue `Days`-Default-Sortierung (`neu -> alt`) in compact und regular auf Apple-Hardware funktional bestaetigen
 - [ ] den deutlich ausgebauten `Live`-Tab auf Apple-Hardware funktional bestaetigen, inklusive Status-Chips, Quick Actions und erweitertem Stat-Set
 - [ ] die neue segmentierte Insights-Oberflaeche (`Overview`, `Patterns`, `Breakdowns`) auf Apple-Hardware auf Lesbarkeit und Navigation pruefen
-- [ ] Upload-Batching, Upload-Status und optionalen Server-Upload-Flow in einer echten Apple-Session separat verifizieren
-- [ ] Background-Recording auf echtem iPhone verifizieren (Permission-Upgrade, Background-Aufnahme, Stop/Persistenz)
+- [x] **Background-Recording auf echtem iPhone verifiziert (2026-04-02)** — Permission-Upgrade auf Always, Aufnahme im Hintergrund, Stop/Persistenz: auf realem Gerät bestätigt
+- [x] **Upload-End-to-End zum eigenen Server auf echtem iPhone verifiziert (2026-04-02)** — optionaler nutzergesteuerter HTTPS-Upload: per realem Device-Test bestätigt
 - [ ] Wrapper-Auto-Restore nach Reaktivierung (2026-03-20) kontrolliert mit Positiv-, Datei-fehlt- und Clear-Pfad auf echtem Device nachweisen; ein spontaner positiver Restore-Befund liegt jetzt vor
 
 ## Reale Apple-UI-Session 2026-03-17

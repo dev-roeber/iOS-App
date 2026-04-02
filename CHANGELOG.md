@@ -2,6 +2,12 @@
 
 ## [Unreleased] – 2026-04-02
 
+### Device Runtime Verification – Background-Recording + Upload E2E
+
+- **Background-Recording auf echtem iPhone verifiziert**: Permission-Upgrade auf `Always Allow`, Aufnahme im Hintergrund und Stop-/Persistenzverhalten auf iPhone 15 Pro Max real geprüft und bestätigt (2026-04-02); Feature ist funktional vollständig verifiziert auf echtem Gerät
+- **Upload-End-to-End zum eigenen Server auf echtem iPhone verifiziert**: optionaler nutzergesteuerter HTTPS-Upload an eigenen Server auf echtem Gerät durchgelaufen und bestätigt (2026-04-02); HTTPS-Erzwingung, Bearer-Token und Queue-Verhalten im realen Betrieb bestätigt
+- Doku-Sync: `docs/APPLE_VERIFICATION_CHECKLIST.md`, `NEXT_STEPS.md`, `docs/PRIVACY_MANIFEST_SCOPE.md` und `README.md` auf verifizierten Stand gebracht
+
 ### Apple Device Verification – Mac / Xcode / iPhone (post-performance-fix)
 
 - Wrapper `ContentView.swift`: deterministischer Launch-Reset fuer UI-Tests via `LH2GPX_UI_TESTING` + `LH2GPX_RESET_PERSISTENCE` Launch-Arguments; `prepareLaunchStateIfNeeded()` loescht ImportBookmarkStore, RecentFilesStore und AppPreferences vor dem Test-Lauf; `restoreBookmarkedFile()` nutzt jetzt `AppImportStateBridge.restoreLastImportIfEnabled` statt rohem `ImportBookmarkStore.restore()`

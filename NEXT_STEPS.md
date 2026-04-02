@@ -13,8 +13,7 @@ Verifiziert auf iPhone 15 Pro Max via `testDeviceSmokeNavigationAndActions`:
 - Export-Tab: fileExporter real ausgeloest
 
 Noch offen (nicht in UI-Automation testbar):
-- Upload-End-to-End mit echtem HTTPS-Endpunkt auf Geraet (erfordert konfigurierten Server)
-- Background-Recording auf echtem iPhone (Permission-Upgrade auf Always, Aufnahme im Hintergrund)
+- Background-Recording-Detailpfade in kontrollierten Szenarien (App-Hintergrund nach laufender Aufnahme, explizites Stop aus Notification): kein bekanntes Problem, aber noch kein isolierter Regressionstest
 - Upload-Zustaende, Queue-Flush, Pause/Resume im Live-Tab unter Echtbedingungen
 - Insights-Chart-Lesbarkeit und Segmentnavigation visuell auf Device
 
@@ -59,17 +58,17 @@ Fehlt noch:
 
 ## 4. Phase 19.54 – Background-Recording auf echtem iPhone verifizieren
 
-Status: **teilweise umgesetzt**
+Status: **✅ auf realem Gerät verifiziert (2026-04-02)**
 
-Bereits drin:
+Verifiziert:
 - Background-Recording-Codepfad
 - `Always Allow`-Upgrade im Live-Location-Modell
 - Wrapper-Deklarationen fuer `NSLocationAlwaysAndWhenInUseUsageDescription` und `UIBackgroundModes=location`
-- echter iPhone-15-Pro-Max-Lauf bestaetigt stabilen Wrapper-Launch; der eigentliche Recording-/Background-Pfad wurde dabei noch nicht bedient
+- Permission-Upgrade, laufende Aufnahme im Hintergrund und Stop-/Persistenzverhalten: auf echtem iPhone 15 Pro Max real geprüft und bestätigt (2026-04-02)
 
-Fehlt noch:
-- echte Device-Verifikation fuer Permission-Upgrade, laufende Aufnahme im Hintergrund und Stop-/Persistenzverhalten
-- separater dokumentierter Nachweis im Apple-/Wrapper-Runbook
+Bewusst nachgelagert (erfordert Developer Account):
+- separater dokumentierter Nachweis im Apple-/Wrapper-Runbook noch nicht formalisiert
+- TestFlight/App Store Connect: bewusst verschoben, erfordert Developer Account
 
 ## 5. Phase 19.55 – Auto-Restore / Recent Files auf echtem iPhone erneut verifizieren
 
@@ -132,9 +131,9 @@ Bereits drin:
 - hart kodierter Test-Server-Endpunkt entfernt: `defaultTestEndpointURLString = ""`
 - PrivacyInfo.xcprivacy vorhanden unter `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy`: `NSPrivacyTracking: false`, UserDefaults CA92.1 deklariert
 - `NSPrivacyCollectedDataTypes` in PrivacyInfo.xcprivacy ist derzeit leer
+- **End-to-End-Device-Verifikation mit eigenem HTTPS-Endpunkt: auf realem Gerät verifiziert (2026-04-02)**
 
-Fehlt noch:
-- End-to-End-Device-Verifikation mit echtem HTTPS-Endpunkt
+Fehlt noch (bewusst verschoben, erfordert Developer Account):
 - Apple-seitige Scope-/Review-Entscheidung: muss `NSPrivacyCollectedDataTypes` für den optionalen Standort-Upload (Lat/Lon/Timestamp/Accuracy) in PrivacyInfo.xcprivacy ergänzt werden? Benötigt Apple-Hardware und ggf. Store-Review-Feedback
 - Prüfen ob ZIPFoundation-Abhängigkeit file-timestamp-Zugriffe deklarieren muss (`NSPrivacyAccessedAPICategoryFileTimestamp` in PrivacyInfo.xcprivacy) — auf Apple-Host mit `xcodebuild` prüfen
 - Datenschutzrichtlinien-URL und Support-URL für App Store Connect (extern, Pflichtfelder)
