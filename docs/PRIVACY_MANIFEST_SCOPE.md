@@ -133,32 +133,25 @@ Kein Upload von importierter History, Exports, Einstellungen oder anderen App-Da
 
 ## 4. Nächste Schritte für Privacy Manifest auf Apple-Host
 
-Auf einem Mac mit Xcode auszuführen, in dieser Reihenfolge:
+Stand 2026-04-02 — bereits erledigt:
+- **`xcodebuild archive`**: ARCHIVE SUCCEEDED (2026-04-02, Xcode 26.3, iPhone 15 Pro Max)
+- **Upload-End-to-End**: optionaler nutzergesteuerter HTTPS-Upload an eigenen Server auf echtem Gerät durchgelaufen und bestätigt (2026-04-02)
+- **Background-Recording**: auf echtem iPhone verifiziert (2026-04-02)
 
-1. **`xcodebuild archive`** für den aktuellen Stand ausführen:
-   ```bash
-   cd ~/repos/LocationHistory2GPX-Monorepo
-   xcodebuild archive \
-     -project wrapper/LH2GPXWrapper.xcodeproj \
-     -scheme LH2GPXWrapper \
-     -destination 'generic/platform=iOS' \
-     -archivePath ~/Desktop/LH2GPXWrapper.xcarchive
-   ```
-   Xcode zeigt Warnings wenn API-Zugriffe nicht im Manifest deklariert sind.
+Noch offen — erfordert Developer Account oder Apple-Store-Review:
 
-2. **ZIPFoundation-Manifest prüfen:**
-   Im generierten `.xcarchive` unter `Products/Applications/LH2GPX.app/Frameworks/` (falls als Framework eingebettet) oder direkt in der ZIPFoundation-Package-Quelle nach `PrivacyInfo.xcprivacy` suchen.
+1. **ZIPFoundation-Manifest prüfen:**
+   Im generierten `.xcarchive` unter `Products/Applications/LH2GPX.app/Frameworks/` (falls als Framework eingebettet) oder direkt in der ZIPFoundation-Package-Quelle nach `PrivacyInfo.xcprivacy` suchen. `xcodebuild` zeigt Warnings bei fehlenden Manifest-Deklarationen.
 
-3. **NSPrivacyCollectedDataTypes Entscheidung:**
-   - Optionalen Upload-Flow in der App aktivieren
+2. **NSPrivacyCollectedDataTypes Entscheidung (bewusst verschoben — erfordert Developer Account):**
    - App Store Connect → App Privacy → „Data Types" — App Review prüfen ob Standortdaten-Deklaration angefragt wird
    - Alternativ: Apple Developer Forum / TSI (Technical Support Incident) für Policy-Klarstellung
 
-4. **Privacy Nutrition Label in App Store Connect:**
-   Basierend auf Ergebnis aus Punkt 3: Data Types für „Precise Location" ggf. mit „Optional, user-initiated, app functionality" deklarieren.
+3. **Privacy Nutrition Label in App Store Connect:**
+   Basierend auf Ergebnis aus Punkt 2: Data Types für „Precise Location" ggf. mit „Optional, user-initiated, app functionality" deklarieren.
 
-5. **PrivacyInfo.xcprivacy aktualisieren:**
-   Falls Schritt 3 ergibt, dass Deklaration erforderlich: `NSPrivacyCollectedDataTypes` ergänzen (Template oben).
+4. **PrivacyInfo.xcprivacy aktualisieren:**
+   Falls Schritt 2 ergibt, dass Deklaration erforderlich: `NSPrivacyCollectedDataTypes` ergänzen (Template in Abschnitt 3a).
 
 ---
 
@@ -177,4 +170,4 @@ Auf einem Mac mit Xcode auszuführen, in dieser Reihenfolge:
 | Datenschutzrichtlinien-URL | ❌ fehlt | App Store Connect |
 | Support-URL | ❌ fehlt | App Store Connect |
 | Fresh xcodebuild archive verifiziert | ⚠️ historisch (2026-03-17) | Apple-Host |
-| End-to-End Upload auf Gerät | ❌ offen | Apple-Host + echter Endpunkt |
+| End-to-End Upload auf Gerät | ✅ verifiziert (2026-04-02) | Apple-Host + echter Endpunkt |
