@@ -26,6 +26,15 @@ public enum RecordingIntervalUnit: String, Codable, CaseIterable, Identifiable, 
         }
     }
 
+    /// Lowercase singular key for localisation lookups (e.g. "second", "minute", "hour").
+    public var singularKey: String {
+        switch self {
+        case .seconds: return "second"
+        case .minutes: return "minute"
+        case .hours:   return "hour"
+        }
+    }
+
     public var maximumValue: Int {
         switch self {
         case .seconds: return 3600
@@ -70,13 +79,13 @@ public struct RecordingIntervalPreference: Codable, Equatable, Sendable {
         }
     }
 
-    /// Plain English display string for the interval, e.g. "5 Seconds", "1 Minute".
-    /// For a localised variant, build the string from `value` and a localised `unit.displayName`.
+    /// Plain English display string for the interval, e.g. "5 seconds", "1 minute".
+    /// For a localised variant, build the string from `value` and a localised `unit.singularKey`/`unit.rawValue`.
     public var displayString: String {
         switch unit {
-        case .seconds: return value == 1 ? "1 Second"  : "\(value) Seconds"
-        case .minutes: return value == 1 ? "1 Minute"  : "\(value) Minutes"
-        case .hours:   return value == 1 ? "1 Hour"    : "\(value) Hours"
+        case .seconds: return value == 1 ? "1 second"  : "\(value) seconds"
+        case .minutes: return value == 1 ? "1 minute"  : "\(value) minutes"
+        case .hours:   return value == 1 ? "1 hour"    : "\(value) hours"
         }
     }
 }

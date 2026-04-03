@@ -114,29 +114,35 @@ final class RecordingIntervalPreferenceTests: XCTestCase {
         XCTAssertEqual(RecordingIntervalUnit.hours.singularDisplayName, "Hour")
     }
 
+    func testUnitSingularKey() {
+        XCTAssertEqual(RecordingIntervalUnit.seconds.singularKey, "second")
+        XCTAssertEqual(RecordingIntervalUnit.minutes.singularKey, "minute")
+        XCTAssertEqual(RecordingIntervalUnit.hours.singularKey, "hour")
+    }
+
     // MARK: - displayString
 
-    func testDisplayString_singular_second() {
-        XCTAssertEqual(RecordingIntervalPreference(value: 1, unit: .seconds).displayString, "1 Second")
+    func testDisplayString_singularSecond() {
+        XCTAssertEqual(RecordingIntervalPreference(value: 1, unit: .seconds).displayString, "1 second")
     }
 
-    func testDisplayString_plural_seconds() {
-        XCTAssertEqual(RecordingIntervalPreference(value: 5, unit: .seconds).displayString, "5 Seconds")
+    func testDisplayString_pluralSeconds() {
+        XCTAssertEqual(RecordingIntervalPreference(value: 5, unit: .seconds).displayString, "5 seconds")
     }
 
-    func testDisplayString_singular_minute() {
-        XCTAssertEqual(RecordingIntervalPreference(value: 1, unit: .minutes).displayString, "1 Minute")
+    func testDisplayString_singularMinute() {
+        XCTAssertEqual(RecordingIntervalPreference(value: 1, unit: .minutes).displayString, "1 minute")
     }
 
-    func testDisplayString_plural_minutes() {
-        XCTAssertEqual(RecordingIntervalPreference(value: 3, unit: .minutes).displayString, "3 Minutes")
+    func testDisplayString_pluralMinutes() {
+        XCTAssertEqual(RecordingIntervalPreference(value: 3, unit: .minutes).displayString, "3 minutes")
     }
 
-    func testDisplayString_singular_hour() {
-        XCTAssertEqual(RecordingIntervalPreference(value: 1, unit: .hours).displayString, "1 Hour")
+    func testDisplayString_singularHour() {
+        XCTAssertEqual(RecordingIntervalPreference(value: 1, unit: .hours).displayString, "1 hour")
     }
 
-    func testDisplayString_plural_hours() {
-        XCTAssertEqual(RecordingIntervalPreference(value: 2, unit: .hours).displayString, "2 Hours")
+    func testDisplayString_pluralHours() {
+        XCTAssertEqual(RecordingIntervalPreference(value: 2, unit: .hours).displayString, "2 hours")
     }
 }
