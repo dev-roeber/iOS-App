@@ -2,6 +2,14 @@
 
 ## [Unreleased] – 2026-04-03
 
+### Fix: Linux URLSession Test Coverage
+
+- `LiveLocationServerUploaderTests.swift` (neu): 9 Tests für `HTTPSLiveLocationServerUploader` — fehlende Unit-Test-Abdeckung des Linux-spezifischen `dataTask`-Continuation-Pfades nachgeliefert
+- Ursache: `URLSession.data(for:)` async-Overload ist auf Swift 5.9 Linux (FoundationNetworking) nicht verfügbar (confirmed per Compiler); der vorhandene `#if canImport(FoundationNetworking)`-Workaround war korrekt, aber nie durch Tests abgesichert
+- Mock-Strategie: `URLProtocol`-Subklasse mit `URLSessionConfiguration.ephemeral` und lock-geschütztem statischem Handler — funktioniert auf Linux (FoundationNetworking) und Apple-Plattformen ohne echte Netzwerkaufrufe
+- Abgedeckte Fälle: POST-Methode, korrekter Endpoint, `Content-Type`-Header, `Authorization: Bearer`-Header, fehlender Auth-Header wenn `bearerToken` nil, JSON-Body, 2xx-Erfolg, 4xx/5xx → `unsuccessfulStatusCode`, Netzwerkfehler-Propagation
+- Linux-Nachweis: `swift test` → `Executed 444 tests, with 2 tests skipped and 0 failures (0 unexpected)`; `git diff --check` sauber
+
 ### Polish: Overview + Insights UX
 
 - Summary card order: Active Days and Total Distance promoted to top; Days Loaded moved below
