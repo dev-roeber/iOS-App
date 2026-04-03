@@ -6,19 +6,24 @@ public struct LiveTrackRecorderConfiguration: Equatable {
     public var minimumDistanceDeltaM: Double
     public var minimumTimeDeltaS: TimeInterval
     public var minimumPersistedPointCount: Int
+    /// Absolute minimum elapsed time between any two accepted points.
+    /// A value of 0 disables the gate (all-pass). Set from `RecordingIntervalPreference.totalSeconds`.
+    public var minimumRecordingIntervalS: TimeInterval
 
     public init(
         maximumAcceptedAccuracyM: Double = 65,
         duplicateDistanceThresholdM: Double = 3,
         minimumDistanceDeltaM: Double = 15,
         minimumTimeDeltaS: TimeInterval = 8,
-        minimumPersistedPointCount: Int = 2
+        minimumPersistedPointCount: Int = 2,
+        minimumRecordingIntervalS: TimeInterval = 0
     ) {
         self.maximumAcceptedAccuracyM = maximumAcceptedAccuracyM
         self.duplicateDistanceThresholdM = duplicateDistanceThresholdM
         self.minimumDistanceDeltaM = minimumDistanceDeltaM
         self.minimumTimeDeltaS = minimumTimeDeltaS
         self.minimumPersistedPointCount = minimumPersistedPointCount
+        self.minimumRecordingIntervalS = minimumRecordingIntervalS
     }
 }
 
@@ -65,6 +70,12 @@ public struct LiveTrackRecorder {
 
         let timeDelta = candidate.timestamp.timeIntervalSince(last.timestamp)
         if timeDelta <= 0 {
+            return false
+        }
+
+        // Honour the user-configured recording interval: reject if not enough time has elapsed.
+        if configuration.minimumRecordingIntervalS > 0,
+           timeDelta < configuration.minimumRecordingIntervalS {
             return false
         }
 

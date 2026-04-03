@@ -1,6 +1,20 @@
 # CHANGELOG
 
-## [Unreleased] – 2026-04-02
+## [Unreleased] – 2026-04-03
+
+### Feature: Konfigurierbarer GPS-Aufnahmeintervall für Live-Recording
+
+- `RecordingIntervalPreference.swift` (neu): `RecordingIntervalUnit` (`.seconds`/`.minutes`/`.hours`; `Codable`, `CaseIterable`, `Identifiable`, `Sendable`) und `RecordingIntervalPreference` (`Codable`, `Equatable`, `Sendable`) modellieren einen absoluten Mindest-Zeitabstand zwischen akzeptierten GPS-Punkten; `static .default` = 5 s; `static func validated(value:unit:)` klemmt auf gültige Einheits-Grenzen (s: 1–3600, min: 1–60, h: 1–24); `totalSeconds: TimeInterval`; `displayString: String` (EN, Singular/Plural)
+- `LiveTrackRecorder.swift`: `LiveTrackRecorderConfiguration` um `minimumRecordingIntervalS: TimeInterval` (default `0` = kein Gate) erweitert; `append(_:)` verwirft Punkte wenn `timeDelta < minimumRecordingIntervalS > 0` – absolutes Zeit-Gate unabhängig von Distanz
+- `AppPreferences.swift`: neues `@Published var recordingInterval: RecordingIntervalPreference`; UserDefaults-Key `"app.preferences.recordingInterval"` (JSON-encoded); `liveTrackRecorderConfiguration` übergibt `minimumRecordingIntervalS: recordingInterval.totalSeconds`; `reset()` setzt auf `.default` zurück
+- `AppOptionsView.swift`: neue `Stepper` + `Picker`-Zeilen im Abschnitt „Live Recording" erlauben Wert und Einheit des Intervalls inline anzupassen; Footer erklärt Auswirkung auf Punktanzahl / Akku / Upload
+- `AppLanguageSupport.swift`: neue DE-Keys: `"Recording Interval"`, `"Interval Unit"`, `"Seconds"`, `"Minutes"`, `"Hours"`, Hinweistext
+- `RecordingIntervalPreferenceTests.swift` (neu): 21 Tests — Default, `totalSeconds` für alle Einheiten, Validation/Clamping, Codable-Roundtrip, Equality, `CaseIterable`, `Identifiable`, `displayString` Singular/Plural
+- `LiveTrackRecorderTests.swift`: 3 neue Tests für `minimumRecordingIntervalS`-Gate (rejects early, accepts after interval, zero disables gate)
+- `AppPreferencesTests.swift`: Default- und StoredValues-Tests prüfen `recordingInterval` und `minimumRecordingIntervalS`; Reset prüft Rückkehr auf `.default`
+- Linux-Nachweis: `swift test` → alle neuen und geänderten Tests grün; 2 bestehende `InsightsPeriodComparisonPresentationTests`-Failures sind datums-sensitiv und pre-existing
+
+
 
 ### Feature Batch Phase B – New Insights, Charts und Export-Erweiterung
 

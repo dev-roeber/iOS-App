@@ -3,6 +3,22 @@
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 
+## 0a. Phase 19.57b – Konfigurierbarer GPS-Aufnahmeintervall für Live-Recording
+
+Status: **✅ abgeschlossen (2026-04-03)**
+
+Umgesetzt:
+- `RecordingIntervalPreference` / `RecordingIntervalUnit` als `Codable`/`Equatable`/`Sendable`-Typen modelliert; Default 5 s; Validation clampt auf Einheitsgrenzen
+- `LiveTrackRecorderConfiguration.minimumRecordingIntervalS` als absolutes Zeit-Gate im Recorder
+- `AppPreferences.recordingInterval` mit JSON-Persistenz und Reset-Support
+- `AppOptionsView`: Stepper + Unit-Picker im Abschnitt „Live Recording"
+- DE-Lokalisierung aller neuen Strings
+- 21 neue Tests in `RecordingIntervalPreferenceTests`, 3 neue Tests in `LiveTrackRecorderTests`, erweiterte `AppPreferencesTests`
+- Linux-Nachweis: alle neuen und geänderten Tests grün
+
+Noch offen (bewusst nachgelagert):
+- **Apple-Device-Verifikation** des Aufnahmeintervalls unter realen GPS-Bedingungen (iPhone); kein bekanntes Problem, aber noch nicht auf Gerät geprüft
+
 ## 0. Feature Batch Phase A – Days Range + Map Drilldown
 
 Status: **✅ abgeschlossen (2026-04-02)**

@@ -207,6 +207,7 @@ public final class AppPreferences: ObservableObject {
         static let liveTrackingServerUploadURL = "app.preferences.liveTrackingServerUploadURL"
         static let liveTrackingServerUploadBearerToken = "app.preferences.liveTrackingServerUploadBearerToken"
         static let liveTrackingUploadBatch = "app.preferences.liveTrackingUploadBatch"
+        static let recordingInterval = "app.preferences.recordingInterval"
         static let autoRestoreLastImport = "app.preferences.autoRestoreLastImport"
     }
 
@@ -262,6 +263,14 @@ public final class AppPreferences: ObservableObject {
         didSet { userDefaults.set(liveTrackingUploadBatch.rawValue, forKey: Keys.liveTrackingUploadBatch) }
     }
 
+    @Published public var recordingInterval: RecordingIntervalPreference {
+        didSet {
+            if let data = try? JSONEncoder().encode(recordingInterval) {
+                userDefaults.set(data, forKey: Keys.recordingInterval)
+            }
+        }
+    }
+
     /// When `true`, the app attempts to re-open the most recently imported file on launch.
     /// Defaults to `false` (opt-in behaviour).
     @Published public var autoRestoreLastImport: Bool {
@@ -274,7 +283,8 @@ public final class AppPreferences: ObservableObject {
             duplicateDistanceThresholdM: liveTrackingDetail.duplicateDistanceThresholdM,
             minimumDistanceDeltaM: liveTrackingDetail.minimumDistanceDeltaM,
             minimumTimeDeltaS: liveTrackingDetail.minimumTimeDeltaS,
-            minimumPersistedPointCount: 2
+            minimumPersistedPointCount: 2,
+            minimumRecordingIntervalS: recordingInterval.totalSeconds
         )
     }
 
@@ -354,6 +364,12 @@ public final class AppPreferences: ObservableObject {
             key: Keys.liveTrackingUploadBatch,
             from: userDefaults
         ) ?? .small
+        if let data = userDefaults.data(forKey: Keys.recordingInterval),
+           let decoded = try? JSONDecoder().decode(RecordingIntervalPreference.self, from: data) {
+            self.recordingInterval = decoded
+        } else {
+            self.recordingInterval = .default
+        }
         self.autoRestoreLastImport = userDefaults.object(forKey: Keys.autoRestoreLastImport) as? Bool ?? false
     }
 
@@ -371,6 +387,7 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.liveTrackingServerUploadBearerToken)
         KeychainHelper.delete(key: Keys.liveTrackingServerUploadBearerToken)
         userDefaults.removeObject(forKey: Keys.liveTrackingUploadBatch)
+        userDefaults.removeObject(forKey: Keys.recordingInterval)
         userDefaults.removeObject(forKey: Keys.autoRestoreLastImport)
 
         distanceUnit = .metric
@@ -385,6 +402,7 @@ public final class AppPreferences: ObservableObject {
         liveLocationServerUploadURLString = LiveLocationServerUploadConfiguration.defaultTestEndpointURLString
         liveLocationServerUploadBearerToken = ""
         liveTrackingUploadBatch = .small
+        recordingInterval = .default
         autoRestoreLastImport = false
     }
 

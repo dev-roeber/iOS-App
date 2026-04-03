@@ -101,13 +101,31 @@ public struct AppOptionsView: View {
 
                 Toggle(t("Allow Background Recording"), isOn: $preferences.allowsBackgroundLiveTracking)
 
+                Stepper(
+                    "\(t("Recording Interval")): \(preferences.recordingInterval.value) \(t(preferences.recordingInterval.unit.displayName))",
+                    value: Binding(
+                        get: { preferences.recordingInterval.value },
+                        set: { preferences.recordingInterval = .validated(value: $0, unit: preferences.recordingInterval.unit) }
+                    ),
+                    in: 1...preferences.recordingInterval.unit.maximumValue
+                )
+
+                Picker(t("Interval Unit"), selection: Binding(
+                    get: { preferences.recordingInterval.unit },
+                    set: { preferences.recordingInterval = .validated(value: preferences.recordingInterval.value, unit: $0) }
+                )) {
+                    ForEach(RecordingIntervalUnit.allCases) { unit in
+                        Text(t(unit.displayName)).tag(unit)
+                    }
+                }
+
                 LabeledContent(t("Accepted Accuracy"), value: "\(Int(preferences.liveTrackRecorderConfiguration.maximumAcceptedAccuracyM)) m")
                 LabeledContent(t("Minimum Movement"), value: "\(Int(preferences.liveTrackRecorderConfiguration.minimumDistanceDeltaM)) m")
                 LabeledContent(t("Minimum Time Gap"), value: "\(Int(preferences.liveTrackRecorderConfiguration.minimumTimeDeltaS)) s")
             } header: {
                 Text(t("Live Recording"))
             } footer: {
-                Text("\(t(preferences.liveTrackingAccuracy.detail)) \(t(preferences.liveTrackingDetail.detail)) Background recording requires Always Allow permission and only affects local live-track recording.")
+                Text("\(t(preferences.liveTrackingAccuracy.detail)) \(t(preferences.liveTrackingDetail.detail)) \(t("Recording Interval sets a hard floor on how often a point is accepted – larger values reduce point count, battery use and upload frequency.")) Background recording requires Always Allow permission and only affects local live-track recording.")
             }
 
             Section {
