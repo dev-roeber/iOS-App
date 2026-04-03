@@ -90,8 +90,18 @@ public struct LiveTrackRecorder {
             return false
         }
 
+        // When a user-configured recording interval is active and has already been satisfied,
+        // honour it as the effective time floor for the quality gate.
+        // This prevents minimumTimeDeltaS (derived from the Detail setting, typically 8 s)
+        // from silently blocking points that the user explicitly asked to record at a shorter
+        // interval (e.g. 1 s). Without this, setting the recording interval to 1 s would have
+        // no effect because the quality gate's 8 s threshold would still reject every point.
+        let effectiveMinTimeDeltaS = configuration.minimumRecordingIntervalS > 0
+            ? configuration.minimumRecordingIntervalS
+            : configuration.minimumTimeDeltaS
+
         if distanceDelta < configuration.minimumDistanceDeltaM,
-           timeDelta < configuration.minimumTimeDeltaS {
+           timeDelta < effectiveMinTimeDeltaS {
             return false
         }
 
