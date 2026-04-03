@@ -157,6 +157,28 @@ final class InsightsPeriodComparisonPresentationTests: XCTestCase {
         XCTAssertFalse(InsightsPeriodComparisonPresentation.noRangeMessage().isEmpty)
     }
 
+    func testAllTimeMessageIsNonEmpty() {
+        XCTAssertFalse(InsightsPeriodComparisonPresentation.allTimeMessage().isEmpty)
+    }
+
+    func testAllTimeMessageMentionsAllTime() {
+        XCTAssertTrue(InsightsPeriodComparisonPresentation.allTimeMessage().lowercased().contains("all time"))
+    }
+
+    func testNoDataMessageIsNonEmpty() {
+        XCTAssertFalse(InsightsPeriodComparisonPresentation.noDataMessage().isEmpty)
+    }
+
+    func testAllTimeFilterProducesNilComparison() {
+        let filter = HistoryDateRangeFilter(preset: .all)
+        let result = InsightsPeriodComparisonPresentation.comparison(
+            currentSummaries: [makeSummary("2024-06-01", hasContent: true)],
+            allSummaries: [makeSummary("2024-06-01", hasContent: true)],
+            rangeFilter: filter
+        )
+        XCTAssertNil(result, "All-Time range must not produce a comparison")
+    }
+
     // MARK: - Helper
 
     private func makeSummary(_ date: String, hasContent: Bool) -> DaySummary {

@@ -150,4 +150,19 @@ final class InsightsStreakPresentationTests: XCTestCase {
         XCTAssertEqual(stat.longestStreakStart, "2024-10-01")
         XCTAssertEqual(stat.longestStreakEnd, "2024-10-03")
     }
+
+    // MARK: - Empty state message
+
+    func testNoDataMessageIsNonEmpty() {
+        XCTAssertFalse(InsightsStreakPresentation.noDataMessage().isEmpty)
+    }
+
+    func testNoDataMessageWhenZeroStreakIsActionable() {
+        let stat = InsightsStreakPresentation.streak(from: [])
+        XCTAssertEqual(stat.longestStreakDays, 0)
+        XCTAssertEqual(stat.recentStreakDays, 0)
+        let message = InsightsStreakPresentation.noDataMessage()
+        XCTAssertFalse(message.isEmpty, "Empty streak state must provide a non-empty message")
+        XCTAssertTrue(message.lowercased().contains("streak"), "Message should mention streak")
+    }
 }

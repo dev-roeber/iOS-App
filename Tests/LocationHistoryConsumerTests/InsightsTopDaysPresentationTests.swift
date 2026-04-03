@@ -86,4 +86,27 @@ final class InsightsTopDaysPresentationTests: XCTestCase {
             "Ranked by total visits, activities and routes. Tap a row to open drilldown actions for that day."
         )
     }
+
+    // MARK: - Empty range message
+
+    func testEmptyRangeMessageIsNonEmpty() {
+        XCTAssertFalse(InsightsTopDaysPresentation.emptyRangeMessage().isEmpty)
+    }
+
+    func testTopDaysReturnsEmptyForSummariesWithNoContent() {
+        let summaries = [
+            DaySummary(
+                date: "2024-05-01",
+                visitCount: 0,
+                activityCount: 0,
+                pathCount: 0,
+                totalPathPointCount: 0,
+                totalPathDistanceM: 0,
+                hasContent: false
+            ),
+        ]
+        let result = InsightsTopDaysPresentation.topDays(from: summaries, by: .events)
+        XCTAssertTrue(result.isEmpty, "topDays must be empty when no summaries have content")
+        XCTAssertFalse(InsightsTopDaysPresentation.emptyRangeMessage().isEmpty)
+    }
 }
