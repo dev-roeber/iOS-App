@@ -43,6 +43,11 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.liveLocationServerUploadBearerToken, "")
             XCTAssertEqual(preferences.liveTrackRecorderConfiguration.maximumAcceptedAccuracyM, 65)
             XCTAssertEqual(preferences.liveTrackRecorderConfiguration.minimumDistanceDeltaM, 15)
+            // recordingInterval default
+            XCTAssertEqual(preferences.recordingInterval, .default)
+            XCTAssertEqual(preferences.recordingInterval.value, 5)
+            XCTAssertEqual(preferences.recordingInterval.unit, .seconds)
+            XCTAssertEqual(preferences.liveTrackRecorderConfiguration.minimumRecordingIntervalS, 5.0)
         }
     }
 
@@ -59,6 +64,10 @@ final class AppPreferencesTests: XCTestCase {
         defaults.set(true, forKey: "app.preferences.liveTrackingServerUploadEnabled")
         defaults.set("https://example.invalid/live", forKey: "app.preferences.liveTrackingServerUploadURL")
         try? KeychainHelper.save(key: bearerTokenKey, value: "secret")
+        // Store a custom recording interval (2 minutes)
+        if let data = try? JSONEncoder().encode(RecordingIntervalPreference(value: 2, unit: .minutes)) {
+            defaults.set(data, forKey: "app.preferences.recordingInterval")
+        }
 
         MainActor.assumeIsolated {
             let preferences = AppPreferences(userDefaults: defaults)
@@ -77,6 +86,9 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.liveLocationServerUploadBearerToken, "secret")
             XCTAssertEqual(preferences.liveTrackRecorderConfiguration.maximumAcceptedAccuracyM, 25)
             XCTAssertEqual(preferences.liveTrackRecorderConfiguration.minimumDistanceDeltaM, 8)
+            // loaded recording interval
+            XCTAssertEqual(preferences.recordingInterval, RecordingIntervalPreference(value: 2, unit: .minutes))
+            XCTAssertEqual(preferences.liveTrackRecorderConfiguration.minimumRecordingIntervalS, 120.0)
         }
     }
 
@@ -95,6 +107,7 @@ final class AppPreferencesTests: XCTestCase {
             preferences.sendsLiveLocationToServer = true
             preferences.liveLocationServerUploadURLString = "https://example.invalid/custom"
             preferences.liveLocationServerUploadBearerToken = "token"
+            preferences.recordingInterval = RecordingIntervalPreference(value: 10, unit: .minutes)
 
             preferences.reset()
 
@@ -113,6 +126,8 @@ final class AppPreferencesTests: XCTestCase {
                 LiveLocationServerUploadConfiguration.defaultTestEndpointURLString
             )
             XCTAssertEqual(preferences.liveLocationServerUploadBearerToken, "")
+            // reset restores default recording interval
+            XCTAssertEqual(preferences.recordingInterval, .default)
         }
     }
 
