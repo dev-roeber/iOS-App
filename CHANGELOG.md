@@ -2,6 +2,15 @@
 
 ## [Unreleased] – 2026-04-03
 
+### Fix: Live-Recording-Settings UX
+
+- `RecordingIntervalPreference.displayString`: korrekte Singular/Plural (1 Second / 2 Seconds etc.) — war bereits implementiert, Verhalten bestätigt
+- `RecordingIntervalUnit.singularDisplayName`: neues Property (`"Second"` / `"Minute"` / `"Hour"`) für lokalisierbare Stepper-Labels
+- `AppOptionsView` Stepper-Label: nutzt jetzt `singularDisplayName` wenn `value == 1` → korrekte Singular/Plural-Darstellung im UI
+- `AppOptionsView`: `"Minimum Time Gap"` → `"Minimum Time Gap (from Detail)"` mit Footer-Hinweis, dass dieser Wert aus der Aufzeichnungsdetail-Einstellung stammt, nicht aus dem Aufnahmeintervall
+- `AppLanguageSupport`: neue DE-Singular-Keys (`"Second"` → `"Sekunde"`, `"Minute"` → `"Minute"`, `"Hour"` → `"Stunde"`) sowie DE-Übersetzungen für neue Footer-Strings
+- `RecordingIntervalPreferenceTests`: neuer Test `testUnitSingularDisplayName` für alle drei Einheiten
+
 ### Feature: Konfigurierbarer GPS-Aufnahmeintervall für Live-Recording
 
 - `RecordingIntervalPreference.swift` (neu): `RecordingIntervalUnit` (`.seconds`/`.minutes`/`.hours`; `Codable`, `CaseIterable`, `Identifiable`, `Sendable`) und `RecordingIntervalPreference` (`Codable`, `Equatable`, `Sendable`) modellieren einen absoluten Mindest-Zeitabstand zwischen akzeptierten GPS-Punkten; `static .default` = 5 s; `static func validated(value:unit:)` klemmt auf gültige Einheits-Grenzen (s: 1–3600, min: 1–60, h: 1–24); `totalSeconds: TimeInterval`; `displayString: String` (EN, Singular/Plural)

@@ -17,6 +17,15 @@ public enum RecordingIntervalUnit: String, Codable, CaseIterable, Identifiable, 
         }
     }
 
+    /// Singular display name used when value == 1 (e.g. "Second", "Minute", "Hour").
+    public var singularDisplayName: String {
+        switch self {
+        case .seconds: return "Second"
+        case .minutes: return "Minute"
+        case .hours:   return "Hour"
+        }
+    }
+
     public var maximumValue: Int {
         switch self {
         case .seconds: return 3600

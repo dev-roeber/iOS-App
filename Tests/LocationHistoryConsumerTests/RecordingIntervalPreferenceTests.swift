@@ -108,6 +108,12 @@ final class RecordingIntervalPreferenceTests: XCTestCase {
         XCTAssertEqual(RecordingIntervalUnit.hours.displayName, "Hours")
     }
 
+    func testUnitSingularDisplayName() {
+        XCTAssertEqual(RecordingIntervalUnit.seconds.singularDisplayName, "Second")
+        XCTAssertEqual(RecordingIntervalUnit.minutes.singularDisplayName, "Minute")
+        XCTAssertEqual(RecordingIntervalUnit.hours.singularDisplayName, "Hour")
+    }
+
     // MARK: - displayString
 
     func testDisplayString_singular_second() {
