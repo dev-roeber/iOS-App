@@ -2,6 +2,16 @@
 
 ## [Unreleased] – 2026-04-12
 
+### Fix: Live Background Authorization Start Gate
+
+- `LiveLocationFeatureModel`: Startfluss fuer Live-Recording als kleine Zustandsmaschine abgesichert (`idle`, `requestingWhenInUse`, `awaitingAlwaysUpgrade`, `readyToStart`, `recording`, `failedAuthorization`)
+- `recorder.start()` und `client.startUpdatingLocation()` laufen bei aktivierter Hintergrundaufzeichnung jetzt erst, nachdem das `Always Allow`-Upgrade tatsaechlich aufgeloest wurde
+- fehlgeschlagene `Always Allow`-Erweiterung bleibt nicht mehr im irrefuehrenden Pending-Zustand; die UI zeigt jetzt einen expliziten `Background Access Required`-Fehlerzustand
+- mehrfaches Start-Triggern waehrend Pending/Recording fuehrt nicht mehr zu doppeltem Start
+- `LiveLocationFeatureModelTests`: 5 neue Regressionstests fuer wartenden Start, erfolgreichen Upgrade-Pfad, denied/restricted ohne Start, doppeltes Triggern und Permission-Prompt-Failure
+- Repo-Truth: die Deep-Audit-Race-Condition rund um `requestAlwaysAuthorization()` und `recorder.start()` war real und ist jetzt gezielt eingegrenzt behoben
+- Nachweis: `swift test --filter LiveLocationFeatureModelTests` → `Executed 22 tests, with 0 failures (0 unexpected)`
+
 ### Test: Google Timeline Timezone / DST Verification
 
 - `GoogleTimelineConverter`: Timezone-/DST-Audit-Vermutung gezielt verifiziert; keine Produktionslogik geändert

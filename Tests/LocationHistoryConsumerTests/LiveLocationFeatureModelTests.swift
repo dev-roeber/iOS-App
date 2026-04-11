@@ -193,6 +193,90 @@ final class LiveLocationFeatureModelTests: XCTestCase {
         }
     }
 
+    func testBackgroundRecordingStartWaitsForAlwaysAuthorizationUpgrade() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let model = LiveLocationFeatureModel(client: client, store: store)
+
+            model.setBackgroundTrackingPreference(true)
+            model.setRecordingEnabled(true)
+
+            XCTAssertTrue(model.isAwaitingAuthorization)
+            XCTAssertFalse(model.isRecording)
+            XCTAssertEqual(client.startUpdatingLocationCallCount, 0)
+            XCTAssertEqual(model.permissionTitle, "Background Upgrade Pending")
+        }
+    }
+
+    func testBackgroundRecordingStartsAfterAlwaysAuthorizationUpgradeSucceeds() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let model = LiveLocationFeatureModel(client: client, store: store)
+
+            model.setBackgroundTrackingPreference(true)
+            model.setRecordingEnabled(true)
+            client.emitAuthorization(.authorizedAlways)
+            client.emit(samples: [
+                sample(offsetSeconds: 0, latitude: 52.52, longitude: 13.40, accuracy: 6),
+            ])
+
+            XCTAssertFalse(model.isAwaitingAuthorization)
+            XCTAssertTrue(model.isRecording)
+            XCTAssertEqual(client.startUpdatingLocationCallCount, 1)
+            XCTAssertEqual(model.liveTrackPoints.count, 1)
+            XCTAssertTrue(model.isBackgroundTrackingActive)
+        }
+    }
+
+    func testBackgroundRecordingDoesNotStartWhenAlwaysAuthorizationUpgradeIsDenied() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let model = LiveLocationFeatureModel(client: client, store: store)
+
+            model.setBackgroundTrackingPreference(true)
+            model.setRecordingEnabled(true)
+            client.emitAuthorization(.authorizedWhenInUse)
+
+            XCTAssertFalse(model.isAwaitingAuthorization)
+            XCTAssertFalse(model.isRecording)
+            XCTAssertEqual(client.startUpdatingLocationCallCount, 0)
+            XCTAssertEqual(model.permissionTitle, "Background Access Required")
+        }
+    }
+
+    func testRepeatedStartRequestsDoNotStartRecordingTwice() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedAlways)
+            let store = InMemoryRecordedTrackStore()
+            let model = LiveLocationFeatureModel(client: client, store: store)
+
+            model.setRecordingEnabled(true)
+            model.setRecordingEnabled(true)
+
+            XCTAssertTrue(model.isRecording)
+            XCTAssertEqual(client.startUpdatingLocationCallCount, 1)
+        }
+    }
+
+    func testRestrictedAuthorizationAfterPromptDoesNotStartRecording() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .notDetermined)
+            let store = InMemoryRecordedTrackStore()
+            let model = LiveLocationFeatureModel(client: client, store: store)
+
+            model.setRecordingEnabled(true)
+            client.emitAuthorization(.restricted)
+
+            XCTAssertFalse(model.isAwaitingAuthorization)
+            XCTAssertFalse(model.isRecording)
+            XCTAssertEqual(client.startUpdatingLocationCallCount, 0)
+            XCTAssertEqual(model.permissionTitle, "Location Access Restricted")
+        }
+    }
+
     func testStoppingAlwaysAuthorizedRecordingStoresBackgroundCaptureMode() {
         MainActor.assumeIsolated {
             let client = TestLiveLocationClient(authorization: .authorizedAlways)

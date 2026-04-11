@@ -5,6 +5,15 @@ import Combine
 
 @MainActor
 public final class LiveLocationFeatureModel: ObservableObject {
+    private enum RecordingStartState: Equatable {
+        case idle
+        case requestingWhenInUse
+        case awaitingAlwaysUpgrade
+        case readyToStart
+        case recording
+        case failedAuthorization
+    }
+
     @Published public private(set) var authorization: LiveLocationAuthorization
     @Published public private(set) var isRecording = false
     @Published public private(set) var isAwaitingAuthorization = false
@@ -30,6 +39,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
     private var pendingUploadQueue = PendingLiveLocationUploadQueue()
     private var currentRecordingSessionID = UUID()
     private var uploadTask: Task<Void, Never>?
+    private var recordingStartState: RecordingStartState = .idle
 
     public init() {
         self.client = makeDefaultLiveLocationClient()
@@ -176,6 +186,11 @@ public final class LiveLocationFeatureModel: ObservableObject {
         case .denied:
             return "Location Access Denied"
         case .authorizedWhenInUse, .authorizedAlways:
+            if recordingStartState == .failedAuthorization,
+               prefersBackgroundTracking,
+               authorization == .authorizedWhenInUse {
+                return "Background Access Required"
+            }
             if isRecording && isBackgroundTrackingActive {
                 return "Recording in Background"
             }
@@ -201,6 +216,11 @@ public final class LiveLocationFeatureModel: ObservableObject {
         case .denied:
             return "Enable While Using the App access in Settings to show your position and record live tracks."
         case .authorizedWhenInUse, .authorizedAlways:
+            if recordingStartState == .failedAuthorization,
+               prefersBackgroundTracking,
+               authorization == .authorizedWhenInUse {
+                return "Recording did not start because Apple has not granted Always Allow yet. Enable Always in Settings or turn off background recording in Options."
+            }
             if needsAlwaysAuthorizationUpgrade {
                 return "Background recording is enabled in Options, but Apple has only granted While Using the App so far. Approve Always Allow to keep recording when the app leaves the foreground."
             }
@@ -261,8 +281,17 @@ public final class LiveLocationFeatureModel: ObservableObject {
             applyBackgroundTrackingConfiguration()
         }
 
-        if enabled, authorization == .authorizedWhenInUse {
+        if enabled,
+           authorization == .authorizedWhenInUse,
+           recordingStartState != .awaitingAlwaysUpgrade {
             client?.requestAlwaysAuthorization()
+        }
+
+        if !enabled,
+           recordingStartState == .awaitingAlwaysUpgrade,
+           authorization.allowsForegroundTracking {
+            transition(to: .readyToStart)
+            beginRecording()
         }
     }
 
@@ -327,6 +356,10 @@ public final class LiveLocationFeatureModel: ObservableObject {
     }
 
     private func startRecordingFlow() {
+        guard recordingStartState == .idle || recordingStartState == .failedAuthorization else {
+            return
+        }
+
         persistenceErrorMessage = nil
         currentRecordingSessionID = UUID()
         pendingUploadQueue.removeAll()
@@ -337,32 +370,36 @@ public final class LiveLocationFeatureModel: ObservableObject {
 
         guard let client else {
             authorization = .restricted
+            transition(to: .failedAuthorization)
             return
         }
 
-        switch client.authorization {
-        case .authorizedWhenInUse, .authorizedAlways:
+        authorization = client.authorization
+
+        switch authorization {
+        case .authorizedAlways:
+            transition(to: .readyToStart)
+            beginRecording()
+        case .authorizedWhenInUse:
             applyBackgroundTrackingConfiguration()
-            if prefersBackgroundTracking, client.authorization == .authorizedWhenInUse {
+            if prefersBackgroundTracking {
+                // Background recording must not start until the Always upgrade has resolved.
+                transition(to: .awaitingAlwaysUpgrade)
                 client.requestAlwaysAuthorization()
+            } else {
+                transition(to: .readyToStart)
+                beginRecording()
             }
-            recorder.start()
-            liveTrackPoints = []
-            isRecording = true
-            isAwaitingAuthorization = false
-            client.startUpdatingLocation()
         case .notDetermined:
-            isAwaitingAuthorization = true
+            transition(to: .requestingWhenInUse)
             client.requestWhenInUseAuthorization()
         case .restricted, .denied:
-            isAwaitingAuthorization = false
-            isRecording = false
+            transition(to: .failedAuthorization)
         }
     }
 
     private func stopRecordingFlow() {
-        isAwaitingAuthorization = false
-        isRecording = false
+        transition(to: .idle)
         client?.stopUpdatingLocation()
         currentLocation = nil
         schedulePendingUploadIfNeeded()
@@ -392,20 +429,66 @@ public final class LiveLocationFeatureModel: ObservableObject {
 
     private func handleAuthorizationChange(_ authorization: LiveLocationAuthorization) {
         self.authorization = authorization
-        if isRecording {
+        if recordingStartState == .recording {
             applyBackgroundTrackingConfiguration()
+            if !authorization.allowsForegroundTracking {
+                transition(to: .failedAuthorization)
+                client?.stopUpdatingLocation()
+            }
         }
 
-        guard isAwaitingAuthorization else {
+        switch recordingStartState {
+        case .requestingWhenInUse:
+            resolveForegroundAuthorizationRequest(using: authorization)
+        case .awaitingAlwaysUpgrade:
+            resolveAlwaysAuthorizationUpgrade(using: authorization)
+        case .idle, .readyToStart, .recording, .failedAuthorization:
+            break
+        }
+    }
+
+    private func resolveForegroundAuthorizationRequest(using authorization: LiveLocationAuthorization) {
+        switch authorization {
+        case .authorizedAlways:
+            transition(to: .readyToStart)
+            beginRecording()
+        case .authorizedWhenInUse:
+            if prefersBackgroundTracking {
+                transition(to: .awaitingAlwaysUpgrade)
+                client?.requestAlwaysAuthorization()
+            } else {
+                transition(to: .readyToStart)
+                beginRecording()
+            }
+        case .notDetermined:
+            break
+        case .restricted, .denied:
+            transition(to: .failedAuthorization)
+        }
+    }
+
+    private func resolveAlwaysAuthorizationUpgrade(using authorization: LiveLocationAuthorization) {
+        switch authorization {
+        case .authorizedAlways:
+            transition(to: .readyToStart)
+            beginRecording()
+        case .authorizedWhenInUse, .restricted, .denied:
+            transition(to: .failedAuthorization)
+        case .notDetermined:
+            break
+        }
+    }
+
+    private func beginRecording() {
+        guard recordingStartState == .readyToStart else {
             return
         }
 
-        if authorization.allowsForegroundTracking {
-            startRecordingFlow()
-        } else {
-            isAwaitingAuthorization = false
-            isRecording = false
-        }
+        applyBackgroundTrackingConfiguration()
+        recorder.start()
+        liveTrackPoints = []
+        transition(to: .recording)
+        client?.startUpdatingLocation()
     }
 
     private func handleLocationSamples(_ samples: [LiveLocationSample]) {
@@ -452,6 +535,12 @@ public final class LiveLocationFeatureModel: ObservableObject {
 
     private func applyBackgroundTrackingConfiguration() {
         client?.setBackgroundTrackingEnabled(prefersBackgroundTracking && authorization == .authorizedAlways)
+    }
+
+    private func transition(to state: RecordingStartState) {
+        recordingStartState = state
+        isAwaitingAuthorization = state == .requestingWhenInUse || state == .awaitingAlwaysUpgrade
+        isRecording = state == .recording
     }
 
     private func enqueueUpload(points: [RecordedTrackPoint]) {

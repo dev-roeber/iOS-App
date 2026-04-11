@@ -109,10 +109,12 @@ Status: **✅ auf realem Gerät verifiziert (2026-04-02)**
 Verifiziert:
 - Background-Recording-Codepfad
 - `Always Allow`-Upgrade im Live-Location-Modell
+- Start-Gate fuer Background-Recording: Recording startet bei aktivierter Hintergrundaufzeichnung erst nach aufgeloestem `Always Allow`-Upgrade; denied/restricted und Mehrfachtrigger sind testlich abgesichert (2026-04-12)
 - Wrapper-Deklarationen fuer `NSLocationAlwaysAndWhenInUseUsageDescription` und `UIBackgroundModes=location`
 - Permission-Upgrade, laufende Aufnahme im Hintergrund und Stop-/Persistenzverhalten: auf echtem iPhone 15 Pro Max real geprüft und bestätigt (2026-04-02)
 
 Bewusst nachgelagert (erfordert Developer Account):
+- frischen Device-Nachweis fuer den jetzt gegateten Startpfad (`awaitingAlwaysUpgrade` -> `recording`) auf echter Apple-UI nachziehen
 - separater dokumentierter Nachweis im Apple-/Wrapper-Runbook noch nicht formalisiert
 - TestFlight/App Store Connect: bewusst verschoben, erfordert Developer Account
 
