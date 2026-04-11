@@ -665,21 +665,10 @@ public enum AppExportQueries {
         }
 
         return zip(coordinates, coordinates.dropFirst()).reduce(0.0) { partialResult, pair in
-            partialResult + haversineDistance(from: pair.0, to: pair.1)
+            let a = LocationCoordinate2D(latitude: pair.0.lat, longitude: pair.0.lon)
+            let b = LocationCoordinate2D(latitude: pair.1.lat, longitude: pair.1.lon)
+            return partialResult + a.distance(to: b)
         }
-    }
-
-    private static func haversineDistance(from start: ExportCoordinate, to end: ExportCoordinate) -> Double {
-        let earthRadiusM = 6_371_000.0
-        let startLat = start.lat * .pi / 180
-        let endLat = end.lat * .pi / 180
-        let deltaLat = (end.lat - start.lat) * .pi / 180
-        let deltaLon = (end.lon - start.lon) * .pi / 180
-
-        let a = sin(deltaLat / 2) * sin(deltaLat / 2) +
-            cos(startLat) * cos(endLat) * sin(deltaLon / 2) * sin(deltaLon / 2)
-        let c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return earthRadiusM * c
     }
 
     private static func durationHours(start: String?, end: String?) -> Double? {
