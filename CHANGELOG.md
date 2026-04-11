@@ -2,6 +2,17 @@
 
 ## [Unreleased] – 2026-04-12
 
+### Test: Google Timeline Timezone / DST Verification
+
+- `GoogleTimelineConverter`: Timezone-/DST-Audit-Vermutung gezielt verifiziert; keine Produktionslogik geändert
+- Parsing verifiziert für ISO8601 mit `Z`, `+01:00` und `+02:00`; keine doppelte Offset-Anwendung nachweisbar
+- UTC-Day-Grouping an lokalen Tagesgrenzen verifiziert: lokale `23:xx`/`00:xx`-Übergänge bleiben korrekt auf dem absoluten UTC-Tag gruppiert
+- `timelinePath`-Punktzeiten über DST-Vorwärts- und DST-Rückwärtswechsel verifiziert; Offsets werden als absolute Zeit korrekt fortgeschrieben
+- Downstream-Prüfung bestätigt: `AppExportQueries.daySummaries` und `AppExportQueries.insights` bleiben bei Google-Timeline-Imports auf denselben UTC-Day-Keys stabil
+- 6 neue deterministische Tests in `GoogleTimelineConverterTests`: Zulu-Timestamp, `+01:00`, `+02:00`, DST vorwärts, DST rückwärts, Tagesgrenze mit nachgelagerten Queries/Insights
+- Repo-Truth: Deep-Audit-Annahme einer möglichen Google-Timeline-Timezone-/DST-Schwäche ist durch Tests widerlegt
+- Nachweis: `swift test` → `Executed 492 tests, with 0 failures (0 unexpected)`
+
 ### Fix: P1 Critical Security + Stability Fixes
 
 - `LiveLocationServerUploadConfiguration.defaultTestEndpointURLString`: war bereits `""` (kein Default-Server); URL-Validierung erzwingt HTTPS (localhost erlaubt HTTP) — kein echtes User-Data-Risiko durch versehentlichen Upload

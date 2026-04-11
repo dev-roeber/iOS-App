@@ -14,6 +14,9 @@ Umgesetzt:
 - `MockURLProtocol` (Test): `httpBodyStream`-Fix für macOS (pre-existing crash behoben)
 - 9 neue Tests (effectiveDistance-Fallback, GeoJSON-Leerlauf, Keychain round-trip + error case)
 - `swift test` → 481 Tests, 0 Failures, macOS + Linux-Pfad grün
+- Google-Timeline-Timezone-/DST-Audit nachgezogen: `GoogleTimelineConverter` mit deterministischen `Z`-/`+01:00`-/`+02:00`-/DST-/Tagesgrenzen-Tests verifiziert; kein Produktivfix nötig
+- Downstream verifiziert: `AppExportQueries.daySummaries` und `insights` bleiben für Google-Timeline-Imports auf stabilen UTC-Day-Keys
+- Aktueller Nachweis nach diesem Audit-Follow-up: `swift test` → 492 Tests, 0 Failures
 
 ## 0a. Phase 19.57b – Konfigurierbarer GPS-Aufnahmeintervall für Live-Recording
 
