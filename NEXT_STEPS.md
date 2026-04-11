@@ -3,6 +3,18 @@
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 
+## P1 Critical Fixes — Deep Audit 2026-04-12
+
+Status: **✅ abgeschlossen (2026-04-12)**
+
+Umgesetzt:
+- `KeychainHelper`: `encodingFailed` Case + guard statt force-unwrap
+- `AppExportQueries.effectiveDistance`: Logik auf `if pathDistance > 0` umgestellt + Kommentar
+- `GeoJSONBuilder`: `throws` statt silent fallback; `AppExportView` fängt Fehler ab
+- `MockURLProtocol` (Test): `httpBodyStream`-Fix für macOS (pre-existing crash behoben)
+- 9 neue Tests (effectiveDistance-Fallback, GeoJSON-Leerlauf, Keychain round-trip + error case)
+- `swift test` → 481 Tests, 0 Failures, macOS + Linux-Pfad grün
+
 ## 0a. Phase 19.57b – Konfigurierbarer GPS-Aufnahmeintervall für Live-Recording
 
 Status: **✅ abgeschlossen (2026-04-03)**

@@ -1,7 +1,15 @@
 import Foundation
 
+public enum GeoJSONBuildError: LocalizedError {
+    case serializationFailed
+
+    public var errorDescription: String? {
+        "GeoJSON serialization failed: the export data could not be encoded."
+    }
+}
+
 public enum GeoJSONBuilder {
-    public static func build(from days: [Day], mode: ExportMode = .tracks) -> String {
+    public static func build(from days: [Day], mode: ExportMode = .tracks) throws -> String {
         var features: [[String: Any]] = []
 
         if mode.includesTracks {
@@ -68,7 +76,7 @@ public enum GeoJSONBuilder {
         guard JSONSerialization.isValidJSONObject(root),
               let data = try? JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys]),
               let text = String(data: data, encoding: .utf8) else {
-            return "{\n  \"type\" : \"FeatureCollection\",\n  \"features\" : [ ]\n}"
+            throw GeoJSONBuildError.serializationFailed
         }
 
         return text

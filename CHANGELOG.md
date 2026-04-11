@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [Unreleased] – 2026-04-12
+
+### Fix: P1 Critical Security + Stability Fixes
+
+- `LiveLocationServerUploadConfiguration.defaultTestEndpointURLString`: war bereits `""` (kein Default-Server); URL-Validierung erzwingt HTTPS (localhost erlaubt HTTP) — kein echtes User-Data-Risiko durch versehentlichen Upload
+- `KeychainHelper.KeychainError`: neuer Case `encodingFailed` hinzugefügt; force-unwrap `value.data(using: .utf8)!` durch `guard let data = ... else { throw .encodingFailed }` ersetzt
+- `AppExportQueries.effectiveDistance(for:day:)`: Logik von konfuser `guard pathDistance <= 0 else` auf explizites `if pathDistance > 0 { return }` umgestellt; Kommentar dokumentiert die Fallback-Hierarchie (pathDistance bevorzugt wenn > 0, sonst Aktivitätssumme)
+- `GeoJSONBuilder`: neuer `GeoJSONBuildError.serializationFailed` (mit `LocalizedError`); `build()` ist jetzt `throws` statt silent fallback auf leere FeatureCollection; `AppExportView` fängt den Fehler im `do-catch`-Block ab und zeigt eine lokalisierbare Fehlermeldung
+- `LiveLocationServerUploaderTests.MockURLProtocol.startLoading()`: liest `httpBodyStream` wenn `httpBody` nil ist (Apple-Platform-Fix: URLSession konvertiert POST-Body intern zu Stream); behebt pre-existing macOS-Crash in `testUploadEncodesBodyAsJSON`
+- 9 neue Tests: `testEffectiveDistanceFallsBackToActivityDistanceWhenPathDistanceIsZero`, `testEffectiveDistancePrefersPathDistanceOverActivityDistance`, `testBuildEmptyDaysProducesValidFeatureCollection`, `testSaveAndRetrieveRoundTrip`, `testSaveEmptyStringRoundTrip`, `testEncodingFailedErrorCaseExists`
+- Linux + macOS Nachweis: `swift test` → `Executed 481 tests, with 0 failures (0 unexpected)`; `git diff --check` sauber
+
 ## [Unreleased] – 2026-04-03
 
 ### Fix: Live-Settings Time Gap Bounds

@@ -40,7 +40,22 @@ private final class MockURLProtocol: URLProtocol {
 
     override func startLoading() {
         do {
-            let (data, response) = try MockURLProtocolRegistry.shared.handle(request)
+            // On Apple platforms the URLSession may convert httpBody to httpBodyStream;
+            // read from the stream so the handler always sees the body as Data.
+            var resolved = request
+            if resolved.httpBody == nil, let stream = resolved.httpBodyStream {
+                var bodyData = Data()
+                stream.open()
+                let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 4096)
+                while stream.hasBytesAvailable {
+                    let count = stream.read(buffer, maxLength: 4096)
+                    if count > 0 { bodyData.append(buffer, count: count) }
+                }
+                buffer.deallocate()
+                stream.close()
+                resolved.httpBody = bodyData
+            }
+            let (data, response) = try MockURLProtocolRegistry.shared.handle(resolved)
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: data)
             client?.urlProtocolDidFinishLoading(self)

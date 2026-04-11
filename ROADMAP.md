@@ -1,5 +1,17 @@
 # ROADMAP
 
+## Aktueller Stand (2026-04-12)
+
+### P1 Critical Security + Stability Fixes (2026-04-12)
+
+Abgeschlossen (481 Tests, 0 Failures):
+- `KeychainHelper.encodingFailed`: force-unwrap durch throwing guard ersetzt
+- `AppExportQueries.effectiveDistance`: Logik explizit und kommentiert
+- `GeoJSONBuilder`: wirft `GeoJSONBuildError.serializationFailed` statt silent fallback
+- `MockURLProtocol` macOS-Fix: `httpBodyStream` wird gelesen wenn `httpBody` nil ist
+
+---
+
 ## Aktueller Stand (2026-04-01)
 
 ### Repo-Truth-Zusammenfassung

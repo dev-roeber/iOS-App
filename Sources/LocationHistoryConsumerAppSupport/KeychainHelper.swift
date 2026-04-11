@@ -11,12 +11,15 @@ public enum KeychainHelper {
 
     public enum KeychainError: Error {
         case duplicateItem
+        case encodingFailed
         case unknown(OSStatus)
     }
 
     public static func save(key: String, value: String) throws {
         #if canImport(Security)
-        let data = value.data(using: .utf8)!
+        guard let data = value.data(using: .utf8) else {
+            throw KeychainError.encodingFailed
+        }
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,

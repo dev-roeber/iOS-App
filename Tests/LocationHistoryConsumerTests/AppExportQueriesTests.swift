@@ -545,3 +545,113 @@ final class AppExportQueriesTests: XCTestCase {
         )
     }
 }
+
+// MARK: - effectiveDistance fallback tests (P1 fix verification)
+
+extension AppExportQueriesTests {
+    func testEffectiveDistanceFallsBackToActivityDistanceWhenPathDistanceIsZero() {
+        // Day with no paths → pathDistance = 0 → fallback to activity.distanceM
+        let export = makeEffectiveDistanceFallbackExport()
+        let summaries = AppExportQueries.daySummaries(from: export)
+
+        XCTAssertEqual(summaries.count, 1)
+        // totalPathDistanceM uses effectiveDistance(for:day): paths=0 → fallback to activities
+        XCTAssertEqual(summaries[0].totalPathDistanceM, 3000, accuracy: 0.001)
+    }
+
+    func testEffectiveDistancePrefersPathDistanceOverActivityDistance() {
+        // Day with path distanceM > 0 → must NOT fall back to activities
+        let export = makeEffectiveDistancePathPriorityExport()
+        let summaries = AppExportQueries.daySummaries(from: export)
+
+        XCTAssertEqual(summaries.count, 1)
+        // path distanceM=1500 > 0 → preferred; activity distanceM=99999 must NOT be used
+        XCTAssertEqual(summaries[0].totalPathDistanceM, 1500, accuracy: 0.001)
+    }
+
+    private func makeEffectiveDistanceFallbackExport() -> AppExport {
+        AppExport(
+            schemaVersion: .v1_0,
+            meta: makeMinimalMeta(),
+            data: DataBlock(days: [
+                Day(
+                    date: "2024-11-01",
+                    visits: [],
+                    activities: [
+                        Activity(
+                            startTime: "2024-11-01T08:00:00Z",
+                            endTime: "2024-11-01T09:00:00Z",
+                            startLat: nil, startLon: nil, endLat: nil, endLon: nil,
+                            activityType: "WALKING",
+                            distanceM: 3000,
+                            splitFromMidnight: false,
+                            startAccuracyM: nil, endAccuracyM: nil,
+                            sourceType: "activity",
+                            flatCoordinates: nil
+                        )
+                    ],
+                    paths: []
+                )
+            ]),
+            stats: nil
+        )
+    }
+
+    private func makeEffectiveDistancePathPriorityExport() -> AppExport {
+        AppExport(
+            schemaVersion: .v1_0,
+            meta: makeMinimalMeta(),
+            data: DataBlock(days: [
+                Day(
+                    date: "2024-11-02",
+                    visits: [],
+                    activities: [
+                        Activity(
+                            startTime: "2024-11-02T08:00:00Z",
+                            endTime: "2024-11-02T09:00:00Z",
+                            startLat: nil, startLon: nil, endLat: nil, endLon: nil,
+                            activityType: "WALKING",
+                            distanceM: 99999,
+                            splitFromMidnight: false,
+                            startAccuracyM: nil, endAccuracyM: nil,
+                            sourceType: "activity",
+                            flatCoordinates: nil
+                        )
+                    ],
+                    paths: [
+                        Path(
+                            startTime: nil, endTime: nil,
+                            activityType: "WALKING",
+                            distanceM: 1500,
+                            sourceType: nil,
+                            points: [],
+                            flatCoordinates: nil
+                        )
+                    ]
+                )
+            ]),
+            stats: nil
+        )
+    }
+
+    private func makeMinimalMeta() -> Meta {
+        Meta(
+            exportedAt: "2024-11-01T00:00:00Z",
+            toolVersion: "1.0.0",
+            source: Source(zipBasename: nil, zipPath: nil, inputFormat: "records"),
+            output: Output(outDir: nil),
+            config: ExportConfig(
+                mode: "all",
+                splitMidnight: nil,
+                splitMode: "daily",
+                exportFormat: ["json"],
+                inputFormat: "auto"
+            ),
+            filters: ExportFilters(
+                fromDate: nil, toDate: nil, year: nil, month: nil,
+                weekday: nil, limit: nil, days: nil, has: nil,
+                maxAccuracyM: nil, activityTypes: nil, minGapMin: nil
+            )
+        )
+    }
+}

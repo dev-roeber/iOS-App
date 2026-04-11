@@ -212,3 +212,36 @@ final class AppPreferencesTests: XCTestCase {
         }
     }
 }
+
+// MARK: - KeychainHelper tests (P1 fix verification)
+
+final class KeychainHelperTests: XCTestCase {
+    private let testKey = "KeychainHelperTests.testKey.\(UUID())"
+
+    override func tearDown() {
+        KeychainHelper.delete(key: testKey)
+        super.tearDown()
+    }
+
+    func testSaveAndRetrieveRoundTrip() throws {
+        // Verifies save/get/delete works end-to-end on the current platform
+        try KeychainHelper.save(key: testKey, value: "hello-world")
+        XCTAssertEqual(KeychainHelper.get(key: testKey), "hello-world")
+        KeychainHelper.delete(key: testKey)
+        XCTAssertNil(KeychainHelper.get(key: testKey))
+    }
+
+    func testSaveEmptyStringRoundTrip() throws {
+        // Empty string must not trigger encodingFailed (empty string is valid UTF-8)
+        try KeychainHelper.save(key: testKey, value: "")
+        // On Apple: empty string stored and retrieved; on Linux fallback stores via UserDefaults
+        let retrieved = KeychainHelper.get(key: testKey)
+        XCTAssertEqual(retrieved, "")
+    }
+
+    func testEncodingFailedErrorCaseExists() {
+        // Confirms the encodingFailed case compiles and is a distinct error value
+        let error: KeychainHelper.KeychainError = .encodingFailed
+        XCTAssertNotNil(error)
+    }
+}

@@ -615,10 +615,10 @@ public enum AppExportQueries {
         let pathDistance = day.paths.reduce(0.0) { partialResult, path in
             partialResult + effectiveDistance(for: path)
         }
-        guard pathDistance <= 0 else {
+        // pathDistance preferred if valid (>0), fallback to activity distances otherwise
+        if pathDistance > 0 {
             return pathDistance
         }
-
         return day.activities.reduce(0.0) { partialResult, activity in
             partialResult + effectiveDistance(for: activity)
         }

@@ -899,7 +899,12 @@ public struct AppExportView: View {
         case .kml:
             content = KMLBuilder.build(from: exportDays, mode: effectiveExportMode)
         case .geoJSON:
-            content = GeoJSONBuilder.build(from: exportDays, mode: effectiveExportMode)
+            do {
+                content = try GeoJSONBuilder.build(from: exportDays, mode: effectiveExportMode)
+            } catch {
+                exportError = t("GeoJSON export failed. The data could not be serialized.")
+                return
+            }
         case .csv:
             content = CSVBuilder.build(from: exportDays)
         }
