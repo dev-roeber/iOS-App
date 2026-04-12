@@ -153,33 +153,57 @@ struct AppInsightsContentView: View {
                 systemImage: "chart.line.text.clipboard"
             )
         } else {
-            VStack(alignment: .leading, spacing: 22) {
-                headerSection
+            GeometryReader { geometry in
+                let isLandscape = geometry.size.width > geometry.size.height && geometry.size.width > 600
+                let twoColumnGrid: [GridItem] = [GridItem(.flexible()), GridItem(.flexible())]
+                let oneColumnGrid: [GridItem] = [GridItem(.flexible())]
 
-                AppHistoryDateRangeControl(filter: $rangeFilter)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        headerSection
 
-                if !hasAnyMeaningfulInsightSection {
-                    insightsEmptyCard(
-                        title: t("Limited Insight Data"),
-                        message: t("The import loaded correctly, but it does not contain enough structured data for the current insight views yet."),
-                        systemImage: "chart.bar.xaxis"
-                    )
-                }
+                        AppHistoryDateRangeControl(filter: $rangeFilter)
 
-                Picker("", selection: $surfaceMode) {
-                    ForEach(InsightsSurfaceMode.allCases, id: \.self) { mode in
-                        Text(t(mode.rawValue)).tag(mode)
+                        if !hasAnyMeaningfulInsightSection {
+                            insightsEmptyCard(
+                                title: t("Limited Insight Data"),
+                                message: t("The import loaded correctly, but it does not contain enough structured data for the current insight views yet."),
+                                systemImage: "chart.bar.xaxis"
+                            )
+                        }
+
+                        Picker("", selection: $surfaceMode) {
+                            ForEach(InsightsSurfaceMode.allCases, id: \.self) { mode in
+                                Text(t(mode.rawValue)).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        if isLandscape {
+                            LazyVGrid(columns: twoColumnGrid, alignment: .top, spacing: 16) {
+                                switch surfaceMode {
+                                case .overview:
+                                    overviewSections
+                                case .patterns:
+                                    patternSections
+                                case .breakdowns:
+                                    breakdownSections
+                                }
+                            }
+                        } else {
+                            LazyVGrid(columns: oneColumnGrid, spacing: 16) {
+                                switch surfaceMode {
+                                case .overview:
+                                    overviewSections
+                                case .patterns:
+                                    patternSections
+                                case .breakdowns:
+                                    breakdownSections
+                                }
+                            }
+                        }
                     }
-                }
-                .pickerStyle(.segmented)
-
-                switch surfaceMode {
-                case .overview:
-                    overviewSections
-                case .patterns:
-                    patternSections
-                case .breakdowns:
-                    breakdownSections
+                    .padding(.bottom, 20)
                 }
             }
             .onAppear {
@@ -977,42 +1001,57 @@ struct AppInsightsContentView: View {
     }
 
     private func summaryCard(_ card: InsightsSummaryCard) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(card.title, systemImage: card.icon)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(card.color)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 5) {
+                Image(systemName: card.icon)
+                    .font(.caption2)
+                    .foregroundStyle(card.color)
+                Text(card.title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
             Text(card.value)
-                .font(.title3.weight(.semibold).monospacedDigit())
+                .font(.title2.weight(.bold).monospacedDigit())
+                .foregroundStyle(.primary)
             if let subtitle = card.subtitle {
                 Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(card.color.opacity(0.08))
+        .padding(14)
+        .background(card.color.opacity(0.10))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(card.color.opacity(0.18), lineWidth: 1)
+        )
     }
 
     private func avgCard(_ value: String, label: String, icon: String, color: Color) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundColor(color)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(value)
-                    .font(.headline.monospacedDigit())
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.caption2)
+                    .foregroundStyle(color)
                 Text(label)
-                    .font(.caption)
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            Spacer()
+            Text(value)
+                .font(.title3.weight(.semibold).monospacedDigit())
+                .foregroundStyle(.primary)
         }
-        .padding(10)
-        .background(color.opacity(0.06))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(color.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(color.opacity(0.15), lineWidth: 1)
+        )
     }
 
     private func activityBreakdownCard(_ item: ActivityBreakdownItem) -> some View {
@@ -1075,7 +1114,7 @@ struct AppInsightsContentView: View {
     @ViewBuilder
     private var monthlyTrendRows: some View {
         VStack(spacing: 10) {
-            ForEach(trendItems) { item in
+            ForEach(Array(trendItems.reversed())) { item in
                 if let targets = monthlyTrendDrilldownTargets(for: item), onDrilldown != nil {
                     Button {
                         presentDrilldown(title: "\(t("Monthly Trends")) · \(item.label)", targets: targets)
@@ -1183,8 +1222,11 @@ struct AppInsightsContentView: View {
     }
 
     private var monthlyTrendChart: some View {
-        Chart {
-            ForEach(trendItems) { item in
+        let displayItems = InsightsMonthlyTrendPresentation.chartItems(trendItems)
+        // Show annotation labels only when there are few enough bars to avoid overlap.
+        let showAnnotations = displayItems.count <= 12
+        return Chart {
+            ForEach(displayItems) { item in
                 let rawValue = InsightsMonthlyTrendPresentation.value(for: item, metric: trendMetric)
                 let plottedValue = trendMetric == .distance ? distanceValue(rawValue, unit: preferences.distanceUnit) : rawValue
                 BarMark(
@@ -1194,9 +1236,11 @@ struct AppInsightsContentView: View {
                 .foregroundStyle(accentColor(for: trendMetric).gradient)
                 .cornerRadius(4)
                 .annotation(position: .top) {
-                    Text(trendMetric == .distance ? formatDistance(rawValue, unit: preferences.distanceUnit) : "\(Int(rawValue))")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    if showAnnotations {
+                        Text(trendMetric == .distance ? formatDistance(rawValue, unit: preferences.distanceUnit) : "\(Int(rawValue))")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }
@@ -1204,6 +1248,13 @@ struct AppInsightsContentView: View {
             AxisMarks(position: .leading)
         }
         .chartYAxisLabel(t(axisLabel(for: trendMetric)), alignment: .trailing)
+        .chartXAxis {
+            AxisMarks(values: .automatic(desiredCount: min(displayItems.count, 8))) { _ in
+                AxisGridLine()
+                AxisTick()
+                AxisValueLabel(orientation: displayItems.count > 8 ? .verticalReversed : .horizontal)
+            }
+        }
         .frame(height: 220)
     }
 

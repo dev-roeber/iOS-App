@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [2026-04-12] — Truth Sync: Sorting, Overview Fidelity, Insights Range, Linux Testability
+
+### Changed
+- `AppSessionState`: app-weite Day-Summary-Projektion und gefilterte Days-Liste jetzt repo-wahr `neu -> alt`; Initialauswahl/Fallback bevorzugen den neuesten sichtbaren Tag statt des aeltesten
+- `AppOverviewTracksMapView`: versteckte Route-Kappung fuer die Overview-Karte entfernt; alle Routen im aktiven Zeitraum bleiben erhalten, Performance laeuft weiter ueber Vereinfachung/Decimation statt stilles Weglassen
+- `AppInsightsContentView` / `InsightsMonthlyTrendPresentation`: Monats-Trends respektieren jetzt den aktiven Zeitraum ohne 24-Monats-Cap; Tabellen-/Listenansicht zeigt neueste Monate zuerst
+
+### Fixed
+- Linux-Testbarkeit fuer Import-/Pfad-/Layout-Code nachgezogen: `PathSimplification`, GPX-/TCX-XML-Parser und zugehoerige Tests laufen jetzt ohne Apple-only Foundation/CoreLocation-Annahmen
+- `LandscapeLayoutTests` und `DemoDataLoaderTests` auf aktuellen Produktstand korrigiert
+
+### Tests
+- `swift test` auf Linux: `575` Tests, `2` Skips, `0` Failures
+
+### Not done
+- kein echtes Road-/Path-Matching
+- kein Auto-Resume laufender Live-Aufzeichnungen nach App-Neustart
+- keine neue Apple-Device-/Portal-Verifikation; Linux-only Nachweis
+
 ## [2026-04-12] — Release-Härtung: TCX, Widget-Lokalisierung, Privacy, CI
 
 ### Fixed

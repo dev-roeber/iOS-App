@@ -34,6 +34,24 @@ public struct WidgetDataStore {
         return try? JSONDecoder().decode(LastRecording.self, from: data)
     }
 
+    // MARK: - Preferences sync
+
+    private static let dynamicIslandDisplayKey = "app.preferences.dynamicIslandCompactDisplay"
+
+    /// Writes the compact-display preference so the Live Activity widget can read it.
+    public static func saveDynamicIslandCompactDisplay(_ display: DynamicIslandCompactDisplay) {
+        UserDefaults(suiteName: suiteName)?.set(display.rawValue, forKey: dynamicIslandDisplayKey)
+    }
+
+    /// Reads the compact-display preference. Falls back to `.distance` if not set.
+    public static func loadDynamicIslandCompactDisplay() -> DynamicIslandCompactDisplay {
+        guard let raw = UserDefaults(suiteName: suiteName)?.string(forKey: dynamicIslandDisplayKey),
+              let value = DynamicIslandCompactDisplay(rawValue: raw) else {
+            return .distance
+        }
+        return value
+    }
+
     public static func saveWeeklyStats(totalKm: Double, routeCount: Int) {
         guard let defaults = UserDefaults(suiteName: suiteName) else { return }
         defaults.set(totalKm, forKey: "weeklyKm")

@@ -161,26 +161,28 @@ struct OverviewMapRenderData {
     let pathOverlays: [OverviewMapPathOverlay]
     let region: MKCoordinateRegion?
     let totalRouteCount: Int
+    let isOptimized: Bool
     let isLoading: Bool
 
     var hasContent: Bool { !pathOverlays.isEmpty }
     var visibleRouteCount: Int { pathOverlays.count }
-    var isOptimized: Bool { totalRouteCount > visibleRouteCount }
 
-    static let empty = OverviewMapRenderData(pathOverlays: [], region: nil, totalRouteCount: 0, isLoading: false)
-    static let loading = OverviewMapRenderData(pathOverlays: [], region: nil, totalRouteCount: 0, isLoading: true)
+    static let empty = OverviewMapRenderData(pathOverlays: [], region: nil, totalRouteCount: 0, isOptimized: false, isLoading: false)
+    static let loading = OverviewMapRenderData(pathOverlays: [], region: nil, totalRouteCount: 0, isOptimized: false, isLoading: true)
 
-    init(pathOverlays: [OverviewMapPathOverlay], region: MKCoordinateRegion?, totalRouteCount: Int) {
+    init(pathOverlays: [OverviewMapPathOverlay], region: MKCoordinateRegion?, totalRouteCount: Int, isOptimized: Bool = false) {
         self.pathOverlays = pathOverlays
         self.region = region
         self.totalRouteCount = totalRouteCount
+        self.isOptimized = isOptimized
         self.isLoading = false
     }
 
-    private init(pathOverlays: [OverviewMapPathOverlay], region: MKCoordinateRegion?, totalRouteCount: Int, isLoading: Bool) {
+    private init(pathOverlays: [OverviewMapPathOverlay], region: MKCoordinateRegion?, totalRouteCount: Int, isOptimized: Bool, isLoading: Bool) {
         self.pathOverlays = pathOverlays
         self.region = region
         self.totalRouteCount = totalRouteCount
+        self.isOptimized = isOptimized
         self.isLoading = isLoading
     }
 }
@@ -209,7 +211,7 @@ private struct OverviewMapPathCandidate {
     let score: Double
 }
 
-private struct OverviewMapRenderProfile {
+struct OverviewMapRenderProfile {
     let routeLimit: Int
     let gridDimension: Int
     let maxRoutesPerCell: Int
@@ -217,37 +219,48 @@ private struct OverviewMapRenderProfile {
     let maxPolylinePoints: Int
 
     static func resolve(routeCount: Int, totalPointCount: Int) -> OverviewMapRenderProfile {
+        // Route limits no longer hide routes from the selected time range. They track
+        // the full candidate count so downstream code can stay explicit about coverage
+        // while optimization is done via simplification and point decimation only.
         switch (routeCount, totalPointCount) {
-        case let (routes, points) where routes > 240 || points > 60_000:
+        case let (routes, points) where routes > 500 || points > 150_000:
             return OverviewMapRenderProfile(
-                routeLimit: 72,
-                gridDimension: 10,
+                routeLimit: routeCount,
+                gridDimension: 12,
                 maxRoutesPerCell: 2,
                 simplificationEpsilonM: 140,
                 maxPolylinePoints: 64
             )
-        case let (routes, points) where routes > 120 || points > 30_000:
+        case let (routes, points) where routes > 240 || points > 60_000:
             return OverviewMapRenderProfile(
-                routeLimit: 96,
-                gridDimension: 9,
-                maxRoutesPerCell: 2,
+                routeLimit: routeCount,
+                gridDimension: 10,
+                maxRoutesPerCell: 3,
                 simplificationEpsilonM: 100,
                 maxPolylinePoints: 96
             )
+        case let (routes, points) where routes > 120 || points > 30_000:
+            return OverviewMapRenderProfile(
+                routeLimit: routeCount,
+                gridDimension: 9,
+                maxRoutesPerCell: 4,
+                simplificationEpsilonM: 70,
+                maxPolylinePoints: 120
+            )
         case let (routes, points) where routes > 60 || points > 15_000:
             return OverviewMapRenderProfile(
-                routeLimit: 120,
+                routeLimit: routeCount,
                 gridDimension: 8,
-                maxRoutesPerCell: 3,
-                simplificationEpsilonM: 70,
-                maxPolylinePoints: 140
+                maxRoutesPerCell: 6,
+                simplificationEpsilonM: 50,
+                maxPolylinePoints: 160
             )
         default:
             return OverviewMapRenderProfile(
-                routeLimit: 180,
+                routeLimit: routeCount,
                 gridDimension: 6,
-                maxRoutesPerCell: 4,
-                simplificationEpsilonM: 50,
+                maxRoutesPerCell: 6,
+                simplificationEpsilonM: 30,
                 maxPolylinePoints: 220
             )
         }
@@ -287,11 +300,13 @@ enum OverviewMapPreparation {
         let pathOverlays = selected.compactMap { candidate in
             makeOverlay(from: candidate, profile: profile)
         }
+        let isOptimized = profile.simplificationEpsilonM > 30 || profile.maxPolylinePoints < 220
 
         return OverviewMapRenderData(
             pathOverlays: pathOverlays,
             region: region,
-            totalRouteCount: candidates.count
+            totalRouteCount: candidates.count,
+            isOptimized: isOptimized
         )
     }
 
@@ -331,49 +346,9 @@ enum OverviewMapPreparation {
         region: MKCoordinateRegion?,
         profile: OverviewMapRenderProfile
     ) -> [OverviewMapPathCandidate] {
-        guard candidates.count > profile.routeLimit, let region else {
-            return candidates.sorted { $0.score > $1.score }
-        }
-
-        let latStep = max(region.span.latitudeDelta / Double(profile.gridDimension), 0.005)
-        let lonStep = max(region.span.longitudeDelta / Double(profile.gridDimension), 0.005)
-        let minLat = region.center.latitude - region.span.latitudeDelta / 2
-        let minLon = region.center.longitude - region.span.longitudeDelta / 2
-
-        var buckets: [OverviewMapBucketKey: [OverviewMapPathCandidate]] = [:]
-        for candidate in candidates {
-            let row = Int(floor((candidate.midpoint.latitude - minLat) / latStep))
-            let col = Int(floor((candidate.midpoint.longitude - minLon) / lonStep))
-            let key = OverviewMapBucketKey(row: row, column: col)
-            buckets[key, default: []].append(candidate)
-        }
-
-        var selected: [OverviewMapPathCandidate] = []
-        selected.reserveCapacity(profile.routeLimit)
-
-        for bucket in buckets.values {
-            let top = bucket
-                .sorted { $0.score > $1.score }
-                .prefix(profile.maxRoutesPerCell)
-            selected.append(contentsOf: top)
-        }
-
-        if selected.count < profile.routeLimit {
-            var selectedSignatures = Set(selected.map(\.signature))
-            let fallback = candidates.sorted { $0.score > $1.score }
-            for candidate in fallback where selected.count < profile.routeLimit {
-                if !selectedSignatures.contains(candidate.signature) {
-                    selected.append(candidate)
-                    selectedSignatures.insert(candidate.signature)
-                }
-            }
-        }
-
-        if selected.count > profile.routeLimit {
-            selected = Array(selected.sorted { $0.score > $1.score }.prefix(profile.routeLimit))
-        }
-
-        return selected.sorted { $0.score > $1.score }
+        _ = region
+        _ = profile
+        return candidates.sorted { $0.score > $1.score }
     }
 
     private nonisolated static func makeOverlay(
@@ -447,11 +422,6 @@ enum OverviewMapPreparation {
             return partial + a.distance(from: b)
         }
     }
-}
-
-private struct OverviewMapBucketKey: Hashable {
-    let row: Int
-    let column: Int
 }
 
 #endif

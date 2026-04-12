@@ -75,6 +75,27 @@ private struct TrackingLockScreenView: View {
 
 @available(iOS 16.2, *)
 struct TrackingLiveActivityWidget: Widget {
+
+    @ViewBuilder
+    private func compactTrailingView(context: ActivityViewContext<TrackingAttributes>) -> some View {
+        let display = WidgetDataStore.loadDynamicIslandCompactDisplay()
+        switch display {
+        case .distance:
+            Text(context.state.formattedDistance)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.primary)
+        case .points:
+            Text("\(context.state.pointCount)")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.primary)
+        case .elapsed:
+            Text(context.attributes.startTime, style: .timer)
+                .font(.caption2.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(.primary)
+        }
+    }
+
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TrackingAttributes.self) { context in
             TrackingLockScreenView(context: context)
@@ -130,9 +151,7 @@ struct TrackingLiveActivityWidget: Widget {
                 Image(systemName: context.state.isPaused ? "pause.circle.fill" : "location.fill.viewfinder")
                     .foregroundStyle(context.state.isPaused ? .orange : Color.accentColor)
             } compactTrailing: {
-                Text(context.state.formattedDistance)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.primary)
+                compactTrailingView(context: context)
             } minimal: {
                 Image(systemName: context.state.isPaused ? "pause.circle.fill" : "location.fill.viewfinder")
                     .foregroundStyle(context.state.isPaused ? .orange : Color.accentColor)

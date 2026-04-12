@@ -29,12 +29,13 @@ Das Swift Package im Root (`Package.swift`) wird automatisch als lokale Dependen
 
 - **Import**: Google Timeline JSON/ZIP, LH2GPX App-Export JSON/ZIP, GPX 1.1, TCX 2.0
 - **Tagesansicht**: Days-Liste (absteigend), Day-Detail mit Karte, Suche, Favoriten, Filterchips
-- **Map-Matching Beta**: Douglas-Peucker Pfadvereinfachung (epsilon=15m), Toggle Original/Angepasst
-- **Live-Aufzeichnung**: ActivityKit Live Activity (iOS 16.1+), Background-Recording, optionaler HTTP(S)-Upload
-- **Insights**: Overview, Patterns, Breakdowns, KPI-Karten, Top Days, Monatstrends, Heatmap
+- **Pfadmodus im Day-Detail**: Originalpfad oder vereinfachte Darstellung (`Simplified (Beta)`); kein echtes Straßen-/Wege-Snapping
+- **Live-Aufzeichnung**: ActivityKit Live Activity / Dynamic Island (iOS 16.1+), Fullscreen-Live-Karte, Follow-Location, optionaler HTTP(S)-Upload
+- **Insights**: Overview, Patterns, Breakdowns, KPI-Karten, Top Days, Monatstrends ohne 24-Monats-Cap, Heatmap
 - **Export**: GPX, TCX, KML, KMZ, GeoJSON, CSV; Filter nach Datum, Genauigkeit, Aktivitaetstyp, Bounding Box
 - **Google Maps Export-Hilfe**: Inline-Anleitung fuer iPhone-Export aus Google Maps
 - **Lokalisierung**: Deutsch / Englisch
+- **Widget / Sperrbildschirm**: Homescreen-Widget plus Live Activity / Dynamic Island fuer aktive Aufzeichnungen
 
 ## Repo-Struktur
 
@@ -46,7 +47,7 @@ Sources/
   LocationHistoryConsumerDemoSupport/  — Demo-Harness, Golden-Fixture
   LocationHistoryConsumerApp/          — Produkt-App-Einstieg
   LocationHistoryConsumerDemo/         — Demo-Einstieg
-Tests/LocationHistoryConsumerTests/    — Unit-Tests (586, 0 Failures)
+  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Linux-Nachweis: 575 Tests, 2 Skips, 0 Failures)
 Fixtures/contract/                     — Contract-Fixtures, Golden-JSONs
 wrapper/LH2GPXWrapper.xcodeproj        — Xcode Wrapper (Signing, Bundle, App-Icon)
 docs/                                  — Feature-Inventar, Runbook, Checklisten
@@ -67,6 +68,9 @@ Fuer Apple-komplette Testlaeufe auf macOS mit Xcode:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
+Aktueller Linux-Nachweis fuer dieses Repo:
+- `swift test` → `575` Tests, `2` Skips, `0` Failures
+
 ## Historische Vorstufen
 
 Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weiterentwickelt:
@@ -81,3 +85,9 @@ Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weite
 
 - `dev-roeber/LocationHistory2GPX` — Python Producer-Pipeline fuer Google Rohdaten
 - `dev-roeber/lh2gpx-live-receiver` — Live-Receiver-Server fuer optionalen Upload-Endpunkt
+
+## Bewusst offen
+
+- echtes Road-/Path-Matching a la Dawarich ist **nicht** implementiert
+- Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart ist **nicht** implementiert
+- Apple-Portal-/Signing-/TestFlight-/Device-UI-Themen sind auf diesem Linux-Host nicht voll verifizierbar und werden separat dokumentiert

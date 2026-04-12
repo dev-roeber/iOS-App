@@ -9,6 +9,9 @@ public struct LiveTrackRecorderConfiguration: Equatable {
     /// Absolute minimum elapsed time between any two accepted points.
     /// A value of 0 disables the gate (all-pass). Set from `RecordingIntervalPreference.totalSeconds`.
     public var minimumRecordingIntervalS: TimeInterval
+    /// Maximum allowed time gap between consecutive GPS points before the recorder signals a split.
+    /// `nil` means unlimited (no automatic split).
+    public var maximumGapSeconds: TimeInterval?
 
     public init(
         maximumAcceptedAccuracyM: Double = 65,
@@ -16,7 +19,8 @@ public struct LiveTrackRecorderConfiguration: Equatable {
         minimumDistanceDeltaM: Double = 15,
         minimumTimeDeltaS: TimeInterval = 8,
         minimumPersistedPointCount: Int = 2,
-        minimumRecordingIntervalS: TimeInterval = 0
+        minimumRecordingIntervalS: TimeInterval = 0,
+        maximumGapSeconds: TimeInterval? = nil
     ) {
         self.maximumAcceptedAccuracyM = maximumAcceptedAccuracyM
         self.duplicateDistanceThresholdM = duplicateDistanceThresholdM
@@ -24,6 +28,7 @@ public struct LiveTrackRecorderConfiguration: Equatable {
         self.minimumTimeDeltaS = minimumTimeDeltaS
         self.minimumPersistedPointCount = minimumPersistedPointCount
         self.minimumRecordingIntervalS = minimumRecordingIntervalS
+        self.maximumGapSeconds = maximumGapSeconds
     }
 }
 
@@ -32,6 +37,11 @@ public struct LiveTrackRecorder {
     public private(set) var isRecording = false
     /// Running total distance in metres across all accepted track points.
     public private(set) var accumulatedDistanceM: Double = 0
+
+    /// When `append` detects a time gap exceeding `configuration.maximumGapSeconds`, the current
+    /// track is finalised, stored here, and a new segment is started automatically.
+    /// The caller should drain this after each batch to persist split-off tracks.
+    public private(set) var splitOffTrack: RecordedTrack? = nil
 
     public private(set) var configuration: LiveTrackRecorderConfiguration
     private let calendar: Calendar
@@ -48,10 +58,17 @@ public struct LiveTrackRecorder {
         self.configuration = configuration
     }
 
+    /// Consumes and returns the split-off track produced during the last `append` call, if any.
+    public mutating func takeSplitOffTrack() -> RecordedTrack? {
+        defer { splitOffTrack = nil }
+        return splitOffTrack
+    }
+
     public mutating func start() {
         points = []
         accumulatedDistanceM = 0
         isRecording = true
+        splitOffTrack = nil
     }
 
     public mutating func append(_ sample: LiveLocationSample) -> Bool {
@@ -74,6 +91,16 @@ public struct LiveTrackRecorder {
         let timeDelta = candidate.timestamp.timeIntervalSince(last.timestamp)
         if timeDelta <= 0 {
             return false
+        }
+
+        // Maximum gap check: if the time gap exceeds the configured limit, finalise the current
+        // track segment, store it in splitOffTrack, and restart a fresh segment.
+        if let maxGap = configuration.maximumGapSeconds, timeDelta > maxGap {
+            splitOffTrack = stop()
+            start()
+            // Add the candidate as the first point of the new segment.
+            points = [candidate]
+            return true
         }
 
         // Honour the user-configured recording interval: reject if not enough time has elapsed.

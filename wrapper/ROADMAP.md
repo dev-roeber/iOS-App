@@ -19,6 +19,7 @@ Der frische Host-Nachweis dieses Audits ist Linux-only: der eingebundene Core-St
 - eigene `Saved Live Tracks`-Library plus Editor fuer gespeicherte lokale Tracks
 - aktuelle Position auf der Karte anzeigen
 - Live-Recording mit lokalen Einstellungen fuer Accuracy-Filter und Recording-Detail
+- dedizierter `Live`-Tab mit Fullscreen-Karte, Follow-/Recenter-Aktion, Upload-Status und Dynamic-Island-/Widget-Anbindung
 - GPX-, KML- und GeoJSON-Export fuer importierte History und gespeicherte Live-Tracks
 - Exportmodi fuer `Tracks`, `Waypoints` und `Both`
 - Waypoint-Export aus importierten Visits sowie Activity-Start/-End-Koordinaten
@@ -60,10 +61,8 @@ Der frische Host-Nachweis dieses Audits ist Linux-only: der eingebundene Core-St
 
 ### Noch nicht umgesetzt
 
-- weitere Exportformate wie CSV oder KMZ
-- per-route Auswahl innerhalb eines Tages
-- deutlich mehr Insight-Module und Insight-Tiefe
-- waehlbarer angezeigter Zeitraum fuer Overview/Insights
+- echtes Road-/Path-Matching
+- Auto-Resume laufender Live-Tracks nach Relaunch
 - breitere Lokalisierungsabdeckung und eine strengere Lokalisierungspruefung
 - Cloud-/Sync- oder Account-Features
 

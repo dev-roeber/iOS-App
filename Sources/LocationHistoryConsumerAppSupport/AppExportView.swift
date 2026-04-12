@@ -969,7 +969,9 @@ public struct AppExportView: View {
     }
 
     private var filteredSummaries: [DaySummary] {
-        session.content?.daySummaries(applying: effectiveQueryFilter) ?? []
+        DaySummaryDisplayOrdering.newestFirst(
+            session.content?.daySummaries(applying: effectiveQueryFilter) ?? []
+        )
     }
 
     private var dateOptions: [String] {

@@ -25,7 +25,7 @@ Abgeschlossen (530 Tests, 0 Failures):
 Abgeschlossen (511 Tests, 0 Failures):
 - Overview-Pane umgeordnet: Time-Range-Control an erster Position
 - Favorites-Only-Toggle (Capsule-Chip) im Overview; filtert Statistiken und Map reaktiv
-- `AppOverviewTracksMapView`: async Polyline-Übersichtskarte (iOS 17+), Task.detached, `.task(id:)`, Cap 100 Tage
+- `AppOverviewTracksMapView`: async Polyline-Uebersichtskarte (iOS 17+), Task.detached, `.task(id:)`, keine versteckte Route-Kappung fuer den aktiven Zeitraum; Performance ueber Vereinfachung/Decimation
 - Heatmap Mode/Radius-Picker als Capsule-Chips (passend zu `AppDayFilterChipsView`); Controls scrollbar in Landscape
 - Stray `Text("No data")` aus `AppDayRow` entfernt (visueller Stray-Bullet behoben)
 - `InsightsTopDaysPresentation.topDays(limit:)` von 5 auf 20 erhöht
@@ -60,7 +60,7 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 - Import von LH2GPX-`app_export.json`/`.zip` sowie Google-Timeline-`location-history.json`/`.zip`
 - Overview, Days, Day Detail, Insights und Export als produktnahe App-Shell
 - Suche in compact und regular `Days`
-- `Days` standardmaessig absteigend (`neu -> alt`) inklusive neuer contentful-first Initialauswahl/Fallbacks
+- `Days` standardmaessig absteigend (`neu -> alt`) inklusive neuer newest-first Session-Projektion sowie contentful-first Initialauswahl/Fallbacks
 - Re-Select-Verhalten fuer `Days` auf iPhone: erneutes Tab-Tippen fuehrt zum aktuellen Tag
 - stabile Sheet-Praesentation fuer Optionen, Export, Heatmap und `Saved Live Tracks`
 - eigene `Saved Live Tracks`-Library plus Editor fuer gespeicherte lokale Tracks
@@ -69,6 +69,7 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 - Live-Tracking-Oberflaeche mit klarer Recording-/Upload-/Library-Hierarchie, erweiterten Stat-Karten und Quick Actions fuer Zentrieren, Pause/Resume der Uploads und manuellen Queue-Flush
 - optionaler Server-Upload mit Queue-/Failure-/Last-Success-Status, Pause/Resume und manuellem Flush
 - segmentierte Insights-Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) mit KPI-Karten, Highlight-Karten, `Top Days` und Monatstrends
+- Monatstrends respektieren den aktiven Zeitraum ohne 24-Monats-Cap; Tabellen-/Listenanzeige priorisiert neueste Monate
 - GPX-, KML-, GeoJSON- und **CSV**-Export fuer importierte History und gespeicherte Live-Tracks
 - Exportmodi fuer `Tracks`, `Waypoints` und `Both`
 - Waypoint-Export aus importierten Visits sowie Activity-Start/-End-Koordinaten
@@ -130,11 +131,11 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 
 ### Noch nicht umgesetzt
 
-- **Map Matching + Dynamic Island / Live Activity** — ✅ abgeschlossen (2026-04-12); Douglas-Peucker PathSimplification, AppDayPathDisplayMode Toggle, ActivityKit TrackingAttributes + ActivityManager, NSSupportsLiveActivities, 16 neue Tests, 546 gesamt
+- echtes Road-/Path-Matching; aktuell gibt es nur Pfadvereinfachung im Day-Detail
 - KMZ-Export — ✅ abgeschlossen (2026-04-12); KMZBuilder (ZIPFoundation), KMZDocument (BinaryExportDocument), ExportFormat.kmz, 6 neue Tests
 - Live Activity Widget UI — ✅ Swift-Dateien vorhanden (wrapper/LH2GPXWidget/); Xcode Target manuell anzulegen (docs/WIDGET_XCODE_SETUP.md)
 - weitere Insight-Arbeit: Apple-Host-Verifikation fuer den jetzt verdrahteten Drilldown-/Chart-Share-Flow sowie optional spaeter map-linked Cross-Filtering
-- globale Zeitraumfilter-Verdrahtung fuer `Days` bleibt offen; aktuell sichtbar verdrahtet sind `Overview`, `Insights` und `Export`
+- Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart
 - breitere Lokalisierungsabdeckung und eine strengere Lokalisierungspruefung
 - Cloud-/Sync- oder Account-Features
 

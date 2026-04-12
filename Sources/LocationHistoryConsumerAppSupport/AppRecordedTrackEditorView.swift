@@ -18,10 +18,13 @@ struct AppRecordedTrackEditorView: View {
     }
 
     var body: some View {
-        Form {
-            summarySection
-            mapSection
-            pointsSection
+        GeometryReader { geometry in
+            let isLandscape = geometry.size.width > geometry.size.height
+            if isLandscape {
+                landscapeLayout
+            } else {
+                portraitLayout
+            }
         }
         .navigationTitle(t("Edit Saved Track"))
         .toolbar {
@@ -65,6 +68,68 @@ struct AppRecordedTrackEditorView: View {
         .onChange(of: draft.points) { _, _ in
             centerMapOnTrack()
         }
+    }
+
+    private var portraitLayout: some View {
+        Form {
+            summarySection
+            mapSection
+            pointsSection
+        }
+    }
+
+    private var landscapeLayout: some View {
+        HStack(spacing: 0) {
+            landscapeMapPanel
+            Divider()
+            landscapeFormPanel
+        }
+    }
+
+    @ViewBuilder
+    private var landscapeMapPanel: some View {
+        GeometryReader { geo in
+            Map(position: $mapPosition) {
+                if let first = draft.points.first {
+                    Marker(
+                        t("Start"),
+                        coordinate: CLLocationCoordinate2D(
+                            latitude: first.latitude,
+                            longitude: first.longitude
+                        )
+                    )
+                    .tint(.green)
+                }
+
+                if let last = draft.points.last {
+                    Marker(
+                        t("End"),
+                        coordinate: CLLocationCoordinate2D(
+                            latitude: last.latitude,
+                            longitude: last.longitude
+                        )
+                    )
+                    .tint(.red)
+                }
+
+                if draft.points.count >= 2 {
+                    MapPolyline(coordinates: draft.points.map {
+                        CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+                    })
+                    .stroke(.blue, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var landscapeFormPanel: some View {
+        Form {
+            summarySection
+            pointsSection
+        }
+        .frame(maxWidth: 400)
     }
 
     private var summarySection: some View {

@@ -1,6 +1,6 @@
 # Lokaler iPhone-Betrieb – Runbook
 
-Stand: 2026-03-31 (Monorepo-Migration)
+Stand: 2026-04-12
 
 ---
 
@@ -13,7 +13,7 @@ Dieses Runbook ersetzt keine App-Store-Einreichung – es dient dem lokalen Entw
 (`LocationHistory2GPX-Monorepo`). Alle `xcodebuild`-Aufrufe verwenden deshalb
 `-project wrapper/LH2GPXWrapper.xcodeproj` vom Monorepo-Root aus.
 
-Wichtig fuer diesen Audit: auf dem aktuellen Linux-Host ist `xcodebuild` nicht verfuegbar. Die Apple-/Simulator-/Device-Befunde unten bleiben deshalb historische Nachweise vom 2026-03-17 beziehungsweise 2026-03-30 und wurden in diesem Audit nicht frisch wiederholt.
+Wichtig fuer diesen Audit: auf dem aktuellen Linux-Host ist `xcodebuild` nicht verfuegbar. Die Apple-/Simulator-/Device-Befunde unten bleiben deshalb historische Nachweise; der frische verifizierte Host-Nachweis ist Linux-only via `swift test` im aktiven Repo `iOS-App` (`575` Tests, `2` Skips, `0` Failures).
 
 iPad-Betrieb kommt spaeter. Dieser Schritt fokussiert iPhone.
 

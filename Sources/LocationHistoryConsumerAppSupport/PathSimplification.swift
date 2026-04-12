@@ -1,5 +1,9 @@
 import Foundation
+import LocationHistoryConsumer
+
+#if canImport(CoreLocation)
 import CoreLocation
+#endif
 
 public enum PathSimplification {
     /// Douglas-Peucker line simplification.
@@ -8,9 +12,9 @@ public enum PathSimplification {
     ///   - epsilon: Tolerance in metres (default: 15 m).
     /// - Returns: Simplified coordinates. Original data is never mutated.
     public static func douglasPeucker(
-        _ points: [CLLocationCoordinate2D],
+        _ points: [LocationCoordinate2D],
         epsilon: Double = 15.0
-    ) -> [CLLocationCoordinate2D] {
+    ) -> [LocationCoordinate2D] {
         guard points.count > 2 else { return points }
 
         var maxDist = 0.0
@@ -41,22 +45,33 @@ public enum PathSimplification {
     // MARK: - Private
 
     private static func perpendicularDistance(
-        point: CLLocationCoordinate2D,
-        lineStart: CLLocationCoordinate2D,
-        lineEnd: CLLocationCoordinate2D
+        point: LocationCoordinate2D,
+        lineStart: LocationCoordinate2D,
+        lineEnd: LocationCoordinate2D
     ) -> Double {
-        let p = CLLocation(latitude: point.latitude, longitude: point.longitude)
-        let a = CLLocation(latitude: lineStart.latitude, longitude: lineStart.longitude)
-        let b = CLLocation(latitude: lineEnd.latitude, longitude: lineEnd.longitude)
+        let ab = lineStart.distance(to: lineEnd)
+        guard ab > 0 else { return lineStart.distance(to: point) }
 
-        let ab = a.distance(from: b)
-        guard ab > 0 else { return a.distance(from: p) }
-
-        let ap = a.distance(from: p)
-        let bp = b.distance(from: p)
+        let ap = lineStart.distance(to: point)
+        let bp = lineEnd.distance(to: point)
 
         let s = (ap + bp + ab) / 2
         let area = max(0, s * (s - ap) * (s - bp) * (s - ab))
         return 2 * sqrt(area) / ab
     }
 }
+
+#if canImport(CoreLocation)
+public extension PathSimplification {
+    static func douglasPeucker(
+        _ points: [CLLocationCoordinate2D],
+        epsilon: Double = 15.0
+    ) -> [CLLocationCoordinate2D] {
+        let simplified = douglasPeucker(
+            points.map { LocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) },
+            epsilon: epsilon
+        )
+        return simplified.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+    }
+}
+#endif

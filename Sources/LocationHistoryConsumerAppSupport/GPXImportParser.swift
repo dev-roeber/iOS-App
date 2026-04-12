@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationXML)
+import FoundationXML
+#endif
 import LocationHistoryConsumer
 
 /// Parses GPX 1.1 XML files and converts them to `AppExport`.

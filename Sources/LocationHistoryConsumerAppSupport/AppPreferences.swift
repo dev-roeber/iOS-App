@@ -63,7 +63,7 @@ public enum AppDayPathDisplayMode: String, CaseIterable, Identifiable {
     public var label: String {
         switch self {
         case .original: return "Original"
-        case .mapMatched: return "Map-Matched (Beta)"
+        case .mapMatched: return "Simplified (Beta)"
         }
     }
 }
@@ -71,6 +71,7 @@ public enum AppDayPathDisplayMode: String, CaseIterable, Identifiable {
 public enum AppMapStylePreference: String, CaseIterable, Identifiable {
     case standard
     case hybrid
+    case muted
 
     public var id: String { rawValue }
 
@@ -78,6 +79,7 @@ public enum AppMapStylePreference: String, CaseIterable, Identifiable {
         switch self {
         case .standard: return "Standard"
         case .hybrid: return "Satellite Hybrid"
+        case .muted: return "Muted"
         }
     }
 
@@ -87,6 +89,20 @@ public enum AppMapStylePreference: String, CaseIterable, Identifiable {
 
     mutating func toggle() {
         self = isHybrid ? .standard : .hybrid
+    }
+}
+
+public enum DynamicIslandCompactDisplay: String, Codable, CaseIterable {
+    case distance
+    case points
+    case elapsed
+
+    public var localizedName: String {
+        switch self {
+        case .distance: return "Distanz"
+        case .points: return "Punkte"
+        case .elapsed: return "Dauer"
+        }
     }
 }
 
@@ -224,6 +240,9 @@ public final class AppPreferences: ObservableObject {
         static let recordingInterval = "app.preferences.recordingInterval"
         static let autoRestoreLastImport = "app.preferences.autoRestoreLastImport"
         static let dayPathDisplayMode = "app.preferences.dayPathDisplayMode"
+        static let widgetAutoUpdate = "app.preferences.widgetAutoUpdate"
+        static let dynamicIslandCompactDisplay = "app.preferences.dynamicIslandCompactDisplay"
+        static let maximumRecordingGapSeconds = "app.preferences.maximumRecordingGapSeconds"
     }
 
     private let userDefaults: UserDefaults
@@ -301,6 +320,25 @@ public final class AppPreferences: ObservableObject {
         didSet { userDefaults.set(dayPathDisplayMode.rawValue, forKey: Keys.dayPathDisplayMode) }
     }
 
+    /// Whether the home-screen widget should reload its timeline automatically after each recording.
+    @Published public var widgetAutoUpdate: Bool {
+        didSet { userDefaults.set(widgetAutoUpdate, forKey: Keys.widgetAutoUpdate) }
+    }
+
+    /// Which value is shown in the Dynamic Island compact-trailing slot during live recording.
+    @Published public var dynamicIslandCompactDisplay: DynamicIslandCompactDisplay {
+        didSet {
+            userDefaults.set(dynamicIslandCompactDisplay.rawValue, forKey: Keys.dynamicIslandCompactDisplay)
+            WidgetDataStore.saveDynamicIslandCompactDisplay(dynamicIslandCompactDisplay)
+        }
+    }
+
+    /// Maximum allowed time gap (in seconds) between consecutive GPS points before the recorder
+    /// automatically splits the track. 0 means unlimited (no automatic split).
+    @Published public var maximumRecordingGapSeconds: Int {
+        didSet { userDefaults.set(maximumRecordingGapSeconds, forKey: Keys.maximumRecordingGapSeconds) }
+    }
+
     public var liveTrackRecorderConfiguration: LiveTrackRecorderConfiguration {
         LiveTrackRecorderConfiguration(
             maximumAcceptedAccuracyM: liveTrackingAccuracy.maximumAcceptedAccuracyM,
@@ -308,7 +346,8 @@ public final class AppPreferences: ObservableObject {
             minimumDistanceDeltaM: liveTrackingDetail.minimumDistanceDeltaM,
             minimumTimeDeltaS: liveTrackingDetail.minimumTimeDeltaS,
             minimumPersistedPointCount: 2,
-            minimumRecordingIntervalS: recordingInterval.totalSeconds
+            minimumRecordingIntervalS: recordingInterval.totalSeconds,
+            maximumGapSeconds: maximumRecordingGapSeconds == 0 ? nil : TimeInterval(maximumRecordingGapSeconds)
         )
     }
 
@@ -400,7 +439,18 @@ public final class AppPreferences: ObservableObject {
             key: Keys.dayPathDisplayMode,
             from: userDefaults
         ) ?? .original
+        self.widgetAutoUpdate = userDefaults.object(forKey: Keys.widgetAutoUpdate) as? Bool ?? true
+        let loadedDynamicIslandDisplay = Self.loadEnum(
+            DynamicIslandCompactDisplay.self,
+            key: Keys.dynamicIslandCompactDisplay,
+            from: userDefaults
+        ) ?? .distance
+        self.dynamicIslandCompactDisplay = loadedDynamicIslandDisplay
+        // 0 stored means "unlimited" — default is 300 s (5 minutes)
+        let storedGap = userDefaults.object(forKey: Keys.maximumRecordingGapSeconds) as? Int
+        self.maximumRecordingGapSeconds = storedGap ?? 300
         syncWidgetLanguagePreference()
+        WidgetDataStore.saveDynamicIslandCompactDisplay(loadedDynamicIslandDisplay)
     }
 
     public func reset() {
@@ -420,6 +470,9 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.recordingInterval)
         userDefaults.removeObject(forKey: Keys.autoRestoreLastImport)
         userDefaults.removeObject(forKey: Keys.dayPathDisplayMode)
+        userDefaults.removeObject(forKey: Keys.widgetAutoUpdate)
+        userDefaults.removeObject(forKey: Keys.dynamicIslandCompactDisplay)
+        userDefaults.removeObject(forKey: Keys.maximumRecordingGapSeconds)
 
         distanceUnit = .metric
         startTab = .overview
@@ -436,6 +489,9 @@ public final class AppPreferences: ObservableObject {
         recordingInterval = .default
         autoRestoreLastImport = false
         dayPathDisplayMode = .original
+        widgetAutoUpdate = true
+        dynamicIslandCompactDisplay = .distance
+        maximumRecordingGapSeconds = 300
     }
 
     private func syncWidgetLanguagePreference() {

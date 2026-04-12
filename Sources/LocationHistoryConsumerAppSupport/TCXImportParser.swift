@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationXML)
+import FoundationXML
+#endif
 import LocationHistoryConsumer
 
 public enum TCXImportError: LocalizedError, Equatable {
@@ -41,6 +44,10 @@ public enum TCXImportParser {
     /// Parses TCX data and returns an `AppExport`.
     /// Throws `TCXImportError` when the XML is invalid or contains no usable track points.
     public static func parse(_ data: Data, fileName: String) throws -> AppExport {
+        guard !data.trimmingPrefixWhitespaceAndNewlines.isEmpty else {
+            throw TCXImportError.invalidXML(fileName)
+        }
+
         let parser = _TCXXMLParser(data: data)
         guard parser.run() else {
             throw TCXImportError.invalidXML(fileName)
@@ -177,6 +184,13 @@ public enum TCXImportParser {
             throw TCXImportError.exportRoundTripFailed(fileName)
         }
         return export
+    }
+}
+
+private extension Data {
+    var trimmingPrefixWhitespaceAndNewlines: Data {
+        let scalars = String(decoding: self, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        return Data(scalars.utf8)
     }
 }
 

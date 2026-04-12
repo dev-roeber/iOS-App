@@ -75,6 +75,14 @@ enum InsightsMonthlyTrendPresentation {
         }
     }
 
+    static func chartItems(_ items: [InsightsMonthlyTrendItem]) -> [InsightsMonthlyTrendItem] {
+        items
+    }
+
+    static func isTruncated(_ items: [InsightsMonthlyTrendItem]) -> Bool {
+        false
+    }
+
     static func summary(for item: InsightsMonthlyTrendItem, metric: InsightsTrendMetric) -> String {
         switch metric {
         case .distance:

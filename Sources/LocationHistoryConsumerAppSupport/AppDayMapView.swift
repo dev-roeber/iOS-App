@@ -7,6 +7,9 @@ import LocationHistoryConsumer
 public struct AppDayMapView: View {
     @EnvironmentObject private var preferences: AppPreferences
     let mapData: DayMapData
+    /// When `true` the map fills available height (for landscape side-by-side layouts).
+    /// When `false` (default) the map uses a fixed 280 pt portrait height.
+    var fillHeight: Bool = false
     @State private var renderData: DayMapRenderData
 
     public init(mapData: DayMapData) {
@@ -17,8 +20,9 @@ public struct AppDayMapView: View {
     public var body: some View {
         if renderData.hasMapContent, let region = renderData.region {
             mapContent(region: region)
-                .frame(height: 280)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .frame(height: fillHeight ? nil : 280)
+                .frame(maxHeight: fillHeight ? .infinity : nil)
+                .clipShape(RoundedRectangle(cornerRadius: fillHeight ? 0 : 12, style: .continuous))
                 .overlay(alignment: .topTrailing) {
                     Button {
                         preferences.preferredMapStyle.toggle()
@@ -27,9 +31,9 @@ public struct AppDayMapView: View {
                             .font(.caption)
                             .padding(7)
                             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-                .padding(8)
-                .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
+                    }
+                    .padding(8)
+                    .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
                 }
                 .accessibilityLabel(mapAccessibilityLabel)
                 .onChange(of: mapData) { _, newValue in

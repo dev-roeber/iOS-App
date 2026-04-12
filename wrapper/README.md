@@ -2,9 +2,7 @@
 
 Xcode-Wrapper-Projekt fuer die iOS-App von LocationHistory2GPX.
 
-**Monorepo-Hinweis:** Dieses Verzeichnis (`wrapper/`) ist Teil des Monorepos
-`LocationHistory2GPX-Monorepo`. Der Core Swift Package liegt im Monorepo-Root.
-Das Xcode-Projekt referenziert den Core per `relativePath = "../.."`.
+**Aktiver Repo-Kontext:** Dieses `wrapper/`-Verzeichnis lebt heute im aktiven Repo `iOS-App`. Aeltere Hinweise auf `LocationHistory2GPX-Monorepo` sind nur noch historischer Kontext.
 
 ## Rolle dieses Verzeichnisses
 
@@ -14,7 +12,7 @@ Das Xcode-Projekt referenziert den Core per `relativePath = "../.."`.
 - ist der Weg zu Geraetedeploy, TestFlight und App Store
 - ist bewusst nicht die fachliche Truth-Quelle fuer Parsing-/Export-/Importlogik; diese bleibt im Root-Package
 
-## Monorepo-Architektur
+## Repo-Architektur
 
 | Aspekt | Core (Monorepo-Root) | Wrapper (`wrapper/`) |
 |--------|----------------------|---------------------|
@@ -76,7 +74,8 @@ Die App nutzt die Produkt-UI aus dem Core-Repo (`LocationHistoryConsumerAppSuppo
 - Karten-MVP: MapKit-Ansicht im Day-Detail mit Pfad-Polylines und Visit-Markern
 - Heatmap als eigenes Sheet fuer importierte History auf iOS 17+/macOS 14+
 - Live-Recording-Sektion im Day-Detail: manueller Toggle, aktueller Standort, Live-Polyline, gespeicherte Live-Tracks
-- Optionen-Seite ueber das Actions-Menue: lokale Distanz-Einheit, Start-Tab, Kartenstil, Sprache, technische Importdetails und optionaler Server-Upload
+- dedizierter Live-Tab mit Fullscreen-Karte, Follow-/Recenter-Aktion, Upload-Status und Zugriff auf die gespeicherten Live-Tracks
+- Optionen-Seite ueber das Actions-Menue: lokale Distanz-Einheit, Start-Tab, Kartenstil, Sprache, technische Importdetails, Widget-/Dynamic-Island-Optionen und optionaler Server-Upload
 - VoiceOver-Accessibility: semantische Labels und Gruppierung fuer alle Kernelemente
 - Toolbar-Aktionen mit SF-Symbol-Icons, inklusive Optionen-Seite
 - Konsistente Leer-/Fehler-/Ladezustaende
@@ -119,7 +118,7 @@ Neu auf Code-Stand 2026-03-20:
 - GPX, TCX, KML, GeoJSON koennen per `fileImporter` geoeffnet werden (nicht nur JSON/ZIP)
 
 Aktueller Server-Truth fuer den eingebundenen Core-Stand:
-- `swift test` im Core-Repo laeuft gruen mit `586` Tests und `0` Failures (Stand 2026-04-12)
+- `swift test` im aktiven Repo `iOS-App` laeuft auf Linux gruen mit `575` Tests, `2` Skips und `0` Failures (Stand 2026-04-12)
 - `xcodebuild` ist auf dem Linux-Server nicht verfuegbar; der Wrapper-spezifische Xcode-/Device-Stand ist der letzte Apple-Lauf vom 2026-04-12
 
 Unterstuetztes Import-Format: jede `.json`-Datei oder `.zip`-Datei, die einen gueltigen LH2GPX-App-Export enthaelt, plus Google-Timeline-`location-history.json` / `.zip` aus Google Takeout.
@@ -155,7 +154,7 @@ Vollstaendiger Submission-Leitfaden: `docs/TESTFLIGHT_RUNBOOK.md`
 - kein finales App-Icon-Design (Interims-Icon vorhanden, finales Branding-Design steht aus)
 - keine vollstaendige Lokalisierung; derzeit partielle Deutsch/Englisch-Abdeckung aus dem Core-Repo
 - keine Heatmap-Produktreife- oder Performance-Verifikation, kein Replay, keine Offline-Karten
-- kein CSV-/KMZ-Export
+- kein echtes Road-/Path-Matching
 - kein Resume laufender Live-Tracks, kein Cloud-/Sync-Flow fuer importierte History, keine frische Device-Verifikation fuer optionales Background-Live-Recording
 
 ## Roadmap

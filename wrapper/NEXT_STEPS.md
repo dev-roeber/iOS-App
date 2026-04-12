@@ -10,6 +10,7 @@ Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschl
 - [x] Deep Link `lh2gpx://live`: `CFBundleURLTypes` in `Info.plist`, `onOpenURL`-Handler, `navigateToLiveTabRequested` + `AppContentSplitView` onChange-Observer
 - [x] Widget-/Live-Activity-Lokalisierung: harte deutsche Texte ersetzt; Widget bevorzugt via App Group gespiegelte `AppLanguagePreference`, Geraetesprache als Fallback
 - [x] Wrapper-/Widget-Build in CI: `.github/workflows/swift-test.yml` baut `LH2GPXWrapper` inkl. eingebettetem `LH2GPXWidget`
+- [x] Widget-/Dynamic-Island-Einstellungen im Optionen-Menue sichtbar verdrahtet
 
 ## 1. Phase 19.51 – Live / Upload / Insights / Days auf Apple verifizieren
 
@@ -26,6 +27,7 @@ Fehlt noch:
 - frische Apple-UI-Verifikation fuer den neuen `Live`-Tab inklusive Upload-Zustaenden, Quick Actions und groesserem Stat-Set
 - frische Apple-UI-Verifikation fuer die neue `Insights`-Informationsarchitektur und Chart-Lesbarkeit
 - frische Apple-UI-Verifikation fuer die absteigende `Days`-Default-Sortierung im echten iPhone-/macOS-Flow
+- kein echtes Road-/Path-Matching; aktueller Day-Detail-Switch ist nur Pfadvereinfachung
 
 ## 2. Phase 19.52 – Heatmap testen und auf Apple verifizieren
 

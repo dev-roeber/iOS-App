@@ -34,9 +34,21 @@ public final class LiveLocationFeatureModel: ObservableObject {
     /// Reset to false by the observer after acting on it.
     @Published public var navigateToLiveTabRequested = false
 
+    // MARK: - Follow Mode
+    @Published public var isFollowingLocation: Bool = false
+
+    // MARK: - Auto-Resume Foundation
+    @Published public private(set) var sessionStartedAt: Date?
+    @Published public private(set) var sessionID: UUID?
+    @Published public var hasInterruptedSession: Bool = false
+
+    private static let sessionStartedAtKey = "live.session.startedAt"
+    private static let sessionIDKey = "live.session.id"
+
     private let client: LiveLocationClient?
     private let store: RecordedTrackStoring
     private let uploader: LiveLocationServerUploading
+    private let defaults: UserDefaults
     private var recorder: LiveTrackRecorder
     private var serverUploadConfiguration = LiveLocationServerUploadConfiguration()
     private var pendingUploadQueue = PendingLiveLocationUploadQueue()
@@ -49,6 +61,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
         self.store = RecordedTrackFileStore()
         self.uploader = HTTPSLiveLocationServerUploader()
         self.recorder = LiveTrackRecorder()
+        self.defaults = .standard
         self.authorization = client?.authorization ?? .restricted
 
         do {
@@ -57,6 +70,8 @@ public final class LiveLocationFeatureModel: ObservableObject {
             self.recordedTracks = []
             self.persistenceErrorMessage = "Saved live tracks could not be loaded."
         }
+
+        self.hasInterruptedSession = defaults.string(forKey: Self.sessionIDKey) != nil
 
         client?.onAuthorizationChange = { [weak self] authorization in
             self?.handleAuthorizationChange(authorization)
@@ -70,12 +85,14 @@ public final class LiveLocationFeatureModel: ObservableObject {
         client: LiveLocationClient?,
         store: RecordedTrackStoring,
         recorder: LiveTrackRecorder = LiveTrackRecorder(),
-        uploader: LiveLocationServerUploading = HTTPSLiveLocationServerUploader()
+        uploader: LiveLocationServerUploading = HTTPSLiveLocationServerUploader(),
+        userDefaults: UserDefaults = .standard
     ) {
         self.client = client
         self.store = store
         self.uploader = uploader
         self.recorder = recorder
+        self.defaults = userDefaults
         self.authorization = client?.authorization ?? .restricted
 
         do {
@@ -84,6 +101,8 @@ public final class LiveLocationFeatureModel: ObservableObject {
             self.recordedTracks = []
             self.persistenceErrorMessage = "Saved live tracks could not be loaded."
         }
+
+        self.hasInterruptedSession = defaults.string(forKey: Self.sessionIDKey) != nil
 
         client?.onAuthorizationChange = { [weak self] authorization in
             self?.handleAuthorizationChange(authorization)
@@ -358,6 +377,12 @@ public final class LiveLocationFeatureModel: ObservableObject {
         schedulePendingUploadIfNeeded(force: true, endpointOverride: endpoint)
     }
 
+    public func dismissInterruptedSession() {
+        hasInterruptedSession = false
+        defaults.removeObject(forKey: Self.sessionStartedAtKey)
+        defaults.removeObject(forKey: Self.sessionIDKey)
+    }
+
     private func startRecordingFlow() {
         guard recordingStartState == .idle || recordingStartState == .failedAuthorization else {
             return
@@ -367,6 +392,14 @@ public final class LiveLocationFeatureModel: ObservableObject {
         currentRecordingSessionID = UUID()
         pendingUploadQueue.removeAll()
         pendingUploadPointCount = 0
+
+        // Persist session for auto-resume detection
+        let now = Date()
+        sessionStartedAt = now
+        sessionID = currentRecordingSessionID
+        defaults.set(now.timeIntervalSince1970, forKey: Self.sessionStartedAtKey)
+        defaults.set(currentRecordingSessionID.uuidString, forKey: Self.sessionIDKey)
+        hasInterruptedSession = false
         if serverUploadConfiguration.isEnabled, serverUploadConfiguration.endpointURL != nil {
             serverUploadStatusMessage = "Server upload ready for \(serverUploadConfiguration.endpointDisplayName)."
         }
@@ -405,8 +438,15 @@ public final class LiveLocationFeatureModel: ObservableObject {
         transition(to: .idle)
         client?.stopUpdatingLocation()
         currentLocation = nil
+        isFollowingLocation = false
         schedulePendingUploadIfNeeded()
         pendingUploadPointCount = pendingUploadQueue.count
+
+        // Clear persisted session — clean stop, no interrupted session
+        sessionStartedAt = nil
+        sessionID = nil
+        defaults.removeObject(forKey: Self.sessionStartedAtKey)
+        defaults.removeObject(forKey: Self.sessionIDKey)
 
         #if os(iOS)
         if #available(iOS 16.1, *) {

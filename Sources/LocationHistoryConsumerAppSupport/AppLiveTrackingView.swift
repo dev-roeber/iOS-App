@@ -13,6 +13,7 @@ public struct AppLiveTrackingView: View {
 
     @EnvironmentObject private var preferences: AppPreferences
     @ObservedObject private var liveLocation: LiveLocationFeatureModel
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var hasSeededMap = false
     @State private var recordingDuration: TimeInterval = 0
@@ -21,6 +22,7 @@ public struct AppLiveTrackingView: View {
     @State private var now = Date()
     @State private var metricSnapshot = LiveTrackingMetricSnapshot.empty
     @State private var polylineCoordinates: [CLLocationCoordinate2D] = []
+    @State private var isFullscreenMapPresented = false
 
     private let onOpenSavedTracksLibrary: (() -> Void)?
 
@@ -45,18 +47,13 @@ public struct AppLiveTrackingView: View {
     }
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                mapCard
-                recordingSection
-                if shouldShowUploadSection {
-                    uploadSection
-                }
-                savedTracksSection
-                advancedSection
+        GeometryReader { geometry in
+            let isLandscape = geometry.size.width > 500
+            if isLandscape {
+                landscapeLayout
+            } else {
+                portraitLayout
             }
-            .padding(.horizontal)
-            .padding(.vertical, 14)
         }
         .navigationTitle(t("Live Tracking"))
         .task {
@@ -70,8 +67,11 @@ public struct AppLiveTrackingView: View {
         }
         .onChange(of: liveLocation.currentLocation?.timestamp) { _, _ in
             refreshMetricSnapshot()
-            guard !hasSeededMap else { return }
-            centerOnCurrentLocation()
+            if !hasSeededMap {
+                centerOnCurrentLocation()
+            } else if liveLocation.isFollowingLocation {
+                centerOnCurrentLocation()
+            }
         }
         .onChange(of: liveTrackSignature) { _, _ in
             refreshTrackPresentationState()
@@ -79,7 +79,164 @@ public struct AppLiveTrackingView: View {
         .onChange(of: liveLocation.isRecording) { _, _ in
             syncTimerState()
         }
+        .fullScreenCover(isPresented: $isFullscreenMapPresented) {
+            fullscreenMapView
+        }
     }
+
+    private var portraitLayout: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                if liveLocation.hasInterruptedSession {
+                    interruptedSessionBanner
+                }
+                mapCard
+                recordingSection
+                if shouldShowUploadSection {
+                    uploadSection
+                }
+                savedTracksSection
+                advancedSection
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 14)
+        }
+    }
+
+    private var landscapeLayout: some View {
+        HStack(alignment: .top, spacing: 0) {
+            // Left: full-height map
+            mapCard
+                .padding(.leading)
+                .padding(.vertical, 14)
+                .frame(maxHeight: .infinity, alignment: .top)
+            // Right: scrollable content
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    if liveLocation.hasInterruptedSession {
+                        interruptedSessionBanner
+                    }
+                    recordingSection
+                    if shouldShowUploadSection {
+                        uploadSection
+                    }
+                    savedTracksSection
+                    advancedSection
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 14)
+            }
+        }
+    }
+
+    // MARK: - Interrupted Session Banner
+
+    private var interruptedSessionBanner: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(t("Recording interrupted"))
+                        .font(.subheadline.weight(.semibold))
+                    Text(t("A recording was interrupted. Start a new session?"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            HStack(spacing: 10) {
+                Button(action: {
+                    liveLocation.dismissInterruptedSession()
+                    liveLocation.setRecordingEnabled(true)
+                }) {
+                    Label(t("Resume recording"), systemImage: "record.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+
+                Button(action: {
+                    liveLocation.dismissInterruptedSession()
+                }) {
+                    Text(t("Ignore"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding(14)
+        .background(Color.orange.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Fullscreen Map
+
+    private var fullscreenMapView: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .topTrailing) {
+                liveMapContent(height: geometry.size.height)
+                    .ignoresSafeArea()
+                Button(action: { isFullscreenMapPresented = false }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                        .padding(16)
+                        .background(.thinMaterial, in: Circle())
+                }
+                .padding(20)
+                .accessibilityLabel(t("Close fullscreen map"))
+            }
+        }
+        .ignoresSafeArea()
+    }
+
+    @ViewBuilder
+    private func liveMapContent(height: CGFloat) -> some View {
+        if liveLocation.canDisplayLiveLocation, liveLocation.currentLocation != nil {
+            Map(position: $mapPosition) {
+                if let currentLocation = liveLocation.currentLocation {
+                    Annotation(t("Current Location"), coordinate: CLLocationCoordinate2D(
+                        latitude: currentLocation.latitude,
+                        longitude: currentLocation.longitude
+                    )) {
+                        ZStack {
+                            Circle()
+                                .fill((liveLocation.isRecording ? Color.red : Color.blue).opacity(0.18))
+                                .frame(width: 42, height: 42)
+                            Circle()
+                                .fill(liveLocation.isRecording ? Color.red : Color.blue)
+                                .frame(width: 15, height: 15)
+                                .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                        }
+                    }
+                }
+                if liveLocation.liveTrackShouldRender {
+                    MapPolyline(coordinates: polylineCoordinates)
+                        .stroke(.red, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
+                }
+            }
+            .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .onMapCameraChange { _ in
+                // User manually moved the map — disable follow mode
+                liveLocation.isFollowingLocation = false
+            }
+        } else {
+            Rectangle()
+                .fill(Color.secondary.opacity(0.1))
+                .frame(maxWidth: .infinity)
+                .frame(height: height)
+        }
+    }
+
+    // MARK: -
 
     private var shouldShowUploadSection: Bool {
         preferences.sendsLiveLocationToServer || liveLocation.pendingUploadPointCount > 0 || liveLocation.serverUploadStatusMessage != nil
@@ -165,16 +322,45 @@ public struct AppLiveTrackingView: View {
                     }
                     .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
                     .frame(height: 290)
+                    .onMapCameraChange { _ in
+                        // Disable follow mode when user manually moves the map
+                        liveLocation.isFollowingLocation = false
+                    }
                     .overlay(alignment: .topTrailing) {
-                        Button(action: centerOnCurrentLocation) {
-                            Label(t("Center"), systemImage: "location.fill")
+                        HStack(spacing: 8) {
+                            // Fullscreen button
+                            Button(action: { isFullscreenMapPresented = true }) {
+                                Label(t("Fullscreen"), systemImage: "arrow.up.left.and.arrow.down.right")
+                                    .labelStyle(.iconOnly)
+                                    .font(.subheadline)
+                                    .padding(10)
+                                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            }
+                            .accessibilityLabel(t("Open fullscreen map"))
+                            // Follow toggle button
+                            Button(action: {
+                                liveLocation.isFollowingLocation.toggle()
+                                if liveLocation.isFollowingLocation {
+                                    centerOnCurrentLocation()
+                                }
+                            }) {
+                                Label(
+                                    preferences.appLanguage.isGerman ? "Folgen" : "Follow",
+                                    systemImage: liveLocation.isFollowingLocation ? "location.fill" : "location"
+                                )
                                 .labelStyle(.iconOnly)
                                 .font(.subheadline)
                                 .padding(10)
                                 .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .foregroundStyle(liveLocation.isFollowingLocation ? .blue : .secondary)
+                            }
+                            .accessibilityLabel(
+                                liveLocation.isFollowingLocation
+                                    ? t("Disable follow mode")
+                                    : t("Enable follow mode")
+                            )
                         }
                         .padding(12)
-                        .accessibilityLabel(t("Center on current location"))
                     }
                 } else {
                     VStack(spacing: 12) {
@@ -280,11 +466,22 @@ public struct AppLiveTrackingView: View {
 
     @ViewBuilder
     private var quickActionButtons: some View {
-        Button(action: centerOnCurrentLocation) {
-            Label(t("Center Map"), systemImage: "location.fill")
-                .frame(maxWidth: .infinity)
+        Button(action: {
+            liveLocation.isFollowingLocation.toggle()
+            if liveLocation.isFollowingLocation {
+                centerOnCurrentLocation()
+            }
+        }) {
+            Label(
+                liveLocation.isFollowingLocation
+                    ? (preferences.appLanguage.isGerman ? "Folgen aktiv" : "Following")
+                    : (preferences.appLanguage.isGerman ? "Folgen" : "Follow"),
+                systemImage: liveLocation.isFollowingLocation ? "location.fill" : "location"
+            )
+            .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
+        .tint(liveLocation.isFollowingLocation ? .blue : nil)
         .disabled(liveLocation.currentLocation == nil)
 
         if shouldShowUploadSection {

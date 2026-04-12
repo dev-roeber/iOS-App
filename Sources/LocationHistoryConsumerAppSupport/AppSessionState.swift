@@ -60,7 +60,9 @@ public final class AppSessionContent {
         AppExportQueries.overview(from: export)
     }()
     public private(set) lazy var daySummaries: [DaySummary] = {
-        AppExportQueries.daySummaries(from: export)
+        DaySummaryDisplayOrdering.newestFirst(
+            AppExportQueries.daySummaries(from: export)
+        )
     }()
     public private(set) lazy var insights: ExportInsights = {
         AppExportQueries.insights(from: export)
@@ -78,8 +80,10 @@ public final class AppSessionContent {
         self.source = source
         
         // Eagerly compute selectedDate based on the newest contentful day.
-        let summaries = AppExportQueries.daySummaries(from: export)
-        self.selectedDate = summaries.last(where: \.hasContent)?.date ?? summaries.last?.date
+        let summaries = DaySummaryDisplayOrdering.newestFirst(
+            AppExportQueries.daySummaries(from: export)
+        )
+        self.selectedDate = summaries.first(where: \.hasContent)?.date ?? summaries.first?.date
         
         // Now that all non-lazy stored properties are initialized, we can populate the lazy storage.
         self.daySummaries = summaries
@@ -110,7 +114,9 @@ public final class AppSessionContent {
             return cached
         }
 
-        let projected = AppExportQueries.daySummaries(from: export, applying: filter)
+        let projected = DaySummaryDisplayOrdering.newestFirst(
+            AppExportQueries.daySummaries(from: export, applying: filter)
+        )
         filteredDaySummariesCache[key] = projected
         return projected
     }
@@ -401,7 +407,7 @@ public struct AppSessionState {
         if daySummaries.contains(where: { $0.date == date }) {
             selectedDate = date
         } else {
-            selectedDate = daySummaries.last?.date
+            selectedDate = daySummaries.first?.date
         }
     }
 
@@ -418,7 +424,7 @@ public struct AppSessionState {
             return
         }
 
-        selectedDate = daySummaries.last(where: \.hasContent)?.date ?? daySummaries.last?.date
+        selectedDate = daySummaries.first(where: \.hasContent)?.date ?? daySummaries.first?.date
         sanitizeSelectionIfContentEmpty()
     }
 

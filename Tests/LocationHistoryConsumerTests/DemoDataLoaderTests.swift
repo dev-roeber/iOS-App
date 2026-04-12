@@ -9,7 +9,7 @@ final class DemoDataLoaderTests: XCTestCase {
         XCTAssertEqual(content.overview.schemaVersion, "1.0")
         XCTAssertEqual(content.overview.inputFormat, "records")
         XCTAssertEqual(content.overview.dayCount, 2)
-        XCTAssertEqual(content.daySummaries.map(\.date), ["2024-05-01", "2024-05-02"])
+        XCTAssertEqual(content.daySummaries.map(\.date), ["2024-05-02", "2024-05-01"])
         XCTAssertEqual(content.selectedDate, "2024-05-02")
         XCTAssertEqual(content.source, .demoFixture(name: DemoDataLoader.defaultFixtureName))
     }
@@ -27,7 +27,7 @@ final class DemoDataLoaderTests: XCTestCase {
         let content = try await DemoDataLoader.loadImportedContent(from: importedURL)
 
         XCTAssertEqual(content.overview.schemaVersion, "1.0")
-        XCTAssertEqual(content.daySummaries.map(\.date), ["2024-05-01", "2024-05-02"])
+        XCTAssertEqual(content.daySummaries.map(\.date), ["2024-05-02", "2024-05-01"])
         XCTAssertEqual(content.source, .importedFile(filename: "imported_app_export.json"))
     }
 

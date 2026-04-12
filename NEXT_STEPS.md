@@ -11,25 +11,32 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [x] fileImporter GPX/TCX im Wrapper — abgeschlossen 2026-04-12 (allowedContentTypes erweitert, UTType.tcx Extension)
 - [x] Deep Link lh2gpx://live — abgeschlossen 2026-04-12 (CFBundleURLTypes, onOpenURL, navigateToLiveTabRequested, AppContentSplitView onChange)
 - [x] Overview Map Route Budget Fix — abgeschlossen 2026-04-12 (OverviewMapRenderProfile, Grid-Selektion, Douglas-Peucker)
-- [ ] Chart-Share per ImageRenderer verifizieren
+- [ ] Chart-Share per ImageRenderer auf Apple-Host verifizieren
 - [ ] Split-Repos (LocationHistory2GPX-iOS, LH2GPXWrapper) als historisch/mirror markieren
+- [ ] echtes Road-/Path-Matching konzipieren; aktuelle `Simplified (Beta)`-Darstellung bleibt bewusst nur Pfadvereinfachung
+- [ ] Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart nur mit sauberem Persistenz-/Recovery-Modell
+- [ ] app-weite Landscape-Verifikation fuer jede Hauptseite auf Apple-Hardware nachziehen
 
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 
-## Prompt 3 — Map Matching + Dynamic Island / Live Activity
-**Status: ABGESCHLOSSEN 2026-04-12**
+## Prompt 3 — Simplified Path View + Dynamic Island / Live Activity
+**Status: TEILWEISE ABGESCHLOSSEN 2026-04-12**
 
 Umgesetzt:
 - Phase B1: Douglas-Peucker PathSimplification (epsilon=15m, keine externen Deps)
 - AppDayPathDisplayMode enum (.original / .mapMatched) mit @AppStorage-Persistenz
-- Map Matching Toggle in AppDayDetailView: "Original" vs. "An Straße angepasst (Beta)"
+- Toggle in AppDayDetailView fuer Original vs. vereinfachte Darstellung (`Simplified (Beta)`)
 - Phase B2: ActivityKit Live Activity (iOS 16.1+)
 - TrackingAttributes + TrackingStatus (ActivityAttributes)
 - ActivityManager Singleton: start/update/end/cancelAll
 - Integration in LiveLocationFeatureModel und LiveTrackRecorder
 - NSSupportsLiveActivities = true in Info.plist
 - 9 neue MapMatchingTests + 7 neue LiveActivityTests = 16 neue Tests, 546 gesamt, 0 Failures
+
+Bewusst offen:
+- kein echtes Straßen-/Wege-Snapping
+- kein Resume laufender Live-Tracks nach Relaunch
 
 ## Multi-Source Import Foundation (2026-04-12)
 

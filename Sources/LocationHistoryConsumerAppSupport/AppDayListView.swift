@@ -12,7 +12,18 @@ struct AppDayRow: View {
     var isFavorited: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        GeometryReader { geometry in
+            let isLandscape = geometry.size.width > geometry.size.height
+            rowContent(compactVertical: isLandscape)
+        }
+        // Provide a stable height that works in both orientations; the row
+        // auto-sizes to its content so this just gives List a layout anchor.
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder
+    private func rowContent(compactVertical: Bool) -> some View {
+        VStack(alignment: .leading, spacing: compactVertical ? 2 : 5) {
             HStack {
                 Text(AppDateDisplay.weekday(summary.date))
                     .font(.subheadline)
@@ -66,7 +77,7 @@ struct AppDayRow: View {
                     .accessibilityLabel(t("No recorded entries for this day"))
             }
         }
-        .padding(.vertical, 7)
+        .padding(.vertical, compactVertical ? 5 : 7)
         .padding(.horizontal, 11)
         .background(rowBackground)
         .overlay(

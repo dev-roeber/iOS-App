@@ -539,6 +539,149 @@ final class LiveLocationFeatureModelTests: XCTestCase {
         XCTAssertTrue(uploader.wasCancelled)
     }
 
+    // MARK: - Follow Mode Tests
+
+    func testFollowingLocationDefaultsToFalse() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let model = LiveLocationFeatureModel(client: client, store: store)
+
+            XCTAssertFalse(model.isFollowingLocation)
+        }
+    }
+
+    func testFollowingLocationCanBeToggled() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let model = LiveLocationFeatureModel(client: client, store: store)
+
+            model.isFollowingLocation = true
+            XCTAssertTrue(model.isFollowingLocation)
+
+            model.isFollowingLocation = false
+            XCTAssertFalse(model.isFollowingLocation)
+        }
+    }
+
+    func testFollowingLocationResetToFalseOnStop() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let model = LiveLocationFeatureModel(client: client, store: store)
+
+            model.setRecordingEnabled(true)
+            model.isFollowingLocation = true
+            XCTAssertTrue(model.isFollowingLocation)
+
+            model.setRecordingEnabled(false)
+            XCTAssertFalse(model.isFollowingLocation)
+        }
+    }
+
+    // MARK: - Auto-Resume Foundation Tests
+
+    func testHasInterruptedSessionFalseByDefault() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            XCTAssertFalse(model.hasInterruptedSession)
+        }
+    }
+
+    func testHasInterruptedSessionTrueWhenSessionIDExistsInDefaults() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            defaults.set(UUID().uuidString, forKey: "live.session.id")
+
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            XCTAssertTrue(model.hasInterruptedSession)
+        }
+    }
+
+    func testSessionIDPersistedOnRecordingStart() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            model.setRecordingEnabled(true)
+
+            XCTAssertNotNil(defaults.string(forKey: "live.session.id"))
+            XCTAssertNotNil(model.sessionID)
+            XCTAssertNotNil(model.sessionStartedAt)
+        }
+    }
+
+    func testSessionIDClearedOnRecordingStop() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            model.setRecordingEnabled(true)
+            XCTAssertNotNil(defaults.string(forKey: "live.session.id"))
+
+            model.setRecordingEnabled(false)
+
+            XCTAssertNil(defaults.string(forKey: "live.session.id"))
+            XCTAssertNil(defaults.object(forKey: "live.session.startedAt"))
+            XCTAssertNil(model.sessionID)
+            XCTAssertNil(model.sessionStartedAt)
+        }
+    }
+
+    func testDismissInterruptedSessionClearsStateAndDefaults() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            defaults.set(UUID().uuidString, forKey: "live.session.id")
+            defaults.set(Date().timeIntervalSince1970, forKey: "live.session.startedAt")
+
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+            XCTAssertTrue(model.hasInterruptedSession)
+
+            model.dismissInterruptedSession()
+
+            XCTAssertFalse(model.hasInterruptedSession)
+            XCTAssertNil(defaults.string(forKey: "live.session.id"))
+            XCTAssertNil(defaults.object(forKey: "live.session.startedAt"))
+        }
+    }
+
+    func testStartingNewRecordingClearsInterruptedSessionFlag() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            defaults.set(UUID().uuidString, forKey: "live.session.id")
+
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+            XCTAssertTrue(model.hasInterruptedSession)
+
+            model.setRecordingEnabled(true)
+
+            XCTAssertFalse(model.hasInterruptedSession)
+            XCTAssertTrue(model.isRecording)
+        }
+    }
+
+    private func makeIsolatedUserDefaults() -> UserDefaults {
+        let suiteName = "test.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        return defaults
+    }
+
     private func sample(offsetSeconds: TimeInterval, latitude: Double, longitude: Double, accuracy: Double) -> LiveLocationSample {
         LiveLocationSample(
             latitude: latitude,

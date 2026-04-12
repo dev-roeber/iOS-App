@@ -42,7 +42,10 @@ final class AppOverviewTracksMapViewTests: XCTestCase {
         XCTAssertNotNil(renderData.region)
     }
 
-    func testOverviewMapPreparationLimitsLargeDatasetsButKeepsTotalCount() throws {
+    // The large fixture has ~210 routes and ~11 500 points. The overview now keeps all
+    // routes in range visible and relies on per-polyline simplification instead of
+    // silently culling routes out of dense datasets.
+    func testOverviewMapPreparationShowsAllRoutesWhenBelowRaisedLimit() throws {
         let url = try TestSupport.contractFixtureURL(named: "perf_app_export_large.json")
         let export = try AppExportDecoder.decode(contentsOf: url)
         let content = AppSessionContent(export: export, source: .demoFixture(name: "perf"))
@@ -57,14 +60,81 @@ final class AppOverviewTracksMapViewTests: XCTestCase {
             filter: nil
         )
 
+        // totalRouteCount always reflects the full dataset – never silently dropped.
         XCTAssertEqual(renderData.totalRouteCount, expectedRenderableRoutes)
-        XCTAssertTrue(renderData.isOptimized)
+        // With ~210 routes, the new routeLimit of 400 means all routes are visible.
+        XCTAssertEqual(renderData.visibleRouteCount, expectedRenderableRoutes,
+                       "All routes in the time range should be visible when below the raised limit")
+        XCTAssertTrue(renderData.isOptimized,
+                      "Large datasets should still mark the overview as optimized when simplification is applied")
         XCTAssertGreaterThan(renderData.visibleRouteCount, 0)
-        XCTAssertLessThan(renderData.visibleRouteCount, renderData.totalRouteCount)
-        XCTAssertLessThanOrEqual(renderData.visibleRouteCount, 96)
         XCTAssertTrue(renderData.pathOverlays.allSatisfy { $0.coordinates.count >= 2 })
-        XCTAssertTrue(renderData.pathOverlays.allSatisfy { $0.coordinates.count <= 96 })
         XCTAssertNotNil(renderData.region)
+    }
+
+    func testOverviewMapPreparationTotalRouteCountNeverExceedsActualDataset() throws {
+        let url = try TestSupport.contractFixtureURL(named: "perf_app_export_large.json")
+        let export = try AppExportDecoder.decode(contentsOf: url)
+        let content = AppSessionContent(export: export, source: .demoFixture(name: "perf"))
+        let dates = AppExportQueries.daySummaries(from: export).map(\.date)
+        let expectedRenderableRoutes = export.data.days.reduce(0) { partial, day in
+            partial + day.paths.filter { $0.points.count >= 2 }.count
+        }
+
+        let renderData = OverviewMapPreparation.buildRenderData(
+            for: dates,
+            content: content,
+            filter: nil
+        )
+
+        // totalRouteCount must match the full candidate pool, and the rendered result
+        // must keep every in-range route visible.
+        XCTAssertEqual(renderData.totalRouteCount, expectedRenderableRoutes)
+        XCTAssertEqual(renderData.visibleRouteCount, renderData.totalRouteCount)
+    }
+
+    func testOverviewMapTaskKeyChangesWhenDateRangeFilterChanges() {
+        let summaries = [
+            DaySummary.stub(date: "2024-05-01", pathCount: 2, totalPathPointCount: 40),
+            DaySummary.stub(date: "2024-05-02", pathCount: 3, totalPathPointCount: 70),
+        ]
+        let noFilter: AppExportQueryFilter? = nil
+        let rangeFilter = AppExportQueryFilter(fromDate: "2024-05-01", toDate: "2024-05-01")
+
+        let keyAll = OverviewMapTaskKey.make(daySummaries: summaries, queryFilter: noFilter)
+        let keyFiltered = OverviewMapTaskKey.make(daySummaries: summaries, queryFilter: rangeFilter)
+
+        // A different queryFilter must produce a different task key so the map reloads.
+        XCTAssertNotEqual(keyAll, keyFiltered,
+                          "Task key must change when the time range filter changes so the map reloads")
+    }
+
+    func testOverviewMapTaskKeyChangesWhenSummaryDateSetChanges() {
+        let filterA = AppExportQueryFilter(fromDate: "2024-01-01", toDate: "2024-01-31")
+        let summariesJan = [
+            DaySummary.stub(date: "2024-01-01", pathCount: 2, totalPathPointCount: 40),
+            DaySummary.stub(date: "2024-01-02", pathCount: 1, totalPathPointCount: 10),
+        ]
+        // Simulate narrowing the time range to a single day.
+        let summariesOneDayOnly = [
+            DaySummary.stub(date: "2024-01-01", pathCount: 2, totalPathPointCount: 40),
+        ]
+
+        let keyFull = OverviewMapTaskKey.make(daySummaries: summariesJan, queryFilter: filterA)
+        let keyNarrowed = OverviewMapTaskKey.make(daySummaries: summariesOneDayOnly, queryFilter: filterA)
+
+        XCTAssertNotEqual(keyFull, keyNarrowed,
+                          "Task key must change when the set of day summaries changes")
+    }
+
+    func testOverviewMapRenderProfileNoLongerCapsVisibleRoutes() {
+        let profileLarge = OverviewMapRenderProfile.resolve(routeCount: 150, totalPointCount: 5_000)
+        XCTAssertEqual(profileLarge.routeLimit, 150,
+                       "Route budget metadata should track the full in-range route count")
+
+        let profileHeavy = OverviewMapRenderProfile.resolve(routeCount: 600, totalPointCount: 200_000)
+        XCTAssertEqual(profileHeavy.routeLimit, 600,
+                       "Even heavy datasets must keep all routes visible in the selected time range")
     }
 }
 

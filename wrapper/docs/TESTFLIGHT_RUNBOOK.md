@@ -1,6 +1,6 @@
 # TestFlight + App Store Runbook
 
-Stand: 2026-03-31 | Phase 20
+Stand: 2026-04-12 | Phase 20
 
 ---
 
@@ -34,7 +34,7 @@ Geprueft gegen die relevanten Abschnitte (Stand 2026-03):
 | 5.1.2 Privacy Manifests | PrivacyInfo.xcprivacy vorhanden, UserDefaults CA92.1 und `PreciseLocation` fuer optionalen Upload eingetragen; offen bleibt nur die Apple-seitige Scope-/Review-Einordnung dieser Deklaration | teilweise |
 | 5.1.5 Location | optionales lokales Live-Recording mit While-In-Use-Start und code-seitiger Background-Unterstuetzung nach `Always Allow`; kein ATT/Ad-Tracking | ✅ |
 
-Aus dem lokalen Code- und Doku-Stand laesst sich kein finaler Review-Freigabeclaim ableiten. Offen bleiben die Apple-seitige Scope-/Review-Einordnung fuer den optionalen Server-Upload und die frische Device-Verifikation des erweiterten Location-/Upload-Flows.
+Aus dem lokalen Code- und Doku-Stand laesst sich kein finaler Review-Freigabeclaim ableiten. Offen bleiben die Apple-seitige Scope-/Review-Einordnung fuer den optionalen Server-Upload, frische Device-Verifikation des erweiterten Location-/Upload-Flows sowie alle Apple-Portal-/ASC-/Signing-Themen, die auf diesem Linux-Host nicht direkt verifizierbar sind.
 
 ---
 

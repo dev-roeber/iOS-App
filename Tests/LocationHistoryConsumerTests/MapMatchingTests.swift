@@ -1,5 +1,5 @@
 import XCTest
-import CoreLocation
+import LocationHistoryConsumer
 @testable import LocationHistoryConsumerAppSupport
 
 final class MapMatchingTests: XCTestCase {
@@ -9,12 +9,12 @@ final class MapMatchingTests: XCTestCase {
     /// A straight row of collinear points should collapse to just the two endpoints.
     func testStraightLineReducesToEndpoints() {
         // Five points in a straight horizontal line separated by ~100 m each.
-        let points: [CLLocationCoordinate2D] = [
-            CLLocationCoordinate2D(latitude: 48.0000, longitude: 11.0000),
-            CLLocationCoordinate2D(latitude: 48.0000, longitude: 11.0010),
-            CLLocationCoordinate2D(latitude: 48.0000, longitude: 11.0020),
-            CLLocationCoordinate2D(latitude: 48.0000, longitude: 11.0030),
-            CLLocationCoordinate2D(latitude: 48.0000, longitude: 11.0040),
+        let points: [LocationCoordinate2D] = [
+            LocationCoordinate2D(latitude: 48.0000, longitude: 11.0000),
+            LocationCoordinate2D(latitude: 48.0000, longitude: 11.0010),
+            LocationCoordinate2D(latitude: 48.0000, longitude: 11.0020),
+            LocationCoordinate2D(latitude: 48.0000, longitude: 11.0030),
+            LocationCoordinate2D(latitude: 48.0000, longitude: 11.0040),
         ]
 
         let simplified = PathSimplification.douglasPeucker(points, epsilon: 1.0)
@@ -31,12 +31,12 @@ final class MapMatchingTests: XCTestCase {
 
     /// The source array must remain unchanged after simplification.
     func testOriginalPointsAreNeverMutated() {
-        let points: [CLLocationCoordinate2D] = [
-            CLLocationCoordinate2D(latitude: 48.1000, longitude: 11.5000),
-            CLLocationCoordinate2D(latitude: 48.1100, longitude: 11.5100),
-            CLLocationCoordinate2D(latitude: 48.1050, longitude: 11.5200),
-            CLLocationCoordinate2D(latitude: 48.1150, longitude: 11.5300),
-            CLLocationCoordinate2D(latitude: 48.1200, longitude: 11.5400),
+        let points: [LocationCoordinate2D] = [
+            LocationCoordinate2D(latitude: 48.1000, longitude: 11.5000),
+            LocationCoordinate2D(latitude: 48.1100, longitude: 11.5100),
+            LocationCoordinate2D(latitude: 48.1050, longitude: 11.5200),
+            LocationCoordinate2D(latitude: 48.1150, longitude: 11.5300),
+            LocationCoordinate2D(latitude: 48.1200, longitude: 11.5400),
         ]
         let copy = points
 
@@ -54,12 +54,12 @@ final class MapMatchingTests: XCTestCase {
     /// so the algorithm must keep all points.
     func testEpsilonZeroKeepsAllPoints() {
         // Non-collinear zigzag so every middle point is off the chord.
-        let points: [CLLocationCoordinate2D] = [
-            CLLocationCoordinate2D(latitude: 48.0000, longitude: 11.0000),
-            CLLocationCoordinate2D(latitude: 48.0010, longitude: 11.0010),
-            CLLocationCoordinate2D(latitude: 48.0000, longitude: 11.0020),
-            CLLocationCoordinate2D(latitude: 48.0010, longitude: 11.0030),
-            CLLocationCoordinate2D(latitude: 48.0000, longitude: 11.0040),
+        let points: [LocationCoordinate2D] = [
+            LocationCoordinate2D(latitude: 48.0000, longitude: 11.0000),
+            LocationCoordinate2D(latitude: 48.0010, longitude: 11.0010),
+            LocationCoordinate2D(latitude: 48.0000, longitude: 11.0020),
+            LocationCoordinate2D(latitude: 48.0010, longitude: 11.0030),
+            LocationCoordinate2D(latitude: 48.0000, longitude: 11.0040),
         ]
 
         let simplified = PathSimplification.douglasPeucker(points, epsilon: 0.0)
@@ -76,14 +76,14 @@ final class MapMatchingTests: XCTestCase {
     }
 
     func testSinglePointReturnsSinglePoint() {
-        let point = CLLocationCoordinate2D(latitude: 48.0, longitude: 11.0)
+        let point = LocationCoordinate2D(latitude: 48.0, longitude: 11.0)
         let result = PathSimplification.douglasPeucker([point], epsilon: 15.0)
         XCTAssertEqual(result.count, 1)
     }
 
     func testTwoPointsReturnBothPoints() {
-        let p1 = CLLocationCoordinate2D(latitude: 48.0, longitude: 11.0)
-        let p2 = CLLocationCoordinate2D(latitude: 48.1, longitude: 11.1)
+        let p1 = LocationCoordinate2D(latitude: 48.0, longitude: 11.0)
+        let p2 = LocationCoordinate2D(latitude: 48.1, longitude: 11.1)
         let result = PathSimplification.douglasPeucker([p1, p2], epsilon: 15.0)
         XCTAssertEqual(result.count, 2)
     }

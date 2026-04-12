@@ -81,6 +81,132 @@ public struct AppDayDetailView: View {
     private func contentView(_ detail: DayDetailViewState) -> some View {
         let resolvedMapData = mapData ?? DayMapDataExtractor.mapData(from: detail)
 
+        GeometryReader { geometry in
+            let isLandscape = geometry.size.width > geometry.size.height
+            if isLandscape {
+                HStack(spacing: 0) {
+                    landscapeMapColumn(detail: detail, resolvedMapData: resolvedMapData)
+                        .frame(width: geometry.size.width * 0.6)
+                    Divider()
+                    ScrollView {
+                        landscapeContentColumn(detail: detail)
+                            .padding()
+                    }
+                    .frame(width: geometry.size.width * 0.4)
+                }
+            } else {
+                ScrollView {
+                    portraitContentView(detail: detail, resolvedMapData: resolvedMapData)
+                        .padding()
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func landscapeMapColumn(detail: DayDetailViewState, resolvedMapData: DayMapData) -> some View {
+        VStack(spacing: 0) {
+            #if canImport(MapKit)
+            if #available(iOS 17.0, macOS 14.0, *) {
+                if !detail.paths.isEmpty {
+                    Picker(t("Route Display"), selection: $preferences.dayPathDisplayMode) {
+                        ForEach(AppDayPathDisplayMode.allCases) { mode in
+                            Text(t(mode.label)).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 12)
+                }
+                AppDayMapView(mapData: resolvedMapData, fillHeight: true)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Label(t("Map view requires iOS 17 or later."), systemImage: "map")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            }
+            #else
+            Color.secondary.opacity(0.1)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            #endif
+        }
+    }
+
+    @ViewBuilder
+    private func landscapeContentColumn(_ detail: DayDetailViewState) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(AppDateDisplay.weekday(detail.date))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(AppDateDisplay.longDate(detail.date))
+                    .font(.title3.weight(.semibold))
+                dayTimeRange(detail)
+            }
+
+            let dayDistance = detail.paths.reduce(0.0) { $0 + ($1.distanceM ?? 0) }
+            HStack(spacing: 8) {
+                quickStat("\(detail.visits.count)", label: t("Visits"), icon: "mappin.and.ellipse", color: .blue)
+                quickStat("\(detail.activities.count)", label: t("Activities"), icon: "figure.walk", color: .green)
+                quickStat("\(detail.paths.count)", label: t("Routes"), icon: "location.north.line", color: .orange)
+                if dayDistance > 0 {
+                    quickStat(formatDistance(dayDistance, unit: preferences.distanceUnit), label: t("Distance"), icon: "road.lanes", color: .purple)
+                }
+            }
+
+            dayActionsSection(detail)
+
+            DayTimelineView(detail: detail)
+
+            if !detail.visits.isEmpty {
+                detailSection(t("Visits"), icon: "mappin.and.ellipse", count: detail.visits.count) {
+                    ForEach(Array(detail.visits.enumerated()), id: \.offset) { _, visit in
+                        visitCard(visit)
+                    }
+                }
+            }
+
+            if !detail.activities.isEmpty {
+                detailSection(t("Activities"), icon: "figure.walk", count: detail.activities.count) {
+                    ForEach(Array(detail.activities.enumerated()), id: \.offset) { _, activity in
+                        activityCard(activity)
+                    }
+                }
+            }
+
+            if !detail.paths.isEmpty {
+                detailSection(t("Routes"), icon: "location.north.line", count: detail.paths.count) {
+                    routeSelectionSummary(detail)
+                    ForEach(Array(detail.paths.enumerated()), id: \.offset) { index, path in
+                        pathCard(
+                            path,
+                            dayIdentifier: detail.date,
+                            routeIndex: index,
+                            availableRouteIndices: exportableRouteIndices(for: detail)
+                        )
+                    }
+                }
+            }
+
+            if let liveLocation {
+                detailContextHeader(
+                    t("Local Recording"),
+                    message: t("Live location and saved live tracks stay separate from the imported day data above.")
+                )
+                if #available(iOS 17.0, macOS 14.0, *) {
+                    AppLiveLocationSection(
+                        liveLocation: liveLocation,
+                        onOpenSavedTracksLibrary: onOpenSavedTracks
+                    )
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func portraitContentView(detail: DayDetailViewState, resolvedMapData: DayMapData) -> some View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(AppDateDisplay.weekday(detail.date))

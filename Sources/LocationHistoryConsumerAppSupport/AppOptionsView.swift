@@ -3,6 +3,8 @@ import SwiftUI
 
 public struct AppOptionsView: View {
     @ObservedObject private var preferences: AppPreferences
+    @State private var connectionTestResult: ConnectionTestResult? = nil
+    @State private var isTestingConnection = false
 
     public init(preferences: AppPreferences) {
         self._preferences = ObservedObject(wrappedValue: preferences)
@@ -80,6 +82,32 @@ public struct AppOptionsView: View {
                     }
                 }
 
+                LabeledContent(t("Upload Status")) {
+                    Text(uploadStatusText)
+                        .foregroundStyle(uploadStatusColor)
+                }
+
+                if preferences.sendsLiveLocationToServer,
+                   preferences.liveLocationServerUploadConfiguration.endpointURL != nil {
+                    if isTestingConnection {
+                        HStack {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text(t("Testing…"))
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if let result = connectionTestResult {
+                        LabeledContent(t("Connection")) {
+                            Text(result == .reachable ? t("Reachable") : t("Unreachable"))
+                                .foregroundStyle(result == .reachable ? .green : .red)
+                        }
+                    }
+
+                    Button(t("Test Connection")) {
+                        testConnection()
+                    }
+                }
+
             } header: {
                 Text(t("Language and Upload"))
             } footer: {
@@ -93,11 +121,15 @@ public struct AppOptionsView: View {
                     }
                 }
 
+                LabeledContent(t("Max. GPS Inaccuracy"), value: "\(Int(preferences.liveTrackingAccuracy.maximumAcceptedAccuracyM)) m")
+
                 Picker(t("Recording Detail"), selection: $preferences.liveTrackingDetail) {
                     ForEach(AppLiveTrackingDetailPreference.allCases) { mode in
                         Text(t(mode.title)).tag(mode)
                     }
                 }
+
+                LabeledContent(t("Minimum Movement"), value: "\(Int(preferences.liveTrackingDetail.minimumDistanceDeltaM)) m")
 
                 Toggle(t("Allow Background Recording"), isOn: $preferences.allowsBackgroundLiveTracking)
 
@@ -122,13 +154,43 @@ public struct AppOptionsView: View {
                     }
                 }
 
-                LabeledContent(t("Maximum Time Gap"), value: t(RecordingIntervalPreference.unlimitedDisplayString))
-                LabeledContent(t("Accepted Accuracy"), value: "\(Int(preferences.liveTrackRecorderConfiguration.maximumAcceptedAccuracyM)) m")
-                LabeledContent(t("Minimum Movement"), value: "\(Int(preferences.liveTrackRecorderConfiguration.minimumDistanceDeltaM)) m")
+                Picker(t("Maximum Gap"), selection: $preferences.maximumRecordingGapSeconds) {
+                    Text(t("1 min")).tag(60)
+                    Text(t("5 min")).tag(300)
+                    Text(t("15 min")).tag(900)
+                    Text(t("30 min")).tag(1800)
+                    Text(t("Unlimited")).tag(0)
+                }
+
             } header: {
                 Text(t("Live Recording"))
             } footer: {
-                Text("\(t(preferences.liveTrackingAccuracy.detail)) \(t(preferences.liveTrackingDetail.detail)) \(t("Minimum Time Gap controls the shortest allowed delay between accepted points. Set it to No minimum to disable the hard floor.")) \(t("Larger minimum gaps reduce point count, battery use and upload frequency.")) \(t("Maximum Time Gap is unlimited.")) \(t("Recording Detail still tunes the movement-sensitive quality gate.")) \(t("Background recording requires Always Allow permission and only affects local live-track recording."))")
+                Text("\(t(preferences.liveTrackingAccuracy.detail)) \(t(preferences.liveTrackingDetail.detail)) \(t("Minimum Time Gap controls the shortest allowed delay between accepted points. Set it to No minimum to disable the hard floor.")) \(t("Larger minimum gaps reduce point count, battery use and upload frequency.")) \(t("When Maximum Gap is set, a track is automatically split if two consecutive points are further apart in time than the configured value.")) \(t("Recording Detail still tunes the movement-sensitive quality gate.")) \(t("Background recording requires Always Allow permission and only affects local live-track recording."))")
+            }
+
+            Section {
+                LabeledContent(t("Home Screen Widget")) {
+                    Text(t("Last tour + weekly status"))
+                        .foregroundStyle(.secondary)
+                }
+
+                LabeledContent(t("Unit")) {
+                    Text(preferences.distanceUnit == .metric ? t("Kilometers") : t("Miles"))
+                        .foregroundStyle(.secondary)
+                }
+
+                Toggle(t("Automatic Widget Update"), isOn: $preferences.widgetAutoUpdate)
+
+                Picker(t("Dynamic Island Compact"), selection: $preferences.dynamicIslandCompactDisplay) {
+                    ForEach(DynamicIslandCompactDisplay.allCases, id: \.self) { mode in
+                        Text(t(mode.localizedName)).tag(mode)
+                    }
+                }
+
+            } header: {
+                Text(t("Widget & Live Activity"))
+            } footer: {
+                Text(t("The widget updates automatically after each recording. The Dynamic Island is shown during active recording. The unit follows the global distance setting."))
             }
 
             Section {
@@ -162,6 +224,22 @@ public struct AppOptionsView: View {
             : t("Enabled")
     }
 
+    private var uploadStatusText: String {
+        guard preferences.sendsLiveLocationToServer else {
+            return t("Disabled")
+        }
+        guard preferences.liveLocationServerUploadConfiguration.endpointURL != nil else {
+            return t("Invalid URL")
+        }
+        return t("Active")
+    }
+
+    private var uploadStatusColor: Color {
+        guard preferences.sendsLiveLocationToServer else { return .secondary }
+        guard preferences.liveLocationServerUploadConfiguration.endpointURL != nil else { return .red }
+        return .green
+    }
+
     private var localizedMinimumTimeGapDescription: String {
         let interval = preferences.recordingInterval
         guard !interval.hasNoMinimum else {
@@ -182,8 +260,38 @@ public struct AppOptionsView: View {
         preferences.recordingInterval = .validated(value: current.value - 1, unit: current.unit)
     }
 
+    private func testConnection() {
+        guard let url = preferences.liveLocationServerUploadConfiguration.endpointURL else { return }
+        isTestingConnection = true
+        connectionTestResult = nil
+
+        var request = URLRequest(url: url, timeoutInterval: 10)
+        request.httpMethod = "HEAD"
+        if !preferences.liveLocationServerUploadBearerToken.isEmpty {
+            request.setValue("Bearer \(preferences.liveLocationServerUploadBearerToken)", forHTTPHeaderField: "Authorization")
+        }
+
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            DispatchQueue.main.async {
+                self.isTestingConnection = false
+                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode < 500 {
+                    self.connectionTestResult = .reachable
+                } else if error == nil, response != nil {
+                    self.connectionTestResult = .reachable
+                } else {
+                    self.connectionTestResult = .unreachable
+                }
+            }
+        }.resume()
+    }
+
     private func t(_ english: String) -> String {
         preferences.localized(english)
     }
+}
+
+private enum ConnectionTestResult {
+    case reachable
+    case unreachable
 }
 #endif
