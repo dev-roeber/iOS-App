@@ -585,6 +585,14 @@ enum AppGermanTranslations {
         "Tap a row to open drilldown actions for that day.": "Tippe eine Zeile, um Drilldown-Aktionen für diesen Tag zu öffnen.",
         "Saved Live Tracks Unavailable": "Gespeicherte Live-Tracks nicht verfügbar",
         "Days with tracked activity": "Tage mit aufgezeichneter Aktivität",
-        "Active Days": "Aktive Tage"
+        "Active Days": "Aktive Tage",
+        // GPX / TCX import strings
+        "GPX file": "GPX-Datei",
+        "TCX file": "TCX-Datei",
+        "GPS Exchange Format": "GPS Exchange Format",
+        "Training Center XML": "Training Center XML",
+        "GPX imported": "GPX importiert",
+        "TCX imported": "TCX importiert",
+        "File contains no track points": "Datei enthält keine Trackpunkte"
     ]
 }
