@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Prompt 4] - 2026-04-12
+
+### Added
+- Google Maps export help sheet on start screen (GoogleMapsExportHelpView)
+- Info button (questionmark.circle) next to source title in AppSourceSummaryCard
+- Native bottom sheet: title, 4 concise steps for iPhone export, Takeout fallback hint
+- DE/EN localization for all help strings (9 new entries in AppGermanTranslations)
+- 4 new unit tests in GoogleMapsExportHelpTests
+
 ## [Prompt 3] - 2026-04-12
 
 ### Added

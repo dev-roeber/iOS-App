@@ -68,6 +68,7 @@ public struct AppSourceSummaryCard: View {
             HStack {
                 Text(t(summary.stateTitle))
                     .font(.headline)
+                GoogleMapsExportHelpButton()
                 Spacer()
                 Text(t(summary.statusText))
                     .font(.caption)

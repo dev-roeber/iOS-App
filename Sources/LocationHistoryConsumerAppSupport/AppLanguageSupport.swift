@@ -597,6 +597,16 @@ enum AppGermanTranslations {
         // Day path display mode (Phase B1)
         "Original": "Original",
         "Map-Matched (Beta)": "An Straße angepasst (Beta)",
-        "Route Display": "Routen-Darstellung"
+        "Route Display": "Routen-Darstellung",
+        // Google Maps Export Help (Prompt 4)
+        "Google Maps Export on iPhone": "Google Maps Export auf iPhone",
+        "Google Maps export help": "Hilfe: Google Maps Export",
+        "Open Google Maps on your iPhone.": "Öffne Google Maps auf deinem iPhone.",
+        "Tap your profile picture and open Settings.": "Tippe auf dein Profilbild und öffne Einstellungen.",
+        "Open \u{201C}Location & Privacy\u{201D} and select \u{201C}Export Timeline data\u{201D}.": "\u{201E}Standort und Datenschutz\u{201C} öffnen und \u{201E}Timeline-Daten exportieren\u{201C} wählen.",
+        "Save the file to \u{201C}Files\u{201D}, then open it here in LH2GPX.": "Datei in \u{201E}Dateien\u{201C} speichern, dann hier in LH2GPX öffnen.",
+        "If the direct export is unavailable, a Google Takeout export may be required depending on your account.": "Falls der direkte Export nicht verfügbar ist, kann je nach Google-Konto alternativ ein Google-Takeout-Export nötig sein.",
+        "Dismiss help": "Hilfe schließen",
+        "Step": "Schritt"
     ]
 }
