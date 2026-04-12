@@ -122,6 +122,8 @@ struct ContentView: View {
                 AppMessageCard(message: message)
             }
 
+            GoogleMapsExportHelpInlineAction()
+
             VStack(spacing: 10) {
                 Button {
                     isImportingFile = true
