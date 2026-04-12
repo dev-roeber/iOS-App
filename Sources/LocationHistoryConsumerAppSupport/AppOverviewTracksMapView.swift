@@ -117,31 +117,55 @@ struct AppOverviewTracksMapView: View {
 
         renderData = .loading
 
-        let daysToLoad = daySummaries.map(\.date)
+        let allDates = daySummaries.map(\.date)
+        let firstBatchDates = Array(allDates.prefix(100))
+        let remainingDates = Array(allDates.dropFirst(100))
         let filter = queryFilter
 
-        // Off-main-thread data aggregation.
-        let built = await Task.detached(priority: .userInitiated) {
-            var allPaths: [OverviewMapPathOverlay] = []
-            var allCoords: [DayMapCoordinate] = []
-
-            for date in daysToLoad {
-                guard let mapData = content.mapData(for: date, applying: filter) else { continue }
-                for overlay in mapData.pathOverlays {
-                    guard overlay.coordinates.count >= 2 else { continue }
-                    let clCoords = overlay.coordinates.map {
-                        CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                    }
-                    allPaths.append(OverviewMapPathOverlay(coordinates: clCoords, activityType: overlay.activityType))
-                    allCoords.append(contentsOf: overlay.coordinates)
-                }
-            }
-
-            let region = computeRegion(from: allCoords)
-            return OverviewMapRenderData(pathOverlays: allPaths, region: region)
+        // Phase 1: load first 100 days immediately so the user sees content fast.
+        let firstBatch = await Task.detached(priority: .userInitiated) {
+            buildRenderData(for: firstBatchDates, content: content, filter: filter)
         }.value
 
-        renderData = built
+        renderData = firstBatch
+
+        guard !remainingDates.isEmpty, !Task.isCancelled else { return }
+
+        // Phase 2: load the rest in the background and append.
+        let rest = await Task.detached(priority: .utility) {
+            buildRenderData(for: remainingDates, content: content, filter: filter)
+        }.value
+
+        guard !Task.isCancelled else { return }
+
+        renderData = renderData.appending(rest)
+    }
+
+    private nonisolated func buildRenderData(
+        for dates: [String],
+        content: AppSessionContent,
+        filter: AppExportQueryFilter?
+    ) -> OverviewMapRenderData {
+        var allPaths: [OverviewMapPathOverlay] = []
+        var allCoords: [DayMapCoordinate] = []
+
+        for date in dates {
+            guard let mapData = content.mapData(for: date, applying: filter) else { continue }
+            for overlay in mapData.pathOverlays {
+                guard overlay.coordinates.count >= 2 else { continue }
+                let clCoords = overlay.coordinates.map {
+                    CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                }
+                // Apply Douglas-Peucker with 50 m tolerance for the small overview map.
+                let simplified = PathSimplification.douglasPeucker(clCoords, epsilon: 50.0)
+                guard simplified.count >= 2 else { continue }
+                allPaths.append(OverviewMapPathOverlay(coordinates: simplified, activityType: overlay.activityType))
+                allCoords.append(contentsOf: overlay.coordinates)
+            }
+        }
+
+        let region = computeRegion(from: allCoords)
+        return OverviewMapRenderData(pathOverlays: allPaths, region: region)
     }
 
     private nonisolated func computeRegion(from coordinates: [DayMapCoordinate]) -> MKCoordinateRegion? {
@@ -195,6 +219,44 @@ private struct OverviewMapRenderData {
         self.pathOverlays = pathOverlays
         self.region = region
         self.isLoading = isLoading
+    }
+
+    /// Returns a new value that merges `other` into the receiver.
+    /// The region is expanded to cover both datasets; existing paths are kept.
+    func appending(_ other: OverviewMapRenderData) -> OverviewMapRenderData {
+        let merged = pathOverlays + other.pathOverlays
+        let mergedRegion = unionRegion(self.region, other.region)
+        return OverviewMapRenderData(pathOverlays: merged, region: mergedRegion)
+    }
+
+    // MARK: - Region helpers
+
+    private func unionRegion(
+        _ a: MKCoordinateRegion?,
+        _ b: MKCoordinateRegion?
+    ) -> MKCoordinateRegion? {
+        switch (a, b) {
+        case (nil, let r): return r
+        case (let r, nil): return r
+        case (let r1?, let r2?):
+            let minLat = min(r1.center.latitude  - r1.span.latitudeDelta  / 2,
+                            r2.center.latitude  - r2.span.latitudeDelta  / 2)
+            let maxLat = max(r1.center.latitude  + r1.span.latitudeDelta  / 2,
+                            r2.center.latitude  + r2.span.latitudeDelta  / 2)
+            let minLon = min(r1.center.longitude - r1.span.longitudeDelta / 2,
+                            r2.center.longitude - r2.span.longitudeDelta / 2)
+            let maxLon = max(r1.center.longitude + r1.span.longitudeDelta / 2,
+                            r2.center.longitude + r2.span.longitudeDelta / 2)
+            let center = CLLocationCoordinate2D(
+                latitude:  (minLat + maxLat) / 2,
+                longitude: (minLon + maxLon) / 2
+            )
+            let span = MKCoordinateSpan(
+                latitudeDelta:  max(maxLat - minLat, 0.01),
+                longitudeDelta: max(maxLon - minLon, 0.01)
+            )
+            return MKCoordinateRegion(center: center, span: span)
+        }
     }
 }
 
