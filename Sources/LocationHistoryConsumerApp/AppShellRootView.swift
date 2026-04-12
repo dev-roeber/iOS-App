@@ -288,8 +288,11 @@ private struct AppShellEmptyStateView: View {
                 .accessibilityHidden(true)
 
             VStack(spacing: 8) {
-                Text(localize("Import your location history"))
-                    .font(.title2.weight(.semibold))
+                HStack(spacing: 8) {
+                    Text(localize("Import your location history"))
+                        .font(.title2.weight(.semibold))
+                    GoogleMapsExportHelpButton()
+                }
                 Text(localize("Open an LH2GPX app_export.json or .zip from the LocationHistory2GPX tool — or a Google Timeline location-history.json or .zip from Google Takeout."))
                     .font(.body)
                     .foregroundStyle(.secondary)
