@@ -13,6 +13,10 @@ public final class ActivityManager {
     private var _currentActivityBox: Any?
     #endif
 
+    /// Minimum interval between Activity updates (Live Activity has a daily update budget).
+    private let throttleInterval: TimeInterval = 5
+    private var lastUpdateTime: Date = .distantPast
+
     private init() {}
 
     /// Starts a new Live Activity for a recording session.
@@ -25,19 +29,48 @@ public final class ActivityManager {
     }
 
     /// Pushes a state update to the current Live Activity.
-    public func updateActivity(distanceMeters: Double, pointCount: Int) {
+    /// Updates are throttled to at most one per `throttleInterval` seconds.
+    public func updateActivity(
+        distanceMeters: Double,
+        pointCount: Int,
+        isPaused: Bool = false,
+        uploadQueueCount: Int = 0,
+        lastUploadSuccess: Bool? = nil
+    ) {
         #if canImport(ActivityKit) && os(iOS)
         if #available(iOS 16.2, *) {
-            _updateActivityInternal(distanceMeters: distanceMeters, pointCount: pointCount)
+            let now = Date()
+            guard now.timeIntervalSince(lastUpdateTime) >= throttleInterval else { return }
+            lastUpdateTime = now
+            _updateActivityInternal(
+                distanceMeters: distanceMeters,
+                pointCount: pointCount,
+                isPaused: isPaused,
+                uploadQueueCount: uploadQueueCount,
+                lastUploadSuccess: lastUploadSuccess
+            )
         }
         #endif
     }
 
     /// Ends the current Live Activity with a final state snapshot.
-    public func endActivity(distanceMeters: Double, pointCount: Int) {
+    /// Always sends the final update regardless of throttle timing.
+    public func endActivity(
+        distanceMeters: Double,
+        pointCount: Int,
+        isPaused: Bool = false,
+        uploadQueueCount: Int = 0,
+        lastUploadSuccess: Bool? = nil
+    ) {
         #if canImport(ActivityKit) && os(iOS)
         if #available(iOS 16.2, *) {
-            _endActivityInternal(distanceMeters: distanceMeters, pointCount: pointCount)
+            _endActivityInternal(
+                distanceMeters: distanceMeters,
+                pointCount: pointCount,
+                isPaused: isPaused,
+                uploadQueueCount: uploadQueueCount,
+                lastUploadSuccess: lastUploadSuccess
+            )
         }
         #endif
     }
@@ -68,19 +101,29 @@ public final class ActivityManager {
                 content: content,
                 pushType: nil
             )
+            lastUpdateTime = Date()
         } catch {
             // ActivityKit unavailable or permission denied — fail silently.
         }
     }
 
     @available(iOS 16.2, *)
-    private func _updateActivityInternal(distanceMeters: Double, pointCount: Int) {
+    private func _updateActivityInternal(
+        distanceMeters: Double,
+        pointCount: Int,
+        isPaused: Bool,
+        uploadQueueCount: Int,
+        lastUploadSuccess: Bool?
+    ) {
         guard let activity = _currentActivityBox as? Activity<TrackingAttributes> else { return }
 
         let updatedState = TrackingStatus(
             isRecording: true,
             distanceMeters: distanceMeters,
-            pointCount: pointCount
+            pointCount: pointCount,
+            isPaused: isPaused,
+            uploadQueueCount: uploadQueueCount,
+            lastUploadSuccess: lastUploadSuccess
         )
         let updatedContent = ActivityContent(state: updatedState, staleDate: nil)
 
@@ -90,13 +133,22 @@ public final class ActivityManager {
     }
 
     @available(iOS 16.2, *)
-    private func _endActivityInternal(distanceMeters: Double, pointCount: Int) {
+    private func _endActivityInternal(
+        distanceMeters: Double,
+        pointCount: Int,
+        isPaused: Bool,
+        uploadQueueCount: Int,
+        lastUploadSuccess: Bool?
+    ) {
         guard let activity = _currentActivityBox as? Activity<TrackingAttributes> else { return }
 
         let finalState = TrackingStatus(
             isRecording: false,
             distanceMeters: distanceMeters,
-            pointCount: pointCount
+            pointCount: pointCount,
+            isPaused: isPaused,
+            uploadQueueCount: uploadQueueCount,
+            lastUploadSuccess: lastUploadSuccess
         )
         let finalContent = ActivityContent(
             state: finalState,

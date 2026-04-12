@@ -22,18 +22,45 @@ public struct TrackingAttributes: ActivityAttributes {
 
 /// Dynamic state of the Live Activity — updated as the recording progresses.
 /// Declared outside the ActivityKit guard so it is available for unit tests on all platforms.
-public struct TrackingStatus: Codable, Hashable {
+public struct TrackingStatus: Codable, Hashable, Sendable {
     /// Whether the recording is currently active.
     public var isRecording: Bool
     /// Accumulated distance in metres.
     public var distanceMeters: Double
     /// Number of recorded track points.
     public var pointCount: Int
+    /// Whether recording is currently paused (e.g. upload paused or user-initiated pause).
+    public var isPaused: Bool
+    /// Number of points waiting to be uploaded. 0 when no upload is configured.
+    public var uploadQueueCount: Int
+    /// Whether the last upload attempt succeeded. nil = no attempt yet.
+    public var lastUploadSuccess: Bool?
 
-    public init(isRecording: Bool, distanceMeters: Double, pointCount: Int) {
+    public init(
+        isRecording: Bool,
+        distanceMeters: Double,
+        pointCount: Int,
+        isPaused: Bool = false,
+        uploadQueueCount: Int = 0,
+        lastUploadSuccess: Bool? = nil
+    ) {
         self.isRecording = isRecording
         self.distanceMeters = distanceMeters
         self.pointCount = pointCount
+        self.isPaused = isPaused
+        self.uploadQueueCount = uploadQueueCount
+        self.lastUploadSuccess = lastUploadSuccess
+    }
+
+    // Custom decoder so older JSON payloads (missing new fields) decode gracefully.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        isRecording = try container.decode(Bool.self, forKey: .isRecording)
+        distanceMeters = try container.decode(Double.self, forKey: .distanceMeters)
+        pointCount = try container.decode(Int.self, forKey: .pointCount)
+        isPaused = (try container.decodeIfPresent(Bool.self, forKey: .isPaused)) ?? false
+        uploadQueueCount = (try container.decodeIfPresent(Int.self, forKey: .uploadQueueCount)) ?? 0
+        lastUploadSuccess = try container.decodeIfPresent(Bool.self, forKey: .lastUploadSuccess)
     }
 
     /// Human-readable distance string (e.g. "1.2 km" or "850 m").
@@ -41,7 +68,7 @@ public struct TrackingStatus: Codable, Hashable {
         if distanceMeters >= 1000 {
             return String(format: "%.1f km", distanceMeters / 1000)
         } else {
-            return String(format: "%.0f m", distanceMeters)
+            return String(format: "%.0f m", max(0, distanceMeters))
         }
     }
 }
