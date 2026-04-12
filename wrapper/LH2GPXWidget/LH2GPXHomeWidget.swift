@@ -2,6 +2,17 @@
 import WidgetKit
 import SwiftUI
 
+private extension View {
+    @ViewBuilder
+    func widgetBackground() -> some View {
+        if #available(iOS 17, *) {
+            containerBackground(Color(UIColor.systemBackground), for: .widget)
+        } else {
+            background(Color(UIColor.systemBackground))
+        }
+    }
+}
+
 // MARK: - Timeline Entry
 
 struct LH2GPXEntry: TimelineEntry {
@@ -68,7 +79,7 @@ struct LH2GPXSmallWidgetView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .containerBackground(Color(UIColor.systemBackground), for: .widget)
+            .widgetBackground()
         } else {
             VStack(spacing: 8) {
                 Image(systemName: "map")
@@ -80,7 +91,7 @@ struct LH2GPXSmallWidgetView: View {
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .containerBackground(Color(UIColor.systemBackground), for: .widget)
+            .widgetBackground()
         }
     }
 }
@@ -143,7 +154,7 @@ struct LH2GPXMediumWidgetView: View {
             .padding()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .containerBackground(Color(UIColor.systemBackground), for: .widget)
+        .widgetBackground()
     }
 }
 
