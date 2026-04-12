@@ -1,5 +1,15 @@
 # NEXT_STEPS
 
+## Aktuell (2026-04-12)
+iOS-App ist ab jetzt das zentrale aktive Repo.
+
+### Naechste offene Schritte:
+- [ ] Widget Extension Target fuer Live Activity UI in Xcode anlegen (braucht Xcode GUI)
+- [ ] Apple-UI-Verifikation: Range-Picker, Datumsbereich-Sheet auf echtem iPhone
+- [ ] KMZ-Export
+- [ ] Chart-Share per ImageRenderer verifizieren
+- [ ] Split-Repos (LocationHistory2GPX-iOS, LH2GPXWrapper) als historisch/mirror markieren
+
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 

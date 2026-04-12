@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [iOS-App Init] - 2026-04-12
+
+### Changed
+- iOS-App ist ab jetzt das zentrale aktive Repo (dev-roeber/iOS-App)
+- Vollstaendige iOS-App aus LocationHistory2GPX-Monorepo konsolidiert (inkl. kompletter Git-History)
+- LocationHistory2GPX-Monorepo, LocationHistory2GPX-iOS, LH2GPXWrapper sind historische Vorstufen
+
 ## [Prompt 4b] - 2026-04-12
 
 ### Changed

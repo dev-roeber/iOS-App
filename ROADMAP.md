@@ -1,5 +1,9 @@
 # ROADMAP
 
+## Aktiver Stand (2026-04-12)
+- Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
+- Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
+
 ## Aktueller Stand (2026-04-12)
 
 ### Multi-Source Import Foundation — GPX + TCX (2026-04-12)
