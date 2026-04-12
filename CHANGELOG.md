@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Audit 2026-04-12 — Prompt2/Prompt3 Truth Sync
+- Prompt 2 (GPX/TCX Import): vollständig verifiziert — alle Parser, Tests, Doku repo-wahr ✅
+- Prompt 3 (Map Matching + Dynamic Island): nicht repo-wahr nachweisbar — als offen dokumentiert ⚠️
+- README Import-Abschnitt nachgezogen
+- NEXT_STEPS Wiederanlauf-Plan für Prompt 3 erstellt
+
 ## [Unreleased] – 2026-04-12
 
 ### Feature: Multi-Source Import Foundation (GPX + TCX)
