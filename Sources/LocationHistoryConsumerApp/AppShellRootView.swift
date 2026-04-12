@@ -288,11 +288,8 @@ private struct AppShellEmptyStateView: View {
                 .accessibilityHidden(true)
 
             VStack(spacing: 8) {
-                HStack(spacing: 8) {
-                    Text(localize("Import your location history"))
-                        .font(.title2.weight(.semibold))
-                    GoogleMapsExportHelpButton()
-                }
+                Text(localize("Import your location history"))
+                    .font(.title2.weight(.semibold))
                 Text(localize("Open an LH2GPX app_export.json or .zip from the LocationHistory2GPX tool — or a Google Timeline location-history.json or .zip from Google Takeout."))
                     .font(.body)
                     .foregroundStyle(.secondary)
@@ -324,6 +321,8 @@ private struct AppShellEmptyStateView: View {
                 .background(Color.secondary.opacity(0.06))
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
+
+            GoogleMapsExportHelpInlineAction()
 
             VStack(spacing: 10) {
                 Button(action: openAction) {

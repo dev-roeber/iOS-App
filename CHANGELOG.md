@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Prompt 4b] - 2026-04-12
+
+### Changed
+- Replaced subtle icon-only help button with prominent inline action on import start screen
+- GoogleMapsExportHelpInlineAction: full text label "Google Maps Export on iPhone", map icon, chevron, accentColor background
+- Positioned directly above the primary "Open location history file" button
+- Removed icon-only GoogleMapsExportHelpButton from title row
+- Added DE accessibilityHint for VoiceOver
+
 ## [Prompt 4] - 2026-04-12
 
 ### Added

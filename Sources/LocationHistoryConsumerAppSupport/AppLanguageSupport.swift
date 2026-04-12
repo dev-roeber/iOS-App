@@ -607,6 +607,7 @@ enum AppGermanTranslations {
         "Save the file to \u{201C}Files\u{201D}, then open it here in LH2GPX.": "Datei in \u{201E}Dateien\u{201C} speichern, dann hier in LH2GPX öffnen.",
         "If the direct export is unavailable, a Google Takeout export may be required depending on your account.": "Falls der direkte Export nicht verfügbar ist, kann je nach Google-Konto alternativ ein Google-Takeout-Export nötig sein.",
         "Dismiss help": "Hilfe schließen",
-        "Step": "Schritt"
+        "Step": "Schritt",
+        "Opens step-by-step export instructions": "Öffnet Schritt-für-Schritt-Exportanleitung"
     ]
 }
