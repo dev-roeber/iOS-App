@@ -79,9 +79,11 @@ public struct AppLiveTrackingView: View {
         .onChange(of: liveLocation.isRecording) { _, _ in
             syncTimerState()
         }
+        #if os(iOS)
         .fullScreenCover(isPresented: $isFullscreenMapPresented) {
             fullscreenMapView
         }
+        #endif
     }
 
     private var portraitLayout: some View {

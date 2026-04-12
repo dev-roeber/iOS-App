@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## [2026-04-12] — Mac/Xcode Build Fix: Compiler Errors + Swift Test Regressions
+
+### Fixed
+- `AppDayDetailView.swift`: `landscapeContentColumn(detail: detail)` → `landscapeContentColumn(detail)` (anonymous label mismatch; caused Xcode build failure)
+- `AppDayMapView.swift`: `fillHeight` promoted to init parameter `init(mapData:fillHeight:)` so landscape caller can pass `fillHeight: true` (previously `AppDayMapView(mapData:fillHeight:)` call failed to compile)
+- `WidgetDataStore.swift`: added `import LocationHistoryConsumerAppSupport` so `DynamicIslandCompactDisplay` type resolves in widget target scope
+- `AppInsightsContentView.swift`: body extracted into `loadedBody` + `insightsScrollContent(isLandscape:)` + `insightsModeContent` to fix "compiler unable to type-check expression in reasonable time"; also fixed latent `LazyVGrid(alignment: .top)` bug → `.leading` (HorizontalAlignment)
+- `AppLiveTrackingView.swift`: `.fullScreenCover` wrapped in `#if os(iOS)` to fix `swift test` failure on macOS (unavailable API)
+- `MapMatchingTests.swift`: empty array literal `[]` disambiguated as `[LocationCoordinate2D]()` to resolve ambiguity between `CLLocationCoordinate2D` and `LocationCoordinate2D` overloads
+
+### Build/Test Status
+- `xcodebuild build -scheme LH2GPXWrapper -destination iPhone 17 Simulator`: BUILD SUCCEEDED
+- `swift test` (macOS): 606 Tests, 0 Failures, 0 Skips
+- Xcode unit tests (LH2GPXWrapperTests): all passed
+- UI automation tests (testDeviceSmokeNavigationAndActions, testAppStoreScreenshots): expected fail on Simulator (need real device + loaded content)
+
 ## [2026-04-12] — Truth Sync: Sorting, Overview Fidelity, Insights Range, Linux Testability
 
 ### Changed

@@ -12,8 +12,9 @@ public struct AppDayMapView: View {
     var fillHeight: Bool = false
     @State private var renderData: DayMapRenderData
 
-    public init(mapData: DayMapData) {
+    public init(mapData: DayMapData, fillHeight: Bool = false) {
         self.mapData = mapData
+        self.fillHeight = fillHeight
         self._renderData = State(initialValue: DayMapRenderData(mapData: mapData))
     }
 

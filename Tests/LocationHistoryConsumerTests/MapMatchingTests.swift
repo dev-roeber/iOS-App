@@ -71,7 +71,7 @@ final class MapMatchingTests: XCTestCase {
     // MARK: - Edge cases
 
     func testEmptyInputReturnsEmpty() {
-        let result = PathSimplification.douglasPeucker([], epsilon: 15.0)
+        let result = PathSimplification.douglasPeucker([LocationCoordinate2D](), epsilon: 15.0)
         XCTAssertTrue(result.isEmpty)
     }
 

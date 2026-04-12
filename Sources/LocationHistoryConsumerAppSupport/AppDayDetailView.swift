@@ -89,7 +89,7 @@ public struct AppDayDetailView: View {
                         .frame(width: geometry.size.width * 0.6)
                     Divider()
                     ScrollView {
-                        landscapeContentColumn(detail: detail)
+                        landscapeContentColumn(detail)
                             .padding()
                     }
                     .frame(width: geometry.size.width * 0.4)

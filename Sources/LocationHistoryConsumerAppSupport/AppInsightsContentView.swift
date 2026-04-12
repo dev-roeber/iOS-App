@@ -153,59 +153,16 @@ struct AppInsightsContentView: View {
                 systemImage: "chart.line.text.clipboard"
             )
         } else {
-            GeometryReader { geometry in
-                let isLandscape = geometry.size.width > geometry.size.height && geometry.size.width > 600
-                let twoColumnGrid: [GridItem] = [GridItem(.flexible()), GridItem(.flexible())]
-                let oneColumnGrid: [GridItem] = [GridItem(.flexible())]
+            loadedBody
+        }
+    }
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
-                        headerSection
-
-                        AppHistoryDateRangeControl(filter: $rangeFilter)
-
-                        if !hasAnyMeaningfulInsightSection {
-                            insightsEmptyCard(
-                                title: t("Limited Insight Data"),
-                                message: t("The import loaded correctly, but it does not contain enough structured data for the current insight views yet."),
-                                systemImage: "chart.bar.xaxis"
-                            )
-                        }
-
-                        Picker("", selection: $surfaceMode) {
-                            ForEach(InsightsSurfaceMode.allCases, id: \.self) { mode in
-                                Text(t(mode.rawValue)).tag(mode)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-
-                        if isLandscape {
-                            LazyVGrid(columns: twoColumnGrid, alignment: .top, spacing: 16) {
-                                switch surfaceMode {
-                                case .overview:
-                                    overviewSections
-                                case .patterns:
-                                    patternSections
-                                case .breakdowns:
-                                    breakdownSections
-                                }
-                            }
-                        } else {
-                            LazyVGrid(columns: oneColumnGrid, spacing: 16) {
-                                switch surfaceMode {
-                                case .overview:
-                                    overviewSections
-                                case .patterns:
-                                    patternSections
-                                case .breakdowns:
-                                    breakdownSections
-                                }
-                            }
-                        }
-                    }
-                    .padding(.bottom, 20)
-                }
-            }
+    @ViewBuilder
+    private var loadedBody: some View {
+        GeometryReader { geometry in
+            let isLandscape: Bool = geometry.size.width > geometry.size.height && geometry.size.width > 600
+            insightsScrollContent(isLandscape: isLandscape)
+        }
             .onAppear {
                 refreshDerivedModel()
             }
@@ -273,6 +230,52 @@ struct AppInsightsContentView: View {
             } message: {
                 Text(shareError ?? "")
             }
+    }
+
+    @ViewBuilder
+    private func insightsScrollContent(isLandscape: Bool) -> some View {
+        let twoColumnGrid: [GridItem] = [GridItem(.flexible()), GridItem(.flexible())]
+        let oneColumnGrid: [GridItem] = [GridItem(.flexible())]
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                headerSection
+                AppHistoryDateRangeControl(filter: $rangeFilter)
+                if !hasAnyMeaningfulInsightSection {
+                    insightsEmptyCard(
+                        title: t("Limited Insight Data"),
+                        message: t("The import loaded correctly, but it does not contain enough structured data for the current insight views yet."),
+                        systemImage: "chart.bar.xaxis"
+                    )
+                }
+                Picker("", selection: $surfaceMode) {
+                    ForEach(InsightsSurfaceMode.allCases, id: \.self) { mode in
+                        Text(t(mode.rawValue)).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                if isLandscape {
+                    LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 16) {
+                        insightsModeContent
+                    }
+                } else {
+                    LazyVGrid(columns: oneColumnGrid, spacing: 16) {
+                        insightsModeContent
+                    }
+                }
+            }
+            .padding(.bottom, 20)
+        }
+    }
+
+    @ViewBuilder
+    private var insightsModeContent: some View {
+        switch surfaceMode {
+        case .overview:
+            overviewSections
+        case .patterns:
+            patternSections
+        case .breakdowns:
+            breakdownSections
         }
     }
 

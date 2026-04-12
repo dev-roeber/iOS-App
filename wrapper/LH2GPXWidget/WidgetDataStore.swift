@@ -1,5 +1,6 @@
 #if canImport(WidgetKit) && canImport(SwiftUI)
 import Foundation
+import LocationHistoryConsumerAppSupport
 
 /// Shared data between the main app and the widget via UserDefaults (App Group).
 /// Falls gracefully if App Group is not configured (returns nil/empty).
