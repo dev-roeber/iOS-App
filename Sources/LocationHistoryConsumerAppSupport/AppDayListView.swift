@@ -64,9 +64,6 @@ struct AppDayRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .accessibilityLabel(t("No recorded entries for this day"))
-                Text(t("No data"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 7)
