@@ -38,13 +38,13 @@ public enum AppContentLoaderError: LocalizedError {
         case let .fileReadFailed(name):
             return "'\(name)' could not be read. The file may be corrupted or inaccessible."
         case let .unsupportedFormat(name):
-            return "'\(name)' is not a supported location history format. Open an LH2GPX app_export.json or .zip from the LocationHistory2GPX tool, or a Google Timeline location-history.json or .zip."
+            return "'\(name)' is not a supported location history format. Open an LH2GPX app_export.json or .zip from the LocationHistory2GPX tool, a Google Timeline location-history.json or .zip, or a GPX/TCX track file."
         case let .decodeFailed(name):
             return "'\(name)' could not be decoded. The file may have been created with an incompatible version of the LocationHistory2GPX tool."
         case let .fileTooLarge(name):
             return "'\(name)' exceeds the 256 MB limit for JSON imports."
         case let .jsonNotFoundInZip(name):
-            return "'\(name)' does not contain a supported location history export. The ZIP must contain exactly one compatible LH2GPX export JSON or one Google Timeline JSON such as location-history.json."
+            return "'\(name)' does not contain a supported location history export. The ZIP must contain exactly one compatible LH2GPX export JSON, one Google Timeline JSON such as location-history.json, or a GPX/TCX track file."
         case let .multipleExportsInZip(name):
             return "'\(name)' contains multiple compatible location history exports. Place only one LH2GPX export or one Google Timeline JSON per ZIP."
         }
@@ -56,10 +56,11 @@ public enum AppContentLoader {
     /// Name of the bundled demo fixture used by default when no file is imported.
     public static let defaultDemoFixtureName = "golden_app_export_sample_small"
 
-    /// Loads a user-imported file (`.json` or `.zip`) from the given URL.
+    /// Loads a user-imported file (`.json`, `.zip`, `.gpx`, or `.tcx`) from the given URL.
     public static func loadImportedContent(from url: URL) async throws -> AppSessionContent {
         return try await Task.detached(priority: .userInitiated) {
-            if url.pathExtension.lowercased() == "zip" {
+            let ext = url.pathExtension.lowercased()
+            if ext == "zip" {
                 return try loadZipContent(from: url)
             }
             let export = try decodeFile(at: url, sourceName: url.lastPathComponent)
@@ -83,7 +84,7 @@ public enum AppContentLoader {
         // Collect JSON candidates, excluding macOS resource forks, hidden files, and oversized entries.
         let candidates = archive.filter { isJsonCandidate($0) }
 
-        // Extract each candidate once; reuse the Data for both LH2GPX and Google Timeline attempts.
+        // Extract each JSON candidate once; reuse the Data for both LH2GPX and Google Timeline attempts.
         let extracted: [(entry: Entry, data: Data)] = candidates.compactMap { entry in
             var data = Data()
             guard (try? archive.extract(entry, bufferSize: 65536) { data.append($0) }) != nil else { return nil }
@@ -99,8 +100,8 @@ public enum AppContentLoader {
 
         switch valid.count {
         case 0:
-            // No LH2GPX export found — try Google Timeline conversion using already-extracted data.
-            return try loadGoogleTimelineFromExtracted(extracted, zipName: zipName)
+            // No LH2GPX export found — try Google Timeline, then GPX/TCX.
+            return try loadNonLH2GPXFromExtracted(extracted, archive: archive, zipName: zipName)
         case 1:
             return AppSessionContent(export: valid[0].export, source: .importedFile(filename: zipName))
         default:
@@ -115,15 +116,16 @@ public enum AppContentLoader {
         }
     }
 
-    private static func loadGoogleTimelineFromExtracted(
+    /// Fallback when no LH2GPX JSON export was found: try Google Timeline, then GPX, then TCX.
+    private static func loadNonLH2GPXFromExtracted(
         _ extracted: [(entry: Entry, data: Data)],
+        archive: Archive,
         zipName: String
     ) throws -> AppSessionContent {
+        // 1. Try Google Timeline
         let timelineCandidates = extracted.filter { GoogleTimelineConverter.isGoogleTimeline($0.data) }
 
         switch timelineCandidates.count {
-        case 0:
-            throw AppContentLoaderError.jsonNotFoundInZip(zipName)
         case 1:
             do {
                 let export = try GoogleTimelineConverter.convert(data: timelineCandidates[0].data)
@@ -131,8 +133,7 @@ public enum AppContentLoader {
             } catch {
                 throw AppContentLoaderError.decodeFailed(zipName)
             }
-        default:
-            // Multiple Google Timeline JSONs: prefer "location-history.json" if unambiguous.
+        case let n where n > 1:
             let preferred = timelineCandidates.first(where: {
                 ($0.entry.path as NSString).lastPathComponent == "location-history.json"
             })
@@ -145,7 +146,31 @@ public enum AppContentLoader {
                 }
             }
             throw AppContentLoaderError.multipleExportsInZip(zipName)
+        default:
+            break
         }
+
+        // 2. Try GPX entries in the ZIP
+        let gpxEntries = archive.filter { isGPXCandidate($0) }
+        for entry in gpxEntries {
+            var data = Data()
+            guard (try? archive.extract(entry, bufferSize: 65536) { data.append($0) }) != nil else { continue }
+            if let export = try? GPXImportParser.parse(data, fileName: (entry.path as NSString).lastPathComponent) {
+                return AppSessionContent(export: export, source: .importedFile(filename: zipName))
+            }
+        }
+
+        // 3. Try TCX entries in the ZIP
+        let tcxEntries = archive.filter { isTCXCandidate($0) }
+        for entry in tcxEntries {
+            var data = Data()
+            guard (try? archive.extract(entry, bufferSize: 65536) { data.append($0) }) != nil else { continue }
+            if let export = try? TCXImportParser.parse(data, fileName: (entry.path as NSString).lastPathComponent) {
+                return AppSessionContent(export: export, source: .importedFile(filename: zipName))
+            }
+        }
+
+        throw AppContentLoaderError.jsonNotFoundInZip(zipName)
     }
 
     private static func isJsonCandidate(_ entry: Entry) -> Bool {
@@ -156,6 +181,26 @@ public enum AppContentLoader {
         let filename = (path as NSString).lastPathComponent
         guard !filename.hasPrefix(".") else { return false }
         return filename.lowercased().hasSuffix(".json")
+    }
+
+    private static func isGPXCandidate(_ entry: Entry) -> Bool {
+        guard entry.type == .file else { return false }
+        guard entry.uncompressedSize <= maxSupportedFileSizeBytes else { return false }
+        let path = entry.path
+        guard !path.hasPrefix("__MACOSX/"), !path.contains("/__MACOSX/") else { return false }
+        let filename = (path as NSString).lastPathComponent
+        guard !filename.hasPrefix(".") else { return false }
+        return filename.lowercased().hasSuffix(".gpx")
+    }
+
+    private static func isTCXCandidate(_ entry: Entry) -> Bool {
+        guard entry.type == .file else { return false }
+        guard entry.uncompressedSize <= maxSupportedFileSizeBytes else { return false }
+        let path = entry.path
+        guard !path.hasPrefix("__MACOSX/"), !path.contains("/__MACOSX/") else { return false }
+        let filename = (path as NSString).lastPathComponent
+        guard !filename.hasPrefix(".") else { return false }
+        return filename.lowercased().hasSuffix(".tcx")
     }
 
     public static func loadFixtureContent(named name: String, from bundle: Bundle, source: AppContentSource) throws -> AppSessionContent {
@@ -179,6 +224,21 @@ public enum AppContentLoader {
             data = try Data(contentsOf: url)
         } catch {
             throw AppContentLoaderError.fileReadFailed(sourceName)
+        }
+
+        return try decodeData(data, sourceName: sourceName)
+    }
+
+    /// Decodes raw data into an `AppExport`, routing by format detection.
+    static func decodeData(_ data: Data, sourceName: String) throws -> AppExport {
+        // GPX format detection
+        if GPXImportParser.isGPX(data) {
+            return try GPXImportParser.parse(data, fileName: sourceName)
+        }
+
+        // TCX format detection
+        if TCXImportParser.isTCX(data) {
+            return try TCXImportParser.parse(data, fileName: sourceName)
         }
 
         // If the file is a JSON array, try Google Timeline conversion before giving up.
