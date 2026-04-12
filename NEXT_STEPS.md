@@ -5,6 +5,8 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 
 ### Naechste offene Schritte:
 - [x] Widget Extension Target / eingebetteter Widget-Build — im Projekt vorhanden; `LH2GPXWidget` wird per `xcodebuild` mitgebaut (Stand 2026-04-12)
+- [x] Widget Privacy Manifest — `wrapper/LH2GPXWidget/PrivacyInfo.xcprivacy` erstellt und im `.xcodeproj` verankert (UserDefaults CA92.1, kein Tracking) (verifiziert 2026-04-12)
+- [x] Device Smoke-Test (App startet, kein Crash) — iPhone 15 Pro Max (00008130-00163D0A0461401C): installiert, gestartet, PID stabil (verifiziert 2026-04-12)
 - [ ] Apple-UI-Verifikation: Range-Picker, Datumsbereich-Sheet auf echtem iPhone
 - [x] KMZ-Export — abgeschlossen 2026-04-12 (KMZBuilder + KMZDocument + Tests)
 - [x] App Groups Entitlements / Widget-Datenaustausch — abgeschlossen 2026-04-12 (LH2GPXWrapper.entitlements + LH2GPXWidget.entitlements + pbxproj CODE_SIGN_ENTITLEMENTS)
@@ -258,7 +260,7 @@ Bereits drin:
 
 Fehlt noch (bewusst verschoben, erfordert Developer Account):
 - Apple-seitige Scope-/Review-Entscheidung: bestaetigt Apple die jetzt eingetragene `NSPrivacyCollectedDataTypes`-Deklaration fuer den optionalen Standort-Upload (Lat/Lon/Timestamp/Accuracy) so? Benoetigt Apple-Hardware und ggf. Store-Review-Feedback
-- Prüfen ob ZIPFoundation-Abhängigkeit file-timestamp-Zugriffe deklarieren muss (`NSPrivacyAccessedAPICategoryFileTimestamp` in PrivacyInfo.xcprivacy) — auf Apple-Host mit `xcodebuild` prüfen
+- [x] ZIPFoundation-Abhaengigkeit file-timestamp: ZIPFoundation 0.9.20 bringt eigenes Privacy Manifest mit (FileTimestamp 0A2A.1) — kein Handlungsbedarf (verifiziert 2026-04-12)
 - Datenschutzrichtlinien-URL und Support-URL für App Store Connect (extern, Pflichtfelder)
 - Technische Basis ist dokumentiert in `docs/PRIVACY_MANIFEST_SCOPE.md`
 

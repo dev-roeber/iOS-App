@@ -9,6 +9,21 @@ Diese Checkliste trennt klar zwischen:
 
 Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
+## Statusstand 2026-04-12 — Device Smoke-Test + Widget Privacy Manifest
+
+### Verifikation 2026-04-12
+
+Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C)
+
+#### ✅ real verifiziert (2026-04-12)
+
+- **Device Smoke-Test**: App `de.roeber.LH2GPXWrapper` auf iPhone 15 Pro Max installiert, gestartet, PID 29955 stabil — kein Crash
+- **Widget Privacy Manifest**: `wrapper/LH2GPXWidget/PrivacyInfo.xcprivacy` erstellt und im `.xcodeproj` verankert (UUID 176C3AD213714BC7AC963476); UserDefaults CA92.1 deklariert, `NSPrivacyTracking: false`
+- **ZIPFoundation 0.9.20 Privacy Manifest**: vorhanden (FileTimestamp 0A2A.1) — kein eigener Handlungsbedarf
+- **Signing** (Team XAGR3K7XDJ, Automatic): funktioniert fuer Device-Build
+- **Store-Archive-Pfad**: `wrapper/LH2GPXWrapper.xcodeproj` (Wrapper-Scheme), nicht SPM-Scheme
+- `swift test` (macOS): 606 Tests, 0 Failures, 0 Skips (Stand 2026-04-12 nach Build-Fix-Batch mit 6 gepatchten Dateien)
+
 ## Statusstand 2026-04-02 — Apple-Device-Verifikation nach Performance-Fix
 
 ### Mac + Xcode + iPhone Verifikation (2026-04-02)

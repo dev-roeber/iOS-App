@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [2026-04-12] — Device-Smoke-Test, Widget Privacy Manifest, Archive-Verifikation
+
+### Hinzugefuegt
+- `wrapper/LH2GPXWidget/PrivacyInfo.xcprivacy` erstellt und im `.xcodeproj` verankert (UserDefaults CA92.1, kein Tracking)
+
+### Verifiziert
+- iPhone 15 Pro Max (00008130-00163D0A0461401C): App installiert, gestartet, kein Crash (PID stabil)
+- ZIPFoundation 0.9.20 bringt eigenes Privacy Manifest mit (FileTimestamp 0A2A.1) — kein Handlungsbedarf
+- Signing (Team XAGR3K7XDJ, Automatic) funktioniert fuer Device-Build
+- Store-Archive-Pfad ist `wrapper/LH2GPXWrapper.xcodeproj`, nicht SPM-Scheme
+
 ## [2026-04-12] — Mac/Xcode Build Fix: Compiler Errors + Swift Test Regressions
 
 ### Fixed
