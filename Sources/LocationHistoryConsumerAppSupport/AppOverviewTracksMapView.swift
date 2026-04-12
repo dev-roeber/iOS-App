@@ -16,7 +16,7 @@ struct AppOverviewTracksMapView: View {
     let queryFilter: AppExportQueryFilter?
 
     @State private var renderData: OverviewMapRenderData = .empty
-    @State private var loadTask: Task<Void, Never>?
+    @State private var loadGeneration: UInt64 = 0
 
     var body: some View {
         Group {
@@ -34,7 +34,7 @@ struct AppOverviewTracksMapView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
-        .task(id: taskIdentifier) {
+        .task(id: taskKey) {
             await loadMapData()
         }
     }
@@ -53,7 +53,7 @@ struct AppOverviewTracksMapView: View {
         .disabled(true) // read-only overview; no interaction needed
         .accessibilityLabel(mapAccessibilityLabel)
         .overlay(alignment: .bottomTrailing) {
-            Text("\(renderData.pathOverlays.count) \(t(renderData.pathOverlays.count == 1 ? "route" : "routes"))")
+            Text("\(renderData.visibleRouteCount) \(t(renderData.visibleRouteCount == 1 ? "route" : "routes"))")
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 8)
@@ -61,6 +61,18 @@ struct AppOverviewTracksMapView: View {
                 .background(.black.opacity(0.45))
                 .clipShape(Capsule())
                 .padding(8)
+        }
+        .overlay(alignment: .bottomLeading) {
+            if renderData.isOptimized {
+                Text(t("Optimized overview"))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.35))
+                    .clipShape(Capsule())
+                    .padding(8)
+            }
         }
     }
 
@@ -92,18 +104,21 @@ struct AppOverviewTracksMapView: View {
 
     // MARK: - Data loading
 
-    /// A stable identifier that changes whenever the input data changes.
-    private var taskIdentifier: String {
-        let first = daySummaries.first?.date ?? ""
-        let last = daySummaries.last?.date ?? ""
-        let count = daySummaries.count
-        return "\(first)-\(last)-\(count)-\(queryFilter?.fromDate ?? "")-\(queryFilter?.toDate ?? "")"
+    /// A stable identifier that changes whenever the input data or relevant filters change.
+    private var taskKey: Int {
+        OverviewMapTaskKey.make(daySummaries: daySummaries, queryFilter: queryFilter)
     }
 
     private var mapAccessibilityLabel: String {
-        let count = renderData.pathOverlays.count
+        let count = renderData.visibleRouteCount
         if preferences.appLanguage.isGerman {
+            if renderData.isOptimized {
+                return "Optimierte Übersichtskarte mit \(count) dargestellten \(count == 1 ? "Route" : "Routen")"
+            }
             return "Übersichtskarte mit \(count) \(count == 1 ? "Route" : "Routen")"
+        }
+        if renderData.isOptimized {
+            return "Optimized overview map with \(count) displayed \(count == 1 ? "route" : "routes")"
         }
         return "Overview map with \(count) \(count == 1 ? "route" : "routes")"
     }
@@ -115,67 +130,304 @@ struct AppOverviewTracksMapView: View {
             return
         }
 
+        loadGeneration &+= 1
+        let generation = loadGeneration
         renderData = .loading
 
         let allDates = daySummaries.map(\.date)
-        let firstBatchDates = Array(allDates.prefix(100))
-        let remainingDates = Array(allDates.dropFirst(100))
         let filter = queryFilter
 
-        // Phase 1: load first 100 days immediately so the user sees content fast.
-        let firstBatch = await Task.detached(priority: .userInitiated) {
-            buildRenderData(for: firstBatchDates, content: content, filter: filter)
+        let prepared = await Task.detached(priority: .userInitiated) {
+            OverviewMapPreparation.buildRenderData(for: allDates, content: content, filter: filter)
         }.value
 
-        renderData = firstBatch
-
-        guard !remainingDates.isEmpty, !Task.isCancelled else { return }
-
-        // Phase 2: load the rest in the background and append.
-        let rest = await Task.detached(priority: .utility) {
-            buildRenderData(for: remainingDates, content: content, filter: filter)
-        }.value
-
-        guard !Task.isCancelled else { return }
-
-        renderData = renderData.appending(rest)
+        guard generation == loadGeneration, !Task.isCancelled else { return }
+        renderData = prepared
     }
 
-    private nonisolated func buildRenderData(
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+}
+
+// MARK: - Render data models
+
+struct OverviewMapPathOverlay: Equatable {
+    let coordinates: [CLLocationCoordinate2D]
+    let activityType: String?
+}
+
+struct OverviewMapRenderData {
+    let pathOverlays: [OverviewMapPathOverlay]
+    let region: MKCoordinateRegion?
+    let totalRouteCount: Int
+    let isLoading: Bool
+
+    var hasContent: Bool { !pathOverlays.isEmpty }
+    var visibleRouteCount: Int { pathOverlays.count }
+    var isOptimized: Bool { totalRouteCount > visibleRouteCount }
+
+    static let empty = OverviewMapRenderData(pathOverlays: [], region: nil, totalRouteCount: 0, isLoading: false)
+    static let loading = OverviewMapRenderData(pathOverlays: [], region: nil, totalRouteCount: 0, isLoading: true)
+
+    init(pathOverlays: [OverviewMapPathOverlay], region: MKCoordinateRegion?, totalRouteCount: Int) {
+        self.pathOverlays = pathOverlays
+        self.region = region
+        self.totalRouteCount = totalRouteCount
+        self.isLoading = false
+    }
+
+    private init(pathOverlays: [OverviewMapPathOverlay], region: MKCoordinateRegion?, totalRouteCount: Int, isLoading: Bool) {
+        self.pathOverlays = pathOverlays
+        self.region = region
+        self.totalRouteCount = totalRouteCount
+        self.isLoading = isLoading
+    }
+}
+
+enum OverviewMapTaskKey {
+    nonisolated static func make(daySummaries: [DaySummary], queryFilter: AppExportQueryFilter?) -> Int {
+        var hasher = Hasher()
+        hasher.combine(queryFilter)
+        for summary in daySummaries {
+            hasher.combine(summary.date)
+            hasher.combine(summary.pathCount)
+            hasher.combine(summary.exportablePathCount)
+            hasher.combine(summary.totalPathPointCount)
+            hasher.combine(summary.visitCount)
+            hasher.combine(summary.activityCount)
+        }
+        return hasher.finalize()
+    }
+}
+
+private struct OverviewMapPathCandidate {
+    let signature: Int
+    let fullCoordinates: [CLLocationCoordinate2D]
+    let midpoint: CLLocationCoordinate2D
+    let activityType: String?
+    let score: Double
+}
+
+private struct OverviewMapRenderProfile {
+    let routeLimit: Int
+    let gridDimension: Int
+    let maxRoutesPerCell: Int
+    let simplificationEpsilonM: Double
+    let maxPolylinePoints: Int
+
+    static func resolve(routeCount: Int, totalPointCount: Int) -> OverviewMapRenderProfile {
+        switch (routeCount, totalPointCount) {
+        case let (routes, points) where routes > 240 || points > 60_000:
+            return OverviewMapRenderProfile(
+                routeLimit: 72,
+                gridDimension: 10,
+                maxRoutesPerCell: 2,
+                simplificationEpsilonM: 140,
+                maxPolylinePoints: 64
+            )
+        case let (routes, points) where routes > 120 || points > 30_000:
+            return OverviewMapRenderProfile(
+                routeLimit: 96,
+                gridDimension: 9,
+                maxRoutesPerCell: 2,
+                simplificationEpsilonM: 100,
+                maxPolylinePoints: 96
+            )
+        case let (routes, points) where routes > 60 || points > 15_000:
+            return OverviewMapRenderProfile(
+                routeLimit: 120,
+                gridDimension: 8,
+                maxRoutesPerCell: 3,
+                simplificationEpsilonM: 70,
+                maxPolylinePoints: 140
+            )
+        default:
+            return OverviewMapRenderProfile(
+                routeLimit: 180,
+                gridDimension: 6,
+                maxRoutesPerCell: 4,
+                simplificationEpsilonM: 50,
+                maxPolylinePoints: 220
+            )
+        }
+    }
+}
+
+enum OverviewMapPreparation {
+    nonisolated static func buildRenderData(
         for dates: [String],
         content: AppSessionContent,
         filter: AppExportQueryFilter?
     ) -> OverviewMapRenderData {
-        var allPaths: [OverviewMapPathOverlay] = []
+        var candidates: [OverviewMapPathCandidate] = []
         var allCoords: [DayMapCoordinate] = []
+        var totalPointCount = 0
 
         for date in dates {
             guard let mapData = content.mapData(for: date, applying: filter) else { continue }
             for overlay in mapData.pathOverlays {
-                guard overlay.coordinates.count >= 2 else { continue }
-                let clCoords = overlay.coordinates.map {
-                    CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                }
-                // Apply Douglas-Peucker with 50 m tolerance for the small overview map.
-                let simplified = PathSimplification.douglasPeucker(clCoords, epsilon: 50.0)
-                guard simplified.count >= 2 else { continue }
-                allPaths.append(OverviewMapPathOverlay(coordinates: simplified, activityType: overlay.activityType))
+                guard let candidate = makeCandidate(from: overlay) else { continue }
+                candidates.append(candidate)
+                totalPointCount += overlay.coordinates.count
                 allCoords.append(contentsOf: overlay.coordinates)
             }
         }
 
         let region = computeRegion(from: allCoords)
-        return OverviewMapRenderData(pathOverlays: allPaths, region: region)
+        guard !candidates.isEmpty else {
+            return OverviewMapRenderData(pathOverlays: [], region: region, totalRouteCount: 0)
+        }
+
+        let profile = OverviewMapRenderProfile.resolve(
+            routeCount: candidates.count,
+            totalPointCount: totalPointCount
+        )
+        let selected = selectCandidates(candidates, region: region, profile: profile)
+        let pathOverlays = selected.compactMap { candidate in
+            makeOverlay(from: candidate, profile: profile)
+        }
+
+        return OverviewMapRenderData(
+            pathOverlays: pathOverlays,
+            region: region,
+            totalRouteCount: candidates.count
+        )
     }
 
-    private nonisolated func computeRegion(from coordinates: [DayMapCoordinate]) -> MKCoordinateRegion? {
-        guard let first = coordinates.first else { return nil }
-        var minLat = first.lat, maxLat = first.lat
-        var minLon = first.lon, maxLon = first.lon
-        for c in coordinates {
-            minLat = min(minLat, c.lat); maxLat = max(maxLat, c.lat)
-            minLon = min(minLon, c.lon); maxLon = max(maxLon, c.lon)
+    private nonisolated static func makeCandidate(from overlay: DayMapPathOverlay) -> OverviewMapPathCandidate? {
+        guard overlay.coordinates.count >= 2 else { return nil }
+
+        let coordinates = overlay.coordinates.map {
+            CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
         }
+        guard coordinates.count >= 2 else { return nil }
+
+        let scoreBase = overlay.distanceM ?? approximateDistance(for: coordinates)
+        let pointWeight = log(Double(max(overlay.coordinates.count, 2)))
+        let midpointIndex = coordinates.count / 2
+        var hasher = Hasher()
+        hasher.combine(overlay.activityType)
+        hasher.combine(overlay.coordinates.count)
+        hasher.combine(overlay.distanceM ?? 0)
+        hasher.combine(coordinates.first?.latitude ?? 0)
+        hasher.combine(coordinates.first?.longitude ?? 0)
+        hasher.combine(coordinates[midpointIndex].latitude)
+        hasher.combine(coordinates[midpointIndex].longitude)
+        hasher.combine(coordinates.last?.latitude ?? 0)
+        hasher.combine(coordinates.last?.longitude ?? 0)
+
+        return OverviewMapPathCandidate(
+            signature: hasher.finalize(),
+            fullCoordinates: coordinates,
+            midpoint: coordinates[midpointIndex],
+            activityType: overlay.activityType,
+            score: scoreBase + pointWeight * 100
+        )
+    }
+
+    private nonisolated static func selectCandidates(
+        _ candidates: [OverviewMapPathCandidate],
+        region: MKCoordinateRegion?,
+        profile: OverviewMapRenderProfile
+    ) -> [OverviewMapPathCandidate] {
+        guard candidates.count > profile.routeLimit, let region else {
+            return candidates.sorted { $0.score > $1.score }
+        }
+
+        let latStep = max(region.span.latitudeDelta / Double(profile.gridDimension), 0.005)
+        let lonStep = max(region.span.longitudeDelta / Double(profile.gridDimension), 0.005)
+        let minLat = region.center.latitude - region.span.latitudeDelta / 2
+        let minLon = region.center.longitude - region.span.longitudeDelta / 2
+
+        var buckets: [OverviewMapBucketKey: [OverviewMapPathCandidate]] = [:]
+        for candidate in candidates {
+            let row = Int(floor((candidate.midpoint.latitude - minLat) / latStep))
+            let col = Int(floor((candidate.midpoint.longitude - minLon) / lonStep))
+            let key = OverviewMapBucketKey(row: row, column: col)
+            buckets[key, default: []].append(candidate)
+        }
+
+        var selected: [OverviewMapPathCandidate] = []
+        selected.reserveCapacity(profile.routeLimit)
+
+        for bucket in buckets.values {
+            let top = bucket
+                .sorted { $0.score > $1.score }
+                .prefix(profile.maxRoutesPerCell)
+            selected.append(contentsOf: top)
+        }
+
+        if selected.count < profile.routeLimit {
+            var selectedSignatures = Set(selected.map(\.signature))
+            let fallback = candidates.sorted { $0.score > $1.score }
+            for candidate in fallback where selected.count < profile.routeLimit {
+                if !selectedSignatures.contains(candidate.signature) {
+                    selected.append(candidate)
+                    selectedSignatures.insert(candidate.signature)
+                }
+            }
+        }
+
+        if selected.count > profile.routeLimit {
+            selected = Array(selected.sorted { $0.score > $1.score }.prefix(profile.routeLimit))
+        }
+
+        return selected.sorted { $0.score > $1.score }
+    }
+
+    private nonisolated static func makeOverlay(
+        from candidate: OverviewMapPathCandidate,
+        profile: OverviewMapRenderProfile
+    ) -> OverviewMapPathOverlay? {
+        let simplified = PathSimplification.douglasPeucker(
+            candidate.fullCoordinates,
+            epsilon: profile.simplificationEpsilonM
+        )
+        let decimated = decimate(simplified, maxPoints: profile.maxPolylinePoints)
+        guard decimated.count >= 2 else { return nil }
+
+        return OverviewMapPathOverlay(
+            coordinates: decimated,
+            activityType: candidate.activityType
+        )
+    }
+
+    private nonisolated static func decimate(
+        _ coordinates: [CLLocationCoordinate2D],
+        maxPoints: Int
+    ) -> [CLLocationCoordinate2D] {
+        guard coordinates.count > maxPoints, maxPoints >= 2 else {
+            return coordinates
+        }
+
+        let step = max(1, Int(ceil(Double(coordinates.count - 1) / Double(maxPoints - 1))))
+        var result: [CLLocationCoordinate2D] = []
+        result.reserveCapacity(maxPoints)
+
+        var index = 0
+        while index < coordinates.count - 1 {
+            result.append(coordinates[index])
+            index += step
+        }
+        result.append(coordinates[coordinates.count - 1])
+        return result
+    }
+
+    nonisolated static func computeRegion(from coordinates: [DayMapCoordinate]) -> MKCoordinateRegion? {
+        guard let first = coordinates.first else { return nil }
+        var minLat = first.lat
+        var maxLat = first.lat
+        var minLon = first.lon
+        var maxLon = first.lon
+
+        for coordinate in coordinates {
+            minLat = min(minLat, coordinate.lat)
+            maxLat = max(maxLat, coordinate.lat)
+            minLon = min(minLon, coordinate.lon)
+            maxLon = max(maxLon, coordinate.lon)
+        }
+
         let center = CLLocationCoordinate2D(
             latitude: (minLat + maxLat) / 2,
             longitude: (minLon + maxLon) / 2
@@ -187,77 +439,19 @@ struct AppOverviewTracksMapView: View {
         return MKCoordinateRegion(center: center, span: span)
     }
 
-    private func t(_ english: String) -> String {
-        preferences.localized(english)
-    }
-}
-
-// MARK: - Render data models
-
-private struct OverviewMapPathOverlay {
-    let coordinates: [CLLocationCoordinate2D]
-    let activityType: String?
-}
-
-private struct OverviewMapRenderData {
-    let pathOverlays: [OverviewMapPathOverlay]
-    let region: MKCoordinateRegion?
-    let isLoading: Bool
-
-    var hasContent: Bool { !pathOverlays.isEmpty }
-
-    static let empty = OverviewMapRenderData(pathOverlays: [], region: nil, isLoading: false)
-    static let loading = OverviewMapRenderData(pathOverlays: [], region: nil, isLoading: true)
-
-    init(pathOverlays: [OverviewMapPathOverlay], region: MKCoordinateRegion?) {
-        self.pathOverlays = pathOverlays
-        self.region = region
-        self.isLoading = false
-    }
-
-    private init(pathOverlays: [OverviewMapPathOverlay], region: MKCoordinateRegion?, isLoading: Bool) {
-        self.pathOverlays = pathOverlays
-        self.region = region
-        self.isLoading = isLoading
-    }
-
-    /// Returns a new value that merges `other` into the receiver.
-    /// The region is expanded to cover both datasets; existing paths are kept.
-    func appending(_ other: OverviewMapRenderData) -> OverviewMapRenderData {
-        let merged = pathOverlays + other.pathOverlays
-        let mergedRegion = unionRegion(self.region, other.region)
-        return OverviewMapRenderData(pathOverlays: merged, region: mergedRegion)
-    }
-
-    // MARK: - Region helpers
-
-    private func unionRegion(
-        _ a: MKCoordinateRegion?,
-        _ b: MKCoordinateRegion?
-    ) -> MKCoordinateRegion? {
-        switch (a, b) {
-        case (nil, let r): return r
-        case (let r, nil): return r
-        case (let r1?, let r2?):
-            let minLat = min(r1.center.latitude  - r1.span.latitudeDelta  / 2,
-                            r2.center.latitude  - r2.span.latitudeDelta  / 2)
-            let maxLat = max(r1.center.latitude  + r1.span.latitudeDelta  / 2,
-                            r2.center.latitude  + r2.span.latitudeDelta  / 2)
-            let minLon = min(r1.center.longitude - r1.span.longitudeDelta / 2,
-                            r2.center.longitude - r2.span.longitudeDelta / 2)
-            let maxLon = max(r1.center.longitude + r1.span.longitudeDelta / 2,
-                            r2.center.longitude + r2.span.longitudeDelta / 2)
-            let center = CLLocationCoordinate2D(
-                latitude:  (minLat + maxLat) / 2,
-                longitude: (minLon + maxLon) / 2
-            )
-            let span = MKCoordinateSpan(
-                latitudeDelta:  max(maxLat - minLat, 0.01),
-                longitudeDelta: max(maxLon - minLon, 0.01)
-            )
-            return MKCoordinateRegion(center: center, span: span)
+    private nonisolated static func approximateDistance(for coordinates: [CLLocationCoordinate2D]) -> Double {
+        guard coordinates.count >= 2 else { return 0 }
+        return zip(coordinates, coordinates.dropFirst()).reduce(0) { partial, pair in
+            let a = CLLocation(latitude: pair.0.latitude, longitude: pair.0.longitude)
+            let b = CLLocation(latitude: pair.1.latitude, longitude: pair.1.longitude)
+            return partial + a.distance(from: b)
         }
     }
+}
+
+private struct OverviewMapBucketKey: Hashable {
+    let row: Int
+    let column: Int
 }
 
 #endif

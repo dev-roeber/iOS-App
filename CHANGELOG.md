@@ -13,10 +13,11 @@
 - `.gitignore`: `xcuserdata/`, `*.xcuserstate`
 
 ### Performance
-- Overview Map: progressive Loading (erste 100 Days sofort `.userInitiated`, Rest `.utility`)
-- Douglas-Peucker Simplification 50m für Overview (vs 15m Detail)
-- `OverviewMapRenderData.appending()` + `unionRegion`, `nonisolated buildRenderData()`
-- 294-Routes-Bug behoben: `prefix(100)` Cap entfernt
+- Overview Map: einphasige Off-Main-Preparation statt altem 100-Day-Batching; veraltete Background-Loads werden über stärkeren Task-Key + Generation-Guard verworfen
+- Overview Map: Route-Budget/LOD für große Zeiträume (`routeLimit`, Grid-Selektion pro Region-Zelle, Decimation pro Polyline) für robuste Darstellung bei hohen Datenmengen
+- Douglas-Peucker Simplification 50–140m für Overview je nach Datenmenge (Detail bleibt feiner)
+- Overview-Badge zeigt jetzt die tatsächlich dargestellten Overview-Routen; bei großen Datenmengen zusätzlich Kennzeichnung als optimierte Übersicht
+- 3 neue `AppOverviewTracksMapViewTests` sichern Task-Key-Invaliderung, Small-Range-Verhalten und Large-Range-Optimierung
 
 ### Infrastructure
 - `LocationHistory2GPX` (Python Pipeline) auf privat gesetzt

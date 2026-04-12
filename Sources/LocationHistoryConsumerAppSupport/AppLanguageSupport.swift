@@ -564,6 +564,7 @@ enum AppGermanTranslations {
         // Overview tracks map (task 3)
         "No tracks in selected range": "Keine Tracks im ausgewählten Zeitraum",
         "Loading map…": "Karte wird geladen…",
+        "Optimized overview": "Optimierte Übersicht",
         "route": "Route",
         "routes": "Routen",
         "Overview map with": "Übersichtskarte mit",
