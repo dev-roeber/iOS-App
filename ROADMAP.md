@@ -126,6 +126,7 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 
 ### Noch nicht umgesetzt
 
+- **Map Matching + Dynamic Island / Live Activity** — ⏳ nicht im Repo nachweisbar (Audit 2026-04-12); kein Branch, kein Commit, keine Datei in keinem der 6 Repos gefunden; Wiederanlauf-Plan in NEXT_STEPS.md
 - KMZ-Export
 - weitere Insight-Arbeit: Apple-Host-Verifikation fuer den jetzt verdrahteten Drilldown-/Chart-Share-Flow sowie optional spaeter map-linked Cross-Filtering
 - globale Zeitraumfilter-Verdrahtung fuer `Days` bleibt offen; aktuell sichtbar verdrahtet sind `Overview`, `Insights` und `Export`

@@ -3,6 +3,19 @@
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 
+## Prompt 3 — Map Matching + Dynamic Island / Live Activity
+**Status: NICHT ABGESCHLOSSEN — nicht im Repo nachweisbar**
+
+Nach strengem Repo-Audit (2026-04-12) kein Branch, kein Commit, keine Datei in keinem der
+6 Repos gefunden. Lokale Agentenbehauptungen gelten nicht als Abschlussnachweis.
+
+### Wiederanlauf-Plan
+- [ ] `feat/map-matching-foundation` — Branch anlegen, Day-Track-Snapping implementieren
+- [ ] `feat/dynamic-island-live-activity` — ActivityKit Target, LiveActivityAttributes, UI
+- [ ] Abhängigkeit: Map Matching sollte vor Dynamic Island fertig sein
+- [ ] Tests: MapMatchingTests, LiveActivityTests
+- [ ] Keine Regression bestehender Overview/Days/Insights-Pfade
+
 ## Multi-Source Import Foundation (2026-04-12)
 
 Status: **✅ abgeschlossen (2026-04-12)**
