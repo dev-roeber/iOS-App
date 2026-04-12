@@ -62,7 +62,11 @@ struct AppShellRootView: View {
         #if canImport(UniformTypeIdentifiers)
         .fileImporter(
             isPresented: $isImportingFile,
-            allowedContentTypes: [.json, .zip],
+            allowedContentTypes: [
+                .json, .zip,
+                UTType(filenameExtension: "gpx") ?? .xml,
+                UTType(filenameExtension: "tcx") ?? .xml
+            ],
             allowsMultipleSelection: false,
             onCompletion: handleImportResult
         )
