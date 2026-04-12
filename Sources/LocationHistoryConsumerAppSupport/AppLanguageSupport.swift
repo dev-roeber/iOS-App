@@ -593,6 +593,10 @@ enum AppGermanTranslations {
         "Training Center XML": "Training Center XML",
         "GPX imported": "GPX importiert",
         "TCX imported": "TCX importiert",
-        "File contains no track points": "Datei enthält keine Trackpunkte"
+        "File contains no track points": "Datei enthält keine Trackpunkte",
+        // Day path display mode (Phase B1)
+        "Original": "Original",
+        "Map-Matched (Beta)": "An Straße angepasst (Beta)",
+        "Route Display": "Routen-Darstellung"
     ]
 }

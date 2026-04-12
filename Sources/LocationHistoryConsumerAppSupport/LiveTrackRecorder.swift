@@ -30,6 +30,8 @@ public struct LiveTrackRecorderConfiguration: Equatable {
 public struct LiveTrackRecorder {
     public private(set) var points: [RecordedTrackPoint] = []
     public private(set) var isRecording = false
+    /// Running total distance in metres across all accepted track points.
+    public private(set) var accumulatedDistanceM: Double = 0
 
     public private(set) var configuration: LiveTrackRecorderConfiguration
     private let calendar: Calendar
@@ -48,6 +50,7 @@ public struct LiveTrackRecorder {
 
     public mutating func start() {
         points = []
+        accumulatedDistanceM = 0
         isRecording = true
     }
 
@@ -105,6 +108,7 @@ public struct LiveTrackRecorder {
             return false
         }
 
+        accumulatedDistanceM += distanceDelta
         points.append(candidate)
         return true
     }
@@ -112,6 +116,7 @@ public struct LiveTrackRecorder {
     public mutating func stop() -> RecordedTrack? {
         defer {
             points = []
+            accumulatedDistanceM = 0
             isRecording = false
         }
 

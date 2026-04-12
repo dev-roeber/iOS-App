@@ -54,6 +54,20 @@ public enum AppStartTabPreference: String, CaseIterable, Identifiable {
     }
 }
 
+public enum AppDayPathDisplayMode: String, CaseIterable, Identifiable {
+    case original = "original"
+    case mapMatched = "mapMatched"
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .original: return "Original"
+        case .mapMatched: return "Map-Matched (Beta)"
+        }
+    }
+}
+
 public enum AppMapStylePreference: String, CaseIterable, Identifiable {
     case standard
     case hybrid
@@ -209,6 +223,7 @@ public final class AppPreferences: ObservableObject {
         static let liveTrackingUploadBatch = "app.preferences.liveTrackingUploadBatch"
         static let recordingInterval = "app.preferences.recordingInterval"
         static let autoRestoreLastImport = "app.preferences.autoRestoreLastImport"
+        static let dayPathDisplayMode = "app.preferences.dayPathDisplayMode"
     }
 
     private let userDefaults: UserDefaults
@@ -275,6 +290,12 @@ public final class AppPreferences: ObservableObject {
     /// Defaults to `false` (opt-in behaviour).
     @Published public var autoRestoreLastImport: Bool {
         didSet { userDefaults.set(autoRestoreLastImport, forKey: Keys.autoRestoreLastImport) }
+    }
+
+    /// Controls whether the day-detail map shows the original path or a Douglas-Peucker simplified version.
+    /// Originaldaten werden NIEMALS überschrieben – nur View-seitige Transformation.
+    @Published public var dayPathDisplayMode: AppDayPathDisplayMode {
+        didSet { userDefaults.set(dayPathDisplayMode.rawValue, forKey: Keys.dayPathDisplayMode) }
     }
 
     public var liveTrackRecorderConfiguration: LiveTrackRecorderConfiguration {
@@ -371,6 +392,11 @@ public final class AppPreferences: ObservableObject {
             self.recordingInterval = .default
         }
         self.autoRestoreLastImport = userDefaults.object(forKey: Keys.autoRestoreLastImport) as? Bool ?? false
+        self.dayPathDisplayMode = Self.loadEnum(
+            AppDayPathDisplayMode.self,
+            key: Keys.dayPathDisplayMode,
+            from: userDefaults
+        ) ?? .original
     }
 
     public func reset() {
@@ -389,6 +415,7 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.liveTrackingUploadBatch)
         userDefaults.removeObject(forKey: Keys.recordingInterval)
         userDefaults.removeObject(forKey: Keys.autoRestoreLastImport)
+        userDefaults.removeObject(forKey: Keys.dayPathDisplayMode)
 
         distanceUnit = .metric
         startTab = .overview
@@ -404,6 +431,7 @@ public final class AppPreferences: ObservableObject {
         liveTrackingUploadBatch = .small
         recordingInterval = .default
         autoRestoreLastImport = false
+        dayPathDisplayMode = .original
     }
 
     private static func loadEnum<T: RawRepresentable>(

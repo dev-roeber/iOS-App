@@ -405,6 +405,15 @@ public final class LiveLocationFeatureModel: ObservableObject {
         schedulePendingUploadIfNeeded()
         pendingUploadPointCount = pendingUploadQueue.count
 
+        #if os(iOS)
+        if #available(iOS 16.1, *) {
+            ActivityManager.shared.endActivity(
+                distanceMeters: recorder.accumulatedDistanceM,
+                pointCount: recorder.points.count
+            )
+        }
+        #endif
+
         let finishedTrack = recorder.stop()
         liveTrackPoints = []
 
@@ -489,6 +498,13 @@ public final class LiveLocationFeatureModel: ObservableObject {
         liveTrackPoints = []
         transition(to: .recording)
         client?.startUpdatingLocation()
+
+        #if os(iOS)
+        if #available(iOS 16.1, *) {
+            let trackName = "Live Track \(DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))"
+            ActivityManager.shared.startActivity(trackName: trackName, startTime: Date())
+        }
+        #endif
     }
 
     private func handleLocationSamples(_ samples: [LiveLocationSample]) {
@@ -516,6 +532,15 @@ public final class LiveLocationFeatureModel: ObservableObject {
         if !acceptedPoints.isEmpty {
             liveTrackPoints = recorder.points
             enqueueUpload(points: acceptedPoints)
+
+            #if os(iOS)
+            if #available(iOS 16.1, *) {
+                ActivityManager.shared.updateActivity(
+                    distanceMeters: recorder.accumulatedDistanceM,
+                    pointCount: recorder.points.count
+                )
+            }
+            #endif
         }
     }
 

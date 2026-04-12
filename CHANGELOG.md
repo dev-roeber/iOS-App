@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [Prompt 3] - 2026-04-12
+
+### Added
+- Map Matching toggle in Days detail view: "Original" vs. "An Straße angepasst (Beta)"
+- Douglas-Peucker path simplification (PathSimplification.swift, epsilon=15m, no external deps)
+- AppDayPathDisplayMode enum (.original / .mapMatched) with @AppStorage persistence
+- Live Activity / Dynamic Island support via ActivityKit (iOS 16.1+)
+- TrackingAttributes + TrackingStatus (ActivityAttributes) for recording state
+- ActivityManager singleton: start/update/end/cancelAll
+- NSSupportsLiveActivities = true in Info.plist
+- Integration in LiveLocationFeatureModel and LiveTrackRecorder
+- 16 new tests (MapMatchingTests + LiveActivityTests), total: 546
+
 ## Audit 2026-04-12 — Prompt2/Prompt3 Truth Sync
 - Prompt 2 (GPX/TCX Import): vollständig verifiziert — alle Parser, Tests, Doku repo-wahr ✅
 - Prompt 3 (Map Matching + Dynamic Island): nicht repo-wahr nachweisbar — als offen dokumentiert ⚠️

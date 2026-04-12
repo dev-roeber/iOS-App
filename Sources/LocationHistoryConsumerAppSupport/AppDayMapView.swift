@@ -64,7 +64,10 @@ public struct AppDayMapView: View {
             span: region.span
         ))) {
             ForEach(Array(renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
-                MapPolyline(coordinates: path.coordinates)
+                let coords: [CLLocationCoordinate2D] = preferences.dayPathDisplayMode == .mapMatched
+                    ? PathSimplification.douglasPeucker(path.coordinates)
+                    : path.coordinates
+                MapPolyline(coordinates: coords)
                 .stroke(MapPalette.routeColor(for: path.activityType), lineWidth: 3)
             }
 

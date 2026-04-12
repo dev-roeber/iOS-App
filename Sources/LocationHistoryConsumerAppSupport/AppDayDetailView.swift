@@ -110,6 +110,14 @@ public struct AppDayDetailView: View {
 
             #if canImport(MapKit)
             if #available(iOS 17.0, macOS 14.0, *) {
+                if !detail.paths.isEmpty {
+                    Picker(t("Route Display"), selection: $preferences.dayPathDisplayMode) {
+                        ForEach(AppDayPathDisplayMode.allCases) { mode in
+                            Text(t(mode.label)).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
                 AppDayMapView(mapData: resolvedMapData)
             } else {
                 Label(t("Map view requires iOS 17 or later."), systemImage: "map")
