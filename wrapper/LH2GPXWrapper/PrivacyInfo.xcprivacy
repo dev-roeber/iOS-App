@@ -6,8 +6,38 @@
 	<false/>
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
+	<!--
+	  NSPrivacyCollectedDataTypes: precise location
+
+	  The app optionally sends live GPS track points (latitude, longitude, timestamp,
+	  horizontal accuracy) to a user-configured HTTPS server. This feature is:
+	    - disabled by default (sendsLiveLocationToServer = false)
+	    - user-initiated: requires explicit activation in Options + manual URL entry
+	    - sent only to a server the user owns / explicitly configures
+	    - not linked to any identity, not used for advertising or analytics
+
+	  Apple's Privacy Manifest guidance requires declaring data types that MAY be
+	  collected, even when optional. The upload is user-controlled App Functionality.
+
+	  NSPrivacyCollectedDataTypeLinked = false  (no identity linkage in the app)
+	  NSPrivacyCollectedDataTypeTracking = false (not for ad/analytics tracking)
+	-->
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePreciseLocation</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<!-- App Functionality: user explicitly sends their own live track to their own server -->
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>

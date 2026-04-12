@@ -4,7 +4,7 @@
 iOS-App ist ab jetzt das zentrale aktive Repo.
 
 ### Naechste offene Schritte:
-- [ ] Widget Extension Target in Xcode manuell anlegen (Anleitung: docs/WIDGET_XCODE_SETUP.md) — Swift-Dateien vorhanden in wrapper/LH2GPXWidget/
+- [x] Widget Extension Target / eingebetteter Widget-Build — im Projekt vorhanden; `LH2GPXWidget` wird per `xcodebuild` mitgebaut (Stand 2026-04-12)
 - [ ] Apple-UI-Verifikation: Range-Picker, Datumsbereich-Sheet auf echtem iPhone
 - [x] KMZ-Export — abgeschlossen 2026-04-12 (KMZBuilder + KMZDocument + Tests)
 - [x] App Groups Entitlements / Widget-Datenaustausch — abgeschlossen 2026-04-12 (LH2GPXWrapper.entitlements + LH2GPXWidget.entitlements + pbxproj CODE_SIGN_ENTITLEMENTS)
@@ -246,12 +246,11 @@ Bereits drin:
 - Pause/Resume, manueller Flush sowie Queue-/Failure-/Last-Success-Status
 - repo-wahre Review-/Runbook-Wording-Basis ohne finale Apple-Freigabeclaims
 - hart kodierter Test-Server-Endpunkt entfernt: `defaultTestEndpointURLString = ""`
-- PrivacyInfo.xcprivacy vorhanden unter `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy`: `NSPrivacyTracking: false`, UserDefaults CA92.1 deklariert
-- `NSPrivacyCollectedDataTypes` in PrivacyInfo.xcprivacy ist derzeit leer
+- PrivacyInfo.xcprivacy vorhanden unter `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy`: `NSPrivacyTracking: false`, UserDefaults CA92.1 und `NSPrivacyCollectedDataTypePreciseLocation` fuer den optionalen Live-Upload deklariert
 - **End-to-End-Device-Verifikation mit eigenem HTTPS-Endpunkt: auf realem Gerät verifiziert (2026-04-02)**
 
 Fehlt noch (bewusst verschoben, erfordert Developer Account):
-- Apple-seitige Scope-/Review-Entscheidung: muss `NSPrivacyCollectedDataTypes` für den optionalen Standort-Upload (Lat/Lon/Timestamp/Accuracy) in PrivacyInfo.xcprivacy ergänzt werden? Benötigt Apple-Hardware und ggf. Store-Review-Feedback
+- Apple-seitige Scope-/Review-Entscheidung: bestaetigt Apple die jetzt eingetragene `NSPrivacyCollectedDataTypes`-Deklaration fuer den optionalen Standort-Upload (Lat/Lon/Timestamp/Accuracy) so? Benoetigt Apple-Hardware und ggf. Store-Review-Feedback
 - Prüfen ob ZIPFoundation-Abhängigkeit file-timestamp-Zugriffe deklarieren muss (`NSPrivacyAccessedAPICategoryFileTimestamp` in PrivacyInfo.xcprivacy) — auf Apple-Host mit `xcodebuild` prüfen
 - Datenschutzrichtlinien-URL und Support-URL für App Store Connect (extern, Pflichtfelder)
 - Technische Basis ist dokumentiert in `docs/PRIVACY_MANIFEST_SCOPE.md`

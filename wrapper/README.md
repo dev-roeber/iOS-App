@@ -46,7 +46,7 @@ Genutzte Produkte:
 - **Deployment Target:** iOS 26.2
 - **Signing:** Automatic (Team XAGR3K7XDJ)
 - **App Icon:** Map-Pin + "LH2GPX", 1024x1024 (Interims-Design, kein Gradient-Placeholder mehr)
-- **Privacy Manifest:** `PrivacyInfo.xcprivacy` – kein Tracking, UserDefaults-Zugriff deklariert; lokale Live-Location ueber Info.plist-Usage-Strings fuer While-In-Use plus optionale `Always Allow`-Erweiterung; der optionale nutzergesteuerte Server-Upload von Live-Standortpunkten ist standardmaessig deaktiviert und erfordert aktive Konfiguration
+- **Privacy Manifest:** `PrivacyInfo.xcprivacy` – kein Tracking; UserDefaults-Zugriff (CA92.1) und `NSPrivacyCollectedDataTypePreciseLocation` fuer den optionalen, standardmaessig deaktivierten Live-Upload sind deklariert; lokale Live-Location nutzt die Info.plist-Usage-Strings fuer While-In-Use plus optionale `Always Allow`-Erweiterung
 
 ## Lokaler Build
 
@@ -90,6 +90,9 @@ Verifiziert (2026-03-17):
 - Import `app_export.json`: funktioniert
 - Persistenz / Restore nach App-Neustart: historisch auf 2026-03-17 verifiziert; der seit 2026-03-20 wieder aktive Wrapper-Auto-Restore braucht fuer den aktuellen Code-Stand eine frische Device-Re-Verifikation
 
+Erneut verifiziert (2026-04-12):
+- `make deploy` baut den Wrapper und startet `de.roeber.LH2GPXWrapper` erfolgreich auf `iPhone_15_Pro_Max` und `iPhone_12_Pro_Max`
+
 Neu auf Code-Stand 2026-03-18:
 - Google-Takeout-`location-history.json` und `.zip` werden direkt unterstuetzt
 - Live-Location / Live-Recording ist eingebaut (lokal, manuell gestartet; optionaler Background-Modus im aktuellen Code)
@@ -116,7 +119,7 @@ Neu auf Code-Stand 2026-03-20:
 - GPX, TCX, KML, GeoJSON koennen per `fileImporter` geoeffnet werden (nicht nur JSON/ZIP)
 
 Aktueller Server-Truth fuer den eingebundenen Core-Stand:
-- `swift test` im Core-Repo laeuft gruen mit `573` Tests, `0` Skips und `0` Failures (Stand 2026-04-12)
+- `swift test` im Core-Repo laeuft gruen mit `586` Tests und `0` Failures (Stand 2026-04-12)
 - `xcodebuild` ist auf dem Linux-Server nicht verfuegbar; der Wrapper-spezifische Xcode-/Device-Stand ist der letzte Apple-Lauf vom 2026-04-12
 
 Unterstuetztes Import-Format: jede `.json`-Datei oder `.zip`-Datei, die einen gueltigen LH2GPX-App-Export enthaelt, plus Google-Timeline-`location-history.json` / `.zip` aus Google Takeout.
@@ -129,10 +132,10 @@ iPad: bewusst spaeter.
 
 Lokal verifiziert (2026-03-17):
 - `xcodebuild archive` erfolgreich (v1.0, Build 1)
-- `PrivacyInfo.xcprivacy` UserDefaults-Zugriff (CA92.1) deklariert
+- `PrivacyInfo.xcprivacy` deklariert UserDefaults-Zugriff (CA92.1) und `PreciseLocation` fuer den optionalen Live-Upload
 
 Offen (Stand 2026-03-31):
-- Privacy-Manifest-Scope fuer optionalen Server-Upload (Standortdaten) ungeklaert
+- Apple-Review-Scope fuer die inzwischen eingetragene `PreciseLocation`-Deklaration des optionalen Server-Uploads bleibt ungeklaert
 - App Review Guidelines 5.1.1 (Data Collection) und 5.1.2 (Privacy Manifests): teilweise – kein abschliessender Nachweis der Konformitaet fuer den Upload-Pfad
 - ein manueller Xcode-Start auf dem verbundenen iPhone bleibt ein positiver Teilbefund, ist aber bewusst getrennt von den CLI-Build-/Test-Ergebnissen zu lesen
 

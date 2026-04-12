@@ -245,7 +245,10 @@ public final class AppPreferences: ObservableObject {
     }
 
     @Published public var appLanguage: AppLanguagePreference {
-        didSet { userDefaults.set(appLanguage.rawValue, forKey: Keys.appLanguage) }
+        didSet {
+            userDefaults.set(appLanguage.rawValue, forKey: Keys.appLanguage)
+            syncWidgetLanguagePreference()
+        }
     }
 
     @Published public var liveTrackingAccuracy: AppLiveTrackingAccuracyPreference {
@@ -397,6 +400,7 @@ public final class AppPreferences: ObservableObject {
             key: Keys.dayPathDisplayMode,
             from: userDefaults
         ) ?? .original
+        syncWidgetLanguagePreference()
     }
 
     public func reset() {
@@ -432,6 +436,10 @@ public final class AppPreferences: ObservableObject {
         recordingInterval = .default
         autoRestoreLastImport = false
         dayPathDisplayMode = .original
+    }
+
+    private func syncWidgetLanguagePreference() {
+        UserDefaults(suiteName: WidgetDataStore.suiteName)?.set(appLanguage.rawValue, forKey: Keys.appLanguage)
     }
 
     private static func loadEnum<T: RawRepresentable>(

@@ -3,22 +3,28 @@ import XCTest
 
 final class AppPreferencesTests: XCTestCase {
     private let bearerTokenKey = "app.preferences.liveTrackingServerUploadBearerToken"
+    private let appLanguageKey = "app.preferences.appLanguage"
     private var defaults: UserDefaults!
     private var suiteName: String!
+    private var widgetDefaults: UserDefaults!
 
     override func setUp() {
         super.setUp()
         suiteName = "AppPreferencesTests-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
         defaults.removePersistentDomain(forName: suiteName)
+        widgetDefaults = UserDefaults(suiteName: WidgetDataStore.suiteName)
+        widgetDefaults?.removeObject(forKey: appLanguageKey)
         KeychainHelper.delete(key: bearerTokenKey)
     }
 
     override func tearDown() {
         KeychainHelper.delete(key: bearerTokenKey)
         defaults.removePersistentDomain(forName: suiteName)
+        widgetDefaults?.removeObject(forKey: appLanguageKey)
         defaults = nil
         suiteName = nil
+        widgetDefaults = nil
         super.tearDown()
     }
 
@@ -209,6 +215,18 @@ final class AppPreferencesTests: XCTestCase {
 
             XCTAssertEqual(preferences.localized("No minimum"), "Kein Minimum")
             XCTAssertEqual(preferences.localized("Unlimited"), "Unbegrenzt")
+        }
+    }
+
+    func testAppLanguageMirrorsToWidgetAppGroupDefaults() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            preferences.appLanguage = .german
+
+            XCTAssertEqual(
+                widgetDefaults?.string(forKey: appLanguageKey),
+                AppLanguagePreference.german.rawValue
+            )
         }
     }
 }

@@ -133,19 +133,18 @@ final class MultiSourceImportTests: XCTestCase {
     }
 
     func testInvalidXML_TCX_throwsDecodeFailed() throws {
-        // Even if the content is not XML at all, it should throw decodeFailed
-        // because there are no Trackpoints found.
+        // Direct TCX parsing now surfaces a typed parser error for missing trackpoints.
         let noPoints = Data("<TrainingCenterDatabase/>".utf8)
         do {
             _ = try TCXImportParser.parse(noPoints, fileName: "empty.tcx")
             XCTFail("Should throw for TCX with no trackpoints")
-        } catch let error as AppContentLoaderError {
-            guard case .decodeFailed = error else {
-                XCTFail("Expected decodeFailed but got: \(error)")
+        } catch let error as TCXImportError {
+            guard case .noTrackPoints("empty.tcx") = error else {
+                XCTFail("Expected noTrackPoints but got: \(error)")
                 return
             }
         } catch {
-            XCTFail("Expected AppContentLoaderError but got: \(error)")
+            XCTFail("Expected TCXImportError but got: \(error)")
         }
     }
 

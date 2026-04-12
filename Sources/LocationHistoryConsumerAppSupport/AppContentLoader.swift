@@ -238,7 +238,11 @@ public enum AppContentLoader {
 
         // TCX format detection
         if TCXImportParser.isTCX(data) {
-            return try TCXImportParser.parse(data, fileName: sourceName)
+            do {
+                return try TCXImportParser.parse(data, fileName: sourceName)
+            } catch is TCXImportError {
+                throw AppContentLoaderError.decodeFailed(sourceName)
+            }
         }
 
         // If the file is a JSON array, try Google Timeline conversion before giving up.

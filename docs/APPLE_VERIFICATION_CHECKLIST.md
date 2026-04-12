@@ -20,8 +20,10 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (iOS 26.3), iPhone Air (iO
 - `xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build`: BUILD SUCCEEDED
 - `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`: BUILD SUCCEEDED
 - `xcodebuild archive -scheme LH2GPXWrapper -destination 'generic/platform=iOS'`: ARCHIVE SUCCEEDED (TestFlight-Archiv lokal erzeugbar; Upload erfordert App Store Connect)
-- `xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 573 Tests, 0 Failures (Stand 2026-04-12)
-- PrivacyInfo.xcprivacy vorhanden und technisch konsistent mit aktuellem App-Verhalten (UserDefaults CA92.1 deklariert, NSPrivacyTracking: false)
+- `swift test`: 586 Tests, 0 Failures (Stand 2026-04-12)
+- `xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`: BUILD SUCCEEDED inkl. eingebettetem Widget (Stand 2026-04-12)
+- `make deploy` im Wrapper: Build, Install und Launch auf `iPhone_15_Pro_Max` und `iPhone_12_Pro_Max` erfolgreich (Stand 2026-04-12)
+- PrivacyInfo.xcprivacy vorhanden und technisch konsistent mit aktuellem App-Verhalten (UserDefaults CA92.1 deklariert, `NSPrivacyCollectedDataTypePreciseLocation` fuer optionalen Live-Upload eingetragen, `NSPrivacyTracking: false`)
 - Device-Launch auf iPhone 15 Pro Max: `testLaunch` gruен
 - Device-Smoke-Test `testDeviceSmokeNavigationAndActions` auf iPhone 15 Pro Max: PASSED (44s)
   - Load Demo Data: App startet sauber, Demo-Daten laden ohne Crash
@@ -41,7 +43,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (iOS 26.3), iPhone Air (iO
 
 #### ❌ offen (Apple-Review / Store-Policy)
 
-- `NSPrivacyCollectedDataTypes` in PrivacyInfo.xcprivacy: aktuell leer (`[]`); ob Location-Daten aus Live-Recording als `NSPrivacyCollectedDataType` deklariert werden muessen, entscheidet Apple Review (optionaler Upload und lokale Aufnahme)
+- Apple-Review-Bestaetigung fuer die bereits eingetragene `NSPrivacyCollectedDataTypePreciseLocation`-Deklaration des optionalen Live-Uploads steht weiter aus
 - Datenschutzrichtlinien-URL fuer App Store Connect (Pflichtfeld, noch nicht eingetragen)
 - Support-URL fuer App Store Connect (noch nicht eingetragen)
 
@@ -66,7 +68,7 @@ Dieser Audit-Block basiert ausschließlich auf Quellcode- und Dokumentationsanal
 - `defaultTestEndpointURLString = ""` — kein hart kodierter Testendpunkt im Code
 - Nur akzeptierte Live-Recording-Punkte (Lat/Lon/Timestamp/Accuracy) werden übertragen
 - Keine Analytics, kein Ad-Tracking, kein Cloud-Sync für importierte History
-- `swift test`: 573 Tests, 0 Skips, 0 Failures (macOS, 2026-04-12)
+- `swift test`: 586 Tests, 0 Failures (2026-04-12; dieser Alt-Block wurde nachgezogen)
 
 #### ⚠️ benötigt Apple-Hardware/Xcode
 

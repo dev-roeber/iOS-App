@@ -1,5 +1,12 @@
 name: Swift Tests
 
+# CI Coverage:
+# - swift test: all SPM unit tests (current baseline: 586)
+# - xcodebuild build: compiles the iOS app wrapper and embedded widget extension
+# - dedicated wrapper/.github/workflows/xcode-test.yml: runs xcodebuild test on iOS Simulator
+# - Widget UI itself is not directly testable in CI (requires WidgetKit runtime / hardware)
+# - Live Activity: not testable in CI (requires ActivityKit + hardware)
+
 on:
   push:
     branches: [ main ]
@@ -14,6 +21,14 @@ jobs:
 
       - name: Run tests
         run: swift test
+
+      - name: Build iOS wrapper and embedded widget
+        run: |
+          xcodebuild build \
+            -project wrapper/LH2GPXWrapper.xcodeproj \
+            -scheme LH2GPXWrapper \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Lint
         run: |

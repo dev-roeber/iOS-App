@@ -8,6 +8,8 @@ Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschl
 - [x] App Groups Entitlements: `LH2GPXWrapper.entitlements` + `LH2GPXWidget.entitlements` mit `group.de.roeber.LH2GPXWrapper`; `CODE_SIGN_ENTITLEMENTS` in `project.pbxproj` fuer alle 4 Build-Konfigurationen gesetzt — Widget-Datenaustausch via `WidgetDataStore` (UserDefaults App Group) funktioniert jetzt korrekt
 - [x] fileImporter GPX/TCX: `allowedContentTypes` in `ContentView.swift` auf `[.json, .zip, .gpx, .tcx]` erweitert; `UTType.tcx` Extension in Core hinzugefuegt
 - [x] Deep Link `lh2gpx://live`: `CFBundleURLTypes` in `Info.plist`, `onOpenURL`-Handler, `navigateToLiveTabRequested` + `AppContentSplitView` onChange-Observer
+- [x] Widget-/Live-Activity-Lokalisierung: harte deutsche Texte ersetzt; Widget bevorzugt via App Group gespiegelte `AppLanguagePreference`, Geraetesprache als Fallback
+- [x] Wrapper-/Widget-Build in CI: `.github/workflows/swift-test.yml` baut `LH2GPXWrapper` inkl. eingebettetem `LH2GPXWidget`
 
 ## 1. Phase 19.51 – Live / Upload / Insights / Days auf Apple verifizieren
 

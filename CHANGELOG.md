@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [2026-04-12] — Release-Härtung: TCX, Widget-Lokalisierung, Privacy, CI
+
+### Fixed
+- `TCXImportParser.swift`: bekannter `fatalError`-Pfad entfernt; Parser liefert jetzt typisierte `TCXImportError`-Faelle fuer invalides XML, fehlende Trackpoints, fehlende Pflichtdaten und Export-Roundtrip-Fehler
+- `AppContentLoader.swift`: TCX-Parserfehler werden an der Loader-Grenze weiterhin kontrolliert auf `AppContentLoaderError.decodeFailed(...)` abgebildet; kein Crash im Import-Flow
+- Widget-/Live-Activity-Texte in `wrapper/LH2GPXWidget/` auf lokalisierte `WidgetStr`-Zugriffe umgestellt; Widget bevorzugt jetzt die via App Group gespiegelte `AppLanguagePreference` und faellt sonst auf die Geraetesprache zurueck
+- `AppPreferences.swift`: App-Sprache wird in die App-Group-Defaults gespiegelt, damit Widget und App denselben Sprachwunsch teilen koennen
+- `PrivacyInfo.xcprivacy`: `NSPrivacyCollectedDataTypePreciseLocation` fuer den optionalen, standardmaessig deaktivierten Live-Upload explizit als `App Functionality`, nicht linked und nicht tracking-basiert deklariert
+
+### Tests
+- `swift test`: 586 Tests, 0 Failures
+- Parser-Tests fuer invalides TCX, fehlende Pflichtdaten und unerwartete Trackpoint-Zustaende aktualisiert/ergaenzt
+- `AppPreferencesTests`: neue Abdeckung fuer das Spiegeln der App-Sprache in die Widget-App-Group
+- CI (`.github/workflows/swift-test.yml`): echter `xcodebuild`-Build fuer `LH2GPXWrapper` inklusive eingebettetem `LH2GPXWidget` statt reinem Kommentar-/Echo-Step
+
 ## [2026-04-12] — App Groups Entitlements + GPX/TCX fileImporter + Deep Link + Overview Map Budget Fix
 
 ### Added
@@ -9,9 +24,11 @@
 
 ### Fixed
 - `AppOverviewTracksMapView`: Komplette Neuimplementierung mit `OverviewMapRenderProfile` (adaptives Budget 72–180 Routen), Grid-basierter Kandidatenauswahl und Douglas-Peucker Simplifikation — Karte zeigte 294 Routen statt sinnvolles Budget
+- `TCXImportParser.makeExport()`: `fatalError` durch `throw AppContentLoaderError.decodeFailed(fileName)` ersetzt — robustes Fehlerhandling statt Absturz bei ungueltigen TCX-Daten
 
 ### Tests
-- 573 Tests, 0 Failures
+- `TCXImportParserTests`: neue dedizierte Tests fuer happy path (sample_import.tcx), error paths (leere Daten, kaputtes XML, kein Position-Element), isTCX-Detection, sourceType und Koordinatengenauigkeit
+- 573 Tests, 0 Failures (historischer Stand dieses Batches)
 
 ## [2026-04-12] — Deep Audit + Homescreen Widget + Live Activity Improvements + Overview Map Performance
 

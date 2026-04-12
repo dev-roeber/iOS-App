@@ -62,7 +62,7 @@ Kein Upload von importierter History, Exports, Einstellungen oder anderen App-Da
 |---|---|---|
 | `NSPrivacyTracking` | `false` | ✅ korrekt, kein Cross-App-Tracking |
 | `NSPrivacyTrackingDomains` | leer | ✅ korrekt |
-| `NSPrivacyCollectedDataTypes` | leer | ⚠️ offene Frage (siehe Abschnitt 3) |
+| `NSPrivacyCollectedDataTypes` | `NSPrivacyCollectedDataTypePreciseLocation` fuer optionalen Live-Upload | ✅ technisch im Manifest abgebildet; Review-Auslegung bleibt Rest-Risiko |
 | `NSPrivacyAccessedAPITypes` | UserDefaults CA92.1 | ✅ korrekt für Preferences-Speicherung |
 
 ### Upload-Sicherheit (Code-verifiziert)
@@ -76,11 +76,11 @@ Kein Upload von importierter History, Exports, Einstellungen oder anderen App-Da
 
 ---
 
-## 3. Offene Apple-/Store-Review-Fragen
+## 3. Apple-/Store-Review-Risiken
 
 ### 3a. NSPrivacyCollectedDataTypes für optionalen Server-Upload
 
-**Frage:** Muss `NSPrivacyCollectedDataTypes` in PrivacyInfo.xcprivacy Standortdaten deklarieren, obwohl der Upload optional, nutzergesteuert und standardmäßig deaktiviert ist?
+**Stand 2026-04-12:** Das Manifest deklariert jetzt bereits `NSPrivacyCollectedDataTypePreciseLocation` fuer den optionalen, nutzerinitiierten Live-Upload.
 
 **Technischer Stand:**
 - Wenn Nutzer Upload aktiviert und URL konfiguriert, werden Lat/Lon/Timestamp/Accuracy an den Nutzer-eigenen Server gesendet
@@ -88,7 +88,7 @@ Kein Upload von importierter History, Exports, Einstellungen oder anderen App-Da
 - Ob eine optionale, nutzerinitiierte Funktion deklarationspflichtig ist, hängt von Apples konkreter Policy-Auslegung ab
 - **Kann nur auf Apple-Hardware im Store-Review-Kontext final beantwortet werden**
 
-**Mögliche Lösung (falls Apple verlangt):**
+**Aktuelle Manifest-Loesung:**
 ```xml
 <key>NSPrivacyCollectedDataTypes</key>
 <array>
@@ -106,7 +106,7 @@ Kein Upload von importierter History, Exports, Einstellungen oder anderen App-Da
   </dict>
 </array>
 ```
-<!-- TODO: Vor App-Store-Einreichung mit Apple-Review-Ergebnis abgleichen -->
+Diese Deklaration ist technisch mit dem aktuellen Code synchron; offen bleibt nur, ob Apple die Scope-Einordnung bei Review genauso akzeptiert.
 
 ### 3b. ZIPFoundation-Abhängigkeit
 

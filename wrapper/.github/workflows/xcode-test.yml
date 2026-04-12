@@ -19,6 +19,8 @@ jobs:
 
       - name: Run Tests
         run: |
+          # The LH2GPXWidget extension is embedded in the LH2GPXWrapper scheme.
+          # This simulator test run therefore also compiles the widget target.
           xcodebuild test \
             -project wrapper/LH2GPXWrapper.xcodeproj \
             -scheme LH2GPXWrapper \

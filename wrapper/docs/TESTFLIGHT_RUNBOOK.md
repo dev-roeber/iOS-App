@@ -15,7 +15,7 @@ Stand: 2026-03-31 | Phase 20
 | Display Name | `LH2GPX` | project.pbxproj |
 | Deployment Target | iOS 26.2 | project.pbxproj |
 | Signing | Automatic, Team `XAGR3K7XDJ` | project.pbxproj |
-| PrivacyInfo.xcprivacy | lokal sichtbar: kein Tracking, UserDefaults CA92.1 | PrivacyInfo.xcprivacy |
+| PrivacyInfo.xcprivacy | lokal sichtbar: kein Tracking, UserDefaults CA92.1, `PreciseLocation` fuer optionalen Live-Upload | PrivacyInfo.xcprivacy |
 | App Icon | Map-Pin + "LH2GPX", 1024x1024 | Assets.xcassets/AppIcon.appiconset/ |
 | App Review Guidelines | geprueft, mit offenem Wording fuer den optionalen Server-Upload | Abschnitt unten |
 
@@ -31,7 +31,7 @@ Geprueft gegen die relevanten Abschnitte (Stand 2026-03):
 | 2.3.12 Placeholder Content | App Icon: Map-Pin + App-Name (kein Gradient-Placeholder mehr) | ✅ |
 | 4.2 Minimum Functionality | NavigationSplitView, Day-Detail, Map, Import, Demo | ✅ |
 | 5.1.1 Data Collection | standardmaessig lokal, kein Analytics-/Ad-Tracking; optionaler nutzerkonfigurierter HTTPS-Upload fuer akzeptierte Live-Recording-Punkte ist vorhanden; lokale Texte wurden darauf abgestimmt | teilweise |
-| 5.1.2 Privacy Manifests | PrivacyInfo.xcprivacy vorhanden, UserDefaults CA92.1; fuer den optionalen Upload-Pfad bleibt nur die Apple-seitige Scope-/Review-Einordnung offen | teilweise |
+| 5.1.2 Privacy Manifests | PrivacyInfo.xcprivacy vorhanden, UserDefaults CA92.1 und `PreciseLocation` fuer optionalen Upload eingetragen; offen bleibt nur die Apple-seitige Scope-/Review-Einordnung dieser Deklaration | teilweise |
 | 5.1.5 Location | optionales lokales Live-Recording mit While-In-Use-Start und code-seitiger Background-Unterstuetzung nach `Always Allow`; kein ATT/Ad-Tracking | ✅ |
 
 Aus dem lokalen Code- und Doku-Stand laesst sich kein finaler Review-Freigabeclaim ableiten. Offen bleiben die Apple-seitige Scope-/Review-Einordnung fuer den optionalen Server-Upload und die frische Device-Verifikation des erweiterten Location-/Upload-Flows.

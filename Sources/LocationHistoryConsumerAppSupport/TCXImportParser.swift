@@ -1,6 +1,26 @@
 import Foundation
 import LocationHistoryConsumer
 
+public enum TCXImportError: LocalizedError, Equatable {
+    case invalidXML(String)
+    case noTrackPoints(String)
+    case missingRequiredTrackpointData(String)
+    case exportRoundTripFailed(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case let .invalidXML(fileName):
+            return "'\(fileName)' is not valid TCX XML."
+        case let .noTrackPoints(fileName):
+            return "'\(fileName)' does not contain any TCX track points."
+        case let .missingRequiredTrackpointData(fileName):
+            return "'\(fileName)' contains TCX track points with missing required position data."
+        case let .exportRoundTripFailed(fileName):
+            return "'\(fileName)' could not be converted into an app export."
+        }
+    }
+}
+
 /// Parses TCX 2.0 XML files (Garmin Training Center XML) and converts them to `AppExport`.
 ///
 /// Traverses `<TrainingCenterDatabase>` → `<Activity>` → `<Lap>` → `<Track>` → `<Trackpoint>`.
@@ -19,23 +39,26 @@ public enum TCXImportParser {
     }
 
     /// Parses TCX data and returns an `AppExport`.
-    /// Throws `AppContentLoaderError.decodeFailed` when the XML is invalid or contains no usable track points.
+    /// Throws `TCXImportError` when the XML is invalid or contains no usable track points.
     public static func parse(_ data: Data, fileName: String) throws -> AppExport {
         let parser = _TCXXMLParser(data: data)
         guard parser.run() else {
-            throw AppContentLoaderError.decodeFailed(fileName)
+            throw TCXImportError.invalidXML(fileName)
         }
         guard !parser.trackPoints.isEmpty else {
-            throw AppContentLoaderError.decodeFailed(fileName)
+            if parser.sawIncompleteTrackPoint {
+                throw TCXImportError.missingRequiredTrackpointData(fileName)
+            }
+            throw TCXImportError.noTrackPoints(fileName)
         }
 
         let days = buildDays(trackPoints: parser.trackPoints)
 
         guard !days.isEmpty else {
-            throw AppContentLoaderError.decodeFailed(fileName)
+            throw TCXImportError.noTrackPoints(fileName)
         }
 
-        return makeExport(days: days, fileName: fileName, sourceFormat: "tcx")
+        return try makeExport(days: days, fileName: fileName, sourceFormat: "tcx")
     }
 
     // MARK: - Day grouping
@@ -113,7 +136,7 @@ public enum TCXImportParser {
         return resultDays.sorted { $0.date < $1.date }
     }
 
-    private static func makeExport(days: [Day], fileName: String, sourceFormat: String) -> AppExport {
+    private static func makeExport(days: [Day], fileName: String, sourceFormat: String) throws -> AppExport {
         let isoOutput = ISO8601DateFormatter()
 
         let daysArray: [[String: Any]] = days.map { day in
@@ -151,7 +174,7 @@ public enum TCXImportParser {
 
         guard let exportData = try? JSONSerialization.data(withJSONObject: exportDict),
               let export = try? AppExportDecoder.decode(data: exportData) else {
-            fatalError("TCXImportParser: failed to round-trip valid export dict")
+            throw TCXImportError.exportRoundTripFailed(fileName)
         }
         return export
     }
@@ -172,6 +195,7 @@ final class _TCXXMLParser: NSObject, XMLParserDelegate {
 
     var trackPoints: [_TCXTrackPoint] = []
     private(set) var parseError: Bool = false
+    private(set) var sawIncompleteTrackPoint = false
 
     // Parsing state
     private var insideTrackpoint = false
@@ -245,6 +269,8 @@ final class _TCXXMLParser: NSObject, XMLParserDelegate {
         case "Trackpoint":
             if let lat = currentLat, let lon = currentLon {
                 trackPoints.append(_TCXTrackPoint(lat: lat, lon: lon, time: currentTime))
+            } else if currentLat != nil || currentLon != nil || currentTime != nil {
+                sawIncompleteTrackPoint = true
             }
             insideTrackpoint = false
             currentLat = nil

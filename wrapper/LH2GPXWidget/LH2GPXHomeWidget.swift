@@ -27,7 +27,7 @@ struct LH2GPXProvider: TimelineProvider {
     func placeholder(in context: Context) -> LH2GPXEntry {
         LH2GPXEntry(
             date: Date(),
-            lastRecording: .init(date: Date(), distanceMeters: 5230, durationSeconds: 1800, trackName: "Morgenrunde"),
+            lastRecording: .init(date: Date(), distanceMeters: 5230, durationSeconds: 1800, trackName: WidgetStr.sampleTrackName),
             weeklyStats: (km: 24.5, routes: 7)
         )
     }
@@ -85,7 +85,7 @@ struct LH2GPXSmallWidgetView: View {
                 Image(systemName: "map")
                     .font(.title2)
                     .foregroundStyle(Color.accentColor)
-                Text("Keine Aufzeichnung")
+                Text(WidgetStr.noRecording)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -105,7 +105,7 @@ struct LH2GPXMediumWidgetView: View {
         HStack(spacing: 0) {
             // Left: last recording
             VStack(alignment: .leading, spacing: 6) {
-                Label("Letzte Tour", systemImage: "figure.walk")
+                Label(WidgetStr.lastTour, systemImage: "figure.walk")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -133,7 +133,7 @@ struct LH2GPXMediumWidgetView: View {
 
             // Right: weekly stats
             VStack(alignment: .leading, spacing: 6) {
-                Label("Diese Woche", systemImage: "calendar")
+                Label(WidgetStr.thisWeek, systemImage: "calendar")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -141,11 +141,11 @@ struct LH2GPXMediumWidgetView: View {
                     Text(String(format: "%.1f km", stats.km))
                         .font(.title3.weight(.bold))
                         .minimumScaleFactor(0.7)
-                    Text("\(stats.routes) \(stats.routes == 1 ? "Tour" : "Touren")")
+                    Text("\(stats.routes) \(WidgetStr.tourCount(stats.routes))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("Keine Daten")
+                    Text(WidgetStr.noData)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -169,7 +169,7 @@ struct LH2GPXHomeWidget: Widget {
             LH2GPXMediumWidgetView(entry: entry)
         }
         .configurationDisplayName("LH2GPX")
-        .description("Letzte Aufzeichnung und Wochenstats.")
+        .description(WidgetStr.widgetDescription)
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

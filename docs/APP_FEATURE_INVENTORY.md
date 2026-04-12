@@ -267,6 +267,7 @@ Present:
 - `RecordedTrackFileStore` persists completed live tracks in app support storage
 - demo support loads bundled golden fixtures through the same app-support layer
 - App Groups Entitlements (`com.apple.security.application-groups: group.de.roeber.LH2GPXWrapper`) in `LH2GPXWrapper.entitlements` und `LH2GPXWidget.entitlements`; `WidgetDataStore` nutzt App-Group-UserDefaults fuer Datenaustausch zwischen App und Widget-Extension
+- Widget-/Live-Activity-Texte laufen ueber `WidgetLocalizedStrings`; bevorzugte Sprache kommt aus der via App Group gespiegelten `AppLanguagePreference`, mit Geraetesprache als Fallback
 
 Not present:
 - analytics / telemetry

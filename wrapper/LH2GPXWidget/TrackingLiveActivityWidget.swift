@@ -30,7 +30,7 @@ private struct TrackingLockScreenView: View {
                 // symbolEffect requires iOS 17+; omitted for 16.2 compat
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(context.attributes.trackName.isEmpty ? "Live Track" : context.attributes.trackName)
+                Text(context.attributes.trackName.isEmpty ? WidgetStr.liveTrack : context.attributes.trackName)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -40,7 +40,7 @@ private struct TrackingLockScreenView: View {
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.85))
 
-                    Label("\(context.state.pointCount) pts", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+                    Label(WidgetStr.pointsCount(context.state.pointCount), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.85))
 
@@ -58,7 +58,7 @@ private struct TrackingLockScreenView: View {
                 Text(context.attributes.startTime, style: .timer)
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.white.opacity(0.7))
-                Text("elapsed")
+                Text(WidgetStr.elapsed)
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.5))
             }
@@ -98,7 +98,7 @@ struct TrackingLiveActivityWidget: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
-                        Text(context.attributes.trackName.isEmpty ? "Live Track" : context.attributes.trackName)
+                        Text(context.attributes.trackName.isEmpty ? WidgetStr.liveTrack : context.attributes.trackName)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -106,7 +106,7 @@ struct TrackingLiveActivityWidget: Widget {
 
                         // Paused indicator
                         if context.state.isPaused {
-                            Text("⏸ Pausiert")
+                            Text("⏸ \(WidgetStr.paused)")
                                 .font(.caption2.weight(.medium))
                                 .foregroundStyle(.orange)
                         }
@@ -119,7 +119,7 @@ struct TrackingLiveActivityWidget: Widget {
                                 .padding(.leading, 4)
                         }
 
-                        Label("\(context.state.pointCount)", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+                        Label(WidgetStr.pointsCount(context.state.pointCount), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                             .padding(.leading, 4)
