@@ -142,9 +142,15 @@ public struct AppLiveTrackingView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(t("Recording interrupted"))
                         .font(.subheadline.weight(.semibold))
-                    Text(t("A recording was interrupted. Start a new session?"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if let startedAt = liveLocation.sessionStartedAt {
+                        Text(interruptedSessionMessage(startedAt: startedAt))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(t("A recording was interrupted. Start a new session?"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Spacer()
             }
@@ -175,6 +181,15 @@ public struct AppLiveTrackingView: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color.orange.opacity(0.2), lineWidth: 1)
         )
+    }
+
+    private func interruptedSessionMessage(startedAt: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        formatter.locale = preferences.appLocale
+        let relativeTime = formatter.localizedString(for: startedAt, relativeTo: Date())
+        let format = t("A recording started %@ was interrupted. Start a new session?")
+        return String(format: format, relativeTime)
     }
 
     // MARK: - Fullscreen Map

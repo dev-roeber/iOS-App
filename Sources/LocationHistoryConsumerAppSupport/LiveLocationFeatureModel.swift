@@ -71,7 +71,12 @@ public final class LiveLocationFeatureModel: ObservableObject {
             self.persistenceErrorMessage = "Saved live tracks could not be loaded."
         }
 
-        self.hasInterruptedSession = defaults.string(forKey: Self.sessionIDKey) != nil
+        let restoredSessionID = defaults.string(forKey: Self.sessionIDKey)
+        self.hasInterruptedSession = restoredSessionID != nil
+        if restoredSessionID != nil {
+            let ts = defaults.double(forKey: Self.sessionStartedAtKey)
+            self.sessionStartedAt = ts > 0 ? Date(timeIntervalSince1970: ts) : nil
+        }
 
         client?.onAuthorizationChange = { [weak self] authorization in
             self?.handleAuthorizationChange(authorization)
@@ -102,7 +107,12 @@ public final class LiveLocationFeatureModel: ObservableObject {
             self.persistenceErrorMessage = "Saved live tracks could not be loaded."
         }
 
-        self.hasInterruptedSession = defaults.string(forKey: Self.sessionIDKey) != nil
+        let restoredSessionID = defaults.string(forKey: Self.sessionIDKey)
+        self.hasInterruptedSession = restoredSessionID != nil
+        if restoredSessionID != nil {
+            let ts = defaults.double(forKey: Self.sessionStartedAtKey)
+            self.sessionStartedAt = ts > 0 ? Date(timeIntervalSince1970: ts) : nil
+        }
 
         client?.onAuthorizationChange = { [weak self] authorization in
             self?.handleAuthorizationChange(authorization)

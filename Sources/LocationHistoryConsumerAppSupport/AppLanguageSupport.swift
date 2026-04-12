@@ -612,6 +612,22 @@ enum AppGermanTranslations {
         "If the direct export is unavailable, a Google Takeout export may be required depending on your account.": "Falls der direkte Export nicht verfügbar ist, kann je nach Google-Konto alternativ ein Google-Takeout-Export nötig sein.",
         "Dismiss help": "Hilfe schließen",
         "Step": "Schritt",
-        "Opens step-by-step export instructions": "Öffnet Schritt-für-Schritt-Exportanleitung"
+        "Opens step-by-step export instructions": "Öffnet Schritt-für-Schritt-Exportanleitung",
+        // Interrupted session banner — Live Tracking
+        "Recording interrupted": "Aufzeichnung unterbrochen",
+        "A recording was interrupted. Start a new session?": "Eine Aufzeichnung wurde unterbrochen. Neue Sitzung starten?",
+        "A recording started %@ was interrupted. Start a new session?": "Eine Aufzeichnung, die %@ gestartet wurde, wurde unterbrochen. Neue Sitzung starten?",
+        "Resume recording": "Aufzeichnung fortsetzen",
+        "Ignore": "Ignorieren",
+        "Disable follow mode": "Folgemodus deaktivieren",
+        "Enable follow mode": "Folgemodus aktivieren",
+        "Open fullscreen map": "Karte im Vollbild öffnen",
+        "Close fullscreen map": "Vollbild-Karte schließen",
+        "Fullscreen": "Vollbild",
+        "GPS Accuracy": "GPS-Genauigkeit",
+        "Duration": "Dauer",
+        "Session": "Sitzung",
+        "Start recording to request location access and see your position here.": "Starte die Aufzeichnung, um Standortzugriff anzufordern und deine Position hier zu sehen.",
+        "Background Recording": "Hintergrundaufzeichnung"
     ]
 }

@@ -16,7 +16,7 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [ ] Chart-Share per ImageRenderer auf Apple-Host verifizieren
 - [ ] Split-Repos (LocationHistory2GPX-iOS, LH2GPXWrapper) als historisch/mirror markieren
 - [ ] echtes Road-/Path-Matching konzipieren; aktuelle `Simplified (Beta)`-Darstellung bleibt bewusst nur Pfadvereinfachung
-- [ ] Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart nur mit sauberem Persistenz-/Recovery-Modell
+- [x] Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart — sauberes Modell umgesetzt: SessionID+Timestamp in UserDefaults, Banner mit relativem Zeitstempel beim Start, "Aufzeichnung fortsetzen" / "Ignorieren" (kein blindes Auto-Resume, bewusst user-controlled) (2026-04-13)
 - [ ] app-weite Landscape-Verifikation fuer jede Hauptseite auf Apple-Hardware nachziehen
 
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [2026-04-13] — Live-Ausbau: Auto-Resume UX + Session-Restore
+
+### Hinzugefuegt
+- `LiveLocationFeatureModel`: `sessionStartedAt` wird beim App-Start aus UserDefaults wiederhergestellt, wenn eine unterbrochene Session vorliegt — der Banner zeigt jetzt den relativen Zeitstempel der Unterbrechung an
+- `AppLiveTrackingView`: Unterbrochene-Session-Banner zeigt "Eine Aufzeichnung, die vor X Minuten gestartet wurde, wurde unterbrochen" statt generischer Meldung (via `RelativeDateTimeFormatter`)
+- `AppGermanTranslations`: 16 neue DE-Strings fuer Live-Tracking-Banner, Follow-Mode, Fullscreen-Map und weitere UI-Elemente
+- Neuer Test `testSessionStartedAtRestoredOnInitWhenSessionIDPresent` prueft dass gespeicherter Session-Timestamp beim Init korrekt geladen wird — 607 Tests gesamt, 0 Failures
+
 ## [2026-04-13] — Release-Haertung: Accessibility + Options UX
 
 ### Verbessert

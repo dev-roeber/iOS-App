@@ -606,6 +606,25 @@ final class LiveLocationFeatureModelTests: XCTestCase {
         }
     }
 
+    func testSessionStartedAtRestoredOnInitWhenSessionIDPresent() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            let expectedDate = Date(timeIntervalSince1970: 1_710_000_000)
+            defaults.set(UUID().uuidString, forKey: "live.session.id")
+            defaults.set(expectedDate.timeIntervalSince1970, forKey: "live.session.startedAt")
+
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            XCTAssertTrue(model.hasInterruptedSession)
+            XCTAssertNotNil(model.sessionStartedAt)
+            if let restoredDate = model.sessionStartedAt {
+                XCTAssertEqual(restoredDate.timeIntervalSince1970, expectedDate.timeIntervalSince1970, accuracy: 0.001)
+            }
+        }
+    }
+
     func testSessionIDPersistedOnRecordingStart() {
         MainActor.assumeIsolated {
             let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
