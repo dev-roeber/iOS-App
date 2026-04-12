@@ -10,6 +10,7 @@
 		9E7517152F690B6700E212A7 /* LocationHistoryConsumerAppSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 9E7517142F690B6700E212A7 /* LocationHistoryConsumerAppSupport */; };
 		9E7517172F690B6700E212A7 /* LocationHistoryConsumerDemoSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 9E7517162F690B6700E212A7 /* LocationHistoryConsumerDemoSupport */; };
 		9EBB00032F6C000100000003 /* LH2GPXWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9EBB00012F6C000100000001 /* LH2GPXWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9ED6FB472F8B8F4000C3E5DE /* LocationHistoryConsumerAppSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 9EBB000E2F6C00010000000E /* LocationHistoryConsumerAppSupport */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +59,16 @@
 		9EBB00012F6C000100000001 /* LH2GPXWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LH2GPXWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9EBB00FF2F6C0001000000FF /* Exceptions for "LH2GPXWidget" folder in "LH2GPXWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9EBB00052F6C000100000005 /* LH2GPXWidget */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9E7516EB2F69096F00E212A7 /* LH2GPXWrapper */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -77,22 +88,12 @@
 		9EBB00022F6C000100000002 /* LH2GPXWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				9EBB00FF2F6C0001000000FF /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				9EBB00FF2F6C0001000000FF /* Exceptions for "LH2GPXWidget" folder in "LH2GPXWidget" target */,
 			);
 			path = LH2GPXWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		9EBB00FF2F6C0001000000FF /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 9EBB00052F6C000100000005 /* LH2GPXWidget */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		9E7516E62F69096F00E212A7 /* Frameworks */ = {
@@ -122,6 +123,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9ED6FB472F8B8F4000C3E5DE /* LocationHistoryConsumerAppSupport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -287,7 +289,7 @@
 			mainGroup = 9E7516E02F69096F00E212A7;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				9E7517132F690B6700E212A7 /* XCLocalSwiftPackageReference "../.." */,
+				9E7517132F690B6700E212A7 /* XCLocalSwiftPackageReference ".." */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9E7516EA2F69096F00E212A7 /* Products */;
@@ -332,7 +334,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
 
 /* Begin PBXSourcesBuildPhase section */
 		9E7516E52F69096F00E212A7 /* Sources */ = {
@@ -760,7 +761,7 @@
 /* Begin XCLocalSwiftPackageReference section */
 		9E7517132F690B6700E212A7 /* XCLocalSwiftPackageReference ".." */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = "..";
+			relativePath = ..;
 		};
 /* End XCLocalSwiftPackageReference section */
 
