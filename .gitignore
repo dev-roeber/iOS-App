@@ -6,3 +6,6 @@ DerivedData/
 .DS_Store
 lazygit
 lazygit.tar.gz
+# Xcode user-specific data (device selection, breakpoints, personal preferences)
+xcuserdata/
+*.xcuserstate
