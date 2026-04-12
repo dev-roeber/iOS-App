@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		9E7517152F690B6700E212A7 /* LocationHistoryConsumerAppSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 9E7517142F690B6700E212A7 /* LocationHistoryConsumerAppSupport */; };
 		9E7517172F690B6700E212A7 /* LocationHistoryConsumerDemoSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 9E7517162F690B6700E212A7 /* LocationHistoryConsumerDemoSupport */; };
+		9EBB00032F6C000100000003 /* LH2GPXWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9EBB00012F6C000100000001 /* LH2GPXWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -26,13 +27,35 @@
 			remoteGlobalIDString = 9E7516E82F69096F00E212A7;
 			remoteInfo = LH2GPXWrapper;
 		};
+		9EBB00042F6C000100000004 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9E7516E12F69096F00E212A7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9EBB00052F6C000100000005;
+			remoteInfo = LH2GPXWidget;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9EBB00072F6C000100000007 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				9EBB00032F6C000100000003 /* LH2GPXWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		9E4CAAF42F6A325E002BFA73 /* LH2GPXWrapper.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = LH2GPXWrapper.xctestplan; sourceTree = "<group>"; };
 		9E7516E92F69096F00E212A7 /* LH2GPXWrapper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LH2GPXWrapper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E7516F62F69097200E212A7 /* LH2GPXWrapperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LH2GPXWrapperTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E7517002F69097200E212A7 /* LH2GPXWrapperUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LH2GPXWrapperUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9EBB00012F6C000100000001 /* LH2GPXWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LH2GPXWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -49,6 +72,11 @@
 		9E7517032F69097200E212A7 /* LH2GPXWrapperUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = LH2GPXWrapperUITests;
+			sourceTree = "<group>";
+		};
+		9EBB00022F6C000100000002 /* LH2GPXWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LH2GPXWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -77,6 +105,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9EBB00092F6C000100000009 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -85,6 +120,7 @@
 			children = (
 				9E4CAAF42F6A325E002BFA73 /* LH2GPXWrapper.xctestplan */,
 				9E7516EB2F69096F00E212A7 /* LH2GPXWrapper */,
+				9EBB00022F6C000100000002 /* LH2GPXWidget */,
 				9E7516F92F69097200E212A7 /* LH2GPXWrapperTests */,
 				9E7517032F69097200E212A7 /* LH2GPXWrapperUITests */,
 				9E7516EA2F69096F00E212A7 /* Products */,
@@ -97,6 +133,7 @@
 				9E7516E92F69096F00E212A7 /* LH2GPXWrapper.app */,
 				9E7516F62F69097200E212A7 /* LH2GPXWrapperTests.xctest */,
 				9E7517002F69097200E212A7 /* LH2GPXWrapperUITests.xctest */,
+				9EBB00012F6C000100000001 /* LH2GPXWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -111,10 +148,12 @@
 				9E7516E52F69096F00E212A7 /* Sources */,
 				9E7516E62F69096F00E212A7 /* Frameworks */,
 				9E7516E72F69096F00E212A7 /* Resources */,
+				9EBB00072F6C000100000007 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				9EBB00062F6C000100000006 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				9E7516EB2F69096F00E212A7 /* LH2GPXWrapper */,
@@ -174,6 +213,29 @@
 			productReference = 9E7517002F69097200E212A7 /* LH2GPXWrapperUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		9EBB00052F6C000100000005 /* LH2GPXWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9EBB000B2F6C00010000000B /* Build configuration list for PBXNativeTarget "LH2GPXWidget" */;
+			buildPhases = (
+				9EBB00082F6C000100000008 /* Sources */,
+				9EBB00092F6C000100000009 /* Frameworks */,
+				9EBB000A2F6C00010000000A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				9EBB00022F6C000100000002 /* LH2GPXWidget */,
+			);
+			name = LH2GPXWidget;
+			packageProductDependencies = (
+				9EBB000E2F6C00010000000E /* LocationHistoryConsumerAppSupport */,
+			);
+			productName = LH2GPXWidget;
+			productReference = 9EBB00012F6C000100000001 /* LH2GPXWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -222,6 +284,7 @@
 				9E7516E82F69096F00E212A7 /* LH2GPXWrapper */,
 				9E7516F52F69097200E212A7 /* LH2GPXWrapperTests */,
 				9E7516FF2F69097200E212A7 /* LH2GPXWrapperUITests */,
+				9EBB00052F6C000100000005 /* LH2GPXWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -242,6 +305,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		9E7516FE2F69097200E212A7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9EBB000A2F6C00010000000A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -273,6 +343,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9EBB00082F6C000100000008 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -285,6 +362,11 @@
 			isa = PBXTargetDependency;
 			target = 9E7516E82F69096F00E212A7 /* LH2GPXWrapper */;
 			targetProxy = 9E7517012F69097200E212A7 /* PBXContainerItemProxy */;
+		};
+		9EBB00062F6C000100000006 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9EBB00052F6C000100000005 /* LH2GPXWidget */;
+			targetProxy = 9EBB00042F6C000100000004 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -568,6 +650,50 @@
 			};
 			name = Release;
 		};
+		9EBB000C2F6C00010000000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XAGR3K7XDJ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LH2GPXWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.roeber.LH2GPXWrapper.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9EBB000D2F6C00010000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XAGR3K7XDJ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LH2GPXWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.roeber.LH2GPXWrapper.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -607,6 +733,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		9EBB000B2F6C00010000000B /* Build configuration list for PBXNativeTarget "LH2GPXWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9EBB000C2F6C00010000000C /* Debug */,
+				9EBB000D2F6C00010000000D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -624,6 +759,11 @@
 		9E7517162F690B6700E212A7 /* LocationHistoryConsumerDemoSupport */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LocationHistoryConsumerDemoSupport;
+		};
+		9EBB000E2F6C00010000000E /* LocationHistoryConsumerAppSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9E7517132F690B6700E212A7 /* XCLocalSwiftPackageReference ".." */;
+			productName = LocationHistoryConsumerAppSupport;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

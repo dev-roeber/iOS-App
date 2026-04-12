@@ -94,8 +94,10 @@ struct AppOverviewTracksMapView: View {
 
     /// A stable identifier that changes whenever the input data changes.
     private var taskIdentifier: String {
-        let dates = daySummaries.prefix(50).map(\.date).joined(separator: ",")
-        return "\(dates)-\(queryFilter?.fromDate ?? "")-\(queryFilter?.toDate ?? "")"
+        let first = daySummaries.first?.date ?? ""
+        let last = daySummaries.last?.date ?? ""
+        let count = daySummaries.count
+        return "\(first)-\(last)-\(count)-\(queryFilter?.fromDate ?? "")-\(queryFilter?.toDate ?? "")"
     }
 
     private var mapAccessibilityLabel: String {
@@ -115,8 +117,7 @@ struct AppOverviewTracksMapView: View {
 
         renderData = .loading
 
-        // Limit to the first N days to keep memory and load time bounded.
-        let daysToLoad = daySummaries.prefix(100).map(\.date)
+        let daysToLoad = daySummaries.map(\.date)
         let filter = queryFilter
 
         // Off-main-thread data aggregation.
