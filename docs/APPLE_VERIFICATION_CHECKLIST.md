@@ -20,7 +20,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (iOS 26.3), iPhone Air (iO
 - `xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build`: BUILD SUCCEEDED
 - `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`: BUILD SUCCEEDED
 - `xcodebuild archive -scheme LH2GPXWrapper -destination 'generic/platform=iOS'`: ARCHIVE SUCCEEDED (TestFlight-Archiv lokal erzeugbar; Upload erfordert App Store Connect)
-- `xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 363 Tests, 0 Failures
+- `xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 573 Tests, 0 Failures (Stand 2026-04-12)
 - PrivacyInfo.xcprivacy vorhanden und technisch konsistent mit aktuellem App-Verhalten (UserDefaults CA92.1 deklariert, NSPrivacyTracking: false)
 - Device-Launch auf iPhone 15 Pro Max: `testLaunch` gruен
 - Device-Smoke-Test `testDeviceSmokeNavigationAndActions` auf iPhone 15 Pro Max: PASSED (44s)
@@ -66,7 +66,7 @@ Dieser Audit-Block basiert ausschließlich auf Quellcode- und Dokumentationsanal
 - `defaultTestEndpointURLString = ""` — kein hart kodierter Testendpunkt im Code
 - Nur akzeptierte Live-Recording-Punkte (Lat/Lon/Timestamp/Accuracy) werden übertragen
 - Keine Analytics, kein Ad-Tracking, kein Cloud-Sync für importierte History
-- `swift test`: 228 Tests, 2 Skips, 0 Failures (Linux-Host, 2026-03-31)
+- `swift test`: 573 Tests, 0 Skips, 0 Failures (macOS, 2026-04-12)
 
 #### ⚠️ benötigt Apple-Hardware/Xcode
 

@@ -67,7 +67,7 @@ public struct AppOptionsView: View {
                         #endif
                         .autocorrectionDisabled()
 
-                    TextField(t("Bearer Token (optional)"), text: $preferences.liveLocationServerUploadBearerToken)
+                    SecureField(t("Bearer Token (optional)"), text: $preferences.liveLocationServerUploadBearerToken)
                         #if os(iOS)
                         .textInputAutocapitalization(.never)
                         #endif
