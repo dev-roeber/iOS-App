@@ -52,7 +52,7 @@ struct ContentView: View {
         .environment(\.locale, preferences.appLocale)
         .fileImporter(
             isPresented: $isImportingFile,
-            allowedContentTypes: [.json, .zip],
+            allowedContentTypes: [.json, .zip, .gpx, .tcx],
             allowsMultipleSelection: false,
             onCompletion: handleImportResult
         )
@@ -65,6 +65,10 @@ struct ContentView: View {
                         }
                     }
             }
+        }
+        .onOpenURL { url in
+            // Handle deep links from Widget (lh2gpx://live) and other sources
+            handleDeepLink(url)
         }
         .task {
             await prepareLaunchStateIfNeeded()
@@ -256,6 +260,14 @@ struct ContentView: View {
                     preserveCurrentContent: session.hasLoadedContent
                 )
             }
+        }
+    }
+
+    private func handleDeepLink(_ url: URL) {
+        guard url.scheme == "lh2gpx" else { return }
+        // lh2gpx://live → navigate to Live tab if content is loaded
+        if url.host == "live" {
+            liveLocation.navigateToLiveTabRequested = true
         }
     }
 

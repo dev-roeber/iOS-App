@@ -3,6 +3,12 @@
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 
+## Abgeschlossen 2026-04-12
+
+- [x] App Groups Entitlements: `LH2GPXWrapper.entitlements` + `LH2GPXWidget.entitlements` mit `group.de.roeber.LH2GPXWrapper`; `CODE_SIGN_ENTITLEMENTS` in `project.pbxproj` fuer alle 4 Build-Konfigurationen gesetzt — Widget-Datenaustausch via `WidgetDataStore` (UserDefaults App Group) funktioniert jetzt korrekt
+- [x] fileImporter GPX/TCX: `allowedContentTypes` in `ContentView.swift` auf `[.json, .zip, .gpx, .tcx]` erweitert; `UTType.tcx` Extension in Core hinzugefuegt
+- [x] Deep Link `lh2gpx://live`: `CFBundleURLTypes` in `Info.plist`, `onOpenURL`-Handler, `navigateToLiveTabRequested` + `AppContentSplitView` onChange-Observer
+
 ## 1. Phase 19.51 – Live / Upload / Insights / Days auf Apple verifizieren
 
 Status: **teilweise umgesetzt**

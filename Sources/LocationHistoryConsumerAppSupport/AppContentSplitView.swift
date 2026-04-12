@@ -186,6 +186,11 @@ public struct AppContentSplitView: View {
         .onChange(of: preferences.liveTrackingAccuracy) { _ in syncLiveRecordingSettings() }
         .onChange(of: preferences.liveTrackingDetail) { _ in syncLiveRecordingSettings() }
         .onChange(of: preferences.allowsBackgroundLiveTracking) { _ in syncLiveRecordingSettings() }
+        .onChange(of: liveLocation.navigateToLiveTabRequested) { requested in
+            guard requested else { return }
+            selectedTab = 3
+            liveLocation.navigateToLiveTabRequested = false
+        }
     }
 
     // MARK: - Compact (iPhone) Tab View

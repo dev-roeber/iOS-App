@@ -109,13 +109,15 @@ Neu auf Code-Stand 2026-03-20:
 - lokale Exportfilter decken jetzt auch Bounding Box und Polygon fuer importierte History ab
 - die ueber das Core-Repo gelieferte Produkt-UI bringt jetzt auch den dedizierten `Live`-Tab sowie ein Heatmap-Sheet mit
 - Optionen bieten jetzt Deutsch/Englisch und optionalen Server-Upload fuer akzeptierte Live-Recording-Punkte
-- der Standard-Testendpunkt fuer den Server-Upload ist mit `https://178-104-51-78.sslip.io/live-location` vorbelegt
-- frische Device-Verifikation fuer den erweiterten Permission-/Background-Flow ist weiter offen
-- frische Device-Verifikation fuer den reaktivierten Auto-Restore-Flow ist weiter offen
+- der Standard-Testendpunkt fuer den Server-Upload ist leer (`""`); der Nutzer muss seinen eigenen HTTPS-Endpunkt in den Optionen eintragen
+- Deep Link `lh2gpx://live` navigiert direkt zum Live-Tab (z.B. aus dem Widget)
+- URL-Scheme `lh2gpx://` ist per `CFBundleURLTypes` in `Config/Info.plist` registriert
+- App Groups (`group.de.roeber.LH2GPXWrapper`) fuer Widget-Datenaustausch konfiguriert (Entitlements in `LH2GPXWrapper/` und `LH2GPXWidget/`)
+- GPX, TCX, KML, GeoJSON koennen per `fileImporter` geoeffnet werden (nicht nur JSON/ZIP)
 
 Aktueller Server-Truth fuer den eingebundenen Core-Stand:
-- `swift test` im Core-Repo laeuft auf diesem Linux-Server gruen mit `228` Tests, `2` Skips und `0` Failures
-- `xcodebuild` ist auf diesem Linux-Server nicht verfuegbar; der Wrapper-spezifische Xcode-/Device-Stand bleibt deshalb der zuletzt dokumentierte historische Apple-Lauf vom 2026-03-30
+- `swift test` im Core-Repo laeuft gruen mit `573` Tests, `0` Skips und `0` Failures (Stand 2026-04-12)
+- `xcodebuild` ist auf dem Linux-Server nicht verfuegbar; der Wrapper-spezifische Xcode-/Device-Stand ist der letzte Apple-Lauf vom 2026-04-12
 
 Unterstuetztes Import-Format: jede `.json`-Datei oder `.zip`-Datei, die einen gueltigen LH2GPX-App-Export enthaelt, plus Google-Timeline-`location-history.json` / `.zip` aus Google Takeout.
 

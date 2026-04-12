@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [2026-04-12] — App Groups Entitlements + GPX/TCX fileImporter + Deep Link + Overview Map Budget Fix
+
+### Added
+- App Groups Entitlements: `LH2GPXWrapper.entitlements` und `LH2GPXWidget.entitlements` mit `com.apple.security.application-groups: group.de.roeber.LH2GPXWrapper` erstellt; `CODE_SIGN_ENTITLEMENTS` fuer alle 4 Build-Konfigurationen beider Targets in `project.pbxproj` gesetzt — Widget-Datenaustausch via `WidgetDataStore` (UserDefaults App Group) funktioniert jetzt korrekt; vorher zeigte Widget immer "Keine Aufzeichnung"
+- `fileImporter` akzeptiert jetzt zusaetzlich `.gpx` und `.tcx`: `UTType.tcx` Extension in `GPXDocument.swift`, `allowedContentTypes` in `ContentView.swift` von `[.json, .zip]` auf `[.json, .zip, .gpx, .tcx]` erweitert
+- Deep Link `lh2gpx://live`: `CFBundleURLTypes` mit Schema `lh2gpx://` in `Info.plist` registriert; `onOpenURL`-Handler + `handleDeepLink()` in `ContentView.swift`; `navigateToLiveTabRequested` Property in `LiveLocationFeatureModel.swift`; `onChange`-Observer in `AppContentSplitView.swift` navigiert zu Live-Tab (`selectedTab = 3`)
+
+### Fixed
+- `AppOverviewTracksMapView`: Komplette Neuimplementierung mit `OverviewMapRenderProfile` (adaptives Budget 72–180 Routen), Grid-basierter Kandidatenauswahl und Douglas-Peucker Simplifikation — Karte zeigte 294 Routen statt sinnvolles Budget
+
+### Tests
+- 573 Tests, 0 Failures
+
 ## [2026-04-12] — Deep Audit + Homescreen Widget + Live Activity Improvements + Overview Map Performance
 
 ### Added

@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 // GPX is a registered public UTType on Apple platforms (com.topografix.gpx).
 // Falling back to .xml ensures the file is never unreadable.
-extension UTType {
+public extension UTType {
     static var gpx: UTType {
         UTType(filenameExtension: "gpx") ?? .xml
     }
@@ -15,6 +15,10 @@ extension UTType {
 
     static var geoJSON: UTType {
         UTType(filenameExtension: "geojson") ?? .json
+    }
+
+    static var tcx: UTType {
+        UTType(filenameExtension: "tcx") ?? .xml
     }
 }
 

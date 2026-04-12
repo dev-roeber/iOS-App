@@ -7,6 +7,10 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [ ] Widget Extension Target in Xcode manuell anlegen (Anleitung: docs/WIDGET_XCODE_SETUP.md) — Swift-Dateien vorhanden in wrapper/LH2GPXWidget/
 - [ ] Apple-UI-Verifikation: Range-Picker, Datumsbereich-Sheet auf echtem iPhone
 - [x] KMZ-Export — abgeschlossen 2026-04-12 (KMZBuilder + KMZDocument + Tests)
+- [x] App Groups Entitlements / Widget-Datenaustausch — abgeschlossen 2026-04-12 (LH2GPXWrapper.entitlements + LH2GPXWidget.entitlements + pbxproj CODE_SIGN_ENTITLEMENTS)
+- [x] fileImporter GPX/TCX im Wrapper — abgeschlossen 2026-04-12 (allowedContentTypes erweitert, UTType.tcx Extension)
+- [x] Deep Link lh2gpx://live — abgeschlossen 2026-04-12 (CFBundleURLTypes, onOpenURL, navigateToLiveTabRequested, AppContentSplitView onChange)
+- [x] Overview Map Route Budget Fix — abgeschlossen 2026-04-12 (OverviewMapRenderProfile, Grid-Selektion, Douglas-Peucker)
 - [ ] Chart-Share per ImageRenderer verifizieren
 - [ ] Split-Repos (LocationHistory2GPX-iOS, LH2GPXWrapper) als historisch/mirror markieren
 

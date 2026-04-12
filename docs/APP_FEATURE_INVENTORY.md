@@ -22,6 +22,7 @@ Present:
 - modal sheets exist for `Options`, `Export` (regular width), `Heatmap` and the recorded-tracks library
 - the recorded-tracks library is directly reachable from Overview, the shared `Actions` menu and the live-recording area in day detail
 - a separate SwiftUI demo app exists beside the product shell
+- Deep Link `lh2gpx://live`: URL schema `lh2gpx://` via `CFBundleURLTypes` in `Info.plist` registriert; `onOpenURL`-Handler in `ContentView` leitet zu `handleDeepLink()`; `LiveLocationFeatureModel.navigateToLiveTabRequested` triggert `AppContentSplitView`-Observer, der `selectedTab = 3` (Live-Tab) setzt
 
 Not present:
 - dedicated onboarding flow or walkthrough
@@ -265,6 +266,7 @@ Present:
 - a limited networking stack exists for optional live-location server upload (`URLSession`, JSON payload, bearer token)
 - `RecordedTrackFileStore` persists completed live tracks in app support storage
 - demo support loads bundled golden fixtures through the same app-support layer
+- App Groups Entitlements (`com.apple.security.application-groups: group.de.roeber.LH2GPXWrapper`) in `LH2GPXWrapper.entitlements` und `LH2GPXWidget.entitlements`; `WidgetDataStore` nutzt App-Group-UserDefaults fuer Datenaustausch zwischen App und Widget-Extension
 
 Not present:
 - analytics / telemetry

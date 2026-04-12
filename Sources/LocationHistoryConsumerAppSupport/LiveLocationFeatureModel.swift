@@ -30,6 +30,9 @@ public final class LiveLocationFeatureModel: ObservableObject {
     @Published public private(set) var lastSuccessfulUploadPointCount: Int?
     @Published public private(set) var lastFailedUploadAt: Date?
     @Published public private(set) var consecutiveUploadFailures = 0
+    /// Set to true by a deep link (lh2gpx://live) to request navigation to the Live tab.
+    /// Reset to false by the observer after acting on it.
+    @Published public var navigateToLiveTabRequested = false
 
     private let client: LiveLocationClient?
     private let store: RecordedTrackStoring
