@@ -98,10 +98,10 @@ final class LH2GPXWrapperUITests: XCTestCase {
         XCTAssertTrue(insightsTab.waitForExistence(timeout: 5))
         insightsTab.tap()
 
-        let shareButton = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Share'")).firstMatch
-        XCTAssertTrue(revealElement(shareButton, in: app))
+        let shareButton = app.buttons["insights.section.share"]
+        XCTAssertTrue(revealElement(shareButton, in: app), "insights.section.share button not found")
         shareButton.tap()
-        XCTAssertTrue(app.buttons["Share Chart"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["insights.share.chart"].waitForExistence(timeout: 10))
         app.buttons["Done"].tap()
 
         let exportTab = app.tabBars.buttons["Export"]

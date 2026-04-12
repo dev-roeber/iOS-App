@@ -203,6 +203,7 @@ struct AppInsightsContentView: View {
                             Label(t("Share Chart"), systemImage: "square.and.arrow.up")
                                 .frame(maxWidth: .infinity)
                         }
+                        .accessibilityIdentifier("insights.share.chart")
                         .buttonStyle(.borderedProminent)
                         Spacer()
                     }
@@ -930,6 +931,7 @@ struct AppInsightsContentView: View {
                             .font(.caption.weight(.semibold))
                     }
                     .buttonStyle(.bordered)
+                    .accessibilityIdentifier("insights.section.share")
                 }
             }
             content()
