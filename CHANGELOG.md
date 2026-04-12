@@ -2,6 +2,20 @@
 
 ## [Unreleased] – 2026-04-12
 
+### Feature: Overview, Insights & Heatmap UI Polish (Tasks 1–10)
+
+- **Task 1 – Time-range first**: `AppContentSplitView.overviewPaneContent` reordered so `AppHistoryDateRangeControl` appears at the very top of the overview pane
+- **Task 2 – Favorites toggle**: New Capsule-style "Favorites Only / All Days" button appears below the time-range control when at least one day is favorited; state is held in `overviewShowOnlyFavorites`; `overviewFilteredDaySummaries` feeds the map and the summary stats
+- **Task 3 – Overview tracks map**: New `AppOverviewTracksMapView` (iOS 17+) loads all polylines off-main-thread via `Task.detached`; reactive reload via `.task(id:)`; caps at 100 days; shows loading / empty states; embedded in overview pane
+- **Task 4 – Heatmap chip styling**: Mode and Radius pickers replaced from `.pickerStyle(.segmented)` with custom `HStack<Button>` using Capsule clip shape + accent/secondary background — matches `AppDayFilterChipsView` exactly; controls wrapped in `ScrollView` for landscape usability
+- **Tasks 5/8 – Stray bullet removed**: `AppDayRow` no longer renders a second `Text("No data")` beside the tray `Label`; the orphaned visual point in day list and Insights is gone
+- **Task 6 – Top-days limit 20**: `InsightsTopDaysPresentation.topDays(from:by:limit:)` called with `limit: 20` in `AppInsightsContentView`; was previously hard-coded 5
+- **Task 7a – Date-range timezone fix**: `HistoryDateRangeFilter.isoFormatter` now uses `.autoupdatingCurrent` instead of UTC; eliminates off-by-one day-boundary errors for users outside UTC
+- **Task 7b – Insights metric state shift**: `refreshDerivedModel()` collects all proposed metric values first, then applies them atomically via `withTransaction(Transaction(animation: nil))` to prevent sequential re-renders and visible button shifts
+- **Task 9 – German localization**: ~30 new DE strings in `AppGermanTranslations` covering "Favorites Only", "All Days", "No tracks in selected range", "Loading map…", "Computing heatmap…", Insights period-comparison messages, streak no-data message, accessibility labels, ranked-day metric labels, and several previously-untranslated strings
+- **Task 10 – Landscape (partial)**: Heatmap control overlay wrapped in `ScrollView(.vertical)` with `maxHeight: 260` to prevent clipping in landscape
+- **Tests**: New `OverviewFavoritesAndInsightsTests` (14 cases) covers favorites-filter state, local-timezone correctness of `fromDateString`/`toDateString`, top-days limit=20, German translations for all new keys, and English identity invariant; total test count 511, 0 failures
+
 ### Fix: Live Background Authorization Start Gate
 
 - `LiveLocationFeatureModel`: Startfluss fuer Live-Recording als kleine Zustandsmaschine abgesichert (`idle`, `requestingWhenInUse`, `awaitingAlwaysUpgrade`, `readyToStart`, `recording`, `failedAuthorization`)

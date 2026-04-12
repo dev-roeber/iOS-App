@@ -2,6 +2,20 @@
 
 ## Aktueller Stand (2026-04-12)
 
+### UI Polish – Overview / Insights / Heatmap / Landscape (2026-04-12)
+
+Abgeschlossen (511 Tests, 0 Failures):
+- Overview-Pane umgeordnet: Time-Range-Control an erster Position
+- Favorites-Only-Toggle (Capsule-Chip) im Overview; filtert Statistiken und Map reaktiv
+- `AppOverviewTracksMapView`: async Polyline-Übersichtskarte (iOS 17+), Task.detached, `.task(id:)`, Cap 100 Tage
+- Heatmap Mode/Radius-Picker als Capsule-Chips (passend zu `AppDayFilterChipsView`); Controls scrollbar in Landscape
+- Stray `Text("No data")` aus `AppDayRow` entfernt (visueller Stray-Bullet behoben)
+- `InsightsTopDaysPresentation.topDays(limit:)` von 5 auf 20 erhöht
+- `HistoryDateRangeFilter.isoFormatter`: UTC → `.autoupdatingCurrent` (Timezone-Off-by-One-Fix)
+- `AppInsightsContentView.refreshDerivedModel()`: Metric-State atomar ohne Animation angewendet (State-Shift-Fix)
+- ~30 neue DE-Strings (`AppGermanTranslations`): Favorites, Range-Map, Heatmap, Insights, Accessibility
+- 14 neue Unit-Tests (`OverviewFavoritesAndInsightsTests`): Favorites-Filter, Timezone, Top-Days, Lokalisierung
+
 ### P1 Critical Security + Stability Fixes (2026-04-12)
 
 Abgeschlossen (481 Tests, 0 Failures):

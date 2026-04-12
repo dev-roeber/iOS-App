@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-04-01
+Last analysis: 2026-04-12
 
 Repos in scope:
 - `LocationHistory2GPX-Monorepo`: verified in this workspace
@@ -61,6 +61,9 @@ Present:
 - primary action cards can jump directly into file import, day browsing, insights and export
 - primary actions include a direct jump into the separate `Saved Live Tracks` local library
 - overview entry card for the `Saved Live Tracks` local library
+- time-range control is first item in the overview pane (promoted from lower position)
+- favorites-only Capsule toggle appears below the time-range when at least one day is favorited
+- `AppOverviewTracksMapView` shows an async polyline overview map for all tracks in the active range (iOS 17+); loads off-main-thread via `Task.detached`; caps at 100 days; shows loading and empty states
 
 Not present:
 - dedicated onboarding dashboard state distinct from the import-first root
@@ -118,6 +121,7 @@ Present:
 - live-location map with current-position marker and live polyline while recording
 - recenter button for live-location map
 - dedicated `Heatmap` sheet for imported history on iOS 17+/macOS 14+ with precomputed LOD grids, smoothed aggregated polygon cells, viewport-capped cell selection, calmer low-zoom rendering, local opacity/radius controls, `fit to data`, a small density legend, and stronger nonlinear opacity/intensity/color mapping with earlier low-/mid-density hue separation so sparse detail zoom stays visible and more differentiated instead of fading to near-grey
+- Heatmap Mode and Radius controls rendered as Capsule chip buttons (matching `AppDayFilterChipsView` style); control overlay is scrollable in landscape via `ScrollView(.vertical)`
 
 Not present:
 - offline tile packs
@@ -153,7 +157,7 @@ Present:
 - segmented insight surface with `Overview`, `Patterns` and `Breakdowns`
 - KPI summary cards for loaded days, total distance, average distance/day and active months
 - highlight cards for busiest day, most visits, most routes and longest distance
-- top-days module with switchable ranking metrics
+- top-days module with switchable ranking metrics; shows up to 20 entries (limit raised from 5)
 - monthly-trends module with switchable metrics derived from visible days
 - distance-over-time chart when distance data exists; prefers imported route totals and otherwise falls back to recorded path/trace geometry where verifiable
 - daily averages cards when at least two days exist

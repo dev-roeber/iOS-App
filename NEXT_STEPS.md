@@ -3,6 +3,28 @@
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 
+## UI Polish Batch – Overview / Insights / Heatmap / Landscape (2026-04-12)
+
+Status: **✅ abgeschlossen (2026-04-12)**
+
+Umgesetzt (Tasks 1–10):
+- Time-range control promoted to first position in overview pane
+- Favorites-only toggle (Capsule chip) with live filter; persisted via `@State`
+- `AppOverviewTracksMapView`: async polyline overview map, iOS 17+, Task.detached, reactive `.task(id:)`
+- Heatmap Mode/Radius pickers replaced with Capsule chip buttons matching `AppDayFilterChipsView`
+- Stray `Text("No data")` removed from `AppDayRow` empty state (stray bullet fix)
+- `InsightsTopDaysPresentation.topDays(limit:)` raised from 5 to 20
+- `HistoryDateRangeFilter.isoFormatter` timezone fixed from UTC to `.autoupdatingCurrent`
+- `AppInsightsContentView.refreshDerivedModel()` metric-state applied atomically (`withTransaction(animation: nil)`)
+- ~30 new German translation strings in `AppGermanTranslations`
+- Heatmap controls scrollable in landscape (partial task 10)
+- 14 new unit tests in `OverviewFavoritesAndInsightsTests`; 511 total, 0 failures
+
+Noch offen (bewusst nachgelagert):
+- Task 10 vollständig: 2-Spalten-Layout für Overview/Days/Insights in Landscape
+- Apple-Device-Verifikation der neuen Overview-Map und Heatmap-Chips
+- `docs/APP_FEATURE_INVENTORY.md` und `XCODE_RUNBOOK.md` für neue Features sync-en
+
 ## P1 Critical Fixes — Deep Audit 2026-04-12
 
 Status: **✅ abgeschlossen (2026-04-12)**
