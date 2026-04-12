@@ -2,6 +2,19 @@
 
 ## [Unreleased] – 2026-04-12
 
+### Feature: Multi-Source Import Foundation (GPX + TCX)
+
+- **GPX import**: `GPXImportParser` parses GPX 1.1 XML (`<trk>/<trkseg>/<trkpt>` + `<wpt>`) into `AppExport`. Waypoints become Visit entries. Groups points into days by local calendar date (`.autoupdatingCurrent` timezone).
+- **TCX import**: `TCXImportParser` parses TCX 2.0 XML (`<TrainingCenterDatabase>/<Activity>/<Lap>/<Track>/<Trackpoint>/<Position>`) into `AppExport`. Groups by local date.
+- **AppContentLoader routing**: `decodeData()` detects GPX/TCX before JSON paths. ZIP scanning also looks for `.gpx`/`.tcx` entries when no LH2GPX or Google Timeline JSON is found.
+- **fileImporter UTTypes**: `AppShellRootView.fileImporter` now accepts `.gpx` and `.tcx` in addition to `.json` and `.zip`.
+- **Localization**: 7 new strings in `AppGermanTranslations`: "GPX file", "TCX file", "GPS Exchange Format", "Training Center XML", "GPX imported", "TCX imported", "File contains no track points".
+- **Error messages**: `unsupportedFormat` and `jsonNotFoundInZip` error descriptions updated to mention GPX/TCX.
+- **Fixtures**: `sample_import.gpx`, `sample_import.tcx`, `sample_import_empty.gpx` added to `Fixtures/contract/`.
+- **Tests**: 19 new tests in `MultiSourceImportTests` covering parse correctness, fixture round-trips, edge cases, detection, AppContentLoader routing, data flow into `daySummaries()` + `insights()`, and regression tests for Google Timeline + LH2GPX. Total: 530 tests, 0 failures.
+- **Deliberately NOT implemented**: FIT format (no maintainable Swift library without external dependency); GeoJSON import (complex edge cases — follow-up).
+- **Protected (Prompt-1)**: `HistoryDateRangeFilter`, `AppInsightsContentView`, `AppContentSplitView`, `AppOverviewTracksMapView`, `AppDayListView`, `AppHeatmapView`, `OverviewFavoritesAndInsightsTests` — all untouched.
+
 ### Feature: Overview, Insights & Heatmap UI Polish (Tasks 1–10)
 
 - **Task 1 – Time-range first**: `AppContentSplitView.overviewPaneContent` reordered so `AppHistoryDateRangeControl` appears at the very top of the overview pane

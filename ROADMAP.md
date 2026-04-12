@@ -2,6 +2,20 @@
 
 ## Aktueller Stand (2026-04-12)
 
+### Multi-Source Import Foundation — GPX + TCX (2026-04-12)
+
+Abgeschlossen (530 Tests, 0 Failures):
+- GPX 1.1 Import: `GPXImportParser` (trk/trkseg/trkpt + wpt → AppExport, local-date grouping)
+- TCX 2.0 Import: `TCXImportParser` (TrainingCenterDatabase/Trackpoint/Position → AppExport)
+- `AppContentLoader`: GPX/TCX-Routing in `decodeData()` und ZIP-Scan
+- `fileImporter` akzeptiert `.gpx` und `.tcx` zusätzlich zu `.json` und `.zip`
+- DE/EN-Strings für GPX/TCX-Import ergänzt
+- 3 neue Contract-Fixtures (`sample_import.gpx`, `.tcx`, `_empty.gpx`)
+- 19 neue Tests in `MultiSourceImportTests`
+- FIT-Format: bewusst nicht implementiert (kein wartbares Swift-Framework ohne externe Dependency)
+- GeoJSON-Import: bewusst als Follow-up aufgeschoben (Komplexität; Export bleibt unberührt)
+- Prompt-1-Schutz: alle 7 geschützten Dateien unberührt
+
 ### UI Polish – Overview / Insights / Heatmap / Landscape (2026-04-12)
 
 Abgeschlossen (511 Tests, 0 Failures):

@@ -31,8 +31,11 @@ Not present:
 
 Present:
 - local file import via system file importer
-- product app accepts `.json` and `.zip`
-- supported content types: LH2GPX `app_export.json`, LH2GPX export ZIP, Google Timeline `location-history.json`, Google Timeline ZIP
+- product app accepts `.json`, `.zip`, `.gpx`, and `.tcx`
+- supported content types: LH2GPX `app_export.json`, LH2GPX export ZIP, Google Timeline `location-history.json`, Google Timeline ZIP, GPX 1.1 track files, TCX 2.0 track files
+- GPX import: parses `<trk>/<trkseg>/<trkpt>` + `<wpt>`; groups points by local calendar date; waypoints become Visit entries
+- TCX import: parses `<TrainingCenterDatabase>/<Activity>/<Lap>/<Track>/<Trackpoint>/<Position>`; groups by local calendar date
+- GPX/TCX files inside ZIP archives are also extracted and parsed
 - ZIP import is filename-agnostic for compatible JSONs
 - user-facing import error titles for unsupported format, unreadable file, decode failure, empty ZIP and multiple exports in ZIP
 - bundled demo fixture can be loaded as fallback
@@ -43,6 +46,8 @@ Present:
 - missing or stale last-import bookmarks are skipped gracefully during auto-restore
 
 Not present:
+- FIT format import (no maintainable Swift library without external dependency; deliberate follow-up)
+- GeoJSON import (as import source; export remains present; deliberate follow-up)
 - drag-and-drop import UI
 - multi-file import UI
 

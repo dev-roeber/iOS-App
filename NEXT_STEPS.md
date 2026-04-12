@@ -3,6 +3,25 @@
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 
+## Multi-Source Import Foundation (2026-04-12)
+
+Status: **✅ abgeschlossen (2026-04-12)**
+
+Umgesetzt:
+- GPX 1.1 import (`GPXImportParser`): trk/trkseg/trkpt + wpt → AppExport, grouped by local date
+- TCX 2.0 import (`TCXImportParser`): TrainingCenterDatabase/.../Trackpoint → AppExport, grouped by local date
+- `AppContentLoader.decodeData()` routes GPX/TCX before JSON paths
+- ZIP support: GPX/TCX files inside ZIPs are extracted and parsed
+- `fileImporter` in `AppShellRootView` accepts .gpx and .tcx
+- DE/EN localization strings for GPX/TCX
+- 3 contract fixtures: `sample_import.gpx`, `sample_import.tcx`, `sample_import_empty.gpx`
+- 19 new tests in `MultiSourceImportTests`; 530 total, 0 failures
+- Prompt-1 protected files: untouched
+
+Bewusst nicht umgesetzt (Follow-up):
+- **FIT format**: Kein wartbares Swift-Framework ohne externe Dependency. Garmin FIT ist ein Binärformat mit proprietärem SDK. Follow-up wenn Community-Swift-Parser verfügbar.
+- **GeoJSON import** (als Import, nicht Export): GeoJSON als Importquelle ist optional und komplex (FeatureCollection mit LineString/MultiLineString). Follow-up in separatem Branch.
+
 ## UI Polish Batch – Overview / Insights / Heatmap / Landscape (2026-04-12)
 
 Status: **✅ abgeschlossen (2026-04-12)**
