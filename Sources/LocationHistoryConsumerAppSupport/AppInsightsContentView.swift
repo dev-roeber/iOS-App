@@ -115,7 +115,7 @@ struct AppInsightsContentView: View {
     }
 
     private var topDays: [DaySummary] {
-        InsightsTopDaysPresentation.topDays(from: daySummaries, by: topDayMetric, limit: 5)
+        InsightsTopDaysPresentation.topDays(from: daySummaries, by: topDayMetric, limit: 20)
     }
 
     private var summaryCards: [InsightsSummaryCard] {
@@ -274,18 +274,32 @@ struct AppInsightsContentView: View {
             )
         )
 
+        // Reset picker selections without animation to prevent layout shifts (task-7 fix).
+        var newTopMetric = topDayMetric
+        var newTrendMetric = trendMetric
+        var newWeekdayMetric = weekdayMetric
+        var newPeriodMetric = periodMetric
+
         if let firstTopMetric = builtTopDayMetrics.first, !builtTopDayMetrics.contains(topDayMetric) {
-            topDayMetric = firstTopMetric
+            newTopMetric = firstTopMetric
         }
         if let firstTrendMetric = availableTrendMetrics.first,
            !availableTrendMetrics.contains(trendMetric) {
-            trendMetric = firstTrendMetric
+            newTrendMetric = firstTrendMetric
         }
         if let firstWeekdayMetric = builtWeekdayMetrics.first, !builtWeekdayMetrics.contains(weekdayMetric) {
-            weekdayMetric = firstWeekdayMetric
+            newWeekdayMetric = firstWeekdayMetric
         }
         if let firstPeriodMetric = builtPeriodMetrics.first, !builtPeriodMetrics.contains(periodMetric) {
-            periodMetric = firstPeriodMetric
+            newPeriodMetric = firstPeriodMetric
+        }
+
+        // Apply all picker state changes atomically without animation to avoid button/state jitter.
+        withTransaction(Transaction(animation: nil)) {
+            topDayMetric = newTopMetric
+            trendMetric = newTrendMetric
+            weekdayMetric = newWeekdayMetric
+            periodMetric = newPeriodMetric
         }
     }
 
