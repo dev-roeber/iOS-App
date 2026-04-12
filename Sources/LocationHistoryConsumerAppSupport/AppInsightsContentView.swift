@@ -1035,6 +1035,8 @@ struct AppInsightsContentView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(card.color.opacity(0.18), lineWidth: 1)
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel([card.value, card.title, card.subtitle].compactMap { $0 }.joined(separator: ", "))
     }
 
     private func avgCard(_ value: String, label: String, icon: String, color: Color) -> some View {
@@ -1059,6 +1061,8 @@ struct AppInsightsContentView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(color.opacity(0.15), lineWidth: 1)
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(value), \(label)")
     }
 
     private func activityBreakdownCard(_ item: ActivityBreakdownItem) -> some View {

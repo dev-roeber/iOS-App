@@ -76,15 +76,17 @@ public struct AppOptionsView: View {
                         .autocorrectionDisabled()
                 }
 
-                Picker(t("Upload Batch Size"), selection: $preferences.liveTrackingUploadBatch) {
-                    ForEach(AppLiveTrackingUploadBatchPreference.allCases) { batch in
-                        Text(t(batch.title)).tag(batch)
+                if preferences.sendsLiveLocationToServer {
+                    Picker(t("Upload Batch Size"), selection: $preferences.liveTrackingUploadBatch) {
+                        ForEach(AppLiveTrackingUploadBatchPreference.allCases) { batch in
+                            Text(t(batch.title)).tag(batch)
+                        }
                     }
-                }
 
-                LabeledContent(t("Upload Status")) {
-                    Text(uploadStatusText)
-                        .foregroundStyle(uploadStatusColor)
+                    LabeledContent(t("Upload Status")) {
+                        Text(uploadStatusText)
+                            .foregroundStyle(uploadStatusColor)
+                    }
                 }
 
                 if preferences.sendsLiveLocationToServer,

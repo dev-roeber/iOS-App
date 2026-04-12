@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [2026-04-13] — Release-Haertung: Accessibility + Options UX
+
+### Verbessert
+- `AppLiveTrackingView`: stat-Karten (`statCard`) erhalten `.accessibilityElement(children: .ignore) + .accessibilityLabel("\(value), \(label)")` — VoiceOver liest Wert + Label als eine Einheit statt Einzelfragmente
+- `AppInsightsContentView`: `summaryCard` und `avgCard` erhalten kombiniertes Accessibility-Element (Wert + Titel + optionaler Subtitel) fuer konsistente VoiceOver-Ausgabe
+- `AppOptionsView` (Sektion "Language and Upload"): "Upload Batch Size" und "Upload Status" werden nur noch angezeigt wenn "Upload to Custom Server" aktiv ist — reduziert Informationsrauschen fuer die grosse Mehrheit der Nutzer ohne Upload-Konfiguration
+
 ## [2026-04-12] — Device-Smoke-Test, Widget Privacy Manifest, Archive-Verifikation
 
 ### Hinzugefuegt

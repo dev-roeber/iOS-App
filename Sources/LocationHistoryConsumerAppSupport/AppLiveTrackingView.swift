@@ -648,6 +648,8 @@ public struct AppLiveTrackingView: View {
         .padding(12)
         .background(color.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(value), \(label)")
     }
 
     private func insightBanner(
