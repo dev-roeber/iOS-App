@@ -6,6 +6,7 @@ import SwiftUI
 @main
 struct LH2GPXWidgetBundle: WidgetBundle {
     var body: some Widget {
+        LH2GPXHomeWidget()
         TrackingLiveActivityWidget()
     }
 }

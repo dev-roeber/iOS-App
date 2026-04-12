@@ -10,6 +10,18 @@ import LocationHistoryConsumerAppSupport
 private struct TrackingLockScreenView: View {
     let context: ActivityViewContext<TrackingAttributes>
 
+    /// Pace in min/km, computed from distance and elapsed time. nil if not yet meaningful.
+    private var paceString: String? {
+        let elapsed = Date().timeIntervalSince(context.attributes.startTime)
+        let km = context.state.distanceMeters / 1000
+        guard km >= 0.1, elapsed > 0 else { return nil }
+        let minPerKm = (elapsed / 60) / km
+        guard minPerKm < 99 else { return nil }
+        let minutes = Int(minPerKm)
+        let seconds = Int((minPerKm - Double(minutes)) * 60)
+        return String(format: "%d'%02d\"/km", minutes, seconds)
+    }
+
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: "location.north.fill")
@@ -31,6 +43,12 @@ private struct TrackingLockScreenView: View {
                     Label("\(context.state.pointCount) pts", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.85))
+
+                    if let pace = paceString {
+                        Label(pace, systemImage: "speedometer")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.85))
+                    }
                 }
             }
 
@@ -85,22 +103,39 @@ struct TrackingLiveActivityWidget: Widget {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                         Spacer()
+
+                        // Paused indicator
+                        if context.state.isPaused {
+                            Text("⏸ Pausiert")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.orange)
+                        }
+
+                        // Upload queue badge
+                        if context.state.uploadQueueCount > 0 {
+                            Text("↑ \(context.state.uploadQueueCount)")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.blue)
+                                .padding(.leading, 4)
+                        }
+
                         Label("\(context.state.pointCount)", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
+                            .padding(.leading, 4)
                     }
                     .padding(.top, 4)
                 }
             } compactLeading: {
-                Image(systemName: "location.fill.viewfinder")
-                    .foregroundStyle(Color.accentColor)
+                Image(systemName: context.state.isPaused ? "pause.circle.fill" : "location.fill.viewfinder")
+                    .foregroundStyle(context.state.isPaused ? .orange : Color.accentColor)
             } compactTrailing: {
                 Text(context.state.formattedDistance)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.primary)
             } minimal: {
-                Image(systemName: "location.fill.viewfinder")
-                    .foregroundStyle(Color.accentColor)
+                Image(systemName: context.state.isPaused ? "pause.circle.fill" : "location.fill.viewfinder")
+                    .foregroundStyle(context.state.isPaused ? .orange : Color.accentColor)
             }
             .widgetURL(URL(string: "lh2gpx://live"))
             .keylineTint(Color.accentColor)
