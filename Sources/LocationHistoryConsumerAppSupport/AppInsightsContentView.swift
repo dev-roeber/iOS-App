@@ -254,6 +254,7 @@ struct AppInsightsContentView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .accessibilityIdentifier("insights.surface.picker")
                 if isLandscape {
                     LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 16) {
                         insightsModeContent
@@ -264,6 +265,7 @@ struct AppInsightsContentView: View {
                     }
                 }
             }
+            .padding(.horizontal, 16)
             .padding(.bottom, 20)
         }
     }

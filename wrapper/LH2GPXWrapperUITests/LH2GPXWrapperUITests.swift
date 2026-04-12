@@ -98,7 +98,11 @@ final class LH2GPXWrapperUITests: XCTestCase {
         XCTAssertTrue(insightsTab.waitForExistence(timeout: 5))
         insightsTab.tap()
 
-        let shareButton = app.buttons["insights.section.share"]
+        // Allow insights content to render (lazy grid + derived model computation).
+        RunLoop.current.run(until: Date().addingTimeInterval(1.0))
+
+        // Multiple sections expose insights.section.share; use firstMatch and revealElement.
+        let shareButton = app.buttons.matching(identifier: "insights.section.share").firstMatch
         XCTAssertTrue(revealElement(shareButton, in: app), "insights.section.share button not found")
         shareButton.tap()
         XCTAssertTrue(app.buttons["insights.share.chart"].waitForExistence(timeout: 10))

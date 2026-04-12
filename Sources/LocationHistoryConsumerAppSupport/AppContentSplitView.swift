@@ -246,16 +246,13 @@ public struct AppContentSplitView: View {
             .tag(1)
 
             NavigationStack {
-                ScrollView {
-                    insightsPaneContent
-                        .padding()
-                }
-                .navigationTitle(t("Insights"))
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        actionsMenu
+                insightsPaneContent
+                    .navigationTitle(t("Insights"))
+                    .toolbar {
+                        ToolbarItem(placement: .primaryAction) {
+                            actionsMenu
+                        }
                     }
-                }
             }
             .tabItem {
                 Label(t("Insights"), systemImage: "chart.xyaxis.line")
@@ -947,6 +944,7 @@ public struct AppContentSplitView: View {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, minHeight: 200)
+            .padding()
         }
     }
 
