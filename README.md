@@ -24,6 +24,7 @@ Integriertes Monorepo fuer Core Swift Package und Xcode Wrapper der `LocationHis
 
 - App-Export-JSON laden
 - Google-Timeline-`location-history.json` und `.zip` lokal direkt importieren
+- GPX 1.1 (`.gpx`) und TCX 2.0 (`.tcx`) lokal direkt importieren; GPX/TCX auch innerhalb von `.zip`-Archiven
 - gegen Swift-Modelle decodieren
 - read-only Query-/ViewState-Daten aus dem App-Export ableiten
 - eine kleine produktnahe App-Shell-Struktur fuer lokalen JSON-/ZIP-Import bereitstellen
