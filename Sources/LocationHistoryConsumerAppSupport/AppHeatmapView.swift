@@ -112,7 +112,7 @@ public struct AppHeatmapView: View {
             HStack(spacing: 8) {
                 ProgressView()
                     .controlSize(.small)
-                Text("Pre-computing LOD clusters…")
+                Text(t("Computing heatmap…"))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
@@ -126,6 +126,7 @@ public struct AppHeatmapView: View {
 
     @ViewBuilder
     private var controlsOverlay: some View {
+        ScrollView(.vertical, showsIndicators: false) {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 Button(action: fitToData) {
@@ -142,17 +143,26 @@ public struct AppHeatmapView: View {
                     .multilineTextAlignment(.trailing)
             }
 
-            // Mode picker
+            // Mode picker — chip style matching the filter chips in other views.
             VStack(alignment: .leading, spacing: 6) {
                 Text(t("Mode"))
                     .font(.caption.weight(.semibold))
-                Picker(t("Mode"), selection: $heatmapMode) {
+                HStack(spacing: 8) {
                     ForEach(HeatmapMode.allCases) { mode in
-                        Text(t(mode.labelKey)).tag(mode)
+                        Button {
+                            heatmapMode = mode
+                        } label: {
+                            Text(t(mode.labelKey))
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(heatmapMode == mode ? Color.accentColor.opacity(0.14) : Color.secondary.opacity(0.08))
+                                .foregroundStyle(heatmapMode == mode ? Color.accentColor : Color.primary)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
             }
 
             VStack(alignment: .leading, spacing: 6) {
@@ -171,13 +181,22 @@ public struct AppHeatmapView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(t("Radius"))
                         .font(.caption.weight(.semibold))
-                    Picker(t("Radius"), selection: $radiusPreset) {
+                    HStack(spacing: 8) {
                         ForEach(HeatmapRadiusPreset.allCases) { preset in
-                            Text(t(preset.labelKey)).tag(preset)
+                            Button {
+                                radiusPreset = preset
+                            } label: {
+                                Text(t(preset.labelKey))
+                                    .font(.caption.weight(.semibold))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(radiusPreset == preset ? Color.accentColor.opacity(0.14) : Color.secondary.opacity(0.08))
+                                    .foregroundStyle(radiusPreset == preset ? Color.accentColor : Color.primary)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
                 }
 
                 densityLegend
@@ -191,6 +210,8 @@ public struct AppHeatmapView: View {
         .padding(.bottom, 8)
         .controlSize(.small)
         .shadow(color: Color.black.opacity(0.08), radius: 10, y: 4)
+        } // end ScrollView inner VStack
+        .frame(maxHeight: 260) // cap height in landscape; scrollable beyond that
     }
 
     @ViewBuilder
