@@ -14,6 +14,7 @@ public struct AppContentSplitView: View {
     @State private var daySearchText = ""
     @State private var dayListFilter = DayListFilter.empty
     @State private var favoritedDayIDs: Set<String> = []
+    @State private var overviewShowOnlyFavorites: Bool = false
     @State private var presentedSheet: PresentedSheet?
 
     private let onOpen: () -> Void
@@ -454,6 +455,12 @@ public struct AppContentSplitView: View {
 
     // MARK: - Shared Content
 
+    /// Day summaries filtered by the active range and (optionally) by favorites only.
+    private var overviewFilteredDaySummaries: [DaySummary] {
+        guard overviewShowOnlyFavorites else { return projectedDaySummaries }
+        return projectedDaySummaries.filter { favoritedDayIDs.contains($0.date) }
+    }
+
     @ViewBuilder
     private var overviewPaneContent: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -464,20 +471,22 @@ public struct AppContentSplitView: View {
                 hasDays: session.hasDays
             )
 
-            overviewPrimaryActionsSection
+            // Task 1: Time Range is now the first content block (directly below status).
+            // Task 2: Favorites-only toggle is embedded in the same card.
+            overviewTimeRangeAndFavoritesBlock
 
-            AppHistoryDateRangeControl(filter: $session.historyDateRangeFilter)
-
-            if let range = projectedInsights?.dateRange {
-                HStack(spacing: 8) {
-                    Image(systemName: "calendar.circle.fill")
-                        .foregroundColor(.accentColor)
-                        .font(.title3)
-                    Text("\(AppDateDisplay.mediumDate(range.firstDate)) – \(AppDateDisplay.mediumDate(range.lastDate))")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
+            // Task 3: Map of all tracks within the active time range + favorites filter.
+            if session.hasDays {
+                if #available(iOS 17.0, macOS 14.0, *) {
+                    AppOverviewTracksMapView(
+                        daySummaries: overviewFilteredDaySummaries,
+                        content: session.content,
+                        queryFilter: projectedQueryFilter
+                    )
                 }
             }
+
+            overviewPrimaryActionsSection
 
             if let insights = projectedInsights, insights.totalDistanceM > 0 {
                 HStack(spacing: 12) {
@@ -505,7 +514,7 @@ public struct AppContentSplitView: View {
             if let overview = projectedOverview {
                 AppOverviewSection(
                     overview: overview,
-                    daySummaries: projectedDaySummaries,
+                    daySummaries: overviewFilteredDaySummaries,
                     onDaysTap: horizontalSizeClass == .compact ? { selectedTab = 1 } : nil,
                     onInsightsTap: horizontalSizeClass == .compact ? { selectedTab = 2 } : nil
                 )
@@ -516,6 +525,39 @@ public struct AppContentSplitView: View {
             }
 
             liveTracksOverviewSection
+        }
+    }
+
+    /// Combined Time Range control and Favorites-only toggle (tasks 1 + 2).
+    @ViewBuilder
+    private var overviewTimeRangeAndFavoritesBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            AppHistoryDateRangeControl(filter: $session.historyDateRangeFilter)
+
+            // Favorites toggle — only shown when there are actual favorites.
+            if !favoritedDayIDs.isEmpty {
+                HStack(spacing: 0) {
+                    Spacer()
+                    Button {
+                        overviewShowOnlyFavorites.toggle()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: overviewShowOnlyFavorites ? "star.fill" : "star")
+                                .font(.caption)
+                            Text(overviewShowOnlyFavorites ? t("Favorites Only") : t("All Days"))
+                                .font(.caption.weight(.medium))
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(overviewShowOnlyFavorites ? Color.yellow.opacity(0.18) : Color.secondary.opacity(0.08))
+                        .foregroundStyle(overviewShowOnlyFavorites ? Color.yellow : Color.primary)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(overviewShowOnlyFavorites ? t("Showing favorites only. Tap to show all days.") : t("Showing all days. Tap to show favorites only."))
+                }
+            }
         }
     }
 
@@ -1024,7 +1066,7 @@ public struct AppContentSplitView: View {
                         if #available(iOS 17.0, macOS 14.0, *) {
                             AppHeatmapView(export: export)
                                 .environmentObject(preferences)
-                                .navigationTitle("Heatmap")
+                                .navigationTitle(t("Heatmap"))
                                 .toolbar {
                                     ToolbarItem(placement: .confirmationAction) {
                                         Button(t("Done")) { presentedSheet = nil }
