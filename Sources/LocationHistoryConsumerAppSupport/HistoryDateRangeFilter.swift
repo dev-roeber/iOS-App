@@ -154,7 +154,10 @@ public struct HistoryDateRangeFilter: Equatable {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(secondsFromGMT: 0)
+        // Use the device's current timezone so that preset date boundaries
+        // (computed in Calendar.current / local time) are not shifted to the
+        // previous or next UTC day when the user is not in UTC. (task-7 fix)
+        f.timeZone = .autoupdatingCurrent
         return f
     }
 }
