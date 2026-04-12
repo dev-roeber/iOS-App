@@ -4,9 +4,9 @@
 iOS-App ist ab jetzt das zentrale aktive Repo.
 
 ### Naechste offene Schritte:
-- [ ] Widget Extension Target fuer Live Activity UI in Xcode anlegen (braucht Xcode GUI)
+- [ ] Widget Extension Target in Xcode manuell anlegen (Anleitung: docs/WIDGET_XCODE_SETUP.md) — Swift-Dateien vorhanden in wrapper/LH2GPXWidget/
 - [ ] Apple-UI-Verifikation: Range-Picker, Datumsbereich-Sheet auf echtem iPhone
-- [ ] KMZ-Export
+- [x] KMZ-Export — abgeschlossen 2026-04-12 (KMZBuilder + KMZDocument + Tests)
 - [ ] Chart-Share per ImageRenderer verifizieren
 - [ ] Split-Repos (LocationHistory2GPX-iOS, LH2GPXWrapper) als historisch/mirror markieren
 

@@ -430,6 +430,9 @@ enum AppGermanTranslations {
         "Open a local location history file or load the bundled demo data.": "Öffne eine lokale Standortverlaufsdatei oder lade die gebündelten Demodaten."
         ,
         "GPS Exchange Format – compatible with most navigation and mapping apps.": "GPS Exchange Format – kompatibel mit den meisten Navigations- und Karten-Apps.",
+        "KMZ": "KMZ",
+        "KMZ Archive – a zipped KML compatible with Google Earth and mapping apps.": "KMZ-Archiv – eine gepackte KML-Datei für Google Earth und andere Karten-Apps.",
+        "KMZ export failed. The archive could not be created.": "KMZ-Export fehlgeschlagen. Das Archiv konnte nicht erstellt werden.",
         "Keyhole Markup Language – useful for Google Earth and other map viewers.": "Keyhole Markup Language – nützlich für Google Earth und andere Kartenbetrachter.",
         "GeoJSON FeatureCollection – useful for browsers, GIS tools, and developer workflows.": "GeoJSON-FeatureCollection – nützlich für Browser, GIS-Werkzeuge und Entwickler-Workflows.",
         "Tracks": "Tracks",

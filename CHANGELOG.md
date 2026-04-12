@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [2026-04-12] — KMZ Export + Live Activity Widget UI + Xcode Setup
+
+### Added
+- KMZ Export: `KMZBuilder.swift` (ZIPFoundation, temp-file pattern), `KMZDocument.swift` (BinaryExportDocument), `ExportFormat.kmz` case (archivebox.fill icon), vollständige Integration in `AppExportView` mit eigenem `fileExporter` für binäres KMZ
+- 6 neue KMZ-Tests in `KMZExportTests.swift` (ZIP-Signatur, doc.kml Struktur, KML-Inhalt, Waypoint-Mode, Empty-Days)
+- Live Activity Widget UI: `wrapper/LH2GPXWidget/` mit `TrackingLiveActivityWidget.swift` (Dynamic Island expanded/compact/minimal + Lock Screen Banner), `LH2GPXWidgetBundle.swift`, `Info.plist`
+- `docs/WIDGET_XCODE_SETUP.md`: vollständige Schritt-für-Schritt-Anleitung für manuelles Xcode Widget Extension Target Setup
+- 556 Tests total, 0 Failures (vorher 550)
+
+### Infrastructure
+- Xcode Build für iPhone 15 Pro Max: BUILD SUCCEEDED ✅
+- Deploy + Launch auf iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C) ✅
+
 ## [iOS-App Init] - 2026-04-12
 
 ### Changed

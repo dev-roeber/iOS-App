@@ -69,6 +69,8 @@ public struct AppExportView: View {
     @State private var polygonCoordinatesText: String = ""
     @State private var isExporting = false
     @State private var exportDocument: ExportDocument?
+    @State private var kmzExportDocument: KMZExportDocument?
+    @State private var isExportingKMZ = false
     @State private var exportError: String?
     #if canImport(UniformTypeIdentifiers)
     @State private var exportContentType: UTType = .gpx
@@ -188,6 +190,17 @@ public struct AppExportView: View {
                     exportError = error.localizedDescription
                 }
                 exportDocument = nil
+            }
+            .fileExporter(
+                isPresented: $isExportingKMZ,
+                document: kmzExportDocument,
+                contentType: .kmz,
+                defaultFilename: kmzExportDocument?.suggestedFilename ?? "lh2gpx-export.kmz"
+            ) { result in
+                if case let .failure(error) = result {
+                    exportError = error.localizedDescription
+                }
+                kmzExportDocument = nil
             }
             #endif
             .alert(t("Export Failed"), isPresented: Binding(
@@ -892,6 +905,20 @@ public struct AppExportView: View {
             return
         }
 
+        if selectedFormat == .kmz {
+            do {
+                let kmzData = try KMZBuilder.build(from: exportDays, mode: effectiveExportMode)
+                kmzExportDocument = KMZExportDocument(
+                    data: kmzData,
+                    suggestedFilename: exportFilenamePreview(selection: selection, summaries: summaries)
+                )
+                isExportingKMZ = true
+            } catch {
+                exportError = t("KMZ export failed. The archive could not be created.")
+            }
+            return
+        }
+
         let content: String
         switch selectedFormat {
         case .gpx:
@@ -907,6 +934,9 @@ public struct AppExportView: View {
             }
         case .csv:
             content = CSVBuilder.build(from: exportDays)
+        case .kmz:
+            // Handled above; this case is unreachable.
+            return
         }
 
         exportDocument = ExportDocument(

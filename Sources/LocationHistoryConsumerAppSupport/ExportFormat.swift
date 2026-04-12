@@ -5,11 +5,12 @@ import UniformTypeIdentifiers
 
 public enum ExportFormat: String, Identifiable, CaseIterable {
     case gpx = "GPX"
+    case kmz = "KMZ"
     case kml = "KML"
     case geoJSON = "GeoJSON"
     case csv = "CSV"
 
-    public static let allCases: [ExportFormat] = [.gpx, .kml, .geoJSON, .csv]
+    public static let allCases: [ExportFormat] = [.gpx, .kmz, .kml, .geoJSON, .csv]
 
     public var id: String { rawValue }
 
@@ -17,6 +18,8 @@ public enum ExportFormat: String, Identifiable, CaseIterable {
         switch self {
         case .gpx:
             return "gpx"
+        case .kmz:
+            return "kmz"
         case .kml:
             return "kml"
         case .geoJSON:
@@ -30,6 +33,8 @@ public enum ExportFormat: String, Identifiable, CaseIterable {
         switch self {
         case .gpx:
             return "GPS Exchange Format – compatible with most navigation and mapping apps."
+        case .kmz:
+            return "KMZ Archive – a zipped KML compatible with Google Earth and mapping apps."
         case .kml:
             return "Keyhole Markup Language – useful for Google Earth and other map viewers."
         case .geoJSON:
@@ -43,6 +48,8 @@ public enum ExportFormat: String, Identifiable, CaseIterable {
         switch self {
         case .gpx:
             return "location.north.line.fill"
+        case .kmz:
+            return "archivebox.fill"
         case .kml:
             return "map.fill"
         case .geoJSON:
@@ -57,6 +64,8 @@ public enum ExportFormat: String, Identifiable, CaseIterable {
         switch self {
         case .gpx:
             return .gpx
+        case .kmz:
+            return .kmz
         case .kml:
             return .kml
         case .geoJSON:
