@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="LH2GPX-Test"
+     xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Sample Track</name>
+    <trkseg>
+      <trkpt lat="52.5200" lon="13.4050">
+        <time>2024-06-01T08:00:00Z</time>
+      </trkpt>
+      <trkpt lat="52.5210" lon="13.4060">
+        <time>2024-06-01T08:15:00Z</time>
+      </trkpt>
+    </trkseg>
+    <trkseg>
+      <trkpt lat="48.8566" lon="2.3522">
+        <time>2024-06-02T10:00:00Z</time>
+      </trkpt>
+      <trkpt lat="48.8576" lon="2.3532">
+        <time>2024-06-02T10:30:00Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+  <wpt lat="52.5200" lon="13.4050">
+    <name>Home</name>
+    <time>2024-06-01T07:00:00Z</time>
+  </wpt>
+</gpx>

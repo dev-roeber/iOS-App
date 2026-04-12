@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase
+    xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Activities>
+    <Activity Sport="Running">
+      <Id>2024-06-01T09:00:00Z</Id>
+      <Lap StartTime="2024-06-01T09:00:00Z">
+        <Track>
+          <Trackpoint>
+            <Time>2024-06-01T09:00:00Z</Time>
+            <Position>
+              <LatitudeDegrees>52.5200</LatitudeDegrees>
+              <LongitudeDegrees>13.4050</LongitudeDegrees>
+            </Position>
+          </Trackpoint>
+          <Trackpoint>
+            <Time>2024-06-01T09:15:00Z</Time>
+            <Position>
+              <LatitudeDegrees>52.5215</LatitudeDegrees>
+              <LongitudeDegrees>13.4065</LongitudeDegrees>
+            </Position>
+          </Trackpoint>
+        </Track>
+      </Lap>
+      <Lap StartTime="2024-06-03T14:00:00Z">
+        <Track>
+          <Trackpoint>
+            <Time>2024-06-03T14:00:00Z</Time>
+            <Position>
+              <LatitudeDegrees>48.8566</LatitudeDegrees>
+              <LongitudeDegrees>2.3522</LongitudeDegrees>
+            </Position>
+          </Trackpoint>
+          <Trackpoint>
+            <Time>2024-06-03T14:30:00Z</Time>
+            <Position>
+              <LatitudeDegrees>48.8576</LatitudeDegrees>
+              <LongitudeDegrees>2.3532</LongitudeDegrees>
+            </Position>
+          </Trackpoint>
+        </Track>
+      </Lap>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>
