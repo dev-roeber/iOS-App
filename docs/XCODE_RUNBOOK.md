@@ -112,6 +112,8 @@ Fuer den ersten lokalen Import muss kein echtes Produkt-Exportfile vorliegen. Ei
 - `Fixtures/contract/golden_app_export_no_days_zero.json`
 - alternativ ein anderer `golden_app_export_*.json` Contract-Fall
 
+Unterstuetzte Import-Formate: LH2GPX JSON/ZIP, Google Timeline JSON/ZIP, GPX 1.1 (`.gpx`), TCX 2.0 (`.tcx`). GPX- und TCX-Dateien koennen auch innerhalb von `.zip`-Archiven erkannt werden. Fixtures fuer GPX/TCX-Import: `Fixtures/contract/sample_import.gpx`, `Fixtures/contract/sample_import.tcx`.
+
 Schritte:
 
 1. App mit `LocationHistoryConsumerApp` starten
