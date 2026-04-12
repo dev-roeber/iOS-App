@@ -553,6 +553,38 @@ enum AppGermanTranslations {
         "Period comparison is not available for All Time. Select a specific date range to compare periods.": "Periodenvergleich ist für den gesamten Zeitraum nicht verfügbar. Wähle einen bestimmten Datumsbereich, um Perioden zu vergleichen.",
         "Select Last 7 Days, Last 30 Days or a custom range to enable the comparison.": "Wähle Letzte 7 Tage, Letzte 30 Tage oder einen eigenen Bereich, um den Vergleich zu aktivieren.",
         "At least 2 days are needed for a streak.": "Mindestens 2 Tage werden für eine Streak benötigt.",
-        "No days with activity found in the selected range.": "Keine Tage mit Aktivität im ausgewählten Bereich gefunden."
+        "No days with activity found in the selected range.": "Keine Tage mit Aktivität im ausgewählten Bereich gefunden.",
+        // Favorites toggle in overview (task 2)
+        "Favorites Only": "Nur Favoriten",
+        "Showing favorites only. Tap to show all days.": "Zeigt nur Favoriten. Tippe, um alle Tage anzuzeigen.",
+        "Showing all days. Tap to show favorites only.": "Zeigt alle Tage. Tippe, um nur Favoriten anzuzeigen.",
+        // Overview tracks map (task 3)
+        "No tracks in selected range": "Keine Tracks im ausgewählten Zeitraum",
+        "Loading map…": "Karte wird geladen…",
+        "route": "Route",
+        "routes": "Routen",
+        "Overview map with": "Übersichtskarte mit",
+        // Heatmap chip (task 4)
+        "Computing heatmap…": "Heatmap wird berechnet…",
+        // Insights strings missing DE
+        "No activity streak yet. Start recording to build your streak.": "Noch keine Aktivitätsserie. Starte die Aufzeichnung, um deine Serie aufzubauen.",
+        "Comparing the active date range to the equal-length period immediately before it.": "Vergleicht den aktiven Datumsbereich mit dem gleich langen Zeitraum unmittelbar davor.",
+        "No data available for this period.": "Keine Daten für diesen Zeitraum verfügbar.",
+        "No days with recorded routes in the selected range.": "Keine Tage mit aufgezeichneten Routen im ausgewählten Zeitraum.",
+        // Accessibility strings
+        "Date Range": "Datumsbereich",
+        "Tap to change.": "Tippen zum Ändern.",
+        "All Days. Tap to filter by date range.": "Alle Tage. Tippen, um nach Datumsbereich zu filtern.",
+        "Clear Date Range": "Datumsbereich löschen",
+        // Landscape / general missing strings
+        "No Days in Range": "Keine Tage im Zeitraum",
+        "Ranked by total visits, activities and routes.": "Gerankt nach Besuchen, Aktivitäten und Routen gesamt.",
+        "Ranked by semantic visit count.": "Gerankt nach semantischer Besuchszahl.",
+        "Ranked by recorded route count.": "Gerankt nach Anzahl aufgezeichneter Routen.",
+        "Ranked by total route distance.": "Gerankt nach Gesamtroutendistanz.",
+        "Tap a row to open drilldown actions for that day.": "Tippe eine Zeile, um Drilldown-Aktionen für diesen Tag zu öffnen.",
+        "Saved Live Tracks Unavailable": "Gespeicherte Live-Tracks nicht verfügbar",
+        "Days with tracked activity": "Tage mit aufgezeichneter Aktivität",
+        "Active Days": "Aktive Tage"
     ]
 }
