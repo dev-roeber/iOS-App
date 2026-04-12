@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [2026-04-12] — Deep Audit + Homescreen Widget + Live Activity Improvements + Overview Map Performance
+
+### Added
+- Homescreen Widget (`LH2GPXHomeWidget`): systemSmall + systemMedium, zeigt letzte Aufzeichnung (Distanz, Dauer, Datum), Deep-Link `lh2gpx://live`
+- `WidgetDataStore.swift`: App-Group UserDefaults (`group.de.roeber.LH2GPXWrapper`), graceful Fallback auf `.standard`
+- `TrackingStatus` Erweiterungen: `isPaused`, `uploadQueueCount`, `lastUploadSuccess` (backward-compat `decodeIfPresent`)
+- Live Activity UI: Pause-Indikator ("⏸ Pausiert"), Upload-Badge ("↑ N"), Pace-Label auf Lock Screen
+- ActivityKit Update-Throttling: ≤1 Update/5s (`ThrottleGate` in `ActivityManager`)
+- 4 neue `WidgetDataStoreTests`, 14 neue `LiveActivityTests`
+- `wrapper/Makefile`: dynamisches Device-Deploy via `xcrun devicectl` (CoreDevice UUIDs)
+- `.gitignore`: `xcuserdata/`, `*.xcuserstate`
+
+### Performance
+- Overview Map: progressive Loading (erste 100 Days sofort `.userInitiated`, Rest `.utility`)
+- Douglas-Peucker Simplification 50m für Overview (vs 15m Detail)
+- `OverviewMapRenderData.appending()` + `unionRegion`, `nonisolated buildRenderData()`
+- 294-Routes-Bug behoben: `prefix(100)` Cap entfernt
+
+### Infrastructure
+- `LocationHistory2GPX` (Python Pipeline) auf privat gesetzt
+- 570 Tests total, 0 Failures ✅
+
 ## [2026-04-12] — KMZ Export + Live Activity Widget UI + Xcode Setup
 
 ### Added
