@@ -15,7 +15,7 @@ private struct TrackingLockScreenView: View {
             Image(systemName: "location.north.fill")
                 .font(.title2)
                 .foregroundStyle(.white)
-                .symbolEffect(.pulse, options: .repeating)
+                // symbolEffect requires iOS 17+; omitted for 16.2 compat
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(context.attributes.trackName.isEmpty ? "Live Track" : context.attributes.trackName)
@@ -93,17 +93,17 @@ struct TrackingLiveActivityWidget: Widget {
                 }
             } compactLeading: {
                 Image(systemName: "location.fill.viewfinder")
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
             } compactTrailing: {
                 Text(context.state.formattedDistance)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.primary)
             } minimal: {
                 Image(systemName: "location.fill.viewfinder")
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
             }
             .widgetURL(URL(string: "lh2gpx://live"))
-            .keylineTint(.accentColor)
+            .keylineTint(Color.accentColor)
         }
     }
 }
