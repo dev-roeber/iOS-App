@@ -131,7 +131,8 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 ### Noch nicht umgesetzt
 
 - **Map Matching + Dynamic Island / Live Activity** — ✅ abgeschlossen (2026-04-12); Douglas-Peucker PathSimplification, AppDayPathDisplayMode Toggle, ActivityKit TrackingAttributes + ActivityManager, NSSupportsLiveActivities, 16 neue Tests, 546 gesamt
-- KMZ-Export
+- KMZ-Export — ✅ abgeschlossen (2026-04-12); KMZBuilder (ZIPFoundation), KMZDocument (BinaryExportDocument), ExportFormat.kmz, 6 neue Tests
+- Live Activity Widget UI — ✅ Swift-Dateien vorhanden (wrapper/LH2GPXWidget/); Xcode Target manuell anzulegen (docs/WIDGET_XCODE_SETUP.md)
 - weitere Insight-Arbeit: Apple-Host-Verifikation fuer den jetzt verdrahteten Drilldown-/Chart-Share-Flow sowie optional spaeter map-linked Cross-Filtering
 - globale Zeitraumfilter-Verdrahtung fuer `Days` bleibt offen; aktuell sichtbar verdrahtet sind `Overview`, `Insights` und `Export`
 - breitere Lokalisierungsabdeckung und eine strengere Lokalisierungspruefung

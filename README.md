@@ -32,7 +32,7 @@ Das Swift Package im Root (`Package.swift`) wird automatisch als lokale Dependen
 - **Map-Matching Beta**: Douglas-Peucker Pfadvereinfachung (epsilon=15m), Toggle Original/Angepasst
 - **Live-Aufzeichnung**: ActivityKit Live Activity (iOS 16.1+), Background-Recording, optionaler HTTP(S)-Upload
 - **Insights**: Overview, Patterns, Breakdowns, KPI-Karten, Top Days, Monatstrends, Heatmap
-- **Export**: GPX, TCX, KML, GeoJSON, CSV; Filter nach Datum, Genauigkeit, Aktivitaetstyp, Bounding Box
+- **Export**: GPX, TCX, KML, KMZ, GeoJSON, CSV; Filter nach Datum, Genauigkeit, Aktivitaetstyp, Bounding Box
 - **Google Maps Export-Hilfe**: Inline-Anleitung fuer iPhone-Export aus Google Maps
 - **Lokalisierung**: Deutsch / Englisch
 
