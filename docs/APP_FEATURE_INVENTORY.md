@@ -130,6 +130,10 @@ Present:
 - dedicated `Heatmap` sheet for imported history on iOS 17+/macOS 14+ with precomputed LOD grids, smoothed aggregated polygon cells, viewport-capped cell selection, calmer low-zoom rendering, local opacity/radius controls, `fit to data`, a small density legend, and stronger nonlinear opacity/intensity/color mapping with earlier low-/mid-density hue separation so sparse detail zoom stays visible and more differentiated instead of fading to near-grey
 - Heatmap Mode and Radius controls rendered as Capsule chip buttons (matching `AppDayFilterChipsView` style); control overlay is scrollable in landscape via `ScrollView(.vertical)`
 
+- path display mode toggle in day-detail map: `.original` (raw coordinates) vs. `.mapMatched` (`Simplified (Beta)`); persisted via `AppDayPathDisplayMode` in UserDefaults
+- in `.mapMatched` mode: GPS outlier pre-filter (`PathFilter.removeOutliers`, distance-based, default maxJumpMeters=5000) applied before Douglas-Peucker simplification (epsilon=15m); fallback to original sequence if fewer than 2 points remain after filtering
+- NOTE: no road/path network snapping; `Simplified (Beta)` is geometric simplification + outlier filtering only
+
 Not present:
 - offline tile packs
 - persistent heatmap overlay toggle inside the day-detail map

@@ -29,7 +29,7 @@ Das Swift Package im Root (`Package.swift`) wird automatisch als lokale Dependen
 
 - **Import**: Google Timeline JSON/ZIP, LH2GPX App-Export JSON/ZIP, GPX 1.1, TCX 2.0
 - **Tagesansicht**: Days-Liste (absteigend), Day-Detail mit Karte, Suche, Favoriten, Filterchips
-- **Pfadmodus im Day-Detail**: Originalpfad oder vereinfachte Darstellung (`Simplified (Beta)`); kein echtes Straßen-/Wege-Snapping
+- **Pfadmodus im Day-Detail**: Originalpfad oder vereinfachte Darstellung (`Simplified (Beta)`); im vereinfachten Modus: GPS-Ausreisserfilter (distanzbasiert, PathFilter) + Douglas-Peucker; kein echtes Straßen-/Wege-Snapping
 - **Live-Aufzeichnung**: ActivityKit Live Activity / Dynamic Island (iOS 16.1+), Fullscreen-Live-Karte, Follow-Location, optionaler HTTP(S)-Upload
 - **Insights**: Overview, Patterns, Breakdowns, KPI-Karten, Top Days, Monatstrends ohne 24-Monats-Cap, Heatmap
 - **Export**: GPX, TCX, KML, KMZ, GeoJSON, CSV; Filter nach Datum, Genauigkeit, Aktivitaetstyp, Bounding Box
@@ -47,7 +47,7 @@ Sources/
   LocationHistoryConsumerDemoSupport/  — Demo-Harness, Golden-Fixture
   LocationHistoryConsumerApp/          — Produkt-App-Einstieg
   LocationHistoryConsumerDemo/         — Demo-Einstieg
-  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Linux-Nachweis: 575 Tests, 2 Skips, 0 Failures)
+  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Linux-Nachweis: 616 Tests, 0 Skips, 0 Failures)
 Fixtures/contract/                     — Contract-Fixtures, Golden-JSONs
 wrapper/LH2GPXWrapper.xcodeproj        — Xcode Wrapper (Signing, Bundle, App-Icon)
 docs/                                  — Feature-Inventar, Runbook, Checklisten
@@ -69,7 +69,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
 Aktueller Linux-Nachweis fuer dieses Repo:
-- `swift test` → `575` Tests, `2` Skips, `0` Failures
+- `swift test` → `616` Tests, `0` Skips, `0` Failures
 
 ## Historische Vorstufen
 

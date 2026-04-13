@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [2026-04-13] — PathFilter: GPS-Jump-Filter als Vorverarbeitung im mapMatched-Modus
+
+### Hinzugefuegt
+- `PathFilter.swift` (neu): `removeOutliers(_:maxJumpMeters:)` auf `LocationCoordinate2D` (Linux-kompatibel) entfernt GPS-Ausreisser mit Sprung > 5000 m; `#if canImport(CoreLocation)` Wrapper fuer `CLLocationCoordinate2D`
+- `AppDayMapView.swift`: im `.mapMatched`-Zweig wird `path.coordinates` jetzt zuerst durch `PathFilter.removeOutliers(...)` gefiltert, dann durch `PathSimplification.douglasPeucker(...)`; `.original`-Zweig bleibt unveraendert
+- Fallback: wenn nach dem Filter < 2 Punkte uebrig bleiben, wird die Original-Sequenz unveraendert weitergereicht
+- `PathFilterTests.swift`: 9 Unit-Tests (Edge-Cases, normale Tracks, Ausreisser-Entfernung, Fallback, Custom-Threshold) — 616 Tests gesamt, 0 Failures
+
+### Hinweis
+- Kein echtes Strassen-/Weg-Snapping — die `Simplified (Beta)`-Darstellung bleibt geometrische Vereinfachung + Ausreisserfilterung ohne Road-Network-Abgleich
+- Kein Device-Run; Xcode iOS Build + swift build + swift test (macOS) gruen (Commit cf66dd1)
+
 ## [2026-04-13] — Live-Ausbau: Auto-Resume UX + Session-Restore
 
 ### Hinzugefuegt

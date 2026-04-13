@@ -15,7 +15,8 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [x] Overview Map Route Budget Fix — abgeschlossen 2026-04-12 (OverviewMapRenderProfile, Grid-Selektion, Douglas-Peucker)
 - [ ] Chart-Share per ImageRenderer auf Apple-Host verifizieren
 - [ ] Split-Repos (LocationHistory2GPX-iOS, LH2GPXWrapper) als historisch/mirror markieren
-- [ ] echtes Road-/Path-Matching konzipieren; aktuelle `Simplified (Beta)`-Darstellung bleibt bewusst nur Pfadvereinfachung
+- [x] GPS-Jump-Filter als Vorverarbeitungsstufe — `PathFilter.removeOutliers` (distanzbasiert, maxJumpMeters=5000) vor Douglas-Peucker im `.mapMatched`-Modus; 9 Tests, kein echtes Snapping (2026-04-13, cf66dd1)
+- [ ] echtes Road-/Path-Matching (Strassen-/Weg-Snapping) konzipieren; aktuelle `Simplified (Beta)`-Darstellung ist GPS-Ausreisserfilterung + Pfadvereinfachung, kein Road-Network-Abgleich
 - [x] Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart — sauberes Modell umgesetzt: SessionID+Timestamp in UserDefaults, Banner mit relativem Zeitstempel beim Start, "Aufzeichnung fortsetzen" / "Ignorieren" (kein blindes Auto-Resume, bewusst user-controlled) (2026-04-13)
 - [ ] app-weite Landscape-Verifikation fuer jede Hauptseite auf Apple-Hardware nachziehen
 
