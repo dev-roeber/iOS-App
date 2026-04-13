@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [2026-04-13] — Xcode Cloud Hardprüfung + Doku-Korrekturen
+
+### Behoben
+- `wrapper/ci_scripts/ci_pre_build.sh` → umbenannt in `ci_pre_xcodebuild.sh`: `ci_pre_build.sh` ist kein gültiger Xcode Cloud Skriptname und würde stillschweigend ignoriert; korrekte Namen sind `ci_post_clone.sh`, `ci_pre_xcodebuild.sh`, `ci_post_xcodebuild.sh`
+- `docs/XCODE_CLOUD_RUNBOOK.md`: beide `ci_pre_build.sh`-Referenzen auf `ci_pre_xcodebuild.sh` korrigiert; Hinweis auf gültige Skriptnamen ergänzt
+- `wrapper/docs/TESTFLIGHT_RUNBOOK.md`: falscher Deployment Target `iOS 26.2` auf `iOS 16.0 / 16.2` (App/Widget) korrigiert
+- `wrapper/docs/LOCAL_IPHONE_RUNBOOK.md`: veralteter Pfad `~/repos/LocationHistory2GPX-Monorepo` (2×) → `~/Desktop/XCODE/iOS-App`
+- `wrapper/docs/TESTFLIGHT_RUNBOOK.md`: veralteter Pfad `~/repos/LocationHistory2GPX-Monorepo` (2×) → `~/Desktop/XCODE/iOS-App`
+- `docs/XCODE_RUNBOOK.md`: veralteter Pfad `~/repos/LocationHistory2GPX-Monorepo` (2×) → `~/Desktop/XCODE/iOS-App`
+- `wrapper/README.md`: veralteter Pfad `~/repos/LocationHistory2GPX-Monorepo` → `~/Desktop/XCODE/iOS-App`
+
+### Verifikation
+- `swift test`: 616 Tests, 0 Failures — `xcodebuild generic/platform=iOS`: BUILD SUCCEEDED
+
 ## [2026-04-13] — Apple-Developer-Basis + Xcode Cloud Setup
 
 ### Behoben

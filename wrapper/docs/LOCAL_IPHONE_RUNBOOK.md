@@ -42,7 +42,7 @@ Verifizierung auf iPhone 12 Pro Max und iPhone 15 Pro Max ist nur auf echtem Ger
 ### Simulator starten (CLI)
 
 ```bash
-cd ~/repos/LocationHistory2GPX-Monorepo
+cd ~/Desktop/XCODE/iOS-App
 
 # Build + Launch im Simulator
 xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj \
@@ -107,7 +107,7 @@ xcodebuild test \
 ### Deploy per CLI
 
 ```bash
-cd ~/repos/LocationHistory2GPX-Monorepo
+cd ~/Desktop/XCODE/iOS-App
 
 xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj \
   -scheme LH2GPXWrapper \

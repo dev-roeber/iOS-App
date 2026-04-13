@@ -41,7 +41,7 @@ oder den aktiven Developer Directory lokal auf Xcode umstellen.
 Der vorgesehene Einstieg bleibt das Swift Package, nicht ein separates `.xcodeproj`.
 
 ```bash
-cd ~/repos/LocationHistory2GPX-Monorepo
+cd ~/Desktop/XCODE/iOS-App
 open Package.swift
 ```
 
@@ -187,7 +187,7 @@ Das ersetzt die fruehere ad-hoc-Methode, das gebaute Binary manuell in eine temp
 Die Xcode-IDE bleibt der bevorzugte manuelle Weg. Fuer reproduzierbare CLI-Pruefung koennen dieselben Schemes ueber das echte Xcode gebaut werden:
 
 ```bash
-cd ~/repos/LocationHistory2GPX-Monorepo
+cd ~/Desktop/XCODE/iOS-App
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -list
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test

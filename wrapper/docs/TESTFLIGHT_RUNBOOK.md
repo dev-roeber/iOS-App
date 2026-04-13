@@ -13,7 +13,7 @@ Stand: 2026-04-12 | Phase 20
 | Marketing Version | `1.0` | project.pbxproj |
 | Build Number | `1` | project.pbxproj |
 | Display Name | `LH2GPX` | project.pbxproj |
-| Deployment Target | iOS 26.2 | project.pbxproj |
+| Deployment Target | iOS 16.0 (App, Tests); iOS 16.2 (Widget) | project.pbxproj |
 | Signing | Automatic, Team `XAGR3K7XDJ` | project.pbxproj |
 | PrivacyInfo.xcprivacy | lokal sichtbar: kein Tracking, UserDefaults CA92.1, `PreciseLocation` fuer optionalen Live-Upload | PrivacyInfo.xcprivacy |
 | App Icon | Map-Pin + "LH2GPX", 1024x1024 | Assets.xcassets/AppIcon.appiconset/ |
@@ -105,7 +105,7 @@ xcrun simctl list devices available "iOS 26.3" | grep "iPhone 17 Pro Max\|iPad P
 ### Screenshots reproduzieren (UI-Test)
 
 ```bash
-cd ~/repos/LocationHistory2GPX-Monorepo
+cd ~/Desktop/XCODE/iOS-App
 
 # iPhone 17 Pro Max
 # In LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift: deviceFolder = "iphone" (Standard)
@@ -141,7 +141,7 @@ cp /tmp/lh2gpx_screenshots/ipad/*.png wrapper/docs/appstore-screenshots/ipad/
 ## Archive-Build (lokal reproduzierbar)
 
 ```bash
-cd ~/repos/LocationHistory2GPX-Monorepo
+cd ~/Desktop/XCODE/iOS-App
 
 xcodebuild archive \
   -project wrapper/LH2GPXWrapper.xcodeproj \

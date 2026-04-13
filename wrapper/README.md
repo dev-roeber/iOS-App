@@ -56,7 +56,7 @@ In Xcode:
 
 Per CLI:
 ```bash
-cd ~/repos/LocationHistory2GPX-Monorepo
+cd ~/Desktop/XCODE/iOS-App
 
 xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj \
   -scheme LH2GPXWrapper \

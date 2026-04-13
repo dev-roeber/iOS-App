@@ -15,13 +15,15 @@ Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
 #### ✅ real eingerichtet / verifiziert (2026-04-13)
 
-- **UITests Bundle ID bereinigt**: `xagr3k7xdj.de.roeber.lh2gpxwrapper.uitests` → `de.roeber.LH2GPXWrapper.UITests` (beide Konfigurationen Debug + Release in `project.pbxproj`)
+- **UITests Bundle ID bereinigt**: `xagr3k7xdj.de.roeber.lh2gpxwrapper.uitests` → `de.roeber.LH2GPXWrapper.UITests` (beide Konfigurationen Debug + Release in `project.pbxproj`) — Commit `d50dac3`
 - **Bundle IDs konsistent**: Main `de.roeber.LH2GPXWrapper`, Widget `de.roeber.LH2GPXWrapper.Widget`, Tests `de.roeber.LH2GPXWrapperTests`, UITests `de.roeber.LH2GPXWrapper.UITests`
 - **`.xcode-version`**: `26.3` in `wrapper/` — Xcode Cloud Version gepinnt
-- **`ci_scripts/`**: erstellt unter `wrapper/ci_scripts/`, alle 3 Scripts ausführbar (`ci_post_clone.sh`, `ci_pre_build.sh`, `ci_post_xcodebuild.sh`)
-- **Build-Nummern-Injektion**: `ci_pre_build.sh` injiziert `CI_BUILD_NUMBER` in `CFBundleVersion` beider Plists (App + Widget)
-- **Xcode Cloud Runbook**: erstellt unter `docs/XCODE_CLOUD_RUNBOOK.md`
-- **Xcode Cloud Kompatibilität geprüft**: lokale SPM-Abhängigkeit (`relativePath = ".."`) ist Xcode-Cloud-kompatibel
+- **`ci_scripts/`**: erstellt unter `wrapper/ci_scripts/`, alle 3 Scripts ausführbar mit korrekten Xcode-Cloud-Namen: `ci_post_clone.sh`, `ci_pre_xcodebuild.sh` (Build-Nummern-Injektion), `ci_post_xcodebuild.sh` — Commit `d50dac3` + Korrektur `ci_pre_build.sh→ci_pre_xcodebuild.sh`
+- **Xcode Cloud Runbook**: erstellt unter `docs/XCODE_CLOUD_RUNBOOK.md` (inkl. Hinweis auf gültige Skriptnamen)
+- **Xcode Cloud Kompatibilität geprüft**: lokale SPM-Abhängigkeit (`relativePath = ".."`) ist Xcode-Cloud-kompatibel; `PBXFileSystemSynchronizedRootGroup` schließt `PrivacyInfo.xcprivacy` automatisch ein (kein expliziter pbxproj-Eintrag nötig)
+- **Falsche Deployment-Target-Doku behoben**: `TESTFLIGHT_RUNBOOK.md` sagte `iOS 26.2` statt korrekter `16.0 / 16.2`
+- **Veraltete Repo-Pfade bereinigt**: 7 Vorkommen von `~/repos/LocationHistory2GPX-Monorepo` in 4 Dateien → `~/Desktop/XCODE/iOS-App`
+- **swift test**: 616 Tests, 0 Failures — `xcodebuild generic/platform=iOS`: BUILD SUCCEEDED
 
 #### ⚠️ manuelle Apple-Schritte (blocking für Xcode Cloud Start)
 

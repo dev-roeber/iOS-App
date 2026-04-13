@@ -11,8 +11,8 @@ iOS-App/                        ← git root (dieses Repo)
 │   ├── LH2GPXWrapper.xcodeproj ← Xcode-Projekt (hier Xcode Cloud zeigen)
 │   ├── .xcode-version          ← "26.3" — Xcode Cloud Versionspinning
 │   └── ci_scripts/             ← Xcode Cloud Hooks
-│       ├── ci_post_clone.sh    ← Post-Clone (derzeit No-op, dokumentiert)
-│       ├── ci_pre_build.sh     ← Build-Nummer aus CI_BUILD_NUMBER injizieren
+│       ├── ci_post_clone.sh      ← Post-Clone (derzeit No-op, dokumentiert)
+│       ├── ci_pre_xcodebuild.sh  ← Build-Nummer aus CI_BUILD_NUMBER injizieren
 │       └── ci_post_xcodebuild.sh ← Post-Build Status-Logging
 ```
 
@@ -88,10 +88,17 @@ Vor dem ersten TestFlight-Upload müssen in App Store Connect gesetzt sein:
 
 ## Build-Nummern-Logik
 
-`ci_pre_build.sh` injiziert `CI_BUILD_NUMBER` (Xcode Cloud Auto-Variable)
+`ci_pre_xcodebuild.sh` injiziert `CI_BUILD_NUMBER` (Xcode Cloud Auto-Variable)
 in `CFBundleVersion` beider Info.plist-Dateien (App + Widget).
 `MARKETING_VERSION` (1.0) bleibt unberührt — nur die Build-Nummer wird
 automatisch hochgezählt.
+
+**Wichtig:** Xcode Cloud erkennt nur diese exakten Skriptnamen:
+- `ci_post_clone.sh`
+- `ci_pre_xcodebuild.sh`
+- `ci_post_xcodebuild.sh`
+
+Andere Namen (z.B. `ci_pre_build.sh`) werden stillschweigend ignoriert.
 
 App Store Connect erfordert eindeutige `(version, build)`-Tupel.
 
