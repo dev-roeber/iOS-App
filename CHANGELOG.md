@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## [2026-04-13] — Apple-Developer-Basis + Xcode Cloud Setup
+
+### Behoben
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`: UITests Bundle ID `xagr3k7xdj.de.roeber.lh2gpxwrapper.uitests` → `de.roeber.LH2GPXWrapper.UITests` (beide Konfigurationen Debug + Release); Xcode hatte beim Anlegen des Targets die Team-ID als Prefix generiert
+
+### Hinzugefuegt
+- `wrapper/.xcode-version`: pinnt Xcode Cloud auf Version 26.3 (entspricht lokal installiertem Xcode)
+- `wrapper/ci_scripts/ci_post_clone.sh`: Xcode Cloud Post-Clone-Hook (dokumentiert lokale SPM-Abhängigkeit, erweiterbar)
+- `wrapper/ci_scripts/ci_pre_build.sh`: injiziert `CI_BUILD_NUMBER` als `CFBundleVersion` in App- und Widget-Info.plist; bei lokalem Build ohne `CI_BUILD_NUMBER` No-op
+- `wrapper/ci_scripts/ci_post_xcodebuild.sh`: Post-Build-Logging mit Exit-Code und Action
+- `docs/XCODE_CLOUD_RUNBOOK.md`: vollständiges Runbook für Xcode Cloud Setup inkl. manueller GUI-Schritte, Signing-Tabelle, Build-Nummern-Logik, Kompatibilitätsprüfung
+
+### Doku aktualisiert
+- `docs/APPLE_VERIFICATION_CHECKLIST.md`: 2026-04-13 Block mit verifizierten Schritten und offenen manuellen Apple-Gates
+- `NEXT_STEPS.md`: Bundle-ID-Fix und Xcode-Cloud-Vorbereitungsschritte als erledigt markiert; manuelle Apple-Schritte als offene Aufgaben eingetragen
+
 ## [2026-04-13] — PathFilter: GPS-Jump-Filter als Vorverarbeitung im mapMatched-Modus
 
 ### Hinzugefuegt

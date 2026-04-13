@@ -7,6 +7,10 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [x] Widget Extension Target / eingebetteter Widget-Build — im Projekt vorhanden; `LH2GPXWidget` wird per `xcodebuild` mitgebaut (Stand 2026-04-12)
 - [x] Widget Privacy Manifest — `wrapper/LH2GPXWidget/PrivacyInfo.xcprivacy` erstellt und im `.xcodeproj` verankert (UserDefaults CA92.1, kein Tracking) (verifiziert 2026-04-12)
 - [x] Device Smoke-Test (App startet, kein Crash) — iPhone 15 Pro Max (00008130-00163D0A0461401C): installiert, gestartet, PID stabil (verifiziert 2026-04-12)
+- [x] UITests Bundle ID bereinigt — `xagr3k7xdj.de.roeber.lh2gpxwrapper.uitests` → `de.roeber.LH2GPXWrapper.UITests` (2026-04-13)
+- [x] Xcode Cloud Vorbereitung — `wrapper/.xcode-version` (26.3), `wrapper/ci_scripts/` (post_clone, pre_build, post_xcodebuild), `docs/XCODE_CLOUD_RUNBOOK.md` (2026-04-13)
+- [ ] **Xcode Cloud Workflow anlegen (manuell)** — Product → Xcode Cloud → Create Workflow; Details in `docs/XCODE_CLOUD_RUNBOOK.md`
+- [ ] **App ID + App Group im Developer Portal registrieren** — `de.roeber.LH2GPXWrapper` + `group.de.roeber.LH2GPXWrapper` (einmalig, manuell)
 - [ ] Apple-UI-Verifikation: Range-Picker, Datumsbereich-Sheet auf echtem iPhone
 - [x] KMZ-Export — abgeschlossen 2026-04-12 (KMZBuilder + KMZDocument + Tests)
 - [x] App Groups Entitlements / Widget-Datenaustausch — abgeschlossen 2026-04-12 (LH2GPXWrapper.entitlements + LH2GPXWidget.entitlements + pbxproj CODE_SIGN_ENTITLEMENTS)

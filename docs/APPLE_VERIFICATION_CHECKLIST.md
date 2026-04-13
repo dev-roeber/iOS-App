@@ -9,6 +9,27 @@ Diese Checkliste trennt klar zwischen:
 
 Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
+## Statusstand 2026-04-13 — Apple-Developer-Basis + Xcode Cloud Setup
+
+### Verifikation 2026-04-13
+
+#### ✅ real eingerichtet / verifiziert (2026-04-13)
+
+- **UITests Bundle ID bereinigt**: `xagr3k7xdj.de.roeber.lh2gpxwrapper.uitests` → `de.roeber.LH2GPXWrapper.UITests` (beide Konfigurationen Debug + Release in `project.pbxproj`)
+- **Bundle IDs konsistent**: Main `de.roeber.LH2GPXWrapper`, Widget `de.roeber.LH2GPXWrapper.Widget`, Tests `de.roeber.LH2GPXWrapperTests`, UITests `de.roeber.LH2GPXWrapper.UITests`
+- **`.xcode-version`**: `26.3` in `wrapper/` — Xcode Cloud Version gepinnt
+- **`ci_scripts/`**: erstellt unter `wrapper/ci_scripts/`, alle 3 Scripts ausführbar (`ci_post_clone.sh`, `ci_pre_build.sh`, `ci_post_xcodebuild.sh`)
+- **Build-Nummern-Injektion**: `ci_pre_build.sh` injiziert `CI_BUILD_NUMBER` in `CFBundleVersion` beider Plists (App + Widget)
+- **Xcode Cloud Runbook**: erstellt unter `docs/XCODE_CLOUD_RUNBOOK.md`
+- **Xcode Cloud Kompatibilität geprüft**: lokale SPM-Abhängigkeit (`relativePath = ".."`) ist Xcode-Cloud-kompatibel
+
+#### ⚠️ manuelle Apple-Schritte (blocking für Xcode Cloud Start)
+
+1. **Xcode Cloud Workflow anlegen**: Product → Xcode Cloud → Create Workflow (Xcode.app + Apple ID Login)
+2. **App ID registrieren**: `de.roeber.LH2GPXWrapper` + Capabilities: App Groups, Background Modes (Location)
+3. **App Group registrieren**: `group.de.roeber.LH2GPXWrapper` im Developer Portal
+4. → Details: `docs/XCODE_CLOUD_RUNBOOK.md`
+
 ## Statusstand 2026-04-12 — Device Smoke-Test + Widget Privacy Manifest
 
 ### Verifikation 2026-04-12
