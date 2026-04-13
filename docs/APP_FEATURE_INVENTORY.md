@@ -133,6 +133,7 @@ Present:
 - path display mode toggle in day-detail map: `.original` (raw coordinates) vs. `.mapMatched` (`Simplified (Beta)`); persisted via `AppDayPathDisplayMode` in UserDefaults
 - in `.mapMatched` mode: GPS outlier pre-filter (`PathFilter.removeOutliers`, distance-based, default maxJumpMeters=5000) applied before Douglas-Peucker simplification (epsilon=15m); fallback to original sequence if fewer than 2 points remain after filtering
 - NOTE: no road/path network snapping; `Simplified (Beta)` is geometric simplification + outlier filtering only
+- Historien-Track-Editor Overlay: `ImportedPathMutation` (Codable model), `AppImportedPathMutationStore` (UserDefaults-Persistenz), "Route entfernen"-Button mit Confirmation-Alert in `AppDayDetailView` (Portrait + Landscape); original `AppExport` bleibt unverändert; `onRemovePath`-Callback an Eltern-View
 
 Not present:
 - offline tile packs

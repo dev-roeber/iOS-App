@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [2026-04-13] — Historien-Track-Editor Slice: importierte Routen ausblenden
+
+### Hinzugefuegt
+- `ImportedPathMutation.swift` (neu in `LocationHistoryConsumer`): `ImportedPathDeletion` + `ImportedPathMutationSet` (Codable/Equatable); `DayDetailViewState.removingDeletedPaths(for:)` filtert Pfade ohne AppExport-Mutation
+- `AppImportedPathMutationStore.swift` (neu in `LocationHistoryConsumerAppSupport`): `ObservableObject`, UserDefaults-JSON-Persistenz, `addDeletion()` (Duplikat-sicher) + `reset()`
+- `AppDayDetailView`: "Route entfernen"-Button in `pathCard` (Portrait + Landscape); Confirmation-Alert; `mutations: ImportedPathMutationSet` + `onRemovePath` als optionale Parameter (bestehende Aufrufer bleiben unverändert)
+- `AppLanguageSupport`: DE-Übersetzungen für `"Remove Route"`, `"Remove"` und die Alert-Message
+- `ImportedPathMutationTests.swift`: 7 neue Tests (623 gesamt, 0 Skips, 0 Failures)
+
+### Architektur
+- Original-AppExport wird nie verändert; Mutations-Overlay wird nur zur Darstellungszeit angewandt
+- `pathIndex` = 0-basierter Index in `Day.paths`; Out-of-bounds-Indizes und fremde dayKeys werden ignoriert
+- Persistenz konsistent mit `AppPreferences`-Muster (UserDefaults + JSONEncoder/Decoder)
+
 ## [2026-04-13] — Xcode Cloud Hardprüfung + Doku-Korrekturen
 
 ### Behoben
