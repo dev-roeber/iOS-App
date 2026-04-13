@@ -18,6 +18,9 @@ public struct AppDayDetailView: View {
     let onToggleFavorite: (() -> Void)?
     let liveLocation: LiveLocationFeatureModel?
     let onOpenSavedTracks: (() -> Void)?
+    let mutations: ImportedPathMutationSet
+    let onRemovePath: ((Int) -> Void)?
+    @State private var confirmRemovePathIndex: Int? = nil
 
     public init(
         detail: DayDetailViewState?,
@@ -28,7 +31,9 @@ public struct AppDayDetailView: View {
         isFavorited: Bool = false,
         onToggleFavorite: (() -> Void)? = nil,
         liveLocation: LiveLocationFeatureModel? = nil,
-        onOpenSavedTracks: (() -> Void)? = nil
+        onOpenSavedTracks: (() -> Void)? = nil,
+        mutations: ImportedPathMutationSet = .empty,
+        onRemovePath: ((Int) -> Void)? = nil
     ) {
         self.detail = detail
         self.mapData = mapData
@@ -39,6 +44,8 @@ public struct AppDayDetailView: View {
         self.onToggleFavorite = onToggleFavorite
         self.liveLocation = liveLocation
         self.onOpenSavedTracks = onOpenSavedTracks
+        self.mutations = mutations
+        self.onRemovePath = onRemovePath
     }
 
     init(detail: DayDetailViewState) {
@@ -51,29 +58,52 @@ public struct AppDayDetailView: View {
         self.onToggleFavorite = nil
         self.liveLocation = nil
         self.onOpenSavedTracks = nil
+        self.mutations = .empty
+        self.onRemovePath = nil
     }
 
     public var body: some View {
-        if let detail {
-            if detail.hasContent {
-                contentView(detail)
+        Group {
+            if let detail {
+                if detail.hasContent {
+                    contentView(detail)
+                } else {
+                    emptyDayState(
+                        t("Nothing Recorded"),
+                        message: t("This day has no visits, activities or paths in the export."),
+                        recovery: onBackToOverview
+                    )
+                }
+            } else if hasDays {
+                emptyDayState(
+                    t("Select a Day"),
+                    message: t("Choose a day from the list to view details.")
+                )
             } else {
                 emptyDayState(
-                    t("Nothing Recorded"),
-                    message: t("This day has no visits, activities or paths in the export."),
-                    recovery: onBackToOverview
+                    t("No Day Entries"),
+                    message: t("Import a file with day entries to view details.")
                 )
             }
-        } else if hasDays {
-            emptyDayState(
-                t("Select a Day"),
-                message: t("Choose a day from the list to view details.")
+        }
+        .alert(
+            t("Remove Route"),
+            isPresented: Binding(
+                get: { confirmRemovePathIndex != nil },
+                set: { if !$0 { confirmRemovePathIndex = nil } }
             )
-        } else {
-            emptyDayState(
-                t("No Day Entries"),
-                message: t("Import a file with day entries to view details.")
-            )
+        ) {
+            Button(t("Remove"), role: .destructive) {
+                if let idx = confirmRemovePathIndex {
+                    onRemovePath?(idx)
+                }
+                confirmRemovePathIndex = nil
+            }
+            Button(t("Cancel"), role: .cancel) {
+                confirmRemovePathIndex = nil
+            }
+        } message: {
+            Text(t("This route will be hidden from this day. You can restore all changes by resetting imported data."))
         }
     }
 
@@ -175,15 +205,18 @@ public struct AppDayDetailView: View {
                 }
             }
 
-            if !detail.paths.isEmpty {
-                detailSection(t("Routes"), icon: "location.north.line", count: detail.paths.count) {
+            let deletedLandscape = Set(mutations.deletions.filter { $0.dayKey == detail.date }.map { $0.pathIndex })
+            let visibleLandscape = detail.paths.enumerated().filter { !deletedLandscape.contains($0.offset) }
+            if !visibleLandscape.isEmpty {
+                detailSection(t("Routes"), icon: "location.north.line", count: visibleLandscape.count) {
                     routeSelectionSummary(detail)
-                    ForEach(Array(detail.paths.enumerated()), id: \.offset) { index, path in
+                    ForEach(Array(visibleLandscape), id: \.offset) { item in
                         pathCard(
-                            path,
+                            item.element,
                             dayIdentifier: detail.date,
-                            routeIndex: index,
-                            availableRouteIndices: exportableRouteIndices(for: detail)
+                            routeIndex: item.offset,
+                            availableRouteIndices: exportableRouteIndices(for: detail),
+                            onRemove: { confirmRemovePathIndex = item.offset }
                         )
                     }
                 }
@@ -271,15 +304,18 @@ public struct AppDayDetailView: View {
                 }
             }
 
-            if !detail.paths.isEmpty {
-                detailSection(t("Routes"), icon: "location.north.line", count: detail.paths.count) {
+            let deletedPortrait = Set(mutations.deletions.filter { $0.dayKey == detail.date }.map { $0.pathIndex })
+            let visiblePortrait = detail.paths.enumerated().filter { !deletedPortrait.contains($0.offset) }
+            if !visiblePortrait.isEmpty {
+                detailSection(t("Routes"), icon: "location.north.line", count: visiblePortrait.count) {
                     routeSelectionSummary(detail)
-                    ForEach(Array(detail.paths.enumerated()), id: \.offset) { index, path in
+                    ForEach(Array(visiblePortrait), id: \.offset) { item in
                         pathCard(
-                            path,
+                            item.element,
                             dayIdentifier: detail.date,
-                            routeIndex: index,
-                            availableRouteIndices: exportableRouteIndices(for: detail)
+                            routeIndex: item.offset,
+                            availableRouteIndices: exportableRouteIndices(for: detail),
+                            onRemove: { confirmRemovePathIndex = item.offset }
                         )
                     }
                 }
@@ -454,7 +490,8 @@ public struct AppDayDetailView: View {
         _ path: DayDetailViewState.PathItem,
         dayIdentifier: String,
         routeIndex: Int,
-        availableRouteIndices: Set<Int>
+        availableRouteIndices: Set<Int>,
+        onRemove: (() -> Void)? = nil
     ) -> some View {
         let isExportable = availableRouteIndices.contains(routeIndex)
         let hasExplicitSelection = exportSelection.routeSelections[dayIdentifier] != nil
@@ -512,6 +549,16 @@ public struct AppDayDetailView: View {
                 Text(t("This route has no exportable geometry."))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+            }
+            if let onRemove {
+                Divider()
+                    .padding(.vertical, 2)
+                Button(role: .destructive, action: onRemove) {
+                    Label(t("Remove Route"), systemImage: "trash")
+                        .font(.caption.weight(.medium))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.red)
             }
         }
     }

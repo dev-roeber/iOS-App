@@ -628,6 +628,10 @@ enum AppGermanTranslations {
         "Duration": "Dauer",
         "Session": "Sitzung",
         "Start recording to request location access and see your position here.": "Starte die Aufzeichnung, um Standortzugriff anzufordern und deine Position hier zu sehen.",
-        "Background Recording": "Hintergrundaufzeichnung"
+        "Background Recording": "Hintergrundaufzeichnung",
+        // Imported-path deletion (History Track Editor)
+        "Remove Route": "Route entfernen",
+        "Remove": "Entfernen",
+        "This route will be hidden from this day. You can restore all changes by resetting imported data.": "Diese Route wird für diesen Tag ausgeblendet. Du kannst alle Änderungen zurücksetzen, indem du die Importdaten-Änderungen zurücksetzt."
     ]
 }
