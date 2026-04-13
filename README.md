@@ -89,5 +89,5 @@ Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weite
 ## Bewusst offen
 
 - echtes Road-/Path-Matching a la Dawarich ist **nicht** implementiert
-- Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart ist **nicht** implementiert
+- Auto-Resume (blind/automatisch) einer Live-Aufzeichnung nach App-Neustart ist **nicht** implementiert; Session-Restore mit User-Kontrolle (Banner "Fortsetzen / Ignorieren") ist implementiert (2026-04-13)
 - Apple-Portal-/Signing-/TestFlight-/Device-UI-Themen sind auf diesem Linux-Host nicht voll verifizierbar und werden separat dokumentiert
