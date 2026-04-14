@@ -47,7 +47,7 @@ Sources/
   LocationHistoryConsumerDemoSupport/  — Demo-Harness, Golden-Fixture
   LocationHistoryConsumerApp/          — Produkt-App-Einstieg
   LocationHistoryConsumerDemo/         — Demo-Einstieg
-  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Linux-Nachweis: 616 Tests, 0 Skips, 0 Failures)
+  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 625 Tests, 0 Skips, 0 Failures)
 Fixtures/contract/                     — Contract-Fixtures, Golden-JSONs
 wrapper/LH2GPXWrapper.xcodeproj        — Xcode Wrapper (Signing, Bundle, App-Icon)
 docs/                                  — Feature-Inventar, Runbook, Checklisten
@@ -68,8 +68,8 @@ Fuer Apple-komplette Testlaeufe auf macOS mit Xcode:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
-Aktueller Linux-Nachweis fuer dieses Repo:
-- `swift test` → `616` Tests, `0` Skips, `0` Failures
+Aktueller Nachweis (macOS, 2026-04-14):
+- `swift test` → `625` Tests, `0` Skips, `0` Failures
 
 ## Historische Vorstufen
 
@@ -86,8 +86,16 @@ Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weite
 - `dev-roeber/LocationHistory2GPX` — Python Producer-Pipeline fuer Google Rohdaten
 - `dev-roeber/lh2gpx-live-receiver` — Live-Receiver-Server fuer optionalen Upload-Endpunkt
 
+## CI / Xcode Cloud
+
+- Xcode Cloud Minimal-CI vorbereitet: `wrapper/.xcode-version` (26.3), `wrapper/ci_scripts/` (post_clone, pre_xcodebuild, post_xcodebuild), `wrapper/CI.xctestplan` (Unit-Tests ohne UITests)
+- Workflow-Anlage und App-ID-Registrierung: manuell in Xcode.app / Apple Developer Portal — Details: `docs/XCODE_CLOUD_RUNBOOK.md`
+- `LH2GPXWrapperUITests` bewusst aus Cloud-Testplan ausgeschlossen (Location-Dialoge / Springboard-Interaktion in CI nicht stabil)
+
 ## Bewusst offen
 
-- echtes Road-/Path-Matching a la Dawarich ist **nicht** implementiert
+- echtes Road-/Path-Matching a la Dawarich ist **nicht** implementiert; `Simplified (Beta)` ist GPS-Ausreisserfilterung + Douglas-Peucker, kein Netzwerk-Snapping
 - Auto-Resume (blind/automatisch) einer Live-Aufzeichnung nach App-Neustart ist **nicht** implementiert; Session-Restore mit User-Kontrolle (Banner "Fortsetzen / Ignorieren") ist implementiert (2026-04-13)
-- Apple-Portal-/Signing-/TestFlight-/Device-UI-Themen sind auf diesem Linux-Host nicht voll verifizierbar und werden separat dokumentiert
+- Historien-Track-Editor: Mutations-Reset beim Import-Wechsel fehlt noch — Deletions persistieren über Datei-Wechsel hinaus, wenn dayKeys übereinstimmen
+- Export ignoriert Mutations bewusst — gelöschte Routen bleiben im GPX/KMZ-Export (AppExport ist immutable; Mutations sind display-only)
+- Apple-Portal-/Signing-/TestFlight-/Device-UI-Themen sind auf diesem macOS-Host nicht voll verifizierbar und werden separat dokumentiert
