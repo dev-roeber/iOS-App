@@ -204,7 +204,7 @@ public struct AppSessionState {
     /// App-wide export selection. Cleared automatically on new import or content clear.
     public var exportSelection: ExportSelectionState = ExportSelectionState()
     /// App-wide date range filter applied across Days, Insights and Export tabs.
-    public var historyDateRangeFilter: HistoryDateRangeFilter = .default
+    public var historyDateRangeFilter: HistoryDateRangeFilter = HistoryDateRangeFilter(preset: .last7Days)
     /// Active drilldown action originating from the Insights tab.
     /// Set when a user taps a drilldown target in Insights; cleared by the receiving tab.
     public var activeDrilldownFilter: InsightsDrilldownAction?
@@ -382,6 +382,9 @@ public struct AppSessionState {
         selectedDate = content.selectedDate
         exportSelection.clearAll()
         activeDrilldownFilter = nil
+        // Reset to the standard initial time window on every new import so the
+        // overview starts with a manageable, recent slice of data by default.
+        historyDateRangeFilter = HistoryDateRangeFilter(preset: .last7Days)
         isLoading = false
         let title: String
         if content.source == .demoFixture(name: AppContentLoader.defaultDemoFixtureName) {

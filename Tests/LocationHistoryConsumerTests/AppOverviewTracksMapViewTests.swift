@@ -247,6 +247,23 @@ final class AppOverviewTracksMapViewTests: XCTestCase {
         XCTAssertEqual(r1.totalRouteCount, r2.totalRouteCount,
                        "Two uncancelled runs on the same export must produce identical route counts")
     }
+
+    // MARK: - Loading phase model
+
+    func testLoadingPhaseAnalyzingHasNonEmptyDescription() {
+        XCTAssertFalse(OverviewMapLoadingPhase.analyzing.descriptionKey.isEmpty)
+    }
+
+    func testLoadingPhaseBuildingHasNonEmptyDescription() {
+        XCTAssertFalse(OverviewMapLoadingPhase.building.descriptionKey.isEmpty)
+    }
+
+    func testLoadingPhasesAreDifferent() {
+        XCTAssertNotEqual(
+            OverviewMapLoadingPhase.analyzing.descriptionKey,
+            OverviewMapLoadingPhase.building.descriptionKey
+        )
+    }
 }
 
 private extension DaySummary {

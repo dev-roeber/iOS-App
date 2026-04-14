@@ -2,12 +2,12 @@ import Foundation
 
 /// Preset time ranges for filtering the visible location history.
 public enum HistoryDateRangePreset: String, Identifiable, CaseIterable, Equatable {
-    case all = "all"
     case last7Days = "last7Days"
     case last30Days = "last30Days"
     case last90Days = "last90Days"
     case thisYear = "thisYear"
     case custom = "custom"
+    case all = "all"
 
     public var id: String { rawValue }
 

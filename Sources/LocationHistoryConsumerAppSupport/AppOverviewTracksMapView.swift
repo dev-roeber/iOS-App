@@ -17,6 +17,7 @@ struct AppOverviewTracksMapView: View {
 
     @State private var renderData: OverviewMapRenderData = .empty
     @State private var loadGeneration: UInt64 = 0
+    @State private var loadingPhase: OverviewMapLoadingPhase = .analyzing
 
     var body: some View {
         Group {
@@ -77,12 +78,26 @@ struct AppOverviewTracksMapView: View {
     }
 
     private var loadingPlaceholder: some View {
-        HStack(spacing: 10) {
-            ProgressView()
-                .controlSize(.small)
-            Text(t("Loading map…"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        VStack {
+            Spacer()
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text(t("Loading map…"))
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                }
+                ProgressView()
+                    .progressViewStyle(.linear)
+                    .tint(.accentColor)
+                Text(t(loadingPhase.descriptionKey))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(16)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.horizontal, 20)
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.secondary.opacity(0.05))
@@ -132,6 +147,7 @@ struct AppOverviewTracksMapView: View {
 
         loadGeneration &+= 1
         let generation = loadGeneration
+        loadingPhase = .analyzing
         renderData = .loading
 
         let allDates = daySummaries.map(\.date)
@@ -156,6 +172,7 @@ struct AppOverviewTracksMapView: View {
         // Never guard on Task.isCancelled alone: that would leave renderData
         // stuck at .loading when the view is the sole consumer of this task.
         guard generation == loadGeneration else { return }
+        loadingPhase = .building
         renderData = prepared
     }
 
@@ -198,6 +215,21 @@ struct OverviewMapRenderData {
         self.totalRouteCount = totalRouteCount
         self.isOptimized = isOptimized
         self.isLoading = isLoading
+    }
+}
+
+/// Represents the current computation phase shown in the loading card.
+enum OverviewMapLoadingPhase {
+    /// Collecting and scoring route candidates from the export data.
+    case analyzing
+    /// Committing the simplified overlays to the SwiftUI map.
+    case building
+
+    var descriptionKey: String {
+        switch self {
+        case .analyzing: return "Analysing routes…"
+        case .building:  return "Building map…"
+        }
     }
 }
 

@@ -111,4 +111,33 @@ final class HistoryDateRangeFilterTests: XCTestCase {
         XCTAssertNil(filter.fromDateString)
         XCTAssertNil(filter.toDateString)
     }
+
+    // MARK: - Chip order (All Time must be last)
+
+    func testChipOrderFirstPresetIsLast7Days() {
+        XCTAssertEqual(HistoryDateRangePreset.allCases.first, .last7Days,
+                       "The first chip must be Last 7 Days, not All Time")
+    }
+
+    func testChipOrderLastPresetIsAllTime() {
+        XCTAssertEqual(HistoryDateRangePreset.allCases.last, .all,
+                       "All Time must be the rightmost chip")
+    }
+
+    func testChipOrderCustomIsBeforeAllTime() {
+        let cases = HistoryDateRangePreset.allCases
+        guard let customIdx = cases.firstIndex(of: .custom),
+              let allIdx = cases.firstIndex(of: .all) else {
+            return XCTFail("Expected both .custom and .all in allCases")
+        }
+        XCTAssertLessThan(customIdx, allIdx, "Custom must appear before All Time")
+    }
+
+    // MARK: - App default
+
+    func testAppSessionStateDefaultIsLast7Days() {
+        let state = AppSessionState()
+        XCTAssertEqual(state.historyDateRangeFilter.preset, .last7Days,
+                       "Fresh AppSessionState must default to Last 7 Days")
+    }
 }
