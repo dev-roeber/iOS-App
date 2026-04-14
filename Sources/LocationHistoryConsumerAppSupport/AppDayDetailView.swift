@@ -109,7 +109,8 @@ public struct AppDayDetailView: View {
 
     @ViewBuilder
     private func contentView(_ detail: DayDetailViewState) -> some View {
-        let resolvedMapData = mapData ?? DayMapDataExtractor.mapData(from: detail)
+        let filteredDetail = detail.removingDeletedPaths(for: mutations)
+        let resolvedMapData = DayMapDataExtractor.mapData(from: filteredDetail)
 
         GeometryReader { geometry in
             let isLandscape = geometry.size.width > geometry.size.height

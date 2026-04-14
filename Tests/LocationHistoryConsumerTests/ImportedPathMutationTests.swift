@@ -87,6 +87,20 @@ final class ImportedPathMutationTests: XCTestCase {
         XCTAssertEqual(result.paths.count, 2)
     }
 
+    // MARK: - Map data integration
+
+    func testDeletedPathRemovedFromMapData() {
+        // Make two paths with enough points for a valid overlay (≥ 2 points each)
+        let detail = makeDetail(pathCount: 2)
+        let mutations = ImportedPathMutationSet(
+            deletions: [ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0)]
+        )
+        let filtered = detail.removingDeletedPaths(for: mutations)
+        let mapData = DayMapDataExtractor.mapData(from: filtered)
+        // Both paths have 2 points → each produces one overlay; after deletion only one remains
+        XCTAssertEqual(mapData.pathOverlays.count, 1)
+    }
+
     // MARK: - AppImportedPathMutationStore
 
     #if canImport(Combine)
