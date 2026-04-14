@@ -16,6 +16,7 @@ public struct AppContentSplitView: View {
     @State private var favoritedDayIDs: Set<String> = []
     @State private var overviewShowOnlyFavorites: Bool = false
     @State private var presentedSheet: PresentedSheet?
+    @StateObject private var pathMutationStore = AppImportedPathMutationStore()
 
     private let onOpen: () -> Void
     private let onLoadDemo: () -> Void
@@ -233,7 +234,13 @@ public struct AppContentSplitView: View {
                                 isFavorited: favoritedDayIDs.contains(date),
                                 onToggleFavorite: { toggleFavoriteDay(date) },
                                 liveLocation: liveLocation,
-                                onOpenSavedTracks: { presentSheet(.tracksLibrary) }
+                                onOpenSavedTracks: { presentSheet(.tracksLibrary) },
+                                mutations: pathMutationStore.currentMutations,
+                                onRemovePath: { index in
+                                    pathMutationStore.addDeletion(
+                                        ImportedPathDeletion(dayKey: date, pathIndex: index)
+                                    )
+                                }
                             )
                             .padding()
                         }
@@ -969,7 +976,13 @@ public struct AppContentSplitView: View {
                         isFavorited: favoritedDayIDs.contains(detail.date),
                         onToggleFavorite: { toggleFavoriteDay(detail.date) },
                         liveLocation: liveLocation,
-                        onOpenSavedTracks: { presentSheet(.tracksLibrary) }
+                        onOpenSavedTracks: { presentSheet(.tracksLibrary) },
+                        mutations: pathMutationStore.currentMutations,
+                        onRemovePath: { index in
+                            pathMutationStore.addDeletion(
+                                ImportedPathDeletion(dayKey: detail.date, pathIndex: index)
+                            )
+                        }
                     )
                 }
                 .padding()
