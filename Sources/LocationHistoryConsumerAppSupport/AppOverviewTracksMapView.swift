@@ -137,15 +137,25 @@ struct AppOverviewTracksMapView: View {
         let allDates = daySummaries.map(\.date)
         let filter = queryFilter
 
-        let prepared = await Task.detached(priority: .userInitiated) {
+        // Forward outer-task cancellation into the detached task so that
+        // buildRenderDataFast exits at the next cooperative-cancellation point
+        // instead of continuing to run after the .task(id:) body was torn down.
+        let innerTask = Task.detached(priority: .userInitiated) {
             OverviewMapPreparation.buildRenderDataFast(
                 for: Set(allDates),
                 export: content.export,
                 filter: filter
             )
-        }.value
+        }
+        let prepared = await withTaskCancellationHandler(
+            operation: { await innerTask.value },
+            onCancel: { innerTask.cancel() }
+        )
 
-        guard generation == loadGeneration, !Task.isCancelled else { return }
+        // Only skip publishing when a *newer* generation is already running.
+        // Never guard on Task.isCancelled alone: that would leave renderData
+        // stuck at .loading when the view is the sole consumer of this task.
+        guard generation == loadGeneration else { return }
         renderData = prepared
     }
 
@@ -382,13 +392,27 @@ enum OverviewMapPreparation {
             return OverviewMapRenderData(pathOverlays: [], region: region, totalRouteCount: 0)
         }
 
+        // Exit before the expensive simplification phase if the task was cancelled
+        // during collection (e.g. taskKey changed while iterating a large export).
+        if Task.isCancelled {
+            return OverviewMapRenderData(pathOverlays: [], region: region, totalRouteCount: candidates.count)
+        }
+
         let profile = OverviewMapRenderProfile.resolve(
             routeCount: candidates.count,
             totalPointCount: totalPointCount
         )
         let selected = selectCandidates(candidates, region: region, profile: profile)
-        let pathOverlays = selected.compactMap { candidate in
-            makeOverlay(from: candidate, profile: profile)
+
+        // Build overlays one-by-one so cancellation (e.g. from withTaskCancellationHandler)
+        // can interrupt the Douglas-Peucker loop before all paths are processed.
+        var pathOverlays: [OverviewMapPathOverlay] = []
+        pathOverlays.reserveCapacity(selected.count)
+        for candidate in selected {
+            if Task.isCancelled { break }
+            if let overlay = makeOverlay(from: candidate, profile: profile) {
+                pathOverlays.append(overlay)
+            }
         }
         let isOptimized = profile.simplificationEpsilonM > 30 || profile.maxPolylinePoints < 220
 

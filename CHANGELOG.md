@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [2026-04-14] — Overview Map: Spinner-Freeze-Fix bei großen Dateien (Cancellation-Bug)
+
+### Behoben
+- `AppOverviewTracksMapView.swift`: `loadMapData()` — entfernt `!Task.isCancelled`-Guard; dieser war Root Cause eines permanenten Spinners: wenn SwiftUI die `.task(id:)`-Body cancelierte (z. B. kurze View-Transition nach Import), wurde das Ergebnis verworfen, aber kein neuer Task startete → `renderData` blieb ewig auf `.loading` hängen
+- `AppOverviewTracksMapView.swift`: `loadMapData()` — ersetzt `Task.detached(...).value` durch `withTaskCancellationHandler` + `innerTask.cancel()` im `onCancel`-Handler: Cancellation des Outer-Tasks propagiert jetzt sofort in den Detached-Task
+- `AppOverviewTracksMapView.swift`: `buildRenderDataFast()` — Cancellation-Check **vor** der teuren Douglas-Peucker-Phase: bei großen Dateien (46 MB / tausende Tracks) kann Cancellation jetzt den DP-Loop komplett überspringen statt ihn vollständig auszuführen
+- `AppOverviewTracksMapView.swift`: `buildRenderDataFast()` — Overlay-Build-Loop von `compactMap` auf explizite `for`-Schleife mit `if Task.isCancelled { break }` umgestellt: Cancellation unterbricht die DP-Verarbeitung path-by-path statt am Ende zu prüfen
+- `Tests/AppOverviewTracksMapViewTests.swift`: 2 neue Tests: `testBuildRenderDataFastExitsEarlyWhenCancelledBeforeDP` (canceled Task produziert keine Overlays), `testBuildRenderDataFastCancelledTaskDoesNotBlockSubsequentResult` (zwei parallele unkancelierte Runs liefern identische Routenzahl)
+
+### Verhalten nach Fix
+- Kein permanenter Spinner mehr nach Großdatei-Import wenn View kurz getransitioniert
+- Bei taskKey-Wechsel (neue Generation aktiv): altes Ergebnis wird korrekt verworfen (generation-Guard bleibt)
+- Bei View-Disappear ohne neuen Task: partielles oder leeres Ergebnis wird publiziert → Spinner klärt sich sofort
+
+### Teststatus
+636 Tests, 0 Failures, 0 Skips — BUILD SUCCEEDED ✅
+
 ## [2026-04-14] — Overview Map Performance: O(N) Fast Path für große Standortdateien
 
 ### Behoben

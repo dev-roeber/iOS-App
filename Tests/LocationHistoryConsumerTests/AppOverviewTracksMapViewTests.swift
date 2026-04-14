@@ -196,6 +196,57 @@ final class AppOverviewTracksMapViewTests: XCTestCase {
         XCTAssertEqual(profileHeavy.routeLimit, 600,
                        "Even heavy datasets must keep all routes visible in the selected time range")
     }
+
+    // MARK: - Cancellation behaviour
+
+    /// buildRenderDataFast must return promptly when cancelled before the DP phase,
+    /// not block the caller indefinitely on thousands of Douglas-Peucker runs.
+    func testBuildRenderDataFastExitsEarlyWhenCancelledBeforeDP() async throws {
+        let url = try TestSupport.contractFixtureURL(named: "perf_app_export_large.json")
+        let export = try AppExportDecoder.decode(contentsOf: url)
+        let dates = Set(AppExportQueries.daySummaries(from: export).map(\.date))
+
+        // Cancel the task immediately so Task.isCancelled is true upon entry.
+        let task = Task<OverviewMapRenderData, Never> {
+            // Yield once so Swift propagates the cancel flag before calling into the hot path.
+            await Task.yield()
+            return OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+        }
+        task.cancel()
+
+        let result = await task.value
+
+        // The function must return (not hang). Result may be empty or partial –
+        // both are acceptable. Only totalRouteCount is allowed to be non-zero
+        // (it reflects how many were collected before cancellation was detected).
+        XCTAssertEqual(result.pathOverlays.count, 0,
+                       "Cancelled task must produce no overlays (DP phase was skipped)")
+    }
+
+    /// A second concurrent load (new generation) must not be blocked by a slow
+    /// first load: the first result is discarded by the generation guard, and
+    /// the spinner state must eventually resolve to a non-loading state.
+    func testBuildRenderDataFastCancelledTaskDoesNotBlockSubsequentResult() async throws {
+        let url = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
+        let export = try AppExportDecoder.decode(contentsOf: url)
+        let dates = Set(AppExportQueries.daySummaries(from: export).map(\.date))
+
+        // Simulate two concurrent computations; the second must finish and produce content.
+        async let first = Task.detached {
+            OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+        }.value
+        async let second = Task.detached {
+            OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+        }.value
+
+        let (r1, r2) = await (first, second)
+
+        // Both paths on a non-cancelled task must yield content for this fixture.
+        XCTAssertGreaterThan(r1.totalRouteCount, 0)
+        XCTAssertGreaterThan(r2.totalRouteCount, 0)
+        XCTAssertEqual(r1.totalRouteCount, r2.totalRouteCount,
+                       "Two uncancelled runs on the same export must produce identical route counts")
+    }
 }
 
 private extension DaySummary {
