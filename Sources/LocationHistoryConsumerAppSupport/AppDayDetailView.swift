@@ -176,10 +176,12 @@ public struct AppDayDetailView: View {
             }
 
             let dayDistance = detail.paths.reduce(0.0) { $0 + ($1.distanceM ?? 0) }
+            let deletedInLandscapeStat = Set(mutations.deletions.filter { $0.dayKey == detail.date }.map { $0.pathIndex })
+            let visiblePathCountLandscape = detail.paths.indices.filter { !deletedInLandscapeStat.contains($0) }.count
             HStack(spacing: 8) {
                 quickStat("\(detail.visits.count)", label: t("Visits"), icon: "mappin.and.ellipse", color: .blue)
                 quickStat("\(detail.activities.count)", label: t("Activities"), icon: "figure.walk", color: .green)
-                quickStat("\(detail.paths.count)", label: t("Routes"), icon: "location.north.line", color: .orange)
+                quickStat("\(visiblePathCountLandscape)", label: t("Routes"), icon: "location.north.line", color: .orange)
                 if dayDistance > 0 {
                     quickStat(formatDistance(dayDistance, unit: preferences.distanceUnit), label: t("Distance"), icon: "road.lanes", color: .purple)
                 }
@@ -216,7 +218,7 @@ public struct AppDayDetailView: View {
                             dayIdentifier: detail.date,
                             routeIndex: item.offset,
                             availableRouteIndices: exportableRouteIndices(for: detail),
-                            onRemove: { confirmRemovePathIndex = item.offset }
+                            onRemove: onRemovePath != nil ? { confirmRemovePathIndex = item.offset } : nil
                         )
                     }
                 }
@@ -251,10 +253,12 @@ public struct AppDayDetailView: View {
             }
 
             let dayDistance = detail.paths.reduce(0.0) { $0 + ($1.distanceM ?? 0) }
+            let deletedInPortraitStat = Set(mutations.deletions.filter { $0.dayKey == detail.date }.map { $0.pathIndex })
+            let visiblePathCountPortrait = detail.paths.indices.filter { !deletedInPortraitStat.contains($0) }.count
             HStack(spacing: 12) {
                 quickStat("\(detail.visits.count)", label: t("Visits"), icon: "mappin.and.ellipse", color: .blue)
                 quickStat("\(detail.activities.count)", label: t("Activities"), icon: "figure.walk", color: .green)
-                quickStat("\(detail.paths.count)", label: t("Routes"), icon: "location.north.line", color: .orange)
+                quickStat("\(visiblePathCountPortrait)", label: t("Routes"), icon: "location.north.line", color: .orange)
                 if dayDistance > 0 {
                     quickStat(formatDistance(dayDistance, unit: preferences.distanceUnit), label: t("Distance"), icon: "road.lanes", color: .purple)
                 }
@@ -315,7 +319,7 @@ public struct AppDayDetailView: View {
                             dayIdentifier: detail.date,
                             routeIndex: item.offset,
                             availableRouteIndices: exportableRouteIndices(for: detail),
-                            onRemove: { confirmRemovePathIndex = item.offset }
+                            onRemove: onRemovePath != nil ? { confirmRemovePathIndex = item.offset } : nil
                         )
                     }
                 }
