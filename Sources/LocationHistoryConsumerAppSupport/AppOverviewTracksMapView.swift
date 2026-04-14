@@ -138,7 +138,11 @@ struct AppOverviewTracksMapView: View {
         let filter = queryFilter
 
         let prepared = await Task.detached(priority: .userInitiated) {
-            OverviewMapPreparation.buildRenderData(for: allDates, content: content, filter: filter)
+            OverviewMapPreparation.buildRenderDataFast(
+                for: Set(allDates),
+                export: content.export,
+                filter: filter
+            )
         }.value
 
         guard generation == loadGeneration, !Task.isCancelled else { return }
@@ -268,6 +272,134 @@ struct OverviewMapRenderProfile {
 }
 
 enum OverviewMapPreparation {
+    /// O(N) single-pass fast path — iterates `export.data.days` once using a date Set for O(1) lookup.
+    /// Avoids the O(N² log N) per-date projectedDays() sort of the legacy `buildRenderData`.
+    nonisolated static func buildRenderDataFast(
+        for dateSet: Set<String>,
+        export: AppExport,
+        filter: AppExportQueryFilter?
+    ) -> OverviewMapRenderData {
+        let allowedActivityTypes: Set<String>? = filter.flatMap { f in
+            f.activityTypes.isEmpty ? nil : f.activityTypes
+        }
+
+        var candidates: [OverviewMapPathCandidate] = []
+        var minLat = Double.greatestFiniteMagnitude
+        var maxLat = -Double.greatestFiniteMagnitude
+        var minLon = Double.greatestFiniteMagnitude
+        var maxLon = -Double.greatestFiniteMagnitude
+        var hasAnyCoord = false
+        var totalPointCount = 0
+        let pointBudget = 2_000_000
+        var iterationCount = 0
+
+        outer: for day in export.data.days {
+            guard dateSet.contains(day.date) else { continue }
+
+            for path in day.paths {
+                iterationCount += 1
+                if iterationCount % 100 == 0, Task.isCancelled {
+                    break outer
+                }
+                if totalPointCount >= pointBudget { break outer }
+
+                if let allowed = allowedActivityTypes {
+                    guard let actType = path.activityType, allowed.contains(actType) else { continue }
+                }
+
+                let coordinates: [CLLocationCoordinate2D]
+                if let flat = path.flatCoordinates, flat.count >= 4, flat.count.isMultiple(of: 2) {
+                    var coords = [CLLocationCoordinate2D]()
+                    coords.reserveCapacity(flat.count / 2)
+                    var i = 0
+                    while i < flat.count - 1 {
+                        let lat = flat[i]; let lon = flat[i + 1]
+                        coords.append(CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                        if lat < minLat { minLat = lat }
+                        if lat > maxLat { maxLat = lat }
+                        if lon < minLon { minLon = lon }
+                        if lon > maxLon { maxLon = lon }
+                        hasAnyCoord = true
+                        i += 2
+                    }
+                    coordinates = coords
+                } else if path.points.count >= 2 {
+                    var coords = [CLLocationCoordinate2D]()
+                    coords.reserveCapacity(path.points.count)
+                    for pt in path.points {
+                        coords.append(CLLocationCoordinate2D(latitude: pt.lat, longitude: pt.lon))
+                        if pt.lat < minLat { minLat = pt.lat }
+                        if pt.lat > maxLat { maxLat = pt.lat }
+                        if pt.lon < minLon { minLon = pt.lon }
+                        if pt.lon > maxLon { maxLon = pt.lon }
+                        hasAnyCoord = true
+                    }
+                    coordinates = coords
+                } else {
+                    continue
+                }
+
+                guard coordinates.count >= 2 else { continue }
+                totalPointCount += coordinates.count
+
+                let scoreBase = path.distanceM ?? approximateDistance(for: coordinates)
+                let pointWeight = log(Double(max(coordinates.count, 2)))
+                let midpointIndex = coordinates.count / 2
+                var hasher = Hasher()
+                hasher.combine(path.activityType)
+                hasher.combine(coordinates.count)
+                hasher.combine(path.distanceM ?? 0)
+                hasher.combine(coordinates.first?.latitude ?? 0)
+                hasher.combine(coordinates.first?.longitude ?? 0)
+                hasher.combine(coordinates[midpointIndex].latitude)
+                hasher.combine(coordinates[midpointIndex].longitude)
+                hasher.combine(coordinates.last?.latitude ?? 0)
+                hasher.combine(coordinates.last?.longitude ?? 0)
+
+                candidates.append(OverviewMapPathCandidate(
+                    signature: hasher.finalize(),
+                    fullCoordinates: coordinates,
+                    midpoint: coordinates[midpointIndex],
+                    activityType: path.activityType,
+                    score: scoreBase + pointWeight * 100
+                ))
+            }
+        }
+
+        let region: MKCoordinateRegion? = hasAnyCoord ? {
+            let center = CLLocationCoordinate2D(
+                latitude: (minLat + maxLat) / 2,
+                longitude: (minLon + maxLon) / 2
+            )
+            let span = MKCoordinateSpan(
+                latitudeDelta: max((maxLat - minLat) * 1.3, 0.01),
+                longitudeDelta: max((maxLon - minLon) * 1.3, 0.01)
+            )
+            return MKCoordinateRegion(center: center, span: span)
+        }() : nil
+
+        guard !candidates.isEmpty else {
+            return OverviewMapRenderData(pathOverlays: [], region: region, totalRouteCount: 0)
+        }
+
+        let profile = OverviewMapRenderProfile.resolve(
+            routeCount: candidates.count,
+            totalPointCount: totalPointCount
+        )
+        let selected = selectCandidates(candidates, region: region, profile: profile)
+        let pathOverlays = selected.compactMap { candidate in
+            makeOverlay(from: candidate, profile: profile)
+        }
+        let isOptimized = profile.simplificationEpsilonM > 30 || profile.maxPolylinePoints < 220
+
+        return OverviewMapRenderData(
+            pathOverlays: pathOverlays,
+            region: region,
+            totalRouteCount: candidates.count,
+            isOptimized: isOptimized
+        )
+    }
+
     nonisolated static func buildRenderData(
         for dates: [String],
         content: AppSessionContent,

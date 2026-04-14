@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [2026-04-14] — Overview Map Performance: O(N) Fast Path für große Standortdateien
+
+### Behoben
+- `AppOverviewTracksMapView.swift`: `loadMapData()` ruft jetzt `OverviewMapPreparation.buildRenderDataFast(for:export:filter:)` statt des alten `buildRenderData(for:content:filter:)` auf — eliminiert O(N² log N)-Bottleneck bei großen Importdateien (z. B. 46 MB / tausende Tracks)
+- `OverviewMapPreparation.buildRenderDataFast`: Neuer O(N) Single-Pass über `export.data.days` mit `Set<String>` für O(1)-Datum-Lookup; iteriert alle Tage genau einmal ohne per-date `projectedDays()`-Sortierung; laufende Bounding Box statt `allCoords`-Akkumulation; Cancellation-Check alle 100 Iterationen; Point Budget (2 Mio.); direkter Zugriff auf `Path.flatCoordinates` (schnellster Pfad) mit Fallback auf `Path.points`; Activity-Type-Filter aus `AppExportQueryFilter` angewandt
+- `Tests/AppOverviewTracksMapViewTests.swift`: 4 neue Tests: `testBuildRenderDataFastProducesSameRouteCountAsLegacy_small`, `testBuildRenderDataFastEmptyDateSetReturnsEmpty`, `testBuildRenderDataFastActivityTypeFilterExcludesNonMatchingPaths`, `testBuildRenderDataFastLargeFixtureProducesValidResult`
+
+### Teststatus
+634 Tests, 0 Failures, 0 Skips — BUILD SUCCEEDED ✅
+
 ## [2026-04-14] — Tage UI/UX: Layout-Bugfixes (GeometryReader, ScrollView, Steuerzeile)
 
 ### Behoben

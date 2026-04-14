@@ -127,6 +127,66 @@ final class AppOverviewTracksMapViewTests: XCTestCase {
                           "Task key must change when the set of day summaries changes")
     }
 
+    // MARK: - buildRenderDataFast (O(N) single-pass)
+
+    func testBuildRenderDataFastProducesSameRouteCountAsLegacy_small() throws {
+        let url = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
+        let export = try AppExportDecoder.decode(contentsOf: url)
+        let dates = AppExportQueries.daySummaries(from: export).map(\.date)
+        let content = AppSessionContent(export: export, source: .demoFixture(name: "small"))
+
+        let legacy = OverviewMapPreparation.buildRenderData(for: dates, content: content, filter: nil)
+        let fast = OverviewMapPreparation.buildRenderDataFast(for: Set(dates), export: export, filter: nil)
+
+        XCTAssertEqual(fast.totalRouteCount, legacy.totalRouteCount,
+                       "Fast path must count the same total routes as the legacy path")
+        XCTAssertEqual(fast.visibleRouteCount, legacy.visibleRouteCount,
+                       "Fast path must produce the same visible route count")
+        XCTAssertEqual(fast.isOptimized, legacy.isOptimized)
+        XCTAssertNotNil(fast.region)
+    }
+
+    func testBuildRenderDataFastEmptyDateSetReturnsEmpty() throws {
+        let url = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
+        let export = try AppExportDecoder.decode(contentsOf: url)
+
+        let fast = OverviewMapPreparation.buildRenderDataFast(for: [], export: export, filter: nil)
+
+        XCTAssertFalse(fast.hasContent)
+        XCTAssertEqual(fast.totalRouteCount, 0)
+        XCTAssertNil(fast.region)
+    }
+
+    func testBuildRenderDataFastActivityTypeFilterExcludesNonMatchingPaths() throws {
+        let url = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
+        let export = try AppExportDecoder.decode(contentsOf: url)
+        let dates = Set(AppExportQueries.daySummaries(from: export).map(\.date))
+
+        // Filter for an activity type that is very unlikely to exist in the fixture
+        let filter = AppExportQueryFilter(activityTypes: ["__nonexistent_activity_type__"])
+        let fast = OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: filter)
+
+        XCTAssertEqual(fast.totalRouteCount, 0, "No routes should match a non-existent activity type")
+        XCTAssertFalse(fast.hasContent)
+    }
+
+    func testBuildRenderDataFastLargeFixtureProducesValidResult() throws {
+        let url = try TestSupport.contractFixtureURL(named: "perf_app_export_large.json")
+        let export = try AppExportDecoder.decode(contentsOf: url)
+        let dates = Set(AppExportQueries.daySummaries(from: export).map(\.date))
+        let expectedRenderableRoutes = export.data.days.reduce(0) { partial, day in
+            partial + day.paths.filter { ($0.flatCoordinates?.count ?? 0) >= 4 || $0.points.count >= 2 }.count
+        }
+
+        let fast = OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+
+        XCTAssertEqual(fast.totalRouteCount, expectedRenderableRoutes,
+                       "Fast path totalRouteCount must match all renderable paths in the dataset")
+        XCTAssertGreaterThan(fast.visibleRouteCount, 0)
+        XCTAssertTrue(fast.pathOverlays.allSatisfy { $0.coordinates.count >= 2 })
+        XCTAssertNotNil(fast.region)
+    }
+
     func testOverviewMapRenderProfileNoLongerCapsVisibleRoutes() {
         let profileLarge = OverviewMapRenderProfile.resolve(routeCount: 150, totalPointCount: 5_000)
         XCTAssertEqual(profileLarge.routeLimit, 150,
