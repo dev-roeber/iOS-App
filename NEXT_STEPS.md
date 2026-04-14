@@ -21,7 +21,7 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [ ] Split-Repos (LocationHistory2GPX-iOS, LH2GPXWrapper) als historisch/mirror markieren
 - [x] GPS-Jump-Filter als Vorverarbeitungsstufe — `PathFilter.removeOutliers` (distanzbasiert, maxJumpMeters=5000) vor Douglas-Peucker im `.mapMatched`-Modus; 9 Tests, kein echtes Snapping (2026-04-13, cf66dd1)
 - [x] Historien-Track-Editor Slice — Route-ausblenden-Overlay: `ImportedPathMutation`, `AppImportedPathMutationStore`, "Route entfernen"-Button + Alert in `AppDayDetailView`; 7 Tests (623 gesamt) (2026-04-13, caedf28)
-- [ ] Historien-Track-Editor: `AppImportedPathMutationStore` in Environment einbinden (App-Shell / AppShellRootView) und `onRemovePath` verkabeln
+- [x] Historien-Track-Editor: `AppImportedPathMutationStore` als `@StateObject` in `AppContentSplitView` eingebunden; beide `AppDayDetailView`-Callsites erhalten `mutations:` + `onRemovePath:`; Safety-Fix (Alert-Text) + `testDuplicateDeletionIsIgnored`; 625 Tests (2026-04-14, `3b82761` `8036a01`)
 - [ ] echtes Road-/Path-Matching (Strassen-/Weg-Snapping) konzipieren; aktuelle `Simplified (Beta)`-Darstellung ist GPS-Ausreisserfilterung + Pfadvereinfachung, kein Road-Network-Abgleich
 - [x] Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart — sauberes Modell umgesetzt: SessionID+Timestamp in UserDefaults, Banner mit relativem Zeitstempel beim Start, "Aufzeichnung fortsetzen" / "Ignorieren" (kein blindes Auto-Resume, bewusst user-controlled) (2026-04-13)
 - [ ] app-weite Landscape-Verifikation fuer jede Hauptseite auf Apple-Hardware nachziehen

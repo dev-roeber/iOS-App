@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [2026-04-14] — Historien-Track-Editor: Safety-Fix + CI.xctestplan
+
+### Geaendert
+- `AppDayDetailView.swift`: Alert-Text korrigiert — falsches Restore-Versprechen entfernt; neu: "The original data is not modified." (kein reset()-UI existiert)
+- `AppLanguageSupport.swift`: DE-Übersetzung entsprechend angepasst
+- `wrapper/CI.xctestplan`: neuer CI-Testplan nur mit `LH2GPXWrapperTests` (ohne UITests — Location-Dialoge/Timing in Xcode Cloud nicht stabil)
+- `wrapper/LH2GPXWrapper.xcscheme`: `CI.xctestplan` als zweite Testplan-Option registriert
+- `Tests/ImportedPathMutationTests.swift`: `testDuplicateDeletionIsIgnored` ergänzt (dreifaches addDeletion → exakt 1 Eintrag)
+
+### Teststatus
+625 Tests, 0 Failures, 0 Skips — Commits `30192e1`, `8036a01`
+
 ## [2026-04-14] — ZIPFoundation: Fork-Dependency gehärtet (branch → exact-Tag)
 
 ### Geaendert
