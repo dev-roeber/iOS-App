@@ -632,6 +632,6 @@ enum AppGermanTranslations {
         // Imported-path deletion (History Track Editor)
         "Remove Route": "Route entfernen",
         "Remove": "Entfernen",
-        "This route will be hidden from this day. You can restore all changes by resetting imported data.": "Diese Route wird für diesen Tag ausgeblendet. Du kannst alle Änderungen zurücksetzen, indem du die Importdaten-Änderungen zurücksetzt."
+        "This route will be hidden from this day. The original data is not modified.": "Diese Route wird für diesen Tag ausgeblendet. Die Originaldaten bleiben unverändert."
     ]
 }

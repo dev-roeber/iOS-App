@@ -124,6 +124,21 @@ final class ImportedPathMutationTests: XCTestCase {
         defaults.removePersistentDomain(forName: suiteName)
     }
 
+    func testDuplicateDeletionIsIgnored() {
+        let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let store = AppImportedPathMutationStore(userDefaults: defaults)
+
+        let deletion = ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 2)
+        store.addDeletion(deletion)
+        store.addDeletion(deletion) // second identical tap must be a no-op
+        store.addDeletion(deletion) // third as well
+
+        XCTAssertEqual(store.currentMutations.deletions.count, 1)
+
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
     func testResetClearsAllDeletions() {
         let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

@@ -103,7 +103,7 @@ public struct AppDayDetailView: View {
                 confirmRemovePathIndex = nil
             }
         } message: {
-            Text(t("This route will be hidden from this day. You can restore all changes by resetting imported data."))
+            Text(t("This route will be hidden from this day. The original data is not modified."))
         }
     }
 
