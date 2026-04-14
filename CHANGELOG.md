@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [2026-04-14] — Historien-Track-Editor: Mutations-Reset bei Import-Wechsel
+
+### Geaendert
+- `AppImportedPathMutationStore.swift`: `validateSource(_:)` ergaenzt — vergleicht gespeicherten Source-Identifier (Dateiname) mit dem aktiven Import; setzt bei Wechsel alle Mutations zurueck und speichert neuen Identifier; `reset()` loescht jetzt auch den Identifier-Key
+- `AppContentSplitView.swift`: `.onChange(of: session.source)` ergaenzt — ruft `pathMutationStore.validateSource(source.displayName)` bei jedem Import-Wechsel auf
+- `Tests/ImportedPathMutationTests.swift`: 3 neue Tests: `testMutationsPreservedForSameSource`, `testMutationsResetOnSourceChange`, `testValidateSourcePersistsIdentifierAcrossReload`
+
+### Verhalten
+- Mutations bleiben erhalten, wenn dieselbe Datei nach App-Neustart wieder geoeffnet wird (gleicher Dateiname = gleicher Identifier)
+- Mutations werden zurueckgesetzt, wenn eine andere Datei importiert wird (unterschiedlicher Identifier)
+- Kein stiller Seiteneffekt bei unveraendertem Import
+
+### Teststatus
+628 Tests, 0 Failures, 0 Skips
+
 ## [2026-04-14] — Historien-Track-Editor: Safety-Fix + CI.xctestplan
 
 ### Geaendert

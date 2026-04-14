@@ -171,6 +171,11 @@ public struct AppContentSplitView: View {
             .onChange(of: preferences.liveLocationServerUploadURLString) { _ in syncLiveRecordingSettings() }
             .onChange(of: preferences.liveLocationServerUploadBearerToken) { _ in syncLiveRecordingSettings() }
             .onChange(of: preferences.liveTrackingUploadBatch) { _ in syncLiveRecordingSettings() }
+            .onChange(of: session.source) { source in
+                if let source = source {
+                    pathMutationStore.validateSource(source.displayName)
+                }
+            }
     }
 
     private var liveTrackingObserversBase: some View {

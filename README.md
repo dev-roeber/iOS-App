@@ -47,7 +47,7 @@ Sources/
   LocationHistoryConsumerDemoSupport/  — Demo-Harness, Golden-Fixture
   LocationHistoryConsumerApp/          — Produkt-App-Einstieg
   LocationHistoryConsumerDemo/         — Demo-Einstieg
-  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 625 Tests, 0 Skips, 0 Failures)
+  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 628 Tests, 0 Skips, 0 Failures)
 Fixtures/contract/                     — Contract-Fixtures, Golden-JSONs
 wrapper/LH2GPXWrapper.xcodeproj        — Xcode Wrapper (Signing, Bundle, App-Icon)
 docs/                                  — Feature-Inventar, Runbook, Checklisten
@@ -69,7 +69,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
 Aktueller Nachweis (macOS, 2026-04-14):
-- `swift test` → `625` Tests, `0` Skips, `0` Failures
+- `swift test` → `628` Tests, `0` Skips, `0` Failures
 
 ## Historische Vorstufen
 
@@ -96,6 +96,6 @@ Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weite
 
 - echtes Road-/Path-Matching a la Dawarich ist **nicht** implementiert; `Simplified (Beta)` ist GPS-Ausreisserfilterung + Douglas-Peucker, kein Netzwerk-Snapping
 - Auto-Resume (blind/automatisch) einer Live-Aufzeichnung nach App-Neustart ist **nicht** implementiert; Session-Restore mit User-Kontrolle (Banner "Fortsetzen / Ignorieren") ist implementiert (2026-04-13)
-- Historien-Track-Editor: Mutations-Reset beim Import-Wechsel fehlt noch — Deletions persistieren über Datei-Wechsel hinaus, wenn dayKeys übereinstimmen
-- Export ignoriert Mutations bewusst — gelöschte Routen bleiben im GPX/KMZ-Export (AppExport ist immutable; Mutations sind display-only)
+- Historien-Track-Editor: Mutations-Reset bei Import-Wechsel ist implementiert (`validateSource`, 2026-04-14); Export ignoriert Mutations bewusst (AppExport ist immutable, Mutations sind display-only)
+- Export ignoriert Mutations bewusst — gelöschte Routen bleiben im GPX/KMZ-Export (AppExport ist immutable; Mutations sind rein display-only)
 - Apple-Portal-/Signing-/TestFlight-/Device-UI-Themen sind auf diesem macOS-Host nicht voll verifizierbar und werden separat dokumentiert

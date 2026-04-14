@@ -158,5 +158,56 @@ final class ImportedPathMutationTests: XCTestCase {
         defaults.removePersistentDomain(forName: suiteName)
     }
 
+    // MARK: - validateSource: import-change invalidation
+
+    func testMutationsPreservedForSameSource() {
+        let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let store = AppImportedPathMutationStore(userDefaults: defaults)
+
+        store.validateSource("foo.json")
+        store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
+        XCTAssertEqual(store.currentMutations.deletions.count, 1)
+
+        // Same source → mutations must be preserved
+        store.validateSource("foo.json")
+        XCTAssertEqual(store.currentMutations.deletions.count, 1)
+
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    func testMutationsResetOnSourceChange() {
+        let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let store = AppImportedPathMutationStore(userDefaults: defaults)
+
+        store.validateSource("foo.json")
+        store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
+        XCTAssertEqual(store.currentMutations.deletions.count, 1)
+
+        // Different source → mutations must be cleared
+        store.validateSource("bar.json")
+        XCTAssertTrue(store.currentMutations.deletions.isEmpty)
+
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    func testValidateSourcePersistsIdentifierAcrossReload() {
+        let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let store = AppImportedPathMutationStore(userDefaults: defaults)
+
+        store.validateSource("foo.json")
+        store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
+
+        // Reload store (simulates app restart)
+        let store2 = AppImportedPathMutationStore(userDefaults: defaults)
+        // Same source after reload → must not reset
+        store2.validateSource("foo.json")
+        XCTAssertEqual(store2.currentMutations.deletions.count, 1)
+
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
     #endif
 }
