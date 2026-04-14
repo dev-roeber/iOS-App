@@ -230,25 +230,22 @@ public struct AppContentSplitView: View {
                         }
                     }
                     .navigationDestination(for: String.self) { date in
-                        ScrollView {
-                            AppDayDetailView(
-                                detail: session.content?.detail(for: date),
-                                mapData: session.content?.mapData(for: date),
-                                hasDays: true,
-                                exportSelection: $session.exportSelection,
-                                isFavorited: favoritedDayIDs.contains(date),
-                                onToggleFavorite: { toggleFavoriteDay(date) },
-                                liveLocation: liveLocation,
-                                onOpenSavedTracks: { presentSheet(.tracksLibrary) },
-                                mutations: pathMutationStore.currentMutations,
-                                onRemovePath: { index in
-                                    pathMutationStore.addDeletion(
-                                        ImportedPathDeletion(dayKey: date, pathIndex: index)
-                                    )
-                                }
-                            )
-                            .padding()
-                        }
+                        AppDayDetailView(
+                            detail: session.content?.detail(for: date),
+                            mapData: session.content?.mapData(for: date),
+                            hasDays: true,
+                            exportSelection: $session.exportSelection,
+                            isFavorited: favoritedDayIDs.contains(date),
+                            onToggleFavorite: { toggleFavoriteDay(date) },
+                            liveLocation: liveLocation,
+                            onOpenSavedTracks: { presentSheet(.tracksLibrary) },
+                            mutations: pathMutationStore.currentMutations,
+                            onRemovePath: { index in
+                                pathMutationStore.addDeletion(
+                                    ImportedPathDeletion(dayKey: date, pathIndex: index)
+                                )
+                            }
+                        )
                         .navigationTitle(AppDateDisplay.longDate(date))
                     }
             }

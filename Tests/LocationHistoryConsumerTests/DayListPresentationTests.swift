@@ -126,6 +126,23 @@ final class DayListPresentationTests: XCTestCase {
         )
     }
 
+    // MARK: - Path display mode labels
+
+    func testPathDisplayModeLabelsAreShortEnoughForSegmentedControl() {
+        // Segmented controls clip long labels; each label must stay under 16 chars
+        for mode in AppDayPathDisplayMode.allCases {
+            XCTAssertLessThanOrEqual(
+                mode.label.count, 16,
+                "AppDayPathDisplayMode.\(mode.rawValue) label '\(mode.label)' is too long for a segmented control"
+            )
+        }
+    }
+
+    func testPathDisplayModeLabelsAreDistinct() {
+        let labels = AppDayPathDisplayMode.allCases.map(\.label)
+        XCTAssertEqual(labels.count, Set(labels).count, "Path display mode labels must be unique")
+    }
+
     private func makeSummaries(daysJSON: String) -> [DaySummary] {
         let json = """
         {

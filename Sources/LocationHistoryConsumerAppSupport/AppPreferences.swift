@@ -63,7 +63,7 @@ public enum AppDayPathDisplayMode: String, CaseIterable, Identifiable {
     public var label: String {
         switch self {
         case .original: return "Original"
-        case .mapMatched: return "Simplified (Beta)"
+        case .mapMatched: return "Simplified"
         }
     }
 }

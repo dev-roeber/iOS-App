@@ -600,7 +600,7 @@ enum AppGermanTranslations {
         "File contains no track points": "Datei enthält keine Trackpunkte",
         // Day path display mode (Phase B1)
         "Original": "Original",
-        "Map-Matched (Beta)": "An Straße angepasst (Beta)",
+        "Simplified": "Vereinfacht",
         "Route Display": "Routen-Darstellung",
         // Google Maps Export Help (Prompt 4)
         "Google Maps Export on iPhone": "Google Maps Export auf iPhone",

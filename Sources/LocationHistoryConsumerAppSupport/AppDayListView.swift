@@ -6,19 +6,14 @@ import LocationHistoryConsumer
 
 struct AppDayRow: View {
     @EnvironmentObject private var preferences: AppPreferences
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     let summary: DaySummary
     var highlightIcons: [String] = []
     var isSelectedForExport: Bool = false
     var isFavorited: Bool = false
 
     var body: some View {
-        GeometryReader { geometry in
-            let isLandscape = geometry.size.width > geometry.size.height
-            rowContent(compactVertical: isLandscape)
-        }
-        // Provide a stable height that works in both orientations; the row
-        // auto-sizes to its content so this just gives List a layout anchor.
-        .fixedSize(horizontal: false, vertical: true)
+        rowContent(compactVertical: verticalSizeClass == .compact)
     }
 
     @ViewBuilder

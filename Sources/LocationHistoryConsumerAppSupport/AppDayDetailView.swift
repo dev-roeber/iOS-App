@@ -9,6 +9,7 @@ import MapKit
 
 public struct AppDayDetailView: View {
     @EnvironmentObject private var preferences: AppPreferences
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     let detail: DayDetailViewState?
     let mapData: DayMapData?
     let hasDays: Bool
@@ -112,24 +113,25 @@ public struct AppDayDetailView: View {
         let filteredDetail = detail.removingDeletedPaths(for: mutations)
         let resolvedMapData = DayMapDataExtractor.mapData(from: filteredDetail)
 
-        GeometryReader { geometry in
-            let isLandscape = geometry.size.width > geometry.size.height
-            if isLandscape {
-                HStack(spacing: 0) {
-                    landscapeMapColumn(detail: detail, resolvedMapData: resolvedMapData)
-                        .frame(width: geometry.size.width * 0.6)
-                    Divider()
-                    ScrollView {
-                        landscapeContentColumn(detail)
-                            .padding()
-                    }
-                    .frame(width: geometry.size.width * 0.4)
-                }
-            } else {
+        if verticalSizeClass == .compact {
+            // Landscape (iPhone) — side-by-side: map left, content right
+            HStack(spacing: 0) {
+                landscapeMapColumn(detail: detail, resolvedMapData: resolvedMapData)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Divider()
                 ScrollView {
-                    portraitContentView(detail: detail, resolvedMapData: resolvedMapData)
+                    landscapeContentColumn(detail)
                         .padding()
                 }
+                .frame(maxWidth: 360)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            // Portrait
+            ScrollView {
+                portraitContentView(detail: detail, resolvedMapData: resolvedMapData)
+                    .padding(.horizontal)
+                    .padding(.vertical, 16)
             }
         }
     }
@@ -139,17 +141,7 @@ public struct AppDayDetailView: View {
         VStack(spacing: 0) {
             #if canImport(MapKit)
             if #available(iOS 17.0, macOS 14.0, *) {
-                if !detail.paths.isEmpty {
-                    Picker(t("Route Display"), selection: $preferences.dayPathDisplayMode) {
-                        ForEach(AppDayPathDisplayMode.allCases) { mode in
-                            Text(t(mode.label)).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 12)
-                }
-                AppDayMapView(mapData: resolvedMapData, fillHeight: true)
+                mapControlRow(detail: detail, resolvedMapData: resolvedMapData, fillHeight: true)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Label(t("Map view requires iOS 17 or later."), systemImage: "map")
@@ -274,15 +266,7 @@ public struct AppDayDetailView: View {
 
             #if canImport(MapKit)
             if #available(iOS 17.0, macOS 14.0, *) {
-                if !detail.paths.isEmpty {
-                    Picker(t("Route Display"), selection: $preferences.dayPathDisplayMode) {
-                        ForEach(AppDayPathDisplayMode.allCases) { mode in
-                            Text(t(mode.label)).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                AppDayMapView(mapData: resolvedMapData)
+                mapControlRow(detail: detail, resolvedMapData: resolvedMapData)
             } else {
                 Label(t("Map view requires iOS 17 or later."), systemImage: "map")
                     .font(.caption)
@@ -340,6 +324,45 @@ public struct AppDayDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Combined control row: route-display picker (when paths exist) + map style toggle,
+    /// followed by the map itself. The map's built-in style toggle is suppressed so both
+    /// controls sit in one horizontal strip above the map.
+    @available(iOS 17.0, macOS 14.0, *)
+    @ViewBuilder
+    private func mapControlRow(
+        detail: DayDetailViewState,
+        resolvedMapData: DayMapData,
+        fillHeight: Bool = false
+    ) -> some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                if !detail.paths.isEmpty {
+                    Picker(t("Route Display"), selection: $preferences.dayPathDisplayMode) {
+                        ForEach(AppDayPathDisplayMode.allCases) { mode in
+                            Text(t(mode.label)).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } else {
+                    Spacer()
+                }
+                Button {
+                    preferences.preferredMapStyle.toggle()
+                } label: {
+                    Image(systemName: preferences.preferredMapStyle.isHybrid ? "map" : "globe")
+                        .font(.callout)
+                        .padding(7)
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
+            }
+            .padding(.horizontal, fillHeight ? 12 : 0)
+            .padding(.top, fillHeight ? 12 : 0)
+            AppDayMapView(mapData: resolvedMapData, fillHeight: fillHeight, showStyleToggle: false)
+                .frame(maxWidth: .infinity)
+        }
     }
 
     @ViewBuilder

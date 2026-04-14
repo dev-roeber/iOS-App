@@ -10,11 +10,15 @@ public struct AppDayMapView: View {
     /// When `true` the map fills available height (for landscape side-by-side layouts).
     /// When `false` (default) the map uses a fixed 280 pt portrait height.
     var fillHeight: Bool = false
+    /// When `false` the built-in style-toggle button is hidden so the caller can
+    /// place it inline in its own control row.
+    var showStyleToggle: Bool = true
     @State private var renderData: DayMapRenderData
 
-    public init(mapData: DayMapData, fillHeight: Bool = false) {
+    public init(mapData: DayMapData, fillHeight: Bool = false, showStyleToggle: Bool = true) {
         self.mapData = mapData
         self.fillHeight = fillHeight
+        self.showStyleToggle = showStyleToggle
         self._renderData = State(initialValue: DayMapRenderData(mapData: mapData))
     }
 
@@ -25,16 +29,18 @@ public struct AppDayMapView: View {
                 .frame(maxHeight: fillHeight ? .infinity : nil)
                 .clipShape(RoundedRectangle(cornerRadius: fillHeight ? 0 : 12, style: .continuous))
                 .overlay(alignment: .topTrailing) {
-                    Button {
-                        preferences.preferredMapStyle.toggle()
-                    } label: {
-                        Image(systemName: preferences.preferredMapStyle.isHybrid ? "map" : "globe")
-                            .font(.caption)
-                            .padding(7)
-                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    if showStyleToggle {
+                        Button {
+                            preferences.preferredMapStyle.toggle()
+                        } label: {
+                            Image(systemName: preferences.preferredMapStyle.isHybrid ? "map" : "globe")
+                                .font(.caption)
+                                .padding(7)
+                                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        }
+                        .padding(8)
+                        .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
                     }
-                    .padding(8)
-                    .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
                 }
                 .accessibilityLabel(mapAccessibilityLabel)
                 .onChange(of: mapData) { _, newValue in

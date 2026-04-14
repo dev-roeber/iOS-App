@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [2026-04-14] — Tage UI/UX: Layout-Bugfixes (GeometryReader, ScrollView, Steuerzeile)
+
+### Behoben
+- `AppDayListView.swift` (`AppDayRow`): `GeometryReader` als Root-View in List-Rows entfernt — war Root Cause für überlappende/abgeschnittene Day-Rows (Row-Breite > Row-Höhe → `isLandscape = true` immer wahr); ersetzt durch `@Environment(\.verticalSizeClass)`
+- `AppDayDetailView.swift`: `GeometryReader` in `contentView` entfernt — war Root Cause für schwarzen Leerraum/unsichtbaren Inhalt (innerhalb eines outer `ScrollView` bekommt `GeometryReader` height=0 → `isLandscape = true` immer wahr → Landscape-HStack mit 0 Höhe → nichts sichtbar); ersetzt durch `@Environment(\.verticalSizeClass)`
+- `AppContentSplitView.swift`: outer `ScrollView` um `AppDayDetailView` im compact Nav-Destination entfernt — verursachte das GeometryReader-height=0-Problem; `AppDayDetailView.contentView` verwaltet seinen eigenen `ScrollView`
+- `AppDayDetailView.swift`: Segmented Control + Globe-Button in eine gemeinsame Steuerzeile (`mapControlRow`) zusammengeführt — Globe-Button war isoliert als Overlay auf der Karte; jetzt sauber horizontal ausgerichtet
+- `AppPreferences.swift`: Label `"Simplified (Beta)"` → `"Simplified"` — war zu lang für Segmented Control, verursachte Abschneiden
+- `AppLanguageSupport.swift`: Veralteten Key `"Map-Matched (Beta)"` durch `"Simplified": "Vereinfacht"` ersetzt
+- `AppDayMapView.swift`: Parameter `showStyleToggle: Bool = true` ergänzt — ermöglicht caller-seitige Steuerung des Style-Buttons ohne Regression bei bestehenden Callsites
+- `Tests/DayListPresentationTests.swift`: 2 neue Regressionstests für PathDisplayMode-Labels ergänzt
+
+### Teststatus
+630 Tests, 0 Failures, 0 Skips — BUILD SUCCEEDED ✅
+
 ## [2026-04-14] — Historien-Track-Editor: Mutations-Reset bei Import-Wechsel
 
 ### Geaendert

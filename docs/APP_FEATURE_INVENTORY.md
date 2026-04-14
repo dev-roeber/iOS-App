@@ -130,9 +130,10 @@ Present:
 - dedicated `Heatmap` sheet for imported history on iOS 17+/macOS 14+ with precomputed LOD grids, smoothed aggregated polygon cells, viewport-capped cell selection, calmer low-zoom rendering, local opacity/radius controls, `fit to data`, a small density legend, and stronger nonlinear opacity/intensity/color mapping with earlier low-/mid-density hue separation so sparse detail zoom stays visible and more differentiated instead of fading to near-grey
 - Heatmap Mode and Radius controls rendered as Capsule chip buttons (matching `AppDayFilterChipsView` style); control overlay is scrollable in landscape via `ScrollView(.vertical)`
 
-- path display mode toggle in day-detail map: `.original` (raw coordinates) vs. `.mapMatched` (`Simplified (Beta)`); persisted via `AppDayPathDisplayMode` in UserDefaults
+- path display mode toggle in day-detail map: `.original` (raw coordinates) vs. `.mapMatched` (`Simplified`); persisted via `AppDayPathDisplayMode` in UserDefaults; Steuerzeile kombiniert Picker + Map-Style-Toggle in einer `mapControlRow` (kein separates Globe-Overlay mehr)
 - in `.mapMatched` mode: GPS outlier pre-filter (`PathFilter.removeOutliers`, distance-based, default maxJumpMeters=5000) applied before Douglas-Peucker simplification (epsilon=15m); fallback to original sequence if fewer than 2 points remain after filtering
-- NOTE: no road/path network snapping; `Simplified (Beta)` is geometric simplification + outlier filtering only
+- NOTE: no road/path network snapping; `Simplified` is geometric simplification + outlier filtering only
+- Layout-Bugfix 2026-04-14: `GeometryReader` aus `AppDayRow` (List-Overlap-Bug) und `AppDayDetailView.contentView` (zero-height-Bug in ScrollView) entfernt; outer `ScrollView` aus compact Nav-Destination entfernt; Layout-Erkennung jetzt via `@Environment(\.verticalSizeClass)`
 - Historien-Track-Editor Overlay: `ImportedPathDeletion` + `ImportedPathMutationSet` (Codable), `AppImportedPathMutationStore` (`@StateObject` in `AppContentSplitView`, UserDefaults JSON-Persistenz, duplicate-safe `addDeletion`, `validateSource(_:)` für Import-Wechsel-Invalidierung, `reset()`); "Route entfernen"-Button + Confirmation-Alert in `AppDayDetailView` (Portrait + Landscape); filteredDetail + resolvedMapData für konsistente Karten-Anzeige; original `AppExport` bleibt unverändert; Export ignoriert Mutations bewusst (display-only overlay); bei Import-Wechsel (anderer Dateiname) werden Mutations automatisch zurückgesetzt, bei gleichem Dateinamen nach App-Neustart bleiben sie erhalten
 
 Not present:
