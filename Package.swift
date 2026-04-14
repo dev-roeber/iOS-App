@@ -31,9 +31,10 @@ let package = Package(
         ),
     ],
     dependencies: [
-        // .upToNextMinor pins to 0.9.x: takes patches but blocks any 0.10+ release
-        // that could introduce breaking changes in the 0.x series.
-        .package(url: "https://github.com/dev-roeber/ZIPFoundation.git", branch: "development"),
+        // Pinned to exact tag on dev-roeber fork (ZIPFoundation 0.9.20 base + copyright update).
+        // Use .exact() to guarantee reproducible builds in Xcode Cloud.
+        // To upgrade: push a new tag to dev-roeber/ZIPFoundation, update here + resolve.
+        .package(url: "https://github.com/dev-roeber/ZIPFoundation.git", exact: "0.9.20-devroeber.1"),
     ],
     targets: [
         .target(

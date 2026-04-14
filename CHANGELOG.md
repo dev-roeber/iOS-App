@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [2026-04-14] — ZIPFoundation: Fork-Dependency gehärtet (branch → exact-Tag)
+
+### Geaendert
+- `Package.swift`: ZIPFoundation-Pin von `branch: "development"` auf `exact: "0.9.20-devroeber.1"` umgestellt
+- Tag `0.9.20-devroeber.1` im Fork `dev-roeber/ZIPFoundation` auf Commit `d6e0da4` erstellt und gepusht
+- `Package.resolved` (root + wrapper): `state` von branch-Format auf version-Format (`"version": "0.9.20-devroeber.1"`) aktualisiert
+- `docs/XCODE_CLOUD_RUNBOOK.md`: Fork-Sektion überarbeitet — Upgrade-Prozess, Begründung für `.exact()`, vorherige Branch-Strategie als deprecated markiert
+
+### Hintergrund
+`branch: "development"` ist nicht reproduzierbar — jeder neue Commit auf dem Branch ändert den Build.
+`.exact("0.9.20-devroeber.1")` garantiert dieselbe Revision in jedem Xcode-Cloud- und lokalen Build.
+
+### Teststatus
+624 Tests, 0 Failures, 0 Skips — Build complete
+
 ## [2026-04-14] — ZIPFoundation: Umstellung auf eigenen Fork dev-roeber/ZIPFoundation
 
 ### Geaendert

@@ -124,7 +124,7 @@ cd wrapper && make deploy
 | Punkt | Status |
 |-------|--------|
 | Lokale SPM-Abhängigkeit (`relativePath = ".."`) | Xcode Cloud-kompatibel, da im selben Repo |
-| ZIPFoundation (Fork `dev-roeber/ZIPFoundation`, Branch `development`) | Xcode Cloud-kompatibel; nur Zugriff auf `dev-roeber/ZIPFoundation` erforderlich |
+| ZIPFoundation (Fork `dev-roeber/ZIPFoundation`, Tag `0.9.20-devroeber.1`) | Xcode Cloud-kompatibel; nur Zugriff auf `dev-roeber/ZIPFoundation` erforderlich |
 | `ci_scripts/` vorhanden und ausführbar | ✅ |
 | `.xcode-version` gesetzt (26.3) | ✅ |
 | Scheme `LH2GPXWrapper` ist shared | ✅ |
@@ -135,34 +135,49 @@ cd wrapper && make deploy
 
 ## ZIPFoundation Fork-Abhängigkeit
 
-**Stand:** 2026-04-14
+**Stand:** 2026-04-14 (gehärtet von branch auf exact-Tag)
 
 ZIPFoundation wird seit 2026-04-14 über den eigenen Fork `dev-roeber/ZIPFoundation` bezogen.
+Seit dem Härte-Schritt (ebenfalls 2026-04-14) ist die Dependency auf einen unveränderlichen
+Tag gepinnt statt auf einen Branch — für reproduzierbare CI/Xcode-Cloud-Builds.
 
 | Attribut | Wert |
 |---|---|
 | Fork-URL | `https://github.com/dev-roeber/ZIPFoundation.git` |
-| Branch | `development` |
+| SPM-Strategie | `.exact("0.9.20-devroeber.1")` |
+| Tag | `0.9.20-devroeber.1` |
 | Revision (gepinnt) | `d6e0da4509c22274b2775b0e8c741518194acba1` |
+| Basis | ZIPFoundation 0.9.20 (upstream) + "Update copyright year"-Commit |
 | Früherer Upstream | `https://github.com/weichsel/ZIPFoundation.git` (entfernt) |
+| Frühere Strategie | `branch: "development"` (nicht reproduzierbar) → ersetzt |
 
-**Warum:**
-Xcode Cloud benötigt expliziten GitHub-Zugriff auf alle im Build verwendeten Repos.
-Mit dem Upstream-Repo `weichsel/ZIPFoundation` war ein Fremdzugriff nötig.
-Durch den eigenen Fork liegt die Abhängigkeit ausschließlich unter `dev-roeber/*`.
+**Warum `.exact()` statt Branch:**
+- Branch-Pins sind nicht reproduzierbar: jeder neue Commit auf `development` ändert den Build
+- Xcode Cloud und andere CI-Systeme erwarten stabile, prüfbare Dependency-Hashes
+- `.exact()` garantiert, dass immer dieselbe Revision gezogen wird
 
-**Manueller Fork-Sync (bei Bedarf):**
-Da keine automatische Upstream-Synchronisierung konfiguriert ist, muss der Fork bei
-Bedarf manuell auf den Upstream-Stand gebracht werden:
+**Warum `.exact()` statt `.upToNextMinor()`:**
+- `0.9.20-devroeber.1` ist ein Pre-Release-Identifier — SPM würde ihn bei Range-Auflösung
+  übergehen; `.exact()` ist die einzige zuverlässige Methode für Pre-Release-Tags
+
+**Upgrade-Prozess (wenn Fork aktualisiert wird):**
 ```bash
-git clone https://github.com/dev-roeber/ZIPFoundation.git
+# 1. Fork-Update einspielen
+cd /tmp && git clone https://github.com/dev-roeber/ZIPFoundation.git
 cd ZIPFoundation
 git remote add upstream https://github.com/weichsel/ZIPFoundation.git
-git fetch upstream
-git merge upstream/main  # oder upstream/master
+git fetch upstream && git merge upstream/main
 git push origin development
+
+# 2. Neuen Tag setzen
+git tag -a "0.9.20-devroeber.2" HEAD -m "Release 0.9.20-devroeber.2"
+git push origin "0.9.20-devroeber.2"
+
+# 3. Im iOS-App Repo
+# Package.swift: exact: "0.9.20-devroeber.2"
+swift package resolve
+# Commit: Package.swift + Package.resolved
 ```
-Danach `swift package update` im Projekt ausführen, um die neue Revision zu pinnen.
 
 ---
 

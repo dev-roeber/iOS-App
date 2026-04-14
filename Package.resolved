@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/dev-roeber/ZIPFoundation.git",
       "state" : {
-        "branch" : "development",
-        "revision" : "d6e0da4509c22274b2775b0e8c741518194acba1"
+        "revision" : "d6e0da4509c22274b2775b0e8c741518194acba1",
+        "version" : "0.9.20-devroeber.1"
       }
     }
   ],

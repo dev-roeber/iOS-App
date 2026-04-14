@@ -1,12 +1,13 @@
 {
+  "originHash": "85474b3ecee01445b777650524cdbfc3f9f654b5df42d7fba7ac2e97e97d999a",
   "pins": [
     {
       "identity": "zipfoundation",
       "kind": "remoteSourceControl",
       "location": "https://github.com/dev-roeber/ZIPFoundation.git",
       "state": {
-        "branch": "development",
-        "revision": "d6e0da4509c22274b2775b0e8c741518194acba1"
+        "revision": "d6e0da4509c22274b2775b0e8c741518194acba1",
+        "version": "0.9.20-devroeber.1"
       }
     }
   ],
