@@ -60,8 +60,9 @@ App Store Connect konfiguriert werden — keine YAML-Dateien.
    - **Environment:** Xcode 26.3, macOS 15 (latest)
    - **Actions:**
      1. **Build** — Scheme: `LH2GPXWrapper`, Platform: iOS Simulator
-     2. **Test** — Scheme: `LH2GPXWrapper`, Plan: `LH2GPXWrapper.xctestplan`
-        - Ziele: `LH2GPXWrapperTests` (parallelisiert), `LH2GPXWrapperUITests`
+     2. **Test** — Scheme: `LH2GPXWrapper`, Plan: **`CI`** (nicht `LH2GPXWrapper`!)
+        - Ziele: `LH2GPXWrapperTests` (parallelisiert)
+        - `LH2GPXWrapperUITests` bewusst ausgeschlossen — Location-Permission-Dialoge und Springboard-Interaktion sind in Xcode Cloud nicht stabil
    - **Post-Actions:** (optional) TestFlight Distribution → erst wenn stabile
      Release-Candidate-Builds angestrebt werden
 4. **Save & Start** → Erster Cloud-Build startet
