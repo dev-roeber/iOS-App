@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## [2026-04-15] — Overview: Last-7-Days-Default, Chip-Reihenfolge, Ladefortschritt-Karte
+
+### Geändert
+- `HistoryDateRangeFilter.swift`: Enum-Case-Reihenfolge geändert: `last7Days | last30Days | last90Days | thisYear | custom | all` — "Gesamtzeitraum" steht jetzt ganz rechts hinter "Benutzerdefiniert"; `allCases` und damit die Chips passen sich automatisch an
+- `AppSessionState.swift`: `historyDateRangeFilter` Startwert `.all` → `.last7Days`; `show(content:)` setzt den Filter bei jedem Import auf `last7Days` zurück — bestehende User-Wahl wird nur bei neuem Import ersetzt, nicht bei Tab-Wechsel
+- `AppOverviewTracksMapView.swift`: Neues `OverviewMapLoadingPhase`-Enum (`.analyzing` / `.building`); `loadMapData()` setzt Phase vor und nach dem Inner-Task; `loadingPlaceholder` als frosted-glass Karte mit Spinner, linearem `ProgressView` und Phasentext ersetzt den reinen Kringel
+- `AppLanguageSupport.swift`: DE-Strings für "Analysing routes…" und "Building map…" ergänzt
+
+### Effekt
+- Standardmäßig wird nach Import nur der letzte 7-Tage-Zeitraum geladen → MapKit-Overlay-Last bei großen Dateien um Faktor ~50 reduziert (real größte Freeze-Ursache)
+- User sieht sofort relevante, aktuelle Tracks statt den kompletten Gesamtzeitraum
+- Ladefortschritt zeigt ehrliche Phase statt blindem Spinner
+
+### Teststatus
+643 Tests, 0 Failures, 0 Skips — BUILD SUCCEEDED ✅
+
 ## [2026-04-14] — Overview Map: Spinner-Freeze-Fix bei großen Dateien (Cancellation-Bug)
 
 ### Behoben

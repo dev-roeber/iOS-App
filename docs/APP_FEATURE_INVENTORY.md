@@ -69,7 +69,7 @@ Present:
 - overview entry card for the `Saved Live Tracks` local library
 - time-range control is first item in the overview pane (promoted from lower position)
 - favorites-only Capsule toggle appears below the time-range when at least one day is favorited
-- `AppOverviewTracksMapView` shows an async polyline overview map for all tracks in the active range (iOS 17+); loads off-main-thread via `Task.detached`; keeps all in-range routes and uses simplification/decimation instead of silently dropping routes; shows loading and empty states
+- `AppOverviewTracksMapView` shows an async polyline overview map for all tracks in the active range (iOS 17+); loads off-main-thread via `Task.detached`; keeps all in-range routes and uses simplification/decimation instead of silently dropping routes; shows phase-based loading card (OverviewMapLoadingPhase: analyzing/building) with linear ProgressView instead of plain spinner
 
 Not present:
 - dedicated onboarding dashboard state distinct from the import-first root
@@ -301,7 +301,8 @@ Present:
 - `HistoryDateRangeValidator.validate(start:end:)` prüft auf start-after-end, zu weit in Vergangenheit
 - `effectiveRange: ClosedRange<Date>?`, `fromDateString`/`toDateString` für AppExportQueryFilter
 - `chipLabel` für UI-Chip-Darstellung; `reset()` zurück auf .all
-- In `AppSessionState.historyDateRangeFilter` als shared State
+- Chip-Reihenfolge: `last7Days | last30Days | last90Days | thisYear | custom | all` ("Gesamtzeitraum" ganz rechts)
+- In `AppSessionState.historyDateRangeFilter` als shared State; Startwert und Import-Reset: `.last7Days`
 - sichtbare Verdrahtung in `Overview`, `Insights` und `Export` ueber `AppHistoryDateRangeControl`
 - lokalisierte aktive Bereichsanzeige, Reset und Custom-Range-Sheet ohne neue parallele Range-Logik in Views
 
