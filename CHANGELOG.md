@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## [2026-04-14] — ZIPFoundation: Umstellung auf eigenen Fork dev-roeber/ZIPFoundation
+
+### Geaendert
+- `Package.swift`: ZIPFoundation-Dependency von `weichsel/ZIPFoundation.git` auf `dev-roeber/ZIPFoundation.git` (Branch `development`) umgestellt
+- `Package.resolved`: neu gepinnt auf Revision `d6e0da4509c22274b2775b0e8c741518194acba1` (Branch `development`)
+- `wrapper/LH2GPXWrapper.xcodeproj/.../Package.resolved`: konsistent mit Root-Resolved aktualisiert; staler `originHash` entfernt (wird von Xcode automatisch neu berechnet)
+- `docs/XCODE_CLOUD_RUNBOOK.md`: neuer Abschnitt "ZIPFoundation Fork-Abhängigkeit" inkl. Fork-URL, Revision, Sync-Anleitung
+
+### Hintergrund
+Xcode Cloud benötigt expliziten GitHub-Zugriff auf jedes referenzierte Repo.
+Das Upstream-Repo `weichsel/ZIPFoundation` liegt außerhalb des eigenen GitHub-Accounts.
+Durch Umstellung auf den eigenen Fork (`dev-roeber/ZIPFoundation`) liegt die einzige externe SPM-Abhängigkeit jetzt vollständig unter `dev-roeber/*`.
+
+### Teststatus
+624 Tests, 0 Failures, 0 Skips — Build complete
+
 ## [2026-04-13] — Historien-Track-Editor Slice: importierte Routen ausblenden
 
 ### Hinzugefuegt

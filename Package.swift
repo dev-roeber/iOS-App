@@ -33,7 +33,7 @@ let package = Package(
     dependencies: [
         // .upToNextMinor pins to 0.9.x: takes patches but blocks any 0.10+ release
         // that could introduce breaking changes in the 0.x series.
-        .package(url: "https://github.com/weichsel/ZIPFoundation.git", .upToNextMinor(from: "0.9.19")),
+        .package(url: "https://github.com/dev-roeber/ZIPFoundation.git", branch: "development"),
     ],
     targets: [
         .target(

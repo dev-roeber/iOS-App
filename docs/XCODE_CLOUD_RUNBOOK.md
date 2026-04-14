@@ -124,12 +124,45 @@ cd wrapper && make deploy
 | Punkt | Status |
 |-------|--------|
 | Lokale SPM-Abhängigkeit (`relativePath = ".."`) | Xcode Cloud-kompatibel, da im selben Repo |
-| ZIPFoundation 0.9.20 (remote SPM) | Wird von Xcode Cloud automatisch aufgelöst |
+| ZIPFoundation (Fork `dev-roeber/ZIPFoundation`, Branch `development`) | Xcode Cloud-kompatibel; nur Zugriff auf `dev-roeber/ZIPFoundation` erforderlich |
 | `ci_scripts/` vorhanden und ausführbar | ✅ |
 | `.xcode-version` gesetzt (26.3) | ✅ |
 | Scheme `LH2GPXWrapper` ist shared | ✅ |
 | App Groups Entitlement im Developer Portal | Manuell einzurichten (einmalig) |
 | Privacy Manifest (`PrivacyInfo.xcprivacy`) | ✅ vorhanden (App + Widget) |
+
+---
+
+## ZIPFoundation Fork-Abhängigkeit
+
+**Stand:** 2026-04-14
+
+ZIPFoundation wird seit 2026-04-14 über den eigenen Fork `dev-roeber/ZIPFoundation` bezogen.
+
+| Attribut | Wert |
+|---|---|
+| Fork-URL | `https://github.com/dev-roeber/ZIPFoundation.git` |
+| Branch | `development` |
+| Revision (gepinnt) | `d6e0da4509c22274b2775b0e8c741518194acba1` |
+| Früherer Upstream | `https://github.com/weichsel/ZIPFoundation.git` (entfernt) |
+
+**Warum:**
+Xcode Cloud benötigt expliziten GitHub-Zugriff auf alle im Build verwendeten Repos.
+Mit dem Upstream-Repo `weichsel/ZIPFoundation` war ein Fremdzugriff nötig.
+Durch den eigenen Fork liegt die Abhängigkeit ausschließlich unter `dev-roeber/*`.
+
+**Manueller Fork-Sync (bei Bedarf):**
+Da keine automatische Upstream-Synchronisierung konfiguriert ist, muss der Fork bei
+Bedarf manuell auf den Upstream-Stand gebracht werden:
+```bash
+git clone https://github.com/dev-roeber/ZIPFoundation.git
+cd ZIPFoundation
+git remote add upstream https://github.com/weichsel/ZIPFoundation.git
+git fetch upstream
+git merge upstream/main  # oder upstream/master
+git push origin development
+```
+Danach `swift package update` im Projekt ausführen, um die neue Revision zu pinnen.
 
 ---
 

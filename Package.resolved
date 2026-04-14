@@ -3,10 +3,10 @@
     {
       "identity" : "zipfoundation",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/weichsel/ZIPFoundation.git",
+      "location" : "https://github.com/dev-roeber/ZIPFoundation.git",
       "state" : {
-        "revision" : "22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
-        "version" : "0.9.20"
+        "branch" : "development",
+        "revision" : "d6e0da4509c22274b2775b0e8c741518194acba1"
       }
     }
   ],
