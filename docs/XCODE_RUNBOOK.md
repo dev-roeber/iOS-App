@@ -195,7 +195,17 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 
 ## Reale Verifikation in dieser Phase
 
-Frischer Host-Truth dieses Audits (2026-03-31):
+Frischer Host-Truth (2026-04-29) — macOS, Xcode 26.3, iPhone 15 Pro Max:
+
+- `swift test`: 643 Tests, 0 Failures, 0 Skips ✅
+- `xcodebuild -scheme LH2GPXWrapper -destination generic/platform=iOS build`: BUILD SUCCEEDED ✅
+- `xcodebuild -scheme LocationHistoryConsumerApp -destination platform=macOS build`: BUILD SUCCEEDED ✅
+- CI.xctestplan Wrapper-Unit-Tests (iPhone 17 Pro Max Simulator, iOS 26.3.1): TEST SUCCEEDED ✅
+- `make deploy15`: App auf iPhone 15 Pro Max installiert und gestartet ✅
+- `git diff --check`: sauber
+- `git status --short`: leer (kein uncommitted state)
+
+Frischer Host-Truth (2026-03-31, historisch):
 
 - Linux-Host mit Swift 5.9
 - `swift test`: 228 Tests, 2 Skips, 0 Failures

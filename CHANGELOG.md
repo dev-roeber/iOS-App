@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [2026-04-29] — Verifikationsrunde Audit-Stand (Build/Test/Device)
+
+### Verifiziert
+- `swift test`: 643 Tests, 0 Failures, 0 Skips — Erwartungswert bestätigt
+- `xcodebuild generic/platform=iOS`: BUILD SUCCEEDED (Wrapper inkl. Widget)
+- `xcodebuild platform=macOS (LocationHistoryConsumerApp)`: BUILD SUCCEEDED
+- CI.xctestplan Wrapper-Unit-Tests (iPhone 17 Pro Max Simulator, iOS 26.3.1): TEST SUCCEEDED
+- `make deploy15`: App auf iPhone 15 Pro Max installiert und gestartet
+
+### Korrektur
+- `docs/XCODE_APP_PREPARATION.md`: "Deployment Target iOS 26.2" → "iOS 16.0 / 16.2" (war Xcode-Versionsnummer, nicht iOS-Deployment-Target)
+- `docs/APPLE_VERIFICATION_CHECKLIST.md`: Statusstand 2026-04-29 ergänzt
+
+### Offene manuelle Schritte (unverändert)
+- UITest testLaunch auf echtem Gerät scheitert wegen nicht vertrautem Developer-Zertifikat (Einstellungen → VPN & Geräteverwaltung)
+- Xcode Cloud Workflow, App ID/App Group im Developer Portal, Privacy Policy URL, Support URL, finales App Icon
+
 ## [2026-04-15] — Overview: Last-7-Days-Default, Chip-Reihenfolge, Ladefortschritt-Karte
 
 ### Geändert

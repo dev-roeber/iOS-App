@@ -9,6 +9,45 @@ Diese Checkliste trennt klar zwischen:
 
 Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
+## Statusstand 2026-04-29 — Verifikationsrunde (MacBook, Xcode 26.3, iPhone 15 Pro Max)
+
+### Verifikation 2026-04-29
+
+Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C)
+
+#### ✅ real verifiziert (2026-04-29)
+
+- **swift test**: 643 Tests, 0 Failures, 0 Skips — Erwartungswert laut CHANGELOG bestätigt (BUILD SUCCEEDED)
+- **xcodebuild generic/platform=iOS (LH2GPXWrapper)**: BUILD SUCCEEDED — Wrapper inkl. Widget
+- **xcodebuild platform=macOS (LocationHistoryConsumerApp)**: BUILD SUCCEEDED
+- **CI.xctestplan Wrapper-Unit-Tests** (iPhone 17 Pro Max Simulator, iOS 26.3.1, testPlan CI): TEST SUCCEEDED — alle LH2GPXWrapperTests grün
+- **make deploy15**: App auf iPhone 15 Pro Max installiert und gestartet — `Launched application with de.roeber.LH2GPXWrapper bundle identifier.` ✅
+- **Info.plist**: NSLocationWhenInUseUsageDescription, NSLocationAlwaysAndWhenInUseUsageDescription, UIBackgroundModes=location, NSSupportsLiveActivities=true — alle vorhanden und korrekt
+- **Entitlements**: App Group `group.de.roeber.LH2GPXWrapper` in App + Widget Entitlements — korrekt
+- **PrivacyInfo.xcprivacy**: NSPrivacyTracking=false, UserDefaults CA92.1, NSPrivacyCollectedDataTypePreciseLocation — vollständig
+- **Sicherheit**: keine hartcodierten Tokens/Secrets; defaultTestEndpointURLString=""; HTTPS fuer non-localhost erzwungen; Bearer-Token via Keychain
+- **Deployment Target**: iOS 16.0 (App, LH2GPXWrapperTests) / 16.2 (Widget, UITests) — verifiziert in project.pbxproj
+- **Bundle IDs**: de.roeber.LH2GPXWrapper / de.roeber.LH2GPXWrapper.Widget / de.roeber.LH2GPXWrapperTests / de.roeber.LH2GPXWrapper.UITests — unverändert korrekt
+- **ZIPFoundation**: Fork dev-roeber/ZIPFoundation, Tag 0.9.20-devroeber.1, .exact() — unveränderlich gepinnt
+- **ci_scripts**: ci_post_clone.sh, ci_pre_xcodebuild.sh, ci_post_xcodebuild.sh — alle ausführbar, korrekte Xcode-Cloud-Namen
+- **.xcode-version**: 26.3 — gepinnt
+
+#### ⚠️ nicht heute auf echtem Gerät interaktiv verifiziert
+
+- **UITest testLaunch auf echtem Gerät**: fehlgeschlagen — "Developer App Certificate not trusted" auf iPhone 15 Pro Max; Gerät muss Developer-Zertifikat unter Einstellungen → Allgemein → VPN & Geräteverwaltung manuell vertrauen, dann erneut ausführen
+- **Manuelle Device-UI-Verifikation** (Import 46 MB, Map, Days, Editor, Export, Live, Widget, Landscape): App ist heute installiert und gestartet, interaktive Pfade erfordern manuellen Durchgang auf dem Gerät
+
+#### ❌ weiterhin offen (unverändert)
+
+- Xcode Cloud Workflow anlegen (manuell in Xcode.app: Product → Xcode Cloud → Create Workflow)
+- App ID `de.roeber.LH2GPXWrapper` + App Group `group.de.roeber.LH2GPXWrapper` im Developer Portal registrieren
+- Privacy Policy URL fuer App Store Connect (Pflichtfeld, noch nicht eingetragen)
+- Support URL fuer App Store Connect (noch nicht eingetragen)
+- finales App Icon (aktuell Interimsdesign)
+- Apple-Review-Bestaetigung fuer NSPrivacyCollectedDataTypes (optionaler Live-Upload)
+
+---
+
 ## Statusstand 2026-04-13 — Apple-Developer-Basis + Xcode Cloud Setup
 
 ### Verifikation 2026-04-13

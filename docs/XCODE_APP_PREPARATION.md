@@ -44,7 +44,7 @@ Alternativ kann das Verzeichnis in Xcode geoeffnet werden. Die produktnahe App-S
 - kein Cloud-/Account-Sync fuer importierte History; optionaler Server-Upload ist separat, standardmaessig deaktiviert und in diesem Audit nicht neu auf Apple-Hardware verifiziert
 - keine hardware-verifizierte Background-Recording-Session oder Auto-Resume laufender Live-Tracks
 
-**Hinweis Wrapper:** Der Xcode-Wrapper unter `wrapper/LH2GPXWrapper.xcodeproj` ist bereits vollständig mit Info.plist, Bundle-Identifier `de.roeber.LH2GPXWrapper`, App-Icon, Signing-Team `XAGR3K7XDJ`, Deployment Target iOS 26.2 und `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` ausgestattet. Die Aussage "kein `.xcodeproj`" gilt nur für den Core-Package-Root, nicht für das Monorepo insgesamt.
+**Hinweis Wrapper:** Der Xcode-Wrapper unter `wrapper/LH2GPXWrapper.xcodeproj` ist bereits vollständig mit Info.plist, Bundle-Identifier `de.roeber.LH2GPXWrapper`, App-Icon, Signing-Team `XAGR3K7XDJ`, Deployment Target iOS 16.0 (App, Tests) / 16.2 (Widget, UITests) und `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` ausgestattet. Die Aussage "kein `.xcodeproj`" gilt nur für den Core-Package-Root, nicht für das Monorepo insgesamt.
 
 ## Lokale Verifikation
 
