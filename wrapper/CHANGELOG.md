@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-04-30
+
+### Verification Doc Truth Sync
+- Wrapper-Doku und Runbooks auf aktuellen Release-Truth gezogen: `TARGETED_DEVICE_FAMILY = 1` (iPhone-only v1), keine iPad-Screenshot-Pflicht fuer den aktuellen Build
+- Deployment-Target-Doku fuer App/Widget auf `iOS 16.0 / 16.2` korrigiert
+- keine Produktcode-Aenderung; nur Verifikations- und Runbook-Drift bereinigt
+
 ## 2026-04-29
 
 ### Dynamic Island / Live Activity Truth Sync

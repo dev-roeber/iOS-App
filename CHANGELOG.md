@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [2026-04-30] — docs: Dynamic Island verification truth sync
+
+### Geaendert
+- veraltete Doku-Aussagen fuer den Dynamic-Island-/Widget-Pfad auf aktuellen Repo-Truth gezogen
+- `NEXT_STEPS.md`: historischer Live-Activity-Hinweis auf nutzbaren `iOS 16.2+`-Pfad korrigiert; Screenshot-Hinweis auf iPhone-only-v1 angepasst
+- `ROADMAP.md`: veraltete Aussage entfernt, dass das Widget-Target noch manuell anzulegen sei
+- `wrapper/README.md`, `wrapper/docs/LOCAL_IPHONE_RUNBOOK.md`, `wrapper/docs/TESTFLIGHT_RUNBOOK.md`: iPhone-only-Release-Truth (`TARGETED_DEVICE_FAMILY = 1`) und korrektes Deployment-Target (`iOS 16.0 / 16.2`) synchronisiert
+
+### Verifiziert
+- Repo-Truth-Audit gegen aktuellen Code und Projektdatei
+- `swift test`
+- `git diff --check`
+- `xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`
+
 ## [2026-04-29] — fix: Interactive Overview-/Explore-Map audit hardened
 
 ### Geaendert

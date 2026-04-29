@@ -149,7 +149,7 @@ Lokal abgeschlossen (2026-04-29):
   - Keine Debug-Overlays, keine Server-URLs, keine Tokens sichtbar
 - `docs/privacy.html`: Datenschutzerklärung für App Store Connect (GitHub Pages)
 - `ITSAppUsesNonExemptEncryption = false`: in App + Widget Info.plist gesetzt
-- iPad: TARGETED_DEVICE_FAMILY=1,2 (unterstützt), iPad-Screenshots ausstehend
+- iPad: fuer v1 aktuell nicht im Release-Build vorgesehen (`TARGETED_DEVICE_FAMILY = 1`); iPad-Screenshots sind deshalb nicht erforderlich
 
 Bewusst geparkt (ASC-Zugang erforderlich):
 - App Store Connect Projekt anlegen

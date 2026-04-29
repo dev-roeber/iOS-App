@@ -95,7 +95,7 @@ xcodebuild test \
 
 - Xcode mit aktivem Development-Signing (Team XAGR3K7XDJ)
 - iPhone per USB verbunden, Geraet vertraut gesetzt
-- Deployment Target: iOS 26.2 – das Geraet muss mindestens iOS 26.2 laufen
+- Deployment Target: iOS 16.0 fuer die App / iOS 16.2 fuer das Widget bzw. Live-Activity-Widget
 
 ### Deploy per Xcode (empfohlen)
 

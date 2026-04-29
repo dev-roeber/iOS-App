@@ -14,7 +14,7 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [ ] **Support-URL in App Store Connect eintragen** — `https://dev-roeber.github.io/iOS-App/support.html`
 - [ ] **Privacy-URL in App Store Connect eintragen** — `https://dev-roeber.github.io/iOS-App/privacy.html`
 - [x] **App-Store-Screenshots erstellt** — `testAppStoreScreenshots` UITest auf iPhone 15 Pro Max; 6× PNGs: `iphone-67/` (1290×2796) + `iphone-65/` (1242×2688); Demo-Fixture-Daten, keine privaten Daten (2026-04-29)
-- [ ] **App-Store-Screenshots hochladen** — `docs/app-store-assets/screenshots/iphone-67/*.png` in App Store Connect → 6.7-inch Display Slot; iPad-Screenshots noch ausstehend
+- [ ] **App-Store-Screenshots hochladen** — `docs/app-store-assets/screenshots/iphone-67/*.png` in App Store Connect → 6.7-inch Display Slot; fuer v1 sind keine iPad-Screenshots noetig, solange `TARGETED_DEVICE_FAMILY = 1` bleibt
 - [x] **Datenschutzerklärung erstellt** — `docs/privacy.html` (GitHub Pages); App Store Connect URL: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-29)
 - [ ] **Datenschutzerklärung-URL in App Store Connect eintragen** — App-Datenschutz → Datenschutzrichtlinie → `https://dev-roeber.github.io/iOS-App/privacy.html`
 - [ ] **GitHub Pages aktivieren** — Repo-Settings → Pages → Source: main → /docs (einmalig, manuell)
@@ -60,7 +60,7 @@ Umgesetzt:
 - Phase B1: Douglas-Peucker PathSimplification (epsilon=15m, keine externen Deps)
 - AppDayPathDisplayMode enum (.original / .mapMatched) mit @AppStorage-Persistenz
 - Toggle in AppDayDetailView fuer Original vs. vereinfachte Darstellung (`Simplified (Beta)`)
-- Phase B2: ActivityKit Live Activity (iOS 16.1+)
+- Phase B2: ActivityKit Live Activity (nutzbarer Widget-/Dynamic-Island-Pfad: iOS 16.2+)
 - TrackingAttributes + TrackingStatus (ActivityAttributes)
 - ActivityManager Singleton: start/update/end/cancelAll
 - Integration in LiveLocationFeatureModel und LiveTrackRecorder

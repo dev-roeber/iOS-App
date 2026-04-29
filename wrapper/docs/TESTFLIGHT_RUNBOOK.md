@@ -94,8 +94,8 @@ und liegen im Repo unter `docs/appstore-screenshots/`:
 | iPhone 6.9" | 1320 × 2868 | iPhone 17 Pro Max | `F671FA96-892A-4849-AD86-3EE9FF8FEB36` |
 | iPad Pro 13" | 2752 × 2064 | iPad Pro 13-inch (M5) | `D381D195-1B2D-47C9-98E6-9C07F0C6A857` |
 
-Mindestens 1 iPhone-Klasse ist Pflicht. iPad-Screenshots sind empfohlen, da die App
-TARGETED_DEVICE_FAMILY = 1,2 (iPhone + iPad) hat.
+Mindestens 1 iPhone-Klasse ist Pflicht. Fuer den aktuellen v1-Stand sind keine iPad-Screenshots noetig,
+weil der Release-Build auf `TARGETED_DEVICE_FAMILY = 1` (iPhone-only) steht.
 
 **Hinweis zu UDIDs:** UDIDs sind maschinenspezifisch. Den passenden Simulator finden:
 ```bash

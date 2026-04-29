@@ -161,7 +161,7 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 
 - echtes Road-/Path-Matching; aktuell gibt es nur Pfadvereinfachung im Day-Detail
 - KMZ-Export — ✅ abgeschlossen (2026-04-12); KMZBuilder (ZIPFoundation), KMZDocument (BinaryExportDocument), ExportFormat.kmz, 6 neue Tests
-- Live Activity Widget UI — ✅ Swift-Dateien vorhanden (wrapper/LH2GPXWidget/); Xcode Target manuell anzulegen (docs/WIDGET_XCODE_SETUP.md)
+- Live Activity Widget UI — ✅ Widget-Target und Swift-Dateien sind vorhanden (`wrapper/LH2GPXWidget/`); offene Arbeit ist reale Apple-Hardware-Verifikation, nicht Target-Anlage
 - weitere Insight-Arbeit: Apple-Host-Verifikation fuer den jetzt verdrahteten Drilldown-/Chart-Share-Flow sowie optional spaeter map-linked Cross-Filtering
 - Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart
 - breitere Lokalisierungsabdeckung und eine strengere Lokalisierungspruefung
