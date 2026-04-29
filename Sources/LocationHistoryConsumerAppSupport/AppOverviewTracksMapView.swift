@@ -3,10 +3,103 @@ import SwiftUI
 import MapKit
 import LocationHistoryConsumer
 
-// MARK: - Overview Tracks Map (Task 3)
+// MARK: - Overview Map Model
 
-/// A map that shows polylines for all tracks in the active time range
-/// (and favorites filter). Data is loaded asynchronously off the main thread.
+@available(iOS 17.0, macOS 14.0, *)
+@Observable @MainActor
+final class AppOverviewMapModel {
+    var renderData: OverviewMapRenderData = .empty
+    var dataRegion: MKCoordinateRegion?
+
+    private var allCandidates: [OverviewMapPathCandidate] = []
+    private var totalPointCount: Int = 0
+    private var loadGeneration: UInt64 = 0
+    private var viewportTask: Task<Void, Never>?
+    private var overlayTask: Task<Void, Never>?
+
+    init() {}
+
+    /// Full data load: scans export, caches candidates, then builds initial overlays.
+    func loadData(
+        daySummaries: [DaySummary],
+        content: AppSessionContent?,
+        filter: AppExportQueryFilter?
+    ) async {
+        guard let content, !daySummaries.isEmpty else {
+            allCandidates = []
+            dataRegion = nil
+            renderData = .empty
+            return
+        }
+
+        loadGeneration &+= 1
+        let gen = loadGeneration
+        renderData = .loading
+
+        let dates = Set(daySummaries.map(\.date))
+        let innerTask = Task.detached(priority: .userInitiated) {
+            OverviewMapPreparation.scanCandidates(for: dates, export: content.export, filter: filter)
+        }
+        let scanned = await withTaskCancellationHandler(
+            operation: { await innerTask.value },
+            onCancel: { innerTask.cancel() }
+        )
+
+        guard gen == loadGeneration else { return }
+        allCandidates = scanned.candidates
+        dataRegion = scanned.dataRegion
+        totalPointCount = scanned.totalPointCount
+
+        rebuildOverlays(viewportRegion: nil)
+    }
+
+    /// Immediate overlay rebuild for the given camera region.
+    func updateForViewport(_ region: MKCoordinateRegion) {
+        viewportTask?.cancel()
+        rebuildOverlays(viewportRegion: region)
+    }
+
+    /// Debounced overlay rebuild (100 ms), suitable for continuous camera events.
+    func debounceUpdateForViewport(_ region: MKCoordinateRegion) {
+        viewportTask?.cancel()
+        viewportTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            guard !Task.isCancelled else { return }
+            self.rebuildOverlays(viewportRegion: region)
+        }
+    }
+
+    private func rebuildOverlays(viewportRegion: MKCoordinateRegion?) {
+        overlayTask?.cancel()
+        let candidates = allCandidates
+        let pointCount = totalPointCount
+        let dataReg = dataRegion
+        let viewport = viewportRegion
+        overlayTask = Task.detached(priority: .userInitiated) { [self] in
+            let data = OverviewMapPreparation.buildOverlaysFromCandidates(
+                candidates: candidates,
+                totalPointCount: pointCount,
+                dataRegion: dataReg,
+                viewportRegion: viewport
+            )
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [self] in self.renderData = data }
+        }
+    }
+}
+
+// MARK: - Scan Result
+
+struct OverviewMapScanResult {
+    let candidates: [OverviewMapPathCandidate]
+    let dataRegion: MKCoordinateRegion?
+    let totalPointCount: Int
+}
+
+// MARK: - Overview Tracks Map View
+
+/// Interactive map showing all tracks in the active time range.
+/// Supports zoom/pan, style switching, fit-to-data, and fullscreen explore mode.
 @available(iOS 17.0, macOS 14.0, *)
 struct AppOverviewTracksMapView: View {
     @EnvironmentObject private var preferences: AppPreferences
@@ -15,15 +108,16 @@ struct AppOverviewTracksMapView: View {
     let content: AppSessionContent?
     let queryFilter: AppExportQueryFilter?
 
-    @State private var renderData: OverviewMapRenderData = .empty
-    @State private var loadGeneration: UInt64 = 0
-    @State private var loadingPhase: OverviewMapLoadingPhase = .analyzing
+    @State private var model = AppOverviewMapModel()
+    @State private var mapPosition: MapCameraPosition = .automatic
+    @State private var hasSetInitialPosition = false
+    @State private var isExpanded = false
 
     var body: some View {
         Group {
-            if renderData.hasContent, let region = renderData.region {
-                mapView(region: region)
-            } else if renderData.isLoading {
+            if model.renderData.hasContent {
+                compactMapView
+            } else if model.renderData.isLoading {
                 loadingPlaceholder
             } else {
                 emptyPlaceholder
@@ -35,50 +129,105 @@ struct AppOverviewTracksMapView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
+        .sheet(isPresented: $isExpanded) {
+            AppOverviewExploreSheet(model: model)
+                .environmentObject(preferences)
+        }
         .task(id: taskKey) {
-            await loadMapData()
+            hasSetInitialPosition = false
+            await model.loadData(
+                daySummaries: daySummaries,
+                content: content,
+                filter: queryFilter
+            )
+        }
+        .onChange(of: model.renderData.hasContent) { _, hasContent in
+            if hasContent && !hasSetInitialPosition, let region = model.dataRegion {
+                mapPosition = .region(region)
+                hasSetInitialPosition = true
+            }
         }
     }
 
-    // MARK: - Sub-views
+    // MARK: - Map
 
-    @ViewBuilder
-    private func mapView(region: MKCoordinateRegion) -> some View {
-        Map(initialPosition: .region(region)) {
-            ForEach(Array(renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
+    private var compactMapView: some View {
+        Map(position: $mapPosition) {
+            ForEach(Array(model.renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
                 MapPolyline(coordinates: path.coordinates)
                     .stroke(MapPalette.routeColor(for: path.activityType), lineWidth: 2)
             }
         }
-        .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
-        .disabled(true) // read-only overview; no interaction needed
+        .mapStyle(mapStyle)
+        .onMapCameraChange(frequency: .onEnd) { context in
+            model.updateForViewport(context.region)
+        }
         .accessibilityLabel(mapAccessibilityLabel)
-        .overlay(alignment: .bottomTrailing) {
-            Text("\(renderData.visibleRouteCount) \(t(renderData.visibleRouteCount == 1 ? "route" : "routes"))")
+        .overlay(alignment: .topTrailing) {
+            HStack(spacing: 6) {
+                mapControlButton(systemImage: styleToggleIcon) {
+                    preferences.preferredMapStyle = preferences.preferredMapStyle.isHybrid ? .standard : .hybrid
+                }
+                mapControlButton(systemImage: "location.viewfinder") {
+                    if let region = model.dataRegion {
+                        withAnimation { mapPosition = .region(region) }
+                    }
+                }
+                mapControlButton(systemImage: "arrow.up.left.and.arrow.down.right") {
+                    isExpanded = true
+                }
+            }
+            .padding(8)
+        }
+        .overlay(alignment: .bottomTrailing) { routeCountBadge }
+        .overlay(alignment: .bottomLeading) { optimizedBadge }
+    }
+
+    // MARK: - Controls
+
+    @ViewBuilder
+    private func mapControlButton(systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(.black.opacity(0.4))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHidden(true)
+    }
+
+    private var routeCountBadge: some View {
+        Text("\(model.renderData.visibleRouteCount) \(t(model.renderData.visibleRouteCount == 1 ? "route" : "routes"))")
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.black.opacity(0.45))
+            .clipShape(Capsule())
+            .padding(8)
+    }
+
+    @ViewBuilder
+    private var optimizedBadge: some View {
+        if model.renderData.isOptimized {
+            let label = model.renderData.visibleRouteCount < model.renderData.totalRouteCount
+                ? t("Simplified map – export complete")
+                : t("Optimized overview")
+            Text(label)
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(.black.opacity(0.45))
+                .background(.black.opacity(0.35))
                 .clipShape(Capsule())
                 .padding(8)
         }
-        .overlay(alignment: .bottomLeading) {
-            if renderData.isOptimized {
-                let label = renderData.visibleRouteCount < renderData.totalRouteCount
-                    ? t("Simplified map – export complete")
-                    : t("Optimized overview")
-                Text(label)
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.black.opacity(0.35))
-                    .clipShape(Capsule())
-                    .padding(8)
-            }
-        }
     }
+
+    // MARK: - Placeholders
 
     private var loadingPlaceholder: some View {
         VStack {
@@ -93,7 +242,7 @@ struct AppOverviewTracksMapView: View {
                 ProgressView()
                     .progressViewStyle(.linear)
                     .tint(.accentColor)
-                Text(t(loadingPhase.descriptionKey))
+                Text(t("Analysing routes…"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -120,63 +269,32 @@ struct AppOverviewTracksMapView: View {
         .background(Color.secondary.opacity(0.05))
     }
 
-    // MARK: - Data loading
+    // MARK: - Helpers
 
-    /// A stable identifier that changes whenever the input data or relevant filters change.
     private var taskKey: Int {
         OverviewMapTaskKey.make(daySummaries: daySummaries, queryFilter: queryFilter)
     }
 
+    private var mapStyle: MapStyle {
+        preferences.preferredMapStyle.isHybrid ? .hybrid : .standard
+    }
+
+    private var styleToggleIcon: String {
+        preferences.preferredMapStyle.isHybrid ? "map" : "globe.europe.africa"
+    }
+
     private var mapAccessibilityLabel: String {
-        let count = renderData.visibleRouteCount
+        let count = model.renderData.visibleRouteCount
         if preferences.appLanguage.isGerman {
-            if renderData.isOptimized {
+            if model.renderData.isOptimized {
                 return "Optimierte Übersichtskarte mit \(count) dargestellten \(count == 1 ? "Route" : "Routen")"
             }
             return "Übersichtskarte mit \(count) \(count == 1 ? "Route" : "Routen")"
         }
-        if renderData.isOptimized {
+        if model.renderData.isOptimized {
             return "Optimized overview map with \(count) displayed \(count == 1 ? "route" : "routes")"
         }
         return "Overview map with \(count) \(count == 1 ? "route" : "routes")"
-    }
-
-    @MainActor
-    private func loadMapData() async {
-        guard let content, !daySummaries.isEmpty else {
-            renderData = .empty
-            return
-        }
-
-        loadGeneration &+= 1
-        let generation = loadGeneration
-        loadingPhase = .analyzing
-        renderData = .loading
-
-        let allDates = daySummaries.map(\.date)
-        let filter = queryFilter
-
-        // Forward outer-task cancellation into the detached task so that
-        // buildRenderDataFast exits at the next cooperative-cancellation point
-        // instead of continuing to run after the .task(id:) body was torn down.
-        let innerTask = Task.detached(priority: .userInitiated) {
-            OverviewMapPreparation.buildRenderDataFast(
-                for: Set(allDates),
-                export: content.export,
-                filter: filter
-            )
-        }
-        let prepared = await withTaskCancellationHandler(
-            operation: { await innerTask.value },
-            onCancel: { innerTask.cancel() }
-        )
-
-        // Only skip publishing when a *newer* generation is already running.
-        // Never guard on Task.isCancelled alone: that would leave renderData
-        // stuck at .loading when the view is the sole consumer of this task.
-        guard generation == loadGeneration else { return }
-        loadingPhase = .building
-        renderData = prepared
     }
 
     private func t(_ english: String) -> String {
@@ -184,7 +302,130 @@ struct AppOverviewTracksMapView: View {
     }
 }
 
-// MARK: - Render data models
+// MARK: - Explore Sheet
+
+@available(iOS 17.0, macOS 14.0, *)
+struct AppOverviewExploreSheet: View {
+    let model: AppOverviewMapModel
+    @EnvironmentObject private var preferences: AppPreferences
+    @Environment(\.dismiss) private var dismiss
+    @State private var mapPosition: MapCameraPosition = .automatic
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if model.renderData.hasContent {
+                    exploreMap
+                } else if model.renderData.isLoading {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        Text(t("Loading map…"))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    VStack(spacing: 8) {
+                        Image(systemName: "map")
+                            .font(.largeTitle)
+                            .foregroundStyle(.secondary)
+                        Text(t("No tracks in selected range"))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .navigationTitle(t("Explore"))
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(t("Done")) { dismiss() }
+                }
+            }
+        }
+        .presentationDragIndicator(.visible)
+        .onAppear {
+            if let region = model.dataRegion {
+                mapPosition = .region(region)
+            }
+        }
+    }
+
+    private var exploreMap: some View {
+        Map(position: $mapPosition) {
+            ForEach(Array(model.renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
+                MapPolyline(coordinates: path.coordinates)
+                    .stroke(MapPalette.routeColor(for: path.activityType), lineWidth: 2)
+            }
+        }
+        .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
+        .onMapCameraChange(frequency: .onEnd) { context in
+            model.updateForViewport(context.region)
+        }
+        .ignoresSafeArea(edges: .bottom)
+        .overlay(alignment: .topTrailing) {
+            HStack(spacing: 6) {
+                exploreControlButton(
+                    systemImage: preferences.preferredMapStyle.isHybrid ? "map" : "globe.europe.africa"
+                ) {
+                    preferences.preferredMapStyle = preferences.preferredMapStyle.isHybrid ? .standard : .hybrid
+                }
+                exploreControlButton(systemImage: "location.viewfinder") {
+                    if let region = model.dataRegion {
+                        withAnimation { mapPosition = .region(region) }
+                    }
+                }
+            }
+            .padding(12)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("\(model.renderData.visibleRouteCount) \(t(model.renderData.visibleRouteCount == 1 ? "route" : "routes"))")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.45))
+                    .clipShape(Capsule())
+                if model.renderData.isOptimized {
+                    let label = model.renderData.visibleRouteCount < model.renderData.totalRouteCount
+                        ? t("Simplified map – export complete")
+                        : t("Optimized overview")
+                    Text(label)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.black.opacity(0.35))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(12)
+        }
+    }
+
+    @ViewBuilder
+    private func exploreControlButton(systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(.black.opacity(0.4))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHidden(true)
+    }
+
+    private func t(_ english: String) -> String {
+        preferences.localized(english)
+    }
+}
+
+// MARK: - Render Data Models
 
 struct OverviewMapPathOverlay: Equatable {
     let coordinates: [CLLocationCoordinate2D]
@@ -201,8 +442,12 @@ struct OverviewMapRenderData {
     var hasContent: Bool { !pathOverlays.isEmpty }
     var visibleRouteCount: Int { pathOverlays.count }
 
-    static let empty = OverviewMapRenderData(pathOverlays: [], region: nil, totalRouteCount: 0, isOptimized: false, isLoading: false)
-    static let loading = OverviewMapRenderData(pathOverlays: [], region: nil, totalRouteCount: 0, isOptimized: false, isLoading: true)
+    static let empty = OverviewMapRenderData(
+        pathOverlays: [], region: nil, totalRouteCount: 0, isOptimized: false, isLoading: false
+    )
+    static let loading = OverviewMapRenderData(
+        pathOverlays: [], region: nil, totalRouteCount: 0, isOptimized: false, isLoading: true
+    )
 
     init(pathOverlays: [OverviewMapPathOverlay], region: MKCoordinateRegion?, totalRouteCount: Int, isOptimized: Bool = false) {
         self.pathOverlays = pathOverlays
@@ -221,11 +466,9 @@ struct OverviewMapRenderData {
     }
 }
 
-/// Represents the current computation phase shown in the loading card.
+/// Loading phases exposed for tests and the loading UI.
 enum OverviewMapLoadingPhase {
-    /// Collecting and scoring route candidates from the export data.
     case analyzing
-    /// Committing the simplified overlays to the SwiftUI map.
     case building
 
     var descriptionKey: String {
@@ -252,7 +495,7 @@ enum OverviewMapTaskKey {
     }
 }
 
-private struct OverviewMapPathCandidate {
+struct OverviewMapPathCandidate {
     let signature: Int
     let fullCoordinates: [CLLocationCoordinate2D]
     let midpoint: CLLocationCoordinate2D
@@ -262,9 +505,8 @@ private struct OverviewMapPathCandidate {
 
 struct OverviewMapRenderProfile {
     let routeLimit: Int
-    /// Hard cap on the number of MapPolyline overlays sent to MapKit.
-    /// Prevents freeze/crash when "All Time" is selected on large datasets.
-    /// Export data is never affected by this limit.
+    /// Hard cap on MapPolyline overlays sent to MapKit.
+    /// Prevents freeze/crash for large datasets. Export data is never affected.
     let overlayLimit: Int
     let gridDimension: Int
     let maxRoutesPerCell: Int
@@ -272,68 +514,53 @@ struct OverviewMapRenderProfile {
     let maxPolylinePoints: Int
 
     static func resolve(routeCount: Int, totalPointCount: Int) -> OverviewMapRenderProfile {
-        // routeLimit tracks the full in-range candidate count (metadata only).
-        // overlayLimit is the hard MapKit safety cap: keeps rendered overlay count
-        // within what MapKit can handle without freeze or crash.
-        // Export always uses the full unmodified dataset, regardless of these limits.
         switch (routeCount, totalPointCount) {
         case let (routes, points) where routes > 500 || points > 150_000:
             return OverviewMapRenderProfile(
-                routeLimit: routeCount,
-                overlayLimit: 150,
-                gridDimension: 12,
-                maxRoutesPerCell: 2,
-                simplificationEpsilonM: 140,
-                maxPolylinePoints: 64
+                routeLimit: routeCount, overlayLimit: 150,
+                gridDimension: 12, maxRoutesPerCell: 2,
+                simplificationEpsilonM: 140, maxPolylinePoints: 64
             )
         case let (routes, points) where routes > 240 || points > 60_000:
             return OverviewMapRenderProfile(
-                routeLimit: routeCount,
-                overlayLimit: 200,
-                gridDimension: 10,
-                maxRoutesPerCell: 3,
-                simplificationEpsilonM: 100,
-                maxPolylinePoints: 96
+                routeLimit: routeCount, overlayLimit: 200,
+                gridDimension: 10, maxRoutesPerCell: 3,
+                simplificationEpsilonM: 100, maxPolylinePoints: 96
             )
         case let (routes, points) where routes > 120 || points > 30_000:
             return OverviewMapRenderProfile(
-                routeLimit: routeCount,
-                overlayLimit: 250,
-                gridDimension: 9,
-                maxRoutesPerCell: 4,
-                simplificationEpsilonM: 70,
-                maxPolylinePoints: 120
+                routeLimit: routeCount, overlayLimit: 250,
+                gridDimension: 9, maxRoutesPerCell: 4,
+                simplificationEpsilonM: 70, maxPolylinePoints: 120
             )
         case let (routes, points) where routes > 60 || points > 15_000:
             return OverviewMapRenderProfile(
-                routeLimit: routeCount,
-                overlayLimit: 300,
-                gridDimension: 8,
-                maxRoutesPerCell: 6,
-                simplificationEpsilonM: 50,
-                maxPolylinePoints: 160
+                routeLimit: routeCount, overlayLimit: 300,
+                gridDimension: 8, maxRoutesPerCell: 6,
+                simplificationEpsilonM: 50, maxPolylinePoints: 160
             )
         default:
             return OverviewMapRenderProfile(
-                routeLimit: routeCount,
-                overlayLimit: max(routeCount, 1),
-                gridDimension: 6,
-                maxRoutesPerCell: 6,
-                simplificationEpsilonM: 30,
-                maxPolylinePoints: 220
+                routeLimit: routeCount, overlayLimit: max(routeCount, 1),
+                gridDimension: 6, maxRoutesPerCell: 6,
+                simplificationEpsilonM: 30, maxPolylinePoints: 220
             )
         }
     }
 }
 
+// MARK: - Preparation
+
 enum OverviewMapPreparation {
-    /// O(N) single-pass fast path — iterates `export.data.days` once using a date Set for O(1) lookup.
-    /// Avoids the O(N² log N) per-date projectedDays() sort of the legacy `buildRenderData`.
-    nonisolated static func buildRenderDataFast(
+
+    // MARK: Scan phase — collect all path candidates from the export
+
+    /// O(N) scan: iterates `export.data.days` once, returns all route candidates with scores.
+    nonisolated static func scanCandidates(
         for dateSet: Set<String>,
         export: AppExport,
         filter: AppExportQueryFilter?
-    ) -> OverviewMapRenderData {
+    ) -> OverviewMapScanResult {
         let allowedActivityTypes: Set<String>? = filter.flatMap { f in
             f.activityTypes.isEmpty ? nil : f.activityTypes
         }
@@ -353,9 +580,7 @@ enum OverviewMapPreparation {
 
             for path in day.paths {
                 iterationCount += 1
-                if iterationCount % 100 == 0, Task.isCancelled {
-                    break outer
-                }
+                if iterationCount % 100 == 0, Task.isCancelled { break outer }
                 if totalPointCount >= pointBudget { break outer }
 
                 if let allowed = allowedActivityTypes {
@@ -433,24 +658,33 @@ enum OverviewMapPreparation {
             return MKCoordinateRegion(center: center, span: span)
         }() : nil
 
-        guard !candidates.isEmpty else {
-            return OverviewMapRenderData(pathOverlays: [], region: region, totalRouteCount: 0)
-        }
+        return OverviewMapScanResult(
+            candidates: candidates,
+            dataRegion: region,
+            totalPointCount: totalPointCount
+        )
+    }
 
-        // Exit before the expensive simplification phase if the task was cancelled
-        // during collection (e.g. taskKey changed while iterating a large export).
-        if Task.isCancelled {
-            return OverviewMapRenderData(pathOverlays: [], region: region, totalRouteCount: candidates.count)
+    // MARK: Overlay phase — select + simplify candidates into render data
+
+    /// Selects candidates (optionally viewport-aware), simplifies, and returns render data.
+    /// When `viewportRegion` is set, routes whose midpoint falls within the viewport are prioritised.
+    nonisolated static func buildOverlaysFromCandidates(
+        candidates: [OverviewMapPathCandidate],
+        totalPointCount: Int,
+        dataRegion: MKCoordinateRegion?,
+        viewportRegion: MKCoordinateRegion?
+    ) -> OverviewMapRenderData {
+        guard !candidates.isEmpty else {
+            return OverviewMapRenderData(pathOverlays: [], region: dataRegion, totalRouteCount: 0)
         }
 
         let profile = OverviewMapRenderProfile.resolve(
             routeCount: candidates.count,
             totalPointCount: totalPointCount
         )
-        let selected = selectCandidates(candidates, region: region, profile: profile)
+        let selected = selectCandidates(candidates, viewport: viewportRegion, profile: profile)
 
-        // Build overlays one-by-one so cancellation (e.g. from withTaskCancellationHandler)
-        // can interrupt the Douglas-Peucker loop before all paths are processed.
         var pathOverlays: [OverviewMapPathOverlay] = []
         pathOverlays.reserveCapacity(selected.count)
         for candidate in selected {
@@ -459,16 +693,44 @@ enum OverviewMapPreparation {
                 pathOverlays.append(overlay)
             }
         }
+
         let isCapped = pathOverlays.count < candidates.count
         let isOptimized = profile.simplificationEpsilonM > 30 || profile.maxPolylinePoints < 220 || isCapped
 
         return OverviewMapRenderData(
             pathOverlays: pathOverlays,
-            region: region,
+            region: dataRegion,
             totalRouteCount: candidates.count,
             isOptimized: isOptimized
         )
     }
+
+    // MARK: Combined fast path (used by tests and the legacy load path)
+
+    /// O(N) single-pass: scans candidates then builds overlays in one call.
+    nonisolated static func buildRenderDataFast(
+        for dateSet: Set<String>,
+        export: AppExport,
+        filter: AppExportQueryFilter?
+    ) -> OverviewMapRenderData {
+        let scanned = scanCandidates(for: dateSet, export: export, filter: filter)
+        guard !scanned.candidates.isEmpty else {
+            return OverviewMapRenderData(pathOverlays: [], region: scanned.dataRegion, totalRouteCount: 0)
+        }
+        if Task.isCancelled {
+            return OverviewMapRenderData(
+                pathOverlays: [], region: scanned.dataRegion, totalRouteCount: scanned.candidates.count
+            )
+        }
+        return buildOverlaysFromCandidates(
+            candidates: scanned.candidates,
+            totalPointCount: scanned.totalPointCount,
+            dataRegion: scanned.dataRegion,
+            viewportRegion: nil
+        )
+    }
+
+    // MARK: Legacy path (used by older tests via buildRenderData)
 
     nonisolated static func buildRenderData(
         for dates: [String],
@@ -498,7 +760,7 @@ enum OverviewMapPreparation {
             routeCount: candidates.count,
             totalPointCount: totalPointCount
         )
-        let selected = selectCandidates(candidates, region: region, profile: profile)
+        let selected = selectCandidates(candidates, viewport: region, profile: profile)
         let pathOverlays = selected.compactMap { candidate in
             makeOverlay(from: candidate, profile: profile)
         }
@@ -512,6 +774,8 @@ enum OverviewMapPreparation {
             isOptimized: isOptimized
         )
     }
+
+    // MARK: Private helpers
 
     private nonisolated static func makeCandidate(from overlay: DayMapPathOverlay) -> OverviewMapPathCandidate? {
         guard overlay.coordinates.count >= 2 else { return nil }
@@ -544,15 +808,41 @@ enum OverviewMapPreparation {
         )
     }
 
+    /// Selects up to `overlayLimit` candidates, preferring those within `viewport` when provided.
     private nonisolated static func selectCandidates(
         _ candidates: [OverviewMapPathCandidate],
-        region: MKCoordinateRegion?,
+        viewport: MKCoordinateRegion?,
         profile: OverviewMapRenderProfile
     ) -> [OverviewMapPathCandidate] {
-        _ = region
         let sorted = candidates.sorted { $0.score > $1.score }
         guard sorted.count > profile.overlayLimit else { return sorted }
+
+        if let vp = viewport {
+            let inViewport = sorted.filter { regionContains(vp, coordinate: $0.midpoint) }
+            if inViewport.count >= profile.overlayLimit {
+                return Array(inViewport.prefix(profile.overlayLimit))
+            }
+            if !inViewport.isEmpty {
+                let remainder = sorted
+                    .filter { !regionContains(vp, coordinate: $0.midpoint) }
+                    .prefix(profile.overlayLimit - inViewport.count)
+                return inViewport + Array(remainder)
+            }
+        }
+
         return Array(sorted.prefix(profile.overlayLimit))
+    }
+
+    private nonisolated static func regionContains(
+        _ region: MKCoordinateRegion,
+        coordinate: CLLocationCoordinate2D
+    ) -> Bool {
+        let latMin = region.center.latitude - region.span.latitudeDelta / 2
+        let latMax = region.center.latitude + region.span.latitudeDelta / 2
+        let lonMin = region.center.longitude - region.span.longitudeDelta / 2
+        let lonMax = region.center.longitude + region.span.longitudeDelta / 2
+        return coordinate.latitude >= latMin && coordinate.latitude <= latMax
+            && coordinate.longitude >= lonMin && coordinate.longitude <= lonMax
     }
 
     private nonisolated static func makeOverlay(
@@ -565,25 +855,17 @@ enum OverviewMapPreparation {
         )
         let decimated = decimate(simplified, maxPoints: profile.maxPolylinePoints)
         guard decimated.count >= 2 else { return nil }
-
-        return OverviewMapPathOverlay(
-            coordinates: decimated,
-            activityType: candidate.activityType
-        )
+        return OverviewMapPathOverlay(coordinates: decimated, activityType: candidate.activityType)
     }
 
     private nonisolated static func decimate(
         _ coordinates: [CLLocationCoordinate2D],
         maxPoints: Int
     ) -> [CLLocationCoordinate2D] {
-        guard coordinates.count > maxPoints, maxPoints >= 2 else {
-            return coordinates
-        }
-
+        guard coordinates.count > maxPoints, maxPoints >= 2 else { return coordinates }
         let step = max(1, Int(ceil(Double(coordinates.count - 1) / Double(maxPoints - 1))))
         var result: [CLLocationCoordinate2D] = []
         result.reserveCapacity(maxPoints)
-
         var index = 0
         while index < coordinates.count - 1 {
             result.append(coordinates[index])
@@ -595,18 +877,14 @@ enum OverviewMapPreparation {
 
     nonisolated static func computeRegion(from coordinates: [DayMapCoordinate]) -> MKCoordinateRegion? {
         guard let first = coordinates.first else { return nil }
-        var minLat = first.lat
-        var maxLat = first.lat
-        var minLon = first.lon
-        var maxLon = first.lon
-
+        var minLat = first.lat, maxLat = first.lat
+        var minLon = first.lon, maxLon = first.lon
         for coordinate in coordinates {
             minLat = min(minLat, coordinate.lat)
             maxLat = max(maxLat, coordinate.lat)
             minLon = min(minLon, coordinate.lon)
             maxLon = max(maxLon, coordinate.lon)
         }
-
         let center = CLLocationCoordinate2D(
             latitude: (minLat + maxLat) / 2,
             longitude: (minLon + maxLon) / 2
