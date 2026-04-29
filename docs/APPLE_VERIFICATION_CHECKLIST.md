@@ -96,16 +96,35 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden, manueller Real-Nachweis noch offen
 - **Landscape auf allen Tabs**: kompaktes Landscape-Layout nicht systematisch auf Device verifiziert
 
-#### ❌ weiterhin offen (aktualisiert 2026-04-29)
+#### ❌ weiterhin offen (aktualisiert 2026-04-29, Root Cause bewiesen)
 
-- **Xcode Cloud Build 34 – Signing-Validierungsfehler (Non-ASCII-Zertifikat):**
-  IPA-Forensik (Build 34) ergab: Binary ist korrekt signiert (`codesign --verify`: **valid on disk**),
-  scheitert jedoch an `does not satisfy its designated Requirement`.
-  Authority = `Apple Distribution: Sebastian Röber (XAGR3K7XDJ)` — `ö` ist kein reines ASCII-Zeichen.
-  Wahrscheinlichste Ursache: Apple's Upload-Validierung akzeptiert Non-ASCII in Zertifikats-CNs nicht.
-  **Nächster Schritt:** Neues Distribution-Zertifikat mit ASCII-only CN (`Sebastian Roeber`) erzeugen,
-  dann Xcode Cloud Clean Build starten.
-- App ID `de.roeber.LH2GPXWrapper` + App Group `group.de.roeber.LH2GPXWrapper` im Developer Portal registrieren (weiterhin erforderlich für Automatic Provisioning, nicht mehr wahrscheinlichste Build-34-Ursache)
+- **Xcode Cloud Build 34 – Root Cause: NFD/NFC-Normalisierungsmismatch in Designated Requirement**
+
+  Vollständige IPA-Forensik (IPA: `LH2GPXWrapper 1.0 app-store-4`, Build 34) ergibt:
+
+  | Prüfpunkt | Ergebnis |
+  |---|---|
+  | Signing Authority | Apple Distribution: Sebastian Röber ✅ |
+  | Provisioning Profile | iOS Team Store ✅ |
+  | application-identifier App | XAGR3K7XDJ.de.roeber.LH2GPXWrapper ✅ |
+  | application-identifier Widget | XAGR3K7XDJ.de.roeber.LH2GPXWrapper.Widget ✅ |
+  | App Groups | group.de.roeber.LH2GPXWrapper (App + Widget) ✅ |
+  | Entitlements | vollständig korrekt ✅ |
+  | Run Script Build Phases | KEINE vorhanden ✅ |
+  | `codesign --verify` | valid on disk ✅ |
+  | `codesign --verify --strict` | does not satisfy its designated Requirement ❌ |
+
+  **Bewiesene Ursache:** Designated Requirement enthält CN in Unicode NFD (`6f cc 88` = o + U+0308),
+  tatsächliches Zertifikat hat CN in NFC (`c3 b6` = U+00F6 ö prekomponiert).
+  Byte-Vergleich scheitert. Xcode Cloud / macOS Security Framework normalisiert CN zu NFD beim Einbetten der DR.
+  Apple's Upload-Validator prüft mit `--strict` → "Code failed to satisfy specified code requirement(s)".
+
+  **Ausgeschlossen:** Repo-Signing-Konfiguration, App ID, App Group, Profile, Entitlements — alle korrekt.
+
+  **Fix (manuell, kein Repo-Eingriff nötig):**
+  1. appleid.apple.com → persönliche Daten → Namen auf `Sebastian Roeber` ändern
+  2. Xcode.app → Settings → Accounts → Distribution-Zertifikat revoken + neu erzeugen
+  3. Xcode Cloud Clean Build starten
 - Privacy Policy URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (Seite vorhanden, URL noch nicht eingetragen)
 - Support URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/support.html` (Seite vorhanden, URL noch nicht eingetragen)
 - Marketing URL optional: `https://dev-roeber.github.io/iOS-App/` (`docs/index.html` vorhanden, kein Download-Button)

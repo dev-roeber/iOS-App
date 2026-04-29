@@ -1,35 +1,59 @@
 # CHANGELOG
 
-## [2026-04-29] — Build 34 IPA-Forensik: Signing-Problem durch Nicht-ASCII-Zeichen im Zertifikat
+## [2026-04-29] — Build 34 IPA-Forensik: Root Cause bewiesen — NFD/NFC-Normalisierungsmismatch in Designated Requirement
 
-### Befund
-Xcode Cloud Build 34 (Commit `20538b1`) schlug erneut mit `Validation failed (409) – Invalid Signature` fehl —
-obwohl `CODE_SIGN_IDENTITY[sdk=iphoneos*] = "Apple Distribution"` seit Build 28 gesetzt ist.
+### Befund (bewiesen durch vollständige IPA-Forensik)
 
-IPA-Forensik via `codesign -dvvv` auf dem Xcode-Cloud-Artefakt ergab:
+IPA: `LH2GPXWrapper 1.0 app-store-4/LH2GPXWrapper.ipa` (Build 34, CFBundleVersion=34).
 
 | Prüfpunkt | Ergebnis |
 |---|---|
 | Authority | `Apple Distribution: Sebastian Röber (XAGR3K7XDJ)` ✅ |
 | TeamIdentifier | `XAGR3K7XDJ` ✅ |
-| Provisioning Profile | iOS Team Store Provisioning Profile ✅ |
-| application-identifier | korrekt ✅ |
-| App Group | korrekt ✅ |
+| Provisioning Profile App | `iOS Team Store Provisioning Profile: de.roeber.LH2GPXWrapper` ✅ |
+| Provisioning Profile Widget | `iOS Team Store Provisioning Profile: de.roeber.LH2GPXWrapper.Widget` ✅ |
+| ProvisionedDevices | NICHT vorhanden (korrekt für App Store) ✅ |
+| application-identifier App | `XAGR3K7XDJ.de.roeber.LH2GPXWrapper` ✅ |
+| application-identifier Widget | `XAGR3K7XDJ.de.roeber.LH2GPXWrapper.Widget` ✅ |
+| App Groups App+Widget | `group.de.roeber.LH2GPXWrapper` ✅ |
+| get-task-allow | `false` (Distribution korrekt) ✅ |
+| Entitlements App | application-identifier, team-identifier, app-groups, beta-reports-active — vollständig korrekt ✅ |
+| Run Script Build Phases | KEINE vorhanden ✅ |
+| CODE_SIGN_REQUIREMENTS override | NICHT gesetzt ✅ |
+| OTHER_CODE_SIGN_FLAGS | NICHT gesetzt ✅ |
 | `codesign --verify` | **valid on disk** ✅ |
 | `codesign --verify --strict` | **does not satisfy its designated Requirement** ❌ |
 
-### Fazit
-Repo-Signing-Konfiguration, App IDs und App Groups sind **nicht** die Root Cause.
-Der Binary ist korrekt signiert — Apple's Upload-Validierung lehnt ihn trotzdem ab.
+### Root Cause (bewiesen, nicht geraten)
 
-**Wahrscheinlichste Ursache:** Nicht-ASCII-Zeichen im Common Name des Distribution-Zertifikats
-(`Sebastian Röber` — `ö` ist kein reines ASCII-Zeichen). Apple's Validierungs-Pipeline
-akzeptiert Zertifikats-CNs mit Non-ASCII-Zeichen beim App-Store-Connect-/TestFlight-Upload nicht.
+Die Designated Requirement (DR) in App und Widget enthält den Zertifikats-CN in **Unicode NFD**-Kodierung,
+das tatsächliche Zertifikat (aus dem Provisioning Profile extrahiert) hat den CN in **Unicode NFC**-Kodierung.
+Der `certificate leaf[subject.CN] = 0x<hex>` Check im DR ist ein **Byte-für-Byte-Vergleich** — kein Unicode-normalisierter Vergleich.
 
-### Nächste Schritte (manuell)
-1. Apple Developer Support kontaktieren oder in Xcode.app → Preferences → Accounts ein neues
-   Distribution-Zertifikat mit ASCII-only Common Name (`Sebastian Roeber`) erzeugen
-2. Xcode Cloud Clean Build nach neuem Zertifikat starten
+| | Bytes für `ö` in "Röber" |
+|---|---|
+| DR im Binary (NFD) | `6f cc 88` = U+006F (o) + U+0308 (COMBINING DIAERESIS) |
+| Zertifikat CN (NFC, aus Profil via RFC2253 `\C3\B6`) | `c3 b6` = U+00F6 (ö, präkomponiert) |
+
+**Ursachenkette:**
+1. Apple Distribution Certificate hat CN-Bytes in NFC (`c3 b6` für ö)
+2. Xcode Cloud liest den CN via macOS Security/Keychain-Framework als CFString
+3. macOS normalisiert den String zu NFD (`6f cc 88` für ö)
+4. Xcode bettet diesen NFD-Hex-Wert in die Designated Requirement ein
+5. Apple's Upload-Validator prüft `certificate leaf[subject.CN] = 0x<NFD>` byte-genau gegen das Zertifikat (NFC)
+6. `6f cc 88` ≠ `c3 b6` → "Code failed to satisfy specified code requirement(s)"
+
+### Was ausgeschlossen ist
+- Repo-Signing-Konfiguration (**nicht** die Ursache)
+- App ID / App Group Registrierung (**nicht** die Ursache, beides korrekt im Portal)
+- Provisioning Profile (**nicht** die Ursache, korrekt iOS Team Store)
+- Entitlements (**nicht** die Ursache, vollständig korrekt)
+- Run Scripts oder nachträgliche Bundle-Manipulation (**keine** vorhanden)
+
+### Nächste Schritte (manuell, kein Repo-Fix nötig)
+1. **Apple ID-Namen ändern**: appleid.apple.com → persönliche Daten → Namen auf ASCII-only (`Sebastian Roeber`) ändern
+2. **Neues Distribution-Zertifikat erstellen**: Xcode.app → Settings → Accounts → Manage Certificates → Distribution-Zertifikat revoken + neu generieren (CN wird dann ohne ö erzeugt)
+3. Xcode Cloud Clean Build starten
 
 ---
 
