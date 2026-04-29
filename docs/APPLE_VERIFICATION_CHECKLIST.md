@@ -17,25 +17,40 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 
 #### ✅ real verifiziert (2026-04-29)
 
-- **swift test**: 643 Tests, 0 Failures, 0 Skips — Erwartungswert laut CHANGELOG bestätigt (BUILD SUCCEEDED)
+- **swift test**: 643 Tests, 0 Failures, 0 Skips — bestätigt (2× gelaufen)
 - **xcodebuild generic/platform=iOS (LH2GPXWrapper)**: BUILD SUCCEEDED — Wrapper inkl. Widget
 - **xcodebuild platform=macOS (LocationHistoryConsumerApp)**: BUILD SUCCEEDED
 - **CI.xctestplan Wrapper-Unit-Tests** (iPhone 17 Pro Max Simulator, iOS 26.3.1, testPlan CI): TEST SUCCEEDED — alle LH2GPXWrapperTests grün
-- **make deploy15**: App auf iPhone 15 Pro Max installiert und gestartet — `Launched application with de.roeber.LH2GPXWrapper bundle identifier.` ✅
-- **Info.plist**: NSLocationWhenInUseUsageDescription, NSLocationAlwaysAndWhenInUseUsageDescription, UIBackgroundModes=location, NSSupportsLiveActivities=true — alle vorhanden und korrekt
+- **UITests alle 6 Tests auf iPhone 15 Pro Max** (00008130-00163D0A0461401C, ios 26.3): 6/6 PASSED ✅
+  - `testLaunch` × 4 — App startet sauber, kein Crash ✅
+  - `testAppStoreScreenshots` — Demo-Daten laden, Day-Liste sichtbar ✅
+  - `testDeviceSmokeNavigationAndActions` (55s) — vollständiger Smoke-Pfad ✅:
+    - Demo Data geladen, Overview-Tab erscheint ✅
+    - All-Time-Filter-Chip (`range.chip.all`) sichtbar und tappbar ✅ (neu: accessibility identifier)
+    - Heatmap-Sheet öffnet und schließt ✅
+    - Insights-Tab: `insights.section.share` Button gefunden, Share-Popup erscheint ✅
+    - Export-Tab: fileExporter auf echtem Gerät ausgelöst ✅
+    - Live-Tab: Start-Recording, Location-Permission-Dialog, Stop-Recording — alles auf echtem Gerät ✅
+- **Info.plist**: NSLocationWhenInUseUsageDescription, NSLocationAlwaysAndWhenInUseUsageDescription, UIBackgroundModes=location, NSSupportsLiveActivities=true — vorhanden und korrekt
 - **Entitlements**: App Group `group.de.roeber.LH2GPXWrapper` in App + Widget Entitlements — korrekt
 - **PrivacyInfo.xcprivacy**: NSPrivacyTracking=false, UserDefaults CA92.1, NSPrivacyCollectedDataTypePreciseLocation — vollständig
 - **Sicherheit**: keine hartcodierten Tokens/Secrets; defaultTestEndpointURLString=""; HTTPS fuer non-localhost erzwungen; Bearer-Token via Keychain
 - **Deployment Target**: iOS 16.0 (App, LH2GPXWrapperTests) / 16.2 (Widget, UITests) — verifiziert in project.pbxproj
-- **Bundle IDs**: de.roeber.LH2GPXWrapper / de.roeber.LH2GPXWrapper.Widget / de.roeber.LH2GPXWrapperTests / de.roeber.LH2GPXWrapper.UITests — unverändert korrekt
-- **ZIPFoundation**: Fork dev-roeber/ZIPFoundation, Tag 0.9.20-devroeber.1, .exact() — unveränderlich gepinnt
-- **ci_scripts**: ci_post_clone.sh, ci_pre_xcodebuild.sh, ci_post_xcodebuild.sh — alle ausführbar, korrekte Xcode-Cloud-Namen
+- **Bundle IDs**: de.roeber.LH2GPXWrapper / de.roeber.LH2GPXWrapper.Widget / de.roeber.LH2GPXWrapperTests / de.roeber.LH2GPXWrapper.UITests — korrekt
+- **ZIPFoundation**: Fork dev-roeber/ZIPFoundation, Tag 0.9.20-devroeber.1, .exact() — gepinnt
+- **ci_scripts**: ci_post_clone.sh, ci_pre_xcodebuild.sh, ci_post_xcodebuild.sh — ausführbar, korrekte Xcode-Cloud-Namen
 - **.xcode-version**: 26.3 — gepinnt
+- **Bug-Fix**: `AppHistoryDateRangeControl` — `.accessibilityIdentifier("range.chip.\(preset.rawValue)")` ergänzt (ermöglicht UITest-Selektion des All-Time-Chips ohne Sprachabhängigkeit)
+- **UITest-Fix**: `testDeviceSmokeNavigationAndActions` — tappt nach Demo-Load `range.chip.all` um Last-7-Days-Filter zurückzusetzen; Demo-Daten (2024) sonst durch Default-Filter unsichtbar
 
-#### ⚠️ nicht heute auf echtem Gerät interaktiv verifiziert
+#### ⚠️ nicht automatisiert prüfbar (erfordern manuellen Device-Durchgang)
 
-- **UITest testLaunch auf echtem Gerät**: fehlgeschlagen — "Developer App Certificate not trusted" auf iPhone 15 Pro Max; Gerät muss Developer-Zertifikat unter Einstellungen → Allgemein → VPN & Geräteverwaltung manuell vertrauen, dann erneut ausführen
-- **Manuelle Device-UI-Verifikation** (Import 46 MB, Map, Days, Editor, Export, Live, Widget, Landscape): App ist heute installiert und gestartet, interaktive Pfade erfordern manuellen Durchgang auf dem Gerät
+- **Großer Import (>20 MB)**: kein 46-MB-Fixture im Repo; manuell mit echter Location-History-Datei prüfen
+- **Days-Tab**: Day-Detail + Day-Map auf Gerät interaktiv prüfen (im UITest nur als Demo-Nebeneffekt belegt)
+- **Historien-Track-Editor**: Route entfernen, App-Neustart, Mutation prüfen — nicht automatisiert prüfbar
+- **Widget auf Homescreen/Lockscreen**: Widget Target baut, aber Pinnbar-Test erfordert manuelle Homescreen-Interaktion
+- **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden, manueller Real-Nachweis noch offen
+- **Landscape auf allen Tabs**: kompaktes Landscape-Layout nicht systematisch auf Device verifiziert
 
 #### ❌ weiterhin offen (unverändert)
 

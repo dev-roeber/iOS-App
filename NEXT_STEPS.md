@@ -11,7 +11,7 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [x] Xcode Cloud Vorbereitung — `wrapper/.xcode-version` (26.3), `wrapper/ci_scripts/` (post_clone, pre_build, post_xcodebuild), `docs/XCODE_CLOUD_RUNBOOK.md` (2026-04-13)
 - [ ] **Xcode Cloud Workflow anlegen (manuell)** — Product → Xcode Cloud → Create Workflow; Details in `docs/XCODE_CLOUD_RUNBOOK.md`
 - [ ] **App ID + App Group im Developer Portal registrieren** — `de.roeber.LH2GPXWrapper` + `group.de.roeber.LH2GPXWrapper` (einmalig, manuell)
-- [ ] Apple-UI-Verifikation: Range-Picker, Datumsbereich-Sheet auf echtem iPhone
+- [x] Apple-UI-Verifikation: Range-Picker (All-Time-Chip tappbar, verifiziert via UITest 2026-04-29), Datumsbereich-Sheet manuell noch offen
 - [x] KMZ-Export — abgeschlossen 2026-04-12 (KMZBuilder + KMZDocument + Tests)
 - [x] App Groups Entitlements / Widget-Datenaustausch — abgeschlossen 2026-04-12 (LH2GPXWrapper.entitlements + LH2GPXWidget.entitlements + pbxproj CODE_SIGN_ENTITLEMENTS)
 - [x] fileImporter GPX/TCX im Wrapper — abgeschlossen 2026-04-12 (allowedContentTypes erweitert, UTType.tcx Extension)
@@ -29,7 +29,7 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [x] Overview UX-Paket — Last-7-Days-Default nach Import; Chip-Reihenfolge (All Time ganz rechts); Ladefortschritt-Karte (Phasen + linearer ProgressView); 643 Tests (2026-04-15)
 - [ ] echtes Road-/Path-Matching (Strassen-/Weg-Snapping) konzipieren; aktuelle `Simplified (Beta)`-Darstellung ist GPS-Ausreisserfilterung + Pfadvereinfachung, kein Road-Network-Abgleich
 - [x] Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart — sauberes Modell umgesetzt: SessionID+Timestamp in UserDefaults, Banner mit relativem Zeitstempel beim Start, "Aufzeichnung fortsetzen" / "Ignorieren" (kein blindes Auto-Resume, bewusst user-controlled) (2026-04-13)
-- [ ] app-weite Landscape-Verifikation fuer jede Hauptseite auf Apple-Hardware nachziehen
+- [ ] app-weite Landscape-Verifikation fuer jede Hauptseite auf Apple-Hardware nachziehen (UITests laufen in Portrait; Landscape manuell prüfen)
 
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.

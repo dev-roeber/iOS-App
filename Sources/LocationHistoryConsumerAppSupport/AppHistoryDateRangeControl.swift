@@ -91,6 +91,7 @@ struct AppHistoryDateRangeControl: View {
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("range.chip.\(preset.rawValue)")
                     }
                 }
             }

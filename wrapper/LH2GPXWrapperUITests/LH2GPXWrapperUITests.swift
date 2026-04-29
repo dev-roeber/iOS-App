@@ -88,6 +88,15 @@ final class LH2GPXWrapperUITests: XCTestCase {
         XCTAssertTrue(overviewTab.waitForExistence(timeout: 10))
 
         overviewTab.tap()
+
+        // Demo fixture dates are from 2024 — switch to All Time so Insights and other
+        // tabs show content regardless of when the test runs.
+        let allTimeChip = app.buttons["range.chip.all"]
+        if allTimeChip.waitForExistence(timeout: 5) {
+            allTimeChip.tap()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        }
+
         let heatmapButton = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Heatmap'")).firstMatch
         XCTAssertTrue(revealElement(heatmapButton, in: app))
         heatmapButton.tap()

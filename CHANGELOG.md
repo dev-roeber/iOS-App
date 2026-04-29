@@ -1,21 +1,29 @@
 # CHANGELOG
 
-## [2026-04-29] — Verifikationsrunde Audit-Stand (Build/Test/Device)
+## [2026-04-29] — Device-Verifikation + UITest-Fix (All-Time-Chip-Regression)
 
-### Verifiziert
-- `swift test`: 643 Tests, 0 Failures, 0 Skips — Erwartungswert bestätigt
-- `xcodebuild generic/platform=iOS`: BUILD SUCCEEDED (Wrapper inkl. Widget)
+### Verifiziert auf iPhone 15 Pro Max (ios 26.3, UDID 00008130-00163D0A0461401C)
+- `swift test`: 643 Tests, 0 Failures, 0 Skips — 2× bestätigt
+- `xcodebuild generic/platform=iOS`: BUILD SUCCEEDED
 - `xcodebuild platform=macOS (LocationHistoryConsumerApp)`: BUILD SUCCEEDED
 - CI.xctestplan Wrapper-Unit-Tests (iPhone 17 Pro Max Simulator, iOS 26.3.1): TEST SUCCEEDED
-- `make deploy15`: App auf iPhone 15 Pro Max installiert und gestartet
+- **UITests 6/6 PASSED auf echtem iPhone 15 Pro Max**:
+  - `testLaunch` × 4: App startet sauber ✅
+  - `testAppStoreScreenshots`: Demo-Daten + Screenshots ✅
+  - `testDeviceSmokeNavigationAndActions` (55s): Demo-Load, Overview/All-Time, Heatmap, Insights Share, Export fileExporter, Live Start/Stop — alles auf echtem Gerät bestätigt ✅
 
-### Korrektur
-- `docs/XCODE_APP_PREPARATION.md`: "Deployment Target iOS 26.2" → "iOS 16.0 / 16.2" (war Xcode-Versionsnummer, nicht iOS-Deployment-Target)
-- `docs/APPLE_VERIFICATION_CHECKLIST.md`: Statusstand 2026-04-29 ergänzt
+### Fix: UITest-Regression nach Last-7-Days-Default (2026-04-15)
+- **Root Cause**: `AppSessionState.show(content:)` setzt `historyDateRangeFilter = .last7Days`; Demo-Fixture (2024) fällt außerhalb dieses Fensters → Insights leer → kein `insights.section.share` Button → UITest-Failure
+- **Fix AppHistoryDateRangeControl.swift**: `.accessibilityIdentifier("range.chip.\(preset.rawValue)")` an alle Preset-Chip-Buttons ergänzt
+- **Fix LH2GPXWrapperUITests.swift**: Nach Demo-Load `range.chip.all` tippen um auf All Time zurückzusetzen, bevor Insights-Tab geöffnet wird
+- `swift test` nach Fix: 643 Tests, 0 Failures, 0 Skips ✅
 
-### Offene manuelle Schritte (unverändert)
-- UITest testLaunch auf echtem Gerät scheitert wegen nicht vertrautem Developer-Zertifikat (Einstellungen → VPN & Geräteverwaltung)
+### Korrektur (aus vorherigem Audit)
+- `docs/XCODE_APP_PREPARATION.md`: "Deployment Target iOS 26.2" → "iOS 16.0 / 16.2"
+
+### Weiterhin offen (unverändert)
 - Xcode Cloud Workflow, App ID/App Group im Developer Portal, Privacy Policy URL, Support URL, finales App Icon
+- Großer Import, Track-Editor, Widget, Live Activity, Landscape — manuell prüfen
 
 ## [2026-04-15] — Overview: Last-7-Days-Default, Chip-Reihenfolge, Ladefortschritt-Karte
 
