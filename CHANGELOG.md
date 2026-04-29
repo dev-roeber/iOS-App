@@ -1,5 +1,38 @@
 # CHANGELOG
 
+## [2026-04-29] — Build 34 IPA-Forensik: Signing-Problem durch Nicht-ASCII-Zeichen im Zertifikat
+
+### Befund
+Xcode Cloud Build 34 (Commit `20538b1`) schlug erneut mit `Validation failed (409) – Invalid Signature` fehl —
+obwohl `CODE_SIGN_IDENTITY[sdk=iphoneos*] = "Apple Distribution"` seit Build 28 gesetzt ist.
+
+IPA-Forensik via `codesign -dvvv` auf dem Xcode-Cloud-Artefakt ergab:
+
+| Prüfpunkt | Ergebnis |
+|---|---|
+| Authority | `Apple Distribution: Sebastian Röber (XAGR3K7XDJ)` ✅ |
+| TeamIdentifier | `XAGR3K7XDJ` ✅ |
+| Provisioning Profile | iOS Team Store Provisioning Profile ✅ |
+| application-identifier | korrekt ✅ |
+| App Group | korrekt ✅ |
+| `codesign --verify` | **valid on disk** ✅ |
+| `codesign --verify --strict` | **does not satisfy its designated Requirement** ❌ |
+
+### Fazit
+Repo-Signing-Konfiguration, App IDs und App Groups sind **nicht** die Root Cause.
+Der Binary ist korrekt signiert — Apple's Upload-Validierung lehnt ihn trotzdem ab.
+
+**Wahrscheinlichste Ursache:** Nicht-ASCII-Zeichen im Common Name des Distribution-Zertifikats
+(`Sebastian Röber` — `ö` ist kein reines ASCII-Zeichen). Apple's Validierungs-Pipeline
+akzeptiert Zertifikats-CNs mit Non-ASCII-Zeichen beim App-Store-Connect-/TestFlight-Upload nicht.
+
+### Nächste Schritte (manuell)
+1. Apple Developer Support kontaktieren oder in Xcode.app → Preferences → Accounts ein neues
+   Distribution-Zertifikat mit ASCII-only Common Name (`Sebastian Roeber`) erzeugen
+2. Xcode Cloud Clean Build nach neuem Zertifikat starten
+
+---
+
 ## [2026-04-29] — Release Distribution Signing Fix (Build 32 → Build 33)
 
 ### Problem

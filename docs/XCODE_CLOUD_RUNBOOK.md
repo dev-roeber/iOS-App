@@ -83,7 +83,7 @@ App Store Connect konfiguriert werden — keine YAML-Dateien.
 - keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`
 - keine feste Release-`CODE_SIGN_IDENTITY`
 - Widget-Embed via `CodeSignOnCopy`
-- `CURRENT_PROJECT_VERSION = 27`
+- `CURRENT_PROJECT_VERSION = 28`
 
 ### Wichtig: App Store Connect Pflichtfelder (vor erstem Upload)
 
@@ -125,6 +125,40 @@ xcodebuild test \
 # Auf echtem Gerät deployen (Makefile)
 cd wrapper && make deploy
 ```
+
+---
+
+## Build 34 – Forensik-Befund und offene Signing-Blockade (Stand 2026-04-29)
+
+### Symptom
+Xcode Cloud Build 34 (Commit `20538b1`): `Validation failed (409) – Invalid Signature.
+The file at path "LH2GPXWrapper.app/LH2GPXWrapper" is not properly signed`
+
+Build 32 und 34 scheiterten trotz korrekter `CODE_SIGN_IDENTITY[sdk=iphoneos*] = "Apple Distribution"`-Konfiguration.
+
+### IPA-Forensik-Ergebnis
+
+```
+Authority: Apple Distribution: Sebastian Röber (XAGR3K7XDJ)   ← Non-ASCII: ö
+TeamIdentifier: XAGR3K7XDJ
+Provisioning Profile: iOS Team Store Provisioning Profile
+application-identifier: korrekt
+App Group: korrekt
+codesign --verify:         valid on disk          ✅
+codesign --verify --strict: does not satisfy its designated Requirement  ❌
+```
+
+### Wahrscheinlichste Ursache
+Das Nicht-ASCII-Zeichen `ö` im Zertifikats-Common-Name `Sebastian Röber`
+verursacht die Ablehnung durch Apple's Upload-Validierungsserver.
+Repo-Signing-Konfiguration, App IDs und App Groups sind **nicht** die Root Cause.
+
+### Nächste Schritte
+1. **Apple Developer Support kontaktieren** oder
+2. In Xcode.app → Settings → Accounts → Distribution-Zertifikat revoken + neu erzeugen
+   mit ASCII-only CN: `Sebastian Roeber` (kein Umlaut)
+3. Xcode Cloud Clean Build starten
+4. Parallel: App ID + App Group im Developer Portal registrieren (weiterhin ausstehend)
 
 ---
 

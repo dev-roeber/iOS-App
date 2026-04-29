@@ -96,10 +96,16 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden, manueller Real-Nachweis noch offen
 - **Landscape auf allen Tabs**: kompaktes Landscape-Layout nicht systematisch auf Device verifiziert
 
-#### ❌ weiterhin offen (unverändert)
+#### ❌ weiterhin offen (aktualisiert 2026-04-29)
 
-- **Xcode Cloud Build 33**: `Release – Archive & TestFlight` mit Distribution-Signing-Fix neu starten (Build 32 scheiterte an fehlender `CODE_SIGN_IDENTITY = Apple Distribution`); erster grüner Upload steht aus
-- App ID `de.roeber.LH2GPXWrapper` + App Group `group.de.roeber.LH2GPXWrapper` im Developer Portal registrieren
+- **Xcode Cloud Build 34 – Signing-Validierungsfehler (Non-ASCII-Zertifikat):**
+  IPA-Forensik (Build 34) ergab: Binary ist korrekt signiert (`codesign --verify`: **valid on disk**),
+  scheitert jedoch an `does not satisfy its designated Requirement`.
+  Authority = `Apple Distribution: Sebastian Röber (XAGR3K7XDJ)` — `ö` ist kein reines ASCII-Zeichen.
+  Wahrscheinlichste Ursache: Apple's Upload-Validierung akzeptiert Non-ASCII in Zertifikats-CNs nicht.
+  **Nächster Schritt:** Neues Distribution-Zertifikat mit ASCII-only CN (`Sebastian Roeber`) erzeugen,
+  dann Xcode Cloud Clean Build starten.
+- App ID `de.roeber.LH2GPXWrapper` + App Group `group.de.roeber.LH2GPXWrapper` im Developer Portal registrieren (weiterhin erforderlich für Automatic Provisioning, nicht mehr wahrscheinlichste Build-34-Ursache)
 - Privacy Policy URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (Seite vorhanden, URL noch nicht eingetragen)
 - Support URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/support.html` (Seite vorhanden, URL noch nicht eingetragen)
 - Marketing URL optional: `https://dev-roeber.github.io/iOS-App/` (`docs/index.html` vorhanden, kein Download-Button)
