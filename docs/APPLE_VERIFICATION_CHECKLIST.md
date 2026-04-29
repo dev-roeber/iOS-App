@@ -76,7 +76,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Entitlements**: App Group `group.de.roeber.LH2GPXWrapper` in App + Widget Entitlements — korrekt
 - **PrivacyInfo.xcprivacy**: NSPrivacyTracking=false, UserDefaults CA92.1, NSPrivacyCollectedDataTypePreciseLocation — vollständig
 - **Export-Compliance**: `ITSAppUsesNonExemptEncryption = false` in `wrapper/Config/Info.plist` (App) und `wrapper/LH2GPXWidget/Info.plist` (Widget) gesetzt — kein Upload-Dokument nötig. Begründung: App nutzt ausschließlich systemseitige HTTPS/TLS (URLSession, optionaler Live-Location-Upload); keine eigene Verschlüsselung (kein CryptoKit, CommonCrypto, AES, RSA, VPN, E2E-Messaging, Crypto-Bibliotheken).
-- **Release-Signing-Konfiguration**: `LH2GPXWrapper` + `LH2GPXWidget` auf `CODE_SIGN_STYLE = Automatic`, `DEVELOPMENT_TEAM = XAGR3K7XDJ`, Buildnummer `27`; keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`
+- **Release-Signing-Konfiguration**: `LH2GPXWrapper` + `LH2GPXWidget` auf `CODE_SIGN_STYLE = Automatic`, `DEVELOPMENT_TEAM = XAGR3K7XDJ`, `"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution"` in beiden Release-Configs, Buildnummer `28`; keine feste `PROVISIONING_PROFILE_SPECIFIER`; `com.apple.ApplicationGroups` in TargetAttributes für App + Widget
 - **Widget-Embed**: `LH2GPXWidget.appex` wird mit `CodeSignOnCopy` eingebettet
 - **Sicherheit**: keine hartcodierten Tokens/Secrets; defaultTestEndpointURLString=""; HTTPS fuer non-localhost erzwungen; Bearer-Token via Keychain
 - **Deployment Target**: iOS 16.0 (App, LH2GPXWrapperTests) / 16.2 (Widget, UITests) — verifiziert in project.pbxproj
@@ -98,7 +98,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 
 #### ❌ weiterhin offen (unverändert)
 
-- Xcode Cloud Workflow `Release – Archive & TestFlight` ist angelegt; erster erfolgreicher Cloud-Archive-/TestFlight-Lauf steht noch aus
+- **Xcode Cloud Build 33**: `Release – Archive & TestFlight` mit Distribution-Signing-Fix neu starten (Build 32 scheiterte an fehlender `CODE_SIGN_IDENTITY = Apple Distribution`); erster grüner Upload steht aus
 - App ID `de.roeber.LH2GPXWrapper` + App Group `group.de.roeber.LH2GPXWrapper` im Developer Portal registrieren
 - Privacy Policy URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (Seite vorhanden, URL noch nicht eingetragen)
 - Support URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/support.html` (Seite vorhanden, URL noch nicht eingetragen)

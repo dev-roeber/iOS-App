@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [2026-04-29] — Release Distribution Signing Fix (Build 32 → Build 33)
+
+### Problem
+Xcode Cloud Build 32: Apple lehnte Upload mit `Validation failed (409) – Invalid Signature` ab.
+Root Cause: `CODE_SIGN_IDENTITY` fehlte in allen Release-BuildSettings → Xcode wählte automatisch
+`"Apple Development"` (Development-Zertifikat) auch für Archive/Distribution-Builds.
+
+### Geaendert
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`:
+  - `"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution"` in **LH2GPXWrapper Release** ergänzt
+  - `"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution"` in **LH2GPXWidget Release** ergänzt
+  - `com.apple.ApplicationGroups` in `TargetAttributes.SystemCapabilities` für **LH2GPXWrapper** ergänzt
+  - `LH2GPXWidget (9EBB00052F6C000100000005)` mit `com.apple.ApplicationGroups` in **TargetAttributes** eingetragen
+  - `CURRENT_PROJECT_VERSION` 27 → **28**
+
+### Verifiziert (lokal)
+- `swift test`: 643 Tests, 0 Failures ✅
+- `xcodebuild -showBuildSettings Release LH2GPXWrapper`: `CODE_SIGN_IDENTITY = Apple Distribution` ✅
+- `xcodebuild -showBuildSettings Release LH2GPXWidget`: `CODE_SIGN_IDENTITY = Apple Distribution` ✅
+- `git diff --check`: OK ✅
+- Lokales `xcodebuild archive` schlägt erwartungsgemäß fehl (kein lokales Distribution-Zertifikat für diese App-IDs — normal für Developer-Maschine ohne ASC-Distribution-Profil)
+
+### Noch ausstehend
+- Xcode Cloud Build 33 starten und prüfen, ob Archive + TestFlight-Upload grün ist
+
 ## [2026-04-29] — App-Store-Signing für Xcode Cloud bereinigt
 
 ### Geaendert
