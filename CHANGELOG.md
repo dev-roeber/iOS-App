@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## [2026-04-29] — fix: Overview-Map Freeze/Crash-Fix – Hard Overlay Limit
+
+### Problem (App-Store-Submission-Blocker)
+
+`AppOverviewTracksMapView` fror ein oder crashte bei Auswahl „Gesamtzeitraum" mit großen importierten Datenmengen.
+Root Cause: `selectCandidates` lieferte alle Kandidaten (keine Obergrenze); MapKit erhielt tausende `MapPolyline`-Overlays.
+
+### Fix
+
+- `OverviewMapRenderProfile`: neues Feld `overlayLimit: Int` – Hard Cap auf die Anzahl gerenderter MapPolyline-Objekte.
+- Tier-basierte Limits: >500 Routen oder >150k Punkte → 150; >240/>60k → 200; >120/>30k → 250; >60/>15k → 300; klein → kein Cap.
+- `selectCandidates`: nach Score-Sortierung wird auf `prefix(overlayLimit)` abgeschnitten (Top-Routen nach Score).
+- `isOptimized = true` wenn Cap greift → View-Badge „Karte vereinfacht – Export vollständig" (DE/EN).
+- Export-Daten und Rohdatenmodell sind nicht berührt; Export verwendet weiterhin vollständige Daten.
+
+### Tests
+
+- 5 neue Tests in `AppOverviewTracksMapViewTests`: Tier-basierte `overlayLimit`-Werte, synthetisches 600-Routen-Dataset gecapped, kleines Dataset ungecapped, Start-/Endpunkt-Erhaltung, Export-Daten-Unveränderlichkeit.
+- `swift test`: 647 Tests, 0 Failures.
+- `git diff --check`: sauber.
+
+### Dokumentation
+
+- `NEXT_STEPS.md`: Fix als erledigt markiert; neuer offener Punkt: TestFlight-Verifikation mit realen Daten.
+- `ROADMAP.md`, `docs/APP_FEATURE_INVENTORY.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md`, `docs/XCODE_APP_PREPARATION.md`: aktualisiert.
+- App-Store-Submission bleibt offen, bis Fix auf TestFlight mit echten Daten verifiziert.
+
+---
+
 ## [2026-04-29] — TestFlight Build 1.0 (44): Smoke-Test-Stand dokumentiert
 
 ### Dokumentarisch (kein Codeeingriff)

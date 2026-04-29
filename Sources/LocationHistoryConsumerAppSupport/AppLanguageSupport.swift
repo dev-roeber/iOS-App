@@ -567,6 +567,7 @@ enum AppGermanTranslations {
         "Analysing routes…": "Routen werden analysiert…",
         "Building map…": "Karte wird aufgebaut…",
         "Optimized overview": "Optimierte Übersicht",
+        "Simplified map – export complete": "Karte vereinfacht – Export vollständig",
         "route": "Route",
         "routes": "Routen",
         "Overview map with": "Übersichtskarte mit",

@@ -65,7 +65,10 @@ struct AppOverviewTracksMapView: View {
         }
         .overlay(alignment: .bottomLeading) {
             if renderData.isOptimized {
-                Text(t("Optimized overview"))
+                let label = renderData.visibleRouteCount < renderData.totalRouteCount
+                    ? t("Simplified map – export complete")
+                    : t("Optimized overview")
+                Text(label)
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 8)
@@ -259,19 +262,25 @@ private struct OverviewMapPathCandidate {
 
 struct OverviewMapRenderProfile {
     let routeLimit: Int
+    /// Hard cap on the number of MapPolyline overlays sent to MapKit.
+    /// Prevents freeze/crash when "All Time" is selected on large datasets.
+    /// Export data is never affected by this limit.
+    let overlayLimit: Int
     let gridDimension: Int
     let maxRoutesPerCell: Int
     let simplificationEpsilonM: Double
     let maxPolylinePoints: Int
 
     static func resolve(routeCount: Int, totalPointCount: Int) -> OverviewMapRenderProfile {
-        // Route limits no longer hide routes from the selected time range. They track
-        // the full candidate count so downstream code can stay explicit about coverage
-        // while optimization is done via simplification and point decimation only.
+        // routeLimit tracks the full in-range candidate count (metadata only).
+        // overlayLimit is the hard MapKit safety cap: keeps rendered overlay count
+        // within what MapKit can handle without freeze or crash.
+        // Export always uses the full unmodified dataset, regardless of these limits.
         switch (routeCount, totalPointCount) {
         case let (routes, points) where routes > 500 || points > 150_000:
             return OverviewMapRenderProfile(
                 routeLimit: routeCount,
+                overlayLimit: 150,
                 gridDimension: 12,
                 maxRoutesPerCell: 2,
                 simplificationEpsilonM: 140,
@@ -280,6 +289,7 @@ struct OverviewMapRenderProfile {
         case let (routes, points) where routes > 240 || points > 60_000:
             return OverviewMapRenderProfile(
                 routeLimit: routeCount,
+                overlayLimit: 200,
                 gridDimension: 10,
                 maxRoutesPerCell: 3,
                 simplificationEpsilonM: 100,
@@ -288,6 +298,7 @@ struct OverviewMapRenderProfile {
         case let (routes, points) where routes > 120 || points > 30_000:
             return OverviewMapRenderProfile(
                 routeLimit: routeCount,
+                overlayLimit: 250,
                 gridDimension: 9,
                 maxRoutesPerCell: 4,
                 simplificationEpsilonM: 70,
@@ -296,6 +307,7 @@ struct OverviewMapRenderProfile {
         case let (routes, points) where routes > 60 || points > 15_000:
             return OverviewMapRenderProfile(
                 routeLimit: routeCount,
+                overlayLimit: 300,
                 gridDimension: 8,
                 maxRoutesPerCell: 6,
                 simplificationEpsilonM: 50,
@@ -304,6 +316,7 @@ struct OverviewMapRenderProfile {
         default:
             return OverviewMapRenderProfile(
                 routeLimit: routeCount,
+                overlayLimit: max(routeCount, 1),
                 gridDimension: 6,
                 maxRoutesPerCell: 6,
                 simplificationEpsilonM: 30,
@@ -446,7 +459,8 @@ enum OverviewMapPreparation {
                 pathOverlays.append(overlay)
             }
         }
-        let isOptimized = profile.simplificationEpsilonM > 30 || profile.maxPolylinePoints < 220
+        let isCapped = pathOverlays.count < candidates.count
+        let isOptimized = profile.simplificationEpsilonM > 30 || profile.maxPolylinePoints < 220 || isCapped
 
         return OverviewMapRenderData(
             pathOverlays: pathOverlays,
@@ -488,7 +502,8 @@ enum OverviewMapPreparation {
         let pathOverlays = selected.compactMap { candidate in
             makeOverlay(from: candidate, profile: profile)
         }
-        let isOptimized = profile.simplificationEpsilonM > 30 || profile.maxPolylinePoints < 220
+        let isCapped = pathOverlays.count < candidates.count
+        let isOptimized = profile.simplificationEpsilonM > 30 || profile.maxPolylinePoints < 220 || isCapped
 
         return OverviewMapRenderData(
             pathOverlays: pathOverlays,
@@ -535,8 +550,9 @@ enum OverviewMapPreparation {
         profile: OverviewMapRenderProfile
     ) -> [OverviewMapPathCandidate] {
         _ = region
-        _ = profile
-        return candidates.sorted { $0.score > $1.score }
+        let sorted = candidates.sorted { $0.score > $1.score }
+        guard sorted.count > profile.overlayLimit else { return sorted }
+        return Array(sorted.prefix(profile.overlayLimit))
     }
 
     private nonisolated static func makeOverlay(

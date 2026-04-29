@@ -187,14 +187,96 @@ final class AppOverviewTracksMapViewTests: XCTestCase {
         XCTAssertNotNil(fast.region)
     }
 
-    func testOverviewMapRenderProfileNoLongerCapsVisibleRoutes() {
+    func testOverviewMapRenderProfileRouteLimitIsMetadataAndOverlayLimitCapsRendering() {
+        // routeLimit is metadata (always == routeCount passed in)
         let profileLarge = OverviewMapRenderProfile.resolve(routeCount: 150, totalPointCount: 5_000)
         XCTAssertEqual(profileLarge.routeLimit, 150,
-                       "Route budget metadata should track the full in-range route count")
+                       "routeLimit is metadata and must track the full in-range route count")
+        // 150 routes → medium-heavy tier → overlayLimit 250; no capping for this dataset
+        XCTAssertEqual(profileLarge.overlayLimit, 250)
 
-        let profileHeavy = OverviewMapRenderProfile.resolve(routeCount: 600, totalPointCount: 200_000)
-        XCTAssertEqual(profileHeavy.routeLimit, 600,
-                       "Even heavy datasets must keep all routes visible in the selected time range")
+        // Very heavy dataset: hard cap kicks in to protect MapKit from freeze/crash
+        let profileVeryHeavy = OverviewMapRenderProfile.resolve(routeCount: 600, totalPointCount: 200_000)
+        XCTAssertEqual(profileVeryHeavy.routeLimit, 600,
+                       "routeLimit must still track the full in-range count even when overlay cap applies")
+        XCTAssertEqual(profileVeryHeavy.overlayLimit, 150,
+                       "Very heavy datasets must be capped at 150 overlays to prevent MapKit freeze")
+
+        // Heavy dataset tier
+        let profileHeavy = OverviewMapRenderProfile.resolve(routeCount: 300, totalPointCount: 70_000)
+        XCTAssertEqual(profileHeavy.overlayLimit, 200)
+
+        // Small dataset: no overlay cap applied
+        let profileSmall = OverviewMapRenderProfile.resolve(routeCount: 20, totalPointCount: 400)
+        XCTAssertEqual(profileSmall.overlayLimit, 20,
+                       "Small datasets must not be artificially capped")
+    }
+
+    func testBuildRenderDataFastCapsOverlayCountForVeryLargeDataset() throws {
+        // 600 routes with 10 points each → very heavy profile → overlayLimit 150
+        let export = try makeSyntheticExport(routeCount: 600, pointsPerRoute: 10)
+        let dates = Set(export.data.days.map(\.date))
+
+        let result = OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+
+        XCTAssertEqual(result.totalRouteCount, 600,
+                       "totalRouteCount must reflect the full dataset regardless of overlay cap")
+        XCTAssertLessThanOrEqual(result.visibleRouteCount, 150,
+                                 "Very large dataset must be capped at hard overlay limit to protect MapKit")
+        XCTAssertGreaterThan(result.visibleRouteCount, 0)
+        XCTAssertTrue(result.isOptimized, "Capped dataset must be marked isOptimized")
+        XCTAssertTrue(result.visibleRouteCount < result.totalRouteCount,
+                      "Overlay count must be strictly less than total when cap fires")
+        XCTAssertTrue(result.pathOverlays.allSatisfy { $0.coordinates.count >= 2 })
+    }
+
+    func testBuildRenderDataFastSmallDatasetIsNotCapped() throws {
+        // 20 routes → default profile → overlayLimit == routeCount, no capping
+        let export = try makeSyntheticExport(routeCount: 20, pointsPerRoute: 5)
+        let dates = Set(export.data.days.map(\.date))
+
+        let result = OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+
+        XCTAssertEqual(result.totalRouteCount, 20)
+        XCTAssertEqual(result.visibleRouteCount, 20,
+                       "Small datasets must show all routes without capping")
+        XCTAssertFalse(result.isOptimized, "Small dataset with few points must not be marked isOptimized")
+    }
+
+    func testBuildRenderDataFastStartAndEndPointsPreservedAfterDecimation() throws {
+        // Route with 50 points, profile forcing maxPolylinePoints=64 → no decimation needed,
+        // but start/end must always survive whatever profile is applied.
+        let export = try makeSyntheticExport(routeCount: 1, pointsPerRoute: 50)
+        let dates = Set(export.data.days.map(\.date))
+
+        let result = OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+
+        XCTAssertEqual(result.totalRouteCount, 1)
+        guard let overlay = result.pathOverlays.first else {
+            XCTFail("Expected at least one overlay")
+            return
+        }
+        XCTAssertGreaterThanOrEqual(overlay.coordinates.count, 2)
+        // Start and end must match source (first and last of the 50 generated points)
+        XCTAssertEqual(overlay.coordinates.first?.latitude ?? 0, 48.0, accuracy: 0.0001)
+        XCTAssertEqual(overlay.coordinates.last?.latitude ?? 0, 48.0 + 49 * 0.001, accuracy: 0.0001)
+    }
+
+    func testExportDataUnchangedAfterOverlayCap() throws {
+        // Verify that the original export object is not mutated by the render pipeline
+        let export = try makeSyntheticExport(routeCount: 600, pointsPerRoute: 5)
+        let originalDayCount = export.data.days.count
+        let originalPathCounts = export.data.days.map { $0.paths.count }
+        let dates = Set(export.data.days.map(\.date))
+
+        _ = OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+
+        XCTAssertEqual(export.data.days.count, originalDayCount,
+                       "Export day count must not change after rendering")
+        for (i, day) in export.data.days.enumerated() {
+            XCTAssertEqual(day.paths.count, originalPathCounts[i],
+                           "Export path count for day \(i) must not change after rendering")
+        }
     }
 
     // MARK: - Cancellation behaviour
@@ -264,6 +346,61 @@ final class AppOverviewTracksMapViewTests: XCTestCase {
             OverviewMapLoadingPhase.building.descriptionKey
         )
     }
+}
+
+// MARK: - Synthetic export helper
+
+private func makeSyntheticExport(routeCount: Int, pointsPerRoute: Int) throws -> AppExport {
+    let routesPerDay = 10
+    var daysJSON = ""
+    var remaining = routeCount
+    var dayIndex = 0
+    while remaining > 0 {
+        dayIndex += 1
+        let month = min(((dayIndex - 1) / 28) + 1, 12)
+        let day = ((dayIndex - 1) % 28) + 1
+        let date = String(format: "2024-%02d-%02d", month, day)
+        let count = min(routesPerDay, remaining)
+        remaining -= count
+
+        var pathsJSON = ""
+        for r in 0..<count {
+            let baseLat = 48.0 + Double(r) * 0.01
+            let baseLon = 11.0 + Double(r) * 0.01
+            var flats = [String]()
+            for p in 0..<pointsPerRoute {
+                flats.append(String(baseLat + Double(p) * 0.001))
+                flats.append(String(baseLon + Double(p) * 0.001))
+            }
+            if !pathsJSON.isEmpty { pathsJSON += "," }
+            pathsJSON += """
+            {"activity_type":"WALKING","flat_coordinates":[\(flats.joined(separator: ","))],"points":[]}
+            """
+        }
+        if !daysJSON.isEmpty { daysJSON += "," }
+        daysJSON += """
+        {"date":"\(date)","visits":[],"activities":[],"paths":[\(pathsJSON)]}
+        """
+    }
+
+    let jsonStr = """
+    {
+        "schema_version":"1.0",
+        "meta":{
+            "exported_at":"2024-01-01T00:00:00Z",
+            "tool_version":"test",
+            "source":{"zip_basename":null,"zip_path":null,"input_format":null},
+            "output":{"out_dir":null},
+            "config":{"mode":null,"split_midnight":null,"split_mode":null,"export_format":null,"input_format":null},
+            "filters":{}
+        },
+        "data":{"days":[\(daysJSON)]}
+    }
+    """
+    guard let data = jsonStr.data(using: .utf8) else {
+        throw NSError(domain: "TestHelper", code: 1, userInfo: [NSLocalizedDescriptionKey: "UTF-8 encoding failed"])
+    }
+    return try AppExportDecoder.decode(data: data)
 }
 
 private extension DaySummary {

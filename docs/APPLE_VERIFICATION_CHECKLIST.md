@@ -31,7 +31,8 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 - **TestFlight-Verfügbarkeit**: Build 1.0 (44) ist auf iPhone installierbar ✅
 - **Interner Smoke-Test**: App startet, Haupttabs navigierbar, kein bestätigter Crash ✅
 - **Performance**: gelegentliche UI-Hänger/Ruckler beobachtet — kein reproduzierbarer Crash, aber noch kein systematischer Großdaten-Test
-- **App-Store-Submission**: noch nicht eingereicht ❌ (offen bis Build in App Store Connect unter Vertrieb ausgewählt + eingereicht)
+- **Overview-Map Freeze-Blocker**: behoben (Hard Overlay Limit, s. CHANGELOG 2026-04-29); TestFlight-Verifikation mit echten großen Daten noch ausstehend
+- **App-Store-Submission**: noch nicht eingereicht ❌ (offen bis Fix auf TestFlight mit echten Daten verifiziert + Build in App Store Connect unter Vertrieb ausgewählt + eingereicht)
 
 ---
 

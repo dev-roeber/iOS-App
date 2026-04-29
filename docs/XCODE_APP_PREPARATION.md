@@ -55,11 +55,20 @@ Die App nutzt ausschließlich systemseitige Verschlüsselung (HTTPS/TLS via URLS
 
 Damit sind beim App-Store-Upload **keine Export-Compliance-Unterlagen** erforderlich.
 
+## Performance-Schutzschicht Overview-Map
+
+`AppOverviewTracksMapView` verwendet eine tiered Render-Pipeline mit Hard Overlay Limit:
+- Sammelt Track-Daten off-Main-Thread via `Task.detached`
+- Wählt Top-Kandidaten nach Score aus und capped auf `overlayLimit` (150–300 je nach Datenmenge)
+- Vereinfacht jeden Kandidaten via Douglas-Peucker + stride-Decimation
+- Setzt `isOptimized = true` wenn Limit oder Vereinfachung greift; Badge im View informiert den Nutzer
+- **Export bleibt vollständig und unberührt** — nur die visuelle Kartenrepräsentation wird reduziert
+
 ## Lokale Verifikation
 
 Unter Linux ist ehrlich verifiziert:
 
-- `swift test` (`228` Tests, `2` Skips, `0` Failures am 2026-03-31)
+- `swift test` (647 Tests, 0 Failures am 2026-04-29)
 - Linux-Build der SwiftPM-Targets
 - Linux-Fallback-Mains der Apple-UI-nahen Executables
 

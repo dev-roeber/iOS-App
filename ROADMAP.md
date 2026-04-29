@@ -1,8 +1,22 @@
 # ROADMAP
 
-## Aktiver Stand (2026-04-12)
+## Aktiver Stand (2026-04-29)
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
+
+## Aktueller Stand (2026-04-29)
+
+### Overview-Map Freeze/Crash-Fix – Hard Overlay Limit (2026-04-29)
+
+Abgeschlossen (647 Tests, 0 Failures):
+- **Problem**: `AppOverviewTracksMapView` frierte ein oder crashte bei „Gesamtzeitraum" + großen Datenmengn. Root Cause: `selectCandidates` lieferte alle Kandidaten unsortiert ohne Overlay-Limit; MapKit erhielt tausende `MapPolyline`-Objekte.
+- **Fix**: Hard `overlayLimit` in `OverviewMapRenderProfile` eingeführt. Tier-basierte Limits: sehr groß (>500 Routen/>150k Punkte) → 150, groß → 200, mittel-groß → 250, mittel → 300, klein → kein Cap.
+- `selectCandidates` schneidet nach Score-Sortierung auf `overlayLimit` ab.
+- `isOptimized` ist `true` wenn Cap greift — View zeigt Badge „Karte vereinfacht – Export vollständig".
+- Export-Daten unverändert. Rohdatenmodell und Export-Pipeline kein Eingriff.
+- 5 neue Tests: `overlayLimit`-Werte per Tier, synthetisches 600-Routen-Dataset gecapped, kleines Dataset ungecapped, Start-/Endpunkt-Erhaltung, Export-Daten-Unveränderlichkeit.
+
+---
 
 ## Aktueller Stand (2026-04-12)
 
