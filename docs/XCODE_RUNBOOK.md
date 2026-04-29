@@ -204,8 +204,9 @@ Frischer Host-Truth (2026-04-29) — macOS, Xcode 26.3, iPhone 15 Pro Max (ios 2
 - **UITests 6/6 PASSED auf iPhone 15 Pro Max** (00008130-00163D0A0461401C) ✅
   - `testLaunch` × 4, `testAppStoreScreenshots`, `testDeviceSmokeNavigationAndActions`
   - `testDeviceSmokeNavigationAndActions` verifiziert auf Gerät: Demo-Load, Overview/All-Time-Filter, Heatmap, Insights Share, Export fileExporter, Live Start/Stop
-- `git diff --check`: sauber
-- `git status --short`: leer
+- Wrapper Release-Signing fuer Xcode Cloud/App Store bereinigt: `CODE_SIGN_STYLE = Automatic`, `DEVELOPMENT_TEAM = XAGR3K7XDJ`, keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`, Buildnummer `27`
+- Widget-Embed-Phase: `LH2GPXWidget.appex` wird mit `CodeSignOnCopy` eingebettet
+- `git diff --check` / `git status --short` nur fuer den jeweils aktuellen Arbeitsstand wiederholen; fruehere Gruen-Angaben waren Zwischenstaende und gelten nicht pauschal fuer spaetere Worktrees
 
 Frischer Host-Truth (2026-03-31, historisch):
 

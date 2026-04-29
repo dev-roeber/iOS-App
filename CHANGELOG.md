@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## [2026-04-29] — App-Store-Signing für Xcode Cloud bereinigt
+
+### Geaendert
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`: Release-/Archive-Pfad fuer `LH2GPXWrapper` und `LH2GPXWidget` auf `CODE_SIGN_STYLE = Automatic` und `DEVELOPMENT_TEAM = XAGR3K7XDJ` bereinigt
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`: explizite Release-Overrides fuer `CODE_SIGN_IDENTITY` und `PROVISIONING_PROFILE_SPECIFIER` entfernt, damit Xcode Cloud/App Store Connect die passende Distribution-Signatur selbst aufloest
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`: `CURRENT_PROJECT_VERSION` auf `27` angehoben
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`: Widget-Embed-Phase auf `CodeSignOnCopy` korrigiert
+- `Sources/LocationHistoryConsumerAppSupport/AppLiveTrackingView.swift`: stabile Accessibility IDs fuer Start/Stop-Recording im Live-Tab ergänzt
+- `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift`: Device-Smoke-Test auf die neuen Live-Button-IDs umgestellt
+
+### Verifiziert
+- `swift test`: 643 Tests, 0 Failures ✅
+- `xcodebuild -target LH2GPXWrapper -configuration Release -showBuildSettings`: `CODE_SIGN_STYLE = Automatic`, `CURRENT_PROJECT_VERSION = 27`, `DEVELOPMENT_TEAM = XAGR3K7XDJ` ✅
+- `xcodebuild -target LH2GPXWidget -configuration Release -showBuildSettings`: `CODE_SIGN_STYLE = Automatic`, `CURRENT_PROJECT_VERSION = 27`, `DEVELOPMENT_TEAM = XAGR3K7XDJ` ✅
+- `TARGETED_DEVICE_FAMILY = 1`, `SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO`, `SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO` im Wrapper-Target ✅
+- `ITSAppUsesNonExemptEncryption = false` weiterhin in App + Widget gesetzt ✅
+
+### Offen
+- Lokaler Transporter-Upload vom 2026-04-29 wurde von Apple weiter mit `Invalid Signature` fuer App + Widget abgelehnt
+- Der neu angelegte Xcode-Cloud-Workflow `Release – Archive & TestFlight` muss noch real gruen durchlaufen und den ersten gueltigen TestFlight-Build erzeugen
+
 ## [2026-04-29] — GitHub Pages: Support- und Projektseite
 
 ### Hinzugefügt

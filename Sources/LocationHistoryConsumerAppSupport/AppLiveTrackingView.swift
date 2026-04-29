@@ -453,6 +453,7 @@ public struct AppLiveTrackingView: View {
             }
             .buttonStyle(.plain)
             .disabled(liveLocation.isAwaitingAuthorization)
+            .accessibilityIdentifier(liveLocation.isRecording ? "live.recording.stop" : "live.recording.start")
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 statCard(icon: "scope", label: t("GPS Accuracy"), value: accuracyText, color: accuracyColor)

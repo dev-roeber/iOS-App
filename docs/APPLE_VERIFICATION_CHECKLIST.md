@@ -26,7 +26,7 @@ Ausgefuehrt auf: iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C), Xcode 26.3
 - **Keine feste Server-URL**: Live-Tab zeigt nur optionalen/nutzergesteuerten Upload-Screen (kein Entwickler-Server)
 - **Keine Debug-Overlays**: saubere UI ohne Developer-Tools
 - **App-Store-Deklaration**: „Keine Daten erfasst" korrekt
-- **iPad**: TARGETED_DEVICE_FAMILY=1,2 → iPad Support vorhanden; iPad-Screenshots noch ausstehend (kein iPad-Gerät angeschlossen)
+- **iPad**: v1 jetzt iPhone-only (`TARGETED_DEVICE_FAMILY = 1`) — kein iPad-Support im Release-Build vorgesehen
 - **Apple Watch**: keine WatchKit-App im Repo — keine Watch-Screenshots nötig
 
 #### ScreenShot-Dateien (für App Store Connect)
@@ -76,6 +76,8 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Entitlements**: App Group `group.de.roeber.LH2GPXWrapper` in App + Widget Entitlements — korrekt
 - **PrivacyInfo.xcprivacy**: NSPrivacyTracking=false, UserDefaults CA92.1, NSPrivacyCollectedDataTypePreciseLocation — vollständig
 - **Export-Compliance**: `ITSAppUsesNonExemptEncryption = false` in `wrapper/Config/Info.plist` (App) und `wrapper/LH2GPXWidget/Info.plist` (Widget) gesetzt — kein Upload-Dokument nötig. Begründung: App nutzt ausschließlich systemseitige HTTPS/TLS (URLSession, optionaler Live-Location-Upload); keine eigene Verschlüsselung (kein CryptoKit, CommonCrypto, AES, RSA, VPN, E2E-Messaging, Crypto-Bibliotheken).
+- **Release-Signing-Konfiguration**: `LH2GPXWrapper` + `LH2GPXWidget` auf `CODE_SIGN_STYLE = Automatic`, `DEVELOPMENT_TEAM = XAGR3K7XDJ`, Buildnummer `27`; keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`
+- **Widget-Embed**: `LH2GPXWidget.appex` wird mit `CodeSignOnCopy` eingebettet
 - **Sicherheit**: keine hartcodierten Tokens/Secrets; defaultTestEndpointURLString=""; HTTPS fuer non-localhost erzwungen; Bearer-Token via Keychain
 - **Deployment Target**: iOS 16.0 (App, LH2GPXWrapperTests) / 16.2 (Widget, UITests) — verifiziert in project.pbxproj
 - **Bundle IDs**: de.roeber.LH2GPXWrapper / de.roeber.LH2GPXWrapper.Widget / de.roeber.LH2GPXWrapperTests / de.roeber.LH2GPXWrapper.UITests — korrekt
@@ -96,15 +98,16 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 
 #### ❌ weiterhin offen (unverändert)
 
-- Xcode Cloud Workflow anlegen (manuell in Xcode.app: Product → Xcode Cloud → Create Workflow)
+- Xcode Cloud Workflow `Release – Archive & TestFlight` ist angelegt; erster erfolgreicher Cloud-Archive-/TestFlight-Lauf steht noch aus
 - App ID `de.roeber.LH2GPXWrapper` + App Group `group.de.roeber.LH2GPXWrapper` im Developer Portal registrieren
 - Privacy Policy URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (Seite vorhanden, URL noch nicht eingetragen)
 - Support URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/support.html` (Seite vorhanden, URL noch nicht eingetragen)
 - Marketing URL optional: `https://dev-roeber.github.io/iOS-App/` (`docs/index.html` vorhanden, kein Download-Button)
 - finales App Icon (aktuell Interimsdesign)
 - Apple-Review-Bestaetigung fuer NSPrivacyCollectedDataTypes (optionaler Live-Upload)
-- iPad-Screenshots (TARGETED_DEVICE_FAMILY=1,2 → iPad unterstützt; `ipad/`-Screenshots noch ausstehend)
+- iPad-Screenshots sind fuer v1 nicht relevant, solange `TARGETED_DEVICE_FAMILY = 1` bleibt; iPad-Support spaeter mit eigenem Test-/Screenshot-Set
 - App-Store-Screenshots in App Store Connect hochladen (`docs/app-store-assets/screenshots/iphone-67/`)
+- Apple-validen TestFlight-Build abwarten bzw. erzeugen; lokale Transporter-Uploads vom 2026-04-29 wurden mit `Invalid Signature` fuer App + Widget abgelehnt
 
 ---
 
@@ -126,7 +129,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 
 #### ⚠️ manuelle Apple-Schritte (blocking für Xcode Cloud Start)
 
-1. **Xcode Cloud Workflow anlegen**: Product → Xcode Cloud → Create Workflow (Xcode.app + Apple ID Login)
+1. **Historischer Stand 2026-04-13:** Xcode Cloud Workflow war damals noch manuell anzulegen; Stand 2026-04-29 ist `Release – Archive & TestFlight` inzwischen erstellt
 2. **App ID registrieren**: `de.roeber.LH2GPXWrapper` + Capabilities: App Groups, Background Modes (Location)
 3. **App Group registrieren**: `group.de.roeber.LH2GPXWrapper` im Developer Portal
 4. → Details: `docs/XCODE_CLOUD_RUNBOOK.md`

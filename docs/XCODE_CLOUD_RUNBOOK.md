@@ -71,11 +71,19 @@ App Store Connect konfiguriert werden — keine YAML-Dateien.
 
 1. **Menü:** Product → Xcode Cloud → Create Workflow
 2. **Name:** `Release – Archive & TestFlight`
-3. **Start Condition:** Tag starts with `v` (z.B. `v1.0.0`)
+3. **Start Condition:** `Manual` fuer den ersten Release-Kandidaten; spaeter optional Tag-trigger
 4. **Actions:**
    1. **Archive** — Scheme: `LH2GPXWrapper`, Platform: iOS
    2. **TestFlight (Internal Testing)** — automatisch nach Archive
 5. **Save**
+
+**Projektvoraussetzungen fuer den Release-Pfad (Repo-Truth 2026-04-29):**
+- `LH2GPXWrapper` + `LH2GPXWidget`: `CODE_SIGN_STYLE = Automatic`
+- `DEVELOPMENT_TEAM = XAGR3K7XDJ`
+- keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`
+- keine feste Release-`CODE_SIGN_IDENTITY`
+- Widget-Embed via `CodeSignOnCopy`
+- `CURRENT_PROJECT_VERSION = 27`
 
 ### Wichtig: App Store Connect Pflichtfelder (vor erstem Upload)
 

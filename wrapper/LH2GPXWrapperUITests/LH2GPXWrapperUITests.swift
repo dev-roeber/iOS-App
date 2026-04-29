@@ -158,22 +158,16 @@ final class LH2GPXWrapperUITests: XCTestCase {
         liveTab.tap()
 
         // The recording button's accessibility label combines title + subtitle texts.
-        let startRecordingButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'Start Recording'")
-        ).firstMatch
+        let startRecordingButton = app.buttons["live.recording.start"]
         XCTAssertTrue(startRecordingButton.waitForExistence(timeout: 10), "Start Recording button not found")
         startRecordingButton.tap()
         allowLocationAccessIfNeeded()
 
-        let stopRecordingButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'Stop Recording'")
-        ).firstMatch
+        let stopRecordingButton = app.buttons["live.recording.stop"]
         XCTAssertTrue(stopRecordingButton.waitForExistence(timeout: 15), "Stop Recording button not found")
         stopRecordingButton.tap()
 
-        let startRecordingAgain = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'Start Recording'")
-        ).firstMatch
+        let startRecordingAgain = app.buttons["live.recording.start"]
         XCTAssertTrue(startRecordingAgain.waitForExistence(timeout: 10), "Start Recording button not reappeared after stop")
     }
 

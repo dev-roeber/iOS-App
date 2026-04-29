@@ -18,7 +18,9 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [x] **Datenschutzerklärung erstellt** — `docs/privacy.html` (GitHub Pages); App Store Connect URL: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-29)
 - [ ] **Datenschutzerklärung-URL in App Store Connect eintragen** — App-Datenschutz → Datenschutzrichtlinie → `https://dev-roeber.github.io/iOS-App/privacy.html`
 - [ ] **GitHub Pages aktivieren** — Repo-Settings → Pages → Source: main → /docs (einmalig, manuell)
-- [ ] **Xcode Cloud Workflow anlegen (manuell)** — Product → Xcode Cloud → Create Workflow; Details in `docs/XCODE_CLOUD_RUNBOOK.md`
+- [x] **Xcode Cloud Workflow angelegt** — `Release – Archive & TestFlight` in Xcode erstellt (2026-04-29)
+- [ ] **Xcode Cloud Release-Workflow gruen verifizieren** — erster echter `Archive + TestFlight`-Lauf muss erfolgreich durchlaufen und in App Store Connect erscheinen
+- [ ] **Lokalen Transporter-Pfad nicht weiter verwenden, bis Signing sauber ist** — die lokalen Uploads vom 2026-04-29 wurden von Apple mit `Invalid Signature` fuer App + Widget abgelehnt
 - [ ] **App ID + App Group im Developer Portal registrieren** — `de.roeber.LH2GPXWrapper` + `group.de.roeber.LH2GPXWrapper` (einmalig, manuell)
 - [x] Apple-UI-Verifikation: Range-Picker (All-Time-Chip tappbar, verifiziert via UITest 2026-04-29), Datumsbereich-Sheet manuell noch offen
 - [x] KMZ-Export — abgeschlossen 2026-04-12 (KMZBuilder + KMZDocument + Tests)
