@@ -99,7 +99,8 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - Xcode Cloud Workflow anlegen (manuell in Xcode.app: Product → Xcode Cloud → Create Workflow)
 - App ID `de.roeber.LH2GPXWrapper` + App Group `group.de.roeber.LH2GPXWrapper` im Developer Portal registrieren
 - Privacy Policy URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (Seite vorhanden, URL noch nicht eingetragen)
-- Support URL fuer App Store Connect (noch nicht eingetragen)
+- Support URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/support.html` (Seite vorhanden, URL noch nicht eingetragen)
+- Marketing URL optional: `https://dev-roeber.github.io/iOS-App/` (`docs/index.html` vorhanden, kein Download-Button)
 - finales App Icon (aktuell Interimsdesign)
 - Apple-Review-Bestaetigung fuer NSPrivacyCollectedDataTypes (optionaler Live-Upload)
 - iPad-Screenshots (TARGETED_DEVICE_FAMILY=1,2 → iPad unterstützt; `ipad/`-Screenshots noch ausstehend)

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LH2GPX – Standortverlauf lokal analysieren und exportieren</title>
+  <meta name="description" content="LH2GPX: Google Standortverlauf lokal importieren, analysieren und in GPX, KML, GeoJSON oder CSV exportieren. Kein Konto, kein Tracking, kein Cloud-Zwang.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      color: #1c1c1e;
+      background: #f2f2f7;
+      padding: 0 0 3rem;
+    }
+    header {
+      background: #fff;
+      border-bottom: 1px solid #d1d1d6;
+      padding: 2rem 1.25rem 1.5rem;
+      text-align: center;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p.tagline {
+      font-size: 1.05rem;
+      color: #636366;
+      margin-top: 0.4rem;
+    }
+    header .badge {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      background: #f0f0f5;
+      color: #636366;
+      padding: 0.2rem 0.75rem;
+      border-radius: 20px;
+      border: 1px solid #d1d1d6;
+    }
+    main {
+      max-width: 700px;
+      margin: 1.5rem auto 0;
+      padding: 0 1.25rem;
+    }
+    section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    h2 { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.6rem; }
+    p { margin-bottom: 0.75rem; }
+    p:last-child { margin-bottom: 0; }
+    ul { padding-left: 1.3rem; margin-bottom: 0.75rem; }
+    li { margin-bottom: 0.3rem; }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .feature-item {
+      background: #f9f9fb;
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+    }
+    .feature-item strong { display: block; font-size: 0.95rem; }
+    .feature-item span { font-size: 0.85rem; color: #636366; }
+    .privacy-highlight {
+      background: #f0fdf4;
+      border-left: 4px solid #34c759;
+      padding: 0.75rem 1rem;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 0.75rem;
+    }
+    .privacy-highlight p { margin: 0; font-weight: 500; }
+    .link-list { list-style: none; padding: 0; }
+    .link-list li { margin-bottom: 0.4rem; }
+    .link-list a {
+      color: #007aff;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .link-list a:hover { text-decoration: underline; }
+    a { color: #007aff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer {
+      text-align: center;
+      font-size: 0.82rem;
+      color: #8e8e93;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>LH2GPX</h1>
+  <p class="tagline">Standortverlauf lokal analysieren und exportieren</p>
+  <span class="badge">App Store Veröffentlichung in Vorbereitung</span>
+</header>
+
+<main>
+
+  <section>
+    <h2>Was ist LH2GPX?</h2>
+    <p>LH2GPX ist eine iOS-App, die Ihren eigenen Standortverlauf – zum Beispiel aus einem Google-Takeout-Export – direkt auf Ihrem iPhone importiert, übersichtlich darstellt und in gängige GPS-Formate exportiert.</p>
+    <p>Alle Verarbeitungen finden <strong>lokal auf Ihrem Gerät</strong> statt. Kein Konto, kein Cloud-Zwang, kein Tracking.</p>
+  </section>
+
+  <section>
+    <h2>Kernfunktionen</h2>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <strong>Import</strong>
+        <span>Google Takeout JSON/ZIP, GPX, TCX</span>
+      </div>
+      <div class="feature-item">
+        <strong>Übersicht</strong>
+        <span>Karte, Tage, Strecken, Statistiken</span>
+      </div>
+      <div class="feature-item">
+        <strong>Einblicke</strong>
+        <span>Distanzen, Zeiträume, Aktivitätsauswertung</span>
+      </div>
+      <div class="feature-item">
+        <strong>Export</strong>
+        <span>GPX, KML, KMZ, GeoJSON, CSV</span>
+      </div>
+      <div class="feature-item">
+        <strong>Live-Aufzeichnung</strong>
+        <span>Optional, nutzerkonfiguriert, standardmäßig aus</span>
+      </div>
+      <div class="feature-item">
+        <strong>Widget</strong>
+        <span>iOS-Homescreen-Widget</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Datenschutzfreundlich</h2>
+    <div class="privacy-highlight">
+      <p>App Store Datenschutz: „Keine Daten erfasst"</p>
+    </div>
+    <ul>
+      <li>Keine Kontoregistrierung erforderlich</li>
+      <li>Kein Tracking, keine Werbung, keine Analytics</li>
+      <li>Alle Daten bleiben lokal auf Ihrem Gerät</li>
+      <li>Optionaler Live-Upload nur an eigene nutzerkonfigurierte Adresse</li>
+      <li>Ausschließlich systemseitige Verschlüsselung (HTTPS/TLS via URLSession)</li>
+    </ul>
+    <p><a href="privacy.html">Vollständige Datenschutzerklärung →</a></p>
+  </section>
+
+  <section>
+    <h2>Support</h2>
+    <p>Bei Fragen oder Fehlermeldungen:</p>
+    <p><a href="support.html">Support-Seite →</a></p>
+    <p><a href="https://github.com/dev-roeber/iOS-App/issues">GitHub Issues →</a></p>
+  </section>
+
+  <section>
+    <h2>Links</h2>
+    <ul class="link-list">
+      <li><a href="https://github.com/dev-roeber/iOS-App">GitHub Repository</a></li>
+      <li><a href="support.html">Support</a></li>
+      <li><a href="privacy.html">Datenschutzerklärung</a></li>
+      <li><a href="https://github.com/dev-roeber/iOS-App/blob/main/CHANGELOG.md">Versionshistorie (CHANGELOG)</a></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  <p>LH2GPX · <a href="https://github.com/dev-roeber/iOS-App">github.com/dev-roeber/iOS-App</a></p>
+</footer>
+
+</body>
+</html>

@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [2026-04-29] — GitHub Pages: Support- und Projektseite
+
+### Hinzugefügt
+- `docs/support.html`: öffentliche Support-Seite für App Store Connect; enthält FAQ, Kontakt, Formatübersicht, Datenschutz-Link
+  URL: `https://dev-roeber.github.io/iOS-App/support.html`
+- `docs/index.html`: kleine Projektseite (kein Download-Button, da App noch nicht im Store); enthält Kernfunktionen, Datenschutz-Highlight, Links
+  URL: `https://dev-roeber.github.io/iOS-App/`
+- `docs/privacy.html`: Support-Link im Footer ergänzt
+
+### Inhalt
+- FAQ-Abschnitt mit verifizierten Antworten (Import-/Exportformate aus Repo-Truth)
+- Kein offizieller Live-Receiver-Dienst genannt
+- Keine Download-Buttons / keine Aussage „im App Store verfügbar"
+- Kein Tracking, kein JS, keine externen CDNs/Fonts
+
 ## [2026-04-29] — App-Store-Screenshots (iPhone 15 Pro Max, UITest-basiert)
 
 ### Hinzugefügt

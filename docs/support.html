@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support – LH2GPX</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      color: #1c1c1e;
+      background: #f2f2f7;
+      padding: 0 0 3rem;
+    }
+    header {
+      background: #fff;
+      border-bottom: 1px solid #d1d1d6;
+      padding: 1.5rem 1.25rem 1.25rem;
+    }
+    header h1 { font-size: 1.35rem; font-weight: 700; }
+    header p.subtitle { font-size: 0.9rem; color: #636366; margin-top: 0.3rem; }
+    main {
+      max-width: 700px;
+      margin: 1.5rem auto 0;
+      padding: 0 1.25rem;
+    }
+    section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    h2 { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.6rem; }
+    p { margin-bottom: 0.75rem; }
+    p:last-child { margin-bottom: 0; }
+    ul { padding-left: 1.3rem; margin-bottom: 0.75rem; }
+    li { margin-bottom: 0.3rem; }
+    details { margin-bottom: 0.5rem; border-bottom: 1px solid #f2f2f7; padding-bottom: 0.5rem; }
+    details:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    summary {
+      cursor: pointer;
+      font-weight: 500;
+      padding: 0.4rem 0;
+      list-style: none;
+    }
+    summary::before { content: "▸ "; color: #007aff; }
+    details[open] summary::before { content: "▾ "; }
+    summary::-webkit-details-marker { display: none; }
+    .answer { padding: 0.5rem 0 0.25rem 1.2rem; color: #3a3a3c; }
+    .cta {
+      display: inline-block;
+      background: #007aff;
+      color: #fff;
+      padding: 0.55rem 1.1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+    .cta:hover { background: #0066dd; }
+    a { color: #007aff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .meta { font-size: 0.85rem; color: #8e8e93; margin-top: 0.3rem; }
+    footer {
+      text-align: center;
+      font-size: 0.82rem;
+      color: #8e8e93;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>LH2GPX – Support</h1>
+  <p class="subtitle">Lokaler Standortverlauf-Import, Analyse und Export</p>
+</header>
+
+<main>
+
+  <section>
+    <h2>Was ist LH2GPX?</h2>
+    <p>LH2GPX importiert Ihren Google-Standortverlauf (und weitere Formate) lokal auf Ihrem Gerät, analysiert die Daten und ermöglicht den Export in gängige GPS-Formate. Alle Verarbeitungen finden vollständig lokal statt – ohne Kontozwang, ohne Cloud-Pflicht.</p>
+  </section>
+
+  <section>
+    <h2>Hilfe &amp; Kontakt</h2>
+    <p>Bei Fragen, Fehlermeldungen oder Verbesserungsvorschlägen nutzen Sie bitte die öffentlichen GitHub Issues:</p>
+    <p><a class="cta" href="https://github.com/dev-roeber/iOS-App/issues">Frage stellen / Fehler melden</a></p>
+    <p class="meta">Bitte keine persönlichen Standort- oder Nutzerdaten in Issues hochladen.</p>
+  </section>
+
+  <section>
+    <h2>Häufige Fragen</h2>
+
+    <details>
+      <summary>Werden meine Daten hochgeladen?</summary>
+      <p class="answer">Nein. Die App verarbeitet alle Daten lokal auf Ihrem Gerät. Daten verlassen das Gerät nur, wenn Sie selbst aktiv einen Export auslösen oder – als optionale Funktion – einen eigenen Live-Aufzeichnungs-Server konfigurieren. Der Entwickler empfängt keine Daten.</p>
+    </details>
+
+    <details>
+      <summary>Brauche ich ein Konto oder eine Registrierung?</summary>
+      <p class="answer">Nein. LH2GPX benötigt kein Konto, keine E-Mail-Adresse und keine Anmeldung.</p>
+    </details>
+
+    <details>
+      <summary>Gibt es Tracking, Werbung oder Analytics?</summary>
+      <p class="answer">Nein. Die App enthält kein Tracking, keine Werbenetzwerke, keine Crashreporter und keine Analysedienste. Die App-Store-Datenschutzangabe lautet „Keine Daten erfasst".</p>
+    </details>
+
+    <details>
+      <summary>Welche Importformate werden unterstützt?</summary>
+      <p class="answer">
+        <ul>
+          <li>Google Standortverlauf – <code>app_export.json</code> und <code>.zip</code>-Export</li>
+          <li>GPX 1.1 (Tracks und Wegpunkte)</li>
+          <li>TCX 2.0 (Trainings-/Aktivitätsdateien)</li>
+        </ul>
+      </p>
+    </details>
+
+    <details>
+      <summary>Welche Exportformate werden unterstützt?</summary>
+      <p class="answer">
+        <ul>
+          <li>GPX – GPS Exchange Format</li>
+          <li>KML – Keyhole Markup Language (Google Earth)</li>
+          <li>KMZ – komprimiertes KML</li>
+          <li>GeoJSON</li>
+          <li>CSV – tabellarisch</li>
+        </ul>
+      </p>
+    </details>
+
+    <details>
+      <summary>Was ist die optionale Live-Aufzeichnung?</summary>
+      <p class="answer">LH2GPX kann optional aktuelle GPS-Koordinaten an einen Server Ihrer Wahl übertragen. Diese Funktion ist <strong>standardmäßig vollständig deaktiviert</strong> und erfordert, dass Sie selbst eine eigene Server-URL eintragen. Der Entwickler betreibt keinen Empfangsserver. Die Aktivierung liegt ausschließlich bei Ihnen.</p>
+    </details>
+
+    <details>
+      <summary>Meine Datei wird nicht erkannt – was tun?</summary>
+      <p class="answer">Stellen Sie sicher, dass die Datei im unterstützten Format vorliegt (JSON/ZIP von Google Takeout, GPX oder TCX). Falls das Problem weiterhin besteht, melden Sie es bitte über <a href="https://github.com/dev-roeber/iOS-App/issues">GitHub Issues</a> mit einer anonymisierten Beschreibung des Problems.</p>
+    </details>
+
+    <details>
+      <summary>Die App stürzt ab oder zeigt einen Fehler – wie melde ich das?</summary>
+      <p class="answer">Bitte öffnen Sie ein <a href="https://github.com/dev-roeber/iOS-App/issues">GitHub Issue</a> mit einer Beschreibung des Fehlers, der iOS-Version und der App-Version. Keine privaten Standort- oder Nutzerdaten im Issue teilen.</p>
+    </details>
+
+  </section>
+
+  <section>
+    <h2>Fehler melden</h2>
+    <p>Das Projekt wird öffentlich auf GitHub entwickelt. Fehlerberichte und Verbesserungsvorschläge sind willkommen:</p>
+    <p><a href="https://github.com/dev-roeber/iOS-App/issues">github.com/dev-roeber/iOS-App/issues</a></p>
+    <p class="meta">Es gibt keine Garantie auf Reaktionszeit oder Support-Level – das Projekt wird als Einzelperson betrieben.</p>
+  </section>
+
+  <section>
+    <h2>Datenschutz</h2>
+    <p>Die vollständige Datenschutzerklärung finden Sie hier:</p>
+    <p><a href="privacy.html">Datenschutzerklärung (LH2GPX)</a></p>
+  </section>
+
+  <section>
+    <h2>App Store / Version</h2>
+    <p>LH2GPX befindet sich in Vorbereitung für den App Store. Aktuelle Versionsinformationen und Änderungshistorie sind im öffentlichen Repo verfügbar:</p>
+    <p><a href="https://github.com/dev-roeber/iOS-App/blob/main/CHANGELOG.md">CHANGELOG</a> &nbsp;·&nbsp; <a href="https://github.com/dev-roeber/iOS-App">GitHub Repository</a></p>
+  </section>
+
+</main>
+
+<footer>
+  <p>LH2GPX · <a href="https://github.com/dev-roeber/iOS-App">github.com/dev-roeber/iOS-App</a> · <a href="privacy.html">Datenschutz</a></p>
+</footer>
+
+</body>
+</html>
