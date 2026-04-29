@@ -68,6 +68,7 @@ Present:
 - primary actions include a direct jump into the separate `Saved Live Tracks` local library
 - overview entry card for the `Saved Live Tracks` local library
 - time-range control is first item in the overview pane (promoted from lower position)
+- heatmap entry in the overview is a compact Capsule chip, aligned with the existing filter/status chip language instead of a larger dedicated action card
 - favorites-only Capsule toggle appears below the time-range when at least one day is favorited
 - `AppOverviewTracksMapView` shows an async interactive polyline overview map for all tracks in the active range (iOS 17+); loads off-main-thread via `Task.detached`; caches candidates once per data/filter change and rebuilds overlays on pan/zoom without re-scanning the export; uses viewport bounding-box intersection (not midpoint-only) so long routes crossing the visible region stay prioritizable; supports style toggle, fit-to-data and fullscreen explore mode; uses a tiered render profile (Douglas-Peucker simplification + stride decimation per route + hard `overlayLimit` cap) to keep MapKit within safe overlay and coordinate counts even for "All Time" on large datasets; `overlayLimit × maxPolylinePoints` = implicit global coordinate cap (9.600–48.000 per tier); shows "Simplified map – export complete" badge when overlay cap fires; export data never affected; shows phase-based loading card with linear ProgressView
 
@@ -146,6 +147,8 @@ Not present:
 Present:
 - live recording with current-position marker and live polyline
 - dedicated `Live` tab on compact iOS 17+ with separate cards for map, recording, upload, saved tracks and advanced options
+- Live Activity / Dynamic Island options expose a persisted primary value selection: `Distance`, `Duration`, `Points` or `Upload Status`
+- options surface Live Activity availability explicitly and disable the configuration on unsupported / disabled devices instead of leaving a dead control
 - status chips for recording state, foreground/background state, upload state and queued points
 - quick actions for centering the live map, pausing/resuming uploads, manually flushing the upload queue and opening the saved-track library
 - live stats include accuracy, duration, points, distance, current speed, average speed, last segment and update age
@@ -155,6 +158,7 @@ Present:
 - accepted live-recording points can optionally be sent to a user-configured HTTP(S) endpoint with an optional bearer token
 - permission/status card and record toggle inside day detail
 - upload area can show ready, invalid-endpoint, paused, uploading, retry-pending, queued, last-success and last-failure states when server upload is enabled
+- Live Activity state propagation includes upload status and pause state (`disabled`, `active`, `pending`, `failed`, `paused`) instead of distance / points only
 - completed recordings are persisted as separate local `Saved Live Tracks`
 - dedicated recorded-tracks library page with summary, latest-track preview and editor navigation
 - saved-track editor supports point editing, midpoint insertion and delete

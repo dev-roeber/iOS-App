@@ -47,6 +47,8 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [ ] echtes Road-/Path-Matching (Strassen-/Weg-Snapping) konzipieren; aktuelle `Simplified (Beta)`-Darstellung ist GPS-Ausreisserfilterung + Pfadvereinfachung, kein Road-Network-Abgleich
 - [x] Auto-Resume einer laufenden Live-Aufzeichnung nach App-Neustart — sauberes Modell umgesetzt: SessionID+Timestamp in UserDefaults, Banner mit relativem Zeitstempel beim Start, "Aufzeichnung fortsetzen" / "Ignorieren" (kein blindes Auto-Resume, bewusst user-controlled) (2026-04-13)
 - [ ] app-weite Landscape-Verifikation fuer jede Hauptseite auf Apple-Hardware nachziehen (UITests laufen in Portrait; Landscape manuell prüfen)
+- [ ] Live Activity / Dynamic Island auf echter Apple-Hardware manuell durchpruefen: Lock Screen, expanded / compact / minimal, neue Primärwert-Optionen (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) und Fallback-Hinweise bei deaktivierten / nicht verfuegbaren Live Activities
+- [ ] Wrapper-Simulator-Testlauf fuer `LH2GPXWrapperTests` auf diesem Host stabilisieren oder auf anderem Apple-Host gegenpruefen; aktueller Versuch brach beim App-Launch mit `NSMachErrorDomain Code=-308 (ipc/mig server died)` ab
 
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.

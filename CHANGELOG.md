@@ -92,7 +92,27 @@ Root Cause: `selectCandidates` lieferte alle Kandidaten (keine Obergrenze); MapK
 - **swift test**: 643 Tests, 0 Failures (verifiziert 2026-04-29).
 - **git diff --check**: sauber.
 
+
 ---
+
+## [2026-04-29] — Dynamic Island Settings + Live Activity Fallbacks + Overview Heatmap Chip
+
+### Geaendert
+- `LiveActivityPresentation.swift` neu: zentrale, testbare Formatierung fuer Dynamic-Island-Werte (`Distance`, `Duration`, `Points`, `Upload Status`) sowie testbare Availability-/Fallback-Logik fuer Live Activities
+- `AppPreferences` / `AppOptionsView`: Dynamic-Island-Wert ist jetzt als persistente Primärwert-Option ausgebaut; neuer Upload-Status-Wert verfuegbar; Live-Activity-Verfuegbarkeit wird in den Optionen sichtbar gemacht und deaktiviert die Konfiguration sauber auf nicht unterstuetzten / deaktivierten Geraeten
+- `LiveLocationFeatureModel` -> `ActivityManager` -> `TrackingStatus`: Upload-/Pause-Zustand wird jetzt tatsaechlich bis in die Live Activity durchgereicht statt nur im Modell zu existieren; neue `uploadState`-Ableitung (`disabled`, `active`, `pending`, `failed`, `paused`)
+- `TrackingLiveActivityWidget.swift`: Lock Screen, Dynamic Island expanded, compact trailing und minimal nutzen jetzt den gewaehlten Primärwert konsistent; Minimal bleibt bewusst icon-basiert, aber folgt der Auswahl stabil
+- `AppContentSplitView`: der bisherige Heatmap-Action-Block wurde in der Overview zu einem kompakten Capsule-Chip harmonisiert, passend zu den uebrigen Filter-/Status-Chips
+
+### Verifiziert
+- `swift test` -> `650` Tests, `0` Failures
+- `git diff --check` -> sauber
+- `xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` -> **BUILD SUCCEEDED**
+
+### Offen / nicht als verifiziert behauptet
+- Realer Device-/Dynamic-Island-Nachweis bleibt offen
+- `xcodebuild ... -testPlan CI ... -only-testing:LH2GPXWrapperTests test` konnte auf diesem Host nicht belastbar abgeschlossen werden; der Simulator-Lauf brach beim App-Launch mit `NSMachErrorDomain Code=-308 (ipc/mig server died)` ab
+- Keine Aussage zu manuell geoeffneter Live Activity / Dynamic Island / Homescreen-Widget auf echter Apple-Hardware
 
 ## [2026-04-29] — Build 34 IPA-Forensik: Root Cause bewiesen — NFD/NFC-Normalisierungsmismatch in Designated Requirement
 

@@ -45,6 +45,7 @@ final class LiveActivityTests: XCTestCase {
         XCTAssertFalse(status.isPaused)
         XCTAssertEqual(status.uploadQueueCount, 0)
         XCTAssertNil(status.lastUploadSuccess)
+        XCTAssertEqual(status.uploadState, .disabled)
     }
 
     func testTrackingStatusIsRecordingTrue() {
@@ -61,11 +62,13 @@ final class LiveActivityTests: XCTestCase {
             pointCount: 12,
             isPaused: true,
             uploadQueueCount: 7,
-            lastUploadSuccess: false
+            lastUploadSuccess: false,
+            uploadState: .pending
         )
         XCTAssertTrue(status.isPaused)
         XCTAssertEqual(status.uploadQueueCount, 7)
         XCTAssertEqual(status.lastUploadSuccess, false)
+        XCTAssertEqual(status.uploadState, .pending)
     }
 
     func testTrackingStatusLastUploadSuccessTrue() {
@@ -116,13 +119,15 @@ final class LiveActivityTests: XCTestCase {
             pointCount: 20,
             isPaused: true,
             uploadQueueCount: 3,
-            lastUploadSuccess: true
+            lastUploadSuccess: true,
+            uploadState: .active
         )
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(TrackingStatus.self, from: data)
         XCTAssertEqual(decoded.isPaused, true)
         XCTAssertEqual(decoded.uploadQueueCount, 3)
         XCTAssertEqual(decoded.lastUploadSuccess, true)
+        XCTAssertEqual(decoded.uploadState, .active)
     }
 
     func testTrackingStatusCodableRoundTripNilLastUploadSuccess() throws {
@@ -132,6 +137,7 @@ final class LiveActivityTests: XCTestCase {
         XCTAssertNil(decoded.lastUploadSuccess)
         XCTAssertFalse(decoded.isPaused)
         XCTAssertEqual(decoded.uploadQueueCount, 0)
+        XCTAssertEqual(decoded.uploadState, .disabled)
     }
 
     func testTrackingStatusLegacyDecodingUsesDefaults() throws {
@@ -147,6 +153,64 @@ final class LiveActivityTests: XCTestCase {
         XCTAssertFalse(decoded.isPaused)
         XCTAssertEqual(decoded.uploadQueueCount, 0)
         XCTAssertNil(decoded.lastUploadSuccess)
+        XCTAssertEqual(decoded.uploadState, .disabled)
+    }
+
+    func testElapsedValueFormatting() {
+        let start = Date(timeIntervalSince1970: 100)
+        XCTAssertEqual(
+            LiveActivityValueFormatter.presentation(
+                for: .elapsed,
+                status: TrackingStatus(isRecording: true, distanceMeters: 0, pointCount: 0),
+                startTime: start,
+                now: Date(timeIntervalSince1970: 165)
+            ).text,
+            "1m"
+        )
+    }
+
+    func testPointsValueFormatting() {
+        let presentation = LiveActivityValueFormatter.presentation(
+            for: .points,
+            status: TrackingStatus(isRecording: true, distanceMeters: 0, pointCount: 42),
+            startTime: Date(timeIntervalSince1970: 0),
+            now: Date(timeIntervalSince1970: 10)
+        )
+        XCTAssertEqual(presentation.text, "42")
+        XCTAssertEqual(presentation.accessibilityLabel, "42 points")
+    }
+
+    func testUploadStatusValueFormatting() {
+        let presentation = LiveActivityValueFormatter.presentation(
+            for: .uploadStatus,
+            status: TrackingStatus(
+                isRecording: true,
+                distanceMeters: 0,
+                pointCount: 0,
+                uploadState: .failed
+            ),
+            startTime: Date(timeIntervalSince1970: 0),
+            now: Date(timeIntervalSince1970: 10)
+        )
+        XCTAssertEqual(presentation.text, "Failed")
+        XCTAssertEqual(presentation.compactText, "Retry")
+    }
+
+    func testDistanceValueFormatting() {
+        let presentation = LiveActivityValueFormatter.presentation(
+            for: .distance,
+            status: TrackingStatus(isRecording: true, distanceMeters: 2_500, pointCount: 0),
+            startTime: Date(timeIntervalSince1970: 0),
+            now: Date(timeIntervalSince1970: 10)
+        )
+        XCTAssertEqual(presentation.text, "2.5 km")
+    }
+
+    func testLiveActivityAvailabilityFallbacks() {
+        XCTAssertFalse(LiveActivityFeatureAvailability(status: .unsupported).isConfigurable)
+        XCTAssertEqual(LiveActivityFeatureAvailability(status: .unsupported).statusLabel, "Unavailable")
+        XCTAssertEqual(LiveActivityFeatureAvailability(status: .disabled).statusLabel, "Disabled")
+        XCTAssertTrue(LiveActivityFeatureAvailability(status: .available).isConfigurable)
     }
 
     // MARK: ActivityManager throttle logic

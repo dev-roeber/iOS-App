@@ -35,6 +35,8 @@ public struct TrackingStatus: Codable, Hashable, Sendable {
     public var uploadQueueCount: Int
     /// Whether the last upload attempt succeeded. nil = no attempt yet.
     public var lastUploadSuccess: Bool?
+    /// Derived upload state for user-facing Live Activity status text/icon.
+    public var uploadState: LiveActivityUploadState
 
     public init(
         isRecording: Bool,
@@ -42,7 +44,8 @@ public struct TrackingStatus: Codable, Hashable, Sendable {
         pointCount: Int,
         isPaused: Bool = false,
         uploadQueueCount: Int = 0,
-        lastUploadSuccess: Bool? = nil
+        lastUploadSuccess: Bool? = nil,
+        uploadState: LiveActivityUploadState = .disabled
     ) {
         self.isRecording = isRecording
         self.distanceMeters = distanceMeters
@@ -50,6 +53,7 @@ public struct TrackingStatus: Codable, Hashable, Sendable {
         self.isPaused = isPaused
         self.uploadQueueCount = uploadQueueCount
         self.lastUploadSuccess = lastUploadSuccess
+        self.uploadState = uploadState
     }
 
     // Custom decoder so older JSON payloads (missing new fields) decode gracefully.
@@ -61,6 +65,7 @@ public struct TrackingStatus: Codable, Hashable, Sendable {
         isPaused = (try container.decodeIfPresent(Bool.self, forKey: .isPaused)) ?? false
         uploadQueueCount = (try container.decodeIfPresent(Int.self, forKey: .uploadQueueCount)) ?? 0
         lastUploadSuccess = try container.decodeIfPresent(Bool.self, forKey: .lastUploadSuccess)
+        uploadState = (try container.decodeIfPresent(LiveActivityUploadState.self, forKey: .uploadState)) ?? .disabled
     }
 
     /// Human-readable distance string (e.g. "1.2 km" or "850 m").

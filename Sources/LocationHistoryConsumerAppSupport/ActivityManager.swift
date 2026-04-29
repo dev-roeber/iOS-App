@@ -35,7 +35,8 @@ public final class ActivityManager {
         pointCount: Int,
         isPaused: Bool = false,
         uploadQueueCount: Int = 0,
-        lastUploadSuccess: Bool? = nil
+        lastUploadSuccess: Bool? = nil,
+        uploadState: LiveActivityUploadState = .disabled
     ) {
         #if canImport(ActivityKit) && os(iOS)
         if #available(iOS 16.2, *) {
@@ -47,7 +48,8 @@ public final class ActivityManager {
                 pointCount: pointCount,
                 isPaused: isPaused,
                 uploadQueueCount: uploadQueueCount,
-                lastUploadSuccess: lastUploadSuccess
+                lastUploadSuccess: lastUploadSuccess,
+                uploadState: uploadState
             )
         }
         #endif
@@ -60,7 +62,8 @@ public final class ActivityManager {
         pointCount: Int,
         isPaused: Bool = false,
         uploadQueueCount: Int = 0,
-        lastUploadSuccess: Bool? = nil
+        lastUploadSuccess: Bool? = nil,
+        uploadState: LiveActivityUploadState = .disabled
     ) {
         #if canImport(ActivityKit) && os(iOS)
         if #available(iOS 16.2, *) {
@@ -69,7 +72,8 @@ public final class ActivityManager {
                 pointCount: pointCount,
                 isPaused: isPaused,
                 uploadQueueCount: uploadQueueCount,
-                lastUploadSuccess: lastUploadSuccess
+                lastUploadSuccess: lastUploadSuccess,
+                uploadState: uploadState
             )
         }
         #endif
@@ -92,7 +96,12 @@ public final class ActivityManager {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
         let attributes = TrackingAttributes(trackName: trackName, startTime: startTime)
-        let initialState = TrackingStatus(isRecording: true, distanceMeters: 0, pointCount: 0)
+        let initialState = TrackingStatus(
+            isRecording: true,
+            distanceMeters: 0,
+            pointCount: 0,
+            uploadState: .disabled
+        )
         let content = ActivityContent(state: initialState, staleDate: nil)
 
         do {
@@ -113,7 +122,8 @@ public final class ActivityManager {
         pointCount: Int,
         isPaused: Bool,
         uploadQueueCount: Int,
-        lastUploadSuccess: Bool?
+        lastUploadSuccess: Bool?,
+        uploadState: LiveActivityUploadState
     ) {
         guard let activity = _currentActivityBox as? Activity<TrackingAttributes> else { return }
 
@@ -123,7 +133,8 @@ public final class ActivityManager {
             pointCount: pointCount,
             isPaused: isPaused,
             uploadQueueCount: uploadQueueCount,
-            lastUploadSuccess: lastUploadSuccess
+            lastUploadSuccess: lastUploadSuccess,
+            uploadState: uploadState
         )
         let updatedContent = ActivityContent(state: updatedState, staleDate: nil)
 
@@ -138,7 +149,8 @@ public final class ActivityManager {
         pointCount: Int,
         isPaused: Bool,
         uploadQueueCount: Int,
-        lastUploadSuccess: Bool?
+        lastUploadSuccess: Bool?,
+        uploadState: LiveActivityUploadState
     ) {
         guard let activity = _currentActivityBox as? Activity<TrackingAttributes> else { return }
 
@@ -148,7 +160,8 @@ public final class ActivityManager {
             pointCount: pointCount,
             isPaused: isPaused,
             uploadQueueCount: uploadQueueCount,
-            lastUploadSuccess: lastUploadSuccess
+            lastUploadSuccess: lastUploadSuccess,
+            uploadState: uploadState
         )
         let finalContent = ActivityContent(
             state: finalState,

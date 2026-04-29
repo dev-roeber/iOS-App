@@ -340,12 +340,14 @@ public final class LiveLocationFeatureModel: ObservableObject {
             pendingUploadPointCount = 0
             isUploadPaused = false
             serverUploadStatusMessage = nil
+            syncLiveActivityState()
             return
         }
 
         guard configuration.endpointURL != nil else {
             isUploadingToServer = false
             serverUploadStatusMessage = "Server upload is enabled, but the URL is invalid."
+            syncLiveActivityState()
             return
         }
 
@@ -353,6 +355,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
             serverUploadStatusMessage = "Server upload ready for \(configuration.endpointDisplayName)."
         }
         schedulePendingUploadIfNeeded()
+        syncLiveActivityState()
     }
 
     public func setUploadPaused(_ paused: Bool) {
@@ -360,6 +363,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
         isUploadPaused = paused
         if paused {
             serverUploadStatusMessage = "Server upload paused."
+            syncLiveActivityState()
             return
         }
 
@@ -370,6 +374,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
             serverUploadStatusMessage = "Upload resumed with \(queuedPointCount) queued point\(queuedPointCount == 1 ? "" : "s")."
             schedulePendingUploadIfNeeded()
         }
+        syncLiveActivityState()
     }
 
     public func flushPendingUploads() {
@@ -462,7 +467,11 @@ public final class LiveLocationFeatureModel: ObservableObject {
         if #available(iOS 16.1, *) {
             ActivityManager.shared.endActivity(
                 distanceMeters: recorder.accumulatedDistanceM,
-                pointCount: recorder.points.count
+                pointCount: recorder.points.count,
+                isPaused: isUploadPaused,
+                uploadQueueCount: pendingUploadQueue.count,
+                lastUploadSuccess: liveActivityLastUploadSuccess,
+                uploadState: liveActivityUploadState
             )
         }
         #endif
@@ -588,10 +597,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
 
             #if os(iOS)
             if #available(iOS 16.1, *) {
-                ActivityManager.shared.updateActivity(
-                    distanceMeters: recorder.accumulatedDistanceM,
-                    pointCount: recorder.points.count
-                )
+                syncLiveActivityState()
             }
             #endif
         }
@@ -637,6 +643,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
         pendingUploadQueue.trimToLast(uploadQueueLimit)
         pendingUploadPointCount = pendingUploadQueue.count
         schedulePendingUploadIfNeeded()
+        syncLiveActivityState()
     }
 
     private func schedulePendingUploadIfNeeded(
@@ -710,6 +717,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
         if !pendingUploadQueue.isEmpty {
             schedulePendingUploadIfNeeded()
         }
+        syncLiveActivityState()
     }
 
     private func handleUploadFailure(_ error: Error) {
@@ -718,6 +726,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
         lastFailedUploadAt = Date()
         consecutiveUploadFailures += 1
         serverUploadStatusMessage = "Server upload failed: \(error.localizedDescription)"
+        syncLiveActivityState()
     }
 
     private func handleUploadCancellation() {
@@ -732,6 +741,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
                 serverUploadStatusMessage = "Upload cancelled. Queued points stay ready for retry."
             }
         }
+        syncLiveActivityState()
     }
 
     private func cancelInFlightUpload(reason: String?) {
@@ -741,6 +751,52 @@ public final class LiveLocationFeatureModel: ObservableObject {
         if let reason {
             serverUploadStatusMessage = reason
         }
+        syncLiveActivityState()
+    }
+
+    private var liveActivityUploadState: LiveActivityUploadState {
+        guard serverUploadConfiguration.isEnabled, serverUploadConfiguration.endpointURL != nil else {
+            return .disabled
+        }
+        if isUploadPaused {
+            return .paused
+        }
+        if isUploadingToServer {
+            return .active
+        }
+        if consecutiveUploadFailures > 0 {
+            return .failed
+        }
+        if pendingUploadPointCount > 0 {
+            return .pending
+        }
+        return .active
+    }
+
+    private var liveActivityLastUploadSuccess: Bool? {
+        if consecutiveUploadFailures > 0 {
+            return false
+        }
+        if lastSuccessfulUploadAt != nil {
+            return true
+        }
+        return nil
+    }
+
+    private func syncLiveActivityState() {
+        #if os(iOS)
+        if #available(iOS 16.1, *) {
+            guard isRecording else { return }
+            ActivityManager.shared.updateActivity(
+                distanceMeters: recorder.accumulatedDistanceM,
+                pointCount: recorder.points.count,
+                isPaused: isUploadPaused,
+                uploadQueueCount: pendingUploadPointCount,
+                lastUploadSuccess: liveActivityLastUploadSuccess,
+                uploadState: liveActivityUploadState
+            )
+        }
+        #endif
     }
 
     private var activeCaptureMode: RecordedTrackCaptureMode {

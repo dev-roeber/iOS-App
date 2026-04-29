@@ -545,28 +545,52 @@ public struct AppContentSplitView: View {
         VStack(alignment: .leading, spacing: 10) {
             AppHistoryDateRangeControl(filter: $session.historyDateRangeFilter)
 
-            // Favorites toggle — only shown when there are actual favorites.
-            if !favoritedDayIDs.isEmpty {
+            if session.hasDays || !favoritedDayIDs.isEmpty {
                 HStack(spacing: 0) {
                     Spacer()
-                    Button {
-                        overviewShowOnlyFavorites.toggle()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: overviewShowOnlyFavorites ? "star.fill" : "star")
-                                .font(.caption)
-                            Text(overviewShowOnlyFavorites ? t("Favorites Only") : t("All Days"))
-                                .font(.caption.weight(.medium))
-                                .lineLimit(1)
+                    HStack(spacing: 8) {
+                        if session.hasDays {
+                            Button {
+                                presentSheet(.heatmap)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "thermometer.medium")
+                                        .font(.caption)
+                                    Text(t("Heatmap"))
+                                        .font(.caption.weight(.medium))
+                                        .lineLimit(1)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color.red.opacity(0.08))
+                                .foregroundStyle(Color.red)
+                                .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(t("Open Heatmap"))
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(overviewShowOnlyFavorites ? Color.yellow.opacity(0.18) : Color.secondary.opacity(0.08))
-                        .foregroundStyle(overviewShowOnlyFavorites ? Color.yellow : Color.primary)
-                        .clipShape(Capsule())
+
+                        if !favoritedDayIDs.isEmpty {
+                            Button {
+                                overviewShowOnlyFavorites.toggle()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: overviewShowOnlyFavorites ? "star.fill" : "star")
+                                        .font(.caption)
+                                    Text(overviewShowOnlyFavorites ? t("Favorites Only") : t("All Days"))
+                                        .font(.caption.weight(.medium))
+                                        .lineLimit(1)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(overviewShowOnlyFavorites ? Color.yellow.opacity(0.18) : Color.secondary.opacity(0.08))
+                                .foregroundStyle(overviewShowOnlyFavorites ? Color.yellow : Color.primary)
+                                .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(overviewShowOnlyFavorites ? t("Showing favorites only. Tap to show all days.") : t("Showing all days. Tap to show favorites only."))
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(overviewShowOnlyFavorites ? t("Showing favorites only. Tap to show all days.") : t("Showing all days. Tap to show favorites only."))
                 }
             }
         }
@@ -625,17 +649,6 @@ public struct AppContentSplitView: View {
                     color: .mint
                 ) {
                     presentSheet(.tracksLibrary)
-                }
-
-                if session.hasDays {
-                    overviewActionButton(
-                        title: t("Heatmap"),
-                        subtitle: t("Visualize your movement density on a map."),
-                        icon: "thermometer.medium",
-                        color: .red
-                    ) {
-                        presentSheet(.heatmap)
-                    }
                 }
 
                 if horizontalSizeClass != .compact, session.hasDays {

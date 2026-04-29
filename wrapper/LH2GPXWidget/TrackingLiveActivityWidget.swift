@@ -9,17 +9,16 @@ import LocationHistoryConsumerAppSupport
 @available(iOS 16.2, *)
 private struct TrackingLockScreenView: View {
     let context: ActivityViewContext<TrackingAttributes>
+    private var selectedDisplay: DynamicIslandCompactDisplay {
+        WidgetDataStore.loadDynamicIslandCompactDisplay()
+    }
 
-    /// Pace in min/km, computed from distance and elapsed time. nil if not yet meaningful.
-    private var paceString: String? {
-        let elapsed = Date().timeIntervalSince(context.attributes.startTime)
-        let km = context.state.distanceMeters / 1000
-        guard km >= 0.1, elapsed > 0 else { return nil }
-        let minPerKm = (elapsed / 60) / km
-        guard minPerKm < 99 else { return nil }
-        let minutes = Int(minPerKm)
-        let seconds = Int((minPerKm - Double(minutes)) * 60)
-        return String(format: "%d'%02d\"/km", minutes, seconds)
+    private var primaryValue: LiveActivityValuePresentation {
+        LiveActivityValueFormatter.presentation(
+            for: selectedDisplay,
+            status: context.state,
+            startTime: context.attributes.startTime
+        )
     }
 
     var body: some View {
@@ -36,18 +35,24 @@ private struct TrackingLockScreenView: View {
                     .lineLimit(1)
 
                 HStack(spacing: 12) {
-                    Label(context.state.formattedDistance, systemImage: "ruler")
+                    Label(primaryValue.text, systemImage: primaryValue.systemImageName)
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.85))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
 
-                    Label(WidgetStr.pointsCount(context.state.pointCount), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.85))
-
-                    if let pace = paceString {
-                        Label(pace, systemImage: "speedometer")
+                    if selectedDisplay != .points {
+                        Label(WidgetStr.pointsCount(context.state.pointCount), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.85))
+                    }
+
+                    if selectedDisplay != .uploadStatus, context.state.uploadState != .disabled {
+                        Label(context.state.uploadState.localizedName, systemImage: context.state.uploadState.systemImageName)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.85))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                 }
             }
@@ -55,7 +60,7 @@ private struct TrackingLockScreenView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
-                Text(context.attributes.startTime, style: .timer)
+                Text(LiveActivityValueFormatter.formattedElapsed(since: context.attributes.startTime))
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.white.opacity(0.7))
                 Text(WidgetStr.elapsed)
@@ -76,40 +81,56 @@ private struct TrackingLockScreenView: View {
 @available(iOS 16.2, *)
 struct TrackingLiveActivityWidget: Widget {
 
+    private func selectedDisplay() -> DynamicIslandCompactDisplay {
+        WidgetDataStore.loadDynamicIslandCompactDisplay()
+    }
+
+    private func primaryValue(for context: ActivityViewContext<TrackingAttributes>) -> LiveActivityValuePresentation {
+        LiveActivityValueFormatter.presentation(
+            for: selectedDisplay(),
+            status: context.state,
+            startTime: context.attributes.startTime
+        )
+    }
+
     @ViewBuilder
     private func compactTrailingView(context: ActivityViewContext<TrackingAttributes>) -> some View {
-        let display = WidgetDataStore.loadDynamicIslandCompactDisplay()
-        switch display {
-        case .distance:
-            Text(context.state.formattedDistance)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.primary)
-        case .points:
-            Text("\(context.state.pointCount)")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.primary)
-        case .elapsed:
-            Text(context.attributes.startTime, style: .timer)
-                .font(.caption2.weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(.primary)
-        }
+        Text(primaryValue(for: context).compactText)
+            .font(.caption2.weight(.semibold))
+            .monospacedDigit()
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+    }
+
+    @ViewBuilder
+    private func minimalView(context: ActivityViewContext<TrackingAttributes>) -> some View {
+        let display = selectedDisplay()
+        let primary = primaryValue(for: context)
+        let imageName = context.state.isPaused
+            ? "pause.circle.fill"
+            : (display == .uploadStatus ? primary.systemImageName : primary.systemImageName)
+        Image(systemName: imageName)
+            .foregroundStyle(context.state.isPaused ? .orange : Color.accentColor)
     }
 
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TrackingAttributes.self) { context in
             TrackingLockScreenView(context: context)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let primary = primaryValue(for: context)
+            return DynamicIsland {
                 // MARK: Expanded
                 DynamicIslandExpandedRegion(.leading) {
-                    Label(context.state.formattedDistance, systemImage: "location.north.fill")
+                    Label(primary.text, systemImage: primary.systemImageName)
                         .font(.callout.weight(.semibold))
                         .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     Label {
-                        Text(context.attributes.startTime, style: .timer)
+                        Text(LiveActivityValueFormatter.formattedElapsed(since: context.attributes.startTime))
                             .monospacedDigit()
                     } icon: {
                         Image(systemName: "timer")
@@ -132,18 +153,26 @@ struct TrackingLiveActivityWidget: Widget {
                                 .foregroundStyle(.orange)
                         }
 
-                        // Upload queue badge
-                        if context.state.uploadQueueCount > 0 {
-                            Text("↑ \(context.state.uploadQueueCount)")
+                        if context.state.uploadState != .disabled {
+                            Text(context.state.uploadState.localizedName)
                                 .font(.caption2.weight(.medium))
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(context.state.uploadState == .failed ? .red : .blue)
                                 .padding(.leading, 4)
                         }
 
-                        Label(WidgetStr.pointsCount(context.state.pointCount), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                            .padding(.leading, 4)
+                        if selectedDisplay() != .points {
+                            Label(WidgetStr.pointsCount(context.state.pointCount), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                                .padding(.leading, 4)
+                        }
+
+                        if selectedDisplay() != .distance {
+                            Label(context.state.formattedDistance, systemImage: "ruler")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                                .padding(.leading, 4)
+                        }
                     }
                     .padding(.top, 4)
                 }
@@ -153,8 +182,7 @@ struct TrackingLiveActivityWidget: Widget {
             } compactTrailing: {
                 compactTrailingView(context: context)
             } minimal: {
-                Image(systemName: context.state.isPaused ? "pause.circle.fill" : "location.fill.viewfinder")
-                    .foregroundStyle(context.state.isPaused ? .orange : Color.accentColor)
+                minimalView(context: context)
             }
             .widgetURL(URL(string: "lh2gpx://live"))
             .keylineTint(Color.accentColor)

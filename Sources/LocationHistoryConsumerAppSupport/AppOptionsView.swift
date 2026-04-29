@@ -5,9 +5,11 @@ public struct AppOptionsView: View {
     @ObservedObject private var preferences: AppPreferences
     @State private var connectionTestResult: ConnectionTestResult? = nil
     @State private var isTestingConnection = false
+    private let liveActivityAvailability: LiveActivityFeatureAvailability
 
     public init(preferences: AppPreferences) {
         self._preferences = ObservedObject(wrappedValue: preferences)
+        self.liveActivityAvailability = .current()
     }
 
     public var body: some View {
@@ -183,16 +185,22 @@ public struct AppOptionsView: View {
 
                 Toggle(t("Automatic Widget Update"), isOn: $preferences.widgetAutoUpdate)
 
-                Picker(t("Dynamic Island Compact"), selection: $preferences.dynamicIslandCompactDisplay) {
-                    ForEach(DynamicIslandCompactDisplay.allCases, id: \.self) { mode in
-                        Text(t(mode.localizedName)).tag(mode)
+                LabeledContent(t("Live Activities")) {
+                    Text(t(liveActivityAvailability.statusLabel))
+                        .foregroundStyle(liveActivityAvailability.isConfigurable ? .green : .secondary)
+                }
+
+                Picker(t("Dynamic Island Value"), selection: $preferences.dynamicIslandCompactDisplay) {
+                    ForEach(DynamicIslandCompactDisplay.allCases, id: \.self) { display in
+                        Text(t(display.localizedName)).tag(display)
                     }
                 }
+                .disabled(!liveActivityAvailability.isConfigurable)
 
             } header: {
                 Text(t("Widget & Live Activity"))
             } footer: {
-                Text(t("The widget updates automatically after each recording. The Dynamic Island is shown during active recording. The unit follows the global distance setting."))
+                Text("\(t("The widget updates automatically after each recording. The selected Dynamic Island value is shown in compact and expanded Live Activity regions during active recording.")) \(t(liveActivityAvailability.detailMessage))")
             }
 
             Section {

@@ -2,6 +2,12 @@ import XCTest
 @testable import LocationHistoryConsumerAppSupport
 
 final class WidgetDataStoreTests: XCTestCase {
+    override func tearDown() {
+        UserDefaults(suiteName: WidgetDataStore.suiteName)?
+            .removeObject(forKey: "app.preferences.dynamicIslandCompactDisplay")
+        super.tearDown()
+    }
+
     func testLastRecordingFormattedDistance() {
         let rec = WidgetDataStore.LastRecording(date: Date(), distanceMeters: 5230, durationSeconds: 1800, trackName: "Test")
         XCTAssertEqual(rec.formattedDistance, "5.2 km")
@@ -23,5 +29,14 @@ final class WidgetDataStoreTests: XCTestCase {
         let decoded = try JSONDecoder().decode(WidgetDataStore.LastRecording.self, from: data)
         XCTAssertEqual(decoded.distanceMeters, 3000)
         XCTAssertEqual(decoded.trackName, "Runde")
+    }
+
+    func testDynamicIslandDisplayDefaultsToDistance() {
+        XCTAssertEqual(WidgetDataStore.loadDynamicIslandCompactDisplay(), .distance)
+    }
+
+    func testDynamicIslandDisplayRoundTripsThroughAppGroupDefaults() {
+        WidgetDataStore.saveDynamicIslandCompactDisplay(.uploadStatus)
+        XCTAssertEqual(WidgetDataStore.loadDynamicIslandCompactDisplay(), .uploadStatus)
     }
 }

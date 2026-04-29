@@ -41,7 +41,7 @@ Genutzte Produkte:
 - **Bundle Identifier:** `de.roeber.LH2GPXWrapper`
 - **Display Name:** LH2GPX
 - **Version:** 1.0 (Build 1)
-- **Deployment Target:** iOS 26.2
+- **Deployment Target:** iOS 16.0 (App) / iOS 16.2 (Widget)
 - **Signing:** Automatic (Team XAGR3K7XDJ)
 - **App Icon:** Map-Pin + "LH2GPX", 1024x1024 (Interims-Design, kein Gradient-Placeholder mehr)
 - **Privacy Manifest:** `PrivacyInfo.xcprivacy` – kein Tracking; UserDefaults-Zugriff (CA92.1) und `NSPrivacyCollectedDataTypePreciseLocation` fuer den optionalen, standardmaessig deaktivierten Live-Upload sind deklariert; lokale Live-Location nutzt die Info.plist-Usage-Strings fuer While-In-Use plus optionale `Always Allow`-Erweiterung
@@ -73,6 +73,7 @@ Die App nutzt die Produkt-UI aus dem Core-Repo (`LocationHistoryConsumerAppSuppo
 - Day-Detail mit strukturierten Sections und Cards
 - Karten-MVP: MapKit-Ansicht im Day-Detail mit Pfad-Polylines und Visit-Markern
 - Heatmap als eigenes Sheet fuer importierte History auf iOS 17+/macOS 14+
+- Dynamic-Island-Primärwert (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) ist in den Optionen konfigurierbar; nicht verfuegbare Live Activities werden im Wrapper sichtbar als nicht konfigurierbar ausgewiesen
 - Live-Recording-Sektion im Day-Detail: manueller Toggle, aktueller Standort, Live-Polyline, gespeicherte Live-Tracks
 - dedizierter Live-Tab mit Fullscreen-Karte, Follow-/Recenter-Aktion, Upload-Status und Zugriff auf die gespeicherten Live-Tracks
 - Optionen-Seite ueber das Actions-Menue: lokale Distanz-Einheit, Start-Tab, Kartenstil, Sprache, technische Importdetails, Widget-/Dynamic-Island-Optionen und optionaler Server-Upload
@@ -96,7 +97,7 @@ Neu auf Code-Stand 2026-03-18:
 - Google-Takeout-`location-history.json` und `.zip` werden direkt unterstuetzt
 - Live-Location / Live-Recording ist eingebaut (lokal, manuell gestartet; optionaler Background-Modus im aktuellen Code)
 - Live-Tracks werden getrennt von importierter History gespeichert; kein Auto-Resume nach Neustart
-- Wrapper-Unit-Tests und generischer iOS-Build sind gruen; Stand 2026-03-30 laeuft auch `xcodebuild test -only-testing:LH2GPXWrapperTests` auf dem iPhone-17-Pro-Max-Simulator erfolgreich durch
+- generischer iOS-Build ist auf aktuellem Stand lokal gruen; ein frischer Simulator-Testlauf fuer `LH2GPXWrapperTests` konnte auf diesem Host am 2026-04-29/30 nicht belastbar abgeschlossen werden (`NSMachErrorDomain Code=-308` beim App-Launch)
 
 Neu auf Code-Stand 2026-03-19:
 - eine echte lokale Optionen-Seite ist eingebaut

@@ -92,20 +92,6 @@ public enum AppMapStylePreference: String, CaseIterable, Identifiable {
     }
 }
 
-public enum DynamicIslandCompactDisplay: String, Codable, CaseIterable {
-    case distance
-    case points
-    case elapsed
-
-    public var localizedName: String {
-        switch self {
-        case .distance: return "Distanz"
-        case .points: return "Punkte"
-        case .elapsed: return "Dauer"
-        }
-    }
-}
-
 public enum AppLiveTrackingAccuracyPreference: String, CaseIterable, Identifiable {
     case relaxed
     case balanced
