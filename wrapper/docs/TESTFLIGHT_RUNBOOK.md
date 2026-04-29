@@ -182,9 +182,28 @@ xcodebuild -exportArchive \
   -exportPath ~/Desktop/LH2GPXWrapper_export
 ```
 
-Lokaler Host-Befund 2026-04-30:
-- `xcodebuild -exportArchive` scheitert repo-wahr mit `No signing certificate "iOS Distribution" found`
+Lokaler Host-Befund 2026-04-30 (verifiziert):
+- `security find-identity -v -p codesigning`: **0 valid identities found** — kein Zertifikat (weder Apple Development noch iOS Distribution) im Keychain
+- Provisioning Profiles (`~/Library/MobileDevice/Provisioning Profiles/`): **0 Profile installiert**
+- `xcodebuild -exportArchive` scheitert mit: `Failed to load profile. Profile is missing the required UUID property.`
+  - Root Cause: keine Provisioning Profiles + kein Distribution-Zertifikat im lokalen Keychain
+- ASC-Authentifizierung: keine `AuthKey_*.p8`, kein App-spezifisches Passwort — Upload per CLI nicht moeglich
 - damit ist ein lokaler Export/Upload auf diesem Host derzeit **nicht** moeglich
+
+**Manuelle Schritte zum Freischalten des Export-Pfads:**
+
+Option 1 – Xcode GUI (empfohlen):
+1. Xcode oeffnen → Settings → Accounts → Apple ID `sebastian.roeber94@gmail.com` pruefen
+2. Team `XAGR3K7XDJ` auswählen → Manage Certificates → Distribution-Zertifikat erstellen falls fehlend
+3. `Product > Archive` ausfuehren (Build 45, v1.0)
+4. Organizer oeffnen → Archive waehlen → Distribute App
+5. App Store Connect → Upload → Automatically manage signing → Team XAGR3K7XDJ
+6. Upload abschliessen → App Store Connect > TestFlight > Build 45 prüfen
+
+Option 2 – Xcode Cloud (empfohlen falls GUI blockiert):
+- Xcode Cloud Workflow `Release – Archive & TestFlight` ist bereits angelegt und einmalig gruen gelaufen (Build 44, 2026-04-29)
+- In Xcode: Xcode Cloud → Workflows → Release-Workflow → Run manuell starten
+- Build 45 wird nach erfolgreichem Xcode Cloud Build automatisch in ASC/TestFlight sichtbar
 
 Alternativ: Xcode Organizer → Distribute App → App Store Connect → Upload.
 

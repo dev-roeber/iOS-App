@@ -205,7 +205,7 @@ Frischer Host-Truth (2026-04-29) — macOS, Xcode 26.3, iPhone 15 Pro Max (ios 2
   - `testLaunch` × 4, `testAppStoreScreenshots`, `testDeviceSmokeNavigationAndActions`
   - `testDeviceSmokeNavigationAndActions` verifiziert auf Gerät: Demo-Load, Overview/All-Time-Filter, Heatmap, Insights Share, Export fileExporter, Live Start/Stop
 - Wrapper Release-Signing fuer Xcode Cloud/App Store bereinigt: `CODE_SIGN_STYLE = Automatic`, `DEVELOPMENT_TEAM = XAGR3K7XDJ`, keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`, keine explizite Release-`CODE_SIGN_IDENTITY`, Buildnummer `45`
-- frischer Host-Nachweis 2026-04-30: `xcodebuild archive -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -configuration Release -destination 'generic/platform=iOS'` laeuft lokal wieder gruen; `xcodebuild -exportArchive` bleibt lokal blockiert mit `No signing certificate "iOS Distribution" found`
+- frischer Host-Nachweis 2026-04-30: `xcodebuild archive` gruen (Build 45, v1.0); `xcodebuild -exportArchive` blockiert — exakter Fehler: `Failed to load profile. Profile is missing the required UUID property.` (Root Cause: 0 Signing-Identities + 0 Provisioning-Profile im lokalen Keychain; `security find-identity -v -p codesigning` ergibt 0 valid identities)
 - Widget-Embed-Phase: `LH2GPXWidget.appex` wird mit `CodeSignOnCopy` eingebettet
 - `git diff --check` / `git status --short` nur fuer den jeweils aktuellen Arbeitsstand wiederholen; fruehere Gruen-Angaben waren Zwischenstaende und gelten nicht pauschal fuer spaetere Worktrees
 
