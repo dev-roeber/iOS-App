@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## [2026-04-29] — test: Overview-Map Performance-Audit – Coordinate-Budget-Invarianten
+
+### Befund (kein weiterer Codefix nötig)
+
+Vollständiger Performance-Audit des overlayLimit-Fixes ergab: kein separates globales Coordinate-Budget nötig.
+
+Die Kombination aus `overlayLimit × maxPolylinePoints` erzeugt bereits ein implizites hartes Gesamtbudget:
+
+| Tier | overlayLimit | maxPolylinePoints | Max. Koordinaten gesamt |
+|---|---|---|---|
+| Very heavy | 150 | 64 | 9.600 |
+| Heavy | 200 | 96 | 19.200 |
+| Medium-heavy | 250 | 120 | 30.000 |
+| Medium | 300 | 160 | 48.000 |
+
+Exportdaten sind unberührt. Badge erscheint nur wenn `isOptimized=true`:
+- „Karte vereinfacht – Export vollständig": wenn `visibleRouteCount < totalRouteCount` (Route-Cap greift)
+- „Optimierte Übersicht": wenn Vereinfachung greift, aber alle Routen sichtbar
+
+### Neue Tests (3)
+
+- `testTotalRenderedCoordinateCountBoundedByOverlayTimesPointsLimit`: 600 Routen × 200 Punkte → max 9.600 Koordinaten total
+- `testIndividualRouteCoordinateCountBoundedByMaxPolylinePoints`: 1 Route × 1000 Punkte → max 220 Punkte nach Decimation
+- `testIsOptimizedTrueWhenDecimationAppliedButRoutesNotCapped`: 130 Routen → isOptimized=true, kein Capping, Badge „Optimized overview"
+
+`swift test`: 650 Tests, 0 Failures. `git diff --check`: sauber.
+
+---
+
 ## [2026-04-29] — fix: Overview-Map Freeze/Crash-Fix – Hard Overlay Limit
 
 ### Problem (App-Store-Submission-Blocker)

@@ -279,6 +279,58 @@ final class AppOverviewTracksMapViewTests: XCTestCase {
         }
     }
 
+    // MARK: - Coordinate budget invariants
+
+    /// The combination of overlayLimit × maxPolylinePoints creates an implicit global
+    /// coordinate cap. This test verifies it holds even when routes have many source points.
+    func testTotalRenderedCoordinateCountBoundedByOverlayTimesPointsLimit() throws {
+        // 600 routes × 200 points each → very heavy profile → overlayLimit=150, maxPolylinePoints=64
+        let export = try makeSyntheticExport(routeCount: 600, pointsPerRoute: 200)
+        let dates = Set(export.data.days.map(\.date))
+
+        let result = OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+
+        let totalCoords = result.pathOverlays.reduce(0) { $0 + $1.coordinates.count }
+        // Upper bound: overlayLimit(150) × maxPolylinePoints(64) = 9600
+        XCTAssertLessThanOrEqual(totalCoords, 150 * 64,
+                                 "Total rendered coordinate count must be bounded by overlayLimit × maxPolylinePoints")
+        XCTAssertGreaterThan(totalCoords, 0)
+    }
+
+    /// Individual routes must be decimated to at most maxPolylinePoints after DP+decimate.
+    func testIndividualRouteCoordinateCountBoundedByMaxPolylinePoints() throws {
+        // 1 route with 1000 points → default (small) profile → maxPolylinePoints=220
+        let export = try makeSyntheticExport(routeCount: 1, pointsPerRoute: 1000)
+        let dates = Set(export.data.days.map(\.date))
+
+        let result = OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+
+        guard let overlay = result.pathOverlays.first else {
+            XCTFail("Expected at least one overlay for single-route export"); return
+        }
+        XCTAssertLessThanOrEqual(overlay.coordinates.count, 220,
+                                 "Single route must be decimated to at most maxPolylinePoints(220) coordinates")
+        XCTAssertGreaterThanOrEqual(overlay.coordinates.count, 2)
+    }
+
+    /// When simplification is applied (eps>30) but no route capping occurs, isOptimized is true
+    /// and visibleRouteCount == totalRouteCount → badge shows "Optimized overview", not "Simplified".
+    func testIsOptimizedTrueWhenDecimationAppliedButRoutesNotCapped() throws {
+        // 130 routes (medium-heavy tier: overlayLimit=250 > 130 → no capping, eps=70>30 → simplified)
+        let export = try makeSyntheticExport(routeCount: 130, pointsPerRoute: 30)
+        let dates = Set(export.data.days.map(\.date))
+
+        let result = OverviewMapPreparation.buildRenderDataFast(for: dates, export: export, filter: nil)
+
+        XCTAssertTrue(result.isOptimized,
+                      "Medium-heavy dataset with eps=70 must be marked isOptimized")
+        XCTAssertEqual(result.visibleRouteCount, result.totalRouteCount,
+                       "130 routes is under overlayLimit=250, so all routes must be visible")
+        // Badge logic: isOptimized=true && visibleRouteCount==totalRouteCount → "Optimized overview"
+        XCTAssertFalse(result.visibleRouteCount < result.totalRouteCount,
+                       "No route capping must occur, so badge must show 'Optimized overview' not 'Simplified map'")
+    }
+
     // MARK: - Cancellation behaviour
 
     /// buildRenderDataFast must return promptly when cancelled before the DP phase,

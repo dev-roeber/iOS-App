@@ -14,7 +14,8 @@ Abgeschlossen (647 Tests, 0 Failures):
 - `selectCandidates` schneidet nach Score-Sortierung auf `overlayLimit` ab.
 - `isOptimized` ist `true` wenn Cap greift — View zeigt Badge „Karte vereinfacht – Export vollständig".
 - Export-Daten unverändert. Rohdatenmodell und Export-Pipeline kein Eingriff.
-- 5 neue Tests: `overlayLimit`-Werte per Tier, synthetisches 600-Routen-Dataset gecapped, kleines Dataset ungecapped, Start-/Endpunkt-Erhaltung, Export-Daten-Unveränderlichkeit.
+- 5 neue Tests (Fix): `overlayLimit`-Werte per Tier, synthetisches 600-Routen-Dataset gecapped, kleines Dataset ungecapped, Start-/Endpunkt-Erhaltung, Export-Daten-Unveränderlichkeit.
+- **Performance-Audit (2026-04-29)**: `overlayLimit × maxPolylinePoints` ergibt implizites hartes globales Coordinate-Budget (max 9.600–48.000 je Tier). Kein separates globales Budget nötig. 3 neue Invarianten-Tests: Total-Coordinate-Cap, Einzelrouten-Decimation, Badge-Logik bei Simplification-ohne-Cap. 650 Tests, 0 Failures.
 
 ---
 

@@ -69,7 +69,7 @@ Present:
 - overview entry card for the `Saved Live Tracks` local library
 - time-range control is first item in the overview pane (promoted from lower position)
 - favorites-only Capsule toggle appears below the time-range when at least one day is favorited
-- `AppOverviewTracksMapView` shows an async polyline overview map for all tracks in the active range (iOS 17+); loads off-main-thread via `Task.detached`; uses a tiered render profile (simplification via Douglas-Peucker, per-polyline decimation, and a hard `overlayLimit` cap) to keep MapKit within safe overlay counts even for "All Time" on large datasets; shows "Simplified map – export complete" badge when the cap fires; export data is never affected; shows phase-based loading card with linear ProgressView
+- `AppOverviewTracksMapView` shows an async polyline overview map for all tracks in the active range (iOS 17+); loads off-main-thread via `Task.detached`; uses a tiered render profile (Douglas-Peucker simplification + stride decimation per route + hard `overlayLimit` cap) to keep MapKit within safe overlay and coordinate counts even for "All Time" on large datasets; `overlayLimit × maxPolylinePoints` = implicit global coordinate cap (9.600–48.000 per tier); shows "Simplified map – export complete" badge when overlay cap fires; export data never affected; shows phase-based loading card with linear ProgressView
 
 Not present:
 - dedicated onboarding dashboard state distinct from the import-first root
