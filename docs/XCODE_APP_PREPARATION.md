@@ -59,6 +59,8 @@ Damit sind beim App-Store-Upload **keine Export-Compliance-Unterlagen** erforder
 
 `AppOverviewTracksMapView` verwendet eine tiered Render-Pipeline mit Hard Overlay Limit:
 - Sammelt Track-Daten off-Main-Thread via `Task.detached`
+- Scannt den Export nur bei Daten-/Filterwechsel; Pan/Zoom rebuildet nur Overlays aus dem gecachten Kandidatenpool
+- Nutzt Bounding-Box-Intersection fuer Viewport-Priorisierung, damit lange sichtbare Routen nicht wegen eines außerhalb liegenden Midpoints verschwinden
 - Wählt Top-Kandidaten nach Score aus und capped auf `overlayLimit` (150–300 je nach Datenmenge)
 - Vereinfacht jeden Kandidaten via Douglas-Peucker + stride-Decimation
 - Setzt `isOptimized = true` wenn Limit oder Vereinfachung greift; Badge im View informiert den Nutzer

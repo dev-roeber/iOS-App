@@ -3,6 +3,8 @@ import LocationHistoryConsumer
 @testable import LocationHistoryConsumerAppSupport
 
 #if canImport(MapKit)
+import MapKit
+
 final class AppOverviewTracksMapViewTests: XCTestCase {
 
     func testOverviewMapTaskKeyChangesWhenSummaryCompositionChanges() {
@@ -185,6 +187,110 @@ final class AppOverviewTracksMapViewTests: XCTestCase {
         XCTAssertGreaterThan(fast.visibleRouteCount, 0)
         XCTAssertTrue(fast.pathOverlays.allSatisfy { $0.coordinates.count >= 2 })
         XCTAssertNotNil(fast.region)
+    }
+
+    func testBuildOverlaysFromCandidatesPrioritizesViewportIntersectionOverMidpoint() {
+        let crossing = makeCandidate(
+            coordinates: [
+                CLLocationCoordinate2D(latitude: 0.0, longitude: -2.0),
+                CLLocationCoordinate2D(latitude: 0.0, longitude: -1.0),
+                CLLocationCoordinate2D(latitude: 0.0, longitude: -0.25),
+                CLLocationCoordinate2D(latitude: 0.0, longitude: 0.25),
+            ],
+            score: 1,
+            activityType: "CROSSING"
+        )
+        var fillers: [OverviewMapPathCandidate] = []
+        fillers.reserveCapacity(300)
+        for index in 0..<300 {
+            fillers.append(makeCandidate(
+                coordinates: [
+                    CLLocationCoordinate2D(latitude: 10 + Double(index), longitude: 10),
+                    CLLocationCoordinate2D(latitude: 10 + Double(index), longitude: 10.1),
+                ],
+                score: Double(10_000 - index),
+                activityType: "FILLER"
+            ))
+        }
+
+        let viewport = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            span: MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
+        )
+        let result = OverviewMapPreparation.buildOverlaysFromCandidates(
+            candidates: [crossing] + fillers,
+            totalPointCount: ([crossing] + fillers).reduce(0) { $0 + $1.fullCoordinates.count },
+            dataRegion: viewport,
+            viewportRegion: viewport
+        )
+        let containsCrossing = result.pathOverlays.contains {
+            $0.activityType == "CROSSING"
+                && abs(($0.coordinates.first?.longitude ?? 0) - (-2.0)) < 0.0001
+        }
+
+        XCTAssertEqual(result.visibleRouteCount, 200)
+        XCTAssertTrue(containsCrossing,
+                      "A route that intersects the viewport must survive selection even when its midpoint is outside")
+    }
+
+    func testBuildOverlaysFromCandidatesViewportStillRespectsOverlayLimit() {
+        var candidates: [OverviewMapPathCandidate] = []
+        candidates.reserveCapacity(400)
+        for index in 0..<400 {
+            let lat = Double(index % 20) * 0.01
+            let lon = Double(index / 20) * 0.01
+            candidates.append(makeCandidate(
+                coordinates: [
+                    CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                    CLLocationCoordinate2D(latitude: lat + 0.002, longitude: lon + 0.002),
+                ],
+                score: Double(1_000 - index),
+                activityType: "R\(index)"
+            ))
+        }
+
+        let viewport = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 0.1, longitude: 0.1),
+            span: MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
+        )
+        let result = OverviewMapPreparation.buildOverlaysFromCandidates(
+            candidates: candidates,
+            totalPointCount: candidates.reduce(0) { $0 + $1.fullCoordinates.count },
+            dataRegion: viewport,
+            viewportRegion: viewport
+        )
+
+        XCTAssertEqual(result.totalRouteCount, 400)
+        XCTAssertLessThanOrEqual(result.visibleRouteCount, 200)
+        XCTAssertTrue(result.isOptimized)
+    }
+
+    @MainActor
+    func testOverviewMapModelResetToFullViewRestoresFullSelectionAfterViewportUpdate() async throws {
+        let export = try makeViewportPriorityExport()
+        let content = AppSessionContent(export: export, source: .demoFixture(name: "viewport-priority"))
+        let summaries = AppExportQueries.daySummaries(from: export)
+        let model = AppOverviewMapModel()
+
+        await model.loadData(daySummaries: summaries, content: content, filter: nil)
+        try await waitUntil(timeoutNanoseconds: 2_000_000_000) { model.renderData.visibleRouteCount == 200 }
+
+        let fullViewFirst = try XCTUnwrap(model.renderData.pathOverlays.first)
+        XCTAssertEqual(fullViewFirst.activityType, "OUTSIDE_LONG")
+
+        let narrowViewport = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 48.0, longitude: 11.0),
+            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+        )
+        model.updateForViewport(narrowViewport)
+        try await waitUntil(timeoutNanoseconds: 2_000_000_000) {
+            model.renderData.pathOverlays.first?.activityType == "IN_VIEW"
+        }
+
+        model.resetToFullView()
+        try await waitUntil(timeoutNanoseconds: 2_000_000_000) {
+            model.renderData.pathOverlays.first?.activityType == "OUTSIDE_LONG"
+        }
     }
 
     func testOverviewMapRenderProfileRouteLimitIsMetadataAndOverlayLimitCapsRendering() {
@@ -453,6 +559,132 @@ private func makeSyntheticExport(routeCount: Int, pointsPerRoute: Int) throws ->
         throw NSError(domain: "TestHelper", code: 1, userInfo: [NSLocalizedDescriptionKey: "UTF-8 encoding failed"])
     }
     return try AppExportDecoder.decode(data: data)
+}
+
+private func makeSpreadSyntheticExport(routeCount: Int, pointsPerRoute: Int, spacing: Double) throws -> AppExport {
+    var daysJSON = ""
+    for routeIndex in 0..<routeCount {
+        let month = min((routeIndex / 28) + 1, 12)
+        let day = (routeIndex % 28) + 1
+        let date = String(format: "2024-%02d-%02d", month, day)
+        let baseLat = 48.0 + Double(routeIndex) * spacing
+        let baseLon = 11.0 + Double(routeIndex) * spacing
+        var flats = [String]()
+        for pointIndex in 0..<pointsPerRoute {
+            flats.append(String(baseLat + Double(pointIndex) * 0.001))
+            flats.append(String(baseLon + Double(pointIndex) * 0.001))
+        }
+        if !daysJSON.isEmpty { daysJSON += "," }
+        daysJSON += """
+        {"date":"\(date)","visits":[],"activities":[],"paths":[{"activity_type":"WALKING","flat_coordinates":[\(flats.joined(separator: ","))],"points":[]}]}
+        """
+    }
+
+    let jsonStr = """
+    {
+        "schema_version":"1.0",
+        "meta":{
+            "exported_at":"2024-01-01T00:00:00Z",
+            "tool_version":"test",
+            "source":{"zip_basename":null,"zip_path":null,"input_format":null},
+            "output":{"out_dir":null},
+            "config":{"mode":null,"split_midnight":null,"split_mode":null,"export_format":null,"input_format":null},
+            "filters":{}
+        },
+        "data":{"days":[\(daysJSON)]}
+    }
+    """
+    guard let data = jsonStr.data(using: .utf8) else {
+        throw NSError(domain: "TestHelper", code: 1, userInfo: [NSLocalizedDescriptionKey: "UTF-8 encoding failed"])
+    }
+    return try AppExportDecoder.decode(data: data)
+}
+
+private func makeViewportPriorityExport() throws -> AppExport {
+    func flatRoute(baseLat: Double, baseLon: Double, points: Int, delta: Double) -> String {
+        var flats = [String]()
+        flats.reserveCapacity(points * 2)
+        for index in 0..<points {
+            flats.append(String(baseLat + Double(index) * delta))
+            flats.append(String(baseLon + Double(index) * delta))
+        }
+        return flats.joined(separator: ",")
+    }
+
+    var daysJSON = [String]()
+    daysJSON.reserveCapacity(400)
+
+    for index in 0..<220 {
+        let baseLat = 47.99 + Double(index % 11) * 0.001
+        let baseLon = 10.99 + Double(index / 11) * 0.001
+        daysJSON.append("""
+        {"date":"2024-01-\(String(format: "%02d", (index % 28) + 1))","visits":[],"activities":[],"paths":[{"activity_type":"IN_VIEW","flat_coordinates":[\(flatRoute(baseLat: baseLat, baseLon: baseLon, points: 4, delta: 0.003))],"points":[]}]}
+        """)
+    }
+
+    for index in 0..<180 {
+        let baseLat = 60.0 + Double(index % 15) * 0.01
+        let baseLon = 20.0 + Double(index / 15) * 0.01
+        daysJSON.append("""
+        {"date":"2024-02-\(String(format: "%02d", (index % 28) + 1))","visits":[],"activities":[],"paths":[{"activity_type":"OUTSIDE_LONG","flat_coordinates":[\(flatRoute(baseLat: baseLat, baseLon: baseLon, points: 24, delta: 0.02))],"points":[]}]}
+        """)
+    }
+
+    let jsonStr = """
+    {
+        "schema_version":"1.0",
+        "meta":{
+            "exported_at":"2024-01-01T00:00:00Z",
+            "tool_version":"test",
+            "source":{"zip_basename":null,"zip_path":null,"input_format":null},
+            "output":{"out_dir":null},
+            "config":{"mode":null,"split_midnight":null,"split_mode":null,"export_format":null,"input_format":null},
+            "filters":{}
+        },
+        "data":{"days":[\(daysJSON.joined(separator: ","))]}
+    }
+    """
+    guard let data = jsonStr.data(using: .utf8) else {
+        throw NSError(domain: "TestHelper", code: 1, userInfo: [NSLocalizedDescriptionKey: "UTF-8 encoding failed"])
+    }
+    return try AppExportDecoder.decode(data: data)
+}
+
+private func makeCandidate(
+    coordinates: [CLLocationCoordinate2D],
+    score: Double,
+    activityType: String?
+) -> OverviewMapPathCandidate {
+    let midpointIndex = coordinates.count / 2
+    let lats = coordinates.map(\.latitude)
+    let lons = coordinates.map(\.longitude)
+    return OverviewMapPathCandidate(
+        signature: coordinates.count ^ Int(score),
+        fullCoordinates: coordinates,
+        midpoint: coordinates[midpointIndex],
+        boundsMinLat: lats.min() ?? 0,
+        boundsMaxLat: lats.max() ?? 0,
+        boundsMinLon: lons.min() ?? 0,
+        boundsMaxLon: lons.max() ?? 0,
+        activityType: activityType,
+        score: score
+    )
+}
+
+@MainActor
+private func waitUntil(
+    timeoutNanoseconds: UInt64 = 1_000_000_000,
+    stepNanoseconds: UInt64 = 10_000_000,
+    condition: @escaping () -> Bool
+) async throws {
+    let deadline = DispatchTime.now().uptimeNanoseconds + timeoutNanoseconds
+    while !condition() {
+        if DispatchTime.now().uptimeNanoseconds >= deadline {
+            XCTFail("Timed out waiting for condition")
+            return
+        }
+        try await Task.sleep(nanoseconds: stepNanoseconds)
+    }
 }
 
 private extension DaySummary {

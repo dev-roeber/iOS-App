@@ -14,17 +14,22 @@ final class AppOverviewMapModel {
     private var allCandidates: [OverviewMapPathCandidate] = []
     private var totalPointCount: Int = 0
     private var loadGeneration: UInt64 = 0
-    private var viewportTask: Task<Void, Never>?
     private var overlayTask: Task<Void, Never>?
 
     init() {}
 
-    /// Full data load: scans export, caches candidates, then builds initial overlays.
+    /// Full data load: scans export once, caches all candidates, then builds initial overlays.
+    /// Only called when the input data or filter changes (`.task(id: taskKey)`).
+    /// Pan/zoom never re-triggers this scan — only `rebuildOverlays` is called on viewport change.
     func loadData(
         daySummaries: [DaySummary],
         content: AppSessionContent?,
         filter: AppExportQueryFilter?
     ) async {
+        loadGeneration &+= 1
+        let gen = loadGeneration
+        overlayTask?.cancel()
+
         guard let content, !daySummaries.isEmpty else {
             allCandidates = []
             dataRegion = nil
@@ -32,8 +37,6 @@ final class AppOverviewMapModel {
             return
         }
 
-        loadGeneration &+= 1
-        let gen = loadGeneration
         renderData = .loading
 
         let dates = Set(daySummaries.map(\.date))
@@ -45,7 +48,7 @@ final class AppOverviewMapModel {
             onCancel: { innerTask.cancel() }
         )
 
-        guard gen == loadGeneration else { return }
+        guard !Task.isCancelled, gen == loadGeneration else { return }
         allCandidates = scanned.candidates
         dataRegion = scanned.dataRegion
         totalPointCount = scanned.totalPointCount
@@ -53,20 +56,18 @@ final class AppOverviewMapModel {
         rebuildOverlays(viewportRegion: nil)
     }
 
-    /// Immediate overlay rebuild for the given camera region.
+    /// Rebuilds the visible overlay set for a new camera region.
+    /// Uses bounding-box intersection so long routes that cross the viewport
+    /// are prioritised even when their midpoint is outside.
+    /// No export re-scan; uses the cached candidate list from `loadData`.
     func updateForViewport(_ region: MKCoordinateRegion) {
-        viewportTask?.cancel()
         rebuildOverlays(viewportRegion: region)
     }
 
-    /// Debounced overlay rebuild (100 ms), suitable for continuous camera events.
-    func debounceUpdateForViewport(_ region: MKCoordinateRegion) {
-        viewportTask?.cancel()
-        viewportTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            guard !Task.isCancelled else { return }
-            self.rebuildOverlays(viewportRegion: region)
-        }
+    /// Resets to full-data selection (call when the explore sheet is dismissed
+    /// so the compact map reflects the full overview region again).
+    func resetToFullView() {
+        rebuildOverlays(viewportRegion: nil)
     }
 
     private func rebuildOverlays(viewportRegion: MKCoordinateRegion?) {
@@ -75,6 +76,7 @@ final class AppOverviewMapModel {
         let pointCount = totalPointCount
         let dataReg = dataRegion
         let viewport = viewportRegion
+        let gen = loadGeneration
         overlayTask = Task.detached(priority: .userInitiated) { [self] in
             let data = OverviewMapPreparation.buildOverlaysFromCandidates(
                 candidates: candidates,
@@ -83,7 +85,10 @@ final class AppOverviewMapModel {
                 viewportRegion: viewport
             )
             guard !Task.isCancelled else { return }
-            await MainActor.run { [self] in self.renderData = data }
+            await MainActor.run { [self] in
+                guard gen == self.loadGeneration else { return }
+                self.renderData = data
+            }
         }
     }
 }
@@ -129,7 +134,11 @@ struct AppOverviewTracksMapView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
-        .sheet(isPresented: $isExpanded) {
+        .sheet(isPresented: $isExpanded, onDismiss: {
+            // Reset viewport selection when sheet is dismissed so the compact map
+            // reflects the full overview region, not the last-explored camera position.
+            model.resetToFullView()
+        }) {
             AppOverviewExploreSheet(model: model)
                 .environmentObject(preferences)
         }
@@ -159,21 +168,32 @@ struct AppOverviewTracksMapView: View {
             }
         }
         .mapStyle(mapStyle)
+        // .onEnd fires once per gesture — sufficient for overlay rebuild;
+        // .continuous is not used to avoid spurious rebuilds during smooth MapKit animations.
         .onMapCameraChange(frequency: .onEnd) { context in
             model.updateForViewport(context.region)
         }
         .accessibilityLabel(mapAccessibilityLabel)
         .overlay(alignment: .topTrailing) {
             HStack(spacing: 6) {
-                mapControlButton(systemImage: styleToggleIcon) {
+                mapControlButton(
+                    systemImage: styleToggleIcon,
+                    accessibilityLabel: t("Toggle map style")
+                ) {
                     preferences.preferredMapStyle = preferences.preferredMapStyle.isHybrid ? .standard : .hybrid
                 }
-                mapControlButton(systemImage: "location.viewfinder") {
+                mapControlButton(
+                    systemImage: "location.viewfinder",
+                    accessibilityLabel: t("Fit to data")
+                ) {
                     if let region = model.dataRegion {
                         withAnimation { mapPosition = .region(region) }
                     }
                 }
-                mapControlButton(systemImage: "arrow.up.left.and.arrow.down.right") {
+                mapControlButton(
+                    systemImage: "arrow.up.left.and.arrow.down.right",
+                    accessibilityLabel: t("Open fullscreen map")
+                ) {
                     isExpanded = true
                 }
             }
@@ -186,7 +206,11 @@ struct AppOverviewTracksMapView: View {
     // MARK: - Controls
 
     @ViewBuilder
-    private func mapControlButton(systemImage: String, action: @escaping () -> Void) -> some View {
+    private func mapControlButton(
+        systemImage: String,
+        accessibilityLabel: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.caption.weight(.medium))
@@ -196,7 +220,7 @@ struct AppOverviewTracksMapView: View {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityHidden(true)
+        .accessibilityLabel(accessibilityLabel)
     }
 
     private var routeCountBadge: some View {
@@ -329,6 +353,7 @@ struct AppOverviewExploreSheet: View {
                         Image(systemName: "map")
                             .font(.largeTitle)
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                         Text(t("No tracks in selected range"))
                             .foregroundStyle(.secondary)
                     }
@@ -368,11 +393,15 @@ struct AppOverviewExploreSheet: View {
         .overlay(alignment: .topTrailing) {
             HStack(spacing: 6) {
                 exploreControlButton(
-                    systemImage: preferences.preferredMapStyle.isHybrid ? "map" : "globe.europe.africa"
+                    systemImage: preferences.preferredMapStyle.isHybrid ? "map" : "globe.europe.africa",
+                    accessibilityLabel: t("Toggle map style")
                 ) {
                     preferences.preferredMapStyle = preferences.preferredMapStyle.isHybrid ? .standard : .hybrid
                 }
-                exploreControlButton(systemImage: "location.viewfinder") {
+                exploreControlButton(
+                    systemImage: "location.viewfinder",
+                    accessibilityLabel: t("Fit to data")
+                ) {
                     if let region = model.dataRegion {
                         withAnimation { mapPosition = .region(region) }
                     }
@@ -407,7 +436,11 @@ struct AppOverviewExploreSheet: View {
     }
 
     @ViewBuilder
-    private func exploreControlButton(systemImage: String, action: @escaping () -> Void) -> some View {
+    private func exploreControlButton(
+        systemImage: String,
+        accessibilityLabel: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.caption.weight(.medium))
@@ -417,7 +450,7 @@ struct AppOverviewExploreSheet: View {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityHidden(true)
+        .accessibilityLabel(accessibilityLabel)
     }
 
     private func t(_ english: String) -> String {
@@ -495,10 +528,17 @@ enum OverviewMapTaskKey {
     }
 }
 
+/// A route candidate with bounding box for viewport-intersection culling.
+/// The bounding box ensures that long routes crossing the viewport edge are
+/// prioritised even when their geographic midpoint is outside the visible area.
 struct OverviewMapPathCandidate {
     let signature: Int
     let fullCoordinates: [CLLocationCoordinate2D]
     let midpoint: CLLocationCoordinate2D
+    let boundsMinLat: Double
+    let boundsMaxLat: Double
+    let boundsMinLon: Double
+    let boundsMaxLon: Double
     let activityType: String?
     let score: Double
 }
@@ -555,7 +595,7 @@ enum OverviewMapPreparation {
 
     // MARK: Scan phase — collect all path candidates from the export
 
-    /// O(N) scan: iterates `export.data.days` once, returns all route candidates with scores.
+    /// O(N) scan: iterates `export.data.days` once, returns all route candidates with bounding boxes.
     nonisolated static func scanCandidates(
         for dateSet: Set<String>,
         export: AppExport,
@@ -588,6 +628,11 @@ enum OverviewMapPreparation {
                 }
 
                 let coordinates: [CLLocationCoordinate2D]
+                var pathMinLat = Double.greatestFiniteMagnitude
+                var pathMaxLat = -Double.greatestFiniteMagnitude
+                var pathMinLon = Double.greatestFiniteMagnitude
+                var pathMaxLon = -Double.greatestFiniteMagnitude
+
                 if let flat = path.flatCoordinates, flat.count >= 4, flat.count.isMultiple(of: 2) {
                     var coords = [CLLocationCoordinate2D]()
                     coords.reserveCapacity(flat.count / 2)
@@ -599,6 +644,10 @@ enum OverviewMapPreparation {
                         if lat > maxLat { maxLat = lat }
                         if lon < minLon { minLon = lon }
                         if lon > maxLon { maxLon = lon }
+                        if lat < pathMinLat { pathMinLat = lat }
+                        if lat > pathMaxLat { pathMaxLat = lat }
+                        if lon < pathMinLon { pathMinLon = lon }
+                        if lon > pathMaxLon { pathMaxLon = lon }
                         hasAnyCoord = true
                         i += 2
                     }
@@ -612,6 +661,10 @@ enum OverviewMapPreparation {
                         if pt.lat > maxLat { maxLat = pt.lat }
                         if pt.lon < minLon { minLon = pt.lon }
                         if pt.lon > maxLon { maxLon = pt.lon }
+                        if pt.lat < pathMinLat { pathMinLat = pt.lat }
+                        if pt.lat > pathMaxLat { pathMaxLat = pt.lat }
+                        if pt.lon < pathMinLon { pathMinLon = pt.lon }
+                        if pt.lon > pathMaxLon { pathMaxLon = pt.lon }
                         hasAnyCoord = true
                     }
                     coordinates = coords
@@ -640,6 +693,10 @@ enum OverviewMapPreparation {
                     signature: hasher.finalize(),
                     fullCoordinates: coordinates,
                     midpoint: coordinates[midpointIndex],
+                    boundsMinLat: pathMinLat,
+                    boundsMaxLat: pathMaxLat,
+                    boundsMinLon: pathMinLon,
+                    boundsMaxLon: pathMaxLon,
                     activityType: path.activityType,
                     score: scoreBase + pointWeight * 100
                 ))
@@ -667,8 +724,9 @@ enum OverviewMapPreparation {
 
     // MARK: Overlay phase — select + simplify candidates into render data
 
-    /// Selects candidates (optionally viewport-aware), simplifies, and returns render data.
-    /// When `viewportRegion` is set, routes whose midpoint falls within the viewport are prioritised.
+    /// Selects candidates using viewport bounding-box intersection, simplifies, and returns render data.
+    /// A route intersects the viewport when its bounding box overlaps the visible region —
+    /// this correctly prioritises long routes that cross the viewport edge even if their midpoint is outside.
     nonisolated static func buildOverlaysFromCandidates(
         candidates: [OverviewMapPathCandidate],
         totalPointCount: Int,
@@ -785,6 +843,15 @@ enum OverviewMapPreparation {
         }
         guard coordinates.count >= 2 else { return nil }
 
+        var pathMinLat = coordinates[0].latitude, pathMaxLat = coordinates[0].latitude
+        var pathMinLon = coordinates[0].longitude, pathMaxLon = coordinates[0].longitude
+        for coord in coordinates.dropFirst() {
+            if coord.latitude < pathMinLat { pathMinLat = coord.latitude }
+            if coord.latitude > pathMaxLat { pathMaxLat = coord.latitude }
+            if coord.longitude < pathMinLon { pathMinLon = coord.longitude }
+            if coord.longitude > pathMaxLon { pathMaxLon = coord.longitude }
+        }
+
         let scoreBase = overlay.distanceM ?? approximateDistance(for: coordinates)
         let pointWeight = log(Double(max(overlay.coordinates.count, 2)))
         let midpointIndex = coordinates.count / 2
@@ -803,12 +870,19 @@ enum OverviewMapPreparation {
             signature: hasher.finalize(),
             fullCoordinates: coordinates,
             midpoint: coordinates[midpointIndex],
+            boundsMinLat: pathMinLat,
+            boundsMaxLat: pathMaxLat,
+            boundsMinLon: pathMinLon,
+            boundsMaxLon: pathMaxLon,
             activityType: overlay.activityType,
             score: scoreBase + pointWeight * 100
         )
     }
 
-    /// Selects up to `overlayLimit` candidates, preferring those within `viewport` when provided.
+    /// Selects up to `overlayLimit` candidates.
+    /// When `viewport` is provided, routes whose bounding box intersects the viewport are
+    /// prioritised — this ensures long routes crossing the viewport edge are included
+    /// even when their midpoint lies outside the visible area.
     private nonisolated static func selectCandidates(
         _ candidates: [OverviewMapPathCandidate],
         viewport: MKCoordinateRegion?,
@@ -818,13 +892,13 @@ enum OverviewMapPreparation {
         guard sorted.count > profile.overlayLimit else { return sorted }
 
         if let vp = viewport {
-            let inViewport = sorted.filter { regionContains(vp, coordinate: $0.midpoint) }
+            let inViewport = sorted.filter { boundsIntersect(vp, candidate: $0) }
             if inViewport.count >= profile.overlayLimit {
                 return Array(inViewport.prefix(profile.overlayLimit))
             }
             if !inViewport.isEmpty {
                 let remainder = sorted
-                    .filter { !regionContains(vp, coordinate: $0.midpoint) }
+                    .filter { !boundsIntersect(vp, candidate: $0) }
                     .prefix(profile.overlayLimit - inViewport.count)
                 return inViewport + Array(remainder)
             }
@@ -833,16 +907,19 @@ enum OverviewMapPreparation {
         return Array(sorted.prefix(profile.overlayLimit))
     }
 
-    private nonisolated static func regionContains(
+    /// Returns true when the candidate's axis-aligned bounding box overlaps the given region.
+    private nonisolated static func boundsIntersect(
         _ region: MKCoordinateRegion,
-        coordinate: CLLocationCoordinate2D
+        candidate: OverviewMapPathCandidate
     ) -> Bool {
-        let latMin = region.center.latitude - region.span.latitudeDelta / 2
-        let latMax = region.center.latitude + region.span.latitudeDelta / 2
-        let lonMin = region.center.longitude - region.span.longitudeDelta / 2
-        let lonMax = region.center.longitude + region.span.longitudeDelta / 2
-        return coordinate.latitude >= latMin && coordinate.latitude <= latMax
-            && coordinate.longitude >= lonMin && coordinate.longitude <= lonMax
+        let vpMinLat = region.center.latitude - region.span.latitudeDelta / 2
+        let vpMaxLat = region.center.latitude + region.span.latitudeDelta / 2
+        let vpMinLon = region.center.longitude - region.span.longitudeDelta / 2
+        let vpMaxLon = region.center.longitude + region.span.longitudeDelta / 2
+        return candidate.boundsMinLat <= vpMaxLat
+            && candidate.boundsMaxLat >= vpMinLat
+            && candidate.boundsMinLon <= vpMaxLon
+            && candidate.boundsMaxLon >= vpMinLon
     }
 
     private nonisolated static func makeOverlay(

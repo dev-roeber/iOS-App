@@ -27,6 +27,12 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 - [ ] Keine UI-Hänger >2–3 Sekunden auf dem Zielpfad (Import → Overview-Karte laden → Days-Tab)
 - [ ] Jeder reproduzierbare Hänger mit Screen/Flow dokumentiert und priorisiert
 
+### Repo-/Xcode-Nachweis 2026-04-29 — interaktive Overview-/Explore-Karte
+- Bounding-Box-basiertes Viewport-Culling statt Midpoint-only im Repo verifiziert
+- Pan/Zoom rebuildet nur Overlays auf Basis des gecachten Kandidatenpools; kein neuer Export-Scan im Viewport-Pfad
+- Explore-Dismiss setzt wieder Full-View-Overlays; stale Overlay-Tasks werden bei Neu-Load verworfen
+- Verifiziert nur per `swift test` + `xcodebuild`; **kein** neuer Geräte-Claim aus diesem Audit-Batch
+
 ### Beobachtung Build 1.0 (44) — Stand 2026-04-29
 - **TestFlight-Verfügbarkeit**: Build 1.0 (44) ist auf iPhone installierbar ✅
 - **Interner Smoke-Test**: App startet, Haupttabs navigierbar, kein bestätigter Crash ✅

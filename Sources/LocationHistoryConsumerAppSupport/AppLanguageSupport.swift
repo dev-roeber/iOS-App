@@ -448,6 +448,7 @@ enum AppGermanTranslations {
         "Visualize your movement density on a map.": "Visualisiere deine Bewegungsdichte auf einer Karte.",
         "Open the export sheet for the current imported history.": "Öffne das Export-Fenster für den aktuell importierten Verlauf.",
         "Heatmap": "Heatmap",
+        "Toggle map style": "Kartenstil umschalten",
         "Fit to data": "Auf Daten zoomen",
         "Controls affect display only.": "Regler beeinflussen nur die Darstellung.",
         "Opacity": "Deckkraft",

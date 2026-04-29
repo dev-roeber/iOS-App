@@ -1128,6 +1128,8 @@ Bleibt geparkt bis Developer-Account-Zugang und tatsaechliche Durchfuehrung moeg
 
 **Update 2026-04-29:** lokaler Transporter-Upload weiterhin ungueltig (`Invalid Signature` fuer `LH2GPXWrapper` + `LH2GPXWidget`). Repo-Signing fuer den Xcode-Cloud-Pfad wurde auf `Automatic` + Team `XAGR3K7XDJ` bereinigt; der Workflow `Release – Archive & TestFlight` ist angelegt und jetzt der bevorzugte Uploadpfad. Phase 20 bleibt offen, bis ein echter Build in App Store Connect erscheint.
 
+**Update 2026-04-29 (Overview-/Explore-Map):** die frisch gepushte interaktive Overview-Karte wurde nachauditert und gehaertet: kein Re-Scan bei Pan/Zoom, Viewport-Auswahl per Bounding-Box-Intersection, stale Overlay-Tasks werden bei Neu-Load verworfen, Explore-Dismiss setzt wieder Full-View-Overlays. Der Batch liefert nur Code-/Test-/Xcode-Nachweise, keine neuen Device-Claims.
+
 **Nachgelagert:** Beta-Feedback einarbeiten (erst nach laufender Beta relevant).
 
 **Tests:** TestFlight-Install auf echtem Geraet. Beta-Tester-Feedback. Crash-Reports pruefen.

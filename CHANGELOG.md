@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [2026-04-29] — fix: Interactive Overview-/Explore-Map audit hardened
+
+### Geaendert
+- `Sources/LocationHistoryConsumerAppSupport/AppOverviewTracksMapView.swift`: `loadData` cancelt jetzt alte Overlay-Rebuilds sofort beim Neu-Load; stale Detached-Tasks dürfen keine veralteten Overlays mehr nach einem neuen Load committen
+- `Sources/LocationHistoryConsumerAppSupport/AppOverviewTracksMapView.swift`: nach Cancellation werden gescannte Partialdaten nicht mehr in den Model-State geschrieben
+- `Sources/LocationHistoryConsumerAppSupport/AppOverviewTracksMapView.swift`: Viewport-Culling bleibt bounding-box-basiert; lange Routen, die den sichtbaren Bereich schneiden, bleiben priorisierbar, auch wenn ihr Midpoint außerhalb liegt
+- `Sources/LocationHistoryConsumerAppSupport/AppLanguageSupport.swift`: DE-Lokalisierung für `Toggle map style` ergänzt
+
+### Neue Tests
+- `testBuildOverlaysFromCandidatesPrioritizesViewportIntersectionOverMidpoint`
+- `testBuildOverlaysFromCandidatesViewportStillRespectsOverlayLimit`
+- `testOverviewMapModelResetToFullViewRestoresFullSelectionAfterViewportUpdate`
+
+### Verifiziert
+- `swift test` grün
+- `xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -configuration Debug -destination 'generic/platform=iOS' build` grün
+- `git diff --check` sauber
+
+### Bewusst nicht behauptet
+- Kein neuer Device-Nachweis speziell für die interaktive Overview-/Explore-Karte
+- Kein neuer TestFlight-/App-Store-Claim aus diesem Audit-Batch
+
 ## [2026-04-29] — test: Overview-Map Performance-Audit – Coordinate-Budget-Invarianten
 
 ### Befund (kein weiterer Codefix nötig)
