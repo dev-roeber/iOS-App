@@ -7,6 +7,10 @@ struct ContentView: View {
     private enum LaunchArgument {
         static let uiTesting = "LH2GPX_UI_TESTING"
         static let resetPersistence = "LH2GPX_RESET_PERSISTENCE"
+        static let dynamicIslandDisplayPrefix = "LH2GPX_DYNAMIC_ISLAND_DISPLAY="
+        static let uploadEnabledPrefix = "LH2GPX_UPLOAD_ENABLED="
+        static let uploadURLPrefix = "LH2GPX_UPLOAD_URL="
+        static let uploadBatchPrefix = "LH2GPX_UPLOAD_BATCH="
     }
 
     @State private var session = AppSessionState()
@@ -195,6 +199,7 @@ struct ContentView: View {
         RecentFilesStore.clear()
         preferences.reset()
         session.clearContent()
+        applyUITestingOverrides()
     }
 
     private func restoreBookmarkedFile() {
@@ -273,5 +278,31 @@ struct ContentView: View {
 
     private var launchArguments: Set<String> {
         Set(ProcessInfo.processInfo.arguments)
+    }
+
+    private func applyUITestingOverrides() {
+        if let rawValue = launchArgumentValue(prefix: LaunchArgument.dynamicIslandDisplayPrefix),
+           let value = DynamicIslandCompactDisplay(rawValue: rawValue) {
+            preferences.dynamicIslandCompactDisplay = value
+        }
+
+        if let rawValue = launchArgumentValue(prefix: LaunchArgument.uploadEnabledPrefix) {
+            preferences.sendsLiveLocationToServer = rawValue == "1" || rawValue.lowercased() == "true"
+        }
+
+        if let rawValue = launchArgumentValue(prefix: LaunchArgument.uploadURLPrefix) {
+            preferences.liveLocationServerUploadURLString = rawValue
+        }
+
+        if let rawValue = launchArgumentValue(prefix: LaunchArgument.uploadBatchPrefix),
+           let value = AppLiveTrackingUploadBatchPreference(rawValue: rawValue) {
+            preferences.liveTrackingUploadBatch = value
+        }
+    }
+
+    private func launchArgumentValue(prefix: String) -> String? {
+        ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix(prefix) }).map {
+            String($0.dropFirst(prefix.count))
+        }
     }
 }

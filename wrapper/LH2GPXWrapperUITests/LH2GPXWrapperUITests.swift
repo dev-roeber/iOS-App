@@ -4,6 +4,18 @@ final class LH2GPXWrapperUITests: XCTestCase {
     private enum LaunchArgument {
         static let uiTesting = "LH2GPX_UI_TESTING"
         static let resetPersistence = "LH2GPX_RESET_PERSISTENCE"
+        static func dynamicIslandDisplay(_ value: String) -> String {
+            "LH2GPX_DYNAMIC_ISLAND_DISPLAY=\(value)"
+        }
+        static func uploadEnabled(_ value: Bool) -> String {
+            "LH2GPX_UPLOAD_ENABLED=\(value ? "1" : "0")"
+        }
+        static func uploadURL(_ value: String) -> String {
+            "LH2GPX_UPLOAD_URL=\(value)"
+        }
+        static func uploadBatch(_ value: String) -> String {
+            "LH2GPX_UPLOAD_BATCH=\(value)"
+        }
     }
 
     private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
@@ -171,6 +183,85 @@ final class LH2GPXWrapperUITests: XCTestCase {
         XCTAssertTrue(startRecordingAgain.waitForExistence(timeout: 10), "Start Recording button not reappeared after stop")
     }
 
+    @MainActor
+    func testLiveActivityHardwareCaptureDistance() throws {
+        let app = configuredApp(
+            dynamicIslandDisplay: "distance",
+            uploadEnabled: false
+        )
+        runLiveActivityCaptureFlow(
+            app: app,
+            screenshotPrefix: "live-activity-distance",
+            shouldAttemptExpandedIsland: true,
+            shouldStopRecording: true,
+            shouldRelaunchDuringRecording: false
+        )
+    }
+
+    @MainActor
+    func testLiveActivityHardwareCaptureDuration() throws {
+        let app = configuredApp(
+            dynamicIslandDisplay: "elapsed",
+            uploadEnabled: false
+        )
+        runLiveActivityCaptureFlow(
+            app: app,
+            screenshotPrefix: "live-activity-duration",
+            shouldAttemptExpandedIsland: true,
+            shouldStopRecording: true,
+            shouldRelaunchDuringRecording: false
+        )
+    }
+
+    @MainActor
+    func testLiveActivityHardwareCapturePoints() throws {
+        let app = configuredApp(
+            dynamicIslandDisplay: "points",
+            uploadEnabled: false
+        )
+        runLiveActivityCaptureFlow(
+            app: app,
+            screenshotPrefix: "live-activity-points",
+            shouldAttemptExpandedIsland: true,
+            shouldStopRecording: true,
+            shouldRelaunchDuringRecording: false
+        )
+    }
+
+    @MainActor
+    func testLiveActivityHardwareCaptureUploadStatusPendingAndRestart() throws {
+        let app = configuredApp(
+            dynamicIslandDisplay: "uploadStatus",
+            uploadEnabled: true,
+            uploadURL: "https://example.com/live",
+            uploadBatch: "large"
+        )
+        runLiveActivityCaptureFlow(
+            app: app,
+            screenshotPrefix: "live-activity-upload-pending",
+            shouldAttemptExpandedIsland: true,
+            shouldStopRecording: true,
+            shouldRelaunchDuringRecording: true
+        )
+    }
+
+    @MainActor
+    func testLiveActivityHardwareCaptureUploadStatusFailed() throws {
+        let app = configuredApp(
+            dynamicIslandDisplay: "uploadStatus",
+            uploadEnabled: true,
+            uploadURL: "https://invalid.invalid/live",
+            uploadBatch: "immediate"
+        )
+        runLiveActivityCaptureFlow(
+            app: app,
+            screenshotPrefix: "live-activity-upload-failed",
+            shouldAttemptExpandedIsland: true,
+            shouldStopRecording: true,
+            shouldRelaunchDuringRecording: false
+        )
+    }
+
     // MARK: - Helpers
 
     private func screenshot(_ app: XCUIApplication) -> XCUIScreenshot {
@@ -182,6 +273,101 @@ final class LH2GPXWrapperUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    @MainActor
+    private func configuredApp(
+        dynamicIslandDisplay: String,
+        uploadEnabled: Bool,
+        uploadURL: String? = nil,
+        uploadBatch: String? = nil
+    ) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments += [
+            LaunchArgument.uiTesting,
+            LaunchArgument.resetPersistence,
+            LaunchArgument.dynamicIslandDisplay(dynamicIslandDisplay),
+            LaunchArgument.uploadEnabled(uploadEnabled)
+        ]
+        if let uploadURL {
+            app.launchArguments += [LaunchArgument.uploadURL(uploadURL)]
+        }
+        if let uploadBatch {
+            app.launchArguments += [LaunchArgument.uploadBatch(uploadBatch)]
+        }
+        XCUIDevice.shared.orientation = .portrait
+        return app
+    }
+
+    @MainActor
+    private func runLiveActivityCaptureFlow(
+        app: XCUIApplication,
+        screenshotPrefix: String,
+        shouldAttemptExpandedIsland: Bool,
+        shouldStopRecording: Bool,
+        shouldRelaunchDuringRecording: Bool
+    ) {
+        app.launch()
+
+        let demoButton = app.buttons["Load Demo Data"]
+        XCTAssertTrue(demoButton.waitForExistence(timeout: 5))
+        demoButton.tap()
+
+        let liveTab = app.tabBars.buttons["Live"]
+        XCTAssertTrue(liveTab.waitForExistence(timeout: 10))
+        liveTab.tap()
+
+        let startRecordingButton = app.buttons["live.recording.start"]
+        XCTAssertTrue(startRecordingButton.waitForExistence(timeout: 10))
+        startRecordingButton.tap()
+        allowLocationAccessIfNeeded()
+
+        let stopRecordingButton = app.buttons["live.recording.stop"]
+        XCTAssertTrue(stopRecordingButton.waitForExistence(timeout: 15))
+        RunLoop.current.run(until: Date().addingTimeInterval(4.0))
+        attach(screenshot(app), name: "\(screenshotPrefix)-01-in-app")
+
+        XCUIDevice.shared.press(.home)
+        RunLoop.current.run(until: Date().addingTimeInterval(2.0))
+        attach(screenshot(springboard), name: "\(screenshotPrefix)-02-home-compact")
+
+        if shouldAttemptExpandedIsland {
+            let island = springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.03))
+            island.press(forDuration: 1.3)
+            RunLoop.current.run(until: Date().addingTimeInterval(2.0))
+            attach(screenshot(springboard), name: "\(screenshotPrefix)-03-home-expanded-attempt")
+        }
+
+        if shouldRelaunchDuringRecording {
+            reopenAppFromSpringboardIfNeeded()
+            app.terminate()
+            RunLoop.current.run(until: Date().addingTimeInterval(2.0))
+            XCUIDevice.shared.press(.home)
+            RunLoop.current.run(until: Date().addingTimeInterval(2.0))
+            attach(screenshot(springboard), name: "\(screenshotPrefix)-04-after-terminate")
+            reopenAppFromSpringboardIfNeeded()
+            RunLoop.current.run(until: Date().addingTimeInterval(3.0))
+            attach(screenshot(app), name: "\(screenshotPrefix)-05-after-relaunch")
+        } else {
+            reopenAppFromSpringboardIfNeeded()
+        }
+
+        if shouldStopRecording {
+            let stopAgain = app.buttons["live.recording.stop"]
+            XCTAssertTrue(stopAgain.waitForExistence(timeout: 15))
+            stopAgain.tap()
+            let startAgain = app.buttons["live.recording.start"]
+            XCTAssertTrue(startAgain.waitForExistence(timeout: 15))
+            XCUIDevice.shared.press(.home)
+            RunLoop.current.run(until: Date().addingTimeInterval(3.0))
+            attach(screenshot(springboard), name: "\(screenshotPrefix)-06-after-stop")
+        }
+    }
+
+    @MainActor
+    private func reopenAppFromSpringboardIfNeeded() {
+        let app = XCUIApplication()
+        app.activate()
     }
 
     @MainActor

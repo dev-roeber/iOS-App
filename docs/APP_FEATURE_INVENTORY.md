@@ -149,6 +149,7 @@ Present:
 - dedicated `Live` tab on compact iOS 17+ with separate cards for map, recording, upload, saved tracks and advanced options
 - Live Activity / Dynamic Island options expose a persisted primary value selection: `Distance`, `Duration`, `Points` or `Upload Status`
 - options surface Live Activity availability explicitly and disable the configuration on unsupported / disabled devices instead of leaving a dead control
+- hardware verification status: `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build) confirms recording start plus Dynamic Island `compact`/`expanded` for `Distance` and end/dismiss after stop; lock screen, `minimal`, additional primary values and fallback paths remain open
 - status chips for recording state, foreground/background state, upload state and queued points
 - quick actions for centering the live map, pausing/resuming uploads, manually flushing the upload queue and opening the saved-track library
 - live stats include accuracy, duration, points, distance, current speed, average speed, last segment and update age

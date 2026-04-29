@@ -1,10 +1,10 @@
 # ROADMAP
 
-## Aktiver Stand (2026-04-29)
+## Aktiver Stand (2026-04-30)
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
-### Dynamic Island / Live Activity Truth Update (2026-04-29)
+### Dynamic Island / Live Activity Truth Update (2026-04-30)
 
 Implementiert und lokal verifiziert:
 - konfigurierbarer Dynamic-Island-Primärwert (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) mit Persistenz
@@ -13,8 +13,11 @@ Implementiert und lokal verifiziert:
 - Upload-/Pause-Zustand wird jetzt aus dem Live-Modell tatsaechlich in die Live Activity propagiert
 - Overview-Heatmap-Einstieg als Capsule-Chip an die bestehende Chip-Sprache angepasst
 
+Auf echter Hardware bestaetigt:
+- `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build via `xcodebuild test`): Recording-Start, Dynamic Island `compact` fuer Primärwert `Distanz`, Dynamic Island `expanded` fuer Primärwert `Distanz`, Stop-/Dismiss-Verhalten nach Aufnahmeende
+
 Nicht als abgeschlossen markieren:
-- echte Apple-Hardware-Verifikation fuer Live Activity / Dynamic Island bleibt offen
+- echte Apple-Hardware-Verifikation fuer Live Activity / Dynamic Island bleibt teilweise offen: Lock Screen, `minimal`, Primärwert-Wechsel (`Dauer`, `Punkte`, `Upload-Status`) und deaktivierte / nicht verfuegbare Live Activities sind noch nicht repo-wahr bestaetigt
 - Wrapper-Simulator-Testlauf war auf diesem Host nicht belastbar abschliessbar (`NSMachErrorDomain Code=-308`)
 
 ## Aktueller Stand (2026-04-29)

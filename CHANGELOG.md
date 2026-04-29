@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [2026-04-30] — docs: partial real-device verification for Live Activity / Dynamic Island
+
+### Geaendert
+- realen Device-Nachweis fuer den aktuellen Live-Activity-/Dynamic-Island-Stand repo-wahr dokumentiert
+- `docs/APPLE_VERIFICATION_CHECKLIST.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `README.md`, `docs/APP_FEATURE_INVENTORY.md`: verifizierte Teilmenge (`iPhone 15 Pro Max`, `iOS 26.4`, `Debug`-Build via `xcodebuild test`) von offenen Punkten getrennt
+
+### Verifiziert
+- echter iPhone-Lauf auf `iPhone 15 Pro Max` (`iPhone16,2`) mit `iOS 26.4`
+- Live Recording Start auf echter Hardware
+- Dynamic Island compact fuer Primärwert `Distanz` (`0 m`) auf echter Hardware sichtbar
+- Dynamic Island expanded fuer Primärwert `Distanz` auf echter Hardware sichtbar
+- Stop-/Dismiss-Verhalten der Live Activity nach Ende der Aufnahme auf echter Hardware sichtbar
+
+### Bewusst nicht behauptet
+- kein repo-wahrer Lock-Screen-Nachweis in diesem Slice
+- kein repo-wahrer Minimal-State-Nachweis in diesem Slice
+- keine repo-wahre Hardware-Verifikation fuer `Dauer`, `Punkte`, `Upload-Status`, deaktivierte Live Activities oder Fallbacks ohne Support
+- App Review bleibt bis zu weiterem echten Device-Nachweis fuer die offenen Live-Activity-Pfade `NO-GO`
+
 ## [2026-04-30] — docs: Dynamic Island verification truth sync
 
 ### Geaendert

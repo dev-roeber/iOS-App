@@ -126,7 +126,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Days-Tab**: Day-Detail + Day-Map auf Gerät interaktiv prüfen (im UITest nur als Demo-Nebeneffekt belegt)
 - **Historien-Track-Editor**: Route entfernen, App-Neustart, Mutation prüfen — nicht automatisiert prüfbar
 - **Widget auf Homescreen/Lockscreen**: Widget Target baut, aber Pinnbar-Test erfordert manuelle Homescreen-Interaktion
-- **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden; konfigurierbarer Primärwert (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) + Fallback-Hinweise im Options-Screen implementiert, manueller Real-Nachweis bleibt offen
+- **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden; konfigurierbarer Primärwert (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) + Fallback-Hinweise im Options-Screen implementiert. Partieller Real-Nachweis liegt vor: `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build via `xcodebuild test`) bestaetigt Recording-Start, Dynamic Island `compact` + `expanded` fuer Primärwert `Distanz` sowie Stop-/Dismiss-Verhalten. Offen bleiben Lock Screen, `minimal`, weitere Primärwerte und Fallback-Pfade.
 - **Landscape auf allen Tabs**: kompaktes Landscape-Layout nicht systematisch auf Device verifiziert
 
 #### ❌ weiterhin offen (aktualisiert 2026-04-29, Root Cause bewiesen)
@@ -374,7 +374,7 @@ Der spaetere Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 hat zusaetzlich p
 - [ ] das Heatmap-Sheet fuer importierte History auf Apple-Hardware visuell und performanceseitig verifizieren; der Einstieg ist im realen AX-Snapshot sichtbar, das Sheet selbst noch nicht geoefnet, und die spaeter hinzugekommenen UX-Controls, der neue Aggregations-/Polygon-Renderer sowie das Batch-3-Farb-/Kontrast-Mapping sind auf Device ebenfalls noch nicht separat bestaetigt
 - [ ] die neue `Days`-Default-Sortierung (`neu -> alt`) in compact und regular auf Apple-Hardware funktional bestaetigen
 - [ ] den deutlich ausgebauten `Live`-Tab auf Apple-Hardware funktional bestaetigen, inklusive Status-Chips, Quick Actions und erweitertem Stat-Set
-- [ ] die neue Dynamic-Island-Konfiguration auf Apple-Hardware pruefen: Lock Screen, expanded, compact trailing und minimal; dabei sowohl Primärwert-Wechsel als auch Upload-/Pause-Zustaende und nicht verfuegbare Live-Activities gegenpruefen
+- [ ] die neue Dynamic-Island-Konfiguration auf Apple-Hardware fertig pruefen: `expanded` und `compact` fuer Primärwert `Distanz` sind auf `iPhone 15 Pro Max` (`iOS 26.4`) repo-wahr bestaetigt; offen bleiben Lock Screen, `minimal`, Primärwert-Wechsel (`Dauer`, `Punkte`, `Upload-Status`), Upload-/Pause-Zustaende und nicht verfuegbare Live-Activities
 - [ ] die neue segmentierte Insights-Oberflaeche (`Overview`, `Patterns`, `Breakdowns`) auf Apple-Hardware auf Lesbarkeit und Navigation pruefen
 - [x] **Background-Recording auf echtem iPhone verifiziert (2026-04-02)** — Permission-Upgrade auf Always, Aufnahme im Hintergrund, Stop/Persistenz: auf realem Gerät bestätigt
 - [x] **Upload-End-to-End zum eigenen Server auf echtem iPhone verifiziert (2026-04-02)** — optionaler nutzergesteuerter HTTPS-Upload: per realem Device-Test bestätigt

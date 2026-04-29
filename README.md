@@ -96,7 +96,7 @@ Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weite
 
 - echtes Road-/Path-Matching a la Dawarich ist **nicht** implementiert; `Simplified (Beta)` ist GPS-Ausreisserfilterung + Douglas-Peucker, kein Netzwerk-Snapping
 - Auto-Resume (blind/automatisch) einer Live-Aufzeichnung nach App-Neustart ist **nicht** implementiert; Session-Restore mit User-Kontrolle (Banner "Fortsetzen / Ignorieren") ist implementiert (2026-04-13)
-- Realer Device-Nachweis fuer Live Activity / Dynamic Island / Homescreen-Widget bleibt **offen**; lokal verifiziert sind derzeit nur SwiftPM-Tests und ein generischer iOS-Build
+- Realer Device-Nachweis fuer Live Activity / Dynamic Island ist **teilweise** vorhanden: `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build) bestaetigt Recording-Start, Dynamic Island `compact` + `expanded` fuer Primärwert `Distanz` sowie Stop-/Dismiss-Verhalten; offen bleiben Lock Screen, `minimal`, weitere Primärwerte und Fallback-Pfade. Homescreen-Widget bleibt separat offen.
 - Historien-Track-Editor: Mutations-Reset bei Import-Wechsel ist implementiert (`validateSource`, 2026-04-14); Export ignoriert Mutations bewusst (AppExport ist immutable, Mutations sind display-only)
 - Export ignoriert Mutations bewusst — gelöschte Routen bleiben im GPX/KMZ-Export (AppExport ist immutable; Mutations sind rein display-only)
 - Apple-Portal-/Signing-/TestFlight-/Device-UI-Themen sind auf diesem macOS-Host nicht voll verifizierbar und werden separat dokumentiert
