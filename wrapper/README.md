@@ -138,13 +138,22 @@ Offen (Stand 2026-03-31):
 - App Review Guidelines 5.1.1 (Data Collection) und 5.1.2 (Privacy Manifests): teilweise – kein abschliessender Nachweis der Konformitaet fuer den Upload-Pfad
 - ein manueller Xcode-Start auf dem verbundenen iPhone bleibt ein positiver Teilbefund, ist aber bewusst getrennt von den CLI-Build-/Test-Ergebnissen zu lesen
 
-Lokal abgeschlossen (2026-03-17):
+Lokal abgeschlossen (2026-04-29):
 - App Icon: Map-Pin + "LH2GPX" (kein Gradient-Placeholder mehr)
-- Screenshots erstellt: `docs/appstore-screenshots/` (iPhone 17 Pro Max, iPad Pro 13")
+- Screenshots erstellt: `docs/app-store-assets/screenshots/`
+  - `iphone-67/`: 1290×2796 px (iPhone 15 Pro Max, native 3×) — 6 PNGs ✅
+  - `iphone-65/`: 1242×2688 px (proportional skaliert) — 6 PNGs ✅
+  - Methode: `testAppStoreScreenshots` UITest → XCTAttachment → xcresult-Extraktion
+  - Daten: ausschließlich Repo-Demo-Fixture, keine privaten Nutzerdaten
+  - Keine Debug-Overlays, keine Server-URLs, keine Tokens sichtbar
+- `docs/privacy.html`: Datenschutzerklärung für App Store Connect (GitHub Pages)
+- `ITSAppUsesNonExemptEncryption = false`: in App + Widget Info.plist gesetzt
+- iPad: TARGETED_DEVICE_FAMILY=1,2 (unterstützt), iPad-Screenshots ausstehend
 
 Bewusst geparkt (ASC-Zugang erforderlich):
 - App Store Connect Projekt anlegen
-- Screenshots in ASC hochladen
+- Screenshots in ASC hochladen (`iphone-67/`-Slot: 6.7-inch Display)
+- Privacy URL eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html`
 - Upload / TestFlight-Beta
 
 Vollstaendiger Submission-Leitfaden: `docs/TESTFLIGHT_RUNBOOK.md`

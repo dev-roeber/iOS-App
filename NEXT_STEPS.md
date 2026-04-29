@@ -10,6 +10,8 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [x] UITests Bundle ID bereinigt — `xagr3k7xdj.de.roeber.lh2gpxwrapper.uitests` → `de.roeber.LH2GPXWrapper.UITests` (2026-04-13)
 - [x] Xcode Cloud Vorbereitung — `wrapper/.xcode-version` (26.3), `wrapper/ci_scripts/` (post_clone, pre_build, post_xcodebuild), `docs/XCODE_CLOUD_RUNBOOK.md` (2026-04-13)
 - [x] **Export-Compliance gesetzt** — `ITSAppUsesNonExemptEncryption = false` in App + Widget Info.plist; keine nicht-ausgenommene Verschlüsselung im Code; kein Upload-Dokument nötig (2026-04-29)
+- [x] **App-Store-Screenshots erstellt** — `testAppStoreScreenshots` UITest auf iPhone 15 Pro Max; 6× PNGs: `iphone-67/` (1290×2796) + `iphone-65/` (1242×2688); Demo-Fixture-Daten, keine privaten Daten (2026-04-29)
+- [ ] **App-Store-Screenshots hochladen** — `docs/app-store-assets/screenshots/iphone-67/*.png` in App Store Connect → 6.7-inch Display Slot; iPad-Screenshots noch ausstehend
 - [x] **Datenschutzerklärung erstellt** — `docs/privacy.html` (GitHub Pages); App Store Connect URL: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-29)
 - [ ] **Datenschutzerklärung-URL in App Store Connect eintragen** — App-Datenschutz → Datenschutzrichtlinie → `https://dev-roeber.github.io/iOS-App/privacy.html`
 - [ ] **GitHub Pages aktivieren** — Repo-Settings → Pages → Source: main → /docs (einmalig, manuell)

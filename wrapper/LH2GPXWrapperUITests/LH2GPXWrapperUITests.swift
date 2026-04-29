@@ -14,63 +14,65 @@ final class LH2GPXWrapperUITests: XCTestCase {
 
     // MARK: - App Store Screenshots
     //
-    // Run on iPhone 17 Pro Max for iphone/ screenshots.
-    // Run on iPad Pro 13-inch (M5) for ipad/ screenshots.
+    // Device: iPhone 15 Pro Max (or iPhone 17 Pro Max simulator) — portrait, 3× scale.
+    // Screenshots are captured via XCTAttachment and stored in the xcresult bundle.
+    // Extract after run:
+    //   xcrun xcresulttool export --path <result.xcresult> --output-path /tmp/ss --type directory
+    // Then copy PNGs to docs/app-store-assets/screenshots/iphone-67/
     //
-    // The output path suffix (iphone/ipad) must be adjusted per run.
+    // iPad: run on iPad Pro 13-inch (M4) with deviceFolder = "ipad".
 
     @MainActor
     func testAppStoreScreenshots() throws {
-        // Adjust per simulator run: "iphone" or "ipad"
-        let deviceFolder = "iphone"
-        let outputDir = FileManager.default.temporaryDirectory.appendingPathComponent("lh2gpx_screenshots/\(deviceFolder)").path
-        try FileManager.default.createDirectory(
-            atPath: outputDir, withIntermediateDirectories: true
-        )
-
         let app = XCUIApplication()
         app.launchArguments += [LaunchArgument.uiTesting, LaunchArgument.resetPersistence]
+        XCUIDevice.shared.orientation = .portrait
         app.launch()
-        sleep(1)
+        sleep(2)
 
-        // 1. Import / empty state
-        saveScreenshot(app, to: "\(outputDir)/01_import_state.png")
+        // 01 — Import / empty state (before any data loaded)
+        attach(screenshot(app), name: "01-import")
 
-        // 2. Load Demo Data
+        // Load Demo Data so all tabs have content
         let demoButton = app.buttons.matching(
             NSPredicate(format: "label CONTAINS 'Demo Data'")
         ).firstMatch
-        guard demoButton.waitForExistence(timeout: 5) else {
+        guard demoButton.waitForExistence(timeout: 8) else {
             XCTFail("Demo button not found"); return
         }
         demoButton.tap()
-        sleep(3)
+        sleep(4)
 
-        // On iPhone: go back to see the day list (auto-navigates to detail)
-        // On iPad: back button may not exist – skip
+        // Switch to Overview tab; expand to All Time so 2024 demo data is visible
+        let overviewTab = app.tabBars.buttons["Overview"]
+        if overviewTab.waitForExistence(timeout: 5) { overviewTab.tap(); sleep(1) }
+        let allChip = app.buttons["range.chip.all"]
+        if allChip.waitForExistence(timeout: 5) { allChip.tap(); sleep(2) }
+
+        // 02 — Overview map
+        attach(screenshot(app), name: "02-overview-map")
+
+        // 03 — Days tab (list view)
+        let daysTab = app.tabBars.buttons["Days"]
+        if daysTab.waitForExistence(timeout: 5) { daysTab.tap(); sleep(2) }
         let backButton = app.navigationBars.buttons.firstMatch
-        if backButton.exists && backButton.isHittable {
-            backButton.tap()
-            sleep(1)
-        }
+        if backButton.exists && backButton.isHittable { backButton.tap(); sleep(1) }
+        attach(screenshot(app), name: "03-days")
 
-        // 3. Day list / overview
-        saveScreenshot(app, to: "\(outputDir)/02_day_list.png")
+        // 04 — Insights tab
+        let insightsTab = app.tabBars.buttons["Insights"]
+        if insightsTab.waitForExistence(timeout: 5) { insightsTab.tap(); sleep(2) }
+        attach(screenshot(app), name: "04-insights")
 
-        // 4. Tap first day cell (non-fatal: iPad may not need tap)
-        let firstCell = app.cells.firstMatch
-        if firstCell.waitForExistence(timeout: 5) {
-            firstCell.tap()
-            sleep(2)
-        }
+        // 05 — Export tab
+        let exportTab = app.tabBars.buttons["Export"]
+        if exportTab.waitForExistence(timeout: 5) { exportTab.tap(); sleep(1) }
+        attach(screenshot(app), name: "05-export")
 
-        // 5. Day detail – top (map)
-        saveScreenshot(app, to: "\(outputDir)/03_day_detail.png")
-
-        // 6. Day detail – scrolled (stats + sections)
-        app.swipeUp()
-        sleep(1)
-        saveScreenshot(app, to: "\(outputDir)/04_day_detail_stats.png")
+        // 06 — Live tab (optional, user-controlled, default OFF — no server URL shown)
+        let liveTab = app.tabBars.buttons["Live"]
+        if liveTab.waitForExistence(timeout: 5) { liveTab.tap(); sleep(1) }
+        attach(screenshot(app), name: "06-live-recording")
     }
 
     @MainActor
@@ -177,13 +179,15 @@ final class LH2GPXWrapperUITests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func saveScreenshot(_ app: XCUIApplication, to path: String) {
-        let screenshot = XCUIScreen.main.screenshot()
-        do {
-            try screenshot.pngRepresentation.write(to: URL(fileURLWithPath: path))
-        } catch {
-            XCTFail("Screenshot save failed: \(error)")
-        }
+    private func screenshot(_ app: XCUIApplication) -> XCUIScreenshot {
+        XCUIScreen.main.screenshot()
+    }
+
+    private func attach(_ shot: XCUIScreenshot, name: String) {
+        let attachment = XCTAttachment(screenshot: shot)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     @MainActor

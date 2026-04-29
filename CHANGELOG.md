@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [2026-04-29] — App-Store-Screenshots (iPhone 15 Pro Max, UITest-basiert)
+
+### Hinzugefügt
+- `docs/app-store-assets/screenshots/iphone-67/`: 6 Screenshots (1290×2796 px) vom iPhone 15 Pro Max via `testAppStoreScreenshots` UITest
+- `docs/app-store-assets/screenshots/iphone-65/`: 6 Screenshots (1242×2688 px) proportional skaliert für 6.5"-Slot
+- `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift`: Screenshot-Test auf XCTAttachment-Verfahren umgestellt (xcresult-Bundle statt direkter Dateischreib auf Device); alle 6 Screens (Import, Overview, Days, Insights, Export, Live)
+
+### Inhalt
+- Ausschließlich Repo-Demo-Fixture-Daten (keine privaten Nutzerdaten)
+- Keine Debug-Overlays, keine feste Server-URL im Live-Tab, kein Token sichtbar
+- App-Store-Deklaration „Keine Daten erfasst" korrekt dargestellt
+
+### Verifiziert
+- `swift test`: 643 Tests, 0 Failures ✅
+- UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max: PASSED (41 s) ✅
+- Alle 6 PNGs extrahiert und dimensioniert: 1290×2796 (iphone-67) + 1242×2688 (iphone-65) ✅
+
 ## [2026-04-29] — Datenschutzerklärung (GitHub Pages)
 
 ### Hinzugefügt

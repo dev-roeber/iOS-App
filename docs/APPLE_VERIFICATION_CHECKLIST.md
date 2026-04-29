@@ -9,6 +9,47 @@ Diese Checkliste trennt klar zwischen:
 
 Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
+## Statusstand 2026-04-29 — App-Store-Screenshots (iPhone 15 Pro Max)
+
+### Verifikation 2026-04-29 — Screenshots
+
+Ausgefuehrt auf: iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C), Xcode 26.3
+
+#### ✅ real verifiziert (2026-04-29) — Screenshot-Set
+
+- **UITest `testAppStoreScreenshots`** auf iPhone 15 Pro Max: PASSED (41 s), 6/6 Screenshots erzeugt
+- **Screenshot-Verfahren**: XCTAttachment → xcresult-Bundle → xcresulttool-Extraktion → sips-Skalierung
+- **Originale**: `docs/app-store-assets/screenshots/iphone-67/` — 1290×2796 px (native iPhone 15 Pro Max 3×)
+- **App Store 6.5"**: `docs/app-store-assets/screenshots/iphone-65/` — 1242×2688 px (proportional skaliert + 3 px Crop)
+- **Inhalt**: Demo-Daten (synthetische Fixture aus dem Repo — keine privaten Nutzerdaten)
+- **Keine privaten Daten**: ausschließlich Repo-Demo-Fixture verwendet, keine echten Standortdaten
+- **Keine feste Server-URL**: Live-Tab zeigt nur optionalen/nutzergesteuerten Upload-Screen (kein Entwickler-Server)
+- **Keine Debug-Overlays**: saubere UI ohne Developer-Tools
+- **App-Store-Deklaration**: „Keine Daten erfasst" korrekt
+- **iPad**: TARGETED_DEVICE_FAMILY=1,2 → iPad Support vorhanden; iPad-Screenshots noch ausstehend (kein iPad-Gerät angeschlossen)
+- **Apple Watch**: keine WatchKit-App im Repo — keine Watch-Screenshots nötig
+
+#### ScreenShot-Dateien (für App Store Connect)
+
+| Datei | Größe | Slot |
+|-------|-------|------|
+| `iphone-67/01-import.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
+| `iphone-67/02-overview-map.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
+| `iphone-67/03-days.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
+| `iphone-67/04-insights.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
+| `iphone-67/05-export.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
+| `iphone-67/06-live-recording.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
+| `iphone-65/01-import.png` | 1242×2688 | iPhone 6.5" |
+| `iphone-65/02-overview-map.png` | 1242×2688 | iPhone 6.5" |
+| `iphone-65/03-days.png` | 1242×2688 | iPhone 6.5" |
+| `iphone-65/04-insights.png` | 1242×2688 | iPhone 6.5" |
+| `iphone-65/05-export.png` | 1242×2688 | iPhone 6.5" |
+| `iphone-65/06-live-recording.png` | 1242×2688 | iPhone 6.5" |
+
+**Empfehlung**: Upload der `iphone-67/`-Dateien (1290×2796) in den "6.7-inch Display"-Slot von App Store Connect. Dieser Slot dient gleichzeitig als Fallback für 6.5-inch-Geräte.
+
+---
+
 ## Statusstand 2026-04-29 — Verifikationsrunde (MacBook, Xcode 26.3, iPhone 15 Pro Max)
 
 ### Verifikation 2026-04-29
@@ -57,10 +98,12 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 
 - Xcode Cloud Workflow anlegen (manuell in Xcode.app: Product → Xcode Cloud → Create Workflow)
 - App ID `de.roeber.LH2GPXWrapper` + App Group `group.de.roeber.LH2GPXWrapper` im Developer Portal registrieren
-- Privacy Policy URL fuer App Store Connect (Pflichtfeld, noch nicht eingetragen)
+- Privacy Policy URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (Seite vorhanden, URL noch nicht eingetragen)
 - Support URL fuer App Store Connect (noch nicht eingetragen)
 - finales App Icon (aktuell Interimsdesign)
 - Apple-Review-Bestaetigung fuer NSPrivacyCollectedDataTypes (optionaler Live-Upload)
+- iPad-Screenshots (TARGETED_DEVICE_FAMILY=1,2 → iPad unterstützt; `ipad/`-Screenshots noch ausstehend)
+- App-Store-Screenshots in App Store Connect hochladen (`docs/app-store-assets/screenshots/iphone-67/`)
 
 ---
 
