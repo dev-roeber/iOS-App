@@ -9,6 +9,7 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [x] Device Smoke-Test (App startet, kein Crash) — iPhone 15 Pro Max (00008130-00163D0A0461401C): installiert, gestartet, PID stabil (verifiziert 2026-04-12)
 - [x] UITests Bundle ID bereinigt — `xagr3k7xdj.de.roeber.lh2gpxwrapper.uitests` → `de.roeber.LH2GPXWrapper.UITests` (2026-04-13)
 - [x] Xcode Cloud Vorbereitung — `wrapper/.xcode-version` (26.3), `wrapper/ci_scripts/` (post_clone, pre_build, post_xcodebuild), `docs/XCODE_CLOUD_RUNBOOK.md` (2026-04-13)
+- [x] **Export-Compliance gesetzt** — `ITSAppUsesNonExemptEncryption = false` in App + Widget Info.plist; keine nicht-ausgenommene Verschlüsselung im Code; kein Upload-Dokument nötig (2026-04-29)
 - [ ] **Xcode Cloud Workflow anlegen (manuell)** — Product → Xcode Cloud → Create Workflow; Details in `docs/XCODE_CLOUD_RUNBOOK.md`
 - [ ] **App ID + App Group im Developer Portal registrieren** — `de.roeber.LH2GPXWrapper` + `group.de.roeber.LH2GPXWrapper` (einmalig, manuell)
 - [x] Apple-UI-Verifikation: Range-Picker (All-Time-Chip tappbar, verifiziert via UITest 2026-04-29), Datumsbereich-Sheet manuell noch offen

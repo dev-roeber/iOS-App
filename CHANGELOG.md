@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [2026-04-29] — Export-Compliance: ITSAppUsesNonExemptEncryption gesetzt
+
+### Hinzugefügt
+- `wrapper/Config/Info.plist`: `ITSAppUsesNonExemptEncryption = false` (Haupt-App)
+- `wrapper/LH2GPXWidget/Info.plist`: `ITSAppUsesNonExemptEncryption = false` (Widget-Extension)
+
+### Begründung
+App verwendet keine nicht-ausgenommene Verschlüsselung. Einzige Netzwerkkommunikation ist optionaler nutzergesteuerter HTTPS-Upload via URLSession — systemseitige Standardverschlüsselung, gem. US-Exportrecht ausgenommen. Kein CryptoKit, CommonCrypto, AES, RSA, VPN, E2E oder proprietäre Crypto-Bibliotheken. Beim App-Store-Upload sind keine Export-Compliance-Unterlagen erforderlich.
+
+### Verifiziert
+- `swift test`: 643 Tests, 0 Failures, 0 Skips ✅
+- `xcodebuild generic/platform=iOS`: BUILD SUCCEEDED ✅
+
 ## [2026-04-29] — Device-Verifikation + UITest-Fix (All-Time-Chip-Regression)
 
 ### Verifiziert auf iPhone 15 Pro Max (ios 26.3, UDID 00008130-00163D0A0461401C)

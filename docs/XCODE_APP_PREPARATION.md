@@ -44,7 +44,16 @@ Alternativ kann das Verzeichnis in Xcode geoeffnet werden. Die produktnahe App-S
 - kein Cloud-/Account-Sync fuer importierte History; optionaler Server-Upload ist separat, standardmaessig deaktiviert und in diesem Audit nicht neu auf Apple-Hardware verifiziert
 - keine hardware-verifizierte Background-Recording-Session oder Auto-Resume laufender Live-Tracks
 
-**Hinweis Wrapper:** Der Xcode-Wrapper unter `wrapper/LH2GPXWrapper.xcodeproj` ist bereits vollständig mit Info.plist, Bundle-Identifier `de.roeber.LH2GPXWrapper`, App-Icon, Signing-Team `XAGR3K7XDJ`, Deployment Target iOS 16.0 (App, Tests) / 16.2 (Widget, UITests) und `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` ausgestattet. Die Aussage "kein `.xcodeproj`" gilt nur für den Core-Package-Root, nicht für das Monorepo insgesamt.
+**Hinweis Wrapper:** Der Xcode-Wrapper unter `wrapper/LH2GPXWrapper.xcodeproj` ist bereits vollständig mit Info.plist, Bundle-Identifier `de.roeber.LH2GPXWrapper`, App-Icon, Signing-Team `XAGR3K7XDJ`, Deployment Target iOS 16.0 (App, Tests) / 16.2 (Widget, UITests), `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` und `ITSAppUsesNonExemptEncryption = false` (App + Widget Info.plist) ausgestattet. Die Aussage "kein `.xcodeproj`" gilt nur für den Core-Package-Root, nicht für das Monorepo insgesamt.
+
+## Export-Compliance
+
+Die App nutzt ausschließlich systemseitige Verschlüsselung (HTTPS/TLS via URLSession). Eigene Kryptografie (CryptoKit, CommonCrypto, AES, RSA, VPN, E2E-Messaging, proprietäre Crypto-Bibliotheken) ist nicht vorhanden. `ITSAppUsesNonExemptEncryption = false` ist in beiden App-Store-Targets gesetzt:
+
+- `wrapper/Config/Info.plist` — Haupt-App (`de.roeber.LH2GPXWrapper`)
+- `wrapper/LH2GPXWidget/Info.plist` — Widget-Extension (`de.roeber.LH2GPXWrapper.Widget`)
+
+Damit sind beim App-Store-Upload **keine Export-Compliance-Unterlagen** erforderlich.
 
 ## Lokale Verifikation
 
