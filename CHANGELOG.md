@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [2026-04-29] — TestFlight Build 1.0 (44): Smoke-Test-Stand dokumentiert
+
+### Dokumentarisch (kein Codeeingriff)
+
+- **TestFlight Build 1.0 (44)**: Auf iPhone installierbar und grundsätzlich lauffähig. Interner Smoke-Test abgeschlossen.
+- **Beobachtung**: Gelegentliche UI-Hänger/Ruckler auf echtem Gerät; kein bestätigter reproduzierbarer Crash.
+- **App-Store-Submission**: Bewusst noch nicht eingereicht. Offen bis Build in App Store Connect tatsächlich unter Vertrieb ausgewählt und submitted.
+- **NEXT_STEPS.md**: `Xcode Cloud Release-Workflow grün verifiziert` abgehakt; Performance-Smoke-Test und App-Store-Einreichung als offene Punkte ergänzt.
+- **docs/APPLE_VERIFICATION_CHECKLIST.md**: Abschnitt „TestFlight-Smoke-Test-Kriterien vor App-Store-Submission" ergänzt.
+- **swift test**: 643 Tests, 0 Failures (verifiziert 2026-04-29).
+- **git diff --check**: sauber.
+
+---
+
 ## [2026-04-29] — Build 34 IPA-Forensik: Root Cause bewiesen — NFD/NFC-Normalisierungsmismatch in Designated Requirement
 
 ### Befund (bewiesen durch vollständige IPA-Forensik)

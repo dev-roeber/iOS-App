@@ -9,6 +9,32 @@ Diese Checkliste trennt klar zwischen:
 
 Sie gilt fuer die produktnahe App-Shell `LocationHistoryConsumerApp`.
 
+---
+
+## TestFlight-Smoke-Test-Kriterien vor App-Store-Submission
+
+Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhone erfüllt sein müssen:
+
+### Blocking (muss grün sein)
+- [ ] App installiert sich ohne Fehler aus TestFlight
+- [ ] App startet ohne Crash auf Zielgerät
+- [ ] Dateiimport (`.json`/`.zip`) funktioniert und zeigt Daten an
+- [ ] Overview, Days, Insights, Export, Live-Tab sind navigierbar ohne Crash
+- [ ] Kein reproduzierbarer Crash in den Hauptflows
+
+### Performance-Schwellenwert (vor Submission bewerten)
+- [ ] Performance-Smoke-Test mit großem Datensatz (>20 MB reale Location-History) abgeschlossen
+- [ ] Keine UI-Hänger >2–3 Sekunden auf dem Zielpfad (Import → Overview-Karte laden → Days-Tab)
+- [ ] Jeder reproduzierbare Hänger mit Screen/Flow dokumentiert und priorisiert
+
+### Beobachtung Build 1.0 (44) — Stand 2026-04-29
+- **TestFlight-Verfügbarkeit**: Build 1.0 (44) ist auf iPhone installierbar ✅
+- **Interner Smoke-Test**: App startet, Haupttabs navigierbar, kein bestätigter Crash ✅
+- **Performance**: gelegentliche UI-Hänger/Ruckler beobachtet — kein reproduzierbarer Crash, aber noch kein systematischer Großdaten-Test
+- **App-Store-Submission**: noch nicht eingereicht ❌ (offen bis Build in App Store Connect unter Vertrieb ausgewählt + eingereicht)
+
+---
+
 ## Statusstand 2026-04-29 — App-Store-Screenshots (iPhone 15 Pro Max)
 
 ### Verifikation 2026-04-29 — Screenshots
