@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [2026-04-29] — Datenschutzerklärung (GitHub Pages)
+
+### Hinzugefügt
+- `docs/privacy.html`: statische Datenschutzerklärung in Deutsch, mobil-lesbar, ohne externe Tracker/Fonts/CDN
+- URL für App Store Connect: `https://dev-roeber.github.io/iOS-App/privacy.html`
+- Inhalt basiert ausschließlich auf verifizierten Datenflüssen (lokal, kein Entwickler-Server); optionaler Live-Upload klar als nutzerkonfiguriert/default-deaktiviert beschrieben
+- App Store „Keine Daten erfasst" bestätigt
+
 ## [2026-04-29] — Export-Compliance: ITSAppUsesNonExemptEncryption gesetzt
 
 ### Hinzugefügt

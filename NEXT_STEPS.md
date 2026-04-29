@@ -10,6 +10,9 @@ iOS-App ist ab jetzt das zentrale aktive Repo.
 - [x] UITests Bundle ID bereinigt — `xagr3k7xdj.de.roeber.lh2gpxwrapper.uitests` → `de.roeber.LH2GPXWrapper.UITests` (2026-04-13)
 - [x] Xcode Cloud Vorbereitung — `wrapper/.xcode-version` (26.3), `wrapper/ci_scripts/` (post_clone, pre_build, post_xcodebuild), `docs/XCODE_CLOUD_RUNBOOK.md` (2026-04-13)
 - [x] **Export-Compliance gesetzt** — `ITSAppUsesNonExemptEncryption = false` in App + Widget Info.plist; keine nicht-ausgenommene Verschlüsselung im Code; kein Upload-Dokument nötig (2026-04-29)
+- [x] **Datenschutzerklärung erstellt** — `docs/privacy.html` (GitHub Pages); App Store Connect URL: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-29)
+- [ ] **Datenschutzerklärung-URL in App Store Connect eintragen** — App-Datenschutz → Datenschutzrichtlinie → `https://dev-roeber.github.io/iOS-App/privacy.html`
+- [ ] **GitHub Pages aktivieren** — Repo-Settings → Pages → Source: main → /docs (einmalig, manuell)
 - [ ] **Xcode Cloud Workflow anlegen (manuell)** — Product → Xcode Cloud → Create Workflow; Details in `docs/XCODE_CLOUD_RUNBOOK.md`
 - [ ] **App ID + App Group im Developer Portal registrieren** — `de.roeber.LH2GPXWrapper` + `group.de.roeber.LH2GPXWrapper` (einmalig, manuell)
 - [x] Apple-UI-Verifikation: Range-Picker (All-Time-Chip tappbar, verifiziert via UITest 2026-04-29), Datumsbereich-Sheet manuell noch offen
