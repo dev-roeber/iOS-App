@@ -20,6 +20,17 @@ Nicht als abgeschlossen markieren:
 - echte Apple-Hardware-Verifikation fuer Live Activity / Dynamic Island bleibt teilweise offen: Lock Screen, `minimal`, Primärwert-Wechsel (`Dauer`, `Punkte`, `Upload-Status`) und deaktivierte / nicht verfuegbare Live Activities sind noch nicht repo-wahr bestaetigt
 - Wrapper-Simulator-Testlauf war auf diesem Host nicht belastbar abschliessbar (`NSMachErrorDomain Code=-308`)
 
+### Release / TestFlight Truth Update (2026-04-30)
+
+Implementiert und lokal verifiziert:
+- `CURRENT_PROJECT_VERSION = 45` im Wrapper-Projekt, damit ein neuer lokaler Release-Kandidat oberhalb des bereits dokumentierten TestFlight-Builds `1.0 (44)` liegt
+- Release-Archive fuer `LH2GPXWrapper` sind lokal wieder erzeugbar
+- Release-Signing-Konflikt im Repo bereinigt: keine explizite Release-`CODE_SIGN_IDENTITY`, `CODE_SIGN_STYLE = Automatic` bleibt aktiv
+
+Nicht als abgeschlossen markieren:
+- lokaler Export/Upload nach App Store Connect bleibt offen: aktueller Host hat keine verfuegbare Distribution-Identitaet und keine konfigurierte ASC-CLI-Authentifizierung
+- App Review bleibt bis zur vollstaendigeren Hardware-Verifikation von Live Activity / Dynamic Island offen
+
 ## Aktueller Stand (2026-04-29)
 
 ### Overview-Map Freeze/Crash-Fix – Hard Overlay Limit (2026-04-29)

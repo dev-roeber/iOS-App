@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [2026-04-30] — release: TestFlight archive path truth sync
+
+### Geaendert
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`: `CURRENT_PROJECT_VERSION` fuer App, Widget und Test-Targets auf `45` angehoben, damit ein neuer Release-Kandidat nicht hinter dem bereits dokumentierten TestFlight-Build `1.0 (44)` zurueckfaellt
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`: explizite Release-`CODE_SIGN_IDENTITY = Apple Distribution` fuer App + Widget entfernt; `CODE_SIGN_STYLE = Automatic` bleibt der einzige Release-Signing-Pfad
+- Release-/TestFlight-Doku auf den realen Host-Befund vom 2026-04-30 gezogen
+
+### Verifiziert
+- `swift test`: 660 Tests, 0 Failures
+- `git diff --check`
+- `xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`
+- `xcodebuild archive -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -configuration Release -destination 'generic/platform=iOS' -archivePath /Users/sebastian/Desktop/LH2GPXWrapper.xcarchive`: `ARCHIVE SUCCEEDED`
+
+### Bewusst nicht behauptet
+- kein lokaler TestFlight-Upload: `xcodebuild -exportArchive` scheitert auf diesem Host mit `No signing certificate "iOS Distribution" found`
+- kein automatisierter App Store Connect Upload: `altool` hat auf diesem Host keine konfigurierte JWT- oder Username/App-Password-Authentifizierung
+- App Review bleibt fuer den Dynamic-Island-/Live-Activity-Scope weiter `NO-GO`
+
 ## [2026-04-30] — docs: partial real-device verification for Live Activity / Dynamic Island
 
 ### Geaendert

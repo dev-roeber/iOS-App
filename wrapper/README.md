@@ -40,9 +40,9 @@ Genutzte Produkte:
 
 - **Bundle Identifier:** `de.roeber.LH2GPXWrapper`
 - **Display Name:** LH2GPX
-- **Version:** 1.0 (Build 1)
+- **Version:** 1.0 (lokaler Projektstand Build 45; zuletzt dokumentierter TestFlight-Build: 1.0 (44))
 - **Deployment Target:** iOS 16.0 (App) / iOS 16.2 (Widget)
-- **Signing:** Automatic (Team XAGR3K7XDJ)
+- **Signing:** Automatic (Team XAGR3K7XDJ); lokaler Release-Archive-Pfad baut derzeit mit `Apple Development`, weil auf diesem Host keine Distribution-Identitaet verfuegbar ist
 - **App Icon:** Map-Pin + "LH2GPX", 1024x1024 (Interims-Design, kein Gradient-Placeholder mehr)
 - **Privacy Manifest:** `PrivacyInfo.xcprivacy` – kein Tracking; UserDefaults-Zugriff (CA92.1) und `NSPrivacyCollectedDataTypePreciseLocation` fuer den optionalen, standardmaessig deaktivierten Live-Upload sind deklariert; lokale Live-Location nutzt die Info.plist-Usage-Strings fuer While-In-Use plus optionale `Always Allow`-Erweiterung
 
@@ -130,8 +130,8 @@ iPad: bewusst spaeter.
 
 ## TestFlight + App Store Readiness (Phase 20 – extern geparkt)
 
-Lokal verifiziert (2026-03-17):
-- `xcodebuild archive` erfolgreich (v1.0, Build 1)
+Lokal verifiziert (2026-04-30):
+- `xcodebuild archive` erfolgreich (`1.0 (45)`)
 - `PrivacyInfo.xcprivacy` deklariert UserDefaults-Zugriff (CA92.1) und `PreciseLocation` fuer den optionalen Live-Upload
 
 Offen (Stand 2026-03-31):
@@ -156,6 +156,8 @@ Bewusst geparkt (ASC-Zugang erforderlich):
 - Screenshots in ASC hochladen (`iphone-67/`-Slot: 6.7-inch Display)
 - Privacy URL eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html`
 - Upload / TestFlight-Beta
+  - aktueller lokaler Blocker: `xcodebuild -exportArchive` scheitert mit `No signing certificate "iOS Distribution" found`
+  - zusaetzlicher lokaler Blocker: `altool` hat keine konfigurierte ASC-Authentifizierung (weder JWT noch Username/App-Password)
 
 Vollstaendiger Submission-Leitfaden: `docs/TESTFLIGHT_RUNBOOK.md`
 

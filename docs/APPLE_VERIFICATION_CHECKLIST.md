@@ -109,7 +109,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Entitlements**: App Group `group.de.roeber.LH2GPXWrapper` in App + Widget Entitlements — korrekt
 - **PrivacyInfo.xcprivacy**: NSPrivacyTracking=false, UserDefaults CA92.1, NSPrivacyCollectedDataTypePreciseLocation — vollständig
 - **Export-Compliance**: `ITSAppUsesNonExemptEncryption = false` in `wrapper/Config/Info.plist` (App) und `wrapper/LH2GPXWidget/Info.plist` (Widget) gesetzt — kein Upload-Dokument nötig. Begründung: App nutzt ausschließlich systemseitige HTTPS/TLS (URLSession, optionaler Live-Location-Upload); keine eigene Verschlüsselung (kein CryptoKit, CommonCrypto, AES, RSA, VPN, E2E-Messaging, Crypto-Bibliotheken).
-- **Release-Signing-Konfiguration**: `LH2GPXWrapper` + `LH2GPXWidget` auf `CODE_SIGN_STYLE = Automatic`, `DEVELOPMENT_TEAM = XAGR3K7XDJ`, `"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution"` in beiden Release-Configs, Buildnummer `28`; keine feste `PROVISIONING_PROFILE_SPECIFIER`; `com.apple.ApplicationGroups` in TargetAttributes für App + Widget
+- **Release-Signing-Konfiguration**: `LH2GPXWrapper` + `LH2GPXWidget` stehen auf `CODE_SIGN_STYLE = Automatic`, `DEVELOPMENT_TEAM = XAGR3K7XDJ`, ohne feste Release-`PROVISIONING_PROFILE_SPECIFIER` und ohne explizite Release-`CODE_SIGN_IDENTITY`; Buildnummer lokal auf `45` angehoben; `com.apple.security.application-groups = group.de.roeber.LH2GPXWrapper` in App + Widget vorhanden
 - **Widget-Embed**: `LH2GPXWidget.appex` wird mit `CodeSignOnCopy` eingebettet
 - **Sicherheit**: keine hartcodierten Tokens/Secrets; defaultTestEndpointURLString=""; HTTPS fuer non-localhost erzwungen; Bearer-Token via Keychain
 - **Deployment Target**: iOS 16.0 (App, LH2GPXWrapperTests) / 16.2 (Widget, UITests) — verifiziert in project.pbxproj
@@ -165,7 +165,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - Apple-Review-Bestaetigung fuer NSPrivacyCollectedDataTypes (optionaler Live-Upload)
 - iPad-Screenshots sind fuer v1 nicht relevant, solange `TARGETED_DEVICE_FAMILY = 1` bleibt; iPad-Support spaeter mit eigenem Test-/Screenshot-Set
 - App-Store-Screenshots in App Store Connect hochladen (`docs/app-store-assets/screenshots/iphone-67/`)
-- Apple-validen TestFlight-Build abwarten bzw. erzeugen; lokale Transporter-Uploads vom 2026-04-29 wurden mit `Invalid Signature` fuer App + Widget abgelehnt
+- Apple-validen TestFlight-Build abwarten bzw. erzeugen; lokaler Stand 2026-04-30: `xcodebuild archive` fuer `1.0 (45)` erfolgreich, aber `xcodebuild -exportArchive` scheitert auf diesem Host mit `No signing certificate "iOS Distribution" found`, und `altool` hat keine konfigurierte ASC-Authentifizierung
 
 ---
 

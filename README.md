@@ -100,3 +100,4 @@ Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weite
 - Historien-Track-Editor: Mutations-Reset bei Import-Wechsel ist implementiert (`validateSource`, 2026-04-14); Export ignoriert Mutations bewusst (AppExport ist immutable, Mutations sind display-only)
 - Export ignoriert Mutations bewusst — gelöschte Routen bleiben im GPX/KMZ-Export (AppExport ist immutable; Mutations sind rein display-only)
 - Apple-Portal-/Signing-/TestFlight-/Device-UI-Themen sind auf diesem macOS-Host nicht voll verifizierbar und werden separat dokumentiert
+- Release-Truth 2026-04-30: lokales `Release`-Archive fuer `LH2GPXWrapper` ist wieder erzeugbar (`1.0 (45)`), aber der Export-/Upload-Pfad zu TestFlight ist auf diesem Host noch blockiert, weil nur `Apple Development` lokal verfuegbar ist und `xcodebuild -exportArchive` deshalb kein Distribution-Zertifikat findet

@@ -8,13 +8,13 @@ Stand: 2026-04-12 | Phase 20
 
 | Punkt | Status | Nachweis |
 |-------|--------|---------|
-| `xcodebuild archive` | **verifiziert** | 2026-03-17, v1.0 Build 1, neues Icon korrekt eingebaut |
+| `xcodebuild archive` | **verifiziert** | 2026-04-30, v1.0 Build 45, lokales Release-Archive erzeugbar |
 | Bundle Identifier | `de.roeber.LH2GPXWrapper` | project.pbxproj |
 | Marketing Version | `1.0` | project.pbxproj |
-| Build Number | `1` | project.pbxproj |
+| Build Number | `45` | project.pbxproj |
 | Display Name | `LH2GPX` | project.pbxproj |
 | Deployment Target | iOS 16.0 (App, Tests); iOS 16.2 (Widget) | project.pbxproj |
-| Signing | Automatic, Team `XAGR3K7XDJ` | project.pbxproj |
+| Signing | Automatic, Team `XAGR3K7XDJ`; lokaler Host signiert Archive derzeit mit `Apple Development`, Export zu ASC braucht zusaetzlich eine Distribution-Identitaet | project.pbxproj + lokaler Archive-Lauf 2026-04-30 |
 | PrivacyInfo.xcprivacy | lokal sichtbar: kein Tracking, UserDefaults CA92.1, `PreciseLocation` fuer optionalen Live-Upload | PrivacyInfo.xcprivacy |
 | App Icon | Map-Pin + "LH2GPX", 1024x1024 | Assets.xcassets/AppIcon.appiconset/ |
 | App Review Guidelines | geprueft, mit offenem Wording fuer den optionalen Server-Upload | Abschnitt unten |
@@ -150,7 +150,7 @@ xcodebuild archive \
   -archivePath ~/Desktop/LH2GPXWrapper.xcarchive
 ```
 
-Verifiziert 2026-03-17: `** ARCHIVE SUCCEEDED **`, v1.0 Build 1.
+Verifiziert 2026-04-30: `** ARCHIVE SUCCEEDED **`, v1.0 Build 45.
 
 ---
 
@@ -181,6 +181,10 @@ xcodebuild -exportArchive \
   -exportOptionsPlist ExportOptions.plist \
   -exportPath ~/Desktop/LH2GPXWrapper_export
 ```
+
+Lokaler Host-Befund 2026-04-30:
+- `xcodebuild -exportArchive` scheitert repo-wahr mit `No signing certificate "iOS Distribution" found`
+- damit ist ein lokaler Export/Upload auf diesem Host derzeit **nicht** moeglich
 
 Alternativ: Xcode Organizer → Distribute App → App Store Connect → Upload.
 
@@ -217,6 +221,14 @@ Alternativ: Xcode Organizer → Distribute App → App Store Connect → Upload.
 - Beta App Description: "Erster interner Beta-Build von LH2GPX"
 - Interne Tester (Apple ID) hinzufuegen
 - Build freigeben
+
+CLI-Upload ist nur moeglich, wenn zusaetzlich mindestens einer dieser Pfade eingerichtet ist:
+- JWT-Auth: `--api-key` + `--api-issuer` + zugehoerige `AuthKey_*.p8`
+- Username/App-Passwort-Auth: `--username` + App-spezifisches Passwort + `--provider-public-id`
+
+Lokaler Host-Befund 2026-04-30:
+- `altool --list-providers` scheitert ohne konfigurierte Authentifizierung
+- daher bleibt Upload/ASC-Aktivierung ab diesem Punkt manuell bzw. auf einem anders vorbereiteten Apple-Host noetig
 
 ---
 
