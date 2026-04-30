@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [2026-04-30] — docs: hardware verification blocker truth sync
+
+### Geaendert
+- `docs/APPLE_VERIFICATION_CHECKLIST.md` und `wrapper/docs/LOCAL_IPHONE_RUNBOOK.md` um den aktuellen echten Device-Blocker ergaenzt: `LH2GPXWrapperUITests.xctrunner` ist auf dem verbundenen `iPhone 15 Pro Max` derzeit nicht als vertrauenswuerdige Entwickler-App freigegeben; ein weiterer Live-Capture-Lauf brach zusaetzlich mit `CoreDeviceError / Mercury error 1001` nach Launch ab
+- repo-wahr festgehalten, dass damit weiterhin kein neuer Voll-Nachweis fuer Lock Screen, `minimal`, weitere Primärwerte, deaktivierte Live Activities oder No-Dynamic-Island-Geraete vorliegt
+
 ## [2026-04-30] — live: restore-state hardening for interrupted sessions
 
 ### Fixed

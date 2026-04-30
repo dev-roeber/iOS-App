@@ -169,6 +169,7 @@ xcrun xctrace list devices 2>/dev/null | grep -v "Simulator"
 - [ ] App schliessen, neu starten → Wrapper-Auto-Restore nach der 2026-03-20-Reaktivierung kontrolliert mit Positiv-, Datei-fehlt- und Clear-Pfad auf echtem Geraet verifizieren
 - [ ] Live-Location-Permission, aktueller Standort, Live-Track-Aufnahme und optionale `Always Allow`-Erweiterung fuer Background-Recording separat auf echtem Geraet oder Simulator protokollieren
 - [ ] optionalen Server-Upload mit echtem Endpunkt auf aktuellem Geraet separat pruefen
+- [ ] falls UITests fuer Live Activity / Dynamic Island verwendet werden: `LH2GPXWrapperUITests.xctrunner` auf dem iPhone unter `General -> VPN & Device Management` explizit vertrauen; ohne diesen manuellen Schritt scheitert der aktuelle Device-Lauf bereits vor belastbarer Dynamic-Island-Verifikation
 
 Befunde in dieses Runbook als Tabelle nachtragen.
 
