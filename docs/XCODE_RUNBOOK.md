@@ -209,6 +209,13 @@ Frischer Host-Truth (2026-04-29) — macOS, Xcode 26.3, iPhone 15 Pro Max (ios 2
 - Widget-Embed-Phase: `LH2GPXWidget.appex` wird mit `CodeSignOnCopy` eingebettet
 - `git diff --check` / `git status --short` nur fuer den jeweils aktuellen Arbeitsstand wiederholen; fruehere Gruen-Angaben waren Zwischenstaende und gelten nicht pauschal fuer spaetere Worktrees
 
+ASC-Truth (2026-04-30):
+- `LH2GPX` Version `1.0` ist in App Store Connect eingereicht und steht auf `Warten auf Prüfung`
+- auf der Versionsseite ist Build `52` sichtbar
+- der Xcode-Cloud-Workflow `Release – Archive & TestFlight` zeigt erfolgreiche Builds `55`, `56`, `57`
+- daraus folgt kein automatischer Repo-Claim, welcher Build der richtige Review-Kandidat ist; das muss in ASC bewusst geprueft werden
+- App Review ist nicht mehr am Upload-Schritt blockiert, aber fuer Live Activity / Dynamic Island weiter nicht voll hardware-verifiziert
+
 Frischer Host-Truth (2026-03-31, historisch):
 
 - Linux-Host mit Swift 5.9

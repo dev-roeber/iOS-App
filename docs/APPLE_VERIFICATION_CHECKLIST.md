@@ -33,12 +33,22 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 - Explore-Dismiss setzt wieder Full-View-Overlays; stale Overlay-Tasks werden bei Neu-Load verworfen
 - Verifiziert nur per `swift test` + `xcodebuild`; **kein** neuer Geräte-Claim aus diesem Audit-Batch
 
+### Beobachtung App Store Connect / Review — Stand 2026-04-30
+- **Version `1.0`**: in App Store Connect eingereicht
+- **Status**: `Warten auf Prüfung`
+- **Veröffentlichung**: manuell
+- **Zur Version sichtbarer Build**: `52`
+- **Xcode Cloud**: Workflow `Release – Archive & TestFlight` zeigt erfolgreiche Builds `55`, `56` und `57`
+- **Offene Pruefung**: klaeren, ob Build `52` bewusst fuer Review ausgewaehlt wurde oder ob Build `57` nachgereicht werden soll
+- **Upload-Blocker**: App Review ist nicht mehr durch fehlenden Upload blockiert
+- **Hardware-Risiko bleibt**: Live Activity / Dynamic Island nur partiell auf echter Hardware verifiziert
+
 ### Beobachtung Build 1.0 (44) — Stand 2026-04-29
 - **TestFlight-Verfügbarkeit**: Build 1.0 (44) ist auf iPhone installierbar ✅
 - **Interner Smoke-Test**: App startet, Haupttabs navigierbar, kein bestätigter Crash ✅
 - **Performance**: gelegentliche UI-Hänger/Ruckler beobachtet — kein reproduzierbarer Crash, aber noch kein systematischer Großdaten-Test
 - **Overview-Map Freeze-Blocker**: behoben (Hard Overlay Limit, s. CHANGELOG 2026-04-29); Performance-Audit bestätigt: kein globales Coordinate-Budget nötig; `overlayLimit × maxPolylinePoints` schützt implizit (max 9.600–48.000 Koordinaten je Tier); TestFlight-Verifikation mit echten großen Daten noch ausstehend
-- **App-Store-Submission**: noch nicht eingereicht ❌ (offen bis Fix auf TestFlight mit echten Daten verifiziert + Build in App Store Connect unter Vertrieb ausgewählt + eingereicht)
+- **Historischer Stand**: diese Beobachtung beschreibt nur den damaligen TestFlight-Snapshot; der aktuelle Review-Status steht im Block oben
 
 ---
 
@@ -165,7 +175,8 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - Apple-Review-Bestaetigung fuer NSPrivacyCollectedDataTypes (optionaler Live-Upload)
 - iPad-Screenshots sind fuer v1 nicht relevant, solange `TARGETED_DEVICE_FAMILY = 1` bleibt; iPad-Support spaeter mit eigenem Test-/Screenshot-Set
 - App-Store-Screenshots in App Store Connect hochladen (`docs/app-store-assets/screenshots/iphone-67/`)
-- Apple-validen TestFlight-Build abwarten bzw. erzeugen; lokaler Stand 2026-04-30: `xcodebuild archive` fuer `1.0 (45)` erfolgreich, aber `xcodebuild -exportArchive` scheitert auf diesem Host mit `No signing certificate "iOS Distribution" found`, und `altool` hat keine konfigurierte ASC-Authentifizierung
+- Build-Zuordnung in App Store Connect pruefen: Version `1.0` zeigt Build `52`, waehrend Xcode Cloud erfolgreiche Builds `55`, `56`, `57` ausweist; entscheiden, ob `52` bewusst in Review ist oder ob ein neuerer Build nachgereicht werden soll
+- Live Activity / Dynamic Island auf echter Hardware weiter vervollstaendigen: Lock Screen, `minimal`, weitere Primärwerte und Fallback-Pfade
 
 ---
 

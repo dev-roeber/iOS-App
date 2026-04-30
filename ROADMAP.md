@@ -4,6 +4,18 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### App Store Connect Truth Update (2026-04-30)
+
+Repo-wahr dokumentiert:
+- App Store Connect zeigt fuer `LH2GPX` Version `1.0` den Status `Warten auf Prüfung`
+- die Version ist eingereicht; Veröffentlichung bleibt manuell
+- auf der Versionsseite ist aktuell Build `52` sichtbar
+- der Xcode-Cloud-Workflow `Release – Archive & TestFlight` hat erfolgreichere neuere Builds `55`, `56` und `57`
+
+Nicht als abgeschlossen markieren:
+- es ist noch zu klaeren, ob Build `52` bewusst fuer Review ausgewaehlt wurde oder ob ein neuerer Build (`57`) nachgereicht werden soll
+- App Review ist nicht mehr durch Upload blockiert, aber weiterhin nicht durch vollstaendige Live-Activity-/Dynamic-Island-Hardware-Verifikation abgesichert
+
 ### Dynamic Island / Live Activity Truth Update (2026-04-30)
 
 Implementiert und lokal verifiziert:
@@ -28,7 +40,7 @@ Implementiert und lokal verifiziert:
 - Release-Signing-Konflikt im Repo bereinigt: keine explizite Release-`CODE_SIGN_IDENTITY`, `CODE_SIGN_STYLE = Automatic` bleibt aktiv
 
 Nicht als abgeschlossen markieren:
-- lokaler Export/Upload nach App Store Connect bleibt offen: aktueller Host hat keine verfuegbare Distribution-Identitaet und keine konfigurierte ASC-CLI-Authentifizierung
+- lokaler Export/Upload nach App Store Connect bleibt fuer diesen Host offen: aktueller Host hat keine verfuegbare Distribution-Identitaet und keine konfigurierte ASC-CLI-Authentifizierung; App Review selbst ist aber nicht mehr am Upload-Schritt blockiert
 - App Review bleibt bis zur vollstaendigeren Hardware-Verifikation von Live Activity / Dynamic Island offen
 
 ## Aktueller Stand (2026-04-29)

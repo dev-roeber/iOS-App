@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [2026-04-30] — docs: App Store Connect review status truth sync
+
+### Geaendert
+- App-Store-Connect-Status fuer `LH2GPX` Version `1.0` repo-wahr nachgezogen: Version ist eingereicht, Status `Warten auf Prüfung`
+- dokumentiert, dass auf der Versionsseite derzeit Build `52` sichtbar ist, waehrend der Xcode-Cloud-Workflow `Release – Archive & TestFlight` bereits erfolgreiche Builds `55`, `56` und `57` zeigt
+- offene Prueffrage explizit festgehalten: klaeren, ob Build `52` bewusst fuer Review ausgewaehlt wurde oder ob ein neuerer Build (`57`) nachgereicht werden soll
+- Doku auf den neuen ASC-Truth angepasst: App Review ist nicht mehr durch fehlenden Upload blockiert; partielle Hardware-Verifikation fuer Live Activity / Dynamic Island bleibt weiter offen
+
+### Verifiziert
+- `swift test`
+- `git diff --check`
+- `xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`
+
+### Bewusst nicht behauptet
+- kein Claim, dass App Review bereits bestanden oder abgeschlossen ist
+- keine neue echte Hardware-Verifikation fuer Lock Screen, `minimal`, weitere Primärwerte oder Fallback-Pfade
+
 ## [2026-04-30] — release: TestFlight archive path truth sync
 
 ### Geaendert
