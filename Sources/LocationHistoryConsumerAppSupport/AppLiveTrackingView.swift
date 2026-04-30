@@ -263,24 +263,24 @@ public struct AppLiveTrackingView: View {
     private var statusChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                statusChip(
+                LHStatusChip(
                     title: liveLocation.isRecording ? t("Recording") : t("Idle"),
                     systemImage: liveLocation.isRecording ? "record.circle.fill" : "pause.circle.fill",
                     color: liveLocation.isRecording ? .red : .secondary
                 )
-                statusChip(
+                LHStatusChip(
                     title: liveLocation.isBackgroundTrackingActive ? t("Background Ready") : t("Foreground Only"),
                     systemImage: liveLocation.isBackgroundTrackingActive ? "location.fill.viewfinder" : "location"
                 )
                 if shouldShowUploadSection {
-                    statusChip(
+                    LHStatusChip(
                         title: t(liveLocation.uploadStatusSummary),
                         systemImage: uploadStatusIconName,
                         color: uploadStatusColor
                     )
                 }
                 if liveLocation.pendingUploadPointCount > 0 {
-                    statusChip(
+                    LHStatusChip(
                         title: "\(liveLocation.pendingUploadPointCount) \(t(liveLocation.pendingUploadPointCount == 1 ? "Queued Point" : "Queued Points"))",
                         systemImage: "tray.full.fill",
                         color: .orange
@@ -457,14 +457,14 @@ public struct AppLiveTrackingView: View {
             .accessibilityIdentifier(liveLocation.isRecording ? "live.recording.stop" : "live.recording.start")
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                statCard(icon: "scope", label: t("GPS Accuracy"), value: accuracyText, color: accuracyColor)
-                statCard(icon: "clock.fill", label: t("Duration"), value: durationText, color: .blue)
-                statCard(icon: "point.topleft.down.curvedto.point.bottomright.up", label: t("Points"), value: "\(liveLocation.liveTrackPoints.count)", color: .green)
-                statCard(icon: "road.lanes", label: t("Distance"), value: liveDistanceText, color: .purple)
-                statCard(icon: "speedometer", label: t("Current Speed"), value: currentSpeedText, color: .orange)
-                statCard(icon: "chart.line.uptrend.xyaxis", label: t("Average Speed"), value: averageSpeedText, color: .indigo)
-                statCard(icon: "arrow.left.and.right.circle", label: t("Last Segment"), value: lastSegmentText, color: .mint)
-                statCard(icon: "clock.badge.checkmark", label: t("Update Age"), value: updateAgeText, color: .teal)
+                LHMetricCard(icon: "scope", label: t("GPS Accuracy"), value: accuracyText, color: accuracyColor)
+                LHMetricCard(icon: "clock.fill", label: t("Duration"), value: durationText, color: .blue)
+                LHMetricCard(icon: "point.topleft.down.curvedto.point.bottomright.up", label: t("Points"), value: "\(liveLocation.liveTrackPoints.count)", color: .green)
+                LHMetricCard(icon: "road.lanes", label: t("Distance"), value: liveDistanceText, color: .purple)
+                LHMetricCard(icon: "speedometer", label: t("Current Speed"), value: currentSpeedText, color: .orange)
+                LHMetricCard(icon: "chart.line.uptrend.xyaxis", label: t("Average Speed"), value: averageSpeedText, color: .indigo)
+                LHMetricCard(icon: "arrow.left.and.right.circle", label: t("Last Segment"), value: lastSegmentText, color: .mint)
+                LHMetricCard(icon: "clock.badge.checkmark", label: t("Update Age"), value: updateAgeText, color: .teal)
             }
 
             quickActionRow
@@ -542,7 +542,7 @@ public struct AppLiveTrackingView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                statusChip(
+                LHStatusChip(
                     title: t(liveLocation.uploadStatusSummary),
                     systemImage: uploadStatusIconName,
                     color: uploadStatusColor
@@ -550,16 +550,16 @@ public struct AppLiveTrackingView: View {
             }
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                statCard(icon: "network", label: t("Endpoint"), value: preferences.liveLocationServerUploadConfiguration.endpointDisplayName, color: endpointStatusColor)
-                statCard(icon: hasBearerTokenConfigured ? "key.fill" : "key.slash", label: t("Auth"), value: hasBearerTokenConfigured ? t("Token set") : t("No token"), color: hasBearerTokenConfigured ? .green : .orange)
-                statCard(icon: "square.stack.3d.up.fill", label: t("Batch Size"), value: preferences.liveTrackingUploadBatch.title, color: .blue)
-                statCard(icon: "tray.full.fill", label: t("Queue"), value: "\(liveLocation.pendingUploadPointCount) / \(liveLocation.uploadQueueLimit)", color: liveLocation.pendingUploadPointCount > 0 ? .orange : .secondary)
-                statCard(icon: "exclamationmark.triangle.fill", label: t("Failures"), value: "\(liveLocation.consecutiveUploadFailures)", color: liveLocation.consecutiveUploadFailures > 0 ? .red : .secondary)
-                statCard(icon: "checkmark.circle.fill", label: t("Last Success"), value: lastUploadSuccessText, color: liveLocation.lastSuccessfulUploadAt == nil ? .secondary : .green)
+                LHMetricCard(icon: "network", label: t("Endpoint"), value: preferences.liveLocationServerUploadConfiguration.endpointDisplayName, color: endpointStatusColor)
+                LHMetricCard(icon: hasBearerTokenConfigured ? "key.fill" : "key.slash", label: t("Auth"), value: hasBearerTokenConfigured ? t("Token set") : t("No token"), color: hasBearerTokenConfigured ? .green : .orange)
+                LHMetricCard(icon: "square.stack.3d.up.fill", label: t("Batch Size"), value: preferences.liveTrackingUploadBatch.title, color: .blue)
+                LHMetricCard(icon: "tray.full.fill", label: t("Queue"), value: "\(liveLocation.pendingUploadPointCount) / \(liveLocation.uploadQueueLimit)", color: liveLocation.pendingUploadPointCount > 0 ? .orange : .secondary)
+                LHMetricCard(icon: "exclamationmark.triangle.fill", label: t("Failures"), value: "\(liveLocation.consecutiveUploadFailures)", color: liveLocation.consecutiveUploadFailures > 0 ? .red : .secondary)
+                LHMetricCard(icon: "checkmark.circle.fill", label: t("Last Success"), value: lastUploadSuccessText, color: liveLocation.lastSuccessfulUploadAt == nil ? .secondary : .green)
             }
 
             if let assistive = liveLocation.uploadAssistiveMessage {
-                insightBanner(
+                LHInsightBanner(
                     title: t("Upload Guidance"),
                     message: t(assistive),
                     systemImage: liveLocation.consecutiveUploadFailures > 0 ? "exclamationmark.triangle" : "info.circle",
@@ -568,7 +568,7 @@ public struct AppLiveTrackingView: View {
             }
 
             if let statusMessage = liveLocation.serverUploadStatusMessage {
-                insightBanner(
+                LHInsightBanner(
                     title: t("Latest Upload Status"),
                     message: t(statusMessage),
                     systemImage: uploadStatusIconName,
@@ -607,7 +607,7 @@ public struct AppLiveTrackingView: View {
                     )
                 )
             } else {
-                insightBanner(
+                LHInsightBanner(
                     title: t("No saved tracks yet"),
                     message: t("Record a short route and stop it once to seed the local track library."),
                     systemImage: "point.topleft.down.curvedto.point.bottomright.up",
@@ -642,7 +642,7 @@ public struct AppLiveTrackingView: View {
             Toggle(t("Background Recording"), isOn: $preferences.allowsBackgroundLiveTracking)
                 .font(.subheadline)
 
-            insightBanner(
+            LHInsightBanner(
                 title: t(liveLocation.permissionTitle),
                 message: t(liveLocation.permissionMessage),
                 systemImage: statusSymbolName,
@@ -652,57 +652,6 @@ public struct AppLiveTrackingView: View {
         .cardChrome()
     }
 
-    private func statCard(icon: String, label: String, value: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Label(label, systemImage: icon)
-                .font(.caption)
-                .foregroundStyle(color)
-            Text(value)
-                .font(.headline.monospacedDigit())
-                .foregroundStyle(.primary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(color.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(value), \(label)")
-    }
-
-    private func insightBanner(
-        title: String,
-        message: String,
-        systemImage: String,
-        tint: Color
-    ) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: systemImage)
-                .foregroundStyle(tint)
-                .padding(.top, 2)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(tint.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-
-    private func statusChip(title: String, systemImage: String, color: Color = .accentColor) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(color)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(color.opacity(0.12))
-            .clipShape(Capsule())
-    }
 
     private var mapSubtitleText: String {
         if liveLocation.isRecording {
@@ -914,23 +863,6 @@ public struct AppLiveTrackingView: View {
             recordingStartDate = nil
             recordingDuration = 0
         }
-    }
-}
-
-private extension View {
-    func cardChrome() -> some View {
-        self
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(Color.secondary.opacity(0.062))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(Color.primary.opacity(0.07), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .shadow(color: Color.black.opacity(0.08), radius: 14, y: 5)
     }
 }
 

@@ -32,6 +32,7 @@ P1 — Vorhandene Produktflaechen belastbar machen
 - Track-Editor-/Export-Grenze weiter dokumentieren oder produktseitig spaeter anpassen
 
 P2 — Nachgelagerte Optimierung
+- Design-System (`LH2GPXTheme`) schrittweise auf weitere Stellen ausdehnen; Widget/Dynamic-Island nur bei sicherem Token-Pfad
 - Apple-Review-/Privacy-Einordnung fuer den optionalen Server-Upload weiter sauber beobachten
 - veraltete Notion-/Wrapper-/Split-Repo-Doku weiter abbauen
 - echtes Road-/Path-Matching nur als spaeteren separaten Produktscope betrachten

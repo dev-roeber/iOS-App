@@ -129,14 +129,10 @@ enum OverviewPresentation {
 extension OverviewStatAccent {
     var swiftUIColor: Color {
         switch self {
-        case .blue:
-            return .blue
-        case .purple:
-            return .purple
-        case .green:
-            return .green
-        case .orange:
-            return .orange
+        case .blue:   return LH2GPXTheme.primaryBlue
+        case .purple: return LH2GPXTheme.insightPurple
+        case .green:  return LH2GPXTheme.successGreen
+        case .orange: return LH2GPXTheme.warningOrange
         }
     }
 }

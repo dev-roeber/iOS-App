@@ -57,8 +57,12 @@ public struct RecentFilesView: View {
             }
         }
         .padding()
-        .background(Color.secondary.opacity(0.07))
+        .background(LH2GPXTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
+        )
     }
 
     @ViewBuilder

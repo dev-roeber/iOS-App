@@ -142,24 +142,13 @@ struct AppDayFilterChipsView: View {
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 8)], spacing: 8) {
                 ForEach(availableChips) { chip in
-                    Button {
+                    LHFilterChip(
+                        title: chipTitle(chip),
+                        systemImage: chip.systemImage,
+                        isActive: filter.activeChips.contains(chip)
+                    ) {
                         filter.toggle(chip)
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: filter.activeChips.contains(chip) ? "checkmark.circle.fill" : chip.systemImage)
-                                .font(.caption)
-                            Text(chipTitle(chip))
-                                .font(.caption.weight(.medium))
-                                .lineLimit(1)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(filter.activeChips.contains(chip) ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.08))
-                        .foregroundStyle(filter.activeChips.contains(chip) ? Color.accentColor : Color.primary)
-                        .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }

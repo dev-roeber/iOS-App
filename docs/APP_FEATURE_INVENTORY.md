@@ -281,6 +281,7 @@ Present:
 - demo support loads bundled golden fixtures through the same app-support layer
 - App Groups Entitlements (`com.apple.security.application-groups: group.de.roeber.LH2GPXWrapper`) in `LH2GPXWrapper.entitlements` und `LH2GPXWidget.entitlements`; `WidgetDataStore` nutzt App-Group-UserDefaults fuer Datenaustausch zwischen App und Widget-Extension
 - Widget-/Live-Activity-Texte laufen ueber `WidgetLocalizedStrings`; bevorzugte Sprache kommt aus der via App Group gespiegelten `AppLanguagePreference`, mit Geraetesprache als Fallback
+- `LH2GPXTheme` (2026-04-30): zentrales Design-System mit Color-Tokens und UI-Bausteinen; konsolidiert card/chip/metric/banner Patterns aus `AppLiveTrackingView`, `AppDayListView`, `RecentFilesView`, `OverviewPresentation` in benannte Tokens und wiederverwendbare SwiftUI-Komponenten (`LHStatusChip`, `LHMetricCard`, `LHInsightBanner`, `LHFilterChip`, `LHSectionHeader`, `View.cardChrome()`)
 
 Not present:
 - analytics / telemetry

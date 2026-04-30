@@ -1,5 +1,52 @@
 # CHANGELOG
 
+## [2026-04-30] — feat: LH2GPX Design-System (Theme-Tokens + UI-Bausteine)
+
+### Neu: `LH2GPXTheme.swift`
+
+Zentrales Design-System in `Sources/LocationHistoryConsumerAppSupport/LH2GPXTheme.swift`:
+
+**Color Tokens (LH2GPXTheme):**
+- Kartenoberfläche: `card`, `elevatedCard`, `cardBorder`, `cardShadow`, `separator`, `chipBackground`
+- Semantische Aktionsfarben: `primaryBlue`, `liveMint`, `successGreen`, `warningOrange`, `dangerRed`, `favoriteYellow`, `insightPurple`, `routeOrange`, `distancePurple`
+- Texthierarchie: `textPrimary`, `textSecondary`, `textTertiary`
+
+**Wiederverwendbare UI-Bausteine:**
+- `View.cardChrome()` — Standard-Kartenoberfläche (Padding, Fill, Hairline-Border, Shadow); ersetzt die private Extension aus `AppLiveTrackingView`
+- `LHSectionHeader` — Abschnittstitel mit optionalem Subtitle
+- `LHStatusChip` — Kompakter Capsule-Chip für Status-Labels (Recording / Upload / Permission)
+- `LHMetricCard` — Linksbündige Metrikkachel (Icon + Label + Wert) für 2-Spalten-Grids
+- `LHInsightBanner` — Informations-/Guidance-Banner mit Icon, Titel, Beschreibung
+- `LHFilterChip` — Toggle-Capsule für Filterbars
+
+### Migrierte Stellen
+
+**`AppLiveTrackingView.swift`:**
+- Private `cardChrome()` Extension entfernt → nutzt jetzt `LH2GPXTheme.View.cardChrome()`
+- Private `statusChip()` entfernt → alle Call-Sites verwenden `LHStatusChip`
+- Private `statCard()` entfernt → alle Call-Sites verwenden `LHMetricCard`
+- Private `insightBanner()` entfernt → alle Call-Sites verwenden `LHInsightBanner`
+- Betroffen: `statusChips`, `recordingSection` (8 Metrikkacheln), `uploadSection` (6 Metrikkacheln + Chip + 2 Banner), `savedTracksSection` (1 Banner), `advancedSection` (1 Banner)
+
+**`AppDayListView.swift` (`AppDayFilterChipsView`):**
+- Button-Chip-Body durch `LHFilterChip` ersetzt; gleiche Visuals, zentralisierte Token-Nutzung
+
+**`RecentFilesView.swift`:**
+- Hintergrund von `Color.secondary.opacity(0.07)` auf `LH2GPXTheme.card` migriert
+- Hairline-Border (`LH2GPXTheme.cardBorder`) ergänzt — passt zur Card-Sprache im Rest der App
+
+**`OverviewPresentation.swift` (`OverviewStatAccent.swiftUIColor`):**
+- Hardcodierte `.blue`, `.purple`, `.green`, `.orange` → `LH2GPXTheme.primaryBlue` etc.
+
+### Nicht geändert
+- Keine Business-Logik, kein Presentation-Modell, keine Map-Logik
+- Widget / Dynamic Island: nicht angefasst (System-Farben, kein rein-sicherer Token-Pfad)
+- Kein komplettes Redesign; Farbidentität und Abstände sind unverändert
+
+### Checks
+- `swift test`: 667 Tests, 0 Failures
+- `git diff --check`: kein Whitespace-Fehler
+
 ## [2026-04-30] — docs: GitHub Pages live verifiziert und Screenshot-Assets repo-wahr dokumentiert
 
 ### Geprüft und dokumentiert
