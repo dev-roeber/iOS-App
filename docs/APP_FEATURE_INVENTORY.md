@@ -1,9 +1,9 @@
 # APP Feature Inventory
 
-Last analysis: 2026-04-12
+Last analysis: 2026-04-30
 
 Repos in scope:
-- `LocationHistory2GPX-Monorepo`: verified in this workspace
+- `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper
 
 Governance:
 - Only document what is verifiable in repo/app.
@@ -22,7 +22,7 @@ Present:
 - modal sheets exist for `Options`, `Export` (regular width), `Heatmap` and the recorded-tracks library
 - the recorded-tracks library is directly reachable from Overview, the shared `Actions` menu and the live-recording area in day detail
 - a separate SwiftUI demo app exists beside the product shell
-- Deep Link `lh2gpx://live`: URL schema `lh2gpx://` via `CFBundleURLTypes` in `Info.plist` registriert; `onOpenURL`-Handler in `ContentView` leitet zu `handleDeepLink()`; `LiveLocationFeatureModel.navigateToLiveTabRequested` triggert `AppContentSplitView`-Observer, der `selectedTab = 3` (Live-Tab) setzt
+- Deep Link `lh2gpx://live`: URL schema `lh2gpx://` via `CFBundleURLTypes` in `Info.plist` registriert; `onOpenURL`-Handler in `ContentView` leitet zu `handleDeepLink()`; `LiveLocationFeatureModel.navigateToLiveTabRequested` triggert `AppContentSplitView`-Observer, der auf compact iPhone den dedizierten `Live`-Tab auswaehlt
 
 Not present:
 - dedicated onboarding flow or walkthrough
@@ -95,7 +95,7 @@ Present:
 - search, filter chips, favorites and newest-first ordering apply correctly on the range-projected day list
 
 Not present:
-- favorites, pinning or manual sorting
+- manual sorting beyond the repo-wahr fixed newest-first order
 - filter chips for activity types / semantic types directly in the list
 
 ## 5. Day Detail
@@ -235,7 +235,7 @@ Present:
 - export mode picker for `Tracks`, `Waypoints` and `Both`
 - export preview map for the current selection with route and waypoint context
 - system `fileExporter` flow
-- GPX, KML, GeoJSON and CSV generation from selected imported days and selected saved live tracks
+- GPX, KMZ, KML, GeoJSON and CSV generation from selected imported days and selected saved live tracks
 - waypoint export from imported visits plus activity start/end coordinates
 - suggested export filename based on selected days, saved tracks and the active format
 - export summary card with selected source count, route/waypoint count, distance total and filename preview
@@ -244,10 +244,9 @@ Present:
 - day-detail route subset selections flow into export summary, distance totals and exported imported-day content
 
 Bewusst deaktiviert, aber vorhanden:
-- export architecture can still grow beyond the active `GPX`/`KML`/`GeoJSON`/`CSV` formats
+- export architecture can still grow beyond the active `GPX`/`KMZ`/`KML`/`GeoJSON`/`CSV` formats
 
 Not present:
-- KMZ export in the app UI
 - cloud sync or account-backed sharing
 
 ## 10. Fehlerzustände / Leerzustände / Status-UI

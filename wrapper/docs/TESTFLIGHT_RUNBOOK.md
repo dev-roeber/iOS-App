@@ -26,7 +26,7 @@ Stand: 2026-04-30 | Phase 20
 - Veröffentlichung: manuell
 - auf der Versionsseite sichtbarer Build: `52`
 - Xcode Cloud Workflow `Release – Archive & TestFlight`: erfolgreiche Builds `55`, `56`, `57`
-- offener Pruefpunkt: klaeren, ob Build `52` bewusst fuer Review ausgewaehlt wurde oder ob ein neuerer Build (`57`) nachgereicht werden soll
+- Review-Entscheidung: Build `52` bleibt bewusst in Review; kein Nachreichen eines neueren Builds ohne Apple-Feedback oder bestaetigten release-kritischen Fehler
 - Review ist damit nicht mehr durch fehlenden Upload blockiert
 - Live Activity / Dynamic Island bleibt fuer App-Review-Risiko trotzdem nur partiell hardware-verifiziert
 

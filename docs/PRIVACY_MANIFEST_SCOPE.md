@@ -1,6 +1,6 @@
 # Privacy Manifest Scope
 
-Stand: 2026-04-01 | Monorepo-Audit auf Linux-Host
+Stand: 2026-04-30 | historischer Privacy-Scope-Snapshot, repo-wahr nachgezogen
 
 ---
 
@@ -165,7 +165,8 @@ Noch offen — erfordert Developer Account oder Apple-Store-Review:
 | Upload HTTPS-only | ✅ belastbar | Code (endpointURL-Getter) |
 | Bearer-Token im Keychain | ✅ belastbar | Code (AppPreferences, KeychainHelper) |
 | Kein Hardcode-Endpunkt | ✅ belastbar | Code (defaultTestEndpointURLString = "") |
-| NSPrivacyCollectedDataTypes vollständig | ⚠️ offen | benötigt Apple-Host / Store-Review |
+| NSPrivacyCollectedDataTypes im Manifest eingetragen | ✅ belastbar | PrivacyInfo.xcprivacy |
+| Apple-Review-Einordnung dieser Deklaration | ⚠️ offen | benötigt Apple-Feedback / Store-Review |
 | ZIPFoundation-Manifest-Compliance | ⚠️ offen | benötigt Apple-Host / xcodebuild |
 | Datenschutzrichtlinien-URL | ❌ fehlt | App Store Connect |
 | Support-URL | ❌ fehlt | App Store Connect |

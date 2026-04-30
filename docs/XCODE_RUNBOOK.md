@@ -41,7 +41,7 @@ oder den aktiven Developer Directory lokal auf Xcode umstellen.
 Der vorgesehene Einstieg bleibt das Swift Package, nicht ein separates `.xcodeproj`.
 
 ```bash
-cd ~/Desktop/XCODE/iOS-App
+cd /Users/sebastian/iOS-App
 open Package.swift
 ```
 
@@ -84,7 +84,7 @@ Erwarteter Startzustand:
 - Titel `Import your location history`
 - primaerer Button `Open location history file`
 - sekundaerer Button `Load Demo Data`
-- noch keine Persistenz oder Dateihistorie
+- optional sichtbare Recent Files / Clear-History-Aktionen, wenn bereits Imports vorliegen; Auto-Restore bleibt opt-in
 
 ## Demo-Daten in der App-Shell pruefen
 
@@ -211,9 +211,9 @@ Frischer Host-Truth (2026-04-29) — macOS, Xcode 26.3, iPhone 15 Pro Max (ios 2
 
 ASC-Truth (2026-04-30):
 - `LH2GPX` Version `1.0` ist in App Store Connect eingereicht und steht auf `Warten auf Prüfung`
-- auf der Versionsseite ist Build `52` sichtbar
+- auf der Versionsseite ist bewusst Build `52` sichtbar
 - der Xcode-Cloud-Workflow `Release – Archive & TestFlight` zeigt erfolgreiche Builds `55`, `56`, `57`
-- daraus folgt kein automatischer Repo-Claim, welcher Build der richtige Review-Kandidat ist; das muss in ASC bewusst geprueft werden
+- Review-Entscheidung: Build `52` bleibt in App Review; kein Nachreichen von `57` ohne Apple-Feedback oder bestaetigten release-kritischen Fehler
 - App Review ist nicht mehr am Upload-Schritt blockiert, aber fuer Live Activity / Dynamic Island weiter nicht voll hardware-verifiziert
 
 Frischer Host-Truth (2026-03-31, historisch):
@@ -297,7 +297,7 @@ Nicht separat als eigener Nachweis festgehalten:
 
 - kein `.xcodeproj`, nur Swift Package
 - keine Signierung, keine Distribution, keine Entitlements-Arbeit
-- kein Cloud-/Account-Sync fuer importierte History; optionaler Server-Upload bleibt davon getrennt und ist hier nicht neu auf Apple-Hardware verifiziert
-- keine hardware-verifizierte Background-Recording-Session und kein Auto-Resume laufender Live-Tracks
+- kein Cloud-/Account-Sync fuer importierte History; optionaler Server-Upload bleibt davon getrennt und ist hier nicht abschliessend Apple-review-verifiziert
+- kein Auto-Resume laufender Live-Tracks; Background-Recording wurde historisch auf echter Apple-Hardware verifiziert, ist aber nicht fuer alle heutigen Review-Pfade erneut vollstaendig nachgewiesen
 - keine frische Apple-Verifikation fuer das spaeter hinzugekommene Heatmap-Sheet inklusive der neuen lokalen UX-Controls und des spaeter nachgezogenen Aggregations-/Polygon-Renderers, den dedizierten `Live`-Tab oder Upload-Batching/Upload-Status
 - Apple-Verifikation ersetzt nicht `swift test`, und `swift test` ersetzt keinen echten Apple-UI-Lauf

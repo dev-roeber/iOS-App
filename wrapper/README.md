@@ -40,7 +40,7 @@ Genutzte Produkte:
 
 - **Bundle Identifier:** `de.roeber.LH2GPXWrapper`
 - **Display Name:** LH2GPX
-- **Version:** 1.0 (lokaler Projektstand Build 45; zuletzt dokumentierter TestFlight-Build: 1.0 (44))
+- **Version:** 1.0 (lokaler Projektstand Build 45; App Store Connect Version `1.0` steht auf `Warten auf Prüfung` mit bewusstem Review-Build `52`; Xcode Cloud hat zusaetzlich erfolgreiche Builds `55` bis `57`)
 - **Deployment Target:** iOS 16.0 (App) / iOS 16.2 (Widget)
 - **Signing:** Automatic (Team XAGR3K7XDJ); lokaler Release-Archive-Pfad baut derzeit mit `Apple Development`, weil auf diesem Host keine Distribution-Identitaet verfuegbar ist
 - **App Icon:** Map-Pin + "LH2GPX", 1024x1024 (Interims-Design, kein Gradient-Placeholder mehr)
@@ -128,13 +128,13 @@ Vollstaendiges Device-Runbook: `docs/LOCAL_IPHONE_RUNBOOK.md`
 
 iPad: bewusst spaeter.
 
-## TestFlight + App Store Readiness (Phase 20 – extern geparkt)
+## TestFlight + App Store Readiness
 
 Lokal verifiziert (2026-04-30):
 - `xcodebuild archive` erfolgreich (`1.0 (45)`)
 - `PrivacyInfo.xcprivacy` deklariert UserDefaults-Zugriff (CA92.1) und `PreciseLocation` fuer den optionalen Live-Upload
 
-Offen (Stand 2026-03-31):
+Offen:
 - Apple-Review-Scope fuer die inzwischen eingetragene `PreciseLocation`-Deklaration des optionalen Server-Uploads bleibt ungeklaert
 - App Review Guidelines 5.1.1 (Data Collection) und 5.1.2 (Privacy Manifests): teilweise – kein abschliessender Nachweis der Konformitaet fuer den Upload-Pfad
 - ein manueller Xcode-Start auf dem verbundenen iPhone bleibt ein positiver Teilbefund, ist aber bewusst getrennt von den CLI-Build-/Test-Ergebnissen zu lesen
@@ -151,7 +151,12 @@ Lokal abgeschlossen (2026-04-29):
 - `ITSAppUsesNonExemptEncryption = false`: in App + Widget Info.plist gesetzt
 - iPad: fuer v1 aktuell nicht im Release-Build vorgesehen (`TARGETED_DEVICE_FAMILY = 1`); iPad-Screenshots sind deshalb nicht erforderlich
 
-Bewusst geparkt (ASC-Zugang erforderlich):
+Aktueller ASC-Truth:
+- Version `1.0` ist eingereicht und steht auf `Warten auf Prüfung`
+- Build `52` bleibt bewusst in Review
+- Builds `55`, `56`, `57` sind in Xcode Cloud erfolgreich, werden aber ohne Apple-Feedback oder bestaetigten release-kritischen Fehler nicht nachgereicht
+
+Weiterhin manuell / ASC-abhaengig:
 - App Store Connect Projekt anlegen
 - Screenshots in ASC hochladen (`iphone-67/`-Slot: 6.7-inch Display)
 - Privacy URL eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html`
@@ -171,8 +176,6 @@ Vollstaendiger Submission-Leitfaden: `docs/TESTFLIGHT_RUNBOOK.md`
 
 ## Roadmap
 
-Die vollstaendige Delivery-Roadmap liegt jetzt identisch in beiden Repos:
-- [ROADMAP.md](/home/sebastian/repos/LH2GPXWrapper/ROADMAP.md)
-- [NEXT_STEPS.md](/home/sebastian/repos/LH2GPXWrapper/NEXT_STEPS.md)
-
-Diese Dateien muessen zwischen Core-Repo und Wrapper-Repo inhaltlich synchron gehalten werden.
+Die kanonischen Planungsdateien liegen im Root dieses aktiven Repos:
+- [ROADMAP.md](/Users/sebastian/iOS-App/ROADMAP.md)
+- [NEXT_STEPS.md](/Users/sebastian/iOS-App/NEXT_STEPS.md)

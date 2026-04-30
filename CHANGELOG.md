@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [2026-04-30] — docs: roadmap and review truth sync
+
+### Geaendert
+- `AGENTS.md`, `README.md`, `NEXT_STEPS.md`, `ROADMAP.md` und Apple-/Wrapper-Runbooks auf den aktuellen Repo- und ASC-Truth gezogen
+- `NEXT_STEPS.md` von historischer Mischliste auf echte offene P0/P1/P2-Arbeit reduziert
+- App-Store-Review-Entscheidung repo-wahr nachgezogen: Build `52` bleibt bewusst in Review; Build `57` wird nicht ohne Apple-Feedback oder bestaetigten release-kritischen Fehler nachgereicht
+- veraltete Aussagen zu aktivem Repo, Split-Repos, Teststand, Xcode-Cloud-Buildnummer und Wrapper-Roadmap-Pfaden bereinigt
+
+### Verifiziert
+- `swift test`
+- `git diff --check`
+- `xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build`
+
+### Bewusst nicht behauptet
+- kein Claim, dass App Review bestanden ist
+- keine neue echte Hardware-Verifikation fuer Lock Screen, `minimal`, weitere Primärwerte oder Homescreen-Widget
+
 ## [2026-04-30] — docs: App Store Connect review status truth sync
 
 ### Geaendert

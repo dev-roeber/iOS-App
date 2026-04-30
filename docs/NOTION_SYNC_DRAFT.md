@@ -1,6 +1,6 @@
 # LH2GPX iOS-App — Notion Sync Draft
-*Stand: 2026-04-12 | Quelle: Repo-Truth (Notion MCP war nicht verfügbar)*
-*Direkt nach Notion übertragbar als To-do-Seite*
+*Historischer Snapshot vom 2026-04-12 — nicht mehr kanonisch.*
+*Aktueller Repo-Truth steht in `README.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `CHANGELOG.md` und den Apple-Runbooks.*
 
 ---
 

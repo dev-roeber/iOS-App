@@ -1,6 +1,6 @@
 # Xcode Cloud Runbook
 
-Stand: 2026-04-13
+Stand: 2026-04-30
 
 ## Repo-Struktur (relevant für Xcode Cloud)
 
@@ -49,6 +49,7 @@ App Store Connect konfiguriert werden — keine YAML-Dateien.
 - Apple Developer Account mit Team XAGR3K7XDJ ist aktiv
 - App ID `de.roeber.LH2GPXWrapper` in Developer Portal registriert
 - App Group `group.de.roeber.LH2GPXWrapper` im Developer Portal registriert
+- Der Workflow `Release – Archive & TestFlight` existiert bereits; die Schritte unten sind vor allem Rekonstruktions-/Neuanlage-Hilfe
 
 ### Workflow in Xcode einrichten (einmalig)
 
@@ -77,13 +78,20 @@ App Store Connect konfiguriert werden — keine YAML-Dateien.
    2. **TestFlight (Internal Testing)** — automatisch nach Archive
 5. **Save**
 
-**Projektvoraussetzungen fuer den Release-Pfad (Repo-Truth 2026-04-29):**
+**Projektvoraussetzungen fuer den Release-Pfad (Repo-Truth 2026-04-30):**
 - `LH2GPXWrapper` + `LH2GPXWidget`: `CODE_SIGN_STYLE = Automatic`
 - `DEVELOPMENT_TEAM = XAGR3K7XDJ`
 - keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`
 - keine feste Release-`CODE_SIGN_IDENTITY`
 - Widget-Embed via `CodeSignOnCopy`
-- `CURRENT_PROJECT_VERSION = 28`
+- `CURRENT_PROJECT_VERSION = 45`
+
+### Aktueller ASC-/Cloud-Truth
+
+- App Store Connect zeigt `LH2GPX` Version `1.0` im Status `Warten auf Prüfung`
+- auf der Versionsseite bleibt bewusst Build `52` in Review
+- Xcode Cloud hat erfolgreiche neuere Builds `55`, `56`, `57`
+- ohne Apple-Feedback oder bestaetigten release-kritischen Fehler wird kein neuerer Build proaktiv nachgereicht
 
 ### Wichtig: App Store Connect Pflichtfelder (vor erstem Upload)
 

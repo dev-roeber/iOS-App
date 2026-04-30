@@ -39,7 +39,7 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 - **Veröffentlichung**: manuell
 - **Zur Version sichtbarer Build**: `52`
 - **Xcode Cloud**: Workflow `Release – Archive & TestFlight` zeigt erfolgreiche Builds `55`, `56` und `57`
-- **Offene Pruefung**: klaeren, ob Build `52` bewusst fuer Review ausgewaehlt wurde oder ob Build `57` nachgereicht werden soll
+- **Review-Entscheidung**: Build `52` bleibt bewusst in App Review; kein Nachreichen von Build `57` ohne Apple-Feedback oder bestaetigten release-kritischen Fehler
 - **Upload-Blocker**: App Review ist nicht mehr durch fehlenden Upload blockiert
 - **Hardware-Risiko bleibt**: Live Activity / Dynamic Island nur partiell auf echter Hardware verifiziert
 
@@ -139,7 +139,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden; konfigurierbarer Primärwert (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) + Fallback-Hinweise im Options-Screen implementiert. Partieller Real-Nachweis liegt vor: `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build via `xcodebuild test`) bestaetigt Recording-Start, Dynamic Island `compact` + `expanded` fuer Primärwert `Distanz` sowie Stop-/Dismiss-Verhalten. Offen bleiben Lock Screen, `minimal`, weitere Primärwerte und Fallback-Pfade.
 - **Landscape auf allen Tabs**: kompaktes Landscape-Layout nicht systematisch auf Device verifiziert
 
-#### ❌ weiterhin offen (aktualisiert 2026-04-29, Root Cause bewiesen)
+#### Historischer Incident (nicht aktueller Upload-Blocker)
 
 - **Xcode Cloud Build 34 – Root Cause: NFD/NFC-Normalisierungsmismatch in Designated Requirement**
 
@@ -175,7 +175,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - Apple-Review-Bestaetigung fuer NSPrivacyCollectedDataTypes (optionaler Live-Upload)
 - iPad-Screenshots sind fuer v1 nicht relevant, solange `TARGETED_DEVICE_FAMILY = 1` bleibt; iPad-Support spaeter mit eigenem Test-/Screenshot-Set
 - App-Store-Screenshots in App Store Connect hochladen (`docs/app-store-assets/screenshots/iphone-67/`)
-- Build-Zuordnung in App Store Connect pruefen: Version `1.0` zeigt Build `52`, waehrend Xcode Cloud erfolgreiche Builds `55`, `56`, `57` ausweist; entscheiden, ob `52` bewusst in Review ist oder ob ein neuerer Build nachgereicht werden soll
+- App-Review-Feedback fuer Build `52` beobachten und repo-wahr nachtragen; kein proaktives Nachreichen von `57` ohne neuen harten Grund
 - Live Activity / Dynamic Island auf echter Hardware weiter vervollstaendigen: Lock Screen, `minimal`, weitere Primärwerte und Fallback-Pfade
 
 ---
@@ -193,7 +193,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Xcode Cloud Runbook**: erstellt unter `docs/XCODE_CLOUD_RUNBOOK.md` (inkl. Hinweis auf gültige Skriptnamen)
 - **Xcode Cloud Kompatibilität geprüft**: lokale SPM-Abhängigkeit (`relativePath = ".."`) ist Xcode-Cloud-kompatibel; `PBXFileSystemSynchronizedRootGroup` schließt `PrivacyInfo.xcprivacy` automatisch ein (kein expliziter pbxproj-Eintrag nötig)
 - **Falsche Deployment-Target-Doku behoben**: `TESTFLIGHT_RUNBOOK.md` sagte `iOS 26.2` statt korrekter `16.0 / 16.2`
-- **Veraltete Repo-Pfade bereinigt**: 7 Vorkommen von `~/repos/LocationHistory2GPX-Monorepo` in 4 Dateien → `~/Desktop/XCODE/iOS-App`
+- **Veraltete Repo-Pfade bereinigt**: historische Altpfade wurden auf das aktive Repo `dev-roeber/iOS-App` umgestellt; einzelne alte Kommandopfad-Beispiele unten bleiben nur als Historie stehen
 - **swift test**: 616 Tests, 0 Failures — `xcodebuild generic/platform=iOS`: BUILD SUCCEEDED
 
 #### ⚠️ manuelle Apple-Schritte (blocking für Xcode Cloud Start)

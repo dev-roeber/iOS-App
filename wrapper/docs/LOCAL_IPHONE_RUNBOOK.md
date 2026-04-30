@@ -1,6 +1,6 @@
 # Lokaler iPhone-Betrieb – Runbook
 
-Stand: 2026-04-12
+Stand: 2026-04-30
 
 ---
 
@@ -9,11 +9,10 @@ Stand: 2026-04-12
 Die App lokal auf echten iPhones und im Simulator reproduzierbar starten, testen und verifizieren.
 Dieses Runbook ersetzt keine App-Store-Einreichung – es dient dem lokalen Entwicklungs- und Verifikationsbetrieb.
 
-**Monorepo-Hinweis:** Das Wrapper-Projekt liegt jetzt unter `wrapper/` im Monorepo-Root
-(`LocationHistory2GPX-Monorepo`). Alle `xcodebuild`-Aufrufe verwenden deshalb
+**Repo-Hinweis:** Das Wrapper-Projekt liegt unter `wrapper/` im aktiven Repo `dev-roeber/iOS-App`. Alle `xcodebuild`-Aufrufe verwenden deshalb
 `-project wrapper/LH2GPXWrapper.xcodeproj` vom Monorepo-Root aus.
 
-Wichtig fuer diesen Audit: auf dem aktuellen Linux-Host ist `xcodebuild` nicht verfuegbar. Die Apple-/Simulator-/Device-Befunde unten bleiben deshalb historische Nachweise; der frische verifizierte Host-Nachweis ist Linux-only via `swift test` im aktiven Repo `iOS-App` (`575` Tests, `2` Skips, `0` Failures).
+Wichtig fuer diesen Audit: die Apple-/Simulator-/Device-Befunde unten sind teils historische Nachweise. Der aktuelle repo-weite Mindestnachweis ist `swift test` im aktiven Repo `iOS-App` (`660` Tests, `0` Failures).
 
 iPad-Betrieb kommt spaeter. Dieser Schritt fokussiert iPhone.
 

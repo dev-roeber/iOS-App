@@ -9,12 +9,33 @@
 Repo-wahr dokumentiert:
 - App Store Connect zeigt fuer `LH2GPX` Version `1.0` den Status `Warten auf Prüfung`
 - die Version ist eingereicht; Veröffentlichung bleibt manuell
-- auf der Versionsseite ist aktuell Build `52` sichtbar
+- auf der Versionsseite ist aktuell bewusst Build `52` sichtbar
 - der Xcode-Cloud-Workflow `Release – Archive & TestFlight` hat erfolgreichere neuere Builds `55`, `56` und `57`
 
 Nicht als abgeschlossen markieren:
-- es ist noch zu klaeren, ob Build `52` bewusst fuer Review ausgewaehlt wurde oder ob ein neuerer Build (`57`) nachgereicht werden soll
+- Build `52` bleibt bewusst in Review; Build `57` wird nicht ohne Apple-Feedback oder bestaetigten release-kritischen Fehler nachgereicht
 - App Review ist nicht mehr durch Upload blockiert, aber weiterhin nicht durch vollstaendige Live-Activity-/Dynamic-Island-Hardware-Verifikation abgesichert
+
+### Priorisierte Optimierungs-Roadmap (2026-04-30)
+
+P0 — Release / Review / Hardware-Verifikation
+- Live-Session-Restore gegen Fehl-Persistenz haerten: interrupted-session Status darf nicht schon vor erfolgreichem Recording-Beginn haengen bleiben; denied/restricted und abgelehntes `Always`-Upgrade brauchen Regressionstests
+- App-Review-Fortschritt auf Build `52` beobachten und rueckmelden
+- offene ASC-Metadaten sauber abschliessen: Support-URL, Privacy-URL, Screenshots, GitHub-Pages-Live-Status
+- Live Activity / Dynamic Island auf echter Hardware fuer Lock Screen, `minimal`, weitere Primärwerte und Fallback-Pfade vervollstaendigen
+- grossen echten Device-Smoke-Test fuer Overview-/Explore-Karte dokumentieren
+
+P1 — Vorhandene Produktflaechen belastbar machen
+- Chart-Share auf Apple-Hardware pruefen
+- app-weite Landscape-Verifikation auf Apple-Hardware nachziehen
+- Homescreen-Widget gesondert auf echter Hardware pruefen
+- Simulator-/Host-Testlage fuer `LH2GPXWrapperTests` stabilisieren
+- Track-Editor-/Export-Grenze weiter dokumentieren oder produktseitig spaeter anpassen
+
+P2 — Nachgelagerte Optimierung
+- Apple-Review-/Privacy-Einordnung fuer den optionalen Server-Upload weiter sauber beobachten
+- veraltete Notion-/Wrapper-/Split-Repo-Doku weiter abbauen
+- echtes Road-/Path-Matching nur als spaeteren separaten Produktscope betrachten
 
 ### Dynamic Island / Live Activity Truth Update (2026-04-30)
 
@@ -203,7 +224,7 @@ Der spaetere UI-Polish-/Heatmap-Detail-Batch vom 2026-03-30 staerkt vor allem di
 6. optionalen Server-Upload end-to-end auf Device pruefen; Apple-Review-/Privacy-Einordnung fuer den Upload-Pfad weiter klaeren
 7. erst danach weitere neue Feature-Arbeit (weiterer Insights-Ausbau, KMZ, `Days`-seitige Zeitraumsauswahl)
 
-Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. Phase 21 bleibt fuer spaetere Folgearbeit reserviert.
+Apple-/ASC-/TestFlight-/Release-Themen sind nicht geparkt, sondern bleiben bis zu Apple-Feedback und vollstaendigerer Hardware-Verifikation aktiv. iPad bleibt nachrangig. Phase 21 bleibt fuer spaetere Folgearbeit reserviert.
 
 ### Phase 19.51 – Apple Stabilization Batch 1
 

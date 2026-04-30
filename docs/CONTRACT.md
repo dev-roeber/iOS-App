@@ -92,11 +92,11 @@ Die SwiftUI-Demo in `Sources/LocationHistoryConsumerDemo/` ist nur ein lokaler H
 ## App-Shell
 
 Die kleine App-Shell in `Sources/LocationHistoryConsumerApp/` ist bewusst produktnaeher, aber weiter begrenzt:
-- primaerer Einstieg: lokale LH2GPX- oder Google-Timeline-Datei oeffnen
+- primaerer Einstieg: lokale LH2GPX-, Google-Timeline-, GPX- oder TCX-Datei oeffnen
 - sekundaerer Fallback: Demo-Daten laden
 - gleiche Session-/Content-Typen wie die Demo
-- import-first Leerlaufzustand mit klarer Erklaerung der unterstuetzten lokalen JSON-/ZIP-Dateien
+- import-first Leerlaufzustand mit klarer Erklaerung der unterstuetzten lokalen JSON-/ZIP-/GPX-/TCX-Dateien
 - kompakter Quellen-/Contract-Bereich fuer aktive Quelle, Schema-Version, Exportzeitpunkt, Input-Format und Tagesanzahl
-- klarer Open-/Replace-/Clear-Fluss ohne Persistenz oder Dateiverlauf
+- klarer Open-/Replace-/Clear-Fluss mit Recent Files, Reopen/Clear-History und opt-in Auto-Restore der zuletzt importierten Datei
 - kein Cloud-/Account-Sync fuer importierte History und kein Auto-Resume eines laufenden Live-Tracks nach App-Neustart
 - optionaler nutzergesteuerter Upload betrifft nur akzeptierte Live-Recording-Punkte in `LocationHistoryConsumerAppSupport` und aendert den read-only Consumer-Contract nicht

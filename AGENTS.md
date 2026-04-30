@@ -1,12 +1,13 @@
-# Codex Agent – Projektprofil: LocationHistory2GPX-Monorepo
+# Codex Agent – Projektprofil: iOS-App (LH2GPX)
 
 ## Projektrolle
 
-- Dieses Repo ist ausschliesslich Consumer des stabilen App-Exports aus `LocationHistory2GPX`.
+- Dieses Repo `dev-roeber/iOS-App` ist das zentrale aktive Repository der LH2GPX-iOS-App.
+- Dieses Repo bleibt Consumer des stabilen App-Exports aus `LocationHistory2GPX`.
 - Keine Producer-Verantwortung hierher ziehen.
 - Keine allgemeine Producer-Pipeline fuer Google-Rohdaten hierher ziehen.
 - Der lokal begrenzte Import von Google-Timeline-`location-history.json` / `.zip` in die Consumer-App ist erlaubt.
-- Keine vollstaendige Produkt-App oder neue Produktfeatures in diesem Schritt bauen.
+- Produktive iOS-App-Flaechen in `Sources/` und `wrapper/` sind reale Repo-Wahrheit und duerfen repo-wahr weiterentwickelt werden.
 - Read-only Query-/ViewState-Schicht ist erlaubt, solange sie contract-basiert bleibt.
 - Eine minimale lokale Demo-/Harness-Shell ist erlaubt, solange sie nur Decoder + Query-Layer nutzt.
 - Ein lokaler `app_export.json`-Import in der Demo ist erlaubt, solange er nur den Consumer-Contract laedt und keine Persistenz oder Producer-Logik einfuehrt.
@@ -39,9 +40,9 @@
 - unbekannte additive JSON-Felder tolerieren, aber unbekannte `schema_version` weiter ablehnen
 - Breaking Changes nur mit dokumentierter Contract-Version
 
-## Monorepo-Architektur
+## Repo-Architektur
 
-- Dieses Repo (`LocationHistory2GPX-Monorepo`) ist das primaere integrierte Repo fuer Core Swift Package und Wrapper.
+- Dieses Repo (`iOS-App`) ist das primaere integrierte Repo fuer Core Swift Package und Wrapper.
 - Der Core Swift Package (Decoder, Queries, AppSupport, DemoSupport) liegt im Monorepo-Root (`Package.swift`).
 - Der Xcode-Wrapper liegt unter `wrapper/` im Monorepo-Root.
 - Das Xcode-Projekt referenziert den Core als lokales Swift Package per `relativePath = "../.."` (Monorepo-Root).

@@ -47,7 +47,7 @@ Sources/
   LocationHistoryConsumerDemoSupport/  — Demo-Harness, Golden-Fixture
   LocationHistoryConsumerApp/          — Produkt-App-Einstieg
   LocationHistoryConsumerDemo/         — Demo-Einstieg
-  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 650 Tests, 0 Failures)
+  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 660 Tests, 0 Failures)
 Fixtures/contract/                     — Contract-Fixtures, Golden-JSONs
 wrapper/LH2GPXWrapper.xcodeproj        — Xcode Wrapper (Signing, Bundle, App-Icon)
 docs/                                  — Feature-Inventar, Runbook, Checklisten
@@ -68,8 +68,8 @@ Fuer Apple-komplette Testlaeufe auf macOS mit Xcode:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
-Aktueller Nachweis (macOS, 2026-04-29):
-- `swift test` → `650` Tests, `0` Failures
+Aktueller Nachweis:
+- `swift test` → `660` Tests, `0` Failures
 
 ## Historische Vorstufen
 
@@ -100,4 +100,5 @@ Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weite
 - Historien-Track-Editor: Mutations-Reset bei Import-Wechsel ist implementiert (`validateSource`, 2026-04-14); Export ignoriert Mutations bewusst (AppExport ist immutable, Mutations sind display-only)
 - Export ignoriert Mutations bewusst — gelöschte Routen bleiben im GPX/KMZ-Export (AppExport ist immutable; Mutations sind rein display-only)
 - Apple-Portal-/Signing-/TestFlight-/Device-UI-Themen sind auf diesem macOS-Host nicht voll verifizierbar und werden separat dokumentiert
-- Release-Truth 2026-04-30: lokales `Release`-Archive fuer `LH2GPXWrapper` ist wieder erzeugbar (`1.0 (45)`), aber der Export-/Upload-Pfad zu TestFlight ist auf diesem Host noch blockiert, weil nur `Apple Development` lokal verfuegbar ist und `xcodebuild -exportArchive` deshalb kein Distribution-Zertifikat findet
+- Release-/Review-Truth 2026-04-30: App Store Connect zeigt `LH2GPX` Version `1.0` im Status `Warten auf Prüfung`; zur Version gehoert bewusst Build `52`. Xcode Cloud hat bereits erfolgreiche neuere Builds `55`, `56` und `57`, diese werden aber ohne Apple-Feedback oder bestaetigten release-kritischen Fehler nicht nachgereicht.
+- Lokales `Release`-Archive fuer `LH2GPXWrapper` ist wieder erzeugbar (`1.0 (45)`), aber der Export-/Upload-Pfad zu TestFlight ist auf diesem Host noch blockiert, weil nur `Apple Development` lokal verfuegbar ist und `xcodebuild -exportArchive` deshalb kein Distribution-Zertifikat findet
