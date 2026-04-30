@@ -164,6 +164,7 @@ public struct AppLiveTrackingView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
+                .accessibilityIdentifier("live.interrupted.resume")
 
                 Button(action: {
                     liveLocation.dismissInterruptedSession()

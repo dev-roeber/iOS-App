@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [2026-04-30] — fix: Pending-/Restart-Pfad nach App-Relaunch korrekt abgebildet
+
+### Root Cause
+Nach App-Terminate + Relaunch setzt `restoreInterruptedSessionState()` korrekt `hasInterruptedSession = true`, aber `resetPersistence` loescht den Demo-Content; der Live-Tab war daher nicht sichtbar. Gleichzeitig fehlte dem "Resume recording"-Banner ein `accessibilityIdentifier`, und der UI-Test wartete direkt auf `live.recording.stop`, ohne den Banner zu bestaetigen – das Stop-Element erscheint aber erst, wenn der User explizit "Resume" tappt.
+
+### Fixed
+- `AppLiveTrackingView`: "Resume recording"-Button erhaelt `.accessibilityIdentifier("live.interrupted.resume")` fuer zuverlässige AX-Ansteuerung in UI-Tests
+- `LH2GPXWrapperUITests / runLiveActivityCaptureFlow`: Relaunch-Pfad laedt nach dem Reopen Demo-Daten nach, navigiert zum Live-Tab, tappt `live.interrupted.resume` (mit `allowLocationAccessIfNeeded()`), und wartet erst danach auf `live.recording.stop`
+
+### Tests
+- 4 neue Unit-Tests in `LiveLocationFeatureModelTests`:
+  - `testInterruptedSessionDoesNotAutoResumeRecording` — kein Auto-Resume nach Init mit persistierter Session
+  - `testResumeAfterInterruptedSessionStartsNewRecording` — Dismiss + setRecordingEnabled(true) → isRecording=true
+  - `testPartialDefaultsTimestampOnlyNoInterruptedSession` — nur Timestamp ohne ID → kein falscher interrupted State
+  - `testStopRecordingLeavesNoRestorationState` — Stop raeumt alle Restore-Keys auf
+- `swift test`: 667 Tests, 0 Failures
+- `xcodebuild ... build`: BUILD SUCCEEDED
+- **Echter Device-Rerun (iPhone 15 Pro Max, iOS 26.4): `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart` PASSED (62 s)**
+
 ## [2026-04-30] — docs: real-device Live Activity verification rerun
 
 ### Geaendert

@@ -174,9 +174,9 @@ xcrun xctrace list devices 2>/dev/null | grep -v "Simulator"
 **Live-Activity-Hardware-Rerun (2026-04-30):**
 - Geraet: `iPhone 15 Pro Max` (`iPhone16,2`), iOS `26.4`, per USB verbunden, Developer Mode aktiv
 - `xcodebuild test -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'id=00008130-00163D0A0461401C' -only-testing:LH2GPXWrapperUITests/LH2GPXWrapperUITests/testDeviceSmokeNavigationAndActions`: PASSED
-- `xcodebuild test ... -only-testing:.../testLiveActivityHardwareCaptureDistance -only-testing:.../testLiveActivityHardwareCaptureDuration -only-testing:.../testLiveActivityHardwareCapturePoints -only-testing:.../testLiveActivityHardwareCaptureUploadStatusPendingAndRestart -only-testing:.../testLiveActivityHardwareCaptureUploadStatusFailed`: 4/5 PASSED
-- positiv belegt: echte Capture-Laeufe fuer `Distance`, `Duration`, `Points` und `Upload Status (failed)`; Device-Smoke-Flow inklusive Start/Stop Recording ebenfalls gruen
-- offen / fehlgeschlagen: `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart` scheitert nach Relaunch, weil `live.recording.stop` nicht erneut erscheint; Lock Screen, `minimal`, deaktivierte Live Activities und No-Dynamic-Island-Geraete bleiben offen
+- `xcodebuild test ... -only-testing:.../testLiveActivityHardwareCaptureDistance -only-testing:.../testLiveActivityHardwareCaptureDuration -only-testing:.../testLiveActivityHardwareCapturePoints -only-testing:.../testLiveActivityHardwareCaptureUploadStatusPendingAndRestart -only-testing:.../testLiveActivityHardwareCaptureUploadStatusFailed`: **5/5 PASSED (2026-04-30 nach Bugfix)**
+- positiv belegt: alle 5 Capture-Tests gruen auf `iPhone 15 Pro Max` (`iOS 26.4`); Device-Smoke-Flow inklusive Start/Stop Recording ebenfalls gruen
+- offen: Lock Screen, `minimal`, deaktivierte Live Activities und No-Dynamic-Island-Geraete
 
 Befunde in dieses Runbook als Tabelle nachtragen.
 

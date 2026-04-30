@@ -21,7 +21,7 @@ Nicht als abgeschlossen markieren:
 P0 — Release / Review / Hardware-Verifikation
 - App-Review-Fortschritt auf Build `52` beobachten und rueckmelden
 - offene ASC-Metadaten sauber abschliessen: Support-URL, Privacy-URL, Screenshots, GitHub-Pages-Live-Status
-- Live Activity / Dynamic Island auf echter Hardware fuer Lock Screen, `minimal`, deaktivierte / nicht verfuegbare Live Activities, No-Dynamic-Island-Geraete und den Pending-/Restart-Pfad vervollstaendigen
+- Live Activity / Dynamic Island auf echter Hardware fuer Lock Screen, `minimal`, deaktivierte / nicht verfuegbare Live Activities und No-Dynamic-Island-Geraete vervollstaendigen (Pending-/Restart-Pfad gruen seit 2026-04-30)
 - grossen echten Device-Smoke-Test fuer Overview-/Explore-Karte dokumentieren
 
 P1 — Vorhandene Produktflaechen belastbar machen
@@ -49,7 +49,7 @@ Auf echter Hardware bestaetigt:
 - `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build via `xcodebuild test`): Recording-Start, Dynamic Island `compact` fuer Primärwert `Distanz`, Dynamic Island `expanded` fuer Primärwert `Distanz`, Stop-/Dismiss-Verhalten nach Aufnahmeende
 
 Nicht als abgeschlossen markieren:
-- echte Apple-Hardware-Verifikation fuer Live Activity / Dynamic Island bleibt teilweise offen: Lock Screen, `minimal`, deaktivierte / nicht verfuegbare Live Activities, No-Dynamic-Island-Geraete und der Pending-/Restart-Pfad fuer `Upload-Status` sind noch nicht repo-wahr bestaetigt
+- echte Apple-Hardware-Verifikation fuer Live Activity / Dynamic Island bleibt teilweise offen: Lock Screen, `minimal`, deaktivierte / nicht verfuegbare Live Activities und No-Dynamic-Island-Geraete sind noch nicht repo-wahr bestaetigt; Pending-/Restart-Pfad gruen seit 2026-04-30
 - Wrapper-Simulator-Testlauf war auf diesem Host nicht belastbar abschliessbar (`NSMachErrorDomain Code=-308`)
 
 ### Live-Session-Restore Truth Update (2026-04-30)

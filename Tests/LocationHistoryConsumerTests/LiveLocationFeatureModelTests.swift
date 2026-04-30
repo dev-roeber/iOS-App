@@ -754,7 +754,79 @@ final class LiveLocationFeatureModelTests: XCTestCase {
         }
     }
 
-    private func makeIsolatedUserDefaults() -> UserDefaults {
+    // MARK: - Interrupted Session: No Auto-Resume / Resume Flow
+
+    func testInterruptedSessionDoesNotAutoResumeRecording() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            defaults.set(UUID().uuidString, forKey: "live.session.id")
+            defaults.set(Date().timeIntervalSince1970, forKey: "live.session.startedAt")
+
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            XCTAssertTrue(model.hasInterruptedSession)
+            XCTAssertFalse(model.isRecording)
+            XCTAssertEqual(client.startUpdatingLocationCallCount, 0)
+        }
+    }
+
+    func testResumeAfterInterruptedSessionStartsNewRecording() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            defaults.set(UUID().uuidString, forKey: "live.session.id")
+            defaults.set(Date().timeIntervalSince1970, forKey: "live.session.startedAt")
+
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+            XCTAssertTrue(model.hasInterruptedSession)
+
+            model.dismissInterruptedSession()
+            model.setRecordingEnabled(true)
+
+            XCTAssertFalse(model.hasInterruptedSession)
+            XCTAssertTrue(model.isRecording)
+            XCTAssertEqual(client.startUpdatingLocationCallCount, 1)
+        }
+    }
+
+    func testPartialDefaultsTimestampOnlyNoInterruptedSession() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            defaults.set(Date().timeIntervalSince1970, forKey: "live.session.startedAt")
+
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            XCTAssertFalse(model.hasInterruptedSession)
+            XCTAssertFalse(model.isRecording)
+            XCTAssertNil(defaults.object(forKey: "live.session.startedAt"))
+        }
+    }
+
+    func testStopRecordingLeavesNoRestorationState() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            model.setRecordingEnabled(true)
+            XCTAssertTrue(model.isRecording)
+
+            model.setRecordingEnabled(false)
+
+            XCTAssertFalse(model.isRecording)
+            XCTAssertFalse(model.hasInterruptedSession)
+            XCTAssertNil(defaults.string(forKey: "live.session.id"))
+            XCTAssertNil(defaults.object(forKey: "live.session.startedAt"))
+        }
+    }
+
+        private func makeIsolatedUserDefaults() -> UserDefaults {
         let suiteName = "test.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         return defaults

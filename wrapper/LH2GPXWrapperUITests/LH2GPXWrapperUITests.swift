@@ -348,6 +348,23 @@ final class LH2GPXWrapperUITests: XCTestCase {
             reopenAppFromSpringboardIfNeeded()
             RunLoop.current.run(until: Date().addingTimeInterval(3.0))
             attach(screenshot(app), name: "\(screenshotPrefix)-05-after-relaunch")
+
+            // resetPersistence cleared session content on relaunch; reload demo data and navigate to Live tab.
+            let demoButtonAfterRelaunch = app.buttons["Load Demo Data"]
+            XCTAssertTrue(demoButtonAfterRelaunch.waitForExistence(timeout: 8), "Load Demo Data button not found after relaunch")
+            demoButtonAfterRelaunch.tap()
+
+            let liveTabAfterRelaunch = app.tabBars.buttons["Live"]
+            XCTAssertTrue(liveTabAfterRelaunch.waitForExistence(timeout: 10), "Live tab not found after relaunch")
+            liveTabAfterRelaunch.tap()
+
+            // Interrupted session banner must be visible; tap Resume to restart recording.
+            let resumeButton = app.buttons["live.interrupted.resume"]
+            XCTAssertTrue(resumeButton.waitForExistence(timeout: 10), "Interrupted session resume button not found after relaunch")
+            resumeButton.tap()
+            allowLocationAccessIfNeeded()
+            RunLoop.current.run(until: Date().addingTimeInterval(2.0))
+            attach(screenshot(app), name: "\(screenshotPrefix)-06-after-resume")
         } else {
             reopenAppFromSpringboardIfNeeded()
         }

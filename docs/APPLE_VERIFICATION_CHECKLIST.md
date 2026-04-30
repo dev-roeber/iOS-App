@@ -136,9 +136,9 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Days-Tab**: Day-Detail + Day-Map auf Gerät interaktiv prüfen (im UITest nur als Demo-Nebeneffekt belegt)
 - **Historien-Track-Editor**: Route entfernen, App-Neustart, Mutation prüfen — nicht automatisiert prüfbar
 - **Widget auf Homescreen/Lockscreen**: Widget Target baut, aber Pinnbar-Test erfordert manuelle Homescreen-Interaktion
-- **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden; konfigurierbarer Primärwert (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) + Fallback-Hinweise im Options-Screen implementiert. Echter Device-Rerun auf `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build via `xcodebuild test`) liegt jetzt fuer folgende Pfade vor: Smoke-Test gruen, Capture-Tests fuer `Distanz`, `Dauer`, `Punkte` und `Upload-Status (failed)` gruen, jeweils inklusive In-App-, Home-/compact-, Expanded-Attempt- und Stop-Capture. Offen bleiben Lock Screen, `minimal`, deaktivierte Live Activities, No-Dynamic-Island-Geraete sowie der Pending-/Restart-Pfad.
+- **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden; konfigurierbarer Primärwert (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) + Fallback-Hinweise im Options-Screen implementiert. Echter Device-Rerun auf `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build via `xcodebuild test`) liegt jetzt fuer folgende Pfade vor: Smoke-Test gruen, Capture-Tests fuer `Distanz`, `Dauer`, `Punkte` und `Upload-Status (failed)` gruen, jeweils inklusive In-App-, Home-/compact-, Expanded-Attempt- und Stop-Capture. Offen bleiben Lock Screen, `minimal`, deaktivierte Live Activities und No-Dynamic-Island-Geraete.
 - **Live-Session-Restore**: Fehl-Persistenz fuer unterbrochene Sessions ist per Codefix + Regressionstests gehaertet; daraus wird bewusst kein neuer Hardware-Claim abgeleitet. Offene Hardware-Verifikation fuer Live Activity / Dynamic Island bleibt unveraendert.
-- **Aktueller Device-Status (2026-04-30)**: Der fruehere Trust-Blocker fuer `de.roeber.LH2GPXWrapper.UITests.xctrunner` ist fuer das verbundene `iPhone 15 Pro Max` manuell behoben; echte Device-Laeufe sind wieder moeglich. Der aktuell verbleibende echte Hardware-Befund ist fachlich, nicht infrastrukturell: `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart` scheitert nach Relaunch, weil `live.recording.stop` nicht wieder erscheint. Lock Screen, `minimal`, deaktivierte Live Activities und No-Dynamic-Island-Geraete bleiben weiterhin ohne neuen echten Nachweis offen.
+- **Aktueller Device-Status (2026-04-30)**: Der fruehere Trust-Blocker fuer `de.roeber.LH2GPXWrapper.UITests.xctrunner` ist fuer das verbundene `iPhone 15 Pro Max` manuell behoben; echte Device-Laeufe sind wieder moeglich. Alle 5 Live-Activity-Capture-Tests sind auf echter Hardware gruen (2026-04-30). Lock Screen, `minimal`, deaktivierte Live Activities und No-Dynamic-Island-Geraete bleiben weiterhin ohne neuen echten Nachweis offen.
 - **Landscape auf allen Tabs**: kompaktes Landscape-Layout nicht systematisch auf Device verifiziert
 
 #### Historischer Incident (nicht aktueller Upload-Blocker)
@@ -247,7 +247,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (iOS 26.3), iPhone Air (iO
   - `testLiveActivityHardwareCaptureDuration`: PASSED
   - `testLiveActivityHardwareCapturePoints`: PASSED
   - `testLiveActivityHardwareCaptureUploadStatusFailed`: PASSED
-  - `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart`: FAILED nach Relaunch; `live.recording.stop` erschien nicht erneut
+  - `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart`: PASSED (2026-04-30, nach Bugfix; 62 s)
 - Wrapper-Auto-Restore mit deterministischem Launch-Reset via `LH2GPX_UI_TESTING` + `LH2GPX_RESET_PERSISTENCE` verifiziert
 - Signing/Bundle Identifier/Provisioning: ohne Fehler fuer Device-Build und Archiv
 - **Background-Recording auf echtem iPhone: auf realem Gerät verifiziert (2026-04-02)** — Permission-Upgrade auf Always, Aufnahme im Hintergrund, Stop/Persistenz auf echtem Device geprüft und bestätigt
