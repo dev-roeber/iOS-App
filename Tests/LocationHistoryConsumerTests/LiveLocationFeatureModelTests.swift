@@ -593,7 +593,7 @@ final class LiveLocationFeatureModelTests: XCTestCase {
         }
     }
 
-    func testHasInterruptedSessionTrueWhenSessionIDExistsInDefaults() {
+    func testHasInterruptedSessionFalseWhenSessionTimestampMissing() {
         MainActor.assumeIsolated {
             let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
             let store = InMemoryRecordedTrackStore()
@@ -602,7 +602,10 @@ final class LiveLocationFeatureModelTests: XCTestCase {
 
             let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
 
-            XCTAssertTrue(model.hasInterruptedSession)
+            XCTAssertFalse(model.hasInterruptedSession)
+            XCTAssertNil(model.sessionID)
+            XCTAssertNil(model.sessionStartedAt)
+            XCTAssertNil(defaults.string(forKey: "live.session.id"))
         }
     }
 
@@ -640,6 +643,23 @@ final class LiveLocationFeatureModelTests: XCTestCase {
         }
     }
 
+    func testDeniedRecordingStartDoesNotPersistInterruptedSessionState() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .denied)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            model.setRecordingEnabled(true)
+
+            XCTAssertFalse(model.hasInterruptedSession)
+            XCTAssertNil(model.sessionID)
+            XCTAssertNil(model.sessionStartedAt)
+            XCTAssertNil(defaults.string(forKey: "live.session.id"))
+            XCTAssertNil(defaults.object(forKey: "live.session.startedAt"))
+        }
+    }
+
     func testSessionIDClearedOnRecordingStop() {
         MainActor.assumeIsolated {
             let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
@@ -673,6 +693,8 @@ final class LiveLocationFeatureModelTests: XCTestCase {
             model.dismissInterruptedSession()
 
             XCTAssertFalse(model.hasInterruptedSession)
+            XCTAssertNil(model.sessionID)
+            XCTAssertNil(model.sessionStartedAt)
             XCTAssertNil(defaults.string(forKey: "live.session.id"))
             XCTAssertNil(defaults.object(forKey: "live.session.startedAt"))
         }
@@ -684,6 +706,7 @@ final class LiveLocationFeatureModelTests: XCTestCase {
             let store = InMemoryRecordedTrackStore()
             let defaults = makeIsolatedUserDefaults()
             defaults.set(UUID().uuidString, forKey: "live.session.id")
+            defaults.set(Date().timeIntervalSince1970, forKey: "live.session.startedAt")
 
             let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
             XCTAssertTrue(model.hasInterruptedSession)
@@ -692,6 +715,42 @@ final class LiveLocationFeatureModelTests: XCTestCase {
 
             XCTAssertFalse(model.hasInterruptedSession)
             XCTAssertTrue(model.isRecording)
+        }
+    }
+
+    func testInterruptedSessionRequiresValidSessionIDAndTimestamp() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            defaults.set("not-a-uuid", forKey: "live.session.id")
+            defaults.set(Date().timeIntervalSince1970, forKey: "live.session.startedAt")
+
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            XCTAssertFalse(model.hasInterruptedSession)
+            XCTAssertNil(model.sessionID)
+            XCTAssertNil(model.sessionStartedAt)
+            XCTAssertNil(defaults.string(forKey: "live.session.id"))
+            XCTAssertNil(defaults.object(forKey: "live.session.startedAt"))
+        }
+    }
+
+    func testInterruptedSessionRejectsInvalidTimestampValues() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            let defaults = makeIsolatedUserDefaults()
+            defaults.set(UUID().uuidString, forKey: "live.session.id")
+            defaults.set(0, forKey: "live.session.startedAt")
+
+            let model = LiveLocationFeatureModel(client: client, store: store, userDefaults: defaults)
+
+            XCTAssertFalse(model.hasInterruptedSession)
+            XCTAssertNil(model.sessionID)
+            XCTAssertNil(model.sessionStartedAt)
+            XCTAssertNil(defaults.string(forKey: "live.session.id"))
+            XCTAssertNil(defaults.object(forKey: "live.session.startedAt"))
         }
     }
 

@@ -71,12 +71,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
             self.persistenceErrorMessage = "Saved live tracks could not be loaded."
         }
 
-        let restoredSessionID = defaults.string(forKey: Self.sessionIDKey)
-        self.hasInterruptedSession = restoredSessionID != nil
-        if restoredSessionID != nil {
-            let ts = defaults.double(forKey: Self.sessionStartedAtKey)
-            self.sessionStartedAt = ts > 0 ? Date(timeIntervalSince1970: ts) : nil
-        }
+        restoreInterruptedSessionState()
 
         client?.onAuthorizationChange = { [weak self] authorization in
             self?.handleAuthorizationChange(authorization)
@@ -107,12 +102,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
             self.persistenceErrorMessage = "Saved live tracks could not be loaded."
         }
 
-        let restoredSessionID = defaults.string(forKey: Self.sessionIDKey)
-        self.hasInterruptedSession = restoredSessionID != nil
-        if restoredSessionID != nil {
-            let ts = defaults.double(forKey: Self.sessionStartedAtKey)
-            self.sessionStartedAt = ts > 0 ? Date(timeIntervalSince1970: ts) : nil
-        }
+        restoreInterruptedSessionState()
 
         client?.onAuthorizationChange = { [weak self] authorization in
             self?.handleAuthorizationChange(authorization)
@@ -393,9 +383,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
     }
 
     public func dismissInterruptedSession() {
-        hasInterruptedSession = false
-        defaults.removeObject(forKey: Self.sessionStartedAtKey)
-        defaults.removeObject(forKey: Self.sessionIDKey)
+        clearPersistedSessionState()
     }
 
     private func startRecordingFlow() {
@@ -408,12 +396,6 @@ public final class LiveLocationFeatureModel: ObservableObject {
         pendingUploadQueue.removeAll()
         pendingUploadPointCount = 0
 
-        // Persist session for auto-resume detection
-        let now = Date()
-        sessionStartedAt = now
-        sessionID = currentRecordingSessionID
-        defaults.set(now.timeIntervalSince1970, forKey: Self.sessionStartedAtKey)
-        defaults.set(currentRecordingSessionID.uuidString, forKey: Self.sessionIDKey)
         hasInterruptedSession = false
         if serverUploadConfiguration.isEnabled, serverUploadConfiguration.endpointURL != nil {
             serverUploadStatusMessage = "Server upload ready for \(serverUploadConfiguration.endpointDisplayName)."
@@ -421,6 +403,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
 
         guard let client else {
             authorization = .restricted
+            clearPersistedSessionState()
             transition(to: .failedAuthorization)
             return
         }
@@ -445,6 +428,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
             transition(to: .requestingWhenInUse)
             client.requestWhenInUseAuthorization()
         case .restricted, .denied:
+            clearPersistedSessionState()
             transition(to: .failedAuthorization)
         }
     }
@@ -457,11 +441,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
         schedulePendingUploadIfNeeded()
         pendingUploadPointCount = pendingUploadQueue.count
 
-        // Clear persisted session — clean stop, no interrupted session
-        sessionStartedAt = nil
-        sessionID = nil
-        defaults.removeObject(forKey: Self.sessionStartedAtKey)
-        defaults.removeObject(forKey: Self.sessionIDKey)
+        clearPersistedSessionState()
 
         #if os(iOS)
         if #available(iOS 16.1, *) {
@@ -534,6 +514,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
         case .notDetermined:
             break
         case .restricted, .denied:
+            clearPersistedSessionState()
             transition(to: .failedAuthorization)
         }
     }
@@ -544,6 +525,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
             transition(to: .readyToStart)
             beginRecording()
         case .authorizedWhenInUse, .restricted, .denied:
+            clearPersistedSessionState()
             transition(to: .failedAuthorization)
         case .notDetermined:
             break
@@ -557,6 +539,10 @@ public final class LiveLocationFeatureModel: ObservableObject {
 
         applyBackgroundTrackingConfiguration()
         recorder.start()
+        persistInterruptedSessionState(
+            startedAt: recorder.points.first?.timestamp ?? Date(),
+            sessionID: currentRecordingSessionID
+        )
         liveTrackPoints = []
         transition(to: .recording)
         client?.startUpdatingLocation()
@@ -619,6 +605,43 @@ public final class LiveLocationFeatureModel: ObservableObject {
 
     private func applyBackgroundTrackingConfiguration() {
         client?.setBackgroundTrackingEnabled(prefersBackgroundTracking && authorization == .authorizedAlways)
+    }
+
+    private func restoreInterruptedSessionState() {
+        guard
+            let rawSessionID = defaults.string(forKey: Self.sessionIDKey),
+            let restoredSessionID = UUID(uuidString: rawSessionID),
+            defaults.object(forKey: Self.sessionStartedAtKey) != nil
+        else {
+            clearPersistedSessionState()
+            return
+        }
+
+        let timestamp = defaults.double(forKey: Self.sessionStartedAtKey)
+        guard timestamp > 0 else {
+            clearPersistedSessionState()
+            return
+        }
+
+        sessionID = restoredSessionID
+        sessionStartedAt = Date(timeIntervalSince1970: timestamp)
+        hasInterruptedSession = true
+    }
+
+    private func persistInterruptedSessionState(startedAt: Date, sessionID: UUID) {
+        sessionStartedAt = startedAt
+        self.sessionID = sessionID
+        hasInterruptedSession = false
+        defaults.set(startedAt.timeIntervalSince1970, forKey: Self.sessionStartedAtKey)
+        defaults.set(sessionID.uuidString, forKey: Self.sessionIDKey)
+    }
+
+    private func clearPersistedSessionState() {
+        sessionStartedAt = nil
+        sessionID = nil
+        hasInterruptedSession = false
+        defaults.removeObject(forKey: Self.sessionStartedAtKey)
+        defaults.removeObject(forKey: Self.sessionIDKey)
     }
 
     private func transition(to state: RecordingStartState) {

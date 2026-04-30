@@ -136,6 +136,7 @@ xcrun xctrace list devices 2>/dev/null | grep -v "Simulator"
 - Google-Takeout-`location-history.json` / `.zip` wird im aktuellen Code direkt unterstuetzt
 - der Wrapper ruft `restoreBookmarkedFile()` beim Start wieder auf; fuer diese Reaktivierung liegt in diesem Audit kein frischer Device-Nachweis vor
 - Live-Location / Live-Recording ist implementiert; optionales Background-Recording ist im aktuellen Code vorbereitet, aber ein separat protokollierter iPhone- oder Simulator-UI-Durchlauf fuer diesen erweiterten Flow steht noch aus
+- interrupted-session Restore-Banner ist jetzt code- und testseitig gehaertet: Persistenz erst nach echtem Recording-Start, partielle/kaputte Restore-Werte werden defensiv verworfen; ein neuer Device-Nachweis dafuer liegt in diesem Audit nicht vor
 - die Optionen-Seite bietet jetzt auch Deutsch/Englisch und optionalen Server-Upload fuer akzeptierte Live-Recording-Punkte
 - eine frische End-to-End-Geraeteverifikation fuer den konfigurierbaren Server-Upload steht noch aus
 

@@ -19,7 +19,6 @@ Nicht als abgeschlossen markieren:
 ### Priorisierte Optimierungs-Roadmap (2026-04-30)
 
 P0 — Release / Review / Hardware-Verifikation
-- Live-Session-Restore gegen Fehl-Persistenz haerten: interrupted-session Status darf nicht schon vor erfolgreichem Recording-Beginn haengen bleiben; denied/restricted und abgelehntes `Always`-Upgrade brauchen Regressionstests
 - App-Review-Fortschritt auf Build `52` beobachten und rueckmelden
 - offene ASC-Metadaten sauber abschliessen: Support-URL, Privacy-URL, Screenshots, GitHub-Pages-Live-Status
 - Live Activity / Dynamic Island auf echter Hardware fuer Lock Screen, `minimal`, weitere Primärwerte und Fallback-Pfade vervollstaendigen
@@ -52,6 +51,15 @@ Auf echter Hardware bestaetigt:
 Nicht als abgeschlossen markieren:
 - echte Apple-Hardware-Verifikation fuer Live Activity / Dynamic Island bleibt teilweise offen: Lock Screen, `minimal`, Primärwert-Wechsel (`Dauer`, `Punkte`, `Upload-Status`) und deaktivierte / nicht verfuegbare Live Activities sind noch nicht repo-wahr bestaetigt
 - Wrapper-Simulator-Testlauf war auf diesem Host nicht belastbar abschliessbar (`NSMachErrorDomain Code=-308`)
+
+### Live-Session-Restore Truth Update (2026-04-30)
+
+Implementiert und lokal verifiziert:
+- interrupted-session Persistenz wird erst nach echtem Recording-Start geschrieben, nicht mehr schon bei Initialisierung oder vor erfolgreichem Authorization-/Startpfad
+- Restore-Banner erscheint nur noch bei gueltiger Kombination aus `sessionID` (UUID) und `sessionStartedAt` (gueltiger Timestamp)
+- denied/restricted sowie abgelehntes `Always`-Upgrade raeumen verwaisten Restore-State jetzt defensiv auf
+- `dismissInterruptedSession()` und sauberer Stop entfernen Persistenz und In-Memory-State konsistent
+- Regressionstests decken Initialisierung ohne Recording, Persistenz beim Start, Loeschung bei Stop/Ignore sowie kaputte oder partielle `UserDefaults`-Werte ab
 
 ### Release / TestFlight Truth Update (2026-04-30)
 

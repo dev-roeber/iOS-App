@@ -137,6 +137,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Historien-Track-Editor**: Route entfernen, App-Neustart, Mutation prüfen — nicht automatisiert prüfbar
 - **Widget auf Homescreen/Lockscreen**: Widget Target baut, aber Pinnbar-Test erfordert manuelle Homescreen-Interaktion
 - **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden; konfigurierbarer Primärwert (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) + Fallback-Hinweise im Options-Screen implementiert. Partieller Real-Nachweis liegt vor: `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build via `xcodebuild test`) bestaetigt Recording-Start, Dynamic Island `compact` + `expanded` fuer Primärwert `Distanz` sowie Stop-/Dismiss-Verhalten. Offen bleiben Lock Screen, `minimal`, weitere Primärwerte und Fallback-Pfade.
+- **Live-Session-Restore**: Fehl-Persistenz fuer unterbrochene Sessions ist per Codefix + Regressionstests gehaertet; daraus wird bewusst kein neuer Hardware-Claim abgeleitet. Offene Hardware-Verifikation fuer Live Activity / Dynamic Island bleibt unveraendert.
 - **Landscape auf allen Tabs**: kompaktes Landscape-Layout nicht systematisch auf Device verifiziert
 
 #### Historischer Incident (nicht aktueller Upload-Blocker)

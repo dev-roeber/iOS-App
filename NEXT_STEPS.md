@@ -6,7 +6,6 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 
 ## P0 — Release / Review / Hardware-Verifikation
 
-- [ ] Live-Session-Restore gegen Fehl-Persistenz haerten: `sessionStartedAt` / `sessionID` werden derzeit laut Code-Audit zu frueh gesetzt; denied/restricted bzw. abgelehntes `Always`-Upgrade brauchen saubere Bereinigung plus Regressionstests
 - [ ] App Review auf Build `52` weiter beobachten und Apple-Feedback dokumentieren. Kein Nachreichen von Build `57` ohne Apple-Feedback oder bestaetigten release-kritischen Fehler.
 - [ ] Support-URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/support.html`
 - [ ] Privacy-URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html`

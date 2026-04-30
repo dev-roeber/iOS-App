@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [2026-04-30] — live: restore-state hardening for interrupted sessions
+
+### Fixed
+- `LiveLocationFeatureModel`: interrupted-session Persistenz wird nicht mehr schon beim Init oder vor erfolgreichem Recording-Start geschrieben; Restore-State entsteht jetzt erst nach echtem Start der Aufnahme
+- `LiveLocationFeatureModel`: denied/restricted sowie abgelehntes `Always`-Upgrade raeumen verwaisten Restore-State jetzt defensiv auf
+- `LiveLocationFeatureModel`: `dismissInterruptedSession()` und sauberer Stop loeschen Persistenz und In-Memory-Restore-State konsistent
+
+### Tests
+- `LiveLocationFeatureModelTests`: Regressionen decken Initialisierung ohne Recording, Persistenz erst nach gueltigem Start, Cleanup bei Stop/Ignore sowie kaputte oder partielle `UserDefaults`-Werte ab
+- Verifikation: `swift test` -> 663 Tests, 0 Failures; `xcodebuild -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` -> `BUILD SUCCEEDED`
+
 ## [2026-04-30] — docs: roadmap and review truth sync
 
 ### Geaendert
