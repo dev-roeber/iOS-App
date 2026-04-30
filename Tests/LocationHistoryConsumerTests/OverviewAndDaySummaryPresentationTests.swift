@@ -55,17 +55,16 @@ final class OverviewAndDaySummaryPresentationTests: XCTestCase {
 
         XCTAssertFalse(presentation.dateText.contains("2024-05-01"))
         XCTAssertTrue(presentation.dateText.contains("2024"))
-        XCTAssertEqual(
-            presentation.subtitle,
-            "4 events recorded. 1 route drops during export cleanup."
-        )
+        XCTAssertEqual(presentation.placeText, "1 visit")
+        XCTAssertEqual(presentation.routeText, "2 routes")
+        XCTAssertNotNil(presentation.timeRangeText)
         XCTAssertEqual(
             presentation.metrics.map { $0.text },
-            ["1 visit", "1 activity", "2 routes", "1.3 km"]
+            ["1 visit", "2 routes", "1 activity", "1.3 km"]
         )
     }
 
-    func testDaySummaryRowPresentationExplainsExportReadiness() throws {
+    func testDaySummaryRowPresentationUsesExportRouteTextWhenNoGeometryIsExportable() throws {
         let summary = try daySummaries(daysJSON: """
         [
           {
@@ -84,13 +83,11 @@ final class OverviewAndDaySummaryPresentationTests: XCTestCase {
         )
 
         XCTAssertEqual(
-            presentation.subtitle,
-            "This day has imported history, but no route geometry can be exported."
+            presentation.routeText,
+            "No exportable routes"
         )
-        XCTAssertEqual(
-            presentation.metrics.map { $0.text },
-            ["1 visit", "0 activities", "No exportable routes"]
-        )
+        XCTAssertEqual(presentation.placeText, "1 visit")
+        XCTAssertEqual(presentation.metrics.map { $0.text }, ["1 visit", "0 routes"])
     }
 
     private func export(daysJSON: String) throws -> AppExport {

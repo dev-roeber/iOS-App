@@ -78,4 +78,23 @@ final class AppLanguageSupportMapHeaderStringsTests: XCTestCase {
         XCTAssertEqual(de.localized("Prepare Export"), "Export vorbereiten")
         XCTAssertEqual(de.localized("Import New File"), "Neue Datei importieren")
     }
+
+    func testGermanDaysRedesignStrings() {
+        XCTAssertEqual(de.localized("All"), "Alle")
+        XCTAssertEqual(de.localized("With Routes"), "Mit Routen")
+        XCTAssertEqual(de.localized("Days Search"), "Tagessuche")
+        XCTAssertEqual(
+            de.localized("No days fall within the selected date range. Change the range to see more days."),
+            "Keine Tage liegen im ausgewählten Datumsbereich. Ändere den Zeitraum, um mehr Tage zu sehen."
+        )
+        XCTAssertEqual(
+            de.localized("No days fall within the selected date range. Change the range above to see more days."),
+            "Keine Tage liegen im ausgewählten Datumsbereich. Ändere den Zeitraum oben, um mehr Tage zu sehen."
+        )
+    }
+
+    func testGermanDayDetailRedesignStrings() {
+        XCTAssertEqual(de.localized("Activities"), "Aktivitäten")
+        XCTAssertEqual(de.localized("Route"), "Route")
+    }
 }

@@ -3,9 +3,12 @@ import LocationHistoryConsumer
 
 struct DayDetailContentHierarchy: Equatable {
     enum Section: String, Equatable {
-        case headerSummary
         case importedMap
-        case importedTimeline
+        case metricGrid
+        case actions
+        case segmentControl
+        case overview
+        case timeline
         case visits
         case activities
         case routes
@@ -25,9 +28,9 @@ struct DayDetailContentHierarchy: Equatable {
         self.timeRange = Self.makeTimeRange(detail: detail)
         self.totalDistanceM = detail.paths.reduce(0.0) { $0 + ($1.distanceM ?? 0) }
 
-        var sections: [Section] = [.headerSummary, .importedMap]
+        var sections: [Section] = [.importedMap, .metricGrid, .actions, .segmentControl, .overview]
         if timeRange != nil {
-            sections.append(.importedTimeline)
+            sections.append(.timeline)
         }
         if !detail.visits.isEmpty {
             sections.append(.visits)

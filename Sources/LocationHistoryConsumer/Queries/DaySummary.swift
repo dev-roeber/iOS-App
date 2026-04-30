@@ -9,6 +9,8 @@ public struct DaySummary: Equatable {
     public let totalPathDistanceM: Double
     public let hasContent: Bool
     public let exportablePathCount: Int
+    public let firstEntryStartTime: String?
+    public let lastEntryEndTime: String?
 
     public init(
         date: String,
@@ -18,7 +20,9 @@ public struct DaySummary: Equatable {
         totalPathPointCount: Int,
         totalPathDistanceM: Double,
         hasContent: Bool,
-        exportablePathCount: Int? = nil
+        exportablePathCount: Int? = nil,
+        firstEntryStartTime: String? = nil,
+        lastEntryEndTime: String? = nil
     ) {
         self.date = date
         self.visitCount = visitCount
@@ -28,5 +32,7 @@ public struct DaySummary: Equatable {
         self.totalPathDistanceM = totalPathDistanceM
         self.hasContent = hasContent
         self.exportablePathCount = exportablePathCount ?? pathCount
+        self.firstEntryStartTime = firstEntryStartTime
+        self.lastEntryEndTime = lastEntryEndTime
     }
 }

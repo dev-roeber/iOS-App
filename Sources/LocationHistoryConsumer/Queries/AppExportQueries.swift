@@ -375,7 +375,14 @@ public enum AppExportQueries {
     }
 
     private static func summary(for day: Day) -> DaySummary {
-        DaySummary(
+        let allStarts = day.visits.compactMap(\.startTime)
+            + day.activities.compactMap(\.startTime)
+            + day.paths.compactMap(\.startTime)
+        let allEnds = day.visits.compactMap(\.endTime)
+            + day.activities.compactMap(\.endTime)
+            + day.paths.compactMap(\.endTime)
+
+        return DaySummary(
             date: day.date,
             visitCount: day.visits.count,
             activityCount: day.activities.count,
@@ -383,7 +390,9 @@ public enum AppExportQueries {
             totalPathPointCount: day.paths.reduce(0) { $0 + $1.points.count },
             totalPathDistanceM: effectiveDistance(for: day),
             hasContent: !day.visits.isEmpty || !day.activities.isEmpty || !day.paths.isEmpty,
-            exportablePathCount: ExportRouteSanitizer.exportablePathCount(in: day)
+            exportablePathCount: ExportRouteSanitizer.exportablePathCount(in: day),
+            firstEntryStartTime: allStarts.min(),
+            lastEntryEndTime: allEnds.max()
         )
     }
 

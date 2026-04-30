@@ -20,6 +20,11 @@ public struct AppContentSplitView: View {
         compactHeight: 220,
         expandedHeight: 320
     )
+    @State private var daysMapHeaderState = LHMapHeaderState(
+        visibility: .hidden,
+        compactHeight: 180,
+        expandedHeight: 260
+    )
     @State private var presentedSheet: PresentedSheet?
     @StateObject private var pathMutationStore = AppImportedPathMutationStore()
 
@@ -133,6 +138,14 @@ public struct AppContentSplitView: View {
         }
     }
 
+    private var daysRangeSummaryText: String {
+        StartOverviewPresentation.rangeSummary(
+            for: session.historyDateRangeFilter,
+            language: preferences.appLanguage,
+            locale: preferences.appLocale
+        )
+    }
+
     private enum PresentedSheet: String, Identifiable {
         case export
         case tracksLibrary
@@ -231,6 +244,9 @@ public struct AppContentSplitView: View {
             NavigationStack(path: $daysNavigationPath) {
                 compactDayList
                     .navigationTitle(t("Days"))
+                    #if os(iOS)
+                    .navigationBarTitleDisplayMode(.large)
+                    #endif
                     .searchable(text: $daySearchText, prompt: t("Search by date, weekday or month"))
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
@@ -340,6 +356,21 @@ public struct AppContentSplitView: View {
         let summaries = filteredDaySummaries
         let groups = groupByMonth(summaries, locale: preferences.appLocale)
         return List {
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        compactContextPill(text: daysRangeSummaryText, icon: "calendar", identifier: "days.range")
+                        compactContextPill(
+                            text: daySearchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? t("Days Search") : daySearchText,
+                            icon: "magnifyingglass",
+                            identifier: "days.search"
+                        )
+                    }
+                    daysMapHeaderCard
+                }
+                .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0))
+                .listRowBackground(Color.clear)
+            }
             if let activeDayDrilldownDescription {
                 Section {
                     drilldownBanner(
@@ -406,9 +437,12 @@ public struct AppContentSplitView: View {
                             }
                         }
                     }
+                    .accessibilityIdentifier("days.month.\(group.id)")
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.black)
         .overlay {
             if session.daySummaries.isEmpty {
                 AppDayListEmptyView()
@@ -441,6 +475,8 @@ public struct AppContentSplitView: View {
                 favoriteDayIDs: favoritedDayIDs,
                 drilldownDescription: activeDayDrilldownDescription,
                 isRangeFilterActive: session.historyDateRangeFilter.isActive,
+                rangeSummaryText: daysRangeSummaryText,
+                mapHeader: AnyView(daysMapHeaderCard),
                 selectedDate: Binding(
                     get: { session.selectedDate },
                     set: { session.selectDayForDisplay($0) }
@@ -810,11 +846,19 @@ public struct AppContentSplitView: View {
 
     @ViewBuilder
     private func compactDayRow(_ summary: DaySummary) -> some View {
+        let presentation = DaySummaryRowPresentationBuilder.presentation(
+            for: summary,
+            unit: preferences.distanceUnit,
+            context: .list,
+            isFavorited: favoritedDayIDs.contains(summary.date),
+            isExported: session.exportSelection.isSelected(summary.date)
+        )
         AppDayRow(
             summary: summary,
             highlightIcons: highlightIconsFor(summary.date),
             isSelectedForExport: session.exportSelection.isSelected(summary.date),
-            isFavorited: favoritedDayIDs.contains(summary.date)
+            isFavorited: favoritedDayIDs.contains(summary.date),
+            presentation: presentation
         )
         .contextMenu {
             Button {
@@ -872,6 +916,49 @@ public struct AppContentSplitView: View {
 
     private func refreshFavoriteDays() {
         favoritedDayIDs = DayFavoritesStore.load()
+    }
+
+    private var daysMapHeaderCard: some View {
+        LHCard {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    LHSectionHeader(
+                        t("Map"),
+                        subtitle: daysMapHeaderState.isHidden ? t("Show Map") : daysRangeSummaryText
+                    )
+                    Spacer()
+                }
+                LHCollapsibleMapHeader(
+                    state: $daysMapHeaderState,
+                    language: preferences.appLanguage
+                ) {
+                    if #available(iOS 17.0, macOS 14.0, *) {
+                        AppOverviewTracksMapView(
+                            daySummaries: drilldownDaySummaries,
+                            content: session.content,
+                            queryFilter: projectedQueryFilter,
+                            fixedHeight: nil,
+                            showsFullscreenControl: false
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private func compactContextPill(text: String, icon: String, identifier: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+            Text(text)
+                .lineLimit(1)
+        }
+        .font(.caption.weight(.medium))
+        .foregroundStyle(LH2GPXTheme.textSecondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(LH2GPXTheme.elevatedCard)
+        .clipShape(Capsule())
+        .accessibilityIdentifier(identifier)
     }
 
     private func toggleFavoriteDay(_ date: String) {

@@ -35,7 +35,156 @@ struct DayDetailSummaryPresentation: Equatable {
     let footnote: String?
 }
 
+enum DayDetailSegment: String, CaseIterable, Equatable, Identifiable {
+    case overview
+    case timeline
+    case routes
+    case places
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .overview: return "Overview"
+        case .timeline: return "Timeline"
+        case .routes: return "Routes"
+        case .places: return "Places"
+        }
+    }
+}
+
+struct DayDetailKPIItemPresentation: Equatable, Identifiable {
+    let id: String
+    let icon: String
+    let label: String
+    let value: String
+}
+
+struct DayDetailTimelineEntryPresentation: Equatable, Identifiable {
+    enum Kind: String, Equatable {
+        case start
+        case drive
+        case visit
+        case end
+    }
+
+    let id: String
+    let kind: Kind
+    let title: String
+    let subtitle: String?
+    let timeText: String?
+}
+
 enum DayDetailPresentation {
+    static func kpis(detail: DayDetailViewState, unit: AppDistanceUnitPreference) -> [DayDetailKPIItemPresentation] {
+        [
+            .init(
+                id: "distance",
+                icon: "ruler",
+                label: "Distance",
+                value: detail.paths.reduce(0) { $0 + ($1.distanceM ?? 0) } > 0
+                    ? formatDistance(detail.paths.reduce(0) { $0 + ($1.distanceM ?? 0) }, unit: unit)
+                    : "0"
+            ),
+            .init(id: "routes", icon: "location.north.line", label: "Routes", value: "\(detail.paths.count)"),
+            .init(id: "activities", icon: "figure.walk", label: "Activities", value: "\(detail.activities.count)"),
+            .init(id: "places", icon: "mappin.and.ellipse", label: "Places", value: "\(detail.visits.count)")
+        ]
+    }
+
+    static func segments(detail: DayDetailViewState) -> [DayDetailSegment] {
+        var result: [DayDetailSegment] = [.overview, .timeline]
+        if !detail.paths.isEmpty {
+            result.append(.routes)
+        }
+        if !detail.visits.isEmpty {
+            result.append(.places)
+        }
+        return result
+    }
+
+    static func timeline(detail: DayDetailViewState) -> [DayDetailTimelineEntryPresentation] {
+        struct Event {
+            let date: Date
+            let kind: DayDetailTimelineEntryPresentation.Kind
+            let title: String
+            let subtitle: String?
+            let timeText: String?
+        }
+
+        var events: [Event] = []
+
+        let visitEvents: [Event] = detail.visits.compactMap { visit in
+            guard let start = visit.startTime.flatMap(AppTimeDisplay.date(_:)) else { return nil }
+            return Event(
+                date: start,
+                kind: .visit,
+                title: "Visit",
+                subtitle: displayNameForVisitType(visit.semanticType),
+                timeText: AppTimeDisplay.timeRange(start: visit.startTime, end: visit.endTime)
+            )
+        }
+
+        let routeEvents: [Event] = detail.paths.compactMap { path in
+            guard let start = path.startTime.flatMap(AppTimeDisplay.date(_:)) else { return nil }
+            return Event(
+                date: start,
+                kind: .drive,
+                title: "Drive",
+                subtitle: path.distanceM.map { formatDistance($0, unit: .metric) },
+                timeText: AppTimeDisplay.timeRange(start: path.startTime, end: path.endTime)
+            )
+        }
+
+        events.append(contentsOf: visitEvents)
+        events.append(contentsOf: routeEvents)
+        events.sort { $0.date < $1.date }
+
+        let allStarts = (detail.visits.compactMap(\.startTime) + detail.activities.compactMap(\.startTime) + detail.paths.compactMap(\.startTime))
+            .compactMap(AppTimeDisplay.date(_:))
+        let allEnds = (detail.visits.compactMap(\.endTime) + detail.activities.compactMap(\.endTime) + detail.paths.compactMap(\.endTime))
+            .compactMap(AppTimeDisplay.date(_:))
+
+        var result: [DayDetailTimelineEntryPresentation] = []
+        if let earliest = allStarts.min() {
+            result.append(
+                .init(
+                    id: "start",
+                    kind: .start,
+                    title: "Start",
+                    subtitle: nil,
+                    timeText: AppTimeDisplay.time(ISO8601DateFormatter().string(from: earliest))
+                )
+            )
+        }
+
+        result.append(
+            contentsOf: events.enumerated().map { index, event in
+                .init(
+                    id: "\(event.kind.rawValue)-\(index)",
+                    kind: event.kind,
+                    title: event.title,
+                    subtitle: event.subtitle,
+                    timeText: event.timeText
+                )
+            }
+        )
+
+        if let latest = allEnds.max() {
+            result.append(
+                .init(
+                    id: "end",
+                    kind: .end,
+                    title: "End",
+                    subtitle: nil,
+                    timeText: AppTimeDisplay.time(ISO8601DateFormatter().string(from: latest))
+                )
+            )
+        }
+
+        return result
+    }
+
     static func summary(detail: DayDetailViewState, unit: AppDistanceUnitPreference) -> DayDetailSummaryPresentation {
         var items: [DayDetailSummaryPresentation.Item] = [
             .init(icon: "mappin.and.ellipse", value: "\(detail.visits.count)", label: "Visits"),

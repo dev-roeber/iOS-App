@@ -8,13 +8,26 @@ struct DaySummaryMetricPresentation: Identifiable, Equatable {
     let icon: String
     let text: String
     let accessibilityLabel: String
+    let tint: String?
+}
+
+struct DaySummaryStatusPresentation: Identifiable, Equatable {
+    let id: String
+    let text: String
+    let accessibilityLabel: String
+    let tint: String
 }
 
 struct DaySummaryRowPresentation: Equatable {
+    let dayNumberText: String
     let weekdayText: String
     let dateText: String
-    let subtitle: String
+    let timeRangeText: String?
+    let placeText: String
+    let routeText: String
+    let distanceText: String?
     let metrics: [DaySummaryMetricPresentation]
+    let statuses: [DaySummaryStatusPresentation]
     let accessibilityLabel: String
 }
 
@@ -27,11 +40,17 @@ enum DaySummaryRowPresentationBuilder {
     static func presentation(
         for summary: DaySummary,
         unit: AppDistanceUnitPreference,
-        context: Context
+        context: Context,
+        isFavorited: Bool = false,
+        isExported: Bool = false
     ) -> DaySummaryRowPresentation {
+        let dayNumberText = dayNumber(summary.date)
         let weekdayText = AppDateDisplay.weekday(summary.date)
         let dateText = AppDateDisplay.mediumDate(summary.date)
-        let eventCount = summary.visitCount + summary.activityCount + summary.pathCount
+        let timeRangeText = AppTimeDisplay.timeRange(
+            start: summary.firstEntryStartTime,
+            end: summary.lastEntryEndTime
+        )
 
         var metrics: [DaySummaryMetricPresentation] = []
         let visitText = "\(summary.visitCount) \(summary.visitCount == 1 ? "visit" : "visits")"
@@ -40,93 +59,95 @@ enum DaySummaryRowPresentationBuilder {
                 id: "visits",
                 icon: "mappin.and.ellipse",
                 text: visitText,
-                accessibilityLabel: visitText
+                accessibilityLabel: visitText,
+                tint: "mint"
             )
         )
-        let activityText = "\(summary.activityCount) \(summary.activityCount == 1 ? "activity" : "activities")"
+        let routeTextForMetrics = "\(summary.pathCount) \(summary.pathCount == 1 ? "route" : "routes")"
         metrics.append(
             .init(
-                id: "activities",
-                icon: "figure.walk",
-                text: activityText,
-                accessibilityLabel: activityText
+                id: "routes",
+                icon: "location.north.line",
+                text: routeTextForMetrics,
+                accessibilityLabel: routeTextForMetrics,
+                tint: "orange"
             )
         )
-
-        switch context {
-        case .list:
+        if summary.activityCount > 0 {
             metrics.append(
                 .init(
-                    id: "routes",
-                    icon: "location.north.line",
-                    text: "\(summary.pathCount) \(summary.pathCount == 1 ? "route" : "routes")",
-                    accessibilityLabel: "\(summary.pathCount) \(summary.pathCount == 1 ? "route" : "routes")"
-                )
-            )
-        case .export:
-            let routeText: String
-            if summary.exportablePathCount > 0 {
-                routeText = "\(summary.exportablePathCount) exportable"
-            } else {
-                routeText = "No exportable routes"
-            }
-            metrics.append(
-                .init(
-                    id: "routes",
-                    icon: "location.north.line",
-                    text: routeText,
-                    accessibilityLabel: routeText
+                    id: "activities",
+                    icon: "figure.walk",
+                    text: "\(summary.activityCount) \(summary.activityCount == 1 ? "activity" : "activities")",
+                    accessibilityLabel: "\(summary.activityCount) \(summary.activityCount == 1 ? "activity" : "activities")",
+                    tint: "blue"
                 )
             )
         }
 
+        let distanceText: String?
         if summary.totalPathDistanceM > 0 {
-            let distanceText = formatDistance(summary.totalPathDistanceM, unit: unit)
+            distanceText = formatDistance(summary.totalPathDistanceM, unit: unit)
             metrics.append(
                 .init(
                     id: "distance",
                     icon: "ruler",
-                    text: distanceText,
-                    accessibilityLabel: "\(distanceText) route distance"
+                    text: distanceText!,
+                    accessibilityLabel: "\(distanceText!) route distance",
+                    tint: "purple"
                 )
             )
+        } else {
+            distanceText = nil
         }
 
-        let subtitle: String
+        var statuses: [DaySummaryStatusPresentation] = []
+        if isFavorited {
+            statuses.append(.init(id: "favorite", text: "Favorite", accessibilityLabel: "Favorite", tint: "yellow"))
+        }
+        if isExported {
+            statuses.append(.init(id: "exported", text: "Exported", accessibilityLabel: "Exported", tint: "green"))
+        }
+
+        let routeText: String
         switch context {
         case .list:
-            if !summary.hasContent {
-                subtitle = "No recorded entries"
-            } else if summary.pathCount > summary.exportablePathCount {
-                let skipped = summary.pathCount - summary.exportablePathCount
-                subtitle = "\(eventCount) \(eventCount == 1 ? "event" : "events") recorded. \(skipped) \(skipped == 1 ? "route drops" : "routes drop") during export cleanup."
-            } else if summary.totalPathDistanceM > 0 {
-                subtitle = "\(eventCount) \(eventCount == 1 ? "event" : "events") across visits, activities and routes."
-            } else {
-                subtitle = "\(eventCount) \(eventCount == 1 ? "event" : "events") recorded."
-            }
-
+            routeText = "\(summary.pathCount) \(summary.pathCount == 1 ? "route" : "routes")"
         case .export:
-            if summary.exportablePathCount > 0, summary.totalPathDistanceM > 0 {
-                subtitle = "\(formatDistance(summary.totalPathDistanceM, unit: unit)) ready across \(summary.exportablePathCount) exportable \(summary.exportablePathCount == 1 ? "route" : "routes")."
-            } else if summary.exportablePathCount > 0 {
-                subtitle = "\(summary.exportablePathCount) \(summary.exportablePathCount == 1 ? "route is" : "routes are") ready to export."
-            } else if summary.hasContent {
-                subtitle = "This day has imported history, but no route geometry can be exported."
-            } else {
-                subtitle = "This day has no recorded content."
-            }
+            routeText = summary.exportablePathCount > 0
+                ? "\(summary.exportablePathCount) exportable \(summary.exportablePathCount == 1 ? "route" : "routes")"
+                : "No exportable routes"
         }
 
-        let accessibilityParts = [dateText, subtitle] + metrics.map(\.accessibilityLabel)
+        let placeText = visitText
+        let accessibilityParts = [dateText, weekdayText, timeRangeText, placeText, routeText, distanceText]
+            .compactMap { $0 }
+            + statuses.map(\.accessibilityLabel)
+            + metrics.map(\.accessibilityLabel)
 
         return DaySummaryRowPresentation(
+            dayNumberText: dayNumberText,
             weekdayText: weekdayText,
             dateText: dateText,
-            subtitle: subtitle,
+            timeRangeText: timeRangeText,
+            placeText: placeText,
+            routeText: routeText,
+            distanceText: distanceText,
             metrics: metrics,
+            statuses: statuses,
             accessibilityLabel: accessibilityParts.joined(separator: ", ")
         )
+    }
+
+    private static func dayNumber(_ isoDate: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        guard let date = formatter.date(from: isoDate) else {
+            return String(isoDate.suffix(2))
+        }
+        let calendar = Calendar(identifier: .gregorian)
+        return "\(calendar.component(.day, from: date))"
     }
 }
 

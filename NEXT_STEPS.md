@@ -24,7 +24,7 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 
 ## P2 — Nachgelagerte Optimierung
 
-- [ ] Design-System nach dem jetzt produktiven Start-/Overview-Pilot schrittweise auf weitere Stellen ausweiten: `Days`, `Day Detail`, `Export`, `AppInsightsContentView` Header-Zeilen und ggf. spaeter Widget/Dynamic-Island bei sicherem Token-Pfad
+- [ ] Design-System nach den jetzt produktiven Redesign-Slices fuer `Start`, `Overview`, `Days` und `Day Detail` weiter auf `Export` und `AppInsightsContentView` Header-Zeilen ausweiten; Widget/Dynamic-Island nur bei sicherem Token-Pfad
 - [ ] Apple-Review-/Privacy-Einordnung fuer den optionalen Server-Upload weiter beobachten und nach Review-Feedback repo-wahr nachziehen
 - [ ] `docs/NOTION_SYNC_DRAFT.md` nur noch als manuell gepflegten Snapshot nutzen oder spaeter durch einen schlankeren Status-Export ersetzen
 - [ ] historische Split-Repos `LocationHistory2GPX-iOS` und `LH2GPXWrapper` konsistent als historisch/mirror markieren

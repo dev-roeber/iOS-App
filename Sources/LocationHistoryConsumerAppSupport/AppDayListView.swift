@@ -6,113 +6,116 @@ import LocationHistoryConsumer
 
 struct AppDayRow: View {
     @EnvironmentObject private var preferences: AppPreferences
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
     let summary: DaySummary
     var highlightIcons: [String] = []
     var isSelectedForExport: Bool = false
     var isFavorited: Bool = false
+    let presentation: DaySummaryRowPresentation
 
     var body: some View {
-        rowContent(compactVertical: verticalSizeClass == .compact)
-    }
-
-    @ViewBuilder
-    private func rowContent(compactVertical: Bool) -> some View {
-        VStack(alignment: .leading, spacing: compactVertical ? 2 : 5) {
-            HStack {
-                Text(AppDateDisplay.weekday(summary.date))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                HStack(spacing: 4) {
-                    if isSelectedForExport {
-                        Label(t("Export"), systemImage: "square.and.arrow.up")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundColor(.accentColor)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Color.accentColor.opacity(0.12))
-                            .clipShape(Capsule())
-                    }
-                    if isFavorited {
-                        Image(systemName: "star.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.yellow)
-                    }
-                    ForEach(highlightIcons, id: \.self) { icon in
-                        Image(systemName: icon)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+        HStack(alignment: .top, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(presentation.dayNumberText)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                Text(presentation.weekdayText)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(LH2GPXTheme.textSecondary)
             }
-            Text(AppDateDisplay.mediumDate(summary.date))
-                .font(.headline)
-            if summary.hasContent {
-                HStack(spacing: 12) {
-                    Label("\(summary.visitCount)", systemImage: "mappin.and.ellipse")
-                    Label("\(summary.activityCount)", systemImage: "figure.walk")
-                    Label("\(summary.pathCount)", systemImage: "location.north.line")
-                    if summary.totalPathDistanceM > 0 {
-                        Label(formatDistance(summary.totalPathDistanceM, unit: preferences.distanceUnit), systemImage: "ruler")
+            .frame(width: 54, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(presentation.dateText)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        if let timeRangeText = presentation.timeRangeText {
+                            Label(timeRangeText, systemImage: "clock")
+                                .font(.caption)
+                                .foregroundStyle(LH2GPXTheme.textSecondary)
+                        }
+                    }
+                    Spacer()
+                    HStack(spacing: 6) {
+                        if isFavorited {
+                            statusChip(title: t("Favorites"), systemImage: "star.fill", tint: LH2GPXTheme.favoriteYellow)
+                                .accessibilityIdentifier("days.row.favorite.\(summary.date)")
+                        }
+                        if isSelectedForExport {
+                            statusChip(title: t("Exported"), systemImage: "checkmark.circle.fill", tint: LH2GPXTheme.liveMint)
+                                .accessibilityIdentifier("days.row.exported.\(summary.date)")
+                        }
+                        ForEach(highlightIcons, id: \.self) { icon in
+                            Image(systemName: icon)
+                                .font(.caption)
+                                .foregroundStyle(LH2GPXTheme.textSecondary)
+                        }
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(LH2GPXTheme.primaryBlue.opacity(0.85))
                     }
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel([
-                    visitCountText(summary.visitCount),
-                    activityCountText(summary.activityCount),
-                    routeCountText(summary.pathCount)
-                ].joined(separator: ", "))
-            } else {
-                Label(t("No recorded entries"), systemImage: "tray")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel(t("No recorded entries for this day"))
+
+                HStack(spacing: 10) {
+                    metricPill(icon: "mappin.and.ellipse", text: presentation.placeText, tint: LH2GPXTheme.liveMint)
+                    metricPill(icon: "location.north.line", text: presentation.routeText, tint: LH2GPXTheme.routeOrange)
+                    if let distanceText = presentation.distanceText {
+                        metricPill(icon: "ruler", text: distanceText, tint: LH2GPXTheme.distancePurple)
+                    }
+                }
+
+                if !presentation.metrics.isEmpty {
+                    HStack(spacing: 10) {
+                        ForEach(presentation.metrics.filter { $0.id == "activities" }) { metric in
+                            metricPill(icon: metric.icon, text: metric.text, tint: LH2GPXTheme.primaryBlue)
+                        }
+                    }
+                }
             }
         }
-        .padding(.vertical, compactVertical ? 5 : 7)
-        .padding(.horizontal, 11)
-        .background(rowBackground)
+        .padding(14)
+        .background(Color.black)
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(isSelectedForExport ? Color.accentColor.opacity(0.20) : Color.primary.opacity(summary.hasContent ? 0.035 : 0.05), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .opacity(summary.hasContent ? 1 : 0.72)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: .black.opacity(0.22), radius: 12, y: 6)
+        .opacity(summary.hasContent ? 1 : 0.7)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(presentation.accessibilityLabel)
     }
 
-    private var rowBackground: Color {
-        if isSelectedForExport {
-            return Color.accentColor.opacity(0.06)
+    private func statusChip(title: String, systemImage: String, tint: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+            Text(title)
         }
-        if summary.hasContent {
-            return Color.secondary.opacity(0.018)
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(tint)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(tint.opacity(0.12))
+        .clipShape(Capsule())
+    }
+
+    private func metricPill(icon: String, text: String, tint: Color) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+            Text(text)
+                .lineLimit(1)
         }
-        return Color.secondary.opacity(0.035)
+        .font(.caption.weight(.medium))
+        .foregroundStyle(tint)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(tint.opacity(0.10))
+        .clipShape(Capsule())
     }
 
     private func t(_ english: String) -> String {
         preferences.localized(english)
-    }
-
-    private func visitCountText(_ count: Int) -> String {
-        preferences.appLanguage.isGerman
-            ? "\(count) \(count == 1 ? "Besuch" : "Besuche")"
-            : "\(count) \(count == 1 ? "Visit" : "Visits")"
-    }
-
-    private func activityCountText(_ count: Int) -> String {
-        preferences.appLanguage.isGerman
-            ? "\(count) \(count == 1 ? "Aktivität" : "Aktivitäten")"
-            : "\(count) \(count == 1 ? "Activity" : "Activities")"
-    }
-
-    private func routeCountText(_ count: Int) -> String {
-        preferences.appLanguage.isGerman
-            ? "\(count) \(count == 1 ? "Route" : "Routen")"
-            : "\(count) \(count == 1 ? "Route" : "Routes")"
     }
 }
 
@@ -122,52 +125,59 @@ struct AppDayFilterChipsView: View {
     let availableChips: [DayListFilterChip]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(t("Filter Days"))
-                        .font(.subheadline.weight(.semibold))
-                    Text(t("Combine chips with search while keeping the newest day first."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        let visibleChips = availableChips.filter { [.hasRoutes, .favorites, .exportable].contains($0) }
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                filterChip(title: t("All"), isActive: !filter.isActive, identifier: "days.filter.all") {
+                    filter.clearAll()
                 }
-                Spacer()
-                if filter.isActive {
-                    Button(t("Clear Filters")) {
-                        filter.clearAll()
-                    }
-                    .font(.caption.weight(.medium))
-                }
-            }
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 8)], spacing: 8) {
-                ForEach(availableChips) { chip in
-                    LHFilterChip(
+                ForEach(visibleChips) { chip in
+                    filterChip(
                         title: chipTitle(chip),
-                        systemImage: chip.systemImage,
-                        isActive: filter.activeChips.contains(chip)
+                        isActive: filter.activeChips.contains(chip),
+                        identifier: chipIdentifier(chip)
                     ) {
                         filter.toggle(chip)
                     }
                 }
             }
         }
-        .padding(.vertical, 4)
     }
 
     private func chipTitle(_ chip: DayListFilterChip) -> String {
         switch chip {
         case .favorites:
             return t("Favorites")
-        case .hasVisits:
-            return t("Has Visits")
         case .hasRoutes:
-            return t("Has Routes")
-        case .hasDistance:
-            return t("Has Distance")
+            return t("With Routes")
         case .exportable:
-            return t("Exportable")
+            return t("Exported")
+        case .hasVisits, .hasDistance:
+            return t("All")
         }
+    }
+
+    private func chipIdentifier(_ chip: DayListFilterChip) -> String {
+        switch chip {
+        case .favorites: return "days.filter.favorites"
+        case .hasRoutes: return "days.filter.routes"
+        case .exportable: return "days.filter.exported"
+        case .hasVisits, .hasDistance: return "days.filter.all"
+        }
+    }
+
+    private func filterChip(title: String, isActive: Bool, identifier: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isActive ? Color.black : LH2GPXTheme.textSecondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(isActive ? LH2GPXTheme.liveMint : LH2GPXTheme.elevatedCard)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
     }
 
     private func t(_ english: String) -> String {
@@ -184,6 +194,8 @@ public struct AppDayListView: View {
     let favoriteDayIDs: Set<String>
     let drilldownDescription: String?
     let isRangeFilterActive: Bool
+    let rangeSummaryText: String?
+    let mapHeader: AnyView?
     @Binding var selectedDate: String?
     @Binding var filter: DayListFilter
     @Binding var searchText: String
@@ -197,6 +209,8 @@ public struct AppDayListView: View {
         favoriteDayIDs: Set<String> = [],
         drilldownDescription: String? = nil,
         isRangeFilterActive: Bool = false,
+        rangeSummaryText: String? = nil,
+        mapHeader: AnyView? = nil,
         selectedDate: Binding<String?>,
         filter: Binding<DayListFilter> = .constant(.empty),
         onClearDrilldown: (() -> Void)? = nil,
@@ -209,6 +223,8 @@ public struct AppDayListView: View {
         self.favoriteDayIDs = favoriteDayIDs
         self.drilldownDescription = drilldownDescription
         self.isRangeFilterActive = isRangeFilterActive
+        self.rangeSummaryText = rangeSummaryText
+        self.mapHeader = mapHeader
         self._selectedDate = selectedDate
         self._filter = filter
         self._searchText = searchText
@@ -230,6 +246,21 @@ public struct AppDayListView: View {
         } else {
             let groups = groupByMonth(filteredSummaries, locale: preferences.appLocale)
             List(selection: $selectedDate) {
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(t("Days"))
+                            .font(.system(size: 34, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .accessibilityIdentifier("days.title")
+                        dayContextRow
+                        if let mapHeader {
+                            mapHeader
+                                .accessibilityIdentifier("days.map.header")
+                        }
+                    }
+                    .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0))
+                    .listRowBackground(Color.clear)
+                }
                 if let drilldownDescription {
                     Section {
                         drilldownBanner(description: drilldownDescription)
@@ -254,9 +285,12 @@ public struct AppDayListView: View {
                                 interactiveRow(for: summary)
                             }
                         }
+                        .accessibilityIdentifier("days.month.\(group.id)")
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.black)
             .overlay {
                 if !summaries.isEmpty && filteredSummaries.isEmpty {
                     VStack(spacing: 12) {
@@ -280,19 +314,11 @@ public struct AppDayListView: View {
 
     private var exportStatusSection: some View {
         Section {
-            HStack(spacing: 10) {
-                Image(systemName: "square.and.arrow.up")
-                    .foregroundColor(.accentColor)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(exportSelectionText)
-                        .font(.subheadline.weight(.semibold))
-                    Text(t("Export markers stay visible directly in the list."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-            }
-            .padding(.vertical, 4)
+            LHContextBar(
+                message: exportSelectionText,
+                systemImage: "checkmark.circle.fill",
+                tint: LH2GPXTheme.liveMint
+            )
         }
     }
 
@@ -329,14 +355,23 @@ public struct AppDayListView: View {
 
     @ViewBuilder
     private func interactiveRow(for summary: DaySummary) -> some View {
+        let presentation = DaySummaryRowPresentationBuilder.presentation(
+            for: summary,
+            unit: preferences.distanceUnit,
+            context: .list,
+            isFavorited: favoriteDayIDs.contains(summary.date),
+            isExported: selectedForExportDates.contains(summary.date)
+        )
         AppDayRow(
             summary: summary,
             highlightIcons: highlightIconsForDate(summary.date),
             isSelectedForExport: selectedForExportDates.contains(summary.date),
-            isFavorited: favoriteDayIDs.contains(summary.date)
+            isFavorited: favoriteDayIDs.contains(summary.date),
+            presentation: presentation
         )
         .tag(summary.date)
         .disabled(!summary.hasContent)
+        .accessibilityIdentifier("days.row.\(summary.date)")
         .contextMenu {
             if let onToggleFavorite {
                 Button {
@@ -362,6 +397,35 @@ public struct AppDayListView: View {
                 .tint(favoriteDayIDs.contains(summary.date) ? .gray : .yellow)
             }
         }
+    }
+
+    @ViewBuilder
+    private var dayContextRow: some View {
+        HStack(spacing: 8) {
+            contextPill(text: rangeSummaryText ?? t("All"), icon: "calendar", identifier: "days.range")
+            contextPill(
+                text: searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    ? t("Days Search")
+                    : searchText,
+                icon: "magnifyingglass",
+                identifier: "days.search"
+            )
+        }
+    }
+
+    private func contextPill(text: String, icon: String, identifier: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+            Text(text)
+                .lineLimit(1)
+        }
+        .font(.caption.weight(.medium))
+        .foregroundStyle(LH2GPXTheme.textSecondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(LH2GPXTheme.elevatedCard)
+        .clipShape(Capsule())
+        .accessibilityIdentifier(identifier)
     }
 
     @ViewBuilder

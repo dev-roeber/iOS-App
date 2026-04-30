@@ -32,10 +32,25 @@ P1 — Vorhandene Produktflaechen belastbar machen
 - Track-Editor-/Export-Grenze weiter dokumentieren oder produktseitig spaeter anpassen
 
 P2 — Nachgelagerte Optimierung
-- Design-System (`LH2GPXTheme`) nach dem jetzt produktiven Start-/Overview-Pilot schrittweise auf weitere Stellen ausdehnen; Widget/Dynamic-Island nur bei sicherem Token-Pfad
+- Design-System (`LH2GPXTheme`) nach den jetzt produktiven `Start`-/`Overview`-/`Days`-/`Day Detail`-Slices weiter auf `Export` und `Insights` ausdehnen; Widget/Dynamic-Island nur bei sicherem Token-Pfad
 - Apple-Review-/Privacy-Einordnung fuer den optionalen Server-Upload weiter sauber beobachten
 - veraltete Notion-/Wrapper-/Split-Repo-Doku weiter abbauen
 - echtes Road-/Path-Matching nur als spaeteren separaten Produktscope betrachten
+
+### Days + Day Detail Redesign Truth Update (2026-04-30)
+
+Implementiert und lokal verifiziert:
+- `Days` ist sichtbar auf das neue LH2GPX-Dark-Layout umgestellt: grosser Titel, kompakte Zeitraum-/Suche-Context-Zeile, reduzierte Filterchips, dunkle Card-Rows und optionaler kollabierbarer Map-Header
+- die Days-Map nutzt weiter den bestehenden projizierten / gefilterten Tageskontext; bei verborgenem Header bleibt die `LHCollapsibleMapHeader`-Performance-Invariante erhalten und die Map wird nicht instanziiert
+- Day Rows trennen Favorit und Exportstatus jetzt sichtbar voneinander; Orte, Routen, Aktivitaeten und Distanz bleiben getrennt praesentiert
+- Day Detail ist sichtbar map-first umgebaut: `AppDayMapView` direkt oben, danach KPI-Karten fuer Distanz / Routen / Aktivitaeten / Orte sowie Segmentumschaltung fuer `Overview`, `Timeline`, `Routes`, `Places`
+- bestehende Business-Verdrahtung bleibt erhalten: `daysNavigationPath`, `selectedDayID`, `daySearchText`, `dayListFilter`, `DayListPresentation.filteredSummaries`, `DaySummaryRowPresentationBuilder`, `DayDetailPresentation`, `DayMapDataExtractor`, `ExportSelectionState.routeSelections`, `AppImportedPathMutationStore`, `ImportedPathDeletion`, Insights-Drilldown und SplitView-/Tab-Reselection-Verhalten
+- lokaler Nachweis: `swift test` 741 Tests, 0 Failures
+
+Nicht als abgeschlossen markieren:
+- kein neuer Apple-Hardware-Claim fuer den sichtbaren Days-/Day-Detail-Umbau
+- keine neue Exportfaehigkeit, kein neues Road-Snapping, kein neues Map-Matching
+- keine Aenderung daran, dass display-only entfernte importierte Routen nicht in den Export-Truth einfliessen
 
 ### Start + Overview Redesign Truth Update (2026-04-30)
 

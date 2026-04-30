@@ -22,6 +22,7 @@ public struct AppDayDetailView: View {
     let mutations: ImportedPathMutationSet
     let onRemovePath: ((Int) -> Void)?
     @State private var confirmRemovePathIndex: Int? = nil
+    @State private var selectedSegment: DayDetailSegment = .overview
 
     public init(
         detail: DayDetailViewState?,
@@ -116,11 +117,11 @@ public struct AppDayDetailView: View {
         if verticalSizeClass == .compact {
             // Landscape (iPhone) — side-by-side: map left, content right
             HStack(spacing: 0) {
-                landscapeMapColumn(detail: detail, resolvedMapData: resolvedMapData)
+                landscapeMapColumn(detail: filteredDetail, resolvedMapData: resolvedMapData)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 Divider()
                 ScrollView {
-                    landscapeContentColumn(detail)
+                    landscapeContentColumn(filteredDetail)
                         .padding()
                 }
                 .frame(maxWidth: 360)
@@ -129,7 +130,7 @@ public struct AppDayDetailView: View {
         } else {
             // Portrait
             ScrollView {
-                portraitContentView(detail: detail, resolvedMapData: resolvedMapData)
+                portraitContentView(detail: filteredDetail, resolvedMapData: resolvedMapData)
                     .padding(.horizontal)
                     .padding(.vertical, 16)
             }
@@ -167,56 +168,10 @@ public struct AppDayDetailView: View {
                     .font(.title3.weight(.semibold))
                 dayTimeRange(detail)
             }
-
-            let dayDistance = detail.paths.reduce(0.0) { $0 + ($1.distanceM ?? 0) }
-            let deletedInLandscapeStat = Set(mutations.deletions.filter { $0.dayKey == detail.date }.map { $0.pathIndex })
-            let visiblePathCountLandscape = detail.paths.indices.filter { !deletedInLandscapeStat.contains($0) }.count
-            HStack(spacing: 8) {
-                quickStat("\(detail.visits.count)", label: t("Visits"), icon: "mappin.and.ellipse", color: .blue)
-                quickStat("\(detail.activities.count)", label: t("Activities"), icon: "figure.walk", color: .green)
-                quickStat("\(visiblePathCountLandscape)", label: t("Routes"), icon: "location.north.line", color: .orange)
-                if dayDistance > 0 {
-                    quickStat(formatDistance(dayDistance, unit: preferences.distanceUnit), label: t("Distance"), icon: "road.lanes", color: .purple)
-                }
-            }
-
+            metricGrid(detail)
             dayActionsSection(detail)
-
-            DayTimelineView(detail: detail)
-
-            if !detail.visits.isEmpty {
-                detailSection(t("Visits"), icon: "mappin.and.ellipse", count: detail.visits.count) {
-                    ForEach(Array(detail.visits.enumerated()), id: \.offset) { _, visit in
-                        visitCard(visit)
-                    }
-                }
-            }
-
-            if !detail.activities.isEmpty {
-                detailSection(t("Activities"), icon: "figure.walk", count: detail.activities.count) {
-                    ForEach(Array(detail.activities.enumerated()), id: \.offset) { _, activity in
-                        activityCard(activity)
-                    }
-                }
-            }
-
-            let deletedLandscape = Set(mutations.deletions.filter { $0.dayKey == detail.date }.map { $0.pathIndex })
-            let visibleLandscape = detail.paths.enumerated().filter { !deletedLandscape.contains($0.offset) }
-            if !visibleLandscape.isEmpty {
-                detailSection(t("Routes"), icon: "location.north.line", count: visibleLandscape.count) {
-                    routeSelectionSummary(detail)
-                    ForEach(Array(visibleLandscape), id: \.offset) { item in
-                        pathCard(
-                            item.element,
-                            dayIdentifier: detail.date,
-                            routeIndex: item.offset,
-                            availableRouteIndices: exportableRouteIndices(for: detail),
-                            onRemove: onRemovePath != nil ? { confirmRemovePathIndex = item.offset } : nil
-                        )
-                    }
-                }
-            }
-
+            segmentControl(detail)
+            segmentedContent(detail)
             if let liveLocation {
                 detailContextHeader(
                     t("Local Recording"),
@@ -236,34 +191,6 @@ public struct AppDayDetailView: View {
     @ViewBuilder
     private func portraitContentView(detail: DayDetailViewState, resolvedMapData: DayMapData) -> some View {
         VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(AppDateDisplay.weekday(detail.date))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(AppDateDisplay.longDate(detail.date))
-                    .font(.title2.weight(.semibold))
-                dayTimeRange(detail)
-            }
-
-            let dayDistance = detail.paths.reduce(0.0) { $0 + ($1.distanceM ?? 0) }
-            let deletedInPortraitStat = Set(mutations.deletions.filter { $0.dayKey == detail.date }.map { $0.pathIndex })
-            let visiblePathCountPortrait = detail.paths.indices.filter { !deletedInPortraitStat.contains($0) }.count
-            HStack(spacing: 12) {
-                quickStat("\(detail.visits.count)", label: t("Visits"), icon: "mappin.and.ellipse", color: .blue)
-                quickStat("\(detail.activities.count)", label: t("Activities"), icon: "figure.walk", color: .green)
-                quickStat("\(visiblePathCountPortrait)", label: t("Routes"), icon: "location.north.line", color: .orange)
-                if dayDistance > 0 {
-                    quickStat(formatDistance(dayDistance, unit: preferences.distanceUnit), label: t("Distance"), icon: "road.lanes", color: .purple)
-                }
-            }
-
-            dayActionsSection(detail)
-
-            detailContextHeader(
-                t("Imported Day Data"),
-                message: t("Map, timeline and entry cards below come from the currently imported history file.")
-            )
-
             #if canImport(MapKit)
             if #available(iOS 17.0, macOS 14.0, *) {
                 mapControlRow(detail: detail, resolvedMapData: resolvedMapData)
@@ -275,40 +202,20 @@ public struct AppDayDetailView: View {
             }
             #endif
 
-            DayTimelineView(detail: detail)
-
-            if !detail.visits.isEmpty {
-                detailSection(t("Visits"), icon: "mappin.and.ellipse", count: detail.visits.count) {
-                    ForEach(Array(detail.visits.enumerated()), id: \.offset) { _, visit in
-                        visitCard(visit)
-                    }
-                }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(AppDateDisplay.weekday(detail.date))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(AppDateDisplay.longDate(detail.date))
+                    .font(.title2.weight(.semibold))
+                    .accessibilityIdentifier("dayDetail.title")
+                dayTimeRange(detail)
             }
 
-            if !detail.activities.isEmpty {
-                detailSection(t("Activities"), icon: "figure.walk", count: detail.activities.count) {
-                    ForEach(Array(detail.activities.enumerated()), id: \.offset) { _, activity in
-                        activityCard(activity)
-                    }
-                }
-            }
-
-            let deletedPortrait = Set(mutations.deletions.filter { $0.dayKey == detail.date }.map { $0.pathIndex })
-            let visiblePortrait = detail.paths.enumerated().filter { !deletedPortrait.contains($0.offset) }
-            if !visiblePortrait.isEmpty {
-                detailSection(t("Routes"), icon: "location.north.line", count: visiblePortrait.count) {
-                    routeSelectionSummary(detail)
-                    ForEach(Array(visiblePortrait), id: \.offset) { item in
-                        pathCard(
-                            item.element,
-                            dayIdentifier: detail.date,
-                            routeIndex: item.offset,
-                            availableRouteIndices: exportableRouteIndices(for: detail),
-                            onRemove: onRemovePath != nil ? { confirmRemovePathIndex = item.offset } : nil
-                        )
-                    }
-                }
-            }
+            metricGrid(detail)
+            dayActionsSection(detail)
+            segmentControl(detail)
+            segmentedContent(detail)
 
             if let liveLocation {
                 detailContextHeader(
@@ -362,7 +269,153 @@ public struct AppDayDetailView: View {
             .padding(.top, fillHeight ? 12 : 0)
             AppDayMapView(mapData: resolvedMapData, fillHeight: fillHeight, showStyleToggle: false)
                 .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("dayDetail.map")
         }
+    }
+
+    @ViewBuilder
+    private func metricGrid(_ detail: DayDetailViewState) -> some View {
+        let items = DayDetailPresentation.kpis(detail: detail, unit: preferences.distanceUnit)
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+            ForEach(items) { item in
+                LHMetricCard(
+                    icon: item.icon,
+                    label: t(item.label),
+                    value: item.value,
+                    color: metricColor(for: item.id)
+                )
+                .accessibilityIdentifier("dayDetail.metric.\(item.id)")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func segmentControl(_ detail: DayDetailViewState) -> some View {
+        let segments = DayDetailPresentation.segments(detail: detail)
+        HStack(spacing: 8) {
+            ForEach(segments) { segment in
+                Button {
+                    selectedSegment = segment
+                } label: {
+                    Text(t(segment.title))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(selectedSegment == segment ? Color.black : LH2GPXTheme.textSecondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(selectedSegment == segment ? LH2GPXTheme.liveMint : LH2GPXTheme.elevatedCard)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(segmentIdentifier(segment))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func segmentedContent(_ detail: DayDetailViewState) -> some View {
+        switch selectedSegment {
+        case .overview:
+            overviewSegment(detail)
+        case .timeline:
+            timelineSegment(detail)
+        case .routes:
+            routesSegment(detail)
+        case .places:
+            placesSegment(detail)
+        }
+    }
+
+    @ViewBuilder
+    private func overviewSegment(_ detail: DayDetailViewState) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            timelineCard(detail)
+            if !detail.activities.isEmpty {
+                detailSection(t("Activities"), icon: "figure.walk", count: detail.activities.count) {
+                    ForEach(Array(detail.activities.prefix(3).enumerated()), id: \.offset) { _, activity in
+                        activityCard(activity)
+                    }
+                }
+            }
+            if !detail.visits.isEmpty {
+                detailSection(t("Places"), icon: "mappin.and.ellipse", count: detail.visits.count) {
+                    ForEach(Array(detail.visits.prefix(3).enumerated()), id: \.offset) { _, visit in
+                        visitCard(visit)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func timelineSegment(_ detail: DayDetailViewState) -> some View {
+        timelineCard(detail)
+        if !detail.activities.isEmpty {
+            detailSection(t("Activities"), icon: "figure.walk", count: detail.activities.count) {
+                ForEach(Array(detail.activities.enumerated()), id: \.offset) { _, activity in
+                    activityCard(activity)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func routesSegment(_ detail: DayDetailViewState) -> some View {
+        let visibleRoutes = Array(detail.paths.enumerated())
+        detailSection(t("Routes"), icon: "location.north.line", count: visibleRoutes.count) {
+            routeSelectionSummary(detail)
+            ForEach(visibleRoutes, id: \.offset) { item in
+                pathCard(
+                    item.element,
+                    dayIdentifier: detail.date,
+                    routeIndex: item.offset,
+                    availableRouteIndices: exportableRouteIndices(for: detail),
+                    onRemove: onRemovePath != nil ? { confirmRemovePathIndex = item.offset } : nil
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func placesSegment(_ detail: DayDetailViewState) -> some View {
+        detailSection(t("Places"), icon: "mappin.and.ellipse", count: detail.visits.count) {
+            ForEach(Array(detail.visits.enumerated()), id: \.offset) { _, visit in
+                visitCard(visit)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func timelineCard(_ detail: DayDetailViewState) -> some View {
+        let entries = DayDetailPresentation.timeline(detail: detail)
+        LHCard {
+            VStack(alignment: .leading, spacing: 10) {
+                LHSectionHeader(t("Day Timeline"))
+                ForEach(entries) { entry in
+                    HStack(alignment: .top, spacing: 10) {
+                        Circle()
+                            .fill(timelineColor(for: entry.kind))
+                            .frame(width: 8, height: 8)
+                            .padding(.top, 5)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(t(entry.title))
+                                .font(.subheadline.weight(.semibold))
+                            if let subtitle = entry.subtitle {
+                                Text(subtitle)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        Spacer()
+                        if let timeText = entry.timeText {
+                            Text(timeText)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("dayDetail.timeline")
     }
 
     @ViewBuilder
@@ -431,6 +484,7 @@ public struct AppDayDetailView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("dayDetail.routeSelection")
             }
 
             if !detail.paths.isEmpty {
@@ -587,6 +641,7 @@ public struct AppDayDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.red)
+                .accessibilityIdentifier("dayDetail.removeRoute")
             }
         }
     }
@@ -654,6 +709,33 @@ public struct AppDayDetailView: View {
         preferences.localized(english)
     }
 
+    private func metricColor(for identifier: String) -> Color {
+        switch identifier {
+        case "distance": return LH2GPXTheme.distancePurple
+        case "routes": return LH2GPXTheme.routeOrange
+        case "activities": return LH2GPXTheme.primaryBlue
+        case "places": return LH2GPXTheme.liveMint
+        default: return LH2GPXTheme.primaryBlue
+        }
+    }
+
+    private func timelineColor(for kind: DayDetailTimelineEntryPresentation.Kind) -> Color {
+        switch kind {
+        case .start, .end: return LH2GPXTheme.primaryBlue
+        case .drive: return LH2GPXTheme.routeOrange
+        case .visit: return LH2GPXTheme.liveMint
+        }
+    }
+
+    private func segmentIdentifier(_ segment: DayDetailSegment) -> String {
+        switch segment {
+        case .overview: return "dayDetail.segment.overview"
+        case .timeline: return "dayDetail.segment.timeline"
+        case .routes: return "dayDetail.segment.routes"
+        case .places: return "dayDetail.segment.places"
+        }
+    }
+
     private func pointCountText(_ count: Int) -> String {
         preferences.appLanguage.isGerman
             ? "\(count) \(count == 1 ? "Punkt" : "Punkte")"
@@ -705,16 +787,10 @@ public struct AppDayDetailView: View {
     }
 
     private func routeSelectionLabel(isSelected: Bool, hasExplicitSelection: Bool) -> String {
-        if preferences.appLanguage.isGerman {
-            if hasExplicitSelection {
-                return isSelected ? "Für den Export ausgewählt" : "Nicht für den Export ausgewählt"
-            }
-            return "Standardmäßig im Export enthalten"
-        }
         if hasExplicitSelection {
-            return isSelected ? "Selected for export" : "Not selected for export"
+            return isSelected ? t("Selected for Export") : t("Not Selected for Export")
         }
-        return "Included by default"
+        return t("Included by default")
     }
 
     private func routeSelectionHint(isSelected: Bool, hasExplicitSelection: Bool) -> String {

@@ -79,7 +79,10 @@ Present:
 - day list is repo-wahr sorted newest-first (`neu -> alt`) derived from export days
 - month grouping when multiple months are present
 - search on compact and regular day lists by date, formatted date, weekday and month text
-- day rows show weekday, formatted date, visit/activity/route counts and optional distance
+- day list uses the visible LH2GPX dark redesign: large `Days` title, true-black background, compact context row for active range and search, and dark cards with hairline borders
+- filter chips exposed in the visible redesign are `All`, `With Routes`, `Favorites`, `Exported`
+- an optional collapsible map header sits above the month groups and reuses the existing projected/filtered day-map context; hidden state keeps the invariant that no map view is instantiated
+- day rows show a large day number, weekday, formatted date, optional time range, separate places/routes/activities/distance metrics, a chevron, and visually separate favorite vs. exported status
 - no-content days stay visible in the list, but show a dedicated `No recorded entries` hint
 - no-content days are not treated as normal detail targets in compact or regular navigation
 - compact list can show highlight icons for busiest/longest day
@@ -98,9 +101,13 @@ Not present:
 ## 5. Day Detail
 
 Present:
+- day detail uses a visible map-first layout with `AppDayMapView` directly under navigation
+- map controls remain available on the right side of the map area, including path display mode (`.original` / `.mapMatched`) and map style controls
 - weekday/date header
 - derived day time range when timed entries exist
-- quick stats for visits, activities, routes and optional distance
+- KPI cards for distance, routes, activities and places
+- segment switcher for `Overview`, `Timeline`, `Routes` and `Places`
+- a visible timeline card summarises start, route/drive and visit flow plus end when timed data exists
 - explicit separation between imported day data and local live-recording utilities
 - structured sections for visits, activities and routes
 - colored cards for visit/activity/route items
@@ -108,6 +115,7 @@ Present:
 - day timeline/Gantt visualization for visits and activities
 - day detail is only entered for contentful days; empty calendar days remain list-only
 - live recording section can appear inside day detail on supported platforms
+- favorite toggle, sharing/export entry, route visibility, per-route export selection and display-only imported-route removal remain reachable from day detail
 
 Not present:
 - inline editing of imported visits / activities / routes

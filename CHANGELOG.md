@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## [2026-04-30] — feat: Tage + Tagesdetail sichtbar auf neues LH2GPX-Dark-Redesign umgebaut
+
+### Produkt-UI
+
+- `AppContentSplitView.swift`, `AppDayListView.swift`: `Days` sichtbar auf grosses Titel-Layout mit echter schwarzer Flaeche umgebaut; kompakte Context-Zeile fuer Zeitraum und Suche; reduzierte Filterchips fuer `Alle`, `Mit Routen`, `Favoriten`, `Exportiert`; optionaler `LHCollapsibleMapHeader` mit bestehendem Day-Map-Kontext produktiv angebunden
+- `AppDayListView.swift`, `DaySummaryRowPresentation.swift`: Day Rows sichtbar modernisiert; grosses Datum links, Wochentag und Zeitspanne, getrennte Kennzeichnung fuer Favorit vs. Exportstatus, getrennte Kennzahlen fuer Orte / Routen / Aktivitaeten / Distanz; bestehende Verdrahtung ueber `DayListPresentation.filteredSummaries`, `DaySummaryRowPresentationBuilder`, `selectedDayID`, `daySearchText`, `dayListFilter` und `favoritedDayIDs` bleibt erhalten
+- `AppDayDetailView.swift`, `DayDetailPresentation.swift`, `DayDetailContentHierarchy.swift`: Day Detail auf map-first Layout umgebaut; `AppDayMapView` bleibt die bestehende Kartenkomponente; darunter KPI-Karten fuer Distanz, Routen, Aktivitaeten und Orte sowie Segmentumschaltung fuer `Uebersicht`, `Timeline`, `Routen`, `Orte`
+- `AppDayDetailView.swift`: bestehende Aktionen bleiben erreichbar; Favorit, Teilen/Export, Route anzeigen, per-route Exportauswahl sowie display-only Route entfernen laufen weiter ueber die vorhandenen States und Confirmation-Dialoge
+- `AppContentSplitView.swift`: bestehendes compact-/regular-SplitView-Verhalten, `daysNavigationPath`, `compactDayList`, Insights-Drilldown nach `Days`, Tab-Reselection und iPad/Mac-Verdrahtung bleiben erhalten
+
+### Business-/Export-Grenzen
+
+- keine Aenderung an Parser-, Import-, Producer- oder Export-Builder-Logik
+- keine neue Route-Kappung, kein neues Road-Snapping, kein neues Map-Matching
+- display-only entfernte importierte Routen bleiben display-only; Export-Truth und per-route Auswahl in `ExportSelectionState.routeSelections` bleiben unveraendert
+- Hidden-Map-Invariante bleibt erhalten: bei `.hidden` wird der Days-Map-Builder nicht ausgewertet
+
+### Strings / Tests
+
+- `AppLanguageSupport.swift`: DE/EN-Strings fuer neue Days-/Day-Detail-Beschriftungen und Export-/Map-Labels ergaenzt bzw. sichtbar wiederverwendet
+- aktualisierte Tests in `OverviewAndDaySummaryPresentationTests`, `DayDetailContentHierarchyTests`, `AppLanguageSupportTests`
+
+### Checks
+
+- `swift test`: 741 Tests, 0 Failures
+
 ## [2026-04-30] — feat: Startseite + Übersicht sichtbar auf neues LH2GPX-Redesign umgebaut
 
 ### Produkt-UI

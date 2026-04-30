@@ -45,9 +45,12 @@ final class DayDetailContentHierarchyTests: XCTestCase {
         XCTAssertEqual(
             hierarchy.sections,
             [
-                DayDetailContentHierarchy.Section.headerSummary,
                 .importedMap,
-                .importedTimeline,
+                .metricGrid,
+                .actions,
+                .segmentControl,
+                .overview,
+                .timeline,
                 .visits,
                 .activities,
                 .routes,
@@ -78,8 +81,11 @@ final class DayDetailContentHierarchyTests: XCTestCase {
         XCTAssertEqual(
             hierarchy.sections,
             [
-                DayDetailContentHierarchy.Section.headerSummary,
                 .importedMap,
+                .metricGrid,
+                .actions,
+                .segmentControl,
+                .overview,
                 .activities,
             ]
         )
