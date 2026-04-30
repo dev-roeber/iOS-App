@@ -170,8 +170,8 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
   1. appleid.apple.com → persönliche Daten → Namen auf `Sebastian Roeber` ändern
   2. Xcode.app → Settings → Accounts → Distribution-Zertifikat revoken + neu erzeugen
   3. Xcode Cloud Clean Build starten
-- Privacy Policy URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (Seite vorhanden, URL noch nicht eingetragen)
-- Support URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/support.html` (Seite vorhanden, URL noch nicht eingetragen)
+- Privacy Policy URL in App Store Connect: `https://dev-roeber.github.io/iOS-App/privacy.html` — eingetragen (2026-04-30)
+- Support URL in App Store Connect: `https://dev-roeber.github.io/iOS-App/support.html` — eingetragen (2026-04-30)
 - Marketing URL optional: `https://dev-roeber.github.io/iOS-App/` (`docs/index.html` vorhanden, kein Download-Button)
 - finales App Icon (aktuell Interimsdesign)
 - Apple-Review-Bestaetigung fuer NSPrivacyCollectedDataTypes (optionaler Live-Upload)
@@ -261,8 +261,8 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (iOS 26.3), iPhone Air (iO
 #### ❌ offen (Apple-Review / Store-Policy)
 
 - Apple-Review-Bestaetigung fuer die bereits eingetragene `NSPrivacyCollectedDataTypePreciseLocation`-Deklaration des optionalen Live-Uploads steht weiter aus
-- Datenschutzrichtlinien-URL fuer App Store Connect (Pflichtfeld, noch nicht eingetragen)
-- Support-URL fuer App Store Connect (noch nicht eingetragen)
+- Datenschutzrichtlinien-URL fuer App Store Connect: eingetragen (2026-04-30)
+- Support-URL fuer App Store Connect: eingetragen (2026-04-30)
 
 ## Statusstand 2026-04-01
 
@@ -301,8 +301,8 @@ Dieser Audit-Block basiert ausschließlich auf Quellcode- und Dokumentationsanal
 #### ❌ offen (Apple-Review / Store-Policy)
 
 - Apple-seitige Scope-/Review-Einordnung für den optionalen Server-Upload: Apple entscheidet, ob das Datentypen-Deklaration in `NSPrivacyCollectedDataTypes` erfordert
-- Datenschutzrichtlinien-URL für App Store Connect (Pflichtfeld, noch nicht eingetragen)
-- Support-URL für App Store Connect (noch nicht eingetragen)
+- Datenschutzrichtlinien-URL für App Store Connect: eingetragen (2026-04-30)
+- Support-URL für App Store Connect: eingetragen (2026-04-30)
 - TestFlight-Upload und Beta-Verifikation (erfordert App Store Connect-Zugang)
 - Finaler App Store Review (kann nicht lokal simuliert werden)
 

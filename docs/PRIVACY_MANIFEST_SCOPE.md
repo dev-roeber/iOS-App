@@ -121,13 +121,12 @@ Diese Deklaration ist technisch mit dem aktuellen Code synchron; offen bleibt nu
 ### 3c. Datenschutzrichtlinien-URL (Pflicht)
 
 - App Store Connect verlangt eine Datenschutzrichtlinien-URL
-- Diese ist im Monorepo noch nicht eingetragen
-- **Erforderlich vor jeder Einreichung**
+- `https://dev-roeber.github.io/iOS-App/privacy.html` — in App Store Connect eingetragen (2026-04-30) ✅
 
 ### 3d. Support-URL
 
 - App Store Connect Pflichtfeld
-- Noch nicht konfiguriert
+- `https://dev-roeber.github.io/iOS-App/support.html` — in App Store Connect eingetragen (2026-04-30) ✅
 
 ---
 
@@ -168,7 +167,7 @@ Noch offen — erfordert Developer Account oder Apple-Store-Review:
 | NSPrivacyCollectedDataTypes im Manifest eingetragen | ✅ belastbar | PrivacyInfo.xcprivacy |
 | Apple-Review-Einordnung dieser Deklaration | ⚠️ offen | benötigt Apple-Feedback / Store-Review |
 | ZIPFoundation-Manifest-Compliance | ⚠️ offen | benötigt Apple-Host / xcodebuild |
-| Datenschutzrichtlinien-URL | ❌ fehlt | App Store Connect |
-| Support-URL | ❌ fehlt | App Store Connect |
+| Datenschutzrichtlinien-URL | ✅ eingetragen (2026-04-30) | App Store Connect |
+| Support-URL | ✅ eingetragen (2026-04-30) | App Store Connect |
 | Fresh xcodebuild archive verifiziert | ⚠️ historisch (2026-03-17) | Apple-Host |
 | End-to-End Upload auf Gerät | ✅ verifiziert (2026-04-02) | Apple-Host + echter Endpunkt |

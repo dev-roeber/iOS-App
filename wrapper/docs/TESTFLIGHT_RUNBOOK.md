@@ -243,8 +243,8 @@ Alternativ: Xcode Organizer → Distribute App → App Store Connect → Upload.
   und ist standardmaessig deaktiviert.
 - **Keywords:** location history, google takeout, karte, standortverlauf, gpx
 - **Kategorie:** Dienstprogramme (Utilities)
-- **Support-URL:** (einzutragen)
-- **Datenschutzrichtlinien-URL:** (Pflicht – einzutragen)
+- **Support-URL:** `https://dev-roeber.github.io/iOS-App/support.html` (eingetragen 2026-04-30) ✅
+- **Datenschutzrichtlinien-URL:** `https://dev-roeber.github.io/iOS-App/privacy.html` (eingetragen 2026-04-30) ✅
 
 ### TestFlight aktivieren
 - App Store Connect → TestFlight → Build waehlen

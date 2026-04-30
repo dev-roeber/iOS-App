@@ -7,8 +7,8 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 ## P0 — Release / Review / Hardware-Verifikation
 
 - [ ] App Review auf Build `52` weiter beobachten und Apple-Feedback dokumentieren. Kein Nachreichen von Build `57` ohne Apple-Feedback oder bestaetigten release-kritischen Fehler.
-- [ ] Support-URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/support.html`
-- [ ] Privacy-URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html`
+- [x] Support-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/support.html` (2026-04-30)
+- [x] Privacy-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-30)
 - [ ] App-Store-Screenshots in App Store Connect hochladen: `docs/app-store-assets/screenshots/iphone-67/`
 - [ ] GitHub Pages fuer `/docs` final aktivieren bzw. den echten Live-Status repo-wahr nachtragen
 - [ ] Live Activity / Dynamic Island auf echter Hardware vervollstaendigen: Lock Screen, `minimal`, Fallback bei deaktivierten / nicht verfuegbaren Live Activities, No-Dynamic-Island-Geraet (Pending-/Restart-Pfad jetzt gruen)

@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [2026-04-30] — docs: Support-URL und Privacy-URL in App Store Connect bestätigt
+
+### Dokumentiert
+- Support-URL `https://dev-roeber.github.io/iOS-App/support.html` manuell in App Store Connect eingetragen / geprüft
+- Privacy Policy URL `https://dev-roeber.github.io/iOS-App/privacy.html` manuell in App Store Connect eingetragen / geprüft
+- Build `52` bleibt unverändert im Review; kein neuer Build nachgereicht
+- kein vollständiger Lock-Screen-/minimal-/No-Dynamic-Island-Nachweis in diesem Slice
+
+### Verifiziert
+- `git diff --check` (reine Doku-Änderung; kein `swift test` erforderlich)
+
+### Bewusst nicht behauptet
+- Lock Screen, `minimal`, deaktivierte Live Activities und No-Dynamic-Island-Geraete bleiben weiter ohne echten Hardware-Nachweis offen
+
 ## [2026-04-30] — fix: Pending-/Restart-Pfad nach App-Relaunch korrekt abgebildet
 
 ### Root Cause
