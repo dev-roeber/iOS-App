@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## [2026-04-30] — feat: Wiederverwendbare Seiten-Architektur (Map-Header-Shell)
+
+### Neu: `LHCollapsibleMapHeader.swift`
+
+**`LHMapHeaderVisibility`** — enum (`hidden | compact | expanded | fullscreen`), keine SwiftUI-Abhängigkeit, Linux-safe.
+
+**`LHMapHeaderState`** — Value-Type mit Performance-Invariante: `shouldRenderMap = visibility != .hidden`. Karte liegt bei `.hidden` **nicht** im View-Tree (kein `.hidden()`, kein `.opacity(0)` — `@ViewBuilder`-Closure wird nicht ausgewertet). Übergänge: `toggleHidden`, `expand`, `collapse`, `enterFullscreen`, `exitFullscreen`.
+
+**`LHCollapsibleMapHeader<MapContent: View>`** — SwiftUI-View mit Control-Bar, animiertem Map-Container und Fullscreen-Cover (`#if os(iOS) || os(visionOS)`).
+
+### Neu: `LHPageScaffold.swift`
+
+- `LHPageScaffold` — dünner VStack-Wrapper mit konfigurierbarem Padding/Spacing
+- `LHContextBar` — kompaktes Sticky-Banner für aktive Filter / Drilldown-Kontext
+
+### AppLanguageSupport — neue DE/EN Strings
+
+Neue Einträge: "Show Map"→"Karte anzeigen", "Collapse Map"→"Karte einklappen", "Expand Map"→"Karte erweitern", "Close Map"→"Karte schließen", "Dismiss"→"Schließen" (bereits vorhanden: "Fullscreen"→"Vollbild", "Map Preview"→"Kartenvorschau").
+
+### Tests
+
+- `LHMapHeaderTests.swift` — 40 Tests in 7 Klassen (Visibility, RenderInvariant, FrameHeight, Transitions, Predicates, ButtonLabels, Equatable, Sequences)
+- `AppLanguageSupportTests.swift` — 14 Tests (EN-Identity + DE-Übersetzungen für alle neuen Strings)
+
+### Nicht geändert
+- Keine bestehenden Map-Komponenten (AppOverviewTracksMapView, AppDayMapView, AppExportPreviewMapView, AppHeatmapView)
+- Kein Live-Tracking-Business-Logic
+- Kein Widget / Dynamic Island
+
+### Checks
+- `swift test`: 730 Tests, 0 Failures (Branch: `ui/map-header-shell`)
+
+---
+
 ## [2026-04-30] — feat: LH2GPX Design-System (Theme-Tokens + UI-Bausteine)
 
 ### Neu: `LH2GPXTheme.swift`

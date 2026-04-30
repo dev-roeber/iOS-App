@@ -24,6 +24,7 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 
 ## P2 — Nachgelagerte Optimierung
 
+- [ ] `LHCollapsibleMapHeader` in erste echte Seite einbauen (Kandidat: `AppOverviewSection` oder neue Overview-Map-Seite); `LHPageScaffold` / `LHContextBar` dort pilotieren
 - [ ] Design-System schrittweise auf weitere Stellen ausweiten: `AppOverviewSection` Stat-Cards auf `LHMetricCard`-Pattern, `AppSessionStatusView`, `AppInsightsContentView` Header-Zeilen auf `LHSectionHeader`; Widget/Dynamic-Island falls rein-sicherer Token-Pfad identifizierbar
 - [ ] Apple-Review-/Privacy-Einordnung fuer den optionalen Server-Upload weiter beobachten und nach Review-Feedback repo-wahr nachziehen
 - [ ] `docs/NOTION_SYNC_DRAFT.md` nur noch als manuell gepflegten Snapshot nutzen oder spaeter durch einen schlankeren Status-Export ersetzen

@@ -647,6 +647,12 @@ enum AppGermanTranslations {
         // Imported-path deletion (History Track Editor)
         "Remove Route": "Route entfernen",
         "Remove": "Entfernen",
-        "This route will be hidden from this day. The original data is not modified.": "Diese Route wird für diesen Tag ausgeblendet. Die Originaldaten bleiben unverändert."
+        "This route will be hidden from this day. The original data is not modified.": "Diese Route wird für diesen Tag ausgeblendet. Die Originaldaten bleiben unverändert.",
+        // LHCollapsibleMapHeader / LHContextBar
+        "Show Map": "Karte anzeigen",
+        "Collapse Map": "Karte einklappen",
+        "Expand Map": "Karte erweitern",
+        "Close Map": "Karte schließen",
+        "Dismiss": "Schließen"
     ]
 }
