@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [2026-04-30] — feat: Startseite + Übersicht sichtbar auf neues LH2GPX-Redesign umgebaut
+
+### Produkt-UI
+
+- `AppShellRootView.swift`: import-first Startseite mit schwarzer Flaeche, grossem `LH2GPX`-Titel, kompaktem Subtitle, blauem Primary-Button `Datei importieren`, dunklen Action Rows fuer `Google Maps Export-Anleitung` und `Demo laden`
+- `RecentFilesView.swift` + `RecentFilesStore.swift`: `Zuletzt verwendet` als echte Start-Card uebernommen; Dateiname, Datum und optionale Dateigroesse sichtbar; `Alle anzeigen` fuer laengere Listen; Dateigroesse wird beim Speichern des Recent-Entries mitpersistiert
+- `AppContentSplitView.swift`: Overview sichtbar neu strukturiert mit Importstatus-Card, Zeitraum-Card, KPI-Grid, Highlights-Card und `Weiterarbeiten`-Card; bestehende Navigation (`Days`, `Insights`, `Export`, `onOpen`) bleibt verdrahtet
+- `AppSessionStatusView.swift`: Importstatus-Card auf dunkles Kartenlayout gezogen; aktive Datei wird kompakter dargestellt; Link `Technische Details anzeigen` ersetzt die alte technische Disclosure-Beschriftung
+
+### Design-System / Map-Header-Pilot
+
+- `LH2GPXTheme.swift`: `LHCard` als einfacher Karten-Wrapper auf Basis von `cardChrome()` ergänzt
+- `AppContentSplitView.swift`: `LHCollapsibleMapHeader` jetzt auf der ersten echten Produktseite (`Overview`) pilotiert; `LHPageScaffold` und `LHContextBar` dort ebenfalls produktiv im Einsatz
+- `AppOverviewTracksMapView.swift`: fuer Header-Einbettung konfigurierbar (`fixedHeight`, optionaler Fullscreen-Button); Badge-Text repo-wahr auf `Simplified preview · export complete` / `Vereinfachte Vorschau · Export vollständig` umgestellt
+
+### Strings / Tests
+
+- `AppLanguageSupport.swift`: neue DE/EN-Strings fuer Startseite, neue Overview-Karten, Continue-Aktionen und den neuen Badge-Text ergänzt
+- neue/aktualisierte Tests in `UIWiringTests`, `AppLanguageSupportTests`, `AppPreferencesTests`, `GoogleMapsExportHelpTests`
+
+### Checks
+
+- `swift test`: 739 Tests, 0 Failures
+- `xcodebuild build -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS'`: BUILD SUCCEEDED
+
 ## [2026-04-30] — feat: Wiederverwendbare Seiten-Architektur (Map-Header-Shell)
 
 ### Neu: `LHCollapsibleMapHeader.swift`

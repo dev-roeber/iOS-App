@@ -48,7 +48,12 @@ struct AppShellRootView: View {
                             )
                         }
                     }
-                    .navigationTitle("LH2GPX")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black.ignoresSafeArea())
+                    .navigationTitle("")
+                    #if os(iOS)
+                    .navigationBarTitleDisplayMode(.inline)
+                    #endif
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
                             actionsMenu
@@ -279,124 +284,102 @@ private struct AppShellEmptyStateView: View {
     let localize: (String) -> String
 
     var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
-            Image(systemName: "map.fill")
-                .font(.system(size: 56))
-                .foregroundColor(.accentColor)
-                .accessibilityHidden(true)
-
-            VStack(spacing: 8) {
-                Text(localize("Import your location history"))
-                    .font(.title2.weight(.semibold))
-                Text(localize("Open an LH2GPX app_export.json or .zip from the LocationHistory2GPX tool — or a Google Timeline location-history.json or .zip from Google Takeout."))
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            if let message, message.kind == .error {
-                AppMessageCard(message: message)
-            }
-
-            if !recentFiles.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text(localize("Recent Files"))
-                            .font(.headline)
-                        Spacer()
-                        Button(localize("Clear History"), action: clearRecentHistoryAction)
-                            .font(.caption.weight(.semibold))
-                    }
-
-                    VStack(spacing: 10) {
-                        ForEach(recentFiles) { entry in
-                            recentFileRow(entry)
-                        }
-                    }
+        ScrollView {
+            LHPageScaffold(horizontalPadding: 20, verticalPadding: 28, spacing: 18) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("LH2GPX")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .accessibilityIdentifier("home.title")
+                    Text(localize("Private location history → GPX, KML, CSV, KMZ"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16)
-                .background(Color.secondary.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            }
 
-            GoogleMapsExportHelpInlineAction()
+                if let message, message.kind == .error {
+                    AppMessageCard(message: message)
+                }
 
-            VStack(spacing: 10) {
                 Button(action: openAction) {
-                    Label(localize("Open location history file"), systemImage: "doc.badge.plus")
+                    Text(localize("Import File"))
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
                 }
-                .buttonStyle(.borderedProminent)
-                Button(action: loadDemoAction) {
-                    Label(localize("Load Demo Data"), systemImage: "testtube.2")
+                .buttonStyle(.plain)
+                .foregroundStyle(.white)
+                .background(LH2GPXTheme.primaryBlue, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .accessibilityIdentifier("home.import.primary")
+
+                GoogleMapsExportHelpInlineAction(
+                    titleKey: "Google Maps Export Guide",
+                    accessibilityIdentifier: "home.googleHelp"
+                )
+
+                HomeActionRow(
+                    title: localize("Load Demo"),
+                    systemImage: "testtube.2",
+                    accessibilityIdentifier: "home.demo",
+                    action: loadDemoAction
+                )
+
+                if !recentFiles.isEmpty {
+                    RecentFilesView(
+                        entries: recentFiles,
+                        onOpen: reopenRecentAction,
+                        onRemove: { id in
+                            if let entry = recentFiles.first(where: { $0.id == id }) {
+                                removeRecentAction(entry)
+                            }
+                        },
+                        onClearAll: clearRecentHistoryAction
+                    )
                 }
-                .buttonStyle(.bordered)
+
                 if message?.kind == .error {
-                    Button(action: clearAction) {
-                        Label(localize("Clear"), systemImage: "xmark.circle")
-                    }
-                    .buttonStyle(.bordered)
+                    Button(localize("Clear"), action: clearAction)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(LH2GPXTheme.primaryBlue)
                 }
             }
-
-            Spacer()
+            .frame(maxWidth: 560, alignment: .leading)
         }
-        .frame(maxWidth: 480)
         .frame(maxWidth: .infinity)
-        .padding(24)
     }
+}
 
-    @ViewBuilder
-    private func recentFileRow(_ entry: RecentFileEntry) -> some View {
-        let isAvailable = RecentFilesStore.isAvailable(entry: entry)
-        let iconColor: Color = isAvailable ? .accentColor : .orange
+private struct HomeActionRow: View {
+    let title: String
+    let systemImage: String
+    let accessibilityIdentifier: String
+    let action: () -> Void
 
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: isAvailable ? "clock.arrow.circlepath" : "exclamationmark.triangle")
-                .font(.title3)
-                .foregroundStyle(iconColor)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(entry.displayName)
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(LH2GPXTheme.primaryBlue)
+                    .accessibilityHidden(true)
+                Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                Text(recentFileMetadata(entry: entry, isAvailable: isAvailable))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            if isAvailable {
-                Button(localize("Open Again")) {
-                    reopenRecentAction(entry)
-                }
-                .font(.caption.weight(.semibold))
-            } else {
-                Text(localize("Unavailable"))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(LH2GPXTheme.primaryBlue.opacity(0.8))
+                    .accessibilityHidden(true)
             }
-
-            Button {
-                removeRecentAction(entry)
-            } label: {
-                Image(systemName: "trash")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(localize("Remove Entry"))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(LH2GPXTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .padding(.vertical, 2)
-    }
-
-    private func recentFileMetadata(entry: RecentFileEntry, isAvailable: Bool) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        let openedText = formatter.localizedString(for: entry.lastOpenedAt, relativeTo: Date())
-        let availabilityText = isAvailable ? localize("Available") : localize("Unavailable")
-        return "\(availabilityText) · \(localize("Opened")) \(openedText)"
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(accessibilityIdentifier)
     }
 }
 #endif

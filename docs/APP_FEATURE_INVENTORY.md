@@ -14,6 +14,7 @@ Governance:
 Present:
 - Import-first root screen when no content is loaded
 - import-first root can show a visible recent-files list with reopen, remove-entry and clear-history actions
+- import-first root now uses the visible LH2GPX redesign: large `LH2GPX` title, short subtitle, prominent blue `Import File` primary action, dark help/demo rows and a dark `Recently Used` card
 - shared toolbar `Actions` menu for primary app commands
 - compact layout uses `TabView` with `Overview`, `Days`, `Insights`, `Export` and on iOS 17+ `Live`
 - compact tabs each run inside their own `NavigationStack`, including the optional `Live` tab on iOS 17+
@@ -55,22 +56,18 @@ Not present:
 ## 3. Overview / Dashboard
 
 Present:
-- overview screen with statistics cards for days, visits, activities and routes
-- visible global time-range control for `All Time`, preset ranges and custom ranges
-- localized active-range display plus reset-to-all-time action
-- overview starts with a source/status card and a dedicated `Primary Actions` section
-- optional date-range header when days exist
-- optional total-distance summary card when distance data exists
-- highlight cards for busiest day and longest-distance day
+- overview screen uses the LH2GPX redesign with a large page title, dark cards and true-black background
+- visible import-status/source card with active file and optional technical disclosure
+- visible global time-range card with current range, reset action and quick chips for `Last 7 Days`, `Last 30 Days`, `Last 90 Days` and `This Year`
+- KPI grid for distance, active days, routes and places
+- highlights card for busiest day, longest distance and most activities plus a direct jump into insights
+- continue/quick-action card for day browsing, insights, export and opening another file
 - active-filter banner when export filters are present in metadata
-- source/status card with optional technical disclosure details
-- primary action cards can jump directly into file import, day browsing, insights and export
-- primary actions include a direct jump into the separate `Saved Live Tracks` local library
 - overview entry card for the `Saved Live Tracks` local library
-- time-range control is first item in the overview pane (promoted from lower position)
 - heatmap entry in the overview is a compact Capsule chip, aligned with the existing filter/status chip language instead of a larger dedicated action card
 - favorites-only Capsule toggle appears below the time-range when at least one day is favorited
-- `AppOverviewTracksMapView` shows an async interactive polyline overview map for all tracks in the active range (iOS 17+); loads off-main-thread via `Task.detached`; caches candidates once per data/filter change and rebuilds overlays on pan/zoom without re-scanning the export; uses viewport bounding-box intersection (not midpoint-only) so long routes crossing the visible region stay prioritizable; supports style toggle, fit-to-data and fullscreen explore mode; uses a tiered render profile (Douglas-Peucker simplification + stride decimation per route + hard `overlayLimit` cap) to keep MapKit within safe overlay and coordinate counts even for "All Time" on large datasets; `overlayLimit × maxPolylinePoints` = implicit global coordinate cap (9.600–48.000 per tier); shows "Simplified map – export complete" badge when overlay cap fires; export data never affected; shows phase-based loading card with linear ProgressView
+- `LHCollapsibleMapHeader` is now used as the actual overview-map shell; hidden state keeps the performance invariant that the map builder is not evaluated
+- `AppOverviewTracksMapView` still provides the async interactive polyline overview map for all tracks in the active range (iOS 17+); loads off-main-thread via `Task.detached`; caches candidates once per data/filter change and rebuilds overlays on pan/zoom without re-scanning the export; uses viewport bounding-box intersection (not midpoint-only) so long routes crossing the visible region stay prioritizable; uses the existing tiered render profile (Douglas-Peucker simplification + stride decimation per route + hard `overlayLimit` cap) to keep MapKit within safe overlay and coordinate counts even for "All Time" on large datasets; `overlayLimit × maxPolylinePoints` = implicit global coordinate cap (9.600–48.000 per tier); shows `Simplified preview · export complete` when the cap fires; export data never affected; shows phase-based loading card with linear ProgressView
 
 Not present:
 - dedicated onboarding dashboard state distinct from the import-first root

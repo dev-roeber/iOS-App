@@ -211,6 +211,8 @@ final class AppPreferencesTests: XCTestCase {
 
             XCTAssertEqual(preferences.localized("Options"), "Optionen")
             XCTAssertEqual(preferences.localized("Open location history file"), "Standortverlauf-Datei öffnen")
+            XCTAssertEqual(preferences.localized("Import File"), "Datei importieren")
+            XCTAssertEqual(preferences.localized("Google Maps Export Guide"), "Google Maps Export-Anleitung")
         }
     }
 

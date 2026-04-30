@@ -32,10 +32,27 @@ P1 — Vorhandene Produktflaechen belastbar machen
 - Track-Editor-/Export-Grenze weiter dokumentieren oder produktseitig spaeter anpassen
 
 P2 — Nachgelagerte Optimierung
-- Design-System (`LH2GPXTheme`) schrittweise auf weitere Stellen ausdehnen; Widget/Dynamic-Island nur bei sicherem Token-Pfad
+- Design-System (`LH2GPXTheme`) nach dem jetzt produktiven Start-/Overview-Pilot schrittweise auf weitere Stellen ausdehnen; Widget/Dynamic-Island nur bei sicherem Token-Pfad
 - Apple-Review-/Privacy-Einordnung fuer den optionalen Server-Upload weiter sauber beobachten
 - veraltete Notion-/Wrapper-/Split-Repo-Doku weiter abbauen
 - echtes Road-/Path-Matching nur als spaeteren separaten Produktscope betrachten
+
+### Start + Overview Redesign Truth Update (2026-04-30)
+
+Implementiert und lokal verifiziert:
+- import-first Startseite ist sichtbar auf das neue LH2GPX-Redesign umgestellt: schwarzer Hintergrund, grosser `LH2GPX`-Titel, kompakter Subtitle, grosser blauer Import-Button, dunkle Action Rows fuer Hilfe und Demo
+- `RecentFilesView` ist jetzt die produktive `Zuletzt verwendet`-Card auf der Startseite; Dateiname, Datum und optionale Dateigroesse sind sichtbar, Reopen-/Remove-/Clear-Logik bleibt erhalten
+- Overview ist sichtbar neu strukturiert: Importstatus-Card, Zeitraum-Card, KPI-Grid, Highlights-Card, `Weiterarbeiten`-Card
+- `LHCollapsibleMapHeader` ist jetzt auf der ersten echten Produktseite (`Overview`) pilotiert; `LHPageScaffold` und `LHContextBar` sind dort ebenfalls produktiv im Einsatz
+- `AppOverviewTracksMapView` bleibt die bestehende Overview-Karte; bei verborgenem Header wird die Map-Closure nicht ausgewertet, die bestehende Overlay-/Simplification-/Cancellation-Logik bleibt unveraendert
+- lokaler Nachweis: `swift test` 739 Tests, 0 Failures
+
+Prompt-2-Doku-Korrektur:
+- der bisher noch offene NEXT_STEPS-/ROADMAP-Punkt zum ersten echten `LHCollapsibleMapHeader`-Pilot war nach Prompt 2 weiterhin korrekt offen; mit diesem Slice ist er repo-wahr erledigt und als offener Punkt entfernt bzw. auf weitere Rollout-Arbeit umformuliert
+
+Nicht als abgeschlossen markieren:
+- kein neuer Apple-Hardware-Claim fuer Home-/Overview-Layout, Heatmap, Range-Chips oder die neue Startseiten-IA
+- keine Aussage zu App-Store-Screenshot-Aktualitaet nach dem sichtbaren UI-Umbau
 
 ### Dynamic Island / Live Activity Truth Update (2026-04-30)
 

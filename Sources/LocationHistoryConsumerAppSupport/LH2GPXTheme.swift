@@ -156,6 +156,25 @@ public struct LHMetricCard: View {
     }
 }
 
+// MARK: - LHCard
+
+/// Standard dark card shell used across the redesigned start and overview
+/// screens. Applies the shared LH2GPX surface and hairline border.
+public struct LHCard<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    public init(@ViewBuilder content: @escaping () -> Content) {
+        self.content = content
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            content()
+        }
+        .cardChrome()
+    }
+}
+
 // MARK: - LHInsightBanner
 
 /// Informational / guidance banner with an icon, title and body text.

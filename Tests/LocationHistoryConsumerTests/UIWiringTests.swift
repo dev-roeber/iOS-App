@@ -7,6 +7,57 @@ import LocationHistoryConsumer
 /// is verified manually on an Apple host device.
 final class UIWiringTests: XCTestCase {
 
+    func testOverviewContinueRouteForCompactDaysTargetsDaysTab() {
+        let route = StartOverviewPresentation.route(for: .days, isCompact: true)
+        XCTAssertEqual(route.selectedTab, 1)
+        XCTAssertFalse(route.presentsExportSheet)
+        XCTAssertFalse(route.callsOnOpen)
+    }
+
+    func testOverviewContinueRouteForCompactInsightsTargetsInsightsTab() {
+        let route = StartOverviewPresentation.route(for: .insights, isCompact: true)
+        XCTAssertEqual(route.selectedTab, 2)
+    }
+
+    func testOverviewContinueRouteForCompactExportTargetsExportTab() {
+        let route = StartOverviewPresentation.route(for: .export, isCompact: true)
+        XCTAssertEqual(route.selectedTab, 3)
+        XCTAssertFalse(route.presentsExportSheet)
+    }
+
+    func testOverviewContinueRouteForRegularExportPresentsSheet() {
+        let route = StartOverviewPresentation.route(for: .export, isCompact: false)
+        XCTAssertNil(route.selectedTab)
+        XCTAssertTrue(route.presentsExportSheet)
+    }
+
+    func testOverviewContinueRouteForImportCallsOpen() {
+        let route = StartOverviewPresentation.route(for: .importFile, isCompact: true)
+        XCTAssertTrue(route.callsOnOpen)
+    }
+
+    func testMostActivitiesHighlightUsesHighestActivityCount() {
+        let summaries = [
+            DaySummary.stub(date: "2024-05-01", activityCount: 2),
+            DaySummary.stub(date: "2024-05-02", activityCount: 5),
+            DaySummary.stub(date: "2024-05-03", activityCount: 1)
+        ]
+
+        let highlight = StartOverviewPresentation.mostActivitiesHighlight(in: summaries)
+        XCTAssertEqual(highlight?.date, "2024-05-02")
+        XCTAssertEqual(highlight?.activityCount, 5)
+    }
+
+    func testRangeSummaryForAllTimeReturnsLocalizedAllTimeKey() {
+        let summary = StartOverviewPresentation.rangeSummary(
+            for: HistoryDateRangeFilter(preset: .all),
+            language: .german,
+            locale: Locale(identifier: "de")
+        )
+
+        XCTAssertEqual(summary, "Gesamtzeitraum")
+    }
+
     // MARK: - HistoryDateRangeFilter chipLabel
 
     func testChipLabelAllReturnsLocalizedAllDays() {

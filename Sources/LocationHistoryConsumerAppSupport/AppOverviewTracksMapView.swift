@@ -112,11 +112,27 @@ struct AppOverviewTracksMapView: View {
     let daySummaries: [DaySummary]
     let content: AppSessionContent?
     let queryFilter: AppExportQueryFilter?
+    let fixedHeight: CGFloat?
+    let showsFullscreenControl: Bool
 
     @State private var model = AppOverviewMapModel()
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var hasSetInitialPosition = false
     @State private var isExpanded = false
+
+    init(
+        daySummaries: [DaySummary],
+        content: AppSessionContent?,
+        queryFilter: AppExportQueryFilter?,
+        fixedHeight: CGFloat? = 200,
+        showsFullscreenControl: Bool = true
+    ) {
+        self.daySummaries = daySummaries
+        self.content = content
+        self.queryFilter = queryFilter
+        self.fixedHeight = fixedHeight
+        self.showsFullscreenControl = showsFullscreenControl
+    }
 
     var body: some View {
         Group {
@@ -128,7 +144,7 @@ struct AppOverviewTracksMapView: View {
                 emptyPlaceholder
             }
         }
-        .frame(height: 200)
+        .frame(height: fixedHeight)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -190,11 +206,13 @@ struct AppOverviewTracksMapView: View {
                         withAnimation { mapPosition = .region(region) }
                     }
                 }
-                mapControlButton(
-                    systemImage: "arrow.up.left.and.arrow.down.right",
-                    accessibilityLabel: t("Open fullscreen map")
-                ) {
-                    isExpanded = true
+                if showsFullscreenControl {
+                    mapControlButton(
+                        systemImage: "arrow.up.left.and.arrow.down.right",
+                        accessibilityLabel: t("Open fullscreen map")
+                    ) {
+                        isExpanded = true
+                    }
                 }
             }
             .padding(8)
@@ -238,7 +256,7 @@ struct AppOverviewTracksMapView: View {
     private var optimizedBadge: some View {
         if model.renderData.isOptimized {
             let label = model.renderData.visibleRouteCount < model.renderData.totalRouteCount
-                ? t("Simplified map – export complete")
+                ? t("Simplified preview · export complete")
                 : t("Optimized overview")
             Text(label)
                 .font(.caption2.weight(.medium))
@@ -420,7 +438,7 @@ struct AppOverviewExploreSheet: View {
                     .clipShape(Capsule())
                 if model.renderData.isOptimized {
                     let label = model.renderData.visibleRouteCount < model.renderData.totalRouteCount
-                        ? t("Simplified map – export complete")
+                        ? t("Simplified preview · export complete")
                         : t("Optimized overview")
                     Text(label)
                         .font(.caption2.weight(.medium))

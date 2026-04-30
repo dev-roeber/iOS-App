@@ -15,6 +15,11 @@ public struct AppContentSplitView: View {
     @State private var dayListFilter = DayListFilter.empty
     @State private var favoritedDayIDs: Set<String> = []
     @State private var overviewShowOnlyFavorites: Bool = false
+    @State private var overviewMapHeaderState = LHMapHeaderState(
+        visibility: .compact,
+        compactHeight: 220,
+        expandedHeight: 320
+    )
     @State private var presentedSheet: PresentedSheet?
     @StateObject private var pathMutationStore = AppImportedPathMutationStore()
 
@@ -206,9 +211,12 @@ public struct AppContentSplitView: View {
             NavigationStack {
                 ScrollView {
                     overviewPaneContent
-                        .padding()
                 }
-                .navigationTitle(t("Overview"))
+                .background(Color.black.ignoresSafeArea())
+                .navigationTitle("")
+                #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         actionsMenu
@@ -474,7 +482,20 @@ public struct AppContentSplitView: View {
 
     @ViewBuilder
     private var overviewPaneContent: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        LHPageScaffold(horizontalPadding: 18, verticalPadding: 18, spacing: 18) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(t("Overview"))
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                if !localizedProjectedFilterDescriptions.isEmpty {
+                    LHContextBar(
+                        message: localizedProjectedFilterDescriptions.joined(separator: " · "),
+                        systemImage: "line.3.horizontal.decrease.circle",
+                        tint: LH2GPXTheme.warningOrange
+                    )
+                }
+            }
+
             AppSessionStatusView(
                 summary: session.sourceSummary,
                 message: session.message,
@@ -482,313 +503,293 @@ public struct AppContentSplitView: View {
                 hasDays: session.hasDays
             )
 
-            // Task 1: Time Range is now the first content block (directly below status).
-            // Task 2: Favorites-only toggle is embedded in the same card.
-            overviewTimeRangeAndFavoritesBlock
+            overviewRangeCard
 
-            // Task 3: Map of all tracks within the active time range + favorites filter.
             if session.hasDays {
-                if #available(iOS 17.0, macOS 14.0, *) {
-                    AppOverviewTracksMapView(
-                        daySummaries: overviewFilteredDaySummaries,
-                        content: session.content,
-                        queryFilter: projectedQueryFilter
-                    )
-                }
+                overviewMapCard
             }
 
-            overviewPrimaryActionsSection
-
-            if let insights = projectedInsights, insights.totalDistanceM > 0 {
-                HStack(spacing: 12) {
-                    Image(systemName: "road.lanes")
-                        .font(.title3)
-                        .foregroundColor(.accentColor)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(t("Total Distance"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(formatDistance(insights.totalDistanceM, unit: preferences.distanceUnit))
-                            .font(.title3.weight(.semibold))
-                    }
-                    Spacer()
-                }
-                .padding(12)
-                .background(Color.accentColor.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            if let overview = projectedOverview, let insights = projectedInsights {
+                overviewKPISection(overview: overview, insights: insights)
             }
 
             if let insights = projectedInsights {
-                overviewHighlights(insights)
+                overviewHighlightsCard(insights)
             }
 
-            if let overview = projectedOverview {
-                AppOverviewSection(
-                    overview: overview,
-                    daySummaries: overviewFilteredDaySummaries,
-                    onDaysTap: horizontalSizeClass == .compact ? { selectedTab = 1 } : nil,
-                    onInsightsTap: horizontalSizeClass == .compact ? { selectedTab = 2 } : nil
-                )
-            }
-
-            if !localizedProjectedFilterDescriptions.isEmpty {
-                activeFiltersSection(localizedProjectedFilterDescriptions)
-            }
+            overviewContinueCard
 
             liveTracksOverviewSection
         }
     }
 
-    /// Combined Time Range control and Favorites-only toggle (tasks 1 + 2).
-    @ViewBuilder
-    private var overviewTimeRangeAndFavoritesBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            AppHistoryDateRangeControl(filter: $session.historyDateRangeFilter)
+    private var overviewRangeCard: some View {
+        LHCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top) {
+                    LHSectionHeader(
+                        t("Time Range"),
+                        subtitle: StartOverviewPresentation.rangeSummary(
+                            for: session.historyDateRangeFilter,
+                            language: preferences.appLanguage,
+                            locale: preferences.appLocale
+                        )
+                    )
 
-            if session.hasDays || !favoritedDayIDs.isEmpty {
-                HStack(spacing: 0) {
                     Spacer()
-                    HStack(spacing: 8) {
-                        if session.hasDays {
-                            Button {
-                                presentSheet(.heatmap)
-                            } label: {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "thermometer.medium")
-                                        .font(.caption)
-                                    Text(t("Heatmap"))
-                                        .font(.caption.weight(.medium))
-                                        .lineLimit(1)
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color.red.opacity(0.08))
-                                .foregroundStyle(Color.red)
-                                .clipShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(t("Open Heatmap"))
-                        }
 
-                        if !favoritedDayIDs.isEmpty {
-                            Button {
-                                overviewShowOnlyFavorites.toggle()
-                            } label: {
-                                HStack(spacing: 6) {
-                                    Image(systemName: overviewShowOnlyFavorites ? "star.fill" : "star")
-                                        .font(.caption)
-                                    Text(overviewShowOnlyFavorites ? t("Favorites Only") : t("All Days"))
-                                        .font(.caption.weight(.medium))
-                                        .lineLimit(1)
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(overviewShowOnlyFavorites ? Color.yellow.opacity(0.18) : Color.secondary.opacity(0.08))
-                                .foregroundStyle(overviewShowOnlyFavorites ? Color.yellow : Color.primary)
-                                .clipShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(overviewShowOnlyFavorites ? t("Showing favorites only. Tap to show all days.") : t("Showing all days. Tap to show favorites only."))
+                    if session.historyDateRangeFilter.isActive {
+                        Button(t("Reset")) {
+                            session.historyDateRangeFilter.reset()
                         }
+                        .buttonStyle(.plain)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(LH2GPXTheme.primaryBlue)
                     }
                 }
-            }
-        }
-    }
 
-    @ViewBuilder
-    private var overviewPrimaryActionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(t("Primary Actions"))
-                .font(.title3.weight(.semibold))
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    overviewRangeChip(.last7Days, identifier: "overview.range.last7Days")
+                    overviewRangeChip(.last30Days, identifier: "overview.range.last30Days")
+                    overviewRangeChip(.last90Days, identifier: "overview.range.last90Days")
+                    overviewRangeChip(.thisYear, identifier: "overview.range.thisYear")
+                }
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-                overviewActionButton(
-                    title: openButtonTitle,
-                    subtitle: t("Replace the current import with another local file."),
-                    icon: "doc.badge.plus",
-                    color: .accentColor,
-                    action: onOpen
-                )
-
-                if horizontalSizeClass == .compact {
-                    overviewActionButton(
-                    title: t("Browse Days"),
-                        subtitle: t("Jump into the day list and open imported history entries."),
-                        icon: "calendar",
-                        color: .blue
-                    ) {
-                        selectedTab = 1
-                    }
-
-                    overviewActionButton(
-                    title: t("Open Insights"),
-                        subtitle: t("Switch to charts and derived breakdowns for the current import."),
-                        icon: "chart.xyaxis.line",
-                        color: .indigo
-                    ) {
-                        selectedTab = 2
-                    }
-
+                HStack(spacing: 8) {
                     if session.hasDays {
-                        overviewActionButton(
-                            title: t("Export GPX"),
-                            subtitle: t("Choose days and prepare a GPX export from recorded routes."),
-                            icon: "square.and.arrow.up",
-                            color: .green
+                        Button(t("Heatmap")) {
+                            presentSheet(.heatmap)
+                        }
+                        .buttonStyle(.plain)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(LH2GPXTheme.primaryBlue)
+                    }
+
+                    if !favoritedDayIDs.isEmpty {
+                        LHFilterChip(
+                            title: overviewShowOnlyFavorites ? t("Favorites Only") : t("All Days"),
+                            systemImage: "star",
+                            isActive: overviewShowOnlyFavorites
                         ) {
-                            selectedTab = 3
+                            overviewShowOnlyFavorites.toggle()
                         }
                     }
                 }
-
-                overviewActionButton(
-                    title: t("Saved Live Tracks"),
-                    subtitle: t("Open the separate local track library and edit finished recordings there."),
-                    icon: "point.topleft.down.curvedto.point.bottomright.up",
-                    color: .mint
-                ) {
-                    presentSheet(.tracksLibrary)
-                }
-
-                if horizontalSizeClass != .compact, session.hasDays {
-                    overviewActionButton(
-                        title: t("Export GPX"),
-                        subtitle: t("Open the export sheet for the current imported history."),
-                        icon: "square.and.arrow.up",
-                        color: .green
-                    ) {
-                        presentSheet(.export)
-                    }
-                }
             }
         }
+        .accessibilityIdentifier("overview.range.card")
     }
 
     @ViewBuilder
-    private func overviewHighlights(_ insights: ExportInsights) -> some View {
-        let hasHighlights = insights.busiestDay != nil || insights.longestDistanceDay != nil
-        if hasHighlights {
+    private var overviewMapCard: some View {
+        LHCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text(t("Highlights"))
-                    .font(.title3.weight(.semibold))
-                HStack(spacing: 12) {
-                    if let busiest = insights.busiestDay {
-                        highlightCard(
-                            title: t("Busiest Day"),
-                            value: busiest.value,
-                            date: AppDateDisplay.mediumDate(busiest.date),
-                            icon: "flame.fill",
-                            color: .orange,
-                            onTap: {
-                                daysNavigationPath.append(busiest.date)
-                                selectedTab = 1
-                            }
-                        )
+                HStack {
+                    LHSectionHeader(
+                        t("Map"),
+                        subtitle: overviewMapHeaderState.isHidden ? t("Show Map") : t("Simplified preview · export complete")
+                    )
+                    Spacer()
+                    Button(t("Heatmap")) {
+                        presentSheet(.heatmap)
                     }
-                    if let longest = insights.longestDistanceDay {
-                        highlightCard(
-                            title: t("Longest Distance"),
-                            value: longestDistanceValue(for: longest),
-                            date: AppDateDisplay.mediumDate(longest.date),
-                            icon: "road.lanes",
-                            color: .purple,
-                            onTap: {
-                                daysNavigationPath.append(longest.date)
-                                selectedTab = 1
-                            }
+                    .buttonStyle(.plain)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(LH2GPXTheme.primaryBlue)
+                }
+
+                LHCollapsibleMapHeader(
+                    state: $overviewMapHeaderState,
+                    language: preferences.appLanguage
+                ) {
+                    if #available(iOS 17.0, macOS 14.0, *) {
+                        AppOverviewTracksMapView(
+                            daySummaries: overviewFilteredDaySummaries,
+                            content: session.content,
+                            queryFilter: projectedQueryFilter,
+                            fixedHeight: nil,
+                            showsFullscreenControl: false
                         )
                     }
                 }
+                .accessibilityIdentifier("overview.map.header")
             }
         }
     }
 
-    @ViewBuilder
-    private func highlightCard(title: String, value: String, date: String, icon: String, color: Color, onTap: (() -> Void)? = nil) -> some View {
-        Group {
-            if let onTap {
-                Button(action: onTap) {
-                    highlightCardBody(title: title, value: value, date: date, icon: icon, color: color, isInteractive: true)
+    private func overviewRangeChip(_ preset: HistoryDateRangePreset, identifier: String) -> some View {
+        LHFilterChip(
+            title: t(preset.title),
+            systemImage: "calendar",
+            isActive: session.historyDateRangeFilter.preset == preset
+        ) {
+            session.historyDateRangeFilter = HistoryDateRangeFilter(preset: preset)
+        }
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func overviewKPISection(overview: ExportOverview, insights: ExportInsights) -> some View {
+        let activeDays = StartOverviewPresentation.activeDayCount(in: overviewFilteredDaySummaries)
+        return LHCard {
+            VStack(alignment: .leading, spacing: 12) {
+                LHSectionHeader(t("Overview"))
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    overviewMetricCard(
+                        icon: "road.lanes",
+                        label: t("Distance"),
+                        value: formatDistance(insights.totalDistanceM, unit: preferences.distanceUnit),
+                        color: LH2GPXTheme.primaryBlue,
+                        identifier: "overview.kpi.distance"
+                    )
+                    overviewMetricCard(
+                        icon: "calendar",
+                        label: t("Active Days"),
+                        value: "\(activeDays)",
+                        color: LH2GPXTheme.successGreen,
+                        identifier: "overview.kpi.activeDays"
+                    )
+                    overviewMetricCard(
+                        icon: "location.north.line",
+                        label: t("Routes"),
+                        value: "\(overview.totalPathCount)",
+                        color: LH2GPXTheme.warningOrange,
+                        identifier: "overview.kpi.routes"
+                    )
+                    overviewMetricCard(
+                        icon: "mappin.and.ellipse",
+                        label: t("Places"),
+                        value: "\(overview.totalVisitCount)",
+                        color: LH2GPXTheme.insightPurple,
+                        identifier: "overview.kpi.places"
+                    )
                 }
-                .buttonStyle(.plain)
-            } else {
-                highlightCardBody(title: title, value: value, date: date, icon: icon, color: color, isInteractive: false)
             }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(title): \(value), \(date)")
-        .accessibilityAddTraits(onTap != nil ? .isButton : [])
+        .accessibilityIdentifier("overview.kpi.grid")
+    }
+
+    private func overviewMetricCard(
+        icon: String,
+        label: String,
+        value: String,
+        color: Color,
+        identifier: String
+    ) -> some View {
+        LHMetricCard(icon: icon, label: label, value: value, color: color)
+            .accessibilityIdentifier(identifier)
     }
 
     @ViewBuilder
-    private func highlightCardBody(title: String, value: String, date: String, icon: String, color: Color, isInteractive: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .font(.caption)
+    private func overviewHighlightsCard(_ insights: ExportInsights) -> some View {
+        let mostActivities = StartOverviewPresentation.mostActivitiesHighlight(in: overviewFilteredDaySummaries)
+        let hasHighlights = insights.busiestDay != nil || insights.longestDistanceDay != nil || mostActivities != nil
+        if hasHighlights {
+            LHCard {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        LHSectionHeader(t("Highlights"))
+                        Spacer()
+                        Button(t("Show All Insights")) {
+                            navigate(for: .insights)
+                        }
+                        .buttonStyle(.plain)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(LH2GPXTheme.primaryBlue)
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        if let busiest = insights.busiestDay {
+                            highlightRow(
+                                title: t("Busiest Day"),
+                                value: busiest.value,
+                                detail: AppDateDisplay.mediumDate(busiest.date),
+                                icon: "flame.fill"
+                            )
+                        }
+                        if let longest = insights.longestDistanceDay {
+                            highlightRow(
+                                title: t("Longest Distance"),
+                                value: longestDistanceValue(for: longest),
+                                detail: AppDateDisplay.mediumDate(longest.date),
+                                icon: "road.lanes"
+                            )
+                        }
+                        if let mostActivities {
+                            highlightRow(
+                                title: t("Most Activities"),
+                                value: "\(mostActivities.activityCount)",
+                                detail: AppDateDisplay.mediumDate(mostActivities.date),
+                                icon: "figure.walk"
+                            )
+                        }
+                    }
+                }
+            }
+            .accessibilityIdentifier("overview.highlights")
+        }
+    }
+
+    private func highlightRow(title: String, value: String, detail: String, icon: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundStyle(LH2GPXTheme.primaryBlue)
+                .frame(width: 18)
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                if isInteractive {
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
-                        .foregroundStyle(color.opacity(0.5))
-                }
+                Text(value)
+                    .font(.headline.monospacedDigit())
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
-            Text(value)
-                .font(.headline.monospacedDigit())
-            Text(date)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+            Spacer()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(color.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
-    @ViewBuilder
-    private func overviewActionButton(
-        title: String,
-        subtitle: String,
-        icon: String,
-        color: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: icon)
-                    .font(.subheadline)
-                    .foregroundColor(color)
-                    .frame(width: 18, alignment: .center)
-                    .padding(.top, 2)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.leading)
+    private var overviewContinueCard: some View {
+        LHCard {
+            VStack(alignment: .leading, spacing: 14) {
+                LHSectionHeader(t("Continue"))
+                VStack(spacing: 8) {
+                    overviewContinueButton(title: t("Browse Days"), icon: "calendar", action: .days, identifier: "overview.continue.days")
+                    overviewContinueButton(title: t("Open Insights"), icon: "chart.xyaxis.line", action: .insights, identifier: "overview.continue.insights")
+                    overviewContinueButton(title: t("Prepare Export"), icon: "square.and.arrow.up", action: .export, identifier: "overview.continue.export")
+                    overviewContinueButton(title: t("Import New File"), icon: "doc.badge.plus", action: .importFile, identifier: "overview.continue.import")
                 }
-
-                Spacer(minLength: 8)
-
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .foregroundStyle(color.opacity(0.5))
-                    .padding(.top, 4)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(color.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .accessibilityIdentifier("overview.continue")
+    }
+
+    private func overviewContinueButton(
+        title: String,
+        icon: String,
+        action: OverviewContinueAction,
+        identifier: String
+    ) -> some View {
+        Button {
+            navigate(for: action)
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .foregroundStyle(LH2GPXTheme.primaryBlue)
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(LH2GPXTheme.primaryBlue.opacity(0.8))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(LH2GPXTheme.elevatedCard)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
     }
 
     @ViewBuilder
@@ -1020,6 +1021,7 @@ public struct AppContentSplitView: View {
                 .padding()
             }
             .navigationTitle(t("Overview"))
+            .background(Color.black.ignoresSafeArea())
         }
     }
 
@@ -1141,7 +1143,7 @@ public struct AppContentSplitView: View {
     }
 
     private var liveTracksOverviewSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        LHCard {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(t("Saved Live Tracks"), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
@@ -1176,10 +1178,6 @@ public struct AppContentSplitView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.green.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     @ViewBuilder
@@ -1222,6 +1220,19 @@ public struct AppContentSplitView: View {
 
     private func savedTrackTitle(_ track: RecordedTrack) -> String {
         AppDateDisplay.abbreviatedDateTime(track.startedAt)
+    }
+
+    private func navigate(for action: OverviewContinueAction) {
+        let route = StartOverviewPresentation.route(for: action, isCompact: horizontalSizeClass == .compact)
+        if route.callsOnOpen {
+            onOpen()
+        }
+        if let tab = route.selectedTab {
+            selectedTab = tab
+        }
+        if route.presentsExportSheet {
+            presentSheet(.export)
+        }
     }
 
     private func longestDistanceValue(for highlight: DayHighlight) -> String {

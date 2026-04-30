@@ -6,12 +6,20 @@ public struct RecentFileEntry: Codable, Identifiable, Equatable {
     public var displayName: String
     public var bookmarkData: Data
     public var lastOpenedAt: Date
+    public var fileSizeBytes: Int64?
 
-    public init(id: UUID = UUID(), displayName: String, bookmarkData: Data, lastOpenedAt: Date = Date()) {
+    public init(
+        id: UUID = UUID(),
+        displayName: String,
+        bookmarkData: Data,
+        lastOpenedAt: Date = Date(),
+        fileSizeBytes: Int64? = nil
+    ) {
         self.id = id
         self.displayName = displayName
         self.bookmarkData = bookmarkData
         self.lastOpenedAt = lastOpenedAt
+        self.fileSizeBytes = fileSizeBytes
     }
 }
 
@@ -48,7 +56,12 @@ public enum RecentFilesStore {
         let displayName = url.lastPathComponent
         entries.removeAll { $0.displayName == displayName }
 
-        let entry = RecentFileEntry(displayName: displayName, bookmarkData: bookmarkData, lastOpenedAt: Date())
+        let entry = RecentFileEntry(
+            displayName: displayName,
+            bookmarkData: bookmarkData,
+            lastOpenedAt: Date(),
+            fileSizeBytes: fileSize(for: url)
+        )
         entries.insert(entry, at: 0)
 
         // Trim to max
@@ -150,5 +163,18 @@ public enum RecentFilesStore {
         #else
         return Data(url.path.utf8)
         #endif
+    }
+
+    private static func fileSize(for url: URL) -> Int64? {
+        #if os(macOS) || os(iOS)
+        let values = try? url.resourceValues(forKeys: [.fileSizeKey, .totalFileAllocatedSizeKey])
+        if let allocated = values?.totalFileAllocatedSize {
+            return Int64(allocated)
+        }
+        if let fileSize = values?.fileSize {
+            return Int64(fileSize)
+        }
+        #endif
+        return nil
     }
 }

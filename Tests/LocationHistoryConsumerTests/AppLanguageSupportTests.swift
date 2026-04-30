@@ -65,4 +65,17 @@ final class AppLanguageSupportMapHeaderStringsTests: XCTestCase {
     func testGermanDismiss() {
         XCTAssertEqual(de.localized("Dismiss"), "Schließen")
     }
+
+    func testGermanSimplifiedPreviewCopy() {
+        XCTAssertEqual(
+            de.localized("Simplified preview · export complete"),
+            "Vereinfachte Vorschau · Export vollständig"
+        )
+    }
+
+    func testGermanHomeAndOverviewStrings() {
+        XCTAssertEqual(de.localized("Private location history → GPX, KML, CSV, KMZ"), "Privater Standortverlauf → GPX, KML, CSV, KMZ")
+        XCTAssertEqual(de.localized("Prepare Export"), "Export vorbereiten")
+        XCTAssertEqual(de.localized("Import New File"), "Neue Datei importieren")
+    }
 }

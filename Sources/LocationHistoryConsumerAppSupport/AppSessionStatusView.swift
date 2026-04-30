@@ -27,13 +27,7 @@ public struct AppSessionStatusView: View {
             }
 
             if isLoading {
-                HStack(spacing: 10) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text(t("Loading..."))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+                LHContextBar(message: t("Loading..."), systemImage: "arrow.triangle.2.circlepath", tint: LH2GPXTheme.primaryBlue)
             }
 
             if !isLoading && !hasDays && summary.dayCountText != nil {
@@ -64,48 +58,60 @@ public struct AppSourceSummaryCard: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(t(summary.stateTitle))
-                    .font(.headline)
-                GoogleMapsExportHelpButton()
-                Spacer()
-                Text(t(summary.statusText))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            summaryRow(t(summary.sourceLabel), value: summary.sourceValue, icon: "doc")
-
-            let hasDetails = summary.schemaVersion != nil || summary.inputFormat != nil || summary.exportedAt != nil || summary.dayCountText != nil
-            if hasDetails && preferences.showsTechnicalImportDetails {
-                DisclosureGroup(isExpanded: $isExpanded) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        if let v = summary.schemaVersion {
-                            summaryRow(t("Schema"), value: v, icon: "number")
-                        }
-                        if let v = summary.inputFormat {
-                            summaryRow(t("Format"), value: t(v), icon: "square.grid.2x2")
-                        }
-                        if let v = summary.exportedAt {
-                            summaryRow(t("Exported"), value: v, icon: "clock")
-                        }
-                        if let v = summary.dayCountText {
-                            summaryRow(t("Days"), value: localizeDayCountText(v), icon: "calendar")
-                        }
+        LHCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(t(summary.stateTitle))
+                            .font(.title3.weight(.semibold))
+                        Text(primarySourceLabel)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .padding(.top, 6)
-                } label: {
-                    Text(t("Technical Details"))
+                    Spacer()
+                    GoogleMapsExportHelpButton()
+                }
+
+                summaryRow(
+                    t(primarySourceLabel),
+                    value: primarySourceValue,
+                    icon: "doc"
+                )
+
+                if !summary.statusText.isEmpty {
+                    Text(t(summary.statusText))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                let hasDetails = summary.schemaVersion != nil || summary.inputFormat != nil || summary.exportedAt != nil || summary.dayCountText != nil
+                if hasDetails && preferences.showsTechnicalImportDetails {
+                    DisclosureGroup(isExpanded: $isExpanded) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            if let v = summary.schemaVersion {
+                                summaryRow(t("Schema"), value: v, icon: "number")
+                            }
+                            if let v = summary.inputFormat {
+                                summaryRow(t("Format"), value: t(v), icon: "square.grid.2x2")
+                            }
+                            if let v = summary.exportedAt {
+                                summaryRow(t("Exported"), value: v, icon: "clock")
+                            }
+                            if let v = summary.dayCountText {
+                                summaryRow(t("Days"), value: localizeDayCountText(v), icon: "calendar")
+                            }
+                        }
+                        .padding(.top, 6)
+                    } label: {
+                        Text(t("Show Technical Details"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(LH2GPXTheme.primaryBlue)
+                    }
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.secondary.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityIdentifier("overview.source.card")
     }
 
     private func t(_ english: String) -> String {
@@ -118,6 +124,21 @@ public struct AppSourceSummaryCard: View {
             return text
         }
         return "\(count) \(count == 1 ? "Tag" : "Tage")"
+    }
+
+    private var primarySourceLabel: String {
+        if summary.sourceValue.hasPrefix("Imported file:") || summary.sourceValue == "Imported file" {
+            return "Imported File"
+        }
+        return summary.sourceLabel
+    }
+
+    private var primarySourceValue: String {
+        if let value = summary.sourceValue.split(separator: ":", maxSplits: 1).last,
+           summary.sourceValue.contains(":") {
+            return value.trimmingCharacters(in: .whitespaces)
+        }
+        return summary.sourceValue
     }
 
     @ViewBuilder

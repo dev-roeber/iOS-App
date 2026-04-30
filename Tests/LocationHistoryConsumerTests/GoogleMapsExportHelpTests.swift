@@ -8,6 +8,7 @@ final class GoogleMapsExportHelpTests: XCTestCase {
     func testGermanTranslationsExistForHelpStrings() {
         let requiredKeys = [
             "Google Maps Export on iPhone",
+            "Google Maps Export Guide",
             "Open Google Maps on your iPhone.",
             "Tap your profile picture and open Settings.",
             "If the direct export is unavailable, a Google Takeout export may be required depending on your account.",

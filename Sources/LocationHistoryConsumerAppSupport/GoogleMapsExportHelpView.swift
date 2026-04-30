@@ -120,8 +120,16 @@ public struct GoogleMapsExportHelpSheet: View {
 public struct GoogleMapsExportHelpInlineAction: View {
     @EnvironmentObject private var preferences: AppPreferences
     @State private var showHelp = false
+    let titleKey: String
+    let accessibilityIdentifier: String?
 
-    public init() {}
+    public init(
+        titleKey: String = "Google Maps Export on iPhone",
+        accessibilityIdentifier: String? = nil
+    ) {
+        self.titleKey = titleKey
+        self.accessibilityIdentifier = accessibilityIdentifier
+    }
 
     public var body: some View {
         Button {
@@ -129,25 +137,30 @@ public struct GoogleMapsExportHelpInlineAction: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "map")
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(LH2GPXTheme.primaryBlue)
                     .accessibilityHidden(true)
-                Text(preferences.localized("Google Maps Export on iPhone"))
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.accentColor)
+                Text(preferences.localized(titleKey))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.accentColor.opacity(0.7))
+                    .foregroundStyle(LH2GPXTheme.primaryBlue.opacity(0.8))
                     .accessibilityHidden(true)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.accentColor.opacity(0.10))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.vertical, 14)
+            .background(LH2GPXTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(preferences.localized("Google Maps export help"))
         .accessibilityHint(preferences.localized("Opens step-by-step export instructions"))
+        .accessibilityIdentifier(accessibilityIdentifier ?? "")
         .sheet(isPresented: $showHelp) {
             GoogleMapsExportHelpSheet { showHelp = false }
                 .environmentObject(preferences)

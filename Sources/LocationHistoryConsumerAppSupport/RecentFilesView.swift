@@ -8,6 +8,7 @@ import SwiftUI
 /// can only be removed.
 public struct RecentFilesView: View {
     @EnvironmentObject private var preferences: AppPreferences
+    @State private var showsAllEntries = false
 
     let entries: [RecentFileEntry]
     let onOpen: (RecentFileEntry) -> Void
@@ -27,22 +28,20 @@ public struct RecentFilesView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        LHCard {
             HStack {
-                Label(t("Recent Files"), systemImage: "clock.arrow.circlepath")
-                    .font(.headline)
+                LHSectionHeader(t("Recently Used"))
                 Spacer()
-                if !entries.isEmpty {
-                    Button(role: .destructive) {
-                        onClearAll()
-                    } label: {
-                        Text(t("Clear All"))
-                            .font(.caption)
+                if entries.count > 3 && !showsAllEntries {
+                    Button(t("Show All")) {
+                        showsAllEntries = true
                     }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(LH2GPXTheme.primaryBlue)
                     .buttonStyle(.plain)
-                    .foregroundStyle(.red)
                 }
             }
+            .accessibilityIdentifier("home.recentFiles")
 
             if entries.isEmpty {
                 Label(t("No recent files."), systemImage: "doc.badge.clock")
@@ -51,89 +50,89 @@ public struct RecentFilesView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 12)
             } else {
-                ForEach(entries) { entry in
+                ForEach(visibleEntries) { entry in
                     recentFileRow(entry)
                 }
             }
         }
-        .padding()
-        .background(LH2GPXTheme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
-        )
+        .contextMenu {
+            if !entries.isEmpty {
+                Button(role: .destructive, action: onClearAll) {
+                    Text(t("Clear History"))
+                }
+            }
+        }
     }
 
     @ViewBuilder
     private func recentFileRow(_ entry: RecentFileEntry) -> some View {
         let isAvailable = RecentFilesStore.isAvailable(entry: entry)
 
-        HStack(spacing: 10) {
-            Image(systemName: isAvailable ? "doc.text.fill" : "doc.slash")
-                .foregroundStyle(isAvailable ? Color.accentColor : Color.secondary)
-                .font(.title3)
-                .frame(width: 28)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.displayName)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(isAvailable ? Color.primary : Color.secondary)
-                    .lineLimit(1)
-                HStack(spacing: 4) {
-                    Text(relativeDate(entry.lastOpenedAt))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if !isAvailable {
-                        Text("· \(t("Not available"))")
-                            .font(.caption)
-                            .foregroundStyle(.red.opacity(0.8))
-                    }
-                }
-            }
-
-            Spacer()
-
-            if isAvailable {
-                Button {
-                    onOpen(entry)
-                } label: {
-                    Image(systemName: "arrow.counterclockwise.circle")
-                        .font(.title3)
-                        .foregroundStyle(Color.accentColor)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(t("Open") + " " + entry.displayName)
-            }
-
-            Button(role: .destructive) {
-                onRemove(entry.id)
-            } label: {
-                Image(systemName: "minus.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(.red.opacity(0.7))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(t("Remove") + " " + entry.displayName)
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 4)
-        .contentShape(Rectangle())
-        .onTapGesture {
+        Button {
             guard isAvailable else { return }
             onOpen(entry)
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(entry.displayName)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(isAvailable ? Color.primary : Color.secondary)
+                            .lineLimit(1)
+                        Text(metadataLine(for: entry, isAvailable: isAvailable))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 12)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(isAvailable ? LH2GPXTheme.primaryBlue.opacity(0.9) : .secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 2)
+        }
+        .padding(.vertical, 6)
+        .buttonStyle(.plain)
+        .disabled(!isAvailable)
+        .contentShape(Rectangle())
+        .contextMenu {
+            if isAvailable {
+                Button(t("Open Again")) { onOpen(entry) }
+            }
+            Button(role: .destructive) { onRemove(entry.id) } label: {
+                Text(t("Remove Entry"))
+            }
         }
 
-        if entry.id != entries.last?.id {
+        if entry.id != visibleEntries.last?.id {
             Divider()
         }
     }
 
-    private func relativeDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
+    private var visibleEntries: [RecentFileEntry] {
+        showsAllEntries ? entries : Array(entries.prefix(3))
+    }
+
+    private func metadataLine(for entry: RecentFileEntry, isAvailable: Bool) -> String {
+        let parts = [displayDate(entry.lastOpenedAt), entry.fileSizeBytes.flatMap(fileSizeString), isAvailable ? nil : t("Unavailable")]
+        return parts.compactMap { $0 }.joined(separator: " · ")
+    }
+
+    private func displayDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
         formatter.locale = preferences.appLocale
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
+    }
+
+    private func fileSizeString(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
     }
 
     private func t(_ english: String) -> String {
