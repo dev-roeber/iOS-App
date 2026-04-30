@@ -69,7 +69,7 @@ Noch offen innerhalb des lokalen Review-/Privacy-Blocks:
 
 - [ ] App Store Connect Projekt anlegen (einmalig)
 - [ ] App-Metadaten in ASC eintragen (Beschreibung, Keywords, Kategorie, URLs)
-- [ ] Screenshots in ASC hochladen
+- [ ] Screenshots in ASC hochladen (Assets lokal bereit: 6×1290×2796 px in `docs/app-store-assets/screenshots/iphone-67/`, manueller Upload ausstehend)
 - [ ] Distribution-Export signieren und hochladen
 - [ ] TestFlight-Beta aktivieren (interne Tester)
 

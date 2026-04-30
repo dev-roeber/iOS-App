@@ -172,11 +172,11 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
   3. Xcode Cloud Clean Build starten
 - Privacy Policy URL in App Store Connect: `https://dev-roeber.github.io/iOS-App/privacy.html` — eingetragen (2026-04-30)
 - Support URL in App Store Connect: `https://dev-roeber.github.io/iOS-App/support.html` — eingetragen (2026-04-30)
-- Marketing URL optional: `https://dev-roeber.github.io/iOS-App/` (`docs/index.html` vorhanden, kein Download-Button)
+- Marketing URL / GitHub Pages: `https://dev-roeber.github.io/iOS-App/` — live, HTTP 200 verifiziert (2026-04-30); `support.html` und `privacy.html` ebenfalls HTTP 200
 - finales App Icon (aktuell Interimsdesign)
 - Apple-Review-Bestaetigung fuer NSPrivacyCollectedDataTypes (optionaler Live-Upload)
 - iPad-Screenshots sind fuer v1 nicht relevant, solange `TARGETED_DEVICE_FAMILY = 1` bleibt; iPad-Support spaeter mit eigenem Test-/Screenshot-Set
-- App-Store-Screenshots in App Store Connect hochladen (`docs/app-store-assets/screenshots/iphone-67/`)
+- App-Store-Screenshots in App Store Connect hochladen: Assets lokal bereit (6×1290×2796 px, `iphone-67/`), ASC-Upload manuell ausstehend
 - App-Review-Feedback fuer Build `52` beobachten und repo-wahr nachtragen; kein proaktives Nachreichen von `57` ohne neuen harten Grund
 - Live Activity / Dynamic Island auf echter Hardware weiter vervollstaendigen: Lock Screen, `minimal`, weitere Primärwerte und Fallback-Pfade
 

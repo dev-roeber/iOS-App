@@ -9,8 +9,8 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [ ] App Review auf Build `52` weiter beobachten und Apple-Feedback dokumentieren. Kein Nachreichen von Build `57` ohne Apple-Feedback oder bestaetigten release-kritischen Fehler.
 - [x] Support-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/support.html` (2026-04-30)
 - [x] Privacy-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-30)
-- [ ] App-Store-Screenshots in App Store Connect hochladen: `docs/app-store-assets/screenshots/iphone-67/`
-- [ ] GitHub Pages fuer `/docs` final aktivieren bzw. den echten Live-Status repo-wahr nachtragen
+- [ ] App-Store-Screenshots in App Store Connect hochladen: Assets lokal vorhanden (6×1290×2796 px in `iphone-67/`), manueller Upload in ASC noch ausstehend
+- [x] GitHub Pages fuer `/docs` live und oeffentlich erreichbar (HTTP 200 verifiziert 2026-04-30): `https://dev-roeber.github.io/iOS-App/`, `/support.html`, `/privacy.html`
 - [ ] Live Activity / Dynamic Island auf echter Hardware vervollstaendigen: Lock Screen, `minimal`, Fallback bei deaktivierten / nicht verfuegbaren Live Activities, No-Dynamic-Island-Geraet (Pending-/Restart-Pfad jetzt gruen)
 - [ ] Performance-Smoke-Test auf echtem iPhone mit grosser realer History (>20 MB, Gesamtzeitraum) fuer Overview-/Explore-Karte dokumentieren
 

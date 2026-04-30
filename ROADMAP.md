@@ -20,7 +20,7 @@ Nicht als abgeschlossen markieren:
 
 P0 — Release / Review / Hardware-Verifikation
 - App-Review-Fortschritt auf Build `52` beobachten und rueckmelden
-- offene ASC-Metadaten: Support-URL und Privacy-URL eingetragen (2026-04-30); Screenshots und GitHub-Pages-Live-Status noch offen
+- offene ASC-Metadaten: Support-URL und Privacy-URL eingetragen (2026-04-30); GitHub Pages live (HTTP 200 verifiziert 2026-04-30); Screenshot-Assets lokal bereit, ASC-Upload manuell ausstehend
 - Live Activity / Dynamic Island auf echter Hardware fuer Lock Screen, `minimal`, deaktivierte / nicht verfuegbare Live Activities und No-Dynamic-Island-Geraete vervollstaendigen (Pending-/Restart-Pfad gruen seit 2026-04-30)
 - grossen echten Device-Smoke-Test fuer Overview-/Explore-Karte dokumentieren
 

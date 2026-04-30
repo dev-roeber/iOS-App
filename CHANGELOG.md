@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [2026-04-30] — docs: GitHub Pages live verifiziert und Screenshot-Assets repo-wahr dokumentiert
+
+### Geprüft und dokumentiert
+
+**GitHub Pages (live, HTTP 200 bestätigt 2026-04-30):**
+- `https://dev-roeber.github.io/iOS-App/` → HTTP 200, server: GitHub.com
+- `https://dev-roeber.github.io/iOS-App/support.html` → HTTP 200
+- `https://dev-roeber.github.io/iOS-App/privacy.html` → HTTP 200
+- Last-Modified: 2026-04-30 (passt zum letzten Commit)
+- Keine Tokens, Secrets oder private Pfade in den HTML-Dateien
+- E-Mail `dev_roeber@icloud.com` in support.html und privacy.html: bewusst als Support-Kontakt vorhanden
+
+**Screenshot-Assets lokal vorhanden (`docs/app-store-assets/screenshots/`):**
+- `iphone-67/`: 6 PNG-Dateien, je 1290×2796 px — App Store 6.7"-Slot-konform
+- `iphone-65/`: 6 PNG-Dateien, je 1242×2688 px — App Store 6.5"-Slot-konform
+- Dateinamen: 01-import, 02-overview-map, 03-days, 04-insights, 05-export, 06-live-recording
+- Kein privater Content, keine Debug-Overlays, keine feste Server-URL
+
+### Bewusst nicht behauptet
+- kein ASC-Screenshot-Upload in diesem Slice; Upload bleibt manuell ausstehend
+
+### Checks
+- `git diff --check`: kein Whitespace-Fehler
+- `swift test`: nicht ausgefuehrt — ausschliesslich Doku-Aenderungen
+
 ## [2026-04-30] — docs: Support-URL und Privacy-URL in App Store Connect bestätigt
 
 ### Dokumentiert
