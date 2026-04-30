@@ -136,9 +136,9 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Days-Tab**: Day-Detail + Day-Map auf Gerät interaktiv prüfen (im UITest nur als Demo-Nebeneffekt belegt)
 - **Historien-Track-Editor**: Route entfernen, App-Neustart, Mutation prüfen — nicht automatisiert prüfbar
 - **Widget auf Homescreen/Lockscreen**: Widget Target baut, aber Pinnbar-Test erfordert manuelle Homescreen-Interaktion
-- **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden; konfigurierbarer Primärwert (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) + Fallback-Hinweise im Options-Screen implementiert. Partieller Real-Nachweis liegt vor: `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build via `xcodebuild test`) bestaetigt Recording-Start, Dynamic Island `compact` + `expanded` fuer Primärwert `Distanz` sowie Stop-/Dismiss-Verhalten. Offen bleiben Lock Screen, `minimal`, weitere Primärwerte und Fallback-Pfade.
+- **Live Activity / Dynamic Island**: NSSupportsLiveActivities=true, Code vorhanden; konfigurierbarer Primärwert (`Distanz`, `Dauer`, `Punkte`, `Upload-Status`) + Fallback-Hinweise im Options-Screen implementiert. Echter Device-Rerun auf `iPhone 15 Pro Max` (`iOS 26.4`, Debug-Build via `xcodebuild test`) liegt jetzt fuer folgende Pfade vor: Smoke-Test gruen, Capture-Tests fuer `Distanz`, `Dauer`, `Punkte` und `Upload-Status (failed)` gruen, jeweils inklusive In-App-, Home-/compact-, Expanded-Attempt- und Stop-Capture. Offen bleiben Lock Screen, `minimal`, deaktivierte Live Activities, No-Dynamic-Island-Geraete sowie der Pending-/Restart-Pfad.
 - **Live-Session-Restore**: Fehl-Persistenz fuer unterbrochene Sessions ist per Codefix + Regressionstests gehaertet; daraus wird bewusst kein neuer Hardware-Claim abgeleitet. Offene Hardware-Verifikation fuer Live Activity / Dynamic Island bleibt unveraendert.
-- **Aktueller Device-Blocker (2026-04-30)**: Neuer echter UITest-Lauf auf dem verbundenen `iPhone 15 Pro Max` konnte nicht belastbar abgeschlossen werden. Ein Lauf startete den Live-Capture-Test real an, brach aber mit `CoreDeviceError / Mercury error 1001` nach Launch ab; ein weiterer Lauf scheiterte frueher daran, dass `de.roeber.LH2GPXWrapper.UITests.xctrunner` auf dem Geraet nicht als vertrauenswuerdige Entwickler-App freigegeben war (`General -> VPN & Device Management`). Solange dieser Trust-/Runner-Blocker nicht manuell behoben ist, bleiben Lock Screen, `minimal`, weitere Primärwerte, deaktivierte Live Activities und No-Dynamic-Island-Geraete offen.
+- **Aktueller Device-Status (2026-04-30)**: Der fruehere Trust-Blocker fuer `de.roeber.LH2GPXWrapper.UITests.xctrunner` ist fuer das verbundene `iPhone 15 Pro Max` manuell behoben; echte Device-Laeufe sind wieder moeglich. Der aktuell verbleibende echte Hardware-Befund ist fachlich, nicht infrastrukturell: `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart` scheitert nach Relaunch, weil `live.recording.stop` nicht wieder erscheint. Lock Screen, `minimal`, deaktivierte Live Activities und No-Dynamic-Island-Geraete bleiben weiterhin ohne neuen echten Nachweis offen.
 - **Landscape auf allen Tabs**: kompaktes Landscape-Layout nicht systematisch auf Device verifiziert
 
 #### Historischer Incident (nicht aktueller Upload-Blocker)
@@ -242,6 +242,12 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (iOS 26.3), iPhone Air (iO
   - Insights → Share-Button: Share-Sheet erscheint real (ImageRenderer-Pfad ausgeloest)
   - Export-Tab → Export-Action-Button: fileExporter wird real ausgeloest (koordinatenbasierter Tap selektiert Tag, export.action.primary ist enabled und loest System-Datei-Sheet aus)
   - Live-Tab → Start/Stop Recording: Location-Permission-Prompt erscheint, Recording startet und stoppt sauber
+- Live-Activity-Hardware-Capture auf iPhone 15 Pro Max (`iOS 26.4`): 4/5 PASSED
+  - `testLiveActivityHardwareCaptureDistance`: PASSED
+  - `testLiveActivityHardwareCaptureDuration`: PASSED
+  - `testLiveActivityHardwareCapturePoints`: PASSED
+  - `testLiveActivityHardwareCaptureUploadStatusFailed`: PASSED
+  - `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart`: FAILED nach Relaunch; `live.recording.stop` erschien nicht erneut
 - Wrapper-Auto-Restore mit deterministischem Launch-Reset via `LH2GPX_UI_TESTING` + `LH2GPX_RESET_PERSISTENCE` verifiziert
 - Signing/Bundle Identifier/Provisioning: ohne Fehler fuer Device-Build und Archiv
 - **Background-Recording auf echtem iPhone: auf realem Gerät verifiziert (2026-04-02)** — Permission-Upgrade auf Always, Aufnahme im Hintergrund, Stop/Persistenz auf echtem Device geprüft und bestätigt
@@ -387,7 +393,7 @@ Der spaetere Live-/Upload-/Insights-/Days-Batch vom 2026-03-30 hat zusaetzlich p
 - [ ] das Heatmap-Sheet fuer importierte History auf Apple-Hardware visuell und performanceseitig verifizieren; der Einstieg ist im realen AX-Snapshot sichtbar, das Sheet selbst noch nicht geoefnet, und die spaeter hinzugekommenen UX-Controls, der neue Aggregations-/Polygon-Renderer sowie das Batch-3-Farb-/Kontrast-Mapping sind auf Device ebenfalls noch nicht separat bestaetigt
 - [ ] die neue `Days`-Default-Sortierung (`neu -> alt`) in compact und regular auf Apple-Hardware funktional bestaetigen
 - [ ] den deutlich ausgebauten `Live`-Tab auf Apple-Hardware funktional bestaetigen, inklusive Status-Chips, Quick Actions und erweitertem Stat-Set
-- [ ] die neue Dynamic-Island-Konfiguration auf Apple-Hardware fertig pruefen: `expanded` und `compact` fuer Primärwert `Distanz` sind auf `iPhone 15 Pro Max` (`iOS 26.4`) repo-wahr bestaetigt; offen bleiben Lock Screen, `minimal`, Primärwert-Wechsel (`Dauer`, `Punkte`, `Upload-Status`), Upload-/Pause-Zustaende und nicht verfuegbare Live-Activities
+- [ ] die neue Dynamic-Island-Konfiguration auf Apple-Hardware fertig pruefen: echte Capture-Laeufe fuer `Distanz`, `Dauer`, `Punkte` und `Upload-Status (failed)` sind auf `iPhone 15 Pro Max` (`iOS 26.4`) repo-wahr belegt; offen bleiben Lock Screen, `minimal`, deaktivierte / nicht verfuegbare Live Activities, No-Dynamic-Island-Geraete sowie der fehlgeschlagene Pending-/Restart-Pfad
 - [ ] die neue segmentierte Insights-Oberflaeche (`Overview`, `Patterns`, `Breakdowns`) auf Apple-Hardware auf Lesbarkeit und Navigation pruefen
 - [x] **Background-Recording auf echtem iPhone verifiziert (2026-04-02)** — Permission-Upgrade auf Always, Aufnahme im Hintergrund, Stop/Persistenz: auf realem Gerät bestätigt
 - [x] **Upload-End-to-End zum eigenen Server auf echtem iPhone verifiziert (2026-04-02)** — optionaler nutzergesteuerter HTTPS-Upload: per realem Device-Test bestätigt

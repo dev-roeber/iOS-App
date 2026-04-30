@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [2026-04-30] — docs: real-device Live Activity verification rerun
+
+### Geaendert
+- `docs/APPLE_VERIFICATION_CHECKLIST.md` und `wrapper/docs/LOCAL_IPHONE_RUNBOOK.md` auf den echten Rerun-Stand gezogen: Nach manuellem Trust des UITest-Runners liefen reale Device-Tests wieder auf dem verbundenen `iPhone 15 Pro Max` (`iOS 26.4`)
+- repo-wahr dokumentiert: `testDeviceSmokeNavigationAndActions` auf echter Hardware gruen; Live-Activity-Capture-Tests fuer `Distance`, `Duration`, `Points` und `Upload Status (failed)` auf echter Hardware gruen
+- repo-wahr dokumentiert: `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart` scheitert weiter nach Relaunch, weil `live.recording.stop` nicht wieder erscheint; Lock Screen, `minimal`, deaktivierte Live Activities und No-Dynamic-Island-Geraete bleiben offen
+
 ## [2026-04-30] — docs: hardware verification blocker truth sync
 
 ### Geaendert

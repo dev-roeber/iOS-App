@@ -169,7 +169,14 @@ xcrun xctrace list devices 2>/dev/null | grep -v "Simulator"
 - [ ] App schliessen, neu starten → Wrapper-Auto-Restore nach der 2026-03-20-Reaktivierung kontrolliert mit Positiv-, Datei-fehlt- und Clear-Pfad auf echtem Geraet verifizieren
 - [ ] Live-Location-Permission, aktueller Standort, Live-Track-Aufnahme und optionale `Always Allow`-Erweiterung fuer Background-Recording separat auf echtem Geraet oder Simulator protokollieren
 - [ ] optionalen Server-Upload mit echtem Endpunkt auf aktuellem Geraet separat pruefen
-- [ ] falls UITests fuer Live Activity / Dynamic Island verwendet werden: `LH2GPXWrapperUITests.xctrunner` auf dem iPhone unter `General -> VPN & Device Management` explizit vertrauen; ohne diesen manuellen Schritt scheitert der aktuelle Device-Lauf bereits vor belastbarer Dynamic-Island-Verifikation
+- [ ] falls UITests fuer Live Activity / Dynamic Island auf einem neuen oder frisch zurueckgesetzten Geraet verwendet werden: `LH2GPXWrapperUITests.xctrunner` auf dem iPhone unter `General -> VPN & Device Management` explizit vertrauen; ohne diesen manuellen Schritt scheitert der Device-Lauf vor belastbarer Dynamic-Island-Verifikation
+
+**Live-Activity-Hardware-Rerun (2026-04-30):**
+- Geraet: `iPhone 15 Pro Max` (`iPhone16,2`), iOS `26.4`, per USB verbunden, Developer Mode aktiv
+- `xcodebuild test -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'id=00008130-00163D0A0461401C' -only-testing:LH2GPXWrapperUITests/LH2GPXWrapperUITests/testDeviceSmokeNavigationAndActions`: PASSED
+- `xcodebuild test ... -only-testing:.../testLiveActivityHardwareCaptureDistance -only-testing:.../testLiveActivityHardwareCaptureDuration -only-testing:.../testLiveActivityHardwareCapturePoints -only-testing:.../testLiveActivityHardwareCaptureUploadStatusPendingAndRestart -only-testing:.../testLiveActivityHardwareCaptureUploadStatusFailed`: 4/5 PASSED
+- positiv belegt: echte Capture-Laeufe fuer `Distance`, `Duration`, `Points` und `Upload Status (failed)`; Device-Smoke-Flow inklusive Start/Stop Recording ebenfalls gruen
+- offen / fehlgeschlagen: `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart` scheitert nach Relaunch, weil `live.recording.stop` nicht erneut erscheint; Lock Screen, `minimal`, deaktivierte Live Activities und No-Dynamic-Island-Geraete bleiben offen
 
 Befunde in dieses Runbook als Tabelle nachtragen.
 

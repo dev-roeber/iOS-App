@@ -11,7 +11,7 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [ ] Privacy-URL in App Store Connect eintragen: `https://dev-roeber.github.io/iOS-App/privacy.html`
 - [ ] App-Store-Screenshots in App Store Connect hochladen: `docs/app-store-assets/screenshots/iphone-67/`
 - [ ] GitHub Pages fuer `/docs` final aktivieren bzw. den echten Live-Status repo-wahr nachtragen
-- [ ] Live Activity / Dynamic Island auf echter Hardware vervollstaendigen: Lock Screen, `minimal`, Primärwert-Wechsel (`Dauer`, `Punkte`, `Upload-Status`) sowie Fallback bei deaktivierten / nicht verfuegbaren Live Activities
+- [ ] Live Activity / Dynamic Island auf echter Hardware vervollstaendigen: Lock Screen, `minimal`, Fallback bei deaktivierten / nicht verfuegbaren Live Activities, No-Dynamic-Island-Geraet sowie der fehlschlagende Pending-/Restart-Pfad fuer `Upload-Status`
 - [ ] Performance-Smoke-Test auf echtem iPhone mit grosser realer History (>20 MB, Gesamtzeitraum) fuer Overview-/Explore-Karte dokumentieren
 
 ## P1 — Produktverifikation und Ausbau vorhandener Flaechen
