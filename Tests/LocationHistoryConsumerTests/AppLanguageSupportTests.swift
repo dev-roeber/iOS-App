@@ -97,4 +97,22 @@ final class AppLanguageSupportMapHeaderStringsTests: XCTestCase {
         XCTAssertEqual(de.localized("Activities"), "Aktivitäten")
         XCTAssertEqual(de.localized("Route"), "Route")
     }
+
+    func testGermanInsightsDashboardStrings() {
+        XCTAssertEqual(de.localized("Open in Days"), "In Tage öffnen")
+        XCTAssertEqual(de.localized("Select for Export"), "Für Export auswählen")
+        XCTAssertEqual(de.localized("Show on Map"), "Auf Karte zeigen")
+        XCTAssertEqual(de.localized("Activity Overview"), "Aktivitätsübersicht")
+        XCTAssertEqual(de.localized("Activity Streak"), "Aktivitätsserie")
+        XCTAssertEqual(de.localized("Period Comparison"), "Periodenvergleich")
+        XCTAssertEqual(de.localized("Import More Data"), "Mehr Daten importieren")
+    }
+
+    func testEnglishInsightsDashboardIdentity() {
+        XCTAssertEqual(en.localized("Open in Days"), "Open in Days")
+        XCTAssertEqual(en.localized("Select for Export"), "Select for Export")
+        XCTAssertEqual(en.localized("Show on Map"), "Show on Map")
+        XCTAssertEqual(en.localized("Activity Streak"), "Activity Streak")
+        XCTAssertEqual(en.localized("Period Comparison"), "Period Comparison")
+    }
 }

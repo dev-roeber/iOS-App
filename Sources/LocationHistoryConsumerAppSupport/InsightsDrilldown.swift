@@ -40,7 +40,7 @@ public struct InsightsDrilldownTarget: Identifiable {
     /// Drilldown that navigates to a specific day in the day list.
     public static func showDay(_ date: String) -> InsightsDrilldownTarget {
         InsightsDrilldownTarget(
-            label: "Show in Days",
+            label: "Open in Days",
             systemImage: "calendar",
             action: .filterDaysToDate(date)
         )
@@ -49,7 +49,7 @@ public struct InsightsDrilldownTarget: Identifiable {
     /// Drilldown that pre-fills the export for a specific day.
     public static func exportDay(_ date: String) -> InsightsDrilldownTarget {
         InsightsDrilldownTarget(
-            label: "Export This Day",
+            label: "Select for Export",
             systemImage: "square.and.arrow.up",
             action: .prefillExportForDate(date)
         )

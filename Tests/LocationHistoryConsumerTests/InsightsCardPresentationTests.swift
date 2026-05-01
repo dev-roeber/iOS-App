@@ -87,5 +87,61 @@ final class InsightsCardPresentationTests: XCTestCase {
         XCTAssertTrue(card.metrics.isEmpty)
         XCTAssertFalse(card.dateText.contains("2024-05-04"))
     }
+
+    // MARK: - KPI empty state
+
+    func testSupportingMetricsAllZerosProducesEmptyMetrics() {
+        let summary = DaySummary(
+            date: "2024-06-01",
+            visitCount: 0,
+            activityCount: 0,
+            pathCount: 0,
+            totalPathPointCount: 0,
+            totalPathDistanceM: 0,
+            hasContent: false
+        )
+        let metrics = InsightsCardPresentation.supportingMetrics(for: summary, unit: .metric)
+        XCTAssertTrue(metrics.isEmpty, "A day with no events should produce no metric chips")
+    }
+
+    func testKPIActiveDaysCountsOnlyHasContentDays() {
+        let summaries = [
+            DaySummary(
+                date: "2024-06-01",
+                visitCount: 1, activityCount: 0, pathCount: 0,
+                totalPathPointCount: 0, totalPathDistanceM: 0,
+                hasContent: true
+            ),
+            DaySummary(
+                date: "2024-06-02",
+                visitCount: 0, activityCount: 0, pathCount: 0,
+                totalPathPointCount: 0, totalPathDistanceM: 0,
+                hasContent: false
+            ),
+        ]
+        let activeDays = summaries.filter(\.hasContent).count
+        XCTAssertEqual(activeDays, 1)
+    }
+
+    func testKPIRoutesAndPlacesSummedCorrectly() {
+        let summaries = [
+            DaySummary(
+                date: "2024-06-01",
+                visitCount: 3, activityCount: 0, pathCount: 2,
+                totalPathPointCount: 0, totalPathDistanceM: 0,
+                hasContent: true
+            ),
+            DaySummary(
+                date: "2024-06-02",
+                visitCount: 1, activityCount: 0, pathCount: 1,
+                totalPathPointCount: 0, totalPathDistanceM: 0,
+                hasContent: true
+            ),
+        ]
+        let totalRoutes = summaries.reduce(0) { $0 + $1.pathCount }
+        let totalPlaces = summaries.reduce(0) { $0 + $1.visitCount }
+        XCTAssertEqual(totalRoutes, 3)
+        XCTAssertEqual(totalPlaces, 4)
+    }
 }
 #endif

@@ -336,6 +336,44 @@ final class UIWiringTests: XCTestCase {
             XCTFail("Aggregated filter should not yield a showDayOnMap action")
         }
     }
+
+    // MARK: - Insights Dashboard: drilldown label strings
+
+    func testShowDayTargetLabelIsOpenInDays() {
+        let target = InsightsDrilldownTarget.showDay("2024-06-15")
+        XCTAssertEqual(target.label, "Open in Days")
+    }
+
+    func testExportDayTargetLabelIsSelectForExport() {
+        let target = InsightsDrilldownTarget.exportDay("2024-06-15")
+        XCTAssertEqual(target.label, "Select for Export")
+    }
+
+    func testShowOnMapTargetLabelIsNonEmpty() {
+        let target = InsightsDrilldownTarget.showDayOnMap("2024-06-15")
+        XCTAssertFalse(target.label.isEmpty)
+    }
+
+    // MARK: - Insights Dashboard: drilldown triple includes map target
+
+    func testDrilldownTripleContainsShowOnMapAction() {
+        let targets = InsightsDrilldownTarget.drilldownTargets(for: "2024-06-15")
+        let hasMapTarget = targets.contains { target in
+            if case .showDayOnMap = target.action { return true }
+            return false
+        }
+        XCTAssertTrue(hasMapTarget, "Triple must include showDayOnMap for Insights → Day Detail Map wiring")
+    }
+
+    // MARK: - Insights Dashboard: range filter reset
+
+    func testInsightsRangeFilterResetDisablesActiveState() {
+        var filter = HistoryDateRangeFilter(preset: .last30Days)
+        XCTAssertTrue(filter.isActive)
+        filter.reset()
+        XCTAssertFalse(filter.isActive)
+        XCTAssertEqual(filter, HistoryDateRangeFilter.default)
+    }
 }
 
 // MARK: - DaySummary test stub

@@ -179,7 +179,13 @@ Not present:
 
 Present:
 - segmented insight surface with `Overview`, `Patterns` and `Breakdowns`
-- KPI summary cards for loaded days, total distance, average distance/day and active months
+- large `Insights` title with bold heading; LH2GPX dark-redesign applied (LH2GPXTheme card surface, hairline borders, semantic colors)
+- focused 4-KPI grid (Distance / Active Days / Routes / Places) via `LHMetricCard`; accessibility identifiers `insights.kpi.*`
+- active filter context shown via `LHContextBar`; date range control with `insights.range` identifier
+- share button identifiers updated to `insights.share.<cardType>` for per-section targeting
+- drilldown labels updated: "Open in Days", "Select for Export", "Show on Map"
+- `dayDrilldownTargets` now uses full triple (Days + Map + Export)
+- new `LHInsightsMetricGrid`, `LHInsightsChartCard`, `LHInsightsTopDayRow`, `LHInsightsActionRow` components in `LHInsightsComponents.swift`
 - highlight cards for busiest day, most visits, most routes and longest distance
 - top-days module with switchable ranking metrics; shows up to 20 entries (limit raised from 5)
 - monthly-trends module with switchable metrics derived from visible days and no fixed 24-month cap

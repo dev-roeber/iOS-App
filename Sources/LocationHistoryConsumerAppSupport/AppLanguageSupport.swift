@@ -675,6 +675,14 @@ enum AppGermanTranslations {
         "Collapse Map": "Karte einklappen",
         "Expand Map": "Karte erweitern",
         "Close Map": "Karte schließen",
-        "Dismiss": "Schließen"
+        "Dismiss": "Schließen",
+        // Insights Dashboard Redesign
+        "Open in Days": "In Tage öffnen",
+        "Select for Export": "Für Export auswählen",
+        "Show on Map": "Auf Karte zeigen",
+        "Activity Overview": "Aktivitätsübersicht",
+        "Activity Streak": "Aktivitätsserie",
+        "Period Comparison": "Periodenvergleich",
+        "Import More Data": "Mehr Daten importieren"
     ]
 }

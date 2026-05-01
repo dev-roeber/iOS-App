@@ -1,5 +1,60 @@
 # CHANGELOG
 
+## [2026-05-01] — feat: Insights Dashboard Redesign (ui/insights-dashboard-redesign)
+
+### Neu: `LHInsightsComponents.swift`
+
+Vier neue öffentliche Unterkomponenten für die Insights-Seite:
+- `LHInsightsMetricGrid` + `LHInsightsMetricItem` — datengetriebenes 2×2-Grid aus `LHMetricCard`-Kacheln
+- `LHInsightsChartCard` — Section-Card-Shell mit optionalem Share-Button und LH2GPXTheme-Oberfläche
+- `LHInsightsTopDayRow` — kompakte Rang-Zeile (Rang-Badge, Datum, Primärwert)
+- `LHInsightsActionRow` — Drilldown-Action-Zeile mit Icon + Pfeil
+
+### `AppInsightsContentView.swift` — Visuelles Redesign
+
+- Titel: `Text("Insights Overview")` → `Text("Insights")` mit `.title.weight(.bold)`, Identifier `insights.title`
+- Active-Filter-Banner durch `LHContextBar` ersetzt
+- Neues 4-KPI-Grid: Distanz (lila) / Aktive Tage (grün) / Routen (orange) / Orte (mint) via `LHMetricCard`; Identifier `insights.kpi.*`
+- `AppHistoryDateRangeControl` mit Identifier `insights.range`
+- `insightSection`-Hintergrund/Border/Shadow → `LH2GPXTheme.card / cardBorder / cardShadow`
+- `periodComparisonRows`, `monthlyTrendRow`, `periodRow` → `LH2GPXTheme.card`
+- Share-Button-Identifier: `"insights.section.share"` → `"insights.share.\(shareCardType.rawValue)"`
+- `dayDrilldownTargets` nutzt jetzt `InsightsDrilldownTarget.drilldownTargets(for:)` (vollständiges Triple inkl. `showDayOnMap`)
+- `dateRangeDrilldownTargets`: Labels "Show in Days" → "Open in Days", "Export This Period" → "Select for Export"
+
+### `InsightsDrilldown.swift` — Drilldown-Labels aktualisiert
+
+- `showDay`: "Show in Days" → "Open in Days"
+- `exportDay`: "Export This Day" → "Select for Export"
+- `showDayOnMap`: "Show on Map" (unverändert, jetzt DE-übersetzt)
+
+### AppLanguageSupport — neue DE/EN Strings
+
+"Open in Days"→"In Tage öffnen", "Select for Export"→"Für Export auswählen", "Show on Map"→"Auf Karte zeigen", "Activity Overview"→"Aktivitätsübersicht", "Activity Streak"→"Aktivitätsserie", "Period Comparison"→"Periodenvergleich", "Import More Data"→"Mehr Daten importieren"
+
+### Tests
+
+- `AppLanguageSupportTests` — 12 neue Tests für alle neuen Strings (DE + EN-Identity)
+- `UIWiringTests` — 4 neue Tests: Drilldown-Label-Strings, Triple mit Map-Ziel, Range-Reset
+- `InsightsCardPresentationTests` — 3 neue Tests: KPI-Summen, Empty State
+- `LandscapeLayoutTests` — 2 neue Tests: KPI-Werte Landscape-unabhängig, SurfaceMode-Anzahl
+
+### Nicht geändert
+
+- Keine Chart-Berechnungslogik
+- Keine Drilldown-Ziele entfernt
+- Keine Map-Logik geändert
+- Keine Live-Tracking-/Widget-/Dynamic-Island-Logik
+- Kein App-Export-Contract geändert
+
+### Checks
+
+- `swift test`: 753 Tests, 0 Failures (Branch: `ui/insights-dashboard-redesign`)
+- `git diff --check`: sauber
+- `xcodebuild build -project wrapper/LH2GPXWrapper.xcodeproj -scheme LH2GPXWrapper -destination 'generic/platform=iOS'`: BUILD SUCCEEDED
+
+---
+
 ## [2026-04-30] — feat: Tage + Tagesdetail sichtbar auf neues LH2GPX-Dark-Redesign umgebaut
 
 ### Produkt-UI

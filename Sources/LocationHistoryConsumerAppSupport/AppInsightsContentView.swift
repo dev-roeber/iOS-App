@@ -241,6 +241,7 @@ struct AppInsightsContentView: View {
             VStack(alignment: .leading, spacing: 22) {
                 headerSection
                 AppHistoryDateRangeControl(filter: $rangeFilter)
+                .accessibilityIdentifier("insights.range")
                 if !hasAnyMeaningfulInsightSection {
                     insightsEmptyCard(
                         title: t("Limited Insight Data"),
@@ -436,24 +437,57 @@ struct AppInsightsContentView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(t("Insights Overview"))
-                    .font(.title2.weight(.semibold))
-                Text(t("Overview, Patterns and Breakdowns for your imported history."))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            Text(t("Insights"))
+                .font(.title.weight(.bold))
+                .accessibilityIdentifier("insights.title")
 
             if !activeFilterDescriptions.isEmpty {
-                activeFilterBanner
+                LHContextBar(
+                    message: activeFilterDescriptions.joined(separator: " · "),
+                    systemImage: "line.3.horizontal.decrease.circle.fill",
+                    tint: .orange
+                )
             }
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-                ForEach(summaryCards) { card in
-                    summaryCard(card)
-                }
-            }
+            kpiGrid
         }
+    }
+
+    private var kpiGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            LHMetricCard(
+                icon: "road.lanes",
+                label: t("Distance"),
+                value: formatDistance(insights.totalDistanceM, unit: preferences.distanceUnit),
+                color: LH2GPXTheme.distancePurple
+            )
+            .accessibilityIdentifier("insights.kpi.distance")
+
+            LHMetricCard(
+                icon: "checkmark.circle",
+                label: t("Active Days"),
+                value: "\(daySummaries.filter(\.hasContent).count)",
+                color: LH2GPXTheme.successGreen
+            )
+            .accessibilityIdentifier("insights.kpi.activeDays")
+
+            LHMetricCard(
+                icon: "location.north.line",
+                label: t("Routes"),
+                value: "\(daySummaries.reduce(0) { $0 + $1.pathCount })",
+                color: LH2GPXTheme.routeOrange
+            )
+            .accessibilityIdentifier("insights.kpi.routes")
+
+            LHMetricCard(
+                icon: "mappin.and.ellipse",
+                label: t("Places"),
+                value: "\(daySummaries.reduce(0) { $0 + $1.visitCount })",
+                color: LH2GPXTheme.liveMint
+            )
+            .accessibilityIdentifier("insights.kpi.places")
+        }
+        .accessibilityIdentifier("insights.kpi.grid")
     }
 
     @ViewBuilder
@@ -764,7 +798,7 @@ struct AppInsightsContentView: View {
                 format: { formatDistance($0, unit: preferences.distanceUnit) }
             )
         }
-        .background(Color.secondary.opacity(0.04))
+        .background(LH2GPXTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
@@ -933,34 +967,21 @@ struct AppInsightsContentView: View {
                             .font(.caption.weight(.semibold))
                     }
                     .buttonStyle(.bordered)
-                    .accessibilityIdentifier("insights.section.share")
+                    .accessibilityIdentifier("insights.share.\(shareCardType.rawValue)")
                 }
             }
             content()
         }
         .padding(18)
-        .background(Color.secondary.opacity(0.06))
+        .background(LH2GPXTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.04), radius: 10, y: 3)
+        .shadow(color: LH2GPXTheme.cardShadow, radius: 10, y: 3)
     }
 
-    private var activeFilterBanner: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(t("Active Filters"), systemImage: "line.3.horizontal.decrease.circle.fill")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.orange)
-            Text(activeFilterDescriptions.joined(separator: " · "))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(12)
-        .background(Color.orange.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
 
     private func pageEmptyState(title: String, message: String, systemImage: String) -> some View {
         VStack(spacing: 14) {
@@ -1158,13 +1179,12 @@ struct AppInsightsContentView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(Color.indigo.opacity(0.05))
+        .background(LH2GPXTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func periodRow(_ item: PeriodBreakdownItem, isInteractive: Bool) -> some View {
-        let periodColor = item.distanceM > 0 ? Color.purple : Color.secondary
-        return VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(item.label)
                     .font(.subheadline.weight(.medium))
@@ -1188,7 +1208,7 @@ struct AppInsightsContentView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(periodColor.opacity(0.05))
+        .background(LH2GPXTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
@@ -1382,10 +1402,7 @@ struct AppInsightsContentView: View {
     }
 
     private func dayDrilldownTargets(for date: String) -> [InsightsDrilldownTarget] {
-        [
-            InsightsDrilldownTarget.showDay(date),
-            InsightsDrilldownTarget.exportDay(date),
-        ]
+        InsightsDrilldownTarget.drilldownTargets(for: date)
     }
 
     private func monthlyTrendDrilldownTargets(for item: InsightsMonthlyTrendItem) -> [InsightsDrilldownTarget]? {
@@ -1405,12 +1422,12 @@ struct AppInsightsContentView: View {
     private func dateRangeDrilldownTargets(fromDate: String, toDate: String) -> [InsightsDrilldownTarget] {
         [
             InsightsDrilldownTarget(
-                label: "Show in Days",
+                label: "Open in Days",
                 systemImage: "calendar",
                 action: .filterDaysToDateRange(fromDate: fromDate, toDate: toDate)
             ),
             InsightsDrilldownTarget(
-                label: "Export This Period",
+                label: "Select for Export",
                 systemImage: "square.and.arrow.up",
                 action: .prefillExportForDateRange(fromDate: fromDate, toDate: toDate)
             ),
