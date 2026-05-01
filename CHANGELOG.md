@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## [2026-05-01] — chore: Final UI/Localization Truth Sync (ui/redesign-final-truth-sync)
+
+### Fehlende deutsche Übersetzungen ergänzt
+
+9 Strings, die in der Options/Widget/Upload-UI mit `t()` verwendet werden, fehlten im deutschen Dictionary:
+- `"Invalid URL"` → `"Ungültige URL"` (Upload-Status-Chip)
+- `"Automatic Widget Update"` → `"Automatisches Widget-Update"` (Widget-Toggle)
+- `"Widget & Live Activity"` → `"Widget & Live-Activity"` (Section-Titel und Nav-Link)
+- `"Live Activity"` → `"Live-Activity"` (Section-Titel)
+- `"Reachable"` → `"Erreichbar"` (Verbindungstest-Ergebnis)
+- `"Unreachable"` → `"Nicht erreichbar"` (Verbindungstest-Fehler)
+- `"Test Connection"` → `"Verbindung testen"` (Upload-Subpage-Button)
+- `"Testing…"` → `"Testen…"` (Verbindungstest Spinner-Label)
+- `"Last tour + weekly status"` → `"Letzte Tour + Wochenstatus"` (Widget-Vorschau)
+
+### Tests erweitert
+
+- `AppPreferencesTests.testDefaultsAreSensible`: prüft jetzt auch `widgetAutoUpdate = true` und `maximumRecordingGapSeconds = 300`
+- `AppPreferencesTests.testResetRestoresDefaults`: prüft Reset von `widgetAutoUpdate` und `maximumRecordingGapSeconds`
+- `AppLanguageSupportTests`: +2 neue Gruppen für Truth-Sync-Strings (DE + EN Identity)
+- **Gesamtergebnis: 832 Tests, 0 Failures** (vorher 830)
+
+### Doku
+
+- `NEXT_STEPS.md`: Truth-Sync als abgeschlossen markiert; Screenshot-Aktualisierungsaufgabe als neues P2-Item ergänzt
+- `ROADMAP.md`: Truth-Sync-Stand dokumentiert
+
 ## [2026-05-01] — feat: Options + Widget/Live Settings Redesign (ui/options-widget-live-settings)
 
 ### Neu: `RecordingPreset` (in `AppPreferences.swift`)

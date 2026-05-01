@@ -213,4 +213,27 @@ final class AppLanguageSupportMapHeaderStringsTests: XCTestCase {
         XCTAssertEqual(en.localized("Dynamic Island"),      "Dynamic Island")
         XCTAssertEqual(en.localized("Points per Batch"),    "Points per Batch")
     }
+
+    // MARK: - Truth-sync strings (2026-05-01)
+
+    func testGermanOptionsTruthSyncStrings() {
+        XCTAssertEqual(de.localized("Invalid URL"),                 "Ungültige URL")
+        XCTAssertEqual(de.localized("Automatic Widget Update"),     "Automatisches Widget-Update")
+        XCTAssertEqual(de.localized("Widget & Live Activity"),      "Widget & Live-Activity")
+        XCTAssertEqual(de.localized("Live Activity"),               "Live-Activity")
+        XCTAssertEqual(de.localized("Reachable"),                   "Erreichbar")
+        XCTAssertEqual(de.localized("Unreachable"),                 "Nicht erreichbar")
+        XCTAssertEqual(de.localized("Test Connection"),             "Verbindung testen")
+        XCTAssertEqual(de.localized("Testing…"),                    "Testen…")
+        XCTAssertEqual(de.localized("Last tour + weekly status"),   "Letzte Tour + Wochenstatus")
+    }
+
+    func testEnglishOptionsTruthSyncIdentity() {
+        XCTAssertEqual(en.localized("Invalid URL"),              "Invalid URL")
+        XCTAssertEqual(en.localized("Automatic Widget Update"),  "Automatic Widget Update")
+        XCTAssertEqual(en.localized("Widget & Live Activity"),   "Widget & Live Activity")
+        XCTAssertEqual(en.localized("Reachable"),                "Reachable")
+        XCTAssertEqual(en.localized("Unreachable"),              "Unreachable")
+        XCTAssertEqual(en.localized("Test Connection"),          "Test Connection")
+    }
 }

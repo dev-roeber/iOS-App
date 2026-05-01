@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-01
+Last analysis: 2026-05-01 (truth sync)
 
 Repos in scope:
 - `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper

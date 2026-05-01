@@ -56,6 +56,8 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.recordingInterval.unit, .seconds)
             XCTAssertEqual(preferences.liveTrackRecorderConfiguration.minimumRecordingIntervalS, 5.0)
             XCTAssertEqual(preferences.dynamicIslandCompactDisplay, .distance)
+            XCTAssertTrue(preferences.widgetAutoUpdate)
+            XCTAssertEqual(preferences.maximumRecordingGapSeconds, 300)
         }
     }
 
@@ -158,6 +160,8 @@ final class AppPreferencesTests: XCTestCase {
             preferences.liveLocationServerUploadBearerToken = "token"
             preferences.recordingInterval = RecordingIntervalPreference(value: 10, unit: .minutes)
             preferences.dynamicIslandCompactDisplay = .uploadStatus
+            preferences.widgetAutoUpdate = false
+            preferences.maximumRecordingGapSeconds = 60
 
             preferences.reset()
 
@@ -179,6 +183,8 @@ final class AppPreferencesTests: XCTestCase {
             // reset restores default recording interval
             XCTAssertEqual(preferences.recordingInterval, .default)
             XCTAssertEqual(preferences.dynamicIslandCompactDisplay, .distance)
+            XCTAssertTrue(preferences.widgetAutoUpdate)
+            XCTAssertEqual(preferences.maximumRecordingGapSeconds, 300)
         }
     }
 

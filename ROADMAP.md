@@ -37,6 +37,18 @@ P2 — Nachgelagerte Optimierung
 - veraltete Notion-/Wrapper-/Split-Repo-Doku weiter abbauen
 - echtes Road-/Path-Matching nur als spaeteren separaten Produktscope betrachten
 
+### Final UI/Localization Truth Sync (2026-05-01)
+
+Implementiert und verifiziert:
+- 9 fehlende deutsche Übersetzungen in `AppLanguageSupport.swift` ergänzt (Invalid URL, Widget & Live Activity, Live Activity, Reachable/Unreachable, Test Connection, Testing…, Automatic Widget Update, Last tour + weekly status)
+- `widgetAutoUpdate` und `maximumRecordingGapSeconds` in `AppPreferencesTests` abgedeckt
+- 2 neue Testgruppen in `AppLanguageSupportTests` für Truth-Sync-Strings
+- lokaler Nachweis: `swift test` **832 Tests, 0 Failures**
+
+Nicht als abgeschlossen markieren:
+- App-Store-Screenshots zeigen noch das alte Options-Layout — Aktualisierung auf neue Designs ausstehend
+- Apple-Hardware-Verifikation für alle Redesign-Screens weiterhin ausstehend
+
 ### Options + Widget/Live Settings Redesign Truth Update (2026-05-01)
 
 Implementiert und lokal verifiziert:

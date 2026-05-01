@@ -743,6 +743,16 @@ enum AppGermanTranslations {
         "Storage location and optional upload disclosure": "Speicherort und optionaler Upload-Hinweis",
         "Reset all options to defaults": "Alle Optionen zurücksetzen",
         "Resets all app preferences to their default values. Live tracks and imported data are not affected.": "Setzt alle App-Einstellungen auf Standardwerte zurück. Live-Tracks und importierte Daten bleiben unverändert.",
-        "The widget updates automatically after each recording.": "Das Widget aktualisiert sich nach jeder Aufzeichnung automatisch."
+        "The widget updates automatically after each recording.": "Das Widget aktualisiert sich nach jeder Aufzeichnung automatisch.",
+        // Options truth-sync: missing strings discovered 2026-05-01
+        "Invalid URL": "Ungültige URL",
+        "Automatic Widget Update": "Automatisches Widget-Update",
+        "Widget & Live Activity": "Widget & Live-Activity",
+        "Live Activity": "Live-Activity",
+        "Reachable": "Erreichbar",
+        "Unreachable": "Nicht erreichbar",
+        "Test Connection": "Verbindung testen",
+        "Testing…": "Testen…",
+        "Last tour + weekly status": "Letzte Tour + Wochenstatus"
     ]
 }
