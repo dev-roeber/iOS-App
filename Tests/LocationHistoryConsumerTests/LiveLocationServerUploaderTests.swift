@@ -229,6 +229,46 @@ final class LiveLocationServerUploaderTests: XCTestCase {
         }
     }
 
+    func testBearerTokenIsNotInRequestBody() async throws {
+        let uploader = makeUploader()
+        let endpoint = URL(string: "https://example.invalid/live")!
+        var capturedBody: Data?
+
+        MockURLProtocolRegistry.shared.set { req in
+            capturedBody = req.httpBody
+            return (Data(), HTTPURLResponse(url: req.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        }
+
+        try await uploader.upload(request: makeRequest(), to: endpoint, bearerToken: "mysecret")
+
+        let bodyString = String(data: capturedBody ?? Data(), encoding: .utf8) ?? ""
+        XCTAssertFalse(bodyString.contains("mysecret"), "Bearer token must never appear in the request body")
+    }
+
+    func testTrimmedBearerTokenReturnsNilForEmpty() {
+        let config = LiveLocationServerUploadConfiguration(
+            endpointURLString: "https://example.invalid/live",
+            bearerToken: ""
+        )
+        XCTAssertNil(config.trimmedBearerToken, "Empty bearer token must produce nil — no Authorization header sent")
+    }
+
+    func testTrimmedBearerTokenReturnsNilForWhitespace() {
+        let config = LiveLocationServerUploadConfiguration(
+            endpointURLString: "https://example.invalid/live",
+            bearerToken: "   "
+        )
+        XCTAssertNil(config.trimmedBearerToken)
+    }
+
+    func testTrimmedBearerTokenReturnsTrimmedValue() {
+        let config = LiveLocationServerUploadConfiguration(
+            endpointURLString: "https://example.invalid/live",
+            bearerToken: "  secret  "
+        )
+        XCTAssertEqual(config.trimmedBearerToken, "secret")
+    }
+
     func testUploadPropagatesNetworkError() async throws {
         let uploader = makeUploader()
         let endpoint = URL(string: "https://example.invalid/live")!

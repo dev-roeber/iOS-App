@@ -1,10 +1,12 @@
 #if canImport(SwiftUI)
 import SwiftUI
 
+// MARK: - AppOptionsView
+
+/// Options main page. Each settings group appears as a dark card row that navigates
+/// to the dedicated sub-page. No settings are edited directly on this screen.
 public struct AppOptionsView: View {
     @ObservedObject private var preferences: AppPreferences
-    @State private var connectionTestResult: ConnectionTestResult? = nil
-    @State private var isTestingConnection = false
     private let liveActivityAvailability: LiveActivityFeatureAvailability
 
     public init(preferences: AppPreferences) {
@@ -13,6 +15,129 @@ public struct AppOptionsView: View {
     }
 
     public var body: some View {
+        ScrollView {
+            LHPageScaffold {
+                sectionLink(
+                    icon: "gearshape",
+                    title: t("General"),
+                    description: t("Display, language and import options"),
+                    color: LH2GPXTheme.primaryBlue,
+                    identifier: "options.general"
+                ) {
+                    AppGeneralOptionsView(preferences: preferences)
+                }
+
+                sectionLink(
+                    icon: "map",
+                    title: t("Maps"),
+                    description: t("Default style for all map views"),
+                    color: .teal,
+                    identifier: "options.maps"
+                ) {
+                    AppMapsOptionsView(preferences: preferences)
+                }
+
+                sectionLink(
+                    icon: "square.and.arrow.down",
+                    title: t("Import"),
+                    description: t("Auto-restore and import behaviour"),
+                    color: .indigo,
+                    identifier: "options.import"
+                ) {
+                    AppImportOptionsView(preferences: preferences)
+                }
+
+                sectionLink(
+                    icon: "record.circle",
+                    title: t("Live Recording"),
+                    description: t("Accuracy, interval and background recording"),
+                    color: LH2GPXTheme.liveMint,
+                    identifier: "options.liveRecording"
+                ) {
+                    AppLiveRecordingOptionsView(preferences: preferences)
+                }
+
+                sectionLink(
+                    icon: "arrow.up.circle",
+                    title: t("Upload"),
+                    description: t("Server URL, token and batch settings"),
+                    color: LH2GPXTheme.warningOrange,
+                    identifier: "options.upload"
+                ) {
+                    AppUploadOptionsView(preferences: preferences)
+                }
+
+                sectionLink(
+                    icon: "dot.radiowaves.left.and.right",
+                    title: t("Widget & Live Activity"),
+                    description: t("Dynamic Island value and home widget"),
+                    color: LH2GPXTheme.liveMint,
+                    identifier: "options.widgetLiveActivity"
+                ) {
+                    AppWidgetLiveActivityOptionsView(
+                        preferences: preferences,
+                        availability: liveActivityAvailability
+                    )
+                }
+
+                sectionLink(
+                    icon: "hand.raised",
+                    title: t("Privacy"),
+                    description: t("Storage location and optional upload disclosure"),
+                    color: LH2GPXTheme.successGreen,
+                    identifier: "options.privacy"
+                ) {
+                    AppPrivacyOptionsView(preferences: preferences)
+                }
+
+                sectionLink(
+                    icon: "wrench.and.screwdriver",
+                    title: t("Technical"),
+                    description: t("Reset all options to defaults"),
+                    color: LH2GPXTheme.dangerRed,
+                    identifier: "options.technical"
+                ) {
+                    AppTechnicalOptionsView(preferences: preferences)
+                }
+            }
+        }
+        .navigationTitle(t("Options"))
+        .accessibilityIdentifier("options.title")
+    }
+
+    @ViewBuilder
+    private func sectionLink<D: View>(
+        icon: String,
+        title: String,
+        description: String,
+        color: Color,
+        identifier: String,
+        @ViewBuilder destination: @escaping () -> D
+    ) -> some View {
+        NavigationLink { destination() } label: {
+            LHOptionsSectionRow(icon: icon, title: title, description: description, color: color)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(14)
+        .background(LH2GPXTheme.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func t(_ english: String) -> String { preferences.localized(english) }
+}
+
+// MARK: - AppGeneralOptionsView
+
+struct AppGeneralOptionsView: View {
+    @ObservedObject var preferences: AppPreferences
+
+    var body: some View {
         Form {
             Section {
                 Picker(t("Distance Units"), selection: $preferences.distanceUnit) {
@@ -20,241 +145,259 @@ public struct AppOptionsView: View {
                         Text(t(unit.title)).tag(unit)
                     }
                 }
-
                 Picker(t("Start Tab"), selection: $preferences.startTab) {
                     ForEach(AppStartTabPreference.allCases) { tab in
                         Text(t(tab.title)).tag(tab)
                     }
                 }
-
                 Toggle(t("Show Technical Import Details"), isOn: $preferences.showsTechnicalImportDetails)
-            } header: {
-                Text(t("Display"))
-            } footer: {
-                Text(t("Controls how much metadata the app shows around imports and source information."))
-            }
+                Picker(t("App Language"), selection: $preferences.appLanguage) {
+                    ForEach(AppLanguagePreference.allCases) { language in
+                        Text(t(language.title)).tag(language)
+                    }
+                }
+            } header: { Text(t("General")) }
+        }
+        .navigationTitle(t("General"))
+    }
 
+    private func t(_ english: String) -> String { preferences.localized(english) }
+}
+
+// MARK: - AppMapsOptionsView
+
+struct AppMapsOptionsView: View {
+    @ObservedObject var preferences: AppPreferences
+
+    var body: some View {
+        Form {
             Section {
                 Picker(t("Default Map Style"), selection: $preferences.preferredMapStyle) {
                     ForEach(AppMapStylePreference.allCases) { style in
                         Text(t(style.title)).tag(style)
                     }
                 }
-            } header: {
-                Text(t("Maps"))
-            } footer: {
-                Text(t("Applies to the day-detail map and live-location map."))
-            }
+            } header: { Text(t("Maps")) }
+              footer: { Text(t("Applies to the day-detail map and live-location map.")) }
+        }
+        .navigationTitle(t("Maps"))
+    }
 
+    private func t(_ english: String) -> String { preferences.localized(english) }
+}
+
+// MARK: - AppImportOptionsView
+
+struct AppImportOptionsView: View {
+    @ObservedObject var preferences: AppPreferences
+
+    var body: some View {
+        Form {
             Section {
                 Toggle(t("Restore Last Import on Launch"), isOn: $preferences.autoRestoreLastImport)
-            } header: {
-                Text(t("Imports"))
-            } footer: {
-                Text(t("When enabled, the app tries to reopen the last imported file on startup. Missing or stale files are skipped automatically."))
+            } header: { Text(t("Import")) }
+              footer: { Text(t("When enabled, the app tries to reopen the last imported file on startup. Missing or stale files are skipped automatically.")) }
+        }
+        .navigationTitle(t("Import"))
+    }
+
+    private func t(_ english: String) -> String { preferences.localized(english) }
+}
+
+// MARK: - AppLiveRecordingOptionsView
+
+struct AppLiveRecordingOptionsView: View {
+    @ObservedObject var preferences: AppPreferences
+
+    var body: some View {
+        ScrollView {
+            LHPageScaffold {
+                // Preset selector card
+                LHCard {
+                    LHSectionHeader(t("Recording Preset"))
+                    LHLiveRecordingPresetSelector(
+                        preset: Binding(
+                            get: { preferences.recordingPreset },
+                            set: { preferences.recordingPreset = $0 }
+                        ),
+                        t: t
+                    )
+                    Text(presetHint)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                // Settings card
+                LHCard {
+                    LHSectionHeader(t("Settings"))
+
+                    Divider().foregroundStyle(LH2GPXTheme.separator)
+
+                    accuracyRow
+                    Divider().foregroundStyle(LH2GPXTheme.separator)
+                    motionFilterRow
+                    Divider().foregroundStyle(LH2GPXTheme.separator)
+                    updateIntervalRow
+
+                    if preferences.recordingPreset == .custom {
+                        Divider().foregroundStyle(LH2GPXTheme.separator)
+                        minimumDistanceRow
+                        Divider().foregroundStyle(LH2GPXTheme.separator)
+                        maximumGapRow
+                    }
+
+                    Divider().foregroundStyle(LH2GPXTheme.separator)
+                    foregroundRecordingRow
+                    Divider().foregroundStyle(LH2GPXTheme.separator)
+                    backgroundToggle
+                }
             }
+        }
+        .navigationTitle(t("Live Recording"))
+    }
 
-            Section {
-                Picker(t("App Language"), selection: $preferences.appLanguage) {
-                    ForEach(AppLanguagePreference.allCases) { language in
-                        Text(t(language.title)).tag(language)
-                    }
-                }
-
-                Toggle(t("Upload to Custom Server"), isOn: $preferences.sendsLiveLocationToServer)
-
-                if preferences.sendsLiveLocationToServer {
-                    TextField(t("Server URL"), text: $preferences.liveLocationServerUploadURLString)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.never)
-                        .keyboardType(.URL)
-                        #endif
-                        .autocorrectionDisabled()
-
-                    SecureField(t("Bearer Token (optional)"), text: $preferences.liveLocationServerUploadBearerToken)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.never)
-                        #endif
-                        .autocorrectionDisabled()
-                }
-
-                if preferences.sendsLiveLocationToServer {
-                    Picker(t("Upload Batch Size"), selection: $preferences.liveTrackingUploadBatch) {
-                        ForEach(AppLiveTrackingUploadBatchPreference.allCases) { batch in
-                            Text(t(batch.title)).tag(batch)
-                        }
-                    }
-
-                    LabeledContent(t("Upload Status")) {
-                        Text(uploadStatusText)
-                            .foregroundStyle(uploadStatusColor)
-                    }
-                }
-
-                if preferences.sendsLiveLocationToServer,
-                   preferences.liveLocationServerUploadConfiguration.endpointURL != nil {
-                    if isTestingConnection {
-                        HStack {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text(t("Testing…"))
-                                .foregroundStyle(.secondary)
-                        }
-                    } else if let result = connectionTestResult {
-                        LabeledContent(t("Connection")) {
-                            Text(result == .reachable ? t("Reachable") : t("Unreachable"))
-                                .foregroundStyle(result == .reachable ? .green : .red)
-                        }
-                    }
-
-                    Button(t("Test Connection")) {
-                        testConnection()
-                    }
-                }
-
-            } header: {
-                Text(t("Language and Upload"))
-            } footer: {
-                Text(t("Accepted live-recording points only. Use an HTTP(S) endpoint you control."))
+    private var accuracyRow: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(t("High-Accuracy Location"))
+                    .font(.subheadline)
+                Text(t(preferences.liveTrackingAccuracy.detail))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-
-            Section {
-                Picker(t("Accuracy Filter"), selection: $preferences.liveTrackingAccuracy) {
+            Spacer()
+            if preferences.recordingPreset == .custom {
+                Picker("", selection: $preferences.liveTrackingAccuracy) {
                     ForEach(AppLiveTrackingAccuracyPreference.allCases) { mode in
                         Text(t(mode.title)).tag(mode)
                     }
                 }
+                .labelsHidden()
+                .accessibilityIdentifier("options.live.highAccuracy")
+            } else {
+                Text(t(preferences.liveTrackingAccuracy.title))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
 
-                LabeledContent(t("Max. GPS Inaccuracy"), value: "\(Int(preferences.liveTrackingAccuracy.maximumAcceptedAccuracyM)) m")
-
-                Picker(t("Recording Detail"), selection: $preferences.liveTrackingDetail) {
+    private var motionFilterRow: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(t("Motion Filter"))
+                    .font(.subheadline)
+                Text(t(preferences.liveTrackingDetail.detail))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if preferences.recordingPreset == .custom {
+                Picker("", selection: $preferences.liveTrackingDetail) {
                     ForEach(AppLiveTrackingDetailPreference.allCases) { mode in
                         Text(t(mode.title)).tag(mode)
                     }
                 }
+                .labelsHidden()
+                .accessibilityIdentifier("options.live.motionFilter")
+            } else {
+                Text(t(preferences.liveTrackingDetail.title))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
 
-                LabeledContent(t("Minimum Movement"), value: "\(Int(preferences.liveTrackingDetail.minimumDistanceDeltaM)) m")
-
-                Toggle(t("Allow Background Recording"), isOn: $preferences.allowsBackgroundLiveTracking)
-
-                LabeledContent(t("Minimum Time Gap")) {
-                    HStack(spacing: 4) {
-                        Text(localizedMinimumTimeGapDescription)
-                            .monospacedDigit()
-                        Picker("", selection: Binding(
-                            get: { preferences.recordingInterval.unit },
-                            set: { preferences.recordingInterval = .validated(value: preferences.recordingInterval.value, unit: $0) }
-                        )) {
-                            ForEach(RecordingIntervalUnit.allCases) { unit in
-                                Text(t(unit.displayName)).tag(unit)
-                            }
-                        }
-                        .labelsHidden()
-                        .fixedSize()
-                        Stepper(
-                            onIncrement: incrementMinimumTimeGap,
-                            onDecrement: decrementMinimumTimeGap
-                        ) { EmptyView() }
+    private var updateIntervalRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(t("Update Interval"))
+                .font(.subheadline)
+            HStack(spacing: 4) {
+                Text(localizedMinimumTimeGapDescription)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                Picker("", selection: Binding(
+                    get: { preferences.recordingInterval.unit },
+                    set: { preferences.recordingInterval = .validated(value: preferences.recordingInterval.value, unit: $0) }
+                )) {
+                    ForEach(RecordingIntervalUnit.allCases) { unit in
+                        Text(t(unit.displayName)).tag(unit)
                     }
                 }
-
-                Picker(t("Maximum Gap"), selection: $preferences.maximumRecordingGapSeconds) {
-                    Text(t("1 min")).tag(60)
-                    Text(t("5 min")).tag(300)
-                    Text(t("15 min")).tag(900)
-                    Text(t("30 min")).tag(1800)
-                    Text(t("Unlimited")).tag(0)
-                }
-
-            } header: {
-                Text(t("Live Recording"))
-            } footer: {
-                Text("\(t(preferences.liveTrackingAccuracy.detail)) \(t(preferences.liveTrackingDetail.detail)) \(t("Minimum Time Gap controls the shortest allowed delay between accepted points. Set it to No minimum to disable the hard floor.")) \(t("Larger minimum gaps reduce point count, battery use and upload frequency.")) \(t("When Maximum Gap is set, a track is automatically split if two consecutive points are further apart in time than the configured value.")) \(t("Recording Detail still tunes the movement-sensitive quality gate.")) \(t("Background recording requires Always Allow permission and only affects local live-track recording."))")
+                .labelsHidden()
+                .fixedSize()
+                Stepper(onIncrement: incrementMinimumTimeGap, onDecrement: decrementMinimumTimeGap) { EmptyView() }
             }
-
-            Section {
-                LabeledContent(t("Home Screen Widget")) {
-                    Text(t("Last tour + weekly status"))
-                        .foregroundStyle(.secondary)
-                }
-
-                LabeledContent(t("Unit")) {
-                    Text(preferences.distanceUnit == .metric ? t("Kilometers") : t("Miles"))
-                        .foregroundStyle(.secondary)
-                }
-
-                Toggle(t("Automatic Widget Update"), isOn: $preferences.widgetAutoUpdate)
-
-                LabeledContent(t("Live Activities")) {
-                    Text(t(liveActivityAvailability.statusLabel))
-                        .foregroundStyle(liveActivityAvailability.isConfigurable ? .green : .secondary)
-                }
-
-                Picker(t("Dynamic Island Value"), selection: $preferences.dynamicIslandCompactDisplay) {
-                    ForEach(DynamicIslandCompactDisplay.allCases, id: \.self) { display in
-                        Text(t(display.localizedName)).tag(display)
-                    }
-                }
-                .disabled(!liveActivityAvailability.isConfigurable)
-
-            } header: {
-                Text(t("Widget & Live Activity"))
-            } footer: {
-                Text("\(t("The widget updates automatically after each recording. The selected Dynamic Island value is shown in compact and expanded Live Activity regions during active recording.")) \(t(liveActivityAvailability.detailMessage))")
-            }
-
-            Section {
-                LabeledContent(t("Location Data"), value: t("Stored locally on this device"))
-                LabeledContent(t("Server Upload"), value: serverUploadPrivacyValue)
-                LabeledContent(t("Live Recording"), value: preferences.allowsBackgroundLiveTracking ? t("Foreground + optional background") : t("Foreground only"))
-            } header: {
-                Text(t("Privacy"))
-            } footer: {
-                Text(t("This app keeps imports and live tracks local by default. Server upload is optional, user-controlled and only sends accepted live-recording points to the configured endpoint."))
-            }
-
-            Section {
-                Button(t("Reset Options")) {
-                    preferences.reset()
-                }
-                .foregroundStyle(.red)
-            } header: {
-                Text(t("Technical"))
-            }
+            .accessibilityIdentifier("options.live.interval")
         }
-        .navigationTitle(t("Options"))
     }
 
-    private var serverUploadPrivacyValue: String {
-        guard preferences.sendsLiveLocationToServer else {
-            return t("Disabled")
+    private var minimumDistanceRow: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(t("Minimum Distance Filter"))
+                    .font(.subheadline)
+                Text("\(Int(preferences.liveTrackingDetail.minimumDistanceDeltaM)) m")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
         }
-        return preferences.liveLocationServerUploadConfiguration.endpointURL == nil
-            ? t("Enabled (invalid URL)")
-            : t("Enabled")
+        .accessibilityIdentifier("options.live.minimumDistance")
     }
 
-    private var uploadStatusText: String {
-        guard preferences.sendsLiveLocationToServer else {
-            return t("Disabled")
+    private var maximumGapRow: some View {
+        HStack {
+            Text(t("Maximum Time Gap"))
+                .font(.subheadline)
+            Spacer()
+            Picker("", selection: $preferences.maximumRecordingGapSeconds) {
+                Text(t("1 min")).tag(60)
+                Text(t("5 min")).tag(300)
+                Text(t("15 min")).tag(900)
+                Text(t("30 min")).tag(1800)
+                Text(t("Unlimited")).tag(0)
+            }
+            .labelsHidden()
         }
-        guard preferences.liveLocationServerUploadConfiguration.endpointURL != nil else {
-            return t("Invalid URL")
-        }
-        return t("Active")
     }
 
-    private var uploadStatusColor: Color {
-        guard preferences.sendsLiveLocationToServer else { return .secondary }
-        guard preferences.liveLocationServerUploadConfiguration.endpointURL != nil else { return .red }
-        return .green
+    private var foregroundRecordingRow: some View {
+        HStack {
+            Text(t("Foreground recording"))
+                .font(.subheadline)
+            Spacer()
+            LHStatusChip(
+                title: t("Active"),
+                systemImage: "checkmark.circle.fill",
+                color: LH2GPXTheme.liveMint
+            )
+        }
+        .accessibilityIdentifier("options.live.foregroundOnly")
+    }
+
+    private var backgroundToggle: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle(t("Allow Background Recording"), isOn: $preferences.allowsBackgroundLiveTracking)
+                .accessibilityIdentifier("options.live.background")
+            Text(t("Background recording requires Always Allow permission and only affects local live-track recording."))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var presetHint: String {
+        switch preferences.recordingPreset {
+        case .battery:  return t("Fewer stored points, larger movement threshold.")
+        case .balanced: return t("Default spacing for local live tracks.")
+        case .precise:  return t("Keeps more movement detail with tighter thresholds.")
+        case .custom:   return t("Advanced settings active. Choosing a preset will overwrite current values.")
+        }
     }
 
     private var localizedMinimumTimeGapDescription: String {
         let interval = preferences.recordingInterval
-        guard !interval.hasNoMinimum else {
-            return t(interval.displayString)
-        }
+        guard !interval.hasNoMinimum else { return t(interval.displayString) }
         let unitKey = interval.value == 1 ? interval.unit.singularKey : interval.unit.rawValue
         return "\(interval.value) \(t(unitKey))"
     }
@@ -270,6 +413,57 @@ public struct AppOptionsView: View {
         preferences.recordingInterval = .validated(value: current.value - 1, unit: current.unit)
     }
 
+    private func t(_ english: String) -> String { preferences.localized(english) }
+}
+
+// MARK: - AppUploadOptionsView
+
+struct AppUploadOptionsView: View {
+    @ObservedObject var preferences: AppPreferences
+    @State private var connectionTestResult: UploadConnectionTestResult? = nil
+    @State private var isTestingConnection = false
+
+    var body: some View {
+        ScrollView {
+            LHPageScaffold {
+                LHCard {
+                    LHSectionHeader(t("Upload"))
+                    LHUploadSettingsCard(preferences: preferences, t: t)
+                }
+
+                if preferences.sendsLiveLocationToServer,
+                   preferences.liveLocationServerUploadConfiguration.endpointURL != nil {
+                    LHCard {
+                        if isTestingConnection {
+                            HStack {
+                                ProgressView().controlSize(.small)
+                                Text(t("Testing…")).foregroundStyle(.secondary)
+                            }
+                        } else if let result = connectionTestResult {
+                            LHStatusChip(
+                                title: result == .reachable ? t("Reachable") : t("Unreachable"),
+                                systemImage: result == .reachable
+                                    ? "checkmark.circle.fill" : "xmark.circle.fill",
+                                color: result == .reachable
+                                    ? LH2GPXTheme.successGreen : LH2GPXTheme.dangerRed
+                            )
+                        }
+                        Button(t("Test Connection"), action: testConnection)
+                            .foregroundStyle(LH2GPXTheme.primaryBlue)
+                    }
+                }
+
+                LHInsightBanner(
+                    title: t("Upload"),
+                    message: t("Accepted live-recording points only. Use an HTTP(S) endpoint you control."),
+                    systemImage: "info.circle",
+                    tint: LH2GPXTheme.warningOrange
+                )
+            }
+        }
+        .navigationTitle(t("Upload"))
+    }
+
     private func testConnection() {
         guard let url = preferences.liveLocationServerUploadConfiguration.endpointURL else { return }
         isTestingConnection = true
@@ -278,7 +472,10 @@ public struct AppOptionsView: View {
         var request = URLRequest(url: url, timeoutInterval: 10)
         request.httpMethod = "HEAD"
         if !preferences.liveLocationServerUploadBearerToken.isEmpty {
-            request.setValue("Bearer \(preferences.liveLocationServerUploadBearerToken)", forHTTPHeaderField: "Authorization")
+            request.setValue(
+                "Bearer \(preferences.liveLocationServerUploadBearerToken)",
+                forHTTPHeaderField: "Authorization"
+            )
         }
 
         URLSession.shared.dataTask(with: request) { _, response, error in
@@ -295,13 +492,162 @@ public struct AppOptionsView: View {
         }.resume()
     }
 
-    private func t(_ english: String) -> String {
-        preferences.localized(english)
-    }
+    private func t(_ english: String) -> String { preferences.localized(english) }
 }
 
-private enum ConnectionTestResult {
+private enum UploadConnectionTestResult {
     case reachable
     case unreachable
 }
+
+// MARK: - AppWidgetLiveActivityOptionsView
+
+struct AppWidgetLiveActivityOptionsView: View {
+    @ObservedObject var preferences: AppPreferences
+    let availability: LiveActivityFeatureAvailability
+
+    init(preferences: AppPreferences, availability: LiveActivityFeatureAvailability) {
+        self._preferences = ObservedObject(wrappedValue: preferences)
+        self.availability = availability
+    }
+
+    var body: some View {
+        ScrollView {
+            LHPageScaffold {
+                // Dynamic Island
+                LHCard {
+                    LHSectionHeader(t("Dynamic Island Primary Value"))
+
+                    LHDynamicIslandPreviewCard(
+                        display: preferences.dynamicIslandCompactDisplay,
+                        availability: availability,
+                        t: t
+                    )
+
+                    if availability.isConfigurable {
+                        Divider().foregroundStyle(LH2GPXTheme.separator)
+                        Picker(t("Dynamic Island Primary Value"), selection: $preferences.dynamicIslandCompactDisplay) {
+                            ForEach(DynamicIslandCompactDisplay.allCases, id: \.self) { display in
+                                Text(t(display.localizedName)).tag(display)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .accessibilityIdentifier("options.dynamicIsland.value")
+                    }
+
+                    Text(t("Active only during recording"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                // Home Widget
+                LHCard {
+                    LHSectionHeader(t("Home Widget"))
+
+                    LHWidgetPreviewCard(distanceUnit: preferences.distanceUnit, t: t)
+
+                    Divider().foregroundStyle(LH2GPXTheme.separator)
+
+                    Toggle(t("Automatic Widget Update"), isOn: $preferences.widgetAutoUpdate)
+
+                    Text(t("The widget updates automatically after each recording."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if !availability.isConfigurable {
+                    LHInsightBanner(
+                        title: t("Live Activity"),
+                        message: t(availability.detailMessage),
+                        systemImage: "exclamationmark.circle",
+                        tint: .secondary
+                    )
+                }
+            }
+        }
+        .navigationTitle(t("Widget & Live Activity"))
+    }
+
+    private func t(_ english: String) -> String { preferences.localized(english) }
+}
+
+// MARK: - AppPrivacyOptionsView
+
+struct AppPrivacyOptionsView: View {
+    @ObservedObject var preferences: AppPreferences
+
+    var body: some View {
+        ScrollView {
+            LHPageScaffold {
+                LHCard {
+                    LHSectionHeader(t("Privacy"))
+
+                    privacyRow(label: t("Location Data"), value: t("Stored locally on this device"))
+                    Divider().foregroundStyle(LH2GPXTheme.separator)
+                    privacyRow(label: t("Server Upload"), value: serverUploadPrivacyValue)
+                    Divider().foregroundStyle(LH2GPXTheme.separator)
+                    privacyRow(
+                        label: t("Live Recording"),
+                        value: preferences.allowsBackgroundLiveTracking
+                            ? t("Foreground + optional background")
+                            : t("Foreground only")
+                    )
+
+                    Text(t("This app keeps imports and live tracks local by default. Server upload is optional, user-controlled and only sends accepted live-recording points to the configured endpoint."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .navigationTitle(t("Privacy"))
+    }
+
+    private func privacyRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label).font(.subheadline)
+            Spacer()
+            Text(value).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.trailing)
+        }
+    }
+
+    private var serverUploadPrivacyValue: String {
+        guard preferences.sendsLiveLocationToServer else { return t("Disabled") }
+        return preferences.liveLocationServerUploadConfiguration.endpointURL == nil
+            ? t("Enabled (invalid URL)") : t("Enabled")
+    }
+
+    private func t(_ english: String) -> String { preferences.localized(english) }
+}
+
+// MARK: - AppTechnicalOptionsView
+
+struct AppTechnicalOptionsView: View {
+    @ObservedObject var preferences: AppPreferences
+
+    var body: some View {
+        ScrollView {
+            LHPageScaffold {
+                LHCard {
+                    LHSectionHeader(t("Technical"))
+
+                    Button(t("Reset Options")) {
+                        preferences.reset()
+                    }
+                    .foregroundStyle(LH2GPXTheme.dangerRed)
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text(t("Resets all app preferences to their default values. Live tracks and imported data are not affected."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .navigationTitle(t("Technical"))
+    }
+
+    private func t(_ english: String) -> String { preferences.localized(english) }
+}
+
 #endif

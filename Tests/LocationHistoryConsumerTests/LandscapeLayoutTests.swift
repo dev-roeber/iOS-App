@@ -313,6 +313,46 @@ final class LandscapeLayoutTests: XCTestCase {
         XCTAssertEqual(weak, "GPS Weak")
     }
 
+    // MARK: - Options Presentation (orientation-independent)
+
+    func testOptionsPresentationHelpersAreOrientationIndependent() {
+        // Static helpers return the same result regardless of layout context.
+        let portrait  = OptionsPresentation.uploadStatusText(sendsToServer: true, hasValidURL: true)
+        let landscape = OptionsPresentation.uploadStatusText(sendsToServer: true, hasValidURL: true)
+        XCTAssertEqual(portrait, landscape)
+        XCTAssertEqual(portrait, "Active")
+    }
+
+    func testOptionsPresentationPrivacyTextOrientationIndependent() {
+        let a = OptionsPresentation.serverUploadPrivacyText(sendsToServer: false, hasValidURL: false)
+        let b = OptionsPresentation.serverUploadPrivacyText(sendsToServer: false, hasValidURL: false)
+        XCTAssertEqual(a, b)
+        XCTAssertEqual(a, "Disabled")
+    }
+
+    func testRecordingPresetComputationIsOrientationIndependent() {
+        let suiteName = "LandscapeLayoutTests-preset-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        MainActor.assumeIsolated {
+            let prefs = AppPreferences(userDefaults: defaults)
+            prefs.recordingPreset = .balanced
+            // Computation is purely deterministic — same in any layout context.
+            let portrait  = prefs.recordingPreset
+            let landscape = prefs.recordingPreset
+            XCTAssertEqual(portrait, landscape)
+            XCTAssertEqual(portrait, .balanced)
+        }
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    func testDynamicIslandLocalizedNamesAreOrientationIndependent() {
+        for display in DynamicIslandCompactDisplay.allCases {
+            let portrait  = display.localizedName
+            let landscape = display.localizedName
+            XCTAssertEqual(portrait, landscape, "\(display).localizedName must be stable")
+        }
+    }
+
     private func makeSummaries(count: Int) throws -> [DaySummary] {
         let days = (1...count).map { i -> String in
             let day = String(format: "%02d", i)

@@ -237,6 +237,90 @@ final class AppPreferencesTests: XCTestCase {
             )
         }
     }
+
+    // MARK: - RecordingPreset mapping
+
+    func testPresetBatteryMapsToRelaxedBatterySaver() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            preferences.recordingPreset = .battery
+            XCTAssertEqual(preferences.liveTrackingAccuracy, .relaxed)
+            XCTAssertEqual(preferences.liveTrackingDetail, .batterySaver)
+            XCTAssertEqual(preferences.recordingPreset, .battery)
+        }
+    }
+
+    func testPresetBalancedMapsToBalancedBalanced() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            preferences.recordingPreset = .balanced
+            XCTAssertEqual(preferences.liveTrackingAccuracy, .balanced)
+            XCTAssertEqual(preferences.liveTrackingDetail, .balanced)
+            XCTAssertEqual(preferences.recordingPreset, .balanced)
+        }
+    }
+
+    func testPresetPreciseMapsToStrictDetailed() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            preferences.recordingPreset = .precise
+            XCTAssertEqual(preferences.liveTrackingAccuracy, .strict)
+            XCTAssertEqual(preferences.liveTrackingDetail, .detailed)
+            XCTAssertEqual(preferences.recordingPreset, .precise)
+        }
+    }
+
+    func testPresetCustomPreservesExistingValues() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            // Start from a non-matching combination (custom territory)
+            preferences.liveTrackingAccuracy = .strict
+            preferences.liveTrackingDetail = .batterySaver
+            XCTAssertEqual(preferences.recordingPreset, .custom)
+            // Setting custom must not change accuracy or detail
+            preferences.recordingPreset = .custom
+            XCTAssertEqual(preferences.liveTrackingAccuracy, .strict)
+            XCTAssertEqual(preferences.liveTrackingDetail, .batterySaver)
+        }
+    }
+
+    func testPresetChangeIsDeterministicAndTestable() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            // Switch from battery to precise — values must match the spec exactly
+            preferences.recordingPreset = .battery
+            preferences.recordingPreset = .precise
+            XCTAssertEqual(preferences.liveTrackingAccuracy, .strict)
+            XCTAssertEqual(preferences.liveTrackingDetail, .detailed)
+            // Switch back to balanced
+            preferences.recordingPreset = .balanced
+            XCTAssertEqual(preferences.liveTrackingAccuracy, .balanced)
+            XCTAssertEqual(preferences.liveTrackingDetail, .balanced)
+        }
+    }
+
+    func testDynamicIslandCompactDisplayPersists() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            preferences.dynamicIslandCompactDisplay = .elapsed
+            // Create a second instance from the same defaults to verify persistence
+            let preferences2 = AppPreferences(userDefaults: defaults)
+            XCTAssertEqual(preferences2.dynamicIslandCompactDisplay, .elapsed)
+        }
+    }
+
+    func testUploadSettingsPersist() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            preferences.sendsLiveLocationToServer = true
+            preferences.liveLocationServerUploadURLString = "https://example.invalid/live"
+            preferences.liveTrackingUploadBatch = .large
+            let preferences2 = AppPreferences(userDefaults: defaults)
+            XCTAssertTrue(preferences2.sendsLiveLocationToServer)
+            XCTAssertEqual(preferences2.liveLocationServerUploadURLString, "https://example.invalid/live")
+            XCTAssertEqual(preferences2.liveTrackingUploadBatch, .large)
+        }
+    }
 }
 
 // MARK: - KeychainHelper tests (P1 fix verification)

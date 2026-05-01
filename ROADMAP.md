@@ -37,6 +37,20 @@ P2 — Nachgelagerte Optimierung
 - veraltete Notion-/Wrapper-/Split-Repo-Doku weiter abbauen
 - echtes Road-/Path-Matching nur als spaeteren separaten Produktscope betrachten
 
+### Options + Widget/Live Settings Redesign Truth Update (2026-05-01)
+
+Implementiert und lokal verifiziert:
+- `AppOptionsView` vollständig auf NavigationLink-Grid mit 8 modular strukturierten Section-Rows umgestellt
+- `RecordingPreset`-Enum mit deterministischem Computed-Property auf `AppPreferences` (kein neuer UserDefaults-Key)
+- `LHOptionsComponents.swift`: `LHOptionsSectionRow`, `LHLiveRecordingPresetSelector`, `LHUploadSettingsCard` (Token nur als `SecureField`), `LHDynamicIslandPreviewCard`, `LHWidgetPreviewCard`
+- `OptionsPresentation.swift`: statische Darstellungs-Helpers für Upload-Status
+- 36 neue DE/EN-Strings in `AppLanguageSupport.swift`
+- lokaler Nachweis: `swift test` **830 Tests, 0 Failures**
+
+Nicht als abgeschlossen markieren:
+- kein Apple-Hardware-Claim für Options-Redesign
+- Dynamic Island / Widget / Live Activity weiterhin nur auf echter Hardware vollständig verifizierbar
+
 ### Live Tracking + Library Redesign Truth Update (2026-05-01)
 
 Implementiert und lokal verifiziert:

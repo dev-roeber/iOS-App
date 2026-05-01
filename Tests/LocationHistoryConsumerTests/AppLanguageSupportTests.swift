@@ -160,4 +160,57 @@ final class AppLanguageSupportMapHeaderStringsTests: XCTestCase {
         XCTAssertEqual(en.localized("Stored Locally"),         "Stored Locally")
         XCTAssertEqual(en.localized("Live Tracks"),            "Live Tracks")
     }
+
+    // MARK: - Options + Widget/Live Activity Redesign Strings
+
+    func testGermanOptionsRedesignStrings() {
+        XCTAssertEqual(de.localized("General"),                    "Allgemein")
+        XCTAssertEqual(de.localized("Live Recording"),             "Live-Aufzeichnung")
+        XCTAssertEqual(de.localized("Battery"),                    "Akku sparen")
+        XCTAssertEqual(de.localized("Precise"),                    "Präzise")
+        XCTAssertEqual(de.localized("Custom"),                     "Benutzerdefiniert")
+        XCTAssertEqual(de.localized("High-Accuracy Location"),     "Hochpräzise Standortdaten")
+        XCTAssertEqual(de.localized("Motion Filter"),              "Bewegungsfilter")
+        XCTAssertEqual(de.localized("Update Interval"),            "Aktualisierungsintervall")
+        XCTAssertEqual(de.localized("Minimum Distance Filter"),    "Minimum-Distanzfilter")
+        XCTAssertEqual(de.localized("Recording Preset"),           "Aufnahme-Voreinstellung")
+        XCTAssertEqual(de.localized("Settings"),                   "Einstellungen")
+        XCTAssertEqual(de.localized("Upload URL"),                 "Upload-URL")
+        XCTAssertEqual(de.localized("Bearer Token"),               "Bearer-Token")
+        XCTAssertEqual(de.localized("Token saved"),                "Token gespeichert")
+        XCTAssertEqual(de.localized("Token not set"),              "Token nicht gesetzt")
+        XCTAssertEqual(de.localized("Points per Batch"),           "Punkte pro Batch")
+    }
+
+    func testGermanWidgetAndLiveActivityStrings() {
+        XCTAssertEqual(de.localized("Dynamic Island Primary Value"),    "Dynamic-Island-Primärwert")
+        XCTAssertEqual(de.localized("Home Widget"),                     "Home Widget")
+        XCTAssertEqual(de.localized("Active only during recording"),    "Nur während laufender Aufnahme")
+        XCTAssertEqual(de.localized("Fallback active"),                 "Fallback aktiv")
+        XCTAssertEqual(de.localized("Dynamic Island"),                  "Dynamic Island")
+        XCTAssertEqual(
+            de.localized("The widget updates automatically after each recording."),
+            "Das Widget aktualisiert sich nach jeder Aufzeichnung automatisch."
+        )
+    }
+
+    func testGermanOptionsSectionDescriptionStrings() {
+        XCTAssertEqual(de.localized("Display, language and import options"),             "Anzeige, Sprache und Importoptionen")
+        XCTAssertEqual(de.localized("Accuracy, interval and background recording"),      "Genauigkeit, Intervall und Hintergrundaufzeichnung")
+        XCTAssertEqual(de.localized("Server URL, token and batch settings"),             "Server-URL, Token und Batch-Einstellungen")
+        XCTAssertEqual(de.localized("Dynamic Island value and home widget"),             "Dynamic-Island-Wert und Home Widget")
+        XCTAssertEqual(de.localized("Reset all options to defaults"),                   "Alle Optionen zurücksetzen")
+    }
+
+    func testEnglishOptionsRedesignIdentity() {
+        XCTAssertEqual(en.localized("General"),             "General")
+        XCTAssertEqual(en.localized("Live Recording"),      "Live Recording")
+        XCTAssertEqual(en.localized("Battery"),             "Battery")
+        XCTAssertEqual(en.localized("Precise"),             "Precise")
+        XCTAssertEqual(en.localized("Custom"),              "Custom")
+        XCTAssertEqual(en.localized("Upload URL"),          "Upload URL")
+        XCTAssertEqual(en.localized("Bearer Token"),        "Bearer Token")
+        XCTAssertEqual(en.localized("Dynamic Island"),      "Dynamic Island")
+        XCTAssertEqual(en.localized("Points per Batch"),    "Points per Batch")
+    }
 }

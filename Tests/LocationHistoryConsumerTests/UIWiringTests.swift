@@ -513,6 +513,65 @@ final class UIWiringTests: XCTestCase {
         XCTAssertFalse(row.metrics.isEmpty)
     }
 
+    // MARK: - Options + Widget/Live Settings wiring
+
+    func testRecordingPresetWiringBatteryToAccuracyDetail() {
+        let suiteName = "UIWiringTests-preset-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        MainActor.assumeIsolated {
+            let prefs = AppPreferences(userDefaults: defaults)
+            prefs.recordingPreset = .battery
+            XCTAssertEqual(prefs.liveTrackingAccuracy, .relaxed)
+            XCTAssertEqual(prefs.liveTrackingDetail, .batterySaver)
+            XCTAssertEqual(prefs.recordingPreset, .battery)
+        }
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    func testRecordingPresetWiringPreciseToAccuracyDetail() {
+        let suiteName = "UIWiringTests-preset2-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        MainActor.assumeIsolated {
+            let prefs = AppPreferences(userDefaults: defaults)
+            prefs.recordingPreset = .precise
+            XCTAssertEqual(prefs.liveTrackingAccuracy, .strict)
+            XCTAssertEqual(prefs.liveTrackingDetail, .detailed)
+            XCTAssertEqual(prefs.recordingPreset, .precise)
+        }
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    func testDynamicIslandAllCasesHaveLocalizedNames() {
+        for display in DynamicIslandCompactDisplay.allCases {
+            XCTAssertFalse(display.localizedName.isEmpty, "\(display) must have a localizedName")
+        }
+    }
+
+    func testOptionsPresentationUploadDisabledText() {
+        XCTAssertEqual(OptionsPresentation.uploadStatusText(sendsToServer: false, hasValidURL: true), "Disabled")
+    }
+
+    func testOptionsPresentationUploadActiveText() {
+        XCTAssertEqual(OptionsPresentation.uploadStatusText(sendsToServer: true, hasValidURL: true), "Active")
+    }
+
+    func testOptionsPresentationUploadInvalidURLText() {
+        XCTAssertEqual(OptionsPresentation.uploadStatusText(sendsToServer: true, hasValidURL: false), "Invalid URL")
+    }
+
+    func testDynamicIslandAllDisplayCasesCount() {
+        XCTAssertEqual(DynamicIslandCompactDisplay.allCases.count, 4)
+    }
+
+    func testRecordingPresetAllCasesCount() {
+        XCTAssertEqual(RecordingPreset.allCases.count, 4)
+    }
+
+    func testRecordingPresetAccessibilityIdentifiersAreUnique() {
+        let ids = RecordingPreset.allCases.map(\.accessibilityIdentifier)
+        XCTAssertEqual(ids.count, Set(ids).count)
+    }
+
     func testBottomBarSummaryContainsFormatNameWhenLiveTrackSelected() {
         let formatter = ISO8601DateFormatter()
         let start = formatter.date(from: "2024-05-01T08:00:00Z")!

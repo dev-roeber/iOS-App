@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## [2026-05-01] — feat: Options + Widget/Live Settings Redesign (ui/options-widget-live-settings)
+
+### Neu: `RecordingPreset` (in `AppPreferences.swift`)
+
+- Enum `RecordingPreset` mit Cases `battery`, `balanced`, `precise`, `custom`
+- Computed property `recordingPreset` auf `AppPreferences`: deterministisch aus `liveTrackingAccuracy` + `liveTrackingDetail` abgeleitet; kein neuer UserDefaults-Key
+- Setter: `battery` → `.relaxed`/`.batterySaver`, `balanced` → `.balanced`/`.balanced`, `precise` → `.strict`/`.detailed`, `custom` → no-op
+
+### Neu: `OptionsPresentation.swift`
+
+- Statische Helpers `uploadStatusText`, `uploadStatusColor`, `serverUploadPrivacyText` — reine Darstellungslogik, kein Business-Code
+
+### Neu: `LHOptionsComponents.swift`
+
+- `LHOptionsSectionRow(icon:title:description:color:)` — dunkle Card-Zeile mit Icon-Badge, Titel, Beschreibung, Chevron
+- `LHLiveRecordingPresetSelector(preset:t:)` — horizontale Chip-Leiste für 4 Presets (farbkodiert) mit Accessibility-Identifiern
+- `LHUploadSettingsCard(preferences:t:)` — Toggle + URL-Feld + `SecureField` für Bearer-Token (nie im Klartext) + Batch-Picker + Status-Dot
+- `LHDynamicIslandPreviewCard(display:availability:t:)` — Icon-Badge, Titel, Availability-Chip; Identifier `options.dynamicIsland.preview`
+- `LHWidgetPreviewCard(distanceUnit:t:)` — Icon-Badge, Titel+Beschreibung; Identifier `options.widget.preview`
+
+### Redesign: `AppOptionsView.swift`
+
+- Hauptseite: NavigationLink-Grid mit 8 Section-Rows (General, Maps, Import, Live Recording, Upload, Widget & Live Activity, Privacy, Technical); schwarzer Hintergrund, dunkle Cards
+- `AppLiveRecordingOptionsView`: Preset-Card + Settings-Card; Advanced-Werte nur bei `.custom` vollständig editierbar
+- `AppUploadOptionsView`: `LHUploadSettingsCard` + optionaler Verbindungstest + Hinweis-Banner; Token nur als `SecureField`
+- `AppWidgetLiveActivityOptionsView`: DI-Picker + Vorschau-Card + Widget-Card + Verfügbarkeits-Banner
+- Sub-pages General, Maps, Import, Privacy, Technical vollständig erhalten
+
+### Erweiterung: `AppLanguageSupport.swift`
+
+- 36 neue DE/EN-Einträge für Options/Widget/Live-Activity-Redesign (General, Live Recording, Preset-Namen, Token-Felder, DI-Werte, Widget-Strings, Section-Descriptions, Reset-Disclaimer)
+
+### Tests
+
+- `AppPreferencesTests`: +7 neue Testmethoden (RecordingPreset-Mapping, DI-Persist, Upload-Persist)
+- `UIWiringTests`: +9 neue Tests (Preset-Wiring, DI-Cases, OptionsPresentation-Helpers, Accessibility-IDs)
+- `LandscapeLayoutTests`: +4 neue Tests (OptionsPresentation orientierungsunabhängig, Preset-Berechnung, DI-localizedName)
+- `AppLanguageSupportTests`: +3 neue Testgruppen (Options-Redesign, Widget/LA-Strings, English-Identity)
+- `LiveActivityTests`: +6 neue Tests (DI-Primärwert-Formatierung für alle 4 Cases, Not-Recording-Fallback)
+- `WidgetDataStoreTests`: +3 neue Tests (allCases round-trip, suiteName, App-Group-Mirroring)
+- `LiveLocationServerUploaderTests`: +3 neue Tests (Token nicht im Body, trimmedBearerToken empty→nil, whitespace→nil)
+- **Gesamtergebnis: 830 Tests, 0 Failures** (vorher 793)
+
 ## [2026-05-01] — feat: Live Tracking + Library Redesign (ui/live-tracking-redesign)
 
 ### Neu: `LHLiveComponents.swift`

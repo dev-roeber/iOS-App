@@ -39,4 +39,33 @@ final class WidgetDataStoreTests: XCTestCase {
         WidgetDataStore.saveDynamicIslandCompactDisplay(.uploadStatus)
         XCTAssertEqual(WidgetDataStore.loadDynamicIslandCompactDisplay(), .uploadStatus)
     }
+
+    func testDynamicIslandAllCasesRoundTrip() {
+        for display in DynamicIslandCompactDisplay.allCases {
+            WidgetDataStore.saveDynamicIslandCompactDisplay(display)
+            XCTAssertEqual(WidgetDataStore.loadDynamicIslandCompactDisplay(), display,
+                           "\(display) must survive a save/load round-trip")
+        }
+    }
+
+    func testWidgetAppGroupSuiteNameIsNonEmpty() {
+        XCTAssertFalse(WidgetDataStore.suiteName.isEmpty)
+    }
+
+    func testAppLanguageMirroringKeyMatchesPreferences() {
+        let suiteName = "WidgetDataStoreTests-mirror-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        MainActor.assumeIsolated {
+            let prefs = AppPreferences(userDefaults: defaults)
+            prefs.appLanguage = .german
+            let widgetDefaults = UserDefaults(suiteName: WidgetDataStore.suiteName)
+            XCTAssertEqual(
+                widgetDefaults?.string(forKey: "app.preferences.appLanguage"),
+                AppLanguagePreference.german.rawValue
+            )
+        }
+        defaults.removePersistentDomain(forName: suiteName)
+        UserDefaults(suiteName: WidgetDataStore.suiteName)?
+            .removeObject(forKey: "app.preferences.appLanguage")
+    }
 }

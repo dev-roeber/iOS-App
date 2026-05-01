@@ -233,6 +233,75 @@ final class LiveActivityTests: XCTestCase {
         XCTAssertTrue(throttle.shouldAllow(at: Date(timeIntervalSince1970: 1)))
     }
 
+    // MARK: DynamicIslandCompactDisplay primary value
+
+    func testDIDistancePresentation() {
+        let p = LiveActivityValueFormatter.presentation(
+            for: .distance,
+            status: TrackingStatus(isRecording: true, distanceMeters: 1000, pointCount: 10),
+            startTime: Date(timeIntervalSince1970: 0),
+            now: Date(timeIntervalSince1970: 60)
+        )
+        XCTAssertFalse(p.text.isEmpty)
+        XCTAssertEqual(p.text, "1.0 km")
+    }
+
+    func testDIPointsPresentation() {
+        let p = LiveActivityValueFormatter.presentation(
+            for: .points,
+            status: TrackingStatus(isRecording: true, distanceMeters: 0, pointCount: 7),
+            startTime: Date(timeIntervalSince1970: 0),
+            now: Date(timeIntervalSince1970: 10)
+        )
+        XCTAssertEqual(p.text, "7")
+        XCTAssertEqual(p.accessibilityLabel, "7 points")
+    }
+
+    func testDIElapsedPresentation() {
+        let start = Date(timeIntervalSince1970: 0)
+        let p = LiveActivityValueFormatter.presentation(
+            for: .elapsed,
+            status: TrackingStatus(isRecording: true, distanceMeters: 0, pointCount: 0),
+            startTime: start,
+            now: Date(timeIntervalSince1970: 90)
+        )
+        XCTAssertEqual(p.text, "1m")
+    }
+
+    func testDIUploadStatusPresentationActive() {
+        let p = LiveActivityValueFormatter.presentation(
+            for: .uploadStatus,
+            status: TrackingStatus(
+                isRecording: true, distanceMeters: 0, pointCount: 0, uploadState: .active
+            ),
+            startTime: Date(timeIntervalSince1970: 0),
+            now: Date(timeIntervalSince1970: 10)
+        )
+        XCTAssertFalse(p.text.isEmpty)
+        XCTAssertFalse(p.compactText.isEmpty)
+    }
+
+    func testAllDIDisplayCasesProduceNonEmptyText() {
+        let status = TrackingStatus(isRecording: true, distanceMeters: 500, pointCount: 5)
+        let start  = Date(timeIntervalSince1970: 0)
+        let now    = Date(timeIntervalSince1970: 120)
+        for display in DynamicIslandCompactDisplay.allCases {
+            let p = LiveActivityValueFormatter.presentation(for: display, status: status, startTime: start, now: now)
+            XCTAssertFalse(p.text.isEmpty, "\(display) must produce non-empty text")
+            XCTAssertFalse(p.compactText.isEmpty, "\(display) must produce non-empty compactText")
+        }
+    }
+
+    func testDINotRecordingDistanceIsZero() {
+        let p = LiveActivityValueFormatter.presentation(
+            for: .distance,
+            status: TrackingStatus(isRecording: false, distanceMeters: 0, pointCount: 0),
+            startTime: Date(timeIntervalSince1970: 0),
+            now: Date(timeIntervalSince1970: 10)
+        )
+        XCTAssertEqual(p.text, "0 m")
+    }
+
     func testActivityManagerThrottleResetAfterStop() {
         var throttle = ThrottleGate(interval: 5)
         _ = throttle.shouldAllow(at: Date(timeIntervalSince1970: 0))

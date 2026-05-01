@@ -208,6 +208,35 @@ public enum AppLiveTrackingUploadBatchPreference: String, CaseIterable, Identifi
     }
 }
 
+// MARK: - RecordingPreset
+
+/// Convenience preset that maps to a deterministic combination of accuracy + detail preferences.
+/// Setting `.custom` is a no-op and preserves any individual values already stored.
+public enum RecordingPreset: String, Equatable, CaseIterable {
+    case battery
+    case balanced
+    case precise
+    case custom
+
+    public var title: String {
+        switch self {
+        case .battery:  return "Battery"
+        case .balanced: return "Balanced"
+        case .precise:  return "Precise"
+        case .custom:   return "Custom"
+        }
+    }
+
+    public var accessibilityIdentifier: String {
+        switch self {
+        case .battery:  return "options.livePreset.battery"
+        case .balanced: return "options.livePreset.balanced"
+        case .precise:  return "options.livePreset.precise"
+        case .custom:   return "options.livePreset.custom"
+        }
+    }
+}
+
 @MainActor
 public final class AppPreferences: ObservableObject {
     private enum Keys {
@@ -323,6 +352,34 @@ public final class AppPreferences: ObservableObject {
     /// automatically splits the track. 0 means unlimited (no automatic split).
     @Published public var maximumRecordingGapSeconds: Int {
         didSet { userDefaults.set(maximumRecordingGapSeconds, forKey: Keys.maximumRecordingGapSeconds) }
+    }
+
+    /// Derived preset based on the current accuracy + detail combination.
+    /// Setting a preset overwrites both; setting `.custom` preserves existing values.
+    public var recordingPreset: RecordingPreset {
+        get {
+            switch (liveTrackingAccuracy, liveTrackingDetail) {
+            case (.relaxed,  .batterySaver): return .battery
+            case (.balanced, .balanced):     return .balanced
+            case (.strict,   .detailed):     return .precise
+            default:                         return .custom
+            }
+        }
+        set {
+            switch newValue {
+            case .battery:
+                liveTrackingAccuracy = .relaxed
+                liveTrackingDetail   = .batterySaver
+            case .balanced:
+                liveTrackingAccuracy = .balanced
+                liveTrackingDetail   = .balanced
+            case .precise:
+                liveTrackingAccuracy = .strict
+                liveTrackingDetail   = .detailed
+            case .custom:
+                break
+            }
+        }
     }
 
     public var liveTrackRecorderConfiguration: LiveTrackRecorderConfiguration {

@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-04-30
+Last analysis: 2026-05-01
 
 Repos in scope:
 - `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper
@@ -181,6 +181,15 @@ Present:
 - `AppRecordedTracksLibraryView` uses `ScrollView` + `LHPageScaffold` replacing the previous `List`; navigation title "Live Tracks"; `liveTracks.title`, `liveTracks.info`, `liveTracks.list`, `liveTracks.row.<index>`, `liveTracks.newTrack` accessibility identifiers
 - `LiveTrackingPresentation.gpsStatusLabel(accuracyM:)` — returns `"GPS Good"` (< 30 m) or `"GPS Weak"`
 - `LiveTrackingPresentation.uploadSectionVisible(sendsToServer:pendingCount:statusMessage:)` — visibility predicate for the upload section
+- **Options + Widget/Live Settings Redesign (2026-05-01):** `AppOptionsView` vollständig auf NavigationLink-Grid mit 8 modularen Section-Rows umgestellt
+- `RecordingPreset` enum (`battery`, `balanced`, `precise`, `custom`) als Computed-Property auf `AppPreferences`; deterministisch aus `liveTrackingAccuracy` + `liveTrackingDetail`; kein neuer UserDefaults-Key
+- `LHOptionsSectionRow` — dunkle Card-Zeile mit Icon-Badge, Titel, Beschreibung, Chevron
+- `LHLiveRecordingPresetSelector` — horizontale Chip-Leiste für 4 Presets (farbkodiert)
+- `LHUploadSettingsCard` — Upload-Toggle + URL-Feld + `SecureField` (Bearer-Token nie im Klartext) + Batch-Picker + Status-Dot
+- `LHDynamicIslandPreviewCard` / `LHWidgetPreviewCard` — Info-Cards für Dynamic Island und Home Widget
+- `OptionsPresentation` — statische Helpers `uploadStatusText`, `uploadStatusColor`, `serverUploadPrivacyText`
+- Bearer-Token: ausschließlich als `SecureField` in der UI; `LiveLocationServerUploadConfiguration.trimmedBearerToken` gibt bei leerem/whitespace-only Token `nil` zurück (kein Authorization-Header)
+- Accessibility-Identifiers: `options.title`, `options.livePreset.*`, `options.upload.*`, `options.dynamicIsland.*`, `options.widget.preview`
 
 Not present:
 - auto-resume of in-progress recordings after relaunch
