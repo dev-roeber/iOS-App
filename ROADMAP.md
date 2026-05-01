@@ -32,10 +32,25 @@ P1 — Vorhandene Produktflaechen belastbar machen
 - Track-Editor-/Export-Grenze weiter dokumentieren oder produktseitig spaeter anpassen
 
 P2 — Nachgelagerte Optimierung
-- Design-System (`LH2GPXTheme`) nach den jetzt produktiven `Start`-/`Overview`-/`Days`-/`Day Detail`-Slices weiter auf `Export` und `Insights` ausdehnen; Widget/Dynamic-Island nur bei sicherem Token-Pfad
+- Design-System (`LH2GPXTheme`) vollständig auf alle Produktionscreens ausgerollt (Start / Overview / Days / Day Detail / Insights / Export / Live Tracking / Live Tracks Library); Widget/Dynamic-Island nur bei sicherem Token-Pfad
 - Apple-Review-/Privacy-Einordnung fuer den optionalen Server-Upload weiter sauber beobachten
 - veraltete Notion-/Wrapper-/Split-Repo-Doku weiter abbauen
 - echtes Road-/Path-Matching nur als spaeteren separaten Produktscope betrachten
+
+### Live Tracking + Library Redesign Truth Update (2026-05-01)
+
+Implementiert und lokal verifiziert:
+- `AppLiveTrackingView` ist sichtbar auf LH2GPX-Dark-Layout umgestellt: `ScrollView`+`LHPageScaffold`+Sticky-`LHLiveBottomBar`, Mint-Polyline/-Standortpunkt, Status-Chips mit Accessibility-Identifiern, Recording-Card ohne eingebetteten Button, Upload-Quick-Actions in Upload-Sektion
+- `AppRecordedTracksLibraryView` ist sichtbar neu strukturiert: `ScrollView`+`LHPageScaffold`, Info-Card, `LHLiveTrackRow`-Zeilen, Titel „Live Tracks"
+- `LHLiveBottomBar` und `LHLiveTrackRow` als neue Komponenten in `LHLiveComponents.swift`
+- `LiveTrackingPresentation` um testbare Helpers `gpsStatusLabel` und `uploadSectionVisible` erweitert
+- Alle bestehenden Verdrahtungen vollständig erhalten
+- lokaler Nachweis: `swift test` 793 Tests, 0 Failures
+
+Nicht als abgeschlossen markieren:
+- kein Apple-Hardware-Claim für Live-Tracking-Redesign
+- Dynamic Island / Lock Screen / Live Activity nur auf echter Hardware verifizierbar
+- `AppRecordedTrackEditorView` bewusst unverändert gelassen
 
 ### Export Checkout Redesign Truth Update (2026-05-01)
 

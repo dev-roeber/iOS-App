@@ -170,6 +170,17 @@ Present:
 - dedicated recorded-tracks library page with summary, latest-track preview and editor navigation
 - saved-track editor supports point editing, midpoint insertion and delete
 - live-recording area links into the separate library instead of duplicating a second inline editor flow
+- **Live Tracking + Library Redesign (2026-05-01):** `AppLiveTrackingView` and `AppRecordedTracksLibraryView` fully ported to LH2GPX dark design system
+- `LHLiveBottomBar` — sticky `.safeAreaInset(edge: .bottom)` CTA bar; mint tint when idle (Start), red tint when recording (Stop); `accessibilityIdentifier` `live.cta.start` / `live.cta.stop`
+- `LHLiveTrackRow` — dark card row wrapping `SavedTrackSummaryContentView` with `LH2GPXTheme.card` surface and `cardBorder` overlay; used in the library list
+- `AppLiveTrackingView` map card uses mint polyline (`LH2GPXTheme.liveMint`) and `live.map` accessibility identifier
+- status chips row exposes four named identifiers: `live.status.gps`, `live.status.upload`, `live.status.follow`, `live.status.ready`
+- recording card (no embedded button) shows duration in mint; four metric identifiers: `live.metric.distance`, `live.metric.duration`, `live.metric.points`, `live.metric.averageSpeed`
+- upload quick actions include pause button with `live.cta.pause` identifier
+- saved-tracks preview card has `live.savedTracks.preview` and `live.savedTracks.openAll` identifiers
+- `AppRecordedTracksLibraryView` uses `ScrollView` + `LHPageScaffold` replacing the previous `List`; navigation title "Live Tracks"; `liveTracks.title`, `liveTracks.info`, `liveTracks.list`, `liveTracks.row.<index>`, `liveTracks.newTrack` accessibility identifiers
+- `LiveTrackingPresentation.gpsStatusLabel(accuracyM:)` — returns `"GPS Good"` (< 30 m) or `"GPS Weak"`
+- `LiveTrackingPresentation.uploadSectionVisible(sendsToServer:pendingCount:statusMessage:)` — visibility predicate for the upload section
 
 Not present:
 - auto-resume of in-progress recordings after relaunch

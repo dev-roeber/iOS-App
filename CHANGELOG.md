@@ -1,5 +1,61 @@
 # CHANGELOG
 
+## [2026-05-01] — feat: Live Tracking + Library Redesign (ui/live-tracking-redesign)
+
+### Neu: `LHLiveComponents.swift`
+
+Zwei neue spezialisierte UI-Komponenten für das Live-Tracking-Redesign:
+- `LHLiveBottomBar` — Sticky Bottom Bar mit vollem Start-CTA (Mint) oder Stop-CTA (Rot); Identifier `live.cta.start / live.cta.stop`
+- `LHLiveTrackRow` — Dark-Card-Zeile für die Live-Tracks-Bibliothek; wraps `SavedTrackSummaryContentView` mit LH2GPX-Kartenoberfläche
+
+### Redesign: `AppLiveTrackingView`
+
+Vollständiger Umbau des Live-Tracking-Screens auf LH2GPX-Dark-Designsystem:
+- `ScrollView` + `LHPageScaffold` ersetzt alte padding-basierte Struktur; Sticky `LHLiveBottomBar` via `.safeAreaInset(edge: .bottom)`
+- Kartenpolyline: `.red` → `LH2GPXTheme.liveMint`; Standortpunkt: Mint bei Aufzeichnung, Blau im Leerlauf
+- Status-Chips-Zeile mit Accessibility-Identifiern: `live.status.ready`, `live.status.gps`, `live.status.follow`, `live.status.upload`
+- Recording-Card ohne eingebetteten Start-/Stop-Button; Dauer-Anzeige in Mint bei laufender Aufzeichnung; Identifier `live.recording.card`
+- Primäre 4 Metriken mit Accessibility-Identifiern: `live.metric.distance`, `live.metric.duration`, `live.metric.points`, `live.metric.averageSpeed`
+- Upload-Quick-Actions aus `recordingSection` in `uploadSection` verschoben; Pause-Button Identifier `live.cta.pause`
+- Saved-Tracks-Karte: Mint-Badge, „Alle Live-Tracks anzeigen"-Button; Identifier `live.savedTracks.preview / live.savedTracks.openAll`
+- Advanced-Section: Follow-Toggle als Capsule-Chip statt separater Zeile; Background-Recording-Toggle unverändert
+- Interrupted-Session-Banner vollständig erhalten; Identifier `live.interrupted.resume` unverändert
+- Fullscreen-Map-Flow und alle `.onChange`-Handler vollständig erhalten
+
+### Redesign: `AppRecordedTracksLibraryView`
+
+Umbau der Saved-Live-Tracks-Bibliothek auf LH2GPX-Dark-Layout:
+- `navigationTitle` von „Saved Live Tracks" auf „Live Tracks" (nutzt bestehende DE-Übersetzung „Live-Tracks")
+- `List` ersetzt durch `ScrollView` + `LHPageScaffold`; `navigationDestination(for: RecordedTrack.self)` vollständig erhalten
+- Info-Card mit „Lokal gespeichert"-Label, Trennungshinweis und Track-Zähler-Badge
+- Track-Zeilen als `LHLiveTrackRow` mit `NavigationLink(value:)` + Index-Identifier `liveTracks.row.<index>`; Identifier `liveTracks.list`
+- Neues optionales `onNewTrack: (() -> Void)?`-Parameter — zeigt „Neuer Track"-Button wenn gesetzt; Identifier `liveTracks.newTrack`
+- Accessibility-Identifier `liveTracks.info`, `liveTracks.title`
+
+### Erweiterung: `LiveTrackingPresentation`
+
+Neue testbare statische Presentation-Helpers:
+- `gpsStatusLabel(accuracyM:) -> String` — „GPS Good" / „GPS Weak" basierend auf Genauigkeitsschwellwert (< 30 m)
+- `uploadSectionVisible(sendsToServer:pendingCount:statusMessage:) -> Bool`
+
+### Neue DE/EN Strings in `AppLanguageSupport`
+
+13 neue Strings: GPS Good/Weak, Upload Active/Off/Waiting, View All Live Tracks, New Track, Stored Locally, Separate from imported history, Follow On/Off, Recording Active
+
+### Tests: +20 neue Tests
+
+- `LiveTrackingPresentationTests`: +9 (GPS-Status, Upload-Visibility)
+- `UIWiringTests`: +7 (Deep-Link, CTA-State, GPS-Status, Track-Row)
+- `LandscapeLayoutTests`: +3 (Metric-Snapshot, Track-Row, GPS-Status)
+- `AppLanguageSupportTests`: +2 (DE/EN Live-Tracking-Strings)
+- 793 Tests gesamt, 0 Failures
+
+### Unverändert (kein Eingriff)
+
+Alle bestehenden Verdrahtungen erhalten: `LiveLocationFeatureModel`, `LiveTrackRecorder`, `RecordedTrackStore`, `WidgetDataStore`, `TrackingAttributes`, `ActivityManager`, `LiveActivityPresentation`, `LiveLocationServerUploader`, `AppContentSplitView.syncLiveRecordingSettings`, Upload Pause/Resume/Flush, Start/Stop/Save-Track-Pfad, Interrupted-Session-Resume-Flow, Deep-Link `lh2gpx://live`, Widget-/App-Group-Mirroring, `AppRecordedTrackEditorView` vollständig unverändert
+
+---
+
 ## [2026-05-01] — feat: Export Checkout Redesign (ui/export-checkout-redesign)
 
 ### Neu: `LHExportComponents.swift`

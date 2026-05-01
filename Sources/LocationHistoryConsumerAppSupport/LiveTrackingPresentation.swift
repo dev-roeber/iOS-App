@@ -16,6 +16,28 @@ struct LiveTrackingMetricSnapshot: Equatable {
 }
 
 enum LiveTrackingPresentation {
+
+    // MARK: - GPS Status
+
+    /// Returns "GPS Good" when accuracy is below 30 m, otherwise "GPS Weak".
+    static func gpsStatusLabel(accuracyM: Double?) -> String {
+        guard let acc = accuracyM, acc >= 0 else { return "GPS Weak" }
+        return acc < 30 ? "GPS Good" : "GPS Weak"
+    }
+
+    // MARK: - Upload Section Visibility
+
+    /// Returns true when the upload section should be shown.
+    static func uploadSectionVisible(
+        sendsToServer: Bool,
+        pendingCount: Int,
+        statusMessage: String?
+    ) -> Bool {
+        sendsToServer || pendingCount > 0 || statusMessage != nil
+    }
+
+    // MARK: - Metrics
+
     static func metrics(
         points: [RecordedTrackPoint],
         currentLocation: LiveLocationSample?

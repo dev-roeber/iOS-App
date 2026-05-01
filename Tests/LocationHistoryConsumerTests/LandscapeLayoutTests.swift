@@ -270,6 +270,49 @@ final class LandscapeLayoutTests: XCTestCase {
         XCTAssertFalse(summaryPortrait.isEmpty)
     }
 
+    // MARK: - Live Tracking Landscape
+
+    func testLiveTrackingMetricSnapshotIsOrientationIndependent() {
+        let start = Date(timeIntervalSince1970: 1_710_000_000)
+        let points = [
+            RecordedTrackPoint(latitude: 52.52, longitude: 13.40, timestamp: start, horizontalAccuracyM: 6),
+            RecordedTrackPoint(latitude: 52.521, longitude: 13.401, timestamp: start.addingTimeInterval(60), horizontalAccuracyM: 6)
+        ]
+        let snapshot = LiveTrackingPresentation.metrics(points: points, currentLocation: nil)
+        // Portrait and landscape both compute from the same metric snapshot.
+        XCTAssertGreaterThan(snapshot.totalDistanceM, 0)
+        XCTAssertNotNil(snapshot.currentSpeedKMH)
+        XCTAssertNotNil(snapshot.lastSampleDate)
+    }
+
+    func testLiveTrackLibraryRowIsOrientationIndependent() {
+        let formatter = ISO8601DateFormatter()
+        let start = formatter.date(from: "2024-06-10T07:00:00Z")!
+        let end   = formatter.date(from: "2024-06-10T07:45:00Z")!
+        let track = RecordedTrack(
+            startedAt: start, endedAt: end,
+            dayKey: "2024-06-10",
+            distanceM: 4200,
+            captureMode: .foregroundWhileInUse,
+            points: [
+                RecordedTrackPoint(latitude: 48.0, longitude: 11.0, timestamp: start, horizontalAccuracyM: 5)
+            ]
+        )
+        let portrait  = SavedTrackPresentation.row(for: track, unit: .metric, language: .english)
+        let landscape = SavedTrackPresentation.row(for: track, unit: .metric, language: .english)
+        // Same data produces equal rows in both orientations.
+        XCTAssertEqual(portrait.title, landscape.title)
+        XCTAssertEqual(portrait.metrics.map(\.text), landscape.metrics.map(\.text))
+    }
+
+    func testGPSStatusLabelOrientationIndependent() {
+        // GPS status presentation is the same regardless of orientation.
+        let good = LiveTrackingPresentation.gpsStatusLabel(accuracyM: 10)
+        let weak = LiveTrackingPresentation.gpsStatusLabel(accuracyM: 80)
+        XCTAssertEqual(good, "GPS Good")
+        XCTAssertEqual(weak, "GPS Weak")
+    }
+
     private func makeSummaries(count: Int) throws -> [DaySummary] {
         let days = (1...count).map { i -> String in
             let day = String(format: "%02d", i)

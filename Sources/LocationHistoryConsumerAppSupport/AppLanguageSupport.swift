@@ -697,6 +697,19 @@ enum AppGermanTranslations {
         "Reset Drilldown": "Drilldown zurücksetzen",
         "Adopted from Insights": "Aus Insights übernommen",
         "Live Tracks": "Live-Tracks",
-        "Tracks + Waypoints": "Tracks + Wegpunkte"
+        "Tracks + Waypoints": "Tracks + Wegpunkte",
+        // Live Tracking Redesign
+        "GPS Good": "GPS gut",
+        "GPS Weak": "GPS schwach",
+        "Upload Active": "Upload aktiv",
+        "Upload Off": "Upload aus",
+        "Upload Waiting": "Upload wartet",
+        "View All Live Tracks": "Alle Live-Tracks anzeigen",
+        "New Track": "Neuer Track",
+        "Stored Locally": "Lokal gespeichert",
+        "Separate from imported history": "Getrennt von importierter Historie",
+        "Follow On": "Folgen aktiv",
+        "Follow Off": "Folgen aus",
+        "Recording Active": "Aufzeichnung läuft"
     ]
 }

@@ -37,4 +37,52 @@ final class LiveTrackingPresentationTests: XCTestCase {
         XCTAssertNil(snapshot.lastSegmentDistanceM)
         XCTAssertNil(snapshot.lastSampleDate)
     }
+
+    // MARK: - GPS Status
+
+    func testGPSStatusIsGoodForHighAccuracy() {
+        XCTAssertEqual(LiveTrackingPresentation.gpsStatusLabel(accuracyM: 10), "GPS Good")
+    }
+
+    func testGPSStatusIsGoodAtThreshold() {
+        XCTAssertEqual(LiveTrackingPresentation.gpsStatusLabel(accuracyM: 29), "GPS Good")
+    }
+
+    func testGPSStatusIsWeakAtThreshold() {
+        XCTAssertEqual(LiveTrackingPresentation.gpsStatusLabel(accuracyM: 30), "GPS Weak")
+    }
+
+    func testGPSStatusIsWeakForLowAccuracy() {
+        XCTAssertEqual(LiveTrackingPresentation.gpsStatusLabel(accuracyM: 80), "GPS Weak")
+    }
+
+    func testGPSStatusIsWeakWhenNoLocation() {
+        XCTAssertEqual(LiveTrackingPresentation.gpsStatusLabel(accuracyM: nil), "GPS Weak")
+    }
+
+    // MARK: - Upload Section Visibility
+
+    func testUploadSectionVisibleWhenServerEnabled() {
+        XCTAssertTrue(LiveTrackingPresentation.uploadSectionVisible(
+            sendsToServer: true, pendingCount: 0, statusMessage: nil
+        ))
+    }
+
+    func testUploadSectionVisibleWhenQueueNonEmpty() {
+        XCTAssertTrue(LiveTrackingPresentation.uploadSectionVisible(
+            sendsToServer: false, pendingCount: 3, statusMessage: nil
+        ))
+    }
+
+    func testUploadSectionVisibleWhenStatusMessagePresent() {
+        XCTAssertTrue(LiveTrackingPresentation.uploadSectionVisible(
+            sendsToServer: false, pendingCount: 0, statusMessage: "Upload ready."
+        ))
+    }
+
+    func testUploadSectionHiddenWhenAllInactive() {
+        XCTAssertFalse(LiveTrackingPresentation.uploadSectionVisible(
+            sendsToServer: false, pendingCount: 0, statusMessage: nil
+        ))
+    }
 }

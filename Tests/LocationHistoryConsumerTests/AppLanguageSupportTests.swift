@@ -134,4 +134,30 @@ final class AppLanguageSupportMapHeaderStringsTests: XCTestCase {
         XCTAssertEqual(en.localized("Advanced Filters"), "Advanced Filters")
         XCTAssertEqual(en.localized("Export"),           "Export")
     }
+
+    // MARK: - Live Tracking Redesign Strings
+
+    func testGermanLiveTrackingRedesignStrings() {
+        XCTAssertEqual(de.localized("GPS Good"),                          "GPS gut")
+        XCTAssertEqual(de.localized("GPS Weak"),                          "GPS schwach")
+        XCTAssertEqual(de.localized("Upload Active"),                     "Upload aktiv")
+        XCTAssertEqual(de.localized("Upload Off"),                        "Upload aus")
+        XCTAssertEqual(de.localized("Upload Waiting"),                    "Upload wartet")
+        XCTAssertEqual(de.localized("View All Live Tracks"),              "Alle Live-Tracks anzeigen")
+        XCTAssertEqual(de.localized("New Track"),                         "Neuer Track")
+        XCTAssertEqual(de.localized("Stored Locally"),                    "Lokal gespeichert")
+        XCTAssertEqual(de.localized("Separate from imported history"),    "Getrennt von importierter Historie")
+        XCTAssertEqual(de.localized("Follow On"),                         "Folgen aktiv")
+        XCTAssertEqual(de.localized("Follow Off"),                        "Folgen aus")
+        XCTAssertEqual(de.localized("Recording Active"),                  "Aufzeichnung läuft")
+    }
+
+    func testEnglishLiveTrackingRedesignIdentity() {
+        XCTAssertEqual(en.localized("GPS Good"),               "GPS Good")
+        XCTAssertEqual(en.localized("GPS Weak"),               "GPS Weak")
+        XCTAssertEqual(en.localized("View All Live Tracks"),   "View All Live Tracks")
+        XCTAssertEqual(en.localized("New Track"),              "New Track")
+        XCTAssertEqual(en.localized("Stored Locally"),         "Stored Locally")
+        XCTAssertEqual(en.localized("Live Tracks"),            "Live Tracks")
+    }
 }

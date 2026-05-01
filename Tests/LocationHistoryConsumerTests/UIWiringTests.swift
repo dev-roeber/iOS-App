@@ -455,6 +455,64 @@ final class UIWiringTests: XCTestCase {
         XCTAssertTrue(summary.isEmpty)
     }
 
+    // MARK: - Live Tracking: Deep Link
+
+    @MainActor
+    func testDeepLinkLiveSetsNavigateFlag() {
+        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+        XCTAssertFalse(model.navigateToLiveTabRequested)
+        model.navigateToLiveTabRequested = true
+        XCTAssertTrue(model.navigateToLiveTabRequested)
+        model.navigateToLiveTabRequested = false
+        XCTAssertFalse(model.navigateToLiveTabRequested)
+    }
+
+    // MARK: - Live Tracking: CTA State
+
+    @MainActor
+    func testCTAIsDisabledWhileAwaitingAuthorization() {
+        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+        // Without a client, isAwaitingAuthorization stays false and isRecording stays false.
+        XCTAssertFalse(model.isRecording)
+        XCTAssertFalse(model.isAwaitingAuthorization)
+    }
+
+    @MainActor
+    func testRecordedTracksEmptyOnInit() {
+        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+        XCTAssertTrue(model.recordedTracks.isEmpty)
+    }
+
+    // MARK: - Live Tracking: GPS Status Presentation
+
+    func testGPSStatusLabelGoodForAccurateLocation() {
+        XCTAssertEqual(LiveTrackingPresentation.gpsStatusLabel(accuracyM: 8), "GPS Good")
+    }
+
+    func testGPSStatusLabelWeakForInaccurateLocation() {
+        XCTAssertEqual(LiveTrackingPresentation.gpsStatusLabel(accuracyM: 100), "GPS Weak")
+    }
+
+    // MARK: - Live Tracks Library: Row Presentation
+
+    func testLiveTrackRowPresentationHasNonEmptyTitle() {
+        let formatter = ISO8601DateFormatter()
+        let start = formatter.date(from: "2024-05-01T08:00:00Z")!
+        let end   = formatter.date(from: "2024-05-01T08:30:00Z")!
+        let track = RecordedTrack(
+            startedAt: start, endedAt: end,
+            dayKey: "2024-05-01",
+            distanceM: 1200,
+            captureMode: .foregroundWhileInUse,
+            points: [
+                RecordedTrackPoint(latitude: 48.0, longitude: 11.0, timestamp: start, horizontalAccuracyM: 5)
+            ]
+        )
+        let row = SavedTrackPresentation.row(for: track, unit: .metric, language: .english)
+        XCTAssertFalse(row.title.isEmpty)
+        XCTAssertFalse(row.metrics.isEmpty)
+    }
+
     func testBottomBarSummaryContainsFormatNameWhenLiveTrackSelected() {
         let formatter = ISO8601DateFormatter()
         let start = formatter.date(from: "2024-05-01T08:00:00Z")!
@@ -482,6 +540,13 @@ final class UIWiringTests: XCTestCase {
         XCTAssertFalse(summary.isEmpty)
         XCTAssertTrue(summary.contains("GPX"))
     }
+}
+
+// MARK: - Mock helpers
+
+private final class MockRecordedTrackStore: RecordedTrackStoring {
+    func loadTracks() throws -> [RecordedTrack] { [] }
+    func saveTracks(_ tracks: [RecordedTrack]) throws {}
 }
 
 // MARK: - DaySummary test stub

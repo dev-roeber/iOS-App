@@ -56,6 +56,15 @@ public struct AppLiveTrackingView: View {
             }
         }
         .navigationTitle(t("Live Tracking"))
+        .safeAreaInset(edge: .bottom) {
+            LHLiveBottomBar(
+                isRecording: liveLocation.isRecording,
+                isDisabled: liveLocation.isAwaitingAuthorization,
+                startTitle: t("Start Recording"),
+                stopTitle: t("Stop Recording"),
+                onToggle: { liveLocation.setRecordingEnabled(!liveLocation.isRecording) }
+            )
+        }
         .task {
             liveLocation.refreshAuthorization()
             refreshTrackPresentationState()
@@ -86,47 +95,43 @@ public struct AppLiveTrackingView: View {
         #endif
     }
 
+    // MARK: - Layouts
+
     private var portraitLayout: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            LHPageScaffold {
                 if liveLocation.hasInterruptedSession {
                     interruptedSessionBanner
                 }
                 mapCard
-                recordingSection
+                recordingCard
                 if shouldShowUploadSection {
                     uploadSection
                 }
                 savedTracksSection
                 advancedSection
             }
-            .padding(.horizontal)
-            .padding(.vertical, 14)
         }
     }
 
     private var landscapeLayout: some View {
         HStack(alignment: .top, spacing: 0) {
-            // Left: full-height map
             mapCard
                 .padding(.leading)
                 .padding(.vertical, 14)
                 .frame(maxHeight: .infinity, alignment: .top)
-            // Right: scrollable content
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                LHPageScaffold {
                     if liveLocation.hasInterruptedSession {
                         interruptedSessionBanner
                     }
-                    recordingSection
+                    recordingCard
                     if shouldShowUploadSection {
                         uploadSection
                     }
                     savedTracksSection
                     advancedSection
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 14)
             }
         }
     }
@@ -225,10 +230,10 @@ public struct AppLiveTrackingView: View {
                     )) {
                         ZStack {
                             Circle()
-                                .fill((liveLocation.isRecording ? Color.red : Color.blue).opacity(0.18))
+                                .fill(locationDotColor.opacity(0.18))
                                 .frame(width: 42, height: 42)
                             Circle()
-                                .fill(liveLocation.isRecording ? Color.red : Color.blue)
+                                .fill(locationDotColor)
                                 .frame(width: 15, height: 15)
                                 .overlay(Circle().stroke(Color.white, lineWidth: 2))
                         }
@@ -236,14 +241,14 @@ public struct AppLiveTrackingView: View {
                 }
                 if liveLocation.liveTrackShouldRender {
                     MapPolyline(coordinates: polylineCoordinates)
-                        .stroke(.red, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
+                        .stroke(LH2GPXTheme.liveMint,
+                                style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
                 }
             }
             .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
             .frame(maxWidth: .infinity)
             .frame(height: height)
             .onMapCameraChange { _ in
-                // User manually moved the map — disable follow mode
                 liveLocation.isFollowingLocation = false
             }
         } else {
@@ -254,41 +259,69 @@ public struct AppLiveTrackingView: View {
         }
     }
 
-    // MARK: -
+    // MARK: - Shared Helpers
 
     private var shouldShowUploadSection: Bool {
-        preferences.sendsLiveLocationToServer || liveLocation.pendingUploadPointCount > 0 || liveLocation.serverUploadStatusMessage != nil
+        LiveTrackingPresentation.uploadSectionVisible(
+            sendsToServer: preferences.sendsLiveLocationToServer,
+            pendingCount: liveLocation.pendingUploadPointCount,
+            statusMessage: liveLocation.serverUploadStatusMessage
+        )
     }
 
-    private var statusChips: some View {
+    private var locationDotColor: Color {
+        liveLocation.isRecording ? LH2GPXTheme.liveMint : LH2GPXTheme.primaryBlue
+    }
+
+    // MARK: - Status Chips
+
+    private var statusChipsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 LHStatusChip(
                     title: liveLocation.isRecording ? t("Recording") : t("Idle"),
                     systemImage: liveLocation.isRecording ? "record.circle.fill" : "pause.circle.fill",
-                    color: liveLocation.isRecording ? .red : .secondary
+                    color: liveLocation.isRecording ? LH2GPXTheme.liveMint : .secondary
                 )
+                .accessibilityIdentifier("live.status.ready")
+
                 LHStatusChip(
-                    title: liveLocation.isBackgroundTrackingActive ? t("Background Ready") : t("Foreground Only"),
-                    systemImage: liveLocation.isBackgroundTrackingActive ? "location.fill.viewfinder" : "location"
+                    title: t(LiveTrackingPresentation.gpsStatusLabel(accuracyM: liveLocation.currentLocation?.horizontalAccuracyM)),
+                    systemImage: liveLocation.currentLocation != nil ? "location.fill" : "location.slash",
+                    color: accuracyColor
                 )
+                .accessibilityIdentifier("live.status.gps")
+
+                if liveLocation.currentLocation != nil {
+                    LHStatusChip(
+                        title: liveLocation.isFollowingLocation ? t("Follow On") : t("Follow Off"),
+                        systemImage: liveLocation.isFollowingLocation ? "location.fill" : "location",
+                        color: liveLocation.isFollowingLocation ? .blue : .secondary
+                    )
+                    .accessibilityIdentifier("live.status.follow")
+                }
+
                 if shouldShowUploadSection {
                     LHStatusChip(
                         title: t(liveLocation.uploadStatusSummary),
                         systemImage: uploadStatusIconName,
                         color: uploadStatusColor
                     )
-                }
-                if liveLocation.pendingUploadPointCount > 0 {
-                    LHStatusChip(
-                        title: "\(liveLocation.pendingUploadPointCount) \(t(liveLocation.pendingUploadPointCount == 1 ? "Queued Point" : "Queued Points"))",
-                        systemImage: "tray.full.fill",
-                        color: .orange
-                    )
+                    .accessibilityIdentifier("live.status.upload")
+
+                    if liveLocation.pendingUploadPointCount > 0 {
+                        LHStatusChip(
+                            title: "\(liveLocation.pendingUploadPointCount) \(t(liveLocation.pendingUploadPointCount == 1 ? "Queued Point" : "Queued Points"))",
+                            systemImage: "tray.full.fill",
+                            color: .orange
+                        )
+                    }
                 }
             }
         }
     }
+
+    // MARK: - Map Card
 
     private var mapCard: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -312,7 +345,7 @@ public struct AppLiveTrackingView: View {
                 }
             }
 
-            statusChips
+            statusChipsRow
 
             Group {
                 if liveLocation.canDisplayLiveLocation, liveLocation.currentLocation != nil {
@@ -324,10 +357,10 @@ public struct AppLiveTrackingView: View {
                             )) {
                                 ZStack {
                                     Circle()
-                                        .fill((liveLocation.isRecording ? Color.red : Color.blue).opacity(0.18))
+                                        .fill(locationDotColor.opacity(0.18))
                                         .frame(width: 42, height: 42)
                                     Circle()
-                                        .fill(liveLocation.isRecording ? Color.red : Color.blue)
+                                        .fill(locationDotColor)
                                         .frame(width: 15, height: 15)
                                         .overlay(Circle().stroke(Color.white, lineWidth: 2))
                                 }
@@ -335,18 +368,17 @@ public struct AppLiveTrackingView: View {
                         }
                         if liveLocation.liveTrackShouldRender {
                             MapPolyline(coordinates: polylineCoordinates)
-                            .stroke(.red, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
+                                .stroke(LH2GPXTheme.liveMint,
+                                        style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
                         }
                     }
                     .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
                     .frame(height: 290)
                     .onMapCameraChange { _ in
-                        // Disable follow mode when user manually moves the map
                         liveLocation.isFollowingLocation = false
                     }
                     .overlay(alignment: .topTrailing) {
                         HStack(spacing: 8) {
-                            // Fullscreen button
                             Button(action: { isFullscreenMapPresented = true }) {
                                 Label(t("Fullscreen"), systemImage: "arrow.up.left.and.arrow.down.right")
                                     .labelStyle(.iconOnly)
@@ -355,7 +387,6 @@ public struct AppLiveTrackingView: View {
                                     .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                             }
                             .accessibilityLabel(t("Open fullscreen map"))
-                            // Follow toggle button
                             Button(action: {
                                 liveLocation.isFollowingLocation.toggle()
                                 if liveLocation.isFollowingLocation {
@@ -363,7 +394,7 @@ public struct AppLiveTrackingView: View {
                                 }
                             }) {
                                 Label(
-                                    preferences.appLanguage.isGerman ? "Folgen" : "Follow",
+                                    liveLocation.isFollowingLocation ? t("Follow On") : t("Follow Off"),
                                     systemImage: liveLocation.isFollowingLocation ? "location.fill" : "location"
                                 )
                                 .labelStyle(.iconOnly)
@@ -402,9 +433,12 @@ public struct AppLiveTrackingView: View {
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .cardChrome()
+        .accessibilityIdentifier("live.map")
     }
 
-    private var recordingSection: some View {
+    // MARK: - Recording Card
+
+    private var recordingCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -422,114 +456,31 @@ public struct AppLiveTrackingView: View {
                             .foregroundStyle(.secondary)
                         Text(durationText)
                             .font(.headline.monospacedDigit())
+                            .foregroundStyle(LH2GPXTheme.liveMint)
                     }
                 }
             }
-
-            Button(action: { liveLocation.setRecordingEnabled(!liveLocation.isRecording) }) {
-                HStack(spacing: 14) {
-                    ZStack {
-                        Circle()
-                            .fill((liveLocation.isRecording ? Color.red : Color.accentColor).opacity(0.16))
-                            .frame(width: 52, height: 52)
-                        Image(systemName: liveLocation.isRecording ? "stop.fill" : "record.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(liveLocation.isRecording ? .red : .accentColor)
-                    }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(liveLocation.isRecording ? t("Stop Recording") : t("Start Recording"))
-                            .font(.headline)
-                        Text(liveLocation.isRecording ? t("Finish the current local track and keep queued uploads ready.") : t("Begin a new local recording session with the current live settings."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(14)
-                .background((liveLocation.isRecording ? Color.red : Color.accentColor).opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .disabled(liveLocation.isAwaitingAuthorization)
-            .accessibilityIdentifier(liveLocation.isRecording ? "live.recording.stop" : "live.recording.start")
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                LHMetricCard(icon: "scope", label: t("GPS Accuracy"), value: accuracyText, color: accuracyColor)
-                LHMetricCard(icon: "clock.fill", label: t("Duration"), value: durationText, color: .blue)
-                LHMetricCard(icon: "point.topleft.down.curvedto.point.bottomright.up", label: t("Points"), value: "\(liveLocation.liveTrackPoints.count)", color: .green)
                 LHMetricCard(icon: "road.lanes", label: t("Distance"), value: liveDistanceText, color: .purple)
-                LHMetricCard(icon: "speedometer", label: t("Current Speed"), value: currentSpeedText, color: .orange)
+                    .accessibilityIdentifier("live.metric.distance")
+                LHMetricCard(icon: "clock.fill", label: t("Duration"), value: durationText, color: .blue)
+                    .accessibilityIdentifier("live.metric.duration")
+                LHMetricCard(icon: "point.topleft.down.curvedto.point.bottomright.up", label: t("Points"), value: "\(liveLocation.liveTrackPoints.count)", color: .green)
+                    .accessibilityIdentifier("live.metric.points")
                 LHMetricCard(icon: "chart.line.uptrend.xyaxis", label: t("Average Speed"), value: averageSpeedText, color: .indigo)
+                    .accessibilityIdentifier("live.metric.averageSpeed")
+                LHMetricCard(icon: "scope", label: t("GPS Accuracy"), value: accuracyText, color: accuracyColor)
+                LHMetricCard(icon: "speedometer", label: t("Current Speed"), value: currentSpeedText, color: .orange)
                 LHMetricCard(icon: "arrow.left.and.right.circle", label: t("Last Segment"), value: lastSegmentText, color: .mint)
                 LHMetricCard(icon: "clock.badge.checkmark", label: t("Update Age"), value: updateAgeText, color: .teal)
             }
-
-            quickActionRow
         }
         .cardChrome()
+        .accessibilityIdentifier("live.recording.card")
     }
 
-    private var quickActionRow: some View {
-        ViewThatFits(in: .vertical) {
-            HStack(spacing: 10) {
-                quickActionButtons
-            }
-            VStack(spacing: 10) {
-                quickActionButtons
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var quickActionButtons: some View {
-        Button(action: {
-            liveLocation.isFollowingLocation.toggle()
-            if liveLocation.isFollowingLocation {
-                centerOnCurrentLocation()
-            }
-        }) {
-            Label(
-                liveLocation.isFollowingLocation
-                    ? (preferences.appLanguage.isGerman ? "Folgen aktiv" : "Following")
-                    : (preferences.appLanguage.isGerman ? "Folgen" : "Follow"),
-                systemImage: liveLocation.isFollowingLocation ? "location.fill" : "location"
-            )
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.bordered)
-        .tint(liveLocation.isFollowingLocation ? .blue : nil)
-        .disabled(liveLocation.currentLocation == nil)
-
-        if shouldShowUploadSection {
-            Button(action: {
-                if liveLocation.isUploadPaused {
-                    liveLocation.setUploadPaused(false)
-                } else {
-                    liveLocation.setUploadPaused(true)
-                }
-            }) {
-                Label(
-                    liveLocation.isUploadPaused ? t("Resume Uploads") : t("Pause Uploads"),
-                    systemImage: liveLocation.isUploadPaused ? "play.fill" : "pause.fill"
-                )
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .disabled(!liveLocation.canPauseUploads)
-        }
-
-        if liveLocation.pendingUploadPointCount > 0 {
-            Button(action: { liveLocation.flushPendingUploads() }) {
-                Label(t("Flush Queue"), systemImage: "arrow.up.circle.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(!liveLocation.canFlushPendingUploads)
-        }
-    }
+    // MARK: - Upload Section
 
     private var uploadSection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -575,9 +526,49 @@ public struct AppLiveTrackingView: View {
                     tint: uploadStatusColor
                 )
             }
+
+            uploadQuickActions
         }
         .cardChrome()
     }
+
+    private var uploadQuickActions: some View {
+        ViewThatFits(in: .vertical) {
+            HStack(spacing: 10) { uploadActionButtons }
+            VStack(spacing: 10) { uploadActionButtons }
+        }
+    }
+
+    @ViewBuilder
+    private var uploadActionButtons: some View {
+        Button(action: {
+            if liveLocation.isUploadPaused {
+                liveLocation.setUploadPaused(false)
+            } else {
+                liveLocation.setUploadPaused(true)
+            }
+        }) {
+            Label(
+                liveLocation.isUploadPaused ? t("Resume Uploads") : t("Pause Uploads"),
+                systemImage: liveLocation.isUploadPaused ? "play.fill" : "pause.fill"
+            )
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .disabled(!liveLocation.canPauseUploads)
+        .accessibilityIdentifier("live.cta.pause")
+
+        if liveLocation.pendingUploadPointCount > 0 {
+            Button(action: { liveLocation.flushPendingUploads() }) {
+                Label(t("Flush Queue"), systemImage: "arrow.up.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!liveLocation.canFlushPendingUploads)
+        }
+    }
+
+    // MARK: - Saved Tracks Section
 
     private var savedTracksSection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -594,7 +585,7 @@ public struct AppLiveTrackingView: View {
                     .font(.headline.monospacedDigit())
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Color.green.opacity(0.12))
+                    .background(LH2GPXTheme.liveMint.opacity(0.12))
                     .clipShape(Capsule())
             }
 
@@ -611,20 +602,25 @@ public struct AppLiveTrackingView: View {
                     title: t("No saved tracks yet"),
                     message: t("Record a short route and stop it once to seed the local track library."),
                     systemImage: "point.topleft.down.curvedto.point.bottomright.up",
-                    tint: .green
+                    tint: LH2GPXTheme.liveMint
                 )
             }
 
             if let onOpenSavedTracksLibrary {
                 Button(action: onOpenSavedTracksLibrary) {
-                    Label(t("Open Track Library"), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+                    Label(t("View All Live Tracks"), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(LH2GPXTheme.liveMint)
+                .accessibilityIdentifier("live.savedTracks.openAll")
             }
         }
         .cardChrome()
+        .accessibilityIdentifier("live.savedTracks.preview")
     }
+
+    // MARK: - Advanced Section
 
     private var advancedSection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -637,6 +633,25 @@ public struct AppLiveTrackingView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
+
+                Button(action: {
+                    liveLocation.isFollowingLocation.toggle()
+                    if liveLocation.isFollowingLocation {
+                        centerOnCurrentLocation()
+                    }
+                }) {
+                    Label(
+                        liveLocation.isFollowingLocation ? t("Follow On") : t("Follow Off"),
+                        systemImage: liveLocation.isFollowingLocation ? "location.fill" : "location"
+                    )
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(liveLocation.isFollowingLocation ? Color.blue.opacity(0.15) : LH2GPXTheme.chipBackground)
+                    .foregroundStyle(liveLocation.isFollowingLocation ? .blue : .secondary)
+                    .clipShape(Capsule())
+                }
+                .disabled(liveLocation.currentLocation == nil)
             }
 
             Toggle(t("Background Recording"), isOn: $preferences.allowsBackgroundLiveTracking)
@@ -652,6 +667,7 @@ public struct AppLiveTrackingView: View {
         .cardChrome()
     }
 
+    // MARK: - Display Helpers
 
     private var mapSubtitleText: String {
         if liveLocation.isRecording {
@@ -672,50 +688,34 @@ public struct AppLiveTrackingView: View {
 
     private var uploadStatusIconName: String {
         switch liveLocation.uploadStatusSummary {
-        case "Invalid endpoint":
-            return "exclamationmark.triangle.fill"
-        case "Uploading":
-            return "arrow.triangle.2.circlepath.circle.fill"
-        case "Paused":
-            return "pause.circle.fill"
-        case "Needs retry":
-            return "wifi.exclamationmark"
-        case "Queue pending":
-            return "tray.full.fill"
-        case "Ready":
-            return "checkmark.circle.fill"
-        default:
-            return "network.slash"
+        case "Invalid endpoint":  return "exclamationmark.triangle.fill"
+        case "Uploading":         return "arrow.triangle.2.circlepath.circle.fill"
+        case "Paused":            return "pause.circle.fill"
+        case "Needs retry":       return "wifi.exclamationmark"
+        case "Queue pending":     return "tray.full.fill"
+        case "Ready":             return "checkmark.circle.fill"
+        default:                  return "network.slash"
         }
     }
 
     private var uploadStatusColor: Color {
         switch liveLocation.uploadStatusSummary {
-        case "Invalid endpoint", "Needs retry":
-            return .orange
-        case "Uploading":
-            return .blue
-        case "Paused":
-            return .yellow
-        case "Queue pending":
-            return .orange
-        case "Ready":
-            return .green
-        default:
-            return .secondary
+        case "Invalid endpoint", "Needs retry": return .orange
+        case "Uploading":                        return .blue
+        case "Paused":                           return .yellow
+        case "Queue pending":                    return .orange
+        case "Ready":                            return .green
+        default:                                 return .secondary
         }
     }
 
     private var permissionTintColor: Color {
         switch liveLocation.authorization {
-        case .authorizedAlways:
-            return .green
+        case .authorizedAlways:                   return .green
         case .authorizedWhenInUse:
             return liveLocation.needsAlwaysAuthorizationUpgrade ? .orange : .blue
-        case .notDetermined:
-            return .secondary
-        case .restricted, .denied:
-            return .red
+        case .notDetermined:                      return .secondary
+        case .restricted, .denied:               return .red
         }
     }
 
@@ -735,14 +735,10 @@ public struct AppLiveTrackingView: View {
     private var accuracyColor: Color {
         guard let location = liveLocation.currentLocation else { return .secondary }
         switch location.horizontalAccuracyM {
-        case ..<10:
-            return .green
-        case ..<30:
-            return .mint
-        case ..<65:
-            return .orange
-        default:
-            return .red
+        case ..<10:  return .green
+        case ..<30:  return .mint
+        case ..<65:  return .orange
+        default:     return .red
         }
     }
 
@@ -780,14 +776,20 @@ public struct AppLiveTrackingView: View {
         guard let lastSampleDate = metricSnapshot.lastSampleDate else { return "–" }
         let age = max(0, now.timeIntervalSince(lastSampleDate))
         if age < 60 {
-            return preferences.appLanguage.isGerman ? String(format: "%.0f Sek.", age) : String(format: "%.0f s", age)
+            return preferences.appLanguage.isGerman
+                ? String(format: "%.0f Sek.", age)
+                : String(format: "%.0f s", age)
         }
         if age < 3600 {
             let minutes = age / 60
-            return preferences.appLanguage.isGerman ? String(format: "%.0f Min.", minutes) : String(format: "%.0f min", minutes)
+            return preferences.appLanguage.isGerman
+                ? String(format: "%.0f Min.", minutes)
+                : String(format: "%.0f min", minutes)
         }
         let hours = age / 3600
-        return preferences.appLanguage.isGerman ? String(format: "%.1f Std.", hours) : String(format: "%.1f h", hours)
+        return preferences.appLanguage.isGerman
+            ? String(format: "%.1f Std.", hours)
+            : String(format: "%.1f h", hours)
     }
 
     private var lastUploadSuccessText: String {
@@ -797,16 +799,15 @@ public struct AppLiveTrackingView: View {
 
     private var statusSymbolName: String {
         switch liveLocation.authorization {
-        case .notDetermined:
-            return "location.circle"
-        case .restricted:
-            return "hand.raised.circle"
-        case .denied:
-            return "location.slash.circle"
+        case .notDetermined:                      return "location.circle"
+        case .restricted:                         return "hand.raised.circle"
+        case .denied:                             return "location.slash.circle"
         case .authorizedWhenInUse, .authorizedAlways:
             return liveLocation.isRecording ? "record.circle" : "location.circle.fill"
         }
     }
+
+    // MARK: - Map Helpers
 
     private func centerOnCurrentLocation() {
         guard let location = liveLocation.currentLocation else { return }
