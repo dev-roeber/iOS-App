@@ -37,6 +37,24 @@ P2 — Nachgelagerte Optimierung
 - veraltete Notion-/Wrapper-/Split-Repo-Doku weiter abbauen
 - echtes Road-/Path-Matching nur als spaeteren separaten Produktscope betrachten
 
+### Export Checkout Redesign Truth Update (2026-05-01)
+
+Implementiert und lokal verifiziert:
+- `AppExportView` ist vollstaendig von `List`-basiertem Layout auf `ScrollView`+`LHPageScaffold`+Sticky-`LHExportBottomBar` umgestellt
+- `LHExportStepIndicator`: 4-Schritt-Progress (Auswahl / Format / Inhalt / Fertig) mit completed/active/pending Zustaenden
+- `LHExportBottomBar`: Sticky `.safeAreaInset`-Bar mit Item-Count + Format-Label und primaerem Export-Button; optionaler Disabled-Reason-Caption
+- `LHExportFilterDisclosure`: kollabierbare Advanced-Filters-Card mit oranger Active-State-Border und Chip-Badge
+- Auswahl-Summary-Card mit 4-KPI-Grid (Days / Routes / Period / Places); „Auswahl bearbeiten" scrollt per `ScrollViewReader` zur Tages-Card
+- Format-Pills (GPX / KMZ / KML / GeoJSON / CSV) und Mode-Pills (Tracks / Waypoints / Both) mit aktivem Fill-Highlight
+- `ExportPresentation.bottomBarSummary` und `ExportPresentation.disabledReason` neu; bestehende `ExportPresentation.readiness` unveraendert
+- alle bestehenden Verdrahtungen erhalten: `fileExporter`, per-Route-Auswahl, Insights-Drilldown, alle Filter, `ExportSelectionState`, Builder, Kontrakt
+- lokaler Nachweis: `swift test` 773 Tests, 0 Failures
+
+Nicht als abgeschlossen markieren:
+- kein neuer Apple-Hardware-Claim fuer den Export-Checkout-Umbau
+- keine neue Exportfaehigkeit, kein neues Format, keine Kontrakt-Aenderung
+- display-only Track-Editor-Mutations fliessen weiterhin nicht in den Export-Truth ein
+
 ### Days + Day Detail Redesign Truth Update (2026-04-30)
 
 Implementiert und lokal verifiziert:

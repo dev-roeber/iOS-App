@@ -374,6 +374,114 @@ final class UIWiringTests: XCTestCase {
         XCTAssertFalse(filter.isActive)
         XCTAssertEqual(filter, HistoryDateRangeFilter.default)
     }
+
+    // MARK: - Export Checkout: Insights → Export drilldown wiring
+
+    func testInsightsDrilldownExportActionForPrefillExportDate() {
+        let exported = InsightsDrilldownBridge.exportAction(from: .prefillExportForDate("2024-06-15"))
+        XCTAssertNotNil(exported, "prefillExportForDate must route to an export action")
+        if case let .prefillExportForDate(date) = exported {
+            XCTAssertEqual(date, "2024-06-15")
+        } else {
+            XCTFail("Expected prefillExportForDate action")
+        }
+    }
+
+    func testInsightsDrilldownShowDayIsNotAnExportAction() {
+        XCTAssertNil(InsightsDrilldownBridge.exportAction(from: .filterDaysToDate("2024-06-15")))
+    }
+
+    // MARK: - Export Checkout: format pills are all present
+
+    func testExportFormatAllCasesContainsExpectedFormats() {
+        let formats = ExportFormat.allCases.map(\.rawValue)
+        XCTAssertTrue(formats.contains("GPX"))
+        XCTAssertTrue(formats.contains("KML"))
+        XCTAssertTrue(formats.contains("KMZ"))
+        XCTAssertTrue(formats.contains("GeoJSON"))
+        XCTAssertTrue(formats.contains("CSV"))
+    }
+
+    // MARK: - Export Checkout: export button disabled/enabled
+
+    func testExportReadinessDisabledForEmptySelection() {
+        let readiness = ExportPresentation.readiness(
+            importedExport: nil,
+            selection: ExportSelectionState(),
+            recordedTracks: [],
+            mode: .tracks
+        )
+        if case .nothingSelected = readiness { /* expected */ }
+        else { XCTFail("Expected nothingSelected for empty selection") }
+    }
+
+    func testExportReadinessEnabledForSavedTrack() {
+        let formatter = ISO8601DateFormatter()
+        let start = formatter.date(from: "2024-05-01T08:00:00Z")!
+        let end   = formatter.date(from: "2024-05-01T08:30:00Z")!
+        let track = RecordedTrack(
+            startedAt: start, endedAt: end,
+            dayKey: "2024-05-01",
+            distanceM: 500,
+            captureMode: .foregroundWhileInUse,
+            points: [
+                RecordedTrackPoint(latitude: 48.0, longitude: 11.0, timestamp: start, horizontalAccuracyM: 5),
+                RecordedTrackPoint(latitude: 48.001, longitude: 11.001, timestamp: end, horizontalAccuracyM: 5)
+            ]
+        )
+        var selection = ExportSelectionState()
+        selection.toggleRecordedTrack(track.id)
+
+        let readiness = ExportPresentation.readiness(
+            importedExport: nil,
+            selection: selection,
+            recordedTracks: [track],
+            mode: .tracks
+        )
+        if case .ready = readiness { /* expected */ }
+        else { XCTFail("Expected ready for saved track selection") }
+    }
+
+    // MARK: - Export Checkout: Live Tracks Card wiring
+
+    func testBottomBarSummaryIsEmptyWhenNothingSelected() {
+        let summary = ExportPresentation.bottomBarSummary(
+            importedExport: nil,
+            selection: ExportSelectionState(),
+            recordedTracks: [],
+            mode: .tracks,
+            format: .gpx
+        )
+        XCTAssertTrue(summary.isEmpty)
+    }
+
+    func testBottomBarSummaryContainsFormatNameWhenLiveTrackSelected() {
+        let formatter = ISO8601DateFormatter()
+        let start = formatter.date(from: "2024-05-01T08:00:00Z")!
+        let end   = formatter.date(from: "2024-05-01T08:30:00Z")!
+        let track = RecordedTrack(
+            startedAt: start, endedAt: end,
+            dayKey: "2024-05-01",
+            distanceM: 500,
+            captureMode: .foregroundWhileInUse,
+            points: [
+                RecordedTrackPoint(latitude: 48.0, longitude: 11.0, timestamp: start, horizontalAccuracyM: 5),
+                RecordedTrackPoint(latitude: 48.001, longitude: 11.001, timestamp: end, horizontalAccuracyM: 5)
+            ]
+        )
+        var selection = ExportSelectionState()
+        selection.toggleRecordedTrack(track.id)
+
+        let summary = ExportPresentation.bottomBarSummary(
+            importedExport: nil,
+            selection: selection,
+            recordedTracks: [track],
+            mode: .tracks,
+            format: .gpx
+        )
+        XCTAssertFalse(summary.isEmpty)
+        XCTAssertTrue(summary.contains("GPX"))
+    }
 }
 
 // MARK: - DaySummary test stub

@@ -293,6 +293,142 @@ final class ExportPresentationTests: XCTestCase {
         )
     }
 
+    // MARK: - Checkout UI helpers (bottomBarSummary / disabledReason)
+
+    func testBottomBarSummaryIsEmptyForNothingSelected() {
+        let summary = ExportPresentation.bottomBarSummary(
+            importedExport: nil,
+            selection: ExportSelectionState(),
+            recordedTracks: [],
+            mode: .tracks,
+            format: .gpx
+        )
+        XCTAssertTrue(summary.isEmpty)
+    }
+
+    func testBottomBarSummaryContainsCountAndFormatWhenReady() {
+        var selection = ExportSelectionState()
+        let track = makeRecordedTrack(dayKey: "2024-05-01")
+        selection.toggleRecordedTrack(track.id)
+
+        let summary = ExportPresentation.bottomBarSummary(
+            importedExport: nil,
+            selection: selection,
+            recordedTracks: [track],
+            mode: .tracks,
+            format: .gpx
+        )
+        XCTAssertTrue(summary.contains("1"))
+        XCTAssertTrue(summary.contains("GPX"))
+    }
+
+    func testBottomBarSummaryUsesGermanSourceLabel() {
+        var selection = ExportSelectionState()
+        let track = makeRecordedTrack(dayKey: "2024-05-02")
+        selection.toggleRecordedTrack(track.id)
+
+        let summary = ExportPresentation.bottomBarSummary(
+            importedExport: nil,
+            selection: selection,
+            recordedTracks: [track],
+            mode: .tracks,
+            format: .kml,
+            language: .german
+        )
+        XCTAssertTrue(summary.contains("Eintrag"))
+        XCTAssertTrue(summary.contains("KML"))
+    }
+
+    func testDisabledReasonIsNilWhenReady() {
+        var selection = ExportSelectionState()
+        let track = makeRecordedTrack(dayKey: "2024-05-01")
+        selection.toggleRecordedTrack(track.id)
+
+        XCTAssertNil(ExportPresentation.disabledReason(
+            importedExport: nil,
+            selection: selection,
+            recordedTracks: [track],
+            mode: .tracks
+        ))
+    }
+
+    func testDisabledReasonForNothingSelectedIsHelpful() {
+        let reason = ExportPresentation.disabledReason(
+            importedExport: nil,
+            selection: ExportSelectionState(),
+            recordedTracks: [],
+            mode: .tracks
+        )
+        XCTAssertNotNil(reason)
+        XCTAssertFalse(reason!.isEmpty)
+    }
+
+    func testDisabledReasonForNoExportableRoutesIsHelpful() {
+        let export = exportWith(days: """
+        {
+          "date":"2024-05-01",
+          "visits":[{"lat":48.0,"lon":11.0,"start_time":"2024-05-01T08:00:00Z","end_time":"2024-05-01T08:30:00Z"}],
+          "activities":[],
+          "paths":[]
+        }
+        """)
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+
+        let reason = ExportPresentation.disabledReason(
+            importedExport: export,
+            selection: selection,
+            recordedTracks: [],
+            mode: .tracks
+        )
+        XCTAssertNotNil(reason)
+        XCTAssertTrue(reason!.lowercased().contains("route"))
+    }
+
+    func testFormatLabelsMatchRawValues() {
+        XCTAssertEqual(ExportFormat.gpx.rawValue,     "GPX")
+        XCTAssertEqual(ExportFormat.kml.rawValue,     "KML")
+        XCTAssertEqual(ExportFormat.kmz.rawValue,     "KMZ")
+        XCTAssertEqual(ExportFormat.geoJSON.rawValue, "GeoJSON")
+        XCTAssertEqual(ExportFormat.csv.rawValue,     "CSV")
+    }
+
+    func testStepReadinessNothingSelectedState() {
+        XCTAssertEqual(
+            ExportPresentation.readiness(
+                importedExport: nil,
+                selection: ExportSelectionState(),
+                recordedTracks: [],
+                mode: .tracks
+            ),
+            .nothingSelected
+        )
+    }
+
+    func testStepReadinessNoExportableContentState() {
+        let export = exportWith(days: """
+        {
+          "date":"2024-05-01",
+          "visits":[],
+          "activities":[],
+          "paths":[]
+        }
+        """)
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+
+        if case .noExportableContent = ExportPresentation.readiness(
+            importedExport: export,
+            selection: selection,
+            recordedTracks: [],
+            mode: .tracks
+        ) {
+            // expected
+        } else {
+            XCTFail("Expected noExportableContent")
+        }
+    }
+
     private func exportWith(days jsonDays: String) -> AppExport {
         let json = """
         {

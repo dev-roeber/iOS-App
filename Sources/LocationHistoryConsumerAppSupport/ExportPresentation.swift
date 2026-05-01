@@ -215,6 +215,74 @@ enum ExportPresentation {
             : "Suggested filename: \(filename) (\(format.fileExtension.uppercased()))."
     }
 
+    // MARK: - Checkout UI helpers
+
+    /// Short summary label for the sticky bottom bar, e.g. "3 items · GPX".
+    /// Returns an empty string when nothing is selected.
+    static func bottomBarSummary(
+        importedExport: AppExport?,
+        selection: ExportSelectionState,
+        recordedTracks: [RecordedTrack],
+        queryFilter: AppExportQueryFilter? = nil,
+        mode: ExportMode,
+        format: ExportFormat,
+        language: AppLanguagePreference = .english
+    ) -> String {
+        let snapshot = ExportSelectionContent.snapshot(
+            importedExport: importedExport,
+            selection: selection,
+            recordedTracks: recordedTracks,
+            queryFilter: queryFilter,
+            mode: mode
+        )
+        guard snapshot.selectedSourceCount > 0 else { return "" }
+        let count = snapshot.selectedSourceCount
+        let sourceLabel = language.isGerman
+            ? "\(count) \(count == 1 ? "Eintrag" : "Einträge")"
+            : "\(count) item\(count == 1 ? "" : "s")"
+        return "\(sourceLabel) · \(format.rawValue)"
+    }
+
+    /// Human-readable reason why the export button is disabled, or nil when ready.
+    static func disabledReason(
+        importedExport: AppExport?,
+        selection: ExportSelectionState,
+        recordedTracks: [RecordedTrack],
+        queryFilter: AppExportQueryFilter? = nil,
+        mode: ExportMode,
+        language: AppLanguagePreference = .english
+    ) -> String? {
+        switch readiness(
+            importedExport: importedExport,
+            selection: selection,
+            recordedTracks: recordedTracks,
+            queryFilter: queryFilter,
+            mode: mode
+        ) {
+        case .ready:
+            return nil
+        case .nothingSelected:
+            return language.isGerman
+                ? "Keine exportierbaren Daten ausgewählt"
+                : "No exportable data selected"
+        case .noExportableContent:
+            switch mode {
+            case .tracks:
+                return language.isGerman
+                    ? "Keine exportierbaren Routen in der Auswahl"
+                    : "No exportable routes selected"
+            case .waypoints:
+                return language.isGerman
+                    ? "Keine Wegpunkte in der Auswahl"
+                    : "No waypoints in selection"
+            case .both:
+                return language.isGerman
+                    ? "Kein exportierbarer Inhalt in der Auswahl"
+                    : "No exportable content selected"
+            }
+        }
+    }
+
     private static func exportedContentSummary(routeCount: Int, waypointCount: Int, language: AppLanguagePreference) -> String {
         var parts: [String] = []
         if routeCount > 0 {

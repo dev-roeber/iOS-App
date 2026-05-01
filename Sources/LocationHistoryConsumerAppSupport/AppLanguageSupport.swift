@@ -683,6 +683,20 @@ enum AppGermanTranslations {
         "Activity Overview": "Aktivitätsübersicht",
         "Activity Streak": "Aktivitätsserie",
         "Period Comparison": "Periodenvergleich",
-        "Import More Data": "Mehr Daten importieren"
+        "Import More Data": "Mehr Daten importieren",
+        // Export Checkout Redesign
+        "Selection": "Auswahl",
+        "Content": "Inhalt",
+        "Edit Selection": "Auswahl bearbeiten",
+        "Export Format": "Exportformat",
+        "Advanced Filters": "Erweiterte Filter",
+        "No exportable data selected": "Keine exportierbaren Daten ausgewählt",
+        "No exportable routes selected": "Keine exportierbaren Routen ausgewählt",
+        "No exportable content selected": "Kein exportierbarer Inhalt ausgewählt",
+        "No waypoints in selection": "Keine Wegpunkte in der Auswahl",
+        "Reset Drilldown": "Drilldown zurücksetzen",
+        "Adopted from Insights": "Aus Insights übernommen",
+        "Live Tracks": "Live-Tracks",
+        "Tracks + Waypoints": "Tracks + Wegpunkte"
     ]
 }

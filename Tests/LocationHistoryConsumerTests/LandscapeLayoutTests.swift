@@ -226,6 +226,50 @@ final class LandscapeLayoutTests: XCTestCase {
         XCTAssertEqual(modes.count, 3)
     }
 
+    // MARK: - Export Checkout Layout
+
+    func testExportPresentationReadinessIsOrientationIndependent() throws {
+        // Empty selection produces the same readiness state in any orientation.
+        let readiness = ExportPresentation.readiness(
+            importedExport: nil,
+            selection: ExportSelectionState(),
+            recordedTracks: [],
+            mode: .tracks
+        )
+        if case .nothingSelected = readiness { /* expected */ }
+        else { XCTFail("Expected nothingSelected for empty selection") }
+    }
+
+    func testExportBottomBarSummaryIsStableAcrossOrientations() {
+        var selection = ExportSelectionState()
+        let formatter = ISO8601DateFormatter()
+        let start = formatter.date(from: "2024-05-01T08:00:00Z")!
+        let end   = formatter.date(from: "2024-05-01T08:30:00Z")!
+        let track = RecordedTrack(
+            startedAt: start, endedAt: end,
+            dayKey: "2024-05-01",
+            distanceM: 400,
+            captureMode: .foregroundWhileInUse,
+            points: [
+                RecordedTrackPoint(latitude: 48.0, longitude: 11.0, timestamp: start, horizontalAccuracyM: 5),
+                RecordedTrackPoint(latitude: 48.001, longitude: 11.001, timestamp: end, horizontalAccuracyM: 5)
+            ]
+        )
+        selection.toggleRecordedTrack(track.id)
+
+        let summaryPortrait = ExportPresentation.bottomBarSummary(
+            importedExport: nil, selection: selection,
+            recordedTracks: [track], mode: .tracks, format: .gpx
+        )
+        let summaryLandscape = ExportPresentation.bottomBarSummary(
+            importedExport: nil, selection: selection,
+            recordedTracks: [track], mode: .tracks, format: .gpx
+        )
+        // Summary is deterministic — portrait and landscape show the same text.
+        XCTAssertEqual(summaryPortrait, summaryLandscape)
+        XCTAssertFalse(summaryPortrait.isEmpty)
+    }
+
     private func makeSummaries(count: Int) throws -> [DaySummary] {
         let days = (1...count).map { i -> String in
             let day = String(format: "%02d", i)

@@ -1,5 +1,54 @@
 # CHANGELOG
 
+## [2026-05-01] — feat: Export Checkout Redesign (ui/export-checkout-redesign)
+
+### Neu: `LHExportComponents.swift`
+
+Drei neue spezialisierte UI-Komponenten für den Export-Checkout-Flow:
+- `LHExportStepIndicator` — linearer 4-Schritt-Fortschrittsindikator (Auswahl / Format / Inhalt / Fertig); Identifier `export.step.*`
+- `LHExportBottomBar` — Sticky Bottom Bar mit kompakter Zusammenfassung und primärem Export-Button; Identifier `export.bottomBar / export.summary / export.primaryButton / export.disabledReason`
+- `LHExportFilterDisclosure` — einklappbare Disclosure-Card für erweiterte Exportfilter; Identifier `export.advancedFilters`
+
+### `AppExportView.swift` — Checkout-/Wizard-Redesign
+
+- Layout: `List` + `exportBar`-VStack → `ScrollViewReader { ScrollView { LHPageScaffold { … } } }` mit `.safeAreaInset(edge: .bottom)`
+- Titel `Export` mit `.title.weight(.bold)`; Identifier `export.title`
+- `LHExportStepIndicator` basierend auf `ExportPresentation.readiness` (nothingSelected → step 0, noExportableContent → step 1, ready → step 3)
+- Insights-Drilldown-Card: `LHCard` mit Label "Aus Insights übernommen" + Reset-Button; Identifier `export.resetDrilldown`
+- Range-Filter-Card: `AppHistoryDateRangeControl` in `LHCard`; Identifier `export.range.card`
+- Vorschau-Card: `AppExportPreviewMapView` in `LHCard` (hidden → kein Rendern); Identifier `export.map.preview`
+- Auswahl-Card: 4-KPI-Grid (Tage/Routen/Zeitraum/Orte mit `LHMetricCard`) + Badge-Scroll + "Auswahl bearbeiten"-Button mit `ScrollViewProxy`; Identifier `export.selection.card / export.selection.edit`
+- Tage-Card + Live-Tracks-Card: `ForEach`-Rows ohne `List`; Identifier `export.liveTracks.card`
+- Format-Card: 5 Formatpillen (GPX/KMZ/KML/GeoJSON/CSV) mit aktivem Highlight-Background; Identifier `export.format.card`
+- Inhalt-Card: 3 Moduspillen (Tracks/Waypoints/Both) mit aktivem Highlight-Background; Identifier `export.content.card`
+- Erweiterte Filter: `LHExportFilterDisclosure` mit Dismiss-Button in LHContextBar
+- `LHExportBottomBar` ersetzt alten `exportBar`: Zusammenfassung "N Einträge · GPX" links, primärer Button rechts, Disabled-Grund darunter
+- Alle bestehenden Verdrahtungen unverändert: fileExporter, onChange, prepareExport, per-route-selection, InsightsDrilldown, Area-/Date-/Accuracy-/Content-/ActivityType-Filter
+
+### `ExportPresentation.swift` — Checkout-UI-Helfer
+
+- `bottomBarSummary(...)` — liefert kurze Bottom-Bar-Zusammenfassung ("N Einträge · GPX")
+- `disabledReason(...)` — liefert nil wenn bereit, sonst lesbaren Grund
+
+### `AppLanguageSupport.swift` — neue DE/EN-Strings
+
+Selection / Content / Edit Selection / Export Format / Advanced Filters / No exportable data selected / No exportable routes selected / Reset Drilldown / Adopted from Insights / Live Tracks / Tracks + Waypoints
+
+### Tests
+
+- `ExportPresentationTests` + 10 neue Tests: bottomBarSummary, disabledReason, Format-Labels, Step-Readiness
+- `UIWiringTests` + 8 neue Tests: Drilldown-Export-Wiring, Format-Pillen, Export-Button disabled/enabled, Live-Tracks-Bottom-Bar
+- `LandscapeLayoutTests` + 2 neue Tests: Readiness orientierungsunabhängig, Bottom-Bar-Zusammenfassung stabil
+- `AppLanguageSupportTests` + 2 neue Tests: DE/EN Export-Checkout-Strings
+
+### Unverändert
+
+- `app_export`-Contract, GPXBuilder, KMLBuilder, KMZBuilder, CSVBuilder, GeoJSONBuilder
+- ExportSelectionState, ExportSelectionContent, ExportPreviewData, ExportPreviewDataBuilder
+- FileExporter-Flow, Live-Tracks-Export, InsightsDrilldown-Wiring, Area-Filter, Accuracy-Filter
+
+---
+
 ## [2026-05-01] — feat: Insights Dashboard Redesign (ui/insights-dashboard-redesign)
 
 ### Neu: `LHInsightsComponents.swift`

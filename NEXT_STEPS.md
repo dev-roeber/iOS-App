@@ -24,7 +24,8 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 
 ## P2 — Nachgelagerte Optimierung
 
-- [ ] Design-System nach den jetzt produktiven Redesign-Slices fuer `Start`, `Overview`, `Days`, `Day Detail` und `Insights` weiter auf `Export` ausweiten; Widget/Dynamic-Island nur bei sicherem Token-Pfad
+- [x] Design-System: Export-Checkout-Redesign abgeschlossen (2026-05-01); alle Screens Start/Overview/Days/DayDetail/Insights/Export jetzt im LH2GPX-Dark-Redesign
+- [ ] Widget/Dynamic-Island nur bei sicherem Token-Pfad weiter ausbauen
 - [ ] `LHCollapsibleMapHeader` in erste echte Seite einbauen (Kandidat: Insights-Heatmap-Kontext oder Overview-Map); nur wenn Daten sauber verfügbar
 - [ ] Apple-Review-/Privacy-Einordnung fuer den optionalen Server-Upload weiter beobachten und nach Review-Feedback repo-wahr nachziehen
 - [ ] `docs/NOTION_SYNC_DRAFT.md` nur noch als manuell gepflegten Snapshot nutzen oder spaeter durch einen schlankeren Status-Export ersetzen

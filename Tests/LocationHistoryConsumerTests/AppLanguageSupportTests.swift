@@ -115,4 +115,23 @@ final class AppLanguageSupportMapHeaderStringsTests: XCTestCase {
         XCTAssertEqual(en.localized("Activity Streak"), "Activity Streak")
         XCTAssertEqual(en.localized("Period Comparison"), "Period Comparison")
     }
+
+    func testGermanExportCheckoutStrings() {
+        XCTAssertEqual(de.localized("Selection"),             "Auswahl")
+        XCTAssertEqual(de.localized("Content"),               "Inhalt")
+        XCTAssertEqual(de.localized("Edit Selection"),        "Auswahl bearbeiten")
+        XCTAssertEqual(de.localized("Export Format"),         "Exportformat")
+        XCTAssertEqual(de.localized("Advanced Filters"),      "Erweiterte Filter")
+        XCTAssertEqual(de.localized("Reset Drilldown"),       "Drilldown zurücksetzen")
+        XCTAssertEqual(de.localized("Adopted from Insights"), "Aus Insights übernommen")
+        XCTAssertEqual(de.localized("Tracks + Waypoints"),    "Tracks + Wegpunkte")
+    }
+
+    func testEnglishExportCheckoutIdentity() {
+        XCTAssertEqual(en.localized("Selection"),        "Selection")
+        XCTAssertEqual(en.localized("Content"),          "Content")
+        XCTAssertEqual(en.localized("Edit Selection"),   "Edit Selection")
+        XCTAssertEqual(en.localized("Advanced Filters"), "Advanced Filters")
+        XCTAssertEqual(en.localized("Export"),           "Export")
+    }
 }

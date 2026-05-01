@@ -254,6 +254,13 @@ Present:
 - disabled export button when nothing is selected or the active mode has no exportable content
 - explicit disabled-reason messaging and clearer marking of days without exportable route data
 - day-detail route subset selections flow into export summary, distance totals and exported imported-day content
+- **Export Checkout Redesign (2026-05-01):** `ScrollView`+`LHPageScaffold` layout replacing the previous `List`-based layout
+- `LHExportStepIndicator` — 4-step linear progress indicator (Auswahl / Format / Inhalt / Fertig) with completed/active/pending node states
+- `LHExportBottomBar` — sticky bottom bar (`.safeAreaInset`) with item count + format summary label and primary export button; optional disabled-reason caption
+- `LHExportFilterDisclosure` — collapsible card for Advanced Filters with orange active-state border and chip badge; replaces inline filter section
+- selection summary card with 4-KPI grid: Days / Routes / Period / Places using `LHMetricCard`; "Edit Selection" scrolls to the days card
+- format pills (GPX / KMZ / KML / GeoJSON / CSV) and mode pills (Tracks / Waypoints / Both) with active fill highlight
+- `ExportPresentation.bottomBarSummary` and `ExportPresentation.disabledReason` — new static presentation helpers
 
 Bewusst deaktiviert, aber vorhanden:
 - export architecture can still grow beyond the active `GPX`/`KMZ`/`KML`/`GeoJSON`/`CSV` formats

@@ -6,30 +6,26 @@ import UniformTypeIdentifiers
 #endif
 
 private enum ExportAccuracyFilterOption: String, Identifiable, CaseIterable {
-    case any = "Any Accuracy"
-    case m25 = "25 m"
-    case m50 = "50 m"
+    case any  = "Any Accuracy"
+    case m25  = "25 m"
+    case m50  = "50 m"
     case m100 = "100 m"
 
     var id: String { rawValue }
 
     var maxAccuracyM: Double? {
         switch self {
-        case .any:
-            return nil
-        case .m25:
-            return 25
-        case .m50:
-            return 50
-        case .m100:
-            return 100
+        case .any:  return nil
+        case .m25:  return 25
+        case .m50:  return 50
+        case .m100: return 100
         }
     }
 }
 
 private enum ExportAreaFilterOption: String, Identifiable, CaseIterable {
-    case none = "No Area Filter"
-    case bounds = "Rectangle"
+    case none    = "No Area Filter"
+    case bounds  = "Rectangle"
     case polygon = "Custom Shape"
 
     var id: String { rawValue }
@@ -77,7 +73,7 @@ public struct AppExportView: View {
     #endif
 
     public init(session: Binding<AppSessionState>, liveLocation: LiveLocationFeatureModel) {
-        self._session = session
+        self._session      = session
         self._liveLocation = ObservedObject(wrappedValue: liveLocation)
     }
 
@@ -93,6 +89,8 @@ public struct AppExportView: View {
         selectedFormat == .csv ? .both : selectedMode
     }
 
+    // MARK: - Body
+
     public var body: some View {
         if session.daySummaries.isEmpty && liveLocation.recordedTracks.isEmpty {
             emptyState
@@ -104,139 +102,314 @@ public struct AppExportView: View {
     @ViewBuilder
     private func exportContent(summaries: [DaySummary]) -> some View {
         let selection = session.exportSelection
-        exportContentStack(selection: selection, summaries: summaries)
-    }
-
-    @ViewBuilder
-    private func exportContentStack(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
         exportContentObservers(summaries: summaries) {
-            VStack(spacing: 0) {
-                exportList(selection: selection, summaries: summaries)
-                exportBar(selection: selection, summaries: summaries)
-            }
+            checkoutLayout(selection: selection, summaries: summaries)
         }
     }
 
+    // MARK: - Checkout Layout
+
     @ViewBuilder
-    private func exportList(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
-        List {
-            if insightsExportDrilldownDescription != nil {
-                insightsDrilldownSection
-            }
+    private func checkoutLayout(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LHPageScaffold(spacing: 14) {
+                    titleHeaderSection
+                        .accessibilityIdentifier("export.title")
 
-            selectionSummarySection(selection: selection, summaries: summaries)
+                    stepIndicatorView(selection: selection, summaries: summaries)
 
-            if hasImportedExport {
-                globalRangeSection
-            }
+                    if insightsExportDrilldownDescription != nil {
+                        insightsDrilldownCard
+                    }
 
-            if hasImportedExport {
-                filterSection
-            }
+                    if hasImportedExport {
+                        rangeFilterCard
+                            .accessibilityIdentifier("export.range.card")
+                    }
 
-            if !selection.isEmpty {
-                previewSection(selection: selection, summaries: summaries)
-            }
+                    if !selection.isEmpty {
+                        previewCard(selection: selection, summaries: summaries)
+                    }
 
-            if !summaries.isEmpty {
-                daysSection(summaries: summaries, selection: selection)
-            }
+                    selectionSummaryCard(selection: selection, summaries: summaries, proxy: proxy)
+                        .accessibilityIdentifier("export.selection.card")
 
-            if !liveLocation.recordedTracks.isEmpty {
-                recordedTracksSection(selection: selection)
+                    if !summaries.isEmpty {
+                        daysCard(summaries: summaries, selection: selection)
+                            .id("export.days.section")
+                    }
+
+                    if !liveLocation.recordedTracks.isEmpty {
+                        liveTracksCard(selection: selection)
+                            .accessibilityIdentifier("export.liveTracks.card")
+                    }
+
+                    formatCard
+                        .accessibilityIdentifier("export.format.card")
+
+                    if selectedFormat == .csv {
+                        csvNoteCard
+                    } else {
+                        contentCard
+                            .accessibilityIdentifier("export.content.card")
+                    }
+
+                    if hasImportedExport {
+                        LHExportFilterDisclosure(
+                            title: t("Advanced Filters"),
+                            isActive: !activeFilterDescriptions.isEmpty,
+                            startsExpanded: !activeFilterDescriptions.isEmpty
+                        ) {
+                            filterContent
+                        }
+                    }
+                }
             }
         }
-        #if os(iOS)
-        .listStyle(.insetGrouped)
-        #else
-        .listStyle(.inset)
-        #endif
+        .safeAreaInset(edge: .bottom) {
+            bottomBar(selection: selection, summaries: summaries)
+        }
     }
 
+    // MARK: - Title Header
+
     @ViewBuilder
-    private var insightsDrilldownSection: some View {
-        Section {
+    private var titleHeaderSection: some View {
+        Text(t("Export"))
+            .font(.title.weight(.bold))
+    }
+
+    // MARK: - Step Indicator
+
+    @ViewBuilder
+    private func stepIndicatorView(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
+        LHExportStepIndicator(
+            labels: [t("Selection"), t("Format"), t("Content"), t("Done")],
+            currentStep: currentExportStep(selection: selection, summaries: summaries)
+        )
+    }
+
+    private func currentExportStep(
+        selection: ExportSelectionState,
+        summaries: [DaySummary]
+    ) -> LHExportStepIndicator.Step {
+        switch ExportPresentation.readiness(
+            importedExport: session.content?.export,
+            selection: selection,
+            recordedTracks: liveLocation.recordedTracks,
+            queryFilter: effectiveQueryFilter,
+            mode: effectiveExportMode
+        ) {
+        case .nothingSelected:      return .selection
+        case .noExportableContent:  return .format
+        case .ready:                return .done
+        }
+    }
+
+    // MARK: - Insights Drilldown Card
+
+    @ViewBuilder
+    private var insightsDrilldownCard: some View {
+        LHCard {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "scope")
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(LH2GPXTheme.primaryBlue)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(t("Insights Drilldown"))
+                    Text(t("Adopted from Insights"))
                         .font(.subheadline.weight(.semibold))
                     Text(insightsExportDrilldownDescription ?? "")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button(t("Reset")) {
+                Button(t("Reset Drilldown")) {
                     clearInsightsDrilldown()
                 }
                 .font(.caption.weight(.medium))
+                .accessibilityIdentifier("export.resetDrilldown")
             }
-            .padding(.vertical, 4)
         }
     }
 
-    @ViewBuilder
-    private func exportContentObservers<Content: View>(summaries: [DaySummary], @ViewBuilder content: () -> Content) -> some View {
-        content()
-            #if canImport(UniformTypeIdentifiers)
-            .fileExporter(
-                isPresented: $isExporting,
-                document: exportDocument,
-                contentType: exportContentType,
-                defaultFilename: exportDocument?.suggestedFilename ?? "lh2gpx-export.\(selectedFormat.fileExtension)"
-            ) { result in
-                if case let .failure(error) = result {
-                    exportError = error.localizedDescription
-                }
-                exportDocument = nil
-            }
-            .fileExporter(
-                isPresented: $isExportingKMZ,
-                document: kmzExportDocument,
-                contentType: .kmz,
-                defaultFilename: kmzExportDocument?.suggestedFilename ?? "lh2gpx-export.kmz"
-            ) { result in
-                if case let .failure(error) = result {
-                    exportError = error.localizedDescription
-                }
-                kmzExportDocument = nil
-            }
-            #endif
-            .alert(t("Export Failed"), isPresented: Binding(
-                get: { exportError != nil },
-                set: { if !$0 { exportError = nil } }
-            )) {
-                Button(t("OK"), role: .cancel) { exportError = nil }
-            } message: {
-                Text(exportError ?? "")
-            }
-            .onChange(of: liveLocation.recordedTracks) { tracks in
-                pruneInvalidRecordedTrackSelection(validTracks: tracks)
-            }
-            .onChange(of: importedSelectionPruneTrigger) { _ in
-                normalizeDateFilterBounds()
-                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
-            }
-            .onChange(of: session.sourceSummary) { _ in
-                resetLocalFilters()
-            }
-    }
+    // MARK: - Range Filter Card
 
     @ViewBuilder
-    private func daysSection(summaries: [DaySummary], selection: ExportSelectionState) -> some View {
-        Section {
-            ForEach(summaries, id: \.date) { summary in
-                dayRow(summary: summary, isSelected: selection.isSelected(summary.date))
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        session.exportSelection.toggle(summary.date)
-                    }
-                    .accessibilityIdentifier("export.day.row")
+    private var rangeFilterCard: some View {
+        LHCard {
+            LHSectionHeader(t("Time Range"))
+            AppHistoryDateRangeControl(
+                filter: $session.historyDateRangeFilter,
+                showsExportHint: true
+            )
+            .accessibilityIdentifier("export.range.card")
+        }
+    }
+
+    // MARK: - Preview Card
+
+    @ViewBuilder
+    private func previewCard(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
+        let previewData = ExportPreviewDataBuilder.previewData(
+            importedExport: session.content?.export,
+            selection: selection,
+            recordedTracks: liveLocation.recordedTracks,
+            queryFilter: effectiveQueryFilter,
+            mode: effectiveExportMode
+        )
+        let presentation = MapPresentation.exportPreview(
+            previewData,
+            unit: preferences.distanceUnit,
+            mode: effectiveExportMode,
+            language: preferences.appLanguage
+        )
+
+        LHCard {
+            LHSectionHeader(t("Preview"))
+            if previewData.hasMapContent {
+                if #available(iOS 17.0, macOS 14.0, *) {
+                    AppExportPreviewMapView(previewData: previewData)
+                        .accessibilityIdentifier("export.map.preview")
+                } else {
+                    Label(
+                        t("Map preview requires a newer Apple platform version, but the export summary below still reflects the current selection."),
+                        systemImage: "map"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                MapSectionSupplementaryView(presentation: presentation)
+            } else {
+                Label(
+                    t("The current selection has no routes with exportable geometry to preview."),
+                    systemImage: "map"
+                )
+                .font(.subheadline.weight(.medium))
+                Text(ExportPresentation.helperMessage(
+                    importedExport: session.content?.export,
+                    selection: selection,
+                    recordedTracks: liveLocation.recordedTracks,
+                    format: selectedFormat,
+                    queryFilter: effectiveQueryFilter,
+                    mode: effectiveExportMode,
+                    language: preferences.appLanguage
+                ))
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
-        } header: {
+        }
+    }
+
+    // MARK: - Selection Summary Card
+
+    @ViewBuilder
+    private func selectionSummaryCard(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        proxy: ScrollViewProxy
+    ) -> some View {
+        let snapshot = ExportSelectionContent.snapshot(
+            importedExport: session.content?.export,
+            selection: selection,
+            recordedTracks: liveLocation.recordedTracks,
+            queryFilter: effectiveQueryFilter,
+            mode: effectiveExportMode
+        )
+        let distance = selectedDistance(selection: selection, summaries: summaries)
+
+        LHCard {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(selectionSummaryTitle(snapshot: snapshot))
+                        .font(.subheadline.weight(.semibold))
+                    if snapshot.selectedSourceCount > 0 {
+                        Text(exportFilenamePreview(selection: selection, summaries: summaries))
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                if !summaries.isEmpty {
+                    Button {
+                        withAnimation { proxy.scrollTo("export.days.section", anchor: .top) }
+                    } label: {
+                        Label(t("Edit Selection"), systemImage: "pencil")
+                            .font(.caption.weight(.medium))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .accessibilityIdentifier("export.selection.edit")
+                }
+            }
+
+            if snapshot.selectedSourceCount > 0 {
+                let selectedSummaries = summaries.filter { selection.isSelected($0.date) }
+                LazyVGrid(
+                    columns: [GridItem(.flexible()), GridItem(.flexible())],
+                    spacing: 10
+                ) {
+                    LHMetricCard(
+                        icon: "calendar",
+                        label: t("Days"),
+                        value: "\(snapshot.selectedDayCount)",
+                        color: LH2GPXTheme.primaryBlue
+                    )
+                    LHMetricCard(
+                        icon: "location.north.line",
+                        label: t("Routes"),
+                        value: "\(selectedSummaries.reduce(0) { $0 + $1.pathCount })",
+                        color: LH2GPXTheme.routeOrange
+                    )
+                    LHMetricCard(
+                        icon: "calendar.badge.clock",
+                        label: t("Period"),
+                        value: selectionPeriodLabel(selection: selection, summaries: summaries),
+                        color: LH2GPXTheme.distancePurple
+                    )
+                    LHMetricCard(
+                        icon: "mappin.and.ellipse",
+                        label: t("Places"),
+                        value: "\(selectedSummaries.reduce(0) { $0 + $1.visitCount })",
+                        color: LH2GPXTheme.liveMint
+                    )
+                }
+
+                // Badge row for routes/waypoints/custom-selection/distance
+                if snapshot.routeCount > 0 || snapshot.waypointCount > 0 || distance > 0 || selection.hasExplicitRouteSelection {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            if snapshot.routeCount > 0 {
+                                exportSummaryBadge(title: routeCountText(snapshot.routeCount), systemImage: "location.north.line")
+                            }
+                            if snapshot.waypointCount > 0 {
+                                exportSummaryBadge(title: waypointCountText(snapshot.waypointCount), systemImage: "mappin.and.ellipse")
+                            }
+                            if selection.hasExplicitRouteSelection {
+                                exportSummaryBadge(
+                                    title: customRouteSelectionBadgeTitle(selection.explicitRouteSelectionCount),
+                                    systemImage: "line.3.horizontal.decrease.circle"
+                                )
+                            }
+                            if distance > 0 {
+                                exportSummaryBadge(
+                                    title: formatDistance(distance, unit: preferences.distanceUnit),
+                                    systemImage: "ruler"
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Days Card
+
+    @ViewBuilder
+    private func daysCard(summaries: [DaySummary], selection: ExportSelectionState) -> some View {
+        LHCard {
             HStack {
-                Text(t("Days"))
+                LHSectionHeader(t("Days"))
                 Spacer()
                 if selection.selectedDayCount == summaries.count {
                     Button(t("Deselect All")) {
@@ -252,22 +425,30 @@ public struct AppExportView: View {
                     .accessibilityIdentifier("export.days.selectAll")
                 }
             }
+
+            VStack(spacing: 0) {
+                ForEach(summaries, id: \.date) { summary in
+                    dayRow(summary: summary, isSelected: selection.isSelected(summary.date))
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            session.exportSelection.toggle(summary.date)
+                        }
+                        .accessibilityIdentifier("export.day.row")
+                    if summary.date != summaries.last?.date {
+                        Divider().padding(.leading, 44)
+                    }
+                }
+            }
         }
     }
 
+    // MARK: - Live Tracks Card
+
     @ViewBuilder
-    private func recordedTracksSection(selection: ExportSelectionState) -> some View {
-        Section {
-            ForEach(liveLocation.recordedTracks) { track in
-                recordedTrackRow(track: track, isSelected: selection.isSelected(recordedTrackID: track.id))
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        session.exportSelection.toggleRecordedTrack(track.id)
-                    }
-            }
-        } header: {
+    private func liveTracksCard(selection: ExportSelectionState) -> some View {
+        LHCard {
             HStack {
-                Text(t("Saved Live Tracks"))
+                LHSectionHeader(t("Saved Live Tracks"))
                 Spacer()
                 if selection.selectedRecordedTrackCount == liveLocation.recordedTracks.count {
                     Button(t("Deselect All")) {
@@ -276,18 +457,339 @@ public struct AppExportView: View {
                     .font(.subheadline)
                 } else {
                     Button(t("Select All")) {
-                        session.exportSelection.selectAllRecordedTracks(from: liveLocation.recordedTracks.map(\.id))
+                        session.exportSelection.selectAllRecordedTracks(
+                            from: liveLocation.recordedTracks.map(\.id)
+                        )
                     }
                     .font(.subheadline)
+                }
+            }
+
+            VStack(spacing: 0) {
+                ForEach(liveLocation.recordedTracks) { track in
+                    recordedTrackRow(
+                        track: track,
+                        isSelected: selection.isSelected(recordedTrackID: track.id)
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        session.exportSelection.toggleRecordedTrack(track.id)
+                    }
+                    if track.id != liveLocation.recordedTracks.last?.id {
+                        Divider().padding(.leading, 44)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Format Card
+
+    @ViewBuilder
+    private var formatCard: some View {
+        LHCard {
+            LHSectionHeader(t("Export Format"))
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible())],
+                spacing: 10
+            ) {
+                ForEach(ExportFormat.allCases) { format in
+                    formatPill(format)
                 }
             }
         }
     }
 
     @ViewBuilder
+    private func formatPill(_ format: ExportFormat) -> some View {
+        let isSelected = selectedFormat == format
+        Button { selectedFormat = format } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: format.systemImage)
+                        .font(.caption)
+                        .foregroundStyle(isSelected ? .white : LH2GPXTheme.primaryBlue)
+                    Text(format.rawValue)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(isSelected ? .white : .primary)
+                    Spacer()
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.white)
+                    }
+                }
+                Text(t(format.description))
+                    .font(.caption2)
+                    .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isSelected ? LH2GPXTheme.primaryBlue : LH2GPXTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isSelected ? Color.clear : LH2GPXTheme.cardBorder, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Content Card
+
+    @ViewBuilder
+    private var contentCard: some View {
+        LHCard {
+            LHSectionHeader(t("Content"))
+            VStack(spacing: 8) {
+                ForEach(ExportMode.allCases) { mode in
+                    modePill(mode)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func modePill(_ mode: ExportMode) -> some View {
+        let isSelected = selectedMode == mode
+        Button { selectedMode = mode } label: {
+            HStack(spacing: 10) {
+                Image(systemName: modeIcon(mode))
+                    .foregroundStyle(isSelected ? .white : LH2GPXTheme.primaryBlue)
+                    .frame(width: 20)
+                Text(t(mode.rawValue))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(isSelected ? .white : .primary)
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.white)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity)
+            .background(isSelected ? LH2GPXTheme.primaryBlue : LH2GPXTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isSelected ? Color.clear : LH2GPXTheme.cardBorder, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func modeIcon(_ mode: ExportMode) -> String {
+        switch mode {
+        case .tracks:    return "location.north.line"
+        case .waypoints: return "mappin.and.ellipse"
+        case .both:      return "map"
+        }
+    }
+
+    // MARK: - CSV Note Card
+
+    @ViewBuilder
+    private var csvNoteCard: some View {
+        LHCard {
+            Label(
+                t("CSV always exports the visible table rows for visits, activities and routes."),
+                systemImage: "tablecells"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: - Filter Content (inside LHExportFilterDisclosure)
+
+    @ViewBuilder
+    private var filterContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if !activeFilterDescriptions.isEmpty {
+                LHContextBar(
+                    message: activeFilterDescriptions.joined(separator: " · "),
+                    systemImage: "line.3.horizontal.decrease.circle.fill",
+                    tint: .orange
+                ) {
+                    resetLocalFilters()
+                }
+            } else {
+                Text(t("Limit imported history by date window or maximum accuracy. Saved Live Tracks stay unaffected by these local export filters."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if !dateOptions.isEmpty {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(t("From"))
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                        Picker(t("From"), selection: $selectedFromDate) {
+                            Text(t("Any")).tag("")
+                            ForEach(dateOptions, id: \.self) { date in
+                                Text(AppDateDisplay.mediumDate(date)).tag(date)
+                            }
+                        }
+                        .labelsHidden()
+                    }
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(t("To"))
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                        Picker(t("To"), selection: $selectedToDate) {
+                            Text(t("Any")).tag("")
+                            ForEach(dateOptions, id: \.self) { date in
+                                Text(AppDateDisplay.mediumDate(date)).tag(date)
+                            }
+                        }
+                        .labelsHidden()
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(t("Maximum accuracy"))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Picker(t("Maximum accuracy"), selection: $selectedAccuracyFilter) {
+                    ForEach(ExportAccuracyFilterOption.allCases) { option in
+                        Text(t(option.rawValue)).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(t("Required imported content"))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                filterChipRow {
+                    ForEach(AppExportContentRequirement.allCases, id: \.self) { req in
+                        filterChip(
+                            title: contentRequirementTitle(req),
+                            isSelected: selectedContentRequirements.contains(req)
+                        ) { toggleContentRequirement(req) }
+                    }
+                }
+            }
+
+            if !availableActivityTypes.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(t("Activity types"))
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    filterChipRow {
+                        ForEach(availableActivityTypes, id: \.self) { activityType in
+                            filterChip(
+                                title: activityTypeTitle(activityType),
+                                isSelected: selectedActivityTypes.contains(activityType)
+                            ) { toggleActivityType(activityType) }
+                        }
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(t("Area filter"))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Picker(t("Area filter"), selection: $selectedAreaFilter) {
+                    ForEach(ExportAreaFilterOption.allCases) { option in
+                        Text(t(option.rawValue)).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                switch selectedAreaFilter {
+                case .none:
+                    Text(t("Optional area filters affect imported history only. Saved Live Tracks always keep their full recorded geometry."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                case .bounds:
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(t("Enter latitude and longitude bounds. Values are combined with any upstream export filters."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: 12) {
+                            TextField(t("Min lat"), text: $boundsMinLat).textFieldStyle(.roundedBorder)
+                            TextField(t("Max lat"), text: $boundsMaxLat).textFieldStyle(.roundedBorder)
+                        }
+                        HStack(spacing: 12) {
+                            TextField(t("Min lon"), text: $boundsMinLon).textFieldStyle(.roundedBorder)
+                            TextField(t("Max lon"), text: $boundsMaxLon).textFieldStyle(.roundedBorder)
+                        }
+                    }
+                case .polygon:
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(t("Enter one `lat,lon` pair per line. At least three vertices are required."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextEditor(text: $polygonCoordinatesText)
+                            .frame(minHeight: 96)
+                            .padding(4)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(Color.secondary.opacity(0.2))
+                            )
+                    }
+                }
+
+                if let spatialFilterValidationMessage {
+                    Label(spatialFilterValidationMessage, systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+            }
+
+            if filteredSummaries.isEmpty {
+                Label(
+                    t("The current imported-history filters hide all day rows. Saved Live Tracks can still be exported separately."),
+                    systemImage: "line.3.horizontal.decrease.circle"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    // MARK: - Bottom Bar
+
+    @ViewBuilder
+    private func bottomBar(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
+        LHExportBottomBar(
+            summary: ExportPresentation.bottomBarSummary(
+                importedExport: session.content?.export,
+                selection: selection,
+                recordedTracks: liveLocation.recordedTracks,
+                queryFilter: effectiveQueryFilter,
+                mode: effectiveExportMode,
+                format: selectedFormat,
+                language: preferences.appLanguage
+            ),
+            buttonTitle: t("Export"),
+            isEnabled: isExportReady(selection: selection, summaries: summaries),
+            disabledReason: ExportPresentation.disabledReason(
+                importedExport: session.content?.export,
+                selection: selection,
+                recordedTracks: liveLocation.recordedTracks,
+                queryFilter: effectiveQueryFilter,
+                mode: effectiveExportMode,
+                language: preferences.appLanguage
+            ),
+            onExport: {
+                prepareExport(selection: selection, summaries: summaries)
+            }
+        )
+    }
+
+    // MARK: - Shared Row Views
+
+    @ViewBuilder
     private func dayRow(summary: DaySummary, isSelected: Bool) -> some View {
         let hasRoutes = summary.pathCount > 0
-
         HStack(spacing: 12) {
             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                 .font(.title3)
@@ -311,20 +813,22 @@ public struct AppExportView: View {
                             .foregroundStyle(.secondary)
                     }
                     if summary.totalPathDistanceM > 0 {
-                        Label(formatDistance(summary.totalPathDistanceM, unit: preferences.distanceUnit), systemImage: "ruler")
-                            .foregroundStyle(.secondary)
+                        Label(
+                            formatDistance(summary.totalPathDistanceM, unit: preferences.distanceUnit),
+                            systemImage: "ruler"
+                        )
+                        .foregroundStyle(.secondary)
                     }
                     if !hasRoutes && summary.visitCount == 0 && summary.activityCount == 0 {
                         Label(t("No map content"), systemImage: "exclamationmark.circle")
-                        .foregroundStyle(.tertiary)
+                            .foregroundStyle(.tertiary)
                     }
                 }
                 .font(.caption)
             }
-
             Spacer()
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 8)
         .padding(.horizontal, 4)
         .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -347,19 +851,24 @@ public struct AppExportView: View {
                 Text(savedTrackTitle(track))
                     .font(.subheadline.weight(.medium))
                 HStack(spacing: 10) {
-                    Label(pointCountText(track.pointCount), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
-                        .foregroundStyle(.secondary)
-                    Label(formatDistance(track.distanceM, unit: preferences.distanceUnit), systemImage: "ruler")
-                        .foregroundStyle(.secondary)
+                    Label(
+                        pointCountText(track.pointCount),
+                        systemImage: "point.topleft.down.curvedto.point.bottomright.up"
+                    )
+                    .foregroundStyle(.secondary)
+                    Label(
+                        formatDistance(track.distanceM, unit: preferences.distanceUnit),
+                        systemImage: "ruler"
+                    )
+                    .foregroundStyle(.secondary)
                     Text(captureModeLabel(for: track))
                         .foregroundStyle(.tertiary)
                 }
                 .font(.caption)
             }
-
             Spacer()
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 8)
         .padding(.horizontal, 4)
         .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -371,418 +880,17 @@ public struct AppExportView: View {
     }
 
     @ViewBuilder
-    private func selectionSummarySection(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
-        let snapshot = ExportSelectionContent.snapshot(
-            importedExport: session.content?.export,
-            selection: selection,
-            recordedTracks: liveLocation.recordedTracks,
-            queryFilter: effectiveQueryFilter,
-            mode: effectiveExportMode
-        )
-        let distance = selectedDistance(selection: selection, summaries: summaries)
-
-        Section {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(selectionSummaryTitle(snapshot: snapshot))
-                            .font(.subheadline.weight(.semibold))
-                        Text(ExportPresentation.helperMessage(
-                            importedExport: session.content?.export,
-                            selection: selection,
-                            recordedTracks: liveLocation.recordedTracks,
-                            format: selectedFormat,
-                            queryFilter: effectiveQueryFilter,
-                            mode: effectiveExportMode,
-                            language: preferences.appLanguage
-                        ))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    if snapshot.selectedSourceCount > 0 {
-                        Text(exportFilenamePreview(selection: selection, summaries: summaries))
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 5)
-                            .background(Color.secondary.opacity(0.08))
-                            .clipShape(Capsule())
-                    }
-                }
-
-                if snapshot.selectedSourceCount > 0 {
-                    HStack(spacing: 10) {
-                        exportSummaryBadge(
-                            title: sourceCountText(snapshot.selectedSourceCount),
-                            systemImage: "tray.full"
-                        )
-                        if snapshot.routeCount > 0 {
-                            exportSummaryBadge(
-                                title: routeCountText(snapshot.routeCount),
-                                systemImage: "location.north.line"
-                            )
-                        }
-                        if snapshot.waypointCount > 0 {
-                            exportSummaryBadge(
-                                title: waypointCountText(snapshot.waypointCount),
-                                systemImage: "mappin.and.ellipse"
-                            )
-                        }
-                        if selection.hasExplicitRouteSelection {
-                            exportSummaryBadge(
-                                title: customRouteSelectionBadgeTitle(selection.explicitRouteSelectionCount),
-                                systemImage: "line.3.horizontal.decrease.circle"
-                            )
-                        }
-                        if distance > 0 {
-                            exportSummaryBadge(
-                                title: formatDistance(distance, unit: preferences.distanceUnit),
-                                systemImage: "ruler"
-                            )
-                        }
-                    }
-                }
-            }
-            .padding(.vertical, 4)
-        }
+    private func exportSummaryBadge(title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.secondary.opacity(0.08))
+            .clipShape(Capsule())
     }
 
-    @ViewBuilder
-    private var filterSection: some View {
-        Section(t("Filter Imported History")) {
-            VStack(alignment: .leading, spacing: 12) {
-                if !activeFilterDescriptions.isEmpty {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Label(t("Local export filters are active"), systemImage: "line.3.horizontal.decrease.circle.fill")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.orange)
-                            Text(activeFilterDescriptions.joined(separator: " · "))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button(t("Clear")) {
-                            resetLocalFilters()
-                        }
-                        .font(.caption.weight(.medium))
-                    }
-                } else {
-                    Text(t("Limit imported history by date window or maximum accuracy. Saved Live Tracks stay unaffected by these local export filters."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if !dateOptions.isEmpty {
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(t("From"))
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                            Picker(t("From"), selection: $selectedFromDate) {
-                                Text(t("Any")).tag("")
-                                ForEach(dateOptions, id: \.self) { date in
-                                    Text(AppDateDisplay.mediumDate(date)).tag(date)
-                                }
-                            }
-                            .labelsHidden()
-                        }
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(t("To"))
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                            Picker(t("To"), selection: $selectedToDate) {
-                                Text(t("Any")).tag("")
-                                ForEach(dateOptions, id: \.self) { date in
-                                    Text(AppDateDisplay.mediumDate(date)).tag(date)
-                                }
-                            }
-                            .labelsHidden()
-                        }
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(t("Maximum accuracy"))
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                    Picker(t("Maximum accuracy"), selection: $selectedAccuracyFilter) {
-                        ForEach(ExportAccuracyFilterOption.allCases) { option in
-                            Text(t(option.rawValue)).tag(option)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(t("Required imported content"))
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                    filterChipRow {
-                        ForEach(AppExportContentRequirement.allCases, id: \.self) { requirement in
-                            filterChip(
-                                title: contentRequirementTitle(requirement),
-                                isSelected: selectedContentRequirements.contains(requirement)
-                            ) {
-                                toggleContentRequirement(requirement)
-                            }
-                        }
-                    }
-                }
-
-                if !availableActivityTypes.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(t("Activity types"))
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
-                        filterChipRow {
-                            ForEach(availableActivityTypes, id: \.self) { activityType in
-                                filterChip(
-                                    title: activityTypeTitle(activityType),
-                                    isSelected: selectedActivityTypes.contains(activityType)
-                                ) {
-                                    toggleActivityType(activityType)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(t("Area filter"))
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                    Picker(t("Area filter"), selection: $selectedAreaFilter) {
-                        ForEach(ExportAreaFilterOption.allCases) { option in
-                            Text(t(option.rawValue)).tag(option)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    switch selectedAreaFilter {
-                    case .none:
-                        Text(t("Optional area filters affect imported history only. Saved Live Tracks always keep their full recorded geometry."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    case .bounds:
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(t("Enter latitude and longitude bounds. Values are combined with any upstream export filters."))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            HStack(spacing: 12) {
-                                TextField(t("Min lat"), text: $boundsMinLat)
-                                    .textFieldStyle(.roundedBorder)
-                                TextField(t("Max lat"), text: $boundsMaxLat)
-                                    .textFieldStyle(.roundedBorder)
-                            }
-                            HStack(spacing: 12) {
-                                TextField(t("Min lon"), text: $boundsMinLon)
-                                    .textFieldStyle(.roundedBorder)
-                                TextField(t("Max lon"), text: $boundsMaxLon)
-                                    .textFieldStyle(.roundedBorder)
-                            }
-                        }
-                    case .polygon:
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(t("Enter one `lat,lon` pair per line. At least three vertices are required."))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            TextEditor(text: $polygonCoordinatesText)
-                                .frame(minHeight: 96)
-                                .padding(4)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .stroke(Color.secondary.opacity(0.2))
-                                )
-                        }
-                    }
-
-                    if let spatialFilterValidationMessage {
-                        Label(spatialFilterValidationMessage, systemImage: "exclamationmark.triangle")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
-                }
-
-                if filteredSummaries.isEmpty {
-                    Label(t("The current imported-history filters hide all day rows. Saved Live Tracks can still be exported separately."), systemImage: "line.3.horizontal.decrease.circle")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.vertical, 4)
-        }
-    }
-
-    @ViewBuilder
-    private var globalRangeSection: some View {
-        Section {
-            AppHistoryDateRangeControl(
-                filter: $session.historyDateRangeFilter,
-                showsExportHint: true
-            )
-            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-            .listRowBackground(Color.clear)
-        }
-    }
-
-    @ViewBuilder
-    private func previewSection(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
-        let previewData = ExportPreviewDataBuilder.previewData(
-            importedExport: session.content?.export,
-            selection: selection,
-            recordedTracks: liveLocation.recordedTracks,
-            queryFilter: effectiveQueryFilter,
-            mode: effectiveExportMode
-        )
-        let presentation = MapPresentation.exportPreview(
-            previewData,
-            unit: preferences.distanceUnit,
-            mode: effectiveExportMode,
-            language: preferences.appLanguage
-        )
-
-        Section(t("Preview")) {
-            VStack(alignment: .leading, spacing: 12) {
-                if previewData.hasMapContent {
-                    if #available(iOS 17.0, macOS 14.0, *) {
-                        AppExportPreviewMapView(previewData: previewData)
-                    } else {
-                        Label(t("Map preview requires a newer Apple platform version, but the export summary below still reflects the current selection."), systemImage: "map")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    MapSectionSupplementaryView(presentation: presentation)
-                } else {
-                    Label(t("The current selection has no routes with exportable geometry to preview."), systemImage: "map")
-                        .font(.subheadline.weight(.medium))
-                    Text(ExportPresentation.helperMessage(
-                        importedExport: session.content?.export,
-                        selection: selection,
-                        recordedTracks: liveLocation.recordedTracks,
-                        format: selectedFormat,
-                        queryFilter: effectiveQueryFilter,
-                        mode: effectiveExportMode,
-                        language: preferences.appLanguage
-                    ))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.vertical, 4)
-        }
-    }
-
-    @ViewBuilder
-    private func exportBar(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
-        VStack(spacing: 0) {
-            Divider()
-            VStack(spacing: 12) {
-                if ExportFormat.allCases.count > 1 {
-                    Picker(t("Format"), selection: $selectedFormat) {
-                        ForEach(ExportFormat.allCases) { format in
-                            Label(t(format.rawValue), systemImage: format.systemImage).tag(format)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                } else {
-                    HStack(spacing: 8) {
-                        Image(systemName: selectedFormat.systemImage)
-                            .foregroundColor(.accentColor)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(t(selectedFormat.rawValue))
-                                .font(.subheadline.weight(.medium))
-                            Text(t(selectedFormat.description))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                    }
-                }
-
-                if selectedFormat == .csv {
-                    Label(t("CSV always exports the visible table rows for visits, activities and routes."), systemImage: "tablecells")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    Picker(t("Mode"), selection: $selectedMode) {
-                        ForEach(ExportMode.allCases) { mode in
-                            Text(t(mode.rawValue)).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-
-                exportButton(selection: selection, summaries: summaries)
-
-                if isExportReady(selection: selection, summaries: summaries) {
-                    Label(
-                        ExportPresentation.filenameMessage(
-                            selection: selection,
-                            summaries: summaries,
-                            recordedTracks: liveLocation.recordedTracks,
-                            format: selectedFormat,
-                            mode: effectiveExportMode,
-                            language: preferences.appLanguage
-                        ),
-                        systemImage: "doc"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    Label(
-                        ExportPresentation.helperMessage(
-                            importedExport: session.content?.export,
-                            selection: selection,
-                            recordedTracks: liveLocation.recordedTracks,
-                            format: selectedFormat,
-                            queryFilter: effectiveQueryFilter,
-                            mode: effectiveExportMode,
-                            language: preferences.appLanguage
-                        ),
-                        systemImage: "info.circle"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.top, 12)
-            .padding(.bottom, 20)
-            .background(Color.secondary.opacity(0.05))
-        }
-    }
-
-    @ViewBuilder
-    private func exportButton(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
-        Button {
-            prepareExport(selection: selection, summaries: summaries)
-        } label: {
-            Label(
-                ExportPresentation.buttonTitle(
-                    importedExport: session.content?.export,
-                    selection: selection,
-                    recordedTracks: liveLocation.recordedTracks,
-                    format: selectedFormat,
-                    queryFilter: effectiveQueryFilter,
-                    mode: effectiveExportMode,
-                    language: preferences.appLanguage
-                ),
-                systemImage: "square.and.arrow.up"
-            )
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
-        .disabled(!isExportReady(selection: selection, summaries: summaries))
-        .accessibilityIdentifier("export.action.primary")
-    }
+    // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: 16) {
@@ -801,6 +909,56 @@ public struct AppExportView: View {
         .padding(32)
     }
 
+    // MARK: - Observers (file exporters, onChange, alerts)
+
+    @ViewBuilder
+    private func exportContentObservers<Content: View>(
+        summaries: [DaySummary],
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            #if canImport(UniformTypeIdentifiers)
+            .fileExporter(
+                isPresented: $isExporting,
+                document: exportDocument,
+                contentType: exportContentType,
+                defaultFilename: exportDocument?.suggestedFilename ?? "lh2gpx-export.\(selectedFormat.fileExtension)"
+            ) { result in
+                if case let .failure(error) = result { exportError = error.localizedDescription }
+                exportDocument = nil
+            }
+            .fileExporter(
+                isPresented: $isExportingKMZ,
+                document: kmzExportDocument,
+                contentType: .kmz,
+                defaultFilename: kmzExportDocument?.suggestedFilename ?? "lh2gpx-export.kmz"
+            ) { result in
+                if case let .failure(error) = result { exportError = error.localizedDescription }
+                kmzExportDocument = nil
+            }
+            #endif
+            .alert(t("Export Failed"), isPresented: Binding(
+                get: { exportError != nil },
+                set: { if !$0 { exportError = nil } }
+            )) {
+                Button(t("OK"), role: .cancel) { exportError = nil }
+            } message: {
+                Text(exportError ?? "")
+            }
+            .onChange(of: liveLocation.recordedTracks) { tracks in
+                pruneInvalidRecordedTrackSelection(validTracks: tracks)
+            }
+            .onChange(of: importedSelectionPruneTrigger) { _ in
+                normalizeDateFilterBounds()
+                pruneInvalidImportedDaySelection(summaries: filteredSummaries)
+            }
+            .onChange(of: session.sourceSummary) { _ in
+                resetLocalFilters()
+            }
+    }
+
+    // MARK: - Export Logic
+
     private func isExportReady(selection: ExportSelectionState, summaries: [DaySummary]) -> Bool {
         switch ExportPresentation.readiness(
             importedExport: session.content?.export,
@@ -809,10 +967,8 @@ public struct AppExportView: View {
             queryFilter: effectiveQueryFilter,
             mode: effectiveExportMode
         ) {
-        case .ready:
-            return true
-        case .nothingSelected, .noExportableContent:
-            return false
+        case .ready:                         return true
+        case .nothingSelected, .noExportableContent: return false
         }
     }
 
@@ -842,6 +998,13 @@ public struct AppExportView: View {
         )
     }
 
+    private func selectionPeriodLabel(selection: ExportSelectionState, summaries: [DaySummary]) -> String {
+        let dates = summaries.filter { selection.isSelected($0.date) }.map(\.date).sorted()
+        guard let first = dates.first, let last = dates.last else { return "–" }
+        if first == last { return String(first.prefix(7)) }
+        return "\(first.prefix(7)) – \(last.prefix(7))"
+    }
+
     private func customRouteSelectionBadgeTitle(_ explicitDayCount: Int) -> String {
         if preferences.appLanguage.isGerman {
             return "\(explicitDayCount) \(explicitDayCount == 1 ? "Tag mit Routenauswahl" : "Tage mit Routenauswahl")"
@@ -851,7 +1014,9 @@ public struct AppExportView: View {
 
     private func selectionSummaryTitle(snapshot: ExportSelectionSnapshot) -> String {
         if snapshot.selectedSourceCount == 0 {
-            return preferences.appLanguage.isGerman ? "Inhalt für den Export auswählen" : "Select content for export"
+            return preferences.appLanguage.isGerman
+                ? "Inhalt für den Export auswählen"
+                : "Select content for export"
         }
         if snapshot.selectedDayCount > 0 && snapshot.selectedRecordedTrackCount == 0 {
             return preferences.appLanguage.isGerman
@@ -866,17 +1031,6 @@ public struct AppExportView: View {
         return preferences.appLanguage.isGerman
             ? "\(snapshot.selectedDayCount) importierte \(snapshot.selectedDayCount == 1 ? "Tag" : "Tage") + \(snapshot.selectedRecordedTrackCount) gespeicherte \(snapshot.selectedRecordedTrackCount == 1 ? "Live-Track" : "Live-Tracks") ausgewählt"
             : "\(snapshot.selectedDayCount) imported day\(snapshot.selectedDayCount == 1 ? "" : "s") + \(snapshot.selectedRecordedTrackCount) saved live track\(snapshot.selectedRecordedTrackCount == 1 ? "" : "s") selected"
-    }
-
-    @ViewBuilder
-    private func exportSummaryBadge(title: String, systemImage: String) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(.caption.weight(.medium))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.secondary.opacity(0.08))
-            .clipShape(Capsule())
     }
 
     private func prepareExport(selection: ExportSelectionState, summaries: [DaySummary]) {
@@ -935,7 +1089,6 @@ public struct AppExportView: View {
         case .csv:
             content = CSVBuilder.build(from: exportDays)
         case .kmz:
-            // Handled above; this case is unreachable.
             return
         }
 
@@ -950,12 +1103,12 @@ public struct AppExportView: View {
     }
 
     private func pruneInvalidRecordedTrackSelection(validTracks: [RecordedTrack]) {
-        let validIDs = Set(validTracks.map(\.id))
+        let validIDs   = Set(validTracks.map(\.id))
         let invalidIDs = session.exportSelection.selectedRecordedTrackIDs.subtracting(validIDs)
-        for id in invalidIDs {
-            session.exportSelection.toggleRecordedTrack(id)
-        }
+        for id in invalidIDs { session.exportSelection.toggleRecordedTrack(id) }
     }
+
+    // MARK: - Computed Properties
 
     private var hasImportedExport: Bool {
         session.content?.export != nil
@@ -1011,19 +1164,24 @@ public struct AppExportView: View {
     }
 
     private var effectiveQueryFilter: AppExportQueryFilter? {
-        guard hasImportedExport else {
-            return nil
-        }
-
-        let baseFilter = globalRangeQueryFilter ?? AppExportQueryFilter()
-        let fromDate = mergedLowerBound(base: baseFilter.fromDate, local: selectedFromDate)
-        let toDate = mergedUpperBound(base: baseFilter.toDate, local: selectedToDate)
-        let maxAccuracyM = mergedMaxAccuracy(base: baseFilter.maxAccuracyM, local: selectedAccuracyFilter.maxAccuracyM)
+        guard hasImportedExport else { return nil }
+        let baseFilter  = globalRangeQueryFilter ?? AppExportQueryFilter()
+        let fromDate    = mergedLowerBound(base: baseFilter.fromDate, local: selectedFromDate)
+        let toDate      = mergedUpperBound(base: baseFilter.toDate,   local: selectedToDate)
+        let maxAccuracyM = mergedMaxAccuracy(
+            base: baseFilter.maxAccuracyM,
+            local: selectedAccuracyFilter.maxAccuracyM
+        )
         let requiredContent = baseFilter.requiredContent.union(selectedContentRequirements)
-        let activityTypes = mergedActivityTypes(base: baseFilter.activityTypes, local: selectedActivityTypes)
-        let spatialFilter = mergedSpatialFilter(base: baseFilter.spatialFilter, local: localSpatialFilter)
-
-        let merged = AppExportQueryFilter(
+        let activityTypes   = mergedActivityTypes(
+            base:  baseFilter.activityTypes,
+            local: selectedActivityTypes
+        )
+        let spatialFilter = mergedSpatialFilter(
+            base:  baseFilter.spatialFilter,
+            local: localSpatialFilter
+        )
+        return AppExportQueryFilter(
             fromDate: fromDate,
             toDate: toDate,
             year: baseFilter.year,
@@ -1037,45 +1195,39 @@ public struct AppExportView: View {
             minGapMin: baseFilter.minGapMin,
             spatialFilter: spatialFilter
         )
-
-        return merged
     }
 
     private var activeFilterDescriptions: [String] {
-        var descriptions: [String] = []
-        if !selectedFromDate.isEmpty {
-            descriptions.append("\(t("From")): \(selectedFromDate)")
-        }
-        if !selectedToDate.isEmpty {
-            descriptions.append("\(t("To")): \(selectedToDate)")
-        }
-        if let maxAccuracyM = selectedAccuracyFilter.maxAccuracyM {
-            descriptions.append("\(t("Maximum accuracy")): \(Int(maxAccuracyM))m")
+        var d: [String] = []
+        if !selectedFromDate.isEmpty         { d.append("\(t("From")): \(selectedFromDate)") }
+        if !selectedToDate.isEmpty           { d.append("\(t("To")): \(selectedToDate)") }
+        if let m = selectedAccuracyFilter.maxAccuracyM {
+            d.append("\(t("Maximum accuracy")): \(Int(m))m")
         }
         if !selectedContentRequirements.isEmpty {
-            descriptions.append("\(t("Required imported content")): \(selectedContentRequirements.map(contentRequirementTitle).sorted().joined(separator: ", "))")
+            d.append("\(t("Required imported content")): \(selectedContentRequirements.map(contentRequirementTitle).sorted().joined(separator: ", "))")
         }
         if !selectedActivityTypes.isEmpty {
-            descriptions.append("\(t("Activity types")): \(selectedActivityTypes.map(activityTypeTitle).sorted().joined(separator: ", "))")
+            d.append("\(t("Activity types")): \(selectedActivityTypes.map(activityTypeTitle).sorted().joined(separator: ", "))")
         }
-        if let localAreaFilterDescription {
-            descriptions.append(localAreaFilterDescription)
-        }
-        return descriptions
+        if let localAreaFilterDescription { d.append(localAreaFilterDescription) }
+        return d
     }
 
+    // MARK: - Mutations / helpers
+
     private func resetLocalFilters() {
-        selectedFromDate = ""
-        selectedToDate = ""
-        selectedAccuracyFilter = .any
-        selectedContentRequirements = []
-        selectedActivityTypes = []
-        selectedAreaFilter = .none
-        boundsMinLat = ""
-        boundsMaxLat = ""
-        boundsMinLon = ""
-        boundsMaxLon = ""
-        polygonCoordinatesText = ""
+        selectedFromDate             = ""
+        selectedToDate               = ""
+        selectedAccuracyFilter       = .any
+        selectedContentRequirements  = []
+        selectedActivityTypes        = []
+        selectedAreaFilter           = .none
+        boundsMinLat                 = ""
+        boundsMaxLat                 = ""
+        boundsMinLon                 = ""
+        boundsMaxLon                 = ""
+        polygonCoordinatesText       = ""
     }
 
     private func clearInsightsDrilldown() {
@@ -1087,73 +1239,53 @@ public struct AppExportView: View {
     }
 
     private func normalizeDateFilterBounds() {
-        guard !selectedFromDate.isEmpty, !selectedToDate.isEmpty, selectedFromDate > selectedToDate else {
-            return
-        }
+        guard !selectedFromDate.isEmpty, !selectedToDate.isEmpty,
+              selectedFromDate > selectedToDate else { return }
         selectedToDate = selectedFromDate
     }
 
     private func pruneInvalidImportedDaySelection(summaries: [DaySummary]) {
-        let validDates = Set(summaries.map(\.date))
+        let validDates   = Set(summaries.map(\.date))
         let invalidDates = session.exportSelection.selectedDates.subtracting(validDates)
-        for date in invalidDates {
-            session.exportSelection.toggle(date)
-        }
+        for date in invalidDates { session.exportSelection.toggle(date) }
     }
 
     private func mergedLowerBound(base: String?, local: String) -> String? {
-        guard !local.isEmpty else {
-            return base
-        }
-        guard let base else {
-            return local
-        }
+        guard !local.isEmpty else { return base }
+        guard let base else { return local }
         return max(base, local)
     }
 
     private func mergedUpperBound(base: String?, local: String) -> String? {
-        guard !local.isEmpty else {
-            return base
-        }
-        guard let base else {
-            return local
-        }
+        guard !local.isEmpty else { return base }
+        guard let base else { return local }
         return min(base, local)
     }
 
     private func mergedMaxAccuracy(base: Double?, local: Double?) -> Double? {
         switch (base, local) {
-        case let (base?, local?):
-            return min(base, local)
-        case let (base?, nil):
-            return base
-        case let (nil, local?):
-            return local
-        case (nil, nil):
-            return nil
+        case let (b?, l?): return min(b, l)
+        case let (b?, nil): return b
+        case let (nil, l?): return l
+        case (nil, nil):    return nil
         }
     }
 
     private func mergedActivityTypes(base: Set<String>, local: Set<String>) -> Set<String> {
-        if base.isEmpty {
-            return local
-        }
-        if local.isEmpty {
-            return base
-        }
+        if base.isEmpty  { return local }
+        if local.isEmpty { return base  }
         return base.intersection(local)
     }
 
-    private func mergedSpatialFilter(base: ExportSpatialFilter?, local: ExportSpatialFilter?) -> ExportSpatialFilter? {
+    private func mergedSpatialFilter(
+        base:  ExportSpatialFilter?,
+        local: ExportSpatialFilter?
+    ) -> ExportSpatialFilter? {
         switch (base, local) {
-        case let (base?, local?):
-            return .all([base, local])
-        case let (base?, nil):
-            return base
-        case let (nil, local?):
-            return local
-        case (nil, nil):
-            return nil
+        case let (b?, l?): return .all([b, l])
+        case let (b?, nil): return b
+        case let (nil, l?): return l
+        case (nil, nil):    return nil
         }
     }
 
@@ -1175,12 +1307,9 @@ public struct AppExportView: View {
 
     private func contentRequirementTitle(_ requirement: AppExportContentRequirement) -> String {
         switch requirement {
-        case .visits:
-            return "Visits"
-        case .activities:
-            return "Activities"
-        case .paths:
-            return "Routes"
+        case .visits:     return "Visits"
+        case .activities: return "Activities"
+        case .paths:      return "Routes"
         }
     }
 
@@ -1198,52 +1327,39 @@ public struct AppExportView: View {
                 let maxLat = parseCoordinate(boundsMaxLat),
                 let minLon = parseCoordinate(boundsMinLon),
                 let maxLon = parseCoordinate(boundsMaxLon)
-            else {
-                return nil
-            }
-            return .bounds(
-                ExportCoordinateBounds(
-                    minLat: minLat,
-                    maxLat: maxLat,
-                    minLon: minLon,
-                    maxLon: maxLon
-                )
-            )
+            else { return nil }
+            return .bounds(ExportCoordinateBounds(
+                minLat: minLat, maxLat: maxLat, minLon: minLon, maxLon: maxLon
+            ))
         case .polygon:
             let coordinates = parsePolygonCoordinates(polygonCoordinatesText)
-            guard coordinates.count >= 3 else {
-                return nil
-            }
+            guard coordinates.count >= 3 else { return nil }
             return .polygon(coordinates)
         }
     }
 
     private var localAreaFilterDescription: String? {
         switch selectedAreaFilter {
-        case .none:
-            return nil
-        case .bounds:
-            return localSpatialFilter == nil ? nil : "\(t("Area")): \(t("Rectangle"))"
-        case .polygon:
-            return localSpatialFilter == nil ? nil : "\(t("Area")): \(t("Custom Shape"))"
+        case .none:    return nil
+        case .bounds:  return localSpatialFilter == nil ? nil : "\(t("Area")): \(t("Rectangle"))"
+        case .polygon: return localSpatialFilter == nil ? nil : "\(t("Area")): \(t("Custom Shape"))"
         }
     }
 
     private var spatialFilterValidationMessage: String? {
         switch selectedAreaFilter {
-        case .none:
-            return nil
+        case .none: return nil
         case .bounds:
-            guard hasBoundsInput else {
-                return nil
-            }
-            return localSpatialFilter == nil ? "Enter valid min/max latitude and longitude values to activate the rectangle filter." : nil
+            guard hasBoundsInput else { return nil }
+            return localSpatialFilter == nil
+                ? "Enter valid min/max latitude and longitude values to activate the rectangle filter."
+                : nil
         case .polygon:
             let trimmed = polygonCoordinatesText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else {
-                return nil
-            }
-            return localSpatialFilter == nil ? "Provide at least three valid `lat,lon` lines to activate the custom shape filter." : nil
+            guard !trimmed.isEmpty else { return nil }
+            return localSpatialFilter == nil
+                ? "Provide at least three valid `lat,lon` lines to activate the custom shape filter."
+                : nil
         }
     }
 
@@ -1258,9 +1374,7 @@ public struct AppExportView: View {
         let normalized = value
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: ",", with: ".")
-        guard !normalized.isEmpty else {
-            return nil
-        }
+        guard !normalized.isEmpty else { return nil }
         return Double(normalized)
     }
 
@@ -1269,15 +1383,11 @@ public struct AppExportView: View {
             .split(whereSeparator: \.isNewline)
             .compactMap { line -> ExportCoordinate? in
                 let trimmed = line.trimmingCharacters(in: .whitespaces)
-                guard !trimmed.isEmpty else {
-                    return nil
-                }
+                guard !trimmed.isEmpty else { return nil }
                 let parts = trimmed.split(separator: ",", omittingEmptySubsequences: false)
                 guard parts.count == 2,
                       let lat = parseCoordinate(String(parts[0])),
-                      let lon = parseCoordinate(String(parts[1])) else {
-                    return nil
-                }
+                      let lon = parseCoordinate(String(parts[1])) else { return nil }
                 return ExportCoordinate(lat: lat, lon: lon)
             }
     }
@@ -1315,10 +1425,8 @@ public struct AppExportView: View {
 
     private func captureModeLabel(for track: RecordedTrack) -> String {
         switch track.captureMode {
-        case .foregroundWhileInUse:
-            return t("Foreground recording")
-        case .backgroundAlways:
-            return t("Background recording")
+        case .foregroundWhileInUse: return t("Foreground recording")
+        case .backgroundAlways:     return t("Background recording")
         }
     }
 
