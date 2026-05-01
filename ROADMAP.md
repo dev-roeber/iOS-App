@@ -1,8 +1,19 @@
 # ROADMAP
 
-## Aktiver Stand (2026-04-30)
+## Aktiver Stand (2026-05-01)
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
+
+### Build 73 + Screenshot-Submit-Vorbereitung (2026-05-01)
+
+Repo-wahr dokumentiert:
+- ASC Version 1.0: `Warten auf Prüfung`, sichtbarer Build `71`
+- Xcode Cloud aktuellster erfolgreicher Build: `73`
+- Repo-Stand für Build 73: `34734ce` (main HEAD nach Final Truth Sync)
+- Screenshots in ASC: aus Build 71, altes UI-Layout — müssen neu aufgenommen werden
+- Neue Screenshot-Slots 07 (Options) und 08 (Day Detail) in `testAppStoreScreenshots` vorbereitet
+- Runbook für manuelle ASC-Schritte erstellt: `docs/ASC_SUBMIT_RUNBOOK.md`
+- Noch nicht ausgeführt: Version aus Prüfung entfernen, Build 73 wählen, Screenshots ersetzen, Submit
 
 ### App Store Connect Truth Update (2026-04-30)
 

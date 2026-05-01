@@ -1,6 +1,6 @@
 # TestFlight + App Store Runbook
 
-Stand: 2026-04-30 | Phase 20
+Stand: 2026-05-01 | Phase 20
 
 ---
 
@@ -19,16 +19,18 @@ Stand: 2026-04-30 | Phase 20
 | App Icon | Map-Pin + "LH2GPX", 1024x1024 | Assets.xcassets/AppIcon.appiconset/ |
 | App Review Guidelines | geprueft, mit offenem Wording fuer den optionalen Server-Upload | Abschnitt unten |
 
-### Aktueller ASC-Stand
+### Aktueller ASC-Stand (2026-05-01)
 
 - App Store Connect: `LH2GPX` Version `1.0` ist eingereicht
 - Status: `Warten auf Prüfung`
 - Veröffentlichung: manuell
-- auf der Versionsseite sichtbarer Build: `52`
-- Xcode Cloud Workflow `Release – Archive & TestFlight`: erfolgreiche Builds `55`, `56`, `57`
-- Review-Entscheidung: Build `52` bleibt bewusst in Review; kein Nachreichen eines neueren Builds ohne Apple-Feedback oder bestaetigten release-kritischen Fehler
-- Review ist damit nicht mehr durch fehlenden Upload blockiert
-- Live Activity / Dynamic Island bleibt fuer App-Review-Risiko trotzdem nur partiell hardware-verifiziert
+- auf der Versionsseite sichtbarer Build: **`71`** (von Sebastian bestätigt 2026-05-01)
+- Xcode Cloud Workflow `Release – Archive & TestFlight`: aktuellster erfolgreicher Build: **`73`**
+- Screenshots in ASC: stammen aus Build 71, zeigen altes UI-Layout (vor LH2GPX-Dark-Redesign)
+- **Nächster Schritt (manuell von Sebastian)**: Version aus Prüfung entfernen → Build 73 wählen → neue Screenshots hochladen → erneut einreichen
+- Runbook für manuelle ASC-Schritte: `docs/ASC_SUBMIT_RUNBOOK.md`
+- Review ist nicht mehr durch Upload blockiert
+- Live Activity / Dynamic Island bleibt für App-Review-Risiko nur partiell hardware-verifiziert
 
 ---
 

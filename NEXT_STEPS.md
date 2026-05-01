@@ -6,13 +6,14 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 
 ## P0 — Release / Review / Hardware-Verifikation
 
-- [ ] App Review auf Build `52` weiter beobachten und Apple-Feedback dokumentieren. Kein Nachreichen von Build `57` ohne Apple-Feedback oder bestaetigten release-kritischen Fehler.
+- [ ] **Build 73 einreichen**: Sebastian muss manuell in ASC Version 1.0 aus Prüfung entfernen → Build 73 wählen → neue Screenshots hochladen → erneut einreichen. Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
+- [ ] **Neue Screenshots aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen → 8 neue PNGs in `docs/app-store-assets/screenshots/iphone-67/` (01–08). Aktuell vorhanden: 01–06 mit altem Layout aus Build 44.
+- [ ] **Nach Submit**: neuen ASC-Status (Build 73 + neue Screenshots) Sebastian bestätigen lassen → Doku in APPLE_VERIFICATION_CHECKLIST.md nachziehen
 - [x] Support-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/support.html` (2026-04-30)
 - [x] Privacy-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-30)
-- [ ] App-Store-Screenshots in App Store Connect hochladen: Assets lokal vorhanden (6×1290×2796 px in `iphone-67/`), manueller Upload in ASC noch ausstehend
 - [x] GitHub Pages fuer `/docs` live und oeffentlich erreichbar (HTTP 200 verifiziert 2026-04-30): `https://dev-roeber.github.io/iOS-App/`, `/support.html`, `/privacy.html`
 - [ ] Live Activity / Dynamic Island auf echter Hardware vervollstaendigen: Lock Screen, `minimal`, Fallback bei deaktivierten / nicht verfuegbaren Live Activities, No-Dynamic-Island-Geraet (Pending-/Restart-Pfad jetzt gruen)
-- [ ] Live Tracking / Live Tracks Library auf echter Apple-Hardware visuell verifizieren: Sticky Bottom Bar, Mint-Polyline, Status-Chips, Library-Zeilen
+- [ ] Live Tracking / Live Tracks Library auf echter Apple-Hardware visuell verifizieren: Sticky Bottom Bar, Mint-Polyline, Status-Chips, Library-Zeilen (Redesign-Screens noch nicht auf echtem Gerät neu verifiziert)
 - [ ] Performance-Smoke-Test auf echtem iPhone mit grosser realer History (>20 MB, Gesamtzeitraum) fuer Overview-/Explore-Karte dokumentieren
 
 ## P1 — Produktverifikation und Ausbau vorhandener Flaechen
@@ -29,7 +30,7 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] Design-System: Live-Tracking-Redesign abgeschlossen (2026-05-01); Live Tracking + Live Tracks Library jetzt im LH2GPX-Dark-Redesign
 - [x] Design-System: Options + Widget/Live Settings Redesign abgeschlossen (2026-05-01); alle 8 Sections modular, RecordingPreset-Wiring, Token nur als SecureField, 830 Tests
 - [x] Final Truth-Sync: fehlende DE-Strings ergänzt (Invalid URL, Widget & Live Activity, Reachable/Unreachable, Test Connection, Automatic Widget Update etc.), widgetAutoUpdate/maximumRecordingGapSeconds getestet; 832 Tests (2026-05-01)
-- [ ] App-Store-Screenshot-Aktualisierung auf neue Designs: alle 8 Options-Sections, Upload-Sektion mit DI-Picker, Live-Tracking-Redesign, Export-Checkout-Redesign — Assets noch mit altem Layout
+- [ ] App-Store-Screenshot-Aktualisierung auf neue Designs: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen → neue 8 Slots 01–08 aufnehmen und nach `iphone-67/` kopieren (s. `docs/ASC_SUBMIT_RUNBOOK.md`)
 - [ ] Widget/Dynamic-Island nur bei sicherem Token-Pfad weiter ausbauen
 - [ ] `LHCollapsibleMapHeader` in erste echte Seite einbauen (Kandidat: Insights-Heatmap-Kontext oder Overview-Map); nur wenn Daten sauber verfügbar
 - [ ] Apple-Review-/Privacy-Einordnung fuer den optionalen Server-Upload weiter beobachten und nach Review-Feedback repo-wahr nachziehen

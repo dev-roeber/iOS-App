@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## [2026-05-01] — chore: Build 73 Screenshot + Submit Prep (release/build-73-screenshots-submit-prep)
+
+### ASC-Stand aktualisiert
+
+- **Version 1.0**: `Warten auf Prüfung`, sichtbarer Build jetzt `71` (von Sebastian bestätigt)
+- **Xcode Cloud Build 73**: aktuellster erfolgreicher Build, entspricht Repo-Stand `34734ce`
+- **Lokale Build-Nummer** in `project.pbxproj`: `CURRENT_PROJECT_VERSION = 45` (Xcode Cloud überschreibt mit `CI_BUILD_NUMBER`)
+- **Build-73-Kandidatenstatus**: Repository-Stand eindeutig zu Build 73 passend; kein neuer Code nach truth sync; Build 73 ≠ lokal archivierter Build — Xcode Cloud ist der alleinige Upload-Pfad
+
+### Screenshot-Infrastruktur erweitert
+
+- `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift`: `testAppStoreScreenshots` um Slots 07 (`07-options`) und 08 (`08-day-detail`) erweitert; bestehende Slots 01–06 für das neue Redesign-Layout kommentiert
+- `docs/app-store-assets/screenshots/README.md`: vollständig überarbeitet mit Status-Tabelle (01–06 vorhanden/alt, 07–08 ausstehend), Sicherheitsregeln, Slot-Übersicht für Build 73
+
+### Neues Runbook
+
+- `docs/ASC_SUBMIT_RUNBOOK.md`: vollständige manuelle ASC-Schritte für Build 73 (Screenshot-Extraktion, Version aus Prüfung entfernen, Build-Tausch, Screenshot-Upload, erneutes Submit)
+
+### Dokumentation nachgezogen
+
+- `docs/APPLE_VERIFICATION_CHECKLIST.md`: ASC-Status auf Build 71 / Xcode Cloud Build 73 aktualisiert; Screenshot-Status (altes Layout) und Handlungsanweisung ergänzt
+- `NEXT_STEPS.md`: P0-Aufgaben für Build 73 + neue Screenshots als oberste Priorität gesetzt
+- `ROADMAP.md`: Build-73-Vorbereitungsstand dokumentiert
+- `wrapper/docs/TESTFLIGHT_RUNBOOK.md`: ASC-Stand auf Build 71 / Xcode Cloud Build 73 nachgezogen
+
+### Keine Code-Änderungen an Produktlogik oder Tests
+
+- `swift test`: 832 Tests, 0 Failures (unverändert)
+- kein Archive, kein Upload, keine ASC-Aktion — nur Repo-Vorbereitung
+
 ## [2026-05-01] — chore: Final UI/Localization Truth Sync (ui/redesign-final-truth-sync)
 
 ### Fehlende deutsche Übersetzungen ergänzt

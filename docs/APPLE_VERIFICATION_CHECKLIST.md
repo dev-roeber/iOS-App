@@ -33,15 +33,22 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 - Explore-Dismiss setzt wieder Full-View-Overlays; stale Overlay-Tasks werden bei Neu-Load verworfen
 - Verifiziert nur per `swift test` + `xcodebuild`; **kein** neuer Geräte-Claim aus diesem Audit-Batch
 
-### Beobachtung App Store Connect / Review — Stand 2026-04-30
+### Beobachtung App Store Connect / Review — Stand 2026-05-01
 - **Version `1.0`**: in App Store Connect eingereicht
 - **Status**: `Warten auf Prüfung`
 - **Veröffentlichung**: manuell
+- **Zur Version sichtbarer Build**: `71` (Stand: von Sebastian bestätigt 2026-05-01)
+- **Xcode Cloud**: Workflow `Release – Archive & TestFlight` zeigt aktuellsten erfolgreichen Build `73`
+- **Screenshots in ASC**: stammen aus Build 71 — zeigen altes UI-Layout (vor LH2GPX-Dark-Redesign); müssen für Build 73 neu aufgenommen und hochgeladen werden
+- **Build-73-Kandidatenstatus**: Build 73 ist in Xcode Cloud erfolgreich; entspricht Repo-Stand `34734ce` (main HEAD nach Final Truth Sync); vor Review-Einreichung muss Sebastian manuell: Version aus Prüfung entfernen → Build 73 wählen → neue Screenshots hochladen → erneut einreichen
+- **Screenshot-Runbook**: `docs/ASC_SUBMIT_RUNBOOK.md`
+- **Upload-Blocker**: App Review ist nicht mehr durch fehlenden Upload blockiert
+- **Hardware-Risiko bleibt**: Live Activity / Dynamic Island nur partiell auf echter Hardware verifiziert; Redesign-Screens (Options, Live Tracking, Export Checkout) noch nicht auf echtem Gerät neu verifiziert
+
+### Beobachtung App Store Connect / Review — Stand 2026-04-30 (historisch)
 - **Zur Version sichtbarer Build**: `52`
 - **Xcode Cloud**: Workflow `Release – Archive & TestFlight` zeigt erfolgreiche Builds `55`, `56` und `57`
-- **Review-Entscheidung**: Build `52` bleibt bewusst in App Review; kein Nachreichen von Build `57` ohne Apple-Feedback oder bestaetigten release-kritischen Fehler
-- **Upload-Blocker**: App Review ist nicht mehr durch fehlenden Upload blockiert
-- **Hardware-Risiko bleibt**: Live Activity / Dynamic Island nur partiell auf echter Hardware verifiziert
+- **Review-Entscheidung**: Build `52` blieb bewusst in App Review bis Build 73 bereit
 
 ### Beobachtung Build 1.0 (44) — Stand 2026-04-29
 - **TestFlight-Verfügbarkeit**: Build 1.0 (44) ist auf iPhone installierbar ✅
@@ -72,22 +79,21 @@ Ausgefuehrt auf: iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C), Xcode 26.3
 - **iPad**: v1 jetzt iPhone-only (`TARGETED_DEVICE_FAMILY = 1`) — kein iPad-Support im Release-Build vorgesehen
 - **Apple Watch**: keine WatchKit-App im Repo — keine Watch-Screenshots nötig
 
-#### ScreenShot-Dateien (für App Store Connect)
+#### Screenshot-Dateien (für App Store Connect) — Zielstand Build 73
 
-| Datei | Größe | Slot |
-|-------|-------|------|
-| `iphone-67/01-import.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
-| `iphone-67/02-overview-map.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
-| `iphone-67/03-days.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
-| `iphone-67/04-insights.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
-| `iphone-67/05-export.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
-| `iphone-67/06-live-recording.png` | 1290×2796 | iPhone 6.7" (bevorzugt) |
-| `iphone-65/01-import.png` | 1242×2688 | iPhone 6.5" |
-| `iphone-65/02-overview-map.png` | 1242×2688 | iPhone 6.5" |
-| `iphone-65/03-days.png` | 1242×2688 | iPhone 6.5" |
-| `iphone-65/04-insights.png` | 1242×2688 | iPhone 6.5" |
-| `iphone-65/05-export.png` | 1242×2688 | iPhone 6.5" |
-| `iphone-65/06-live-recording.png` | 1242×2688 | iPhone 6.5" |
+| Datei | Größe | Slot | Status |
+|-------|-------|------|--------|
+| `iphone-67/01-import.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | vorhanden (altes Layout) |
+| `iphone-67/02-overview-map.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | vorhanden (altes Layout) |
+| `iphone-67/03-days.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | vorhanden (altes Layout) |
+| `iphone-67/04-insights.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | vorhanden (altes Layout) |
+| `iphone-67/05-export.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | **neu aufzunehmen** (Export-Checkout-Redesign) |
+| `iphone-67/06-live-recording.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | **neu aufzunehmen** (Live-Tracking-Redesign) |
+| `iphone-67/07-options.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | **neu aufzunehmen** (Options-Redesign) |
+| `iphone-67/08-day-detail.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | **neu aufzunehmen** (Day-Detail-Map-first) |
+
+**Hinweis**: Alle 8 Slots müssen neu aufgenommen werden — auch 01–04 zeigen teils veraltetes Layout. UITest `testAppStoreScreenshots` erzeugt alle 8 automatisch.
+→ Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
 
 **Empfehlung**: Upload der `iphone-67/`-Dateien (1290×2796) in den "6.7-inch Display"-Slot von App Store Connect. Dieser Slot dient gleichzeitig als Fallback für 6.5-inch-Geräte.
 

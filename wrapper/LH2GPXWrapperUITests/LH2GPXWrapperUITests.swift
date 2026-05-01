@@ -32,6 +32,7 @@ final class LH2GPXWrapperUITests: XCTestCase {
     //   xcrun xcresulttool export --path <result.xcresult> --output-path /tmp/ss --type directory
     // Then copy PNGs to docs/app-store-assets/screenshots/iphone-67/
     //
+    // Slots 01–08 target the redesigned LH2GPX-Dark UI (Build 73+).
     // iPad: run on iPad Pro 13-inch (M4) with deviceFolder = "ipad".
 
     @MainActor
@@ -76,15 +77,38 @@ final class LH2GPXWrapperUITests: XCTestCase {
         if insightsTab.waitForExistence(timeout: 5) { insightsTab.tap(); sleep(2) }
         attach(screenshot(app), name: "04-insights")
 
-        // 05 — Export tab
+        // 05 — Export tab (redesigned checkout with stepper, pills, sticky bar)
         let exportTab = app.tabBars.buttons["Export"]
         if exportTab.waitForExistence(timeout: 5) { exportTab.tap(); sleep(1) }
         attach(screenshot(app), name: "05-export")
 
-        // 06 — Live tab (optional, user-controlled, default OFF — no server URL shown)
+        // 06 — Live tab (redesigned dark layout: Mint polyline, status chips, bottom bar)
         let liveTab = app.tabBars.buttons["Live"]
         if liveTab.waitForExistence(timeout: 5) { liveTab.tap(); sleep(1) }
         attach(screenshot(app), name: "06-live-recording")
+
+        // 07 — Options main screen (redesigned 8-section NavigationLink grid)
+        // Navigate via tab bar "Options" button or accessibility identifier
+        let optionsButton = app.tabBars.buttons.matching(
+            NSPredicate(format: "label CONTAINS 'Options' OR label CONTAINS 'Einstellung'")
+        ).firstMatch
+        if optionsButton.waitForExistence(timeout: 5) {
+            optionsButton.tap(); sleep(1)
+        } else {
+            // Fallback: look for a navigation button labelled Settings/Optionen
+            let settingsBtn = app.buttons.matching(
+                NSPredicate(format: "label CONTAINS 'Options' OR label CONTAINS 'Settings'")
+            ).firstMatch
+            if settingsBtn.waitForExistence(timeout: 3) { settingsBtn.tap(); sleep(1) }
+        }
+        attach(screenshot(app), name: "07-options")
+
+        // 08 — Day Detail (map-first, first available day in demo data)
+        // Return to Days tab and tap the first day row
+        if daysTab.waitForExistence(timeout: 5) { daysTab.tap(); sleep(1) }
+        let firstDayCell = app.cells.firstMatch
+        if firstDayCell.waitForExistence(timeout: 5) { firstDayCell.tap(); sleep(2) }
+        attach(screenshot(app), name: "08-day-detail")
     }
 
     @MainActor
