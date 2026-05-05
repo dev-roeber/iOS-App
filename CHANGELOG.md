@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## [2026-05-05] — feat: UI/UX Redesign Batch 2 — Start + Overview
+
+### Startseite (AppShellRootView)
+
+- `HomeLocalPrivacyRow` (neue private View): kompaktes Privacy-+Formate-Info-Banner zwischen Titel und Import-Button
+  - Schloss-Icon + "Processed locally · JSON, ZIP, GPX, TCX"
+  - Accessibility: `home.localNotice`, vollständiges Label für Screenreader
+  - Kein Account, kein Cloud-Zwang — klar kommuniziert ab dem ersten Öffnen
+- Alle bestehenden Accessibility-Identifier (`home.title`, `home.import.primary`, `home.googleHelp`, `home.demo`) bleiben unverändert
+
+### Übersicht / Overview (AppContentSplitView)
+
+- **Reihenfolge überarbeitet**: Karte jetzt zuerst (vor Zeitraum-Card), dann KPI-Sektion, dann Filter/Zeitraum
+  - Vorher: Status → Zeitraum → Karte → KPI → Highlights → Continue → LiveTracks
+  - Jetzt: Status → Karte → KPI → Zeitraum → Highlights → Continue → LiveTracks
+- **Empty State**: wenn `!session.hasDays && !session.isLoading` → neue `overviewEmptyCallToAction`-Card
+  - "Get Started" Header + Nutzen-Beschreibung + "Import File" CTA-Button
+  - Accessibility: `overview.empty`, `overview.empty.import`
+  - Zeitraum-Card und Continue-Card werden bei leerem State nicht angezeigt
+- **Continue-Card vereinfacht**: "Browse Days" als visuell hervorgehobene primäre Aktion (getönter Hintergrund)
+  - Sekundäre Aktionen (Insights, Export, Import New File) als kleinere Zeilen darunter
+  - Alle bestehenden Accessibility-Identifier bleiben: `overview.continue.days/insights/export/import`
+- **Kein Fake-State**: ausschließlich bestehende Session/Summary/Insights-Quellen genutzt
+
+### Tests
+
+- 19 neue Tests: `StartOverviewRedesignTests` (UIWiringTests.swift) + `AppLanguageSupportRedesignBatch2Tests`
+- `swift test`: **878 Tests, 0 Failures** (+19 Tests)
+
+### Offen — nicht automatisiert prüfbar (Hardware-/Visuell-Verifikation)
+
+- Startseite: visuell auf iPhone 15 Pro Max zu prüfen (Hero + Privacy-Row + Import-Button)
+- Übersicht: Reihenfolge Karte → KPI auf echtem Gerät zu prüfen
+- Übersicht: Empty State CTA auf echtem Gerät zu prüfen
+- Landscape-Verifikation auf echtem Gerät für Start + Overview
+- iPad `regularSplitView` unverändert, visuell ungeprüft
+
+---
+
 ## [2026-05-05] — chore: Verifikations-Batch Sticky Map Workspace
 
 ### Strukturelle Tests für Days-Tab

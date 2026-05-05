@@ -247,3 +247,62 @@ final class AppLanguageSupportMapHeaderStringsTests: XCTestCase {
         )
     }
 }
+
+// MARK: - UI/UX Redesign Batch 2 — Start + Overview strings
+
+final class AppLanguageSupportRedesignBatch2Tests: XCTestCase {
+
+    private let de = AppLanguagePreference.german
+    private let en = AppLanguagePreference.english
+
+    // English identity
+
+    func testEnglishGetStarted() {
+        XCTAssertEqual(en.localized("Get Started"), "Get Started")
+    }
+
+    func testEnglishProcessedLocally() {
+        XCTAssertEqual(en.localized("Processed locally · JSON, ZIP, GPX, TCX"), "Processed locally · JSON, ZIP, GPX, TCX")
+    }
+
+    func testEnglishLocalNoticeAccessibilityLabel() {
+        XCTAssertEqual(
+            en.localized("Data processed locally. Supported formats: JSON, ZIP, GPX, TCX"),
+            "Data processed locally. Supported formats: JSON, ZIP, GPX, TCX"
+        )
+    }
+
+    func testEnglishOverviewEmptyImportCTA() {
+        XCTAssertEqual(
+            en.localized("Import a location history file to explore your journeys, export tracks and see insights."),
+            "Import a location history file to explore your journeys, export tracks and see insights."
+        )
+    }
+
+    // German translations
+
+    func testGermanGetStarted() {
+        XCTAssertEqual(de.localized("Get Started"), "Loslegen")
+    }
+
+    func testGermanProcessedLocally() {
+        XCTAssertEqual(
+            de.localized("Processed locally · JSON, ZIP, GPX, TCX"),
+            "Lokal verarbeitet · JSON, ZIP, GPX, TCX"
+        )
+    }
+
+    func testGermanLocalNoticeAccessibilityLabel() {
+        XCTAssertEqual(
+            de.localized("Data processed locally. Supported formats: JSON, ZIP, GPX, TCX"),
+            "Lokal verarbeitet. Unterstützte Formate: JSON, ZIP, GPX, TCX"
+        )
+    }
+
+    func testGermanOverviewEmptyImportCTA() {
+        XCTAssertEqual(
+            de.localized("Import a location history file to explore your journeys, export tracks and see insights."),
+            "Importiere eine Standortverlaufs-Datei, um Reisen zu erkunden, Tracks zu exportieren und Einblicke zu erhalten."
+        )
+    }
+}

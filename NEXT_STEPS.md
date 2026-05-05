@@ -16,7 +16,7 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
   3. Neuen Build auswählen + neue Screenshots hochladen
   4. Erneut einreichen (`Submit for Review`)
   - Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
-- [ ] **Neue Screenshots aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen → 8 neue PNGs in `docs/app-store-assets/screenshots/iphone-67/` (01–08). Aktuell vorhanden: 01–06 mit altem Layout aus Build 44. **Hinweis**: Screenshots müssen nach diesem Redesign (sticky Map, neue Bottom-Bar) neu aufgenommen werden.
+- [ ] **Neue Screenshots aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen → 8 neue PNGs in `docs/app-store-assets/screenshots/iphone-67/` (01–08). Aktuell vorhanden: 01–06 mit altem Layout aus Build 44. **Hinweis**: Screenshots müssen nach diesem Redesign (Sticky Map, neue Start/Overview, Bottom-Bar) neu aufgenommen werden.
 - [x] Support-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/support.html` (2026-04-30)
 - [x] Privacy-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-30)
 - [x] GitHub Pages fuer `/docs` live und oeffentlich erreichbar (HTTP 200 verifiziert 2026-04-30): `https://dev-roeber.github.io/iOS-App/`, `/support.html`, `/privacy.html`
@@ -24,6 +24,8 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [ ] Live Tracking / Live Tracks Library auf echter Apple-Hardware visuell verifizieren: Sticky Bottom Bar, Mint-Polyline, Status-Chips, Library-Zeilen (Redesign-Screens noch nicht auf echtem Gerät neu verifiziert)
 - [ ] Days-Tab: Landscape-Verifikation auf echtem Gerät — `.safeAreaInset`-Header + Bottom-Bar in Landscape ungeprüft
 - [ ] Days-Tab: iPad-Verifikation — `regularSplitView` nutzt `daysMapHeaderCard` via `AnyView`, visuell ungeprüft
+- [ ] **Startseite**: visuell auf iPhone verifizieren — `HomeLocalPrivacyRow`, Hero-Bereich, Import-Button-Reihenfolge
+- [ ] **Übersicht**: visuell auf iPhone verifizieren — Karte zuerst, KPI direkt darunter, Empty-State-CTA bei keinen Daten
 - [ ] Performance-Smoke-Test auf echtem iPhone mit grosser realer History (>20 MB, Gesamtzeitraum) fuer Overview-/Explore-Karte dokumentieren
 
 ## P1 — Produktverifikation und Ausbau vorhandener Flaechen

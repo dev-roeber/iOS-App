@@ -296,6 +296,8 @@ private struct AppShellEmptyStateView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                HomeLocalPrivacyRow(localize: localize)
+
                 if let message, message.kind == .error {
                     AppMessageCard(message: message)
                 }
@@ -345,6 +347,29 @@ private struct AppShellEmptyStateView: View {
             .frame(maxWidth: 560, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+private struct HomeLocalPrivacyRow: View {
+    let localize: (String) -> String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "lock.shield")
+                .foregroundStyle(Color.green)
+                .font(.caption)
+                .accessibilityHidden(true)
+            Text(localize("Processed locally · JSON, ZIP, GPX, TCX"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityIdentifier("home.localNotice")
+        .accessibilityLabel(localize("Data processed locally. Supported formats: JSON, ZIP, GPX, TCX"))
     }
 }
 

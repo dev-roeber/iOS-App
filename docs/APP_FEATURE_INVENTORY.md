@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-05 (sticky map workspace, Days-Tab redesign)
+Last analysis: 2026-05-05 (UI/UX Redesign Batch 2 — Start + Overview)
 
 Repos in scope:
 - `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper
@@ -24,7 +24,7 @@ LH2GPX is a **public consumer/utility app**. It is not an organization-specific 
 Present:
 - Import-first root screen when no content is loaded
 - import-first root can show a visible recent-files list with reopen, remove-entry and clear-history actions
-- import-first root now uses the visible LH2GPX redesign: large `LH2GPX` title, short subtitle, prominent blue `Import File` primary action, dark help/demo rows and a dark `Recently Used` card
+- import-first root now uses the visible LH2GPX redesign: large `LH2GPX` title, short subtitle, `HomeLocalPrivacyRow` (compact banner: lock icon + "Processed locally · JSON, ZIP, GPX, TCX"), prominent blue `Import File` primary action, dark help/demo rows and a dark `Recently Used` card
 - shared toolbar `Actions` menu for primary app commands
 - compact layout uses `TabView` with `Overview`, `Days`, `Insights`, `Export` and on iOS 17+ `Live`
 - Days-Tab (compact): sticky Map-Workspace via `.safeAreaInset(edge: .top)` — Karte bleibt oben fixiert, scrollt nicht weg; `LHMapHeaderState.isSticky: true` verhindert Ausblenden
@@ -69,11 +69,13 @@ Not present:
 
 Present:
 - overview screen uses the LH2GPX redesign with a large page title, dark cards and true-black background
+- **Layout-Reihenfolge (Redesign Batch 2)**: Status → Karte → KPI → Zeitraum → Highlights → Continue → Live Tracks
 - visible import-status/source card with active file and optional technical disclosure
-- visible global time-range card with current range, reset action and quick chips for `Last 7 Days`, `Last 30 Days`, `Last 90 Days` and `This Year`
-- KPI grid for distance, active days, routes and places
+- visible global time-range card with current range, reset action and quick chips for `Last 7 Days`, `Last 30 Days`, `Last 90 Days` and `This Year` — only shown when `session.hasDays`
+- KPI grid for distance, active days, routes and places — shown immediately below the map
 - highlights card for busiest day, longest distance and most activities plus a direct jump into insights
-- continue/quick-action card for day browsing, insights, export and opening another file
+- continue/quick-action card: "Browse Days" as visually highlighted primary action; Insights, Export, Import New File as secondary rows — only shown when `session.hasDays`
+- **Empty state CTA** (`overviewEmptyCallToAction`): shown when content is loaded but has no day entries — "Get Started" header + import description + "Import File" button; Zeitraum-Card and Continue-Card hidden in this state
 - active-filter banner when export filters are present in metadata
 - overview entry card for the `Saved Live Tracks` local library
 - heatmap entry in the overview is a compact Capsule chip, aligned with the existing filter/status chip language instead of a larger dedicated action card

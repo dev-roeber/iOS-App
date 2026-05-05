@@ -569,24 +569,58 @@ public struct AppContentSplitView: View {
                 hasDays: session.hasDays
             )
 
-            overviewRangeCard
-
+            // Map first — most prominent element when data is present
             if session.hasDays {
                 overviewMapCard
             }
 
+            // KPI strip immediately below the map
             if let overview = projectedOverview, let insights = projectedInsights {
                 overviewKPISection(overview: overview, insights: insights)
+            }
+
+            // Range / filter controls after map and KPIs
+            if session.hasDays {
+                overviewRangeCard
             }
 
             if let insights = projectedInsights {
                 overviewHighlightsCard(insights)
             }
 
-            overviewContinueCard
+            if session.hasDays {
+                overviewContinueCard
+            }
+
+            // Empty state CTA when content is loaded but has no day entries
+            if !session.hasDays && !session.isLoading {
+                overviewEmptyCallToAction
+            }
 
             liveTracksOverviewSection
         }
+    }
+
+    private var overviewEmptyCallToAction: some View {
+        LHCard {
+            VStack(alignment: .leading, spacing: 12) {
+                LHSectionHeader(t("Get Started"))
+                Text(t("Import a location history file to explore your journeys, export tracks and see insights."))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(action: onOpen) {
+                    Label(t("Import File"), systemImage: "doc.badge.plus")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(LH2GPXTheme.primaryBlue)
+                .accessibilityIdentifier("overview.empty.import")
+            }
+        }
+        .accessibilityIdentifier("overview.empty")
     }
 
     private var overviewRangeCard: some View {
@@ -816,14 +850,37 @@ public struct AppContentSplitView: View {
 
     private var overviewContinueCard: some View {
         LHCard {
-            VStack(alignment: .leading, spacing: 14) {
-                LHSectionHeader(t("Continue"))
-                VStack(spacing: 8) {
-                    overviewContinueButton(title: t("Browse Days"), icon: "calendar", action: .days, identifier: "overview.continue.days")
-                    overviewContinueButton(title: t("Open Insights"), icon: "chart.xyaxis.line", action: .insights, identifier: "overview.continue.insights")
-                    overviewContinueButton(title: t("Prepare Export"), icon: "square.and.arrow.up", action: .export, identifier: "overview.continue.export")
-                    overviewContinueButton(title: t("Import New File"), icon: "doc.badge.plus", action: .importFile, identifier: "overview.continue.import")
+            VStack(alignment: .leading, spacing: 10) {
+                // Primary action: Browse Days — visually highlighted
+                Button {
+                    navigate(for: .days)
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "calendar")
+                            .foregroundStyle(LH2GPXTheme.primaryBlue)
+                            .frame(width: 20, alignment: .center)
+                            .accessibilityHidden(true)
+                        Text(t("Browse Days"))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(LH2GPXTheme.primaryBlue.opacity(0.7))
+                            .accessibilityHidden(true)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 14)
+                    .background(LH2GPXTheme.primaryBlue.opacity(0.10))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("overview.continue.days")
+
+                // Secondary actions
+                overviewContinueButton(title: t("Open Insights"), icon: "chart.xyaxis.line", action: .insights, identifier: "overview.continue.insights")
+                overviewContinueButton(title: t("Prepare Export"), icon: "square.and.arrow.up", action: .export, identifier: "overview.continue.export")
+                overviewContinueButton(title: t("Import New File"), icon: "doc.badge.plus", action: .importFile, identifier: "overview.continue.import")
             }
         }
         .accessibilityIdentifier("overview.continue")

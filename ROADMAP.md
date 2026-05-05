@@ -4,6 +4,20 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### UI/UX Redesign Batch 2 — Start + Overview (2026-05-05)
+
+Implementiert und getestet:
+- **Startseite**: `HomeLocalPrivacyRow` — kompaktes Privacy-+Formate-Banner nach dem Titel; kein Account, lokal verarbeitet, JSON/ZIP/GPX/TCX
+- **Übersicht — Reihenfolge**: Karte zuerst (vor Zeitraum/Filter), KPI direkt darunter; Dashboard-Struktur statt verstreuter Karten
+- **Übersicht — Empty State**: `overviewEmptyCallToAction` wenn keine Daten geladen; Zeitraum-Card + Continue-Card bei leerem State ausgeblendet
+- **Continue-Card vereinfacht**: "Browse Days" als visuell hervorgehobene Primär-Aktion; Insights/Export/Import als sekundäre Zeilen
+- 19 neue Tests; Gesamt: **878 Tests, 0 Failures**
+
+Nicht als abgeschlossen markieren:
+- Hardware-Verifikation auf echtem iPhone ausstehend (Start + Overview)
+- Landscape-Verifikation für Start + Overview ausstehend
+- App-Store-Screenshots müssen neu aufgenommen werden (zeigen noch altes Layout)
+
 ### Sticky Map Workspace — Days-Tab (2026-05-05)
 
 Implementiert und verifiziert:

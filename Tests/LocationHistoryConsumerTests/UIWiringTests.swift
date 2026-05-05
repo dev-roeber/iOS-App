@@ -601,6 +601,97 @@ final class UIWiringTests: XCTestCase {
     }
 }
 
+// MARK: - Overview + Start redesign — structural invariants (Batch 2)
+
+/// Verifies the model-layer logic behind the Start and Overview redesign
+/// in UI/UX Redesign Batch 2.  No SwiftUI host required.
+final class StartOverviewRedesignTests: XCTestCase {
+
+    // MARK: Overview empty state — model-layer conditions
+
+    func testEmptyDaySummariesProduceZeroActiveDays() {
+        XCTAssertEqual(StartOverviewPresentation.activeDayCount(in: []), 0,
+            "When no summaries are loaded, activeDayCount must be 0 — overview shows empty CTA")
+    }
+
+    func testEmptySummariesProduceNoHighlight() {
+        XCTAssertNil(StartOverviewPresentation.mostActivitiesHighlight(in: []),
+            "When no summaries are loaded, mostActivitiesHighlight must be nil")
+    }
+
+    func testOnlyInactiveDaysProduceZeroActiveDays() {
+        let inactive = [
+            DaySummary.stub(date: "2024-05-01"),
+            DaySummary.stub(date: "2024-05-02"),
+        ]
+        XCTAssertEqual(StartOverviewPresentation.activeDayCount(in: inactive), 0,
+            "Days without content (hasContent == false) must not count as active")
+    }
+
+    func testActiveDayCountExcludesEmptyDays() {
+        let mixed = [
+            DaySummary.stub(date: "2024-05-01", visitCount: 1),
+            DaySummary.stub(date: "2024-05-02"),
+            DaySummary.stub(date: "2024-05-03", activityCount: 2),
+        ]
+        XCTAssertEqual(StartOverviewPresentation.activeDayCount(in: mixed), 2)
+    }
+
+    // MARK: Overview continue card — navigation routing
+
+    func testBrowseDaysRouteIsCorrectOnCompact() {
+        let route = StartOverviewPresentation.route(for: .days, isCompact: true)
+        XCTAssertEqual(route.selectedTab, 1,
+            "Browse Days must navigate to tab index 1 on compact (iPhone)")
+        XCTAssertFalse(route.presentsExportSheet)
+        XCTAssertFalse(route.callsOnOpen)
+    }
+
+    func testInsightsRouteIsCorrectOnCompact() {
+        let route = StartOverviewPresentation.route(for: .insights, isCompact: true)
+        XCTAssertEqual(route.selectedTab, 2)
+    }
+
+    func testExportRouteOnCompactUsesTab() {
+        let route = StartOverviewPresentation.route(for: .export, isCompact: true)
+        XCTAssertEqual(route.selectedTab, 3)
+        XCTAssertFalse(route.presentsExportSheet,
+            "On compact, Export opens via tab — no sheet")
+    }
+
+    func testExportRouteOnRegularPresentsSheet() {
+        let route = StartOverviewPresentation.route(for: .export, isCompact: false)
+        XCTAssertNil(route.selectedTab)
+        XCTAssertTrue(route.presentsExportSheet,
+            "On regular (iPad), Export opens via sheet — no tab change")
+    }
+
+    func testImportNewFileRouteCallsOnOpen() {
+        let route = StartOverviewPresentation.route(for: .importFile, isCompact: true)
+        XCTAssertTrue(route.callsOnOpen)
+        XCTAssertNil(route.selectedTab)
+        XCTAssertFalse(route.presentsExportSheet)
+    }
+
+    // MARK: Overview range summary — all-time label
+
+    func testRangeSummaryForAllTimePresetIsCorrect() {
+        let filter = HistoryDateRangeFilter(preset: .all)
+        let summary = StartOverviewPresentation.rangeSummary(
+            for: filter, language: .english, locale: Locale(identifier: "en_US")
+        )
+        XCTAssertEqual(summary, "All Time")
+    }
+
+    func testRangeSummaryForAllTimeGermanIsCorrect() {
+        let filter = HistoryDateRangeFilter(preset: .all)
+        let summary = StartOverviewPresentation.rangeSummary(
+            for: filter, language: .german, locale: Locale(identifier: "de_DE")
+        )
+        XCTAssertEqual(summary, "Gesamtzeitraum")
+    }
+}
+
 // MARK: - Days compact layout — structural invariants
 
 /// Verifies that the Days-tab sticky-map workspace has the correct defaults
