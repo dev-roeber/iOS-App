@@ -335,7 +335,7 @@ final class ExportPresentationTests: XCTestCase {
             format: .kml,
             language: .german
         )
-        XCTAssertTrue(summary.contains("Eintrag"))
+        XCTAssertTrue(summary.contains("Live-Track"))
         XCTAssertTrue(summary.contains("KML"))
     }
 
@@ -427,6 +427,68 @@ final class ExportPresentationTests: XCTestCase {
         } else {
             XCTFail("Expected noExportableContent")
         }
+    }
+
+    func testReviewSnapshotReportsEmptySelectionState() {
+        let review = ExportPresentation.reviewSnapshot(
+            importedExport: nil,
+            selection: ExportSelectionState(),
+            recordedTracks: [],
+            mode: .tracks
+        )
+
+        XCTAssertEqual(review.readiness, .nothingSelected)
+        XCTAssertEqual(review.selectedSourceCount, 0)
+        XCTAssertEqual(review.pointCount, 0)
+    }
+
+    func testReviewSnapshotSummarizesSelectedImportedDay() {
+        let export = exportWith(days: """
+        {
+          "date":"2024-05-01",
+          "visits":[{"lat":48.0,"lon":11.0,"start_time":"2024-05-01T08:00:00Z","end_time":"2024-05-01T08:30:00Z"}],
+          "activities":[],
+          "paths":[
+            {"activity_type":"WALKING","distance_m":700,"points":[
+              {"lat":48.0,"lon":11.0,"time":"2024-05-01T08:00:00Z","accuracy_m":10},
+              {"lat":48.001,"lon":11.001,"time":"2024-05-01T08:10:00Z","accuracy_m":8}
+            ]}
+          ]
+        }
+        """)
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+
+        let review = ExportPresentation.reviewSnapshot(
+            importedExport: export,
+            selection: selection,
+            recordedTracks: [],
+            mode: .tracks
+        )
+
+        XCTAssertEqual(review.selectedDayCount, 1)
+        XCTAssertEqual(review.selectedRecordedTrackCount, 0)
+        XCTAssertEqual(review.routeCount, 1)
+        XCTAssertEqual(review.pointCount, 2)
+        XCTAssertEqual(review.selectedDates, ["2024-05-01"])
+    }
+
+    func testSelectionSummaryUsesDayAndTrackLabels() {
+        XCTAssertEqual(
+            ExportPresentation.selectionSummary(
+                selectedDayCount: 3,
+                selectedRecordedTrackCount: 1
+            ),
+            "3 days + 1 live track"
+        )
+        XCTAssertEqual(
+            ExportPresentation.selectionSummary(
+                selectedDayCount: 2,
+                selectedRecordedTrackCount: 1,
+                language: .german
+            ),
+            "2 Tage + 1 Live-Track"
+        )
     }
 
     private func exportWith(days jsonDays: String) -> AppExport {

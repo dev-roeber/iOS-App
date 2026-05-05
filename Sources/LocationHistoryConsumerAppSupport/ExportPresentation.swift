@@ -15,6 +15,20 @@ enum ExportReadiness: Equatable {
 }
 
 enum ExportPresentation {
+    struct ReviewSnapshot: Equatable {
+        let readiness: ExportReadiness
+        let selectedDayCount: Int
+        let selectedRecordedTrackCount: Int
+        let routeCount: Int
+        let waypointCount: Int
+        let pointCount: Int
+        let selectedDates: [String]
+
+        var selectedSourceCount: Int {
+            selectedDayCount + selectedRecordedTrackCount
+        }
+    }
+
     static func readiness(
         importedExport: AppExport?,
         selection: ExportSelectionState,
@@ -228,18 +242,19 @@ enum ExportPresentation {
         format: ExportFormat,
         language: AppLanguagePreference = .english
     ) -> String {
-        let snapshot = ExportSelectionContent.snapshot(
+        let review = reviewSnapshot(
             importedExport: importedExport,
             selection: selection,
             recordedTracks: recordedTracks,
             queryFilter: queryFilter,
             mode: mode
         )
-        guard snapshot.selectedSourceCount > 0 else { return "" }
-        let count = snapshot.selectedSourceCount
-        let sourceLabel = language.isGerman
-            ? "\(count) \(count == 1 ? "Eintrag" : "Einträge")"
-            : "\(count) item\(count == 1 ? "" : "s")"
+        guard review.selectedSourceCount > 0 else { return "" }
+        let sourceLabel = selectionSummary(
+            selectedDayCount: review.selectedDayCount,
+            selectedRecordedTrackCount: review.selectedRecordedTrackCount,
+            language: language
+        )
         return "\(sourceLabel) · \(format.rawValue)"
     }
 
@@ -300,5 +315,78 @@ enum ExportPresentation {
             }
         }
         return parts.joined(separator: language.isGerman ? " und " : " and ")
+    }
+
+    static func reviewSnapshot(
+        importedExport: AppExport?,
+        selection: ExportSelectionState,
+        recordedTracks: [RecordedTrack],
+        queryFilter: AppExportQueryFilter? = nil,
+        mode: ExportMode
+    ) -> ReviewSnapshot {
+        let readiness = readiness(
+            importedExport: importedExport,
+            selection: selection,
+            recordedTracks: recordedTracks,
+            queryFilter: queryFilter,
+            mode: mode
+        )
+        let snapshot = ExportSelectionContent.snapshot(
+            importedExport: importedExport,
+            selection: selection,
+            recordedTracks: recordedTracks,
+            queryFilter: queryFilter,
+            mode: mode
+        )
+        let exportDays = ExportSelectionContent.exportDays(
+            importedExport: importedExport,
+            selection: selection,
+            recordedTracks: recordedTracks,
+            queryFilter: queryFilter
+        )
+        let pointCount = exportDays.reduce(0) { partial, day in
+            partial + day.paths.reduce(0) { $0 + $1.points.count }
+        }
+        let importedDates = exportDays
+            .map(\.date)
+            .filter { selection.isSelected($0) }
+        let recordedDates = recordedTracks
+            .filter { selection.isSelected(recordedTrackID: $0.id) }
+            .map(\.dayKey)
+        return ReviewSnapshot(
+            readiness: readiness,
+            selectedDayCount: snapshot.selectedDayCount,
+            selectedRecordedTrackCount: snapshot.selectedRecordedTrackCount,
+            routeCount: snapshot.routeCount,
+            waypointCount: snapshot.waypointCount,
+            pointCount: pointCount,
+            selectedDates: Array(Set(importedDates + recordedDates)).sorted()
+        )
+    }
+
+    static func selectionSummary(
+        selectedDayCount: Int,
+        selectedRecordedTrackCount: Int,
+        language: AppLanguagePreference = .english
+    ) -> String {
+        var parts: [String] = []
+        if selectedDayCount > 0 {
+            if language.isGerman {
+                parts.append("\(selectedDayCount) \(selectedDayCount == 1 ? "Tag" : "Tage")")
+            } else {
+                parts.append("\(selectedDayCount) day\(selectedDayCount == 1 ? "" : "s")")
+            }
+        }
+        if selectedRecordedTrackCount > 0 {
+            if language.isGerman {
+                parts.append("\(selectedRecordedTrackCount) \(selectedRecordedTrackCount == 1 ? "Live-Track" : "Live-Tracks")")
+            } else {
+                parts.append("\(selectedRecordedTrackCount) live track\(selectedRecordedTrackCount == 1 ? "" : "s")")
+            }
+        }
+        if parts.isEmpty {
+            return language.isGerman ? "Keine Auswahl" : "No selection"
+        }
+        return parts.joined(separator: " + ")
     }
 }

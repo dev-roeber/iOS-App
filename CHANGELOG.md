@@ -1,5 +1,74 @@
 # CHANGELOG
 
+## [2026-05-05] — feat: UI/UX Redesign Batch 3 — Export Checkout
+
+### Export-Flow (`AppExportView`)
+
+- Export als klarer Review-/Checkout-Flow neu strukturiert, ohne neue Export-Engine oder Builder:
+  - Header mit kurzer Checkout-Erklärung statt technischem Wizard-Fokus
+  - Abschnitt **`Review Selection`** als primärer Prüfschritt
+  - Abschnitt **`Preview`** zeigt weiter die bestehende Map-Vorschau, fällt aber bei fehlender stabiler Geometrie sauber auf eine kompakte Summary zurück
+  - Abschnitt **`Choose Format`** bleibt auf den repo-wahren Formaten `GPX`, `KMZ`, `KML`, `GeoJSON`, `CSV`
+  - bestehende Inhaltswahl (`Tracks` / `Waypoints` / `Both`) bleibt erhalten, ist aber sprachlich als „What to include" sekundär eingeordnet
+  - neuer Abschnitt **`Export Destination`** erklärt den echten Systempfad: generierte Datei → systemseitig sichern oder teilen
+- Kein doppelter Primärbutton im Content: nur die sticky Bottom-Bar enthält die finale Primäraktion
+
+### Auswahl prüfen / Review-Logik
+
+- `ExportPresentation.reviewSnapshot(...)` neu:
+  - bündelt echte Export-Review-Daten aus bestehender Auswahl
+  - enthält `readiness`, ausgewählte Tage/Live-Tracks, Routen, Wegpunkte, Punkte und Datumsbereich
+  - keine Fake-Metriken; Werte kommen aus bestehender `ExportSelectionContent.exportDays(...)`-Projektion
+- `ExportPresentation.selectionSummary(...)` neu:
+  - Bottom-Bar- und Review-Zusammenfassung jetzt als `Tage + Live-Tracks` statt generischer `Einträge`
+- `AppExportView` zeigt im Review-Bereich jetzt:
+  - ausgewählte Tage
+  - Zeitraum
+  - Tracks
+  - Punkte
+  - Distanz-/Wegpunkt-/Routenauswahl-Badges
+  - Warning-Banner bei ungültiger Auswahl (`nothingSelected` / `noExportableContent`)
+
+### Navigation / Rückführung
+
+- `AppExportView` akzeptiert jetzt optionale Callbacks `onOpenImport` und `onOpenDays`
+- Compact-Export-Tab in `AppContentSplitView` verdrahtet:
+  - `Open Days` springt zurück auf Tab `Days`
+  - `Import File` nutzt weiter den bestehenden Import-Callback
+- Regular-Width Export-Sheet bleibt korrekt rückführbar:
+  - Import-CTA nutzt weiter `onOpen`
+  - Rückweg zu bestehenden Flächen bleibt über bestehendes Sheet-/Dismiss-Verhalten erhalten
+
+### Bestehende Export-Verdrahtung unverändert
+
+- unverändert echte Exportpipeline:
+  - `ExportSelectionState`
+  - `ExportSelectionContent.exportDays(...)`
+  - `GPXBuilder`, `KMLBuilder`, `KMZBuilder`, `GeoJSONBuilder`, `CSVBuilder`
+  - `ExportDocument` / `KMZExportDocument`
+  - `.fileExporter`
+- keine neue Serverfunktion
+- keine Parser-/Converter-/Contract-Änderung
+- keine parallele Selection-State-Kopie
+
+### Tests
+
+- `ExportPresentationTests` erweitert:
+  - Empty-Selection-Review-Snapshot
+  - Review-Snapshot mit realer Auswahl
+  - Auswahlsummary `days + live track`
+- `swift test`: **881 Tests, 0 Failures** (+3 Tests)
+- `git diff --check`: sauber
+
+### Offen — nicht als erledigt markieren
+
+- visuelle iPhone-Verifikation des neuen Export-Checkout-Flows ausstehend
+- Landscape-Verifikation des Export-Tabs ausstehend
+- iPad-/regular-width visuelle Prüfung des Export-Sheets ausstehend
+- App-Store-Screenshots weiter offen; Slot `05-export.png` muss nach diesem Checkout-Umbau neu aufgenommen werden
+
+---
+
 ## [2026-05-05] — feat: UI/UX Redesign Batch 2 — Start + Overview
 
 ### Startseite (AppShellRootView)

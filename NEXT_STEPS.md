@@ -26,6 +26,7 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [ ] Days-Tab: iPad-Verifikation — `regularSplitView` nutzt `daysMapHeaderCard` via `AnyView`, visuell ungeprüft
 - [ ] **Startseite**: visuell auf iPhone verifizieren — `HomeLocalPrivacyRow`, Hero-Bereich, Import-Button-Reihenfolge
 - [ ] **Übersicht**: visuell auf iPhone verifizieren — Karte zuerst, KPI direkt darunter, Empty-State-CTA bei keinen Daten
+- [ ] **Export**: visuell auf iPhone verifizieren — Review-/Checkout-Struktur, Preview-Fallback, Bottom-Bar-CTA, Rückführung zu Days/Import
 - [ ] Performance-Smoke-Test auf echtem iPhone mit grosser realer History (>20 MB, Gesamtzeitraum) fuer Overview-/Explore-Karte dokumentieren
 
 ## P1 — Produktverifikation und Ausbau vorhandener Flaechen
@@ -38,7 +39,7 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 
 ## P2 — Nachgelagerte Optimierung
 
-- [x] Design-System: Export-Checkout-Redesign abgeschlossen (2026-05-01); alle Screens Start/Overview/Days/DayDetail/Insights/Export jetzt im LH2GPX-Dark-Redesign
+- [x] Design-System: Export-Checkout-Redesign Batch 3 implementiert (2026-05-05); Export nutzt jetzt klare Review-/Checkout-Struktur mit Auswahlprüfung, Preview-Fallback, Formatwahl, Exportziel und finaler Bottom-Bar-CTA
 - [x] Design-System: Live-Tracking-Redesign abgeschlossen (2026-05-01); Live Tracking + Live Tracks Library jetzt im LH2GPX-Dark-Redesign
 - [x] Design-System: Options + Widget/Live Settings Redesign abgeschlossen (2026-05-01); alle 8 Sections modular, RecordingPreset-Wiring, Token nur als SecureField, 830 Tests
 - [x] Final Truth-Sync: fehlende DE-Strings ergänzt (Invalid URL, Widget & Live Activity, Reachable/Unreachable, Test Connection, Automatic Widget Update etc.), widgetAutoUpdate/maximumRecordingGapSeconds getestet; 832 Tests (2026-05-01)

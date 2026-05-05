@@ -294,7 +294,12 @@ public struct AppContentSplitView: View {
             .tag(2)
 
             NavigationStack {
-                AppExportView(session: $session, liveLocation: liveLocation)
+                AppExportView(
+                    session: $session,
+                    liveLocation: liveLocation,
+                    onOpenImport: onOpen,
+                    onOpenDays: { selectedTab = 1 }
+                )
                     .navigationTitle(t("Export"))
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
@@ -1245,7 +1250,11 @@ public struct AppContentSplitView: View {
             NavigationStack {
                 switch sheet {
                 case .export:
-                    AppExportView(session: $session, liveLocation: liveLocation)
+                    AppExportView(
+                        session: $session,
+                        liveLocation: liveLocation,
+                        onOpenImport: onOpen
+                    )
                         .environmentObject(preferences)
                         .navigationTitle(t("Export"))
                         .toolbar {

@@ -32,6 +32,7 @@ private enum ExportAreaFilterOption: String, Identifiable, CaseIterable {
 }
 
 public struct AppExportView: View {
+    @Environment(\.dismiss) private var dismiss
     private struct ImportedSelectionPruneTrigger: Equatable {
         let fromDate: String
         let toDate: String
@@ -50,6 +51,8 @@ public struct AppExportView: View {
     @EnvironmentObject private var preferences: AppPreferences
     @Binding var session: AppSessionState
     @ObservedObject private var liveLocation: LiveLocationFeatureModel
+    private let onOpenImport: (() -> Void)?
+    private let onOpenDays: (() -> Void)?
     @State private var selectedFormat: ExportFormat = .gpx
     @State private var selectedMode: ExportMode = .tracks
     @State private var selectedFromDate: String = ""
@@ -72,9 +75,16 @@ public struct AppExportView: View {
     @State private var exportContentType: UTType = .gpx
     #endif
 
-    public init(session: Binding<AppSessionState>, liveLocation: LiveLocationFeatureModel) {
+    public init(
+        session: Binding<AppSessionState>,
+        liveLocation: LiveLocationFeatureModel,
+        onOpenImport: (() -> Void)? = nil,
+        onOpenDays: (() -> Void)? = nil
+    ) {
         self._session      = session
         self._liveLocation = ObservedObject(wrappedValue: liveLocation)
+        self.onOpenImport  = onOpenImport
+        self.onOpenDays    = onOpenDays
     }
 
     private func t(_ english: String) -> String {
@@ -117,8 +127,6 @@ public struct AppExportView: View {
                     titleHeaderSection
                         .accessibilityIdentifier("export.title")
 
-                    stepIndicatorView(selection: selection, summaries: summaries)
-
                     if insightsExportDrilldownDescription != nil {
                         insightsDrilldownCard
                     }
@@ -128,12 +136,10 @@ public struct AppExportView: View {
                             .accessibilityIdentifier("export.range.card")
                     }
 
-                    if !selection.isEmpty {
-                        previewCard(selection: selection, summaries: summaries)
-                    }
-
                     selectionSummaryCard(selection: selection, summaries: summaries, proxy: proxy)
                         .accessibilityIdentifier("export.selection.card")
+
+                    previewCard(selection: selection, summaries: summaries)
 
                     if !summaries.isEmpty {
                         daysCard(summaries: summaries, selection: selection)
@@ -154,6 +160,8 @@ public struct AppExportView: View {
                         contentCard
                             .accessibilityIdentifier("export.content.card")
                     }
+
+                    exportTargetCard
 
                     if hasImportedExport {
                         LHExportFilterDisclosure(
@@ -176,34 +184,12 @@ public struct AppExportView: View {
 
     @ViewBuilder
     private var titleHeaderSection: some View {
-        Text(t("Export"))
-            .font(.title.weight(.bold))
-    }
-
-    // MARK: - Step Indicator
-
-    @ViewBuilder
-    private func stepIndicatorView(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
-        LHExportStepIndicator(
-            labels: [t("Selection"), t("Format"), t("Content"), t("Done")],
-            currentStep: currentExportStep(selection: selection, summaries: summaries)
-        )
-    }
-
-    private func currentExportStep(
-        selection: ExportSelectionState,
-        summaries: [DaySummary]
-    ) -> LHExportStepIndicator.Step {
-        switch ExportPresentation.readiness(
-            importedExport: session.content?.export,
-            selection: selection,
-            recordedTracks: liveLocation.recordedTracks,
-            queryFilter: effectiveQueryFilter,
-            mode: effectiveExportMode
-        ) {
-        case .nothingSelected:      return .selection
-        case .noExportableContent:  return .format
-        case .ready:                return .done
+        VStack(alignment: .leading, spacing: 8) {
+            Text(t("Export"))
+                .font(.title.weight(.bold))
+            Text(t("Review your selection, confirm the file format and then export a real generated file."))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -266,7 +252,14 @@ public struct AppExportView: View {
 
         LHCard {
             LHSectionHeader(t("Preview"))
-            if previewData.hasMapContent {
+            if selection.isEmpty {
+                Label(
+                    t("Select at least one day or saved live track to unlock the preview."),
+                    systemImage: "map"
+                )
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+            } else if previewData.hasMapContent {
                 if #available(iOS 17.0, macOS 14.0, *) {
                     AppExportPreviewMapView(previewData: previewData)
                         .accessibilityIdentifier("export.map.preview")
@@ -280,22 +273,7 @@ public struct AppExportView: View {
                 }
                 MapSectionSupplementaryView(presentation: presentation)
             } else {
-                Label(
-                    t("The current selection has no routes with exportable geometry to preview."),
-                    systemImage: "map"
-                )
-                .font(.subheadline.weight(.medium))
-                Text(ExportPresentation.helperMessage(
-                    importedExport: session.content?.export,
-                    selection: selection,
-                    recordedTracks: liveLocation.recordedTracks,
-                    format: selectedFormat,
-                    queryFilter: effectiveQueryFilter,
-                    mode: effectiveExportMode,
-                    language: preferences.appLanguage
-                ))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                compactPreviewSummary(selection: selection, summaries: summaries)
             }
         }
     }
@@ -308,7 +286,7 @@ public struct AppExportView: View {
         summaries: [DaySummary],
         proxy: ScrollViewProxy
     ) -> some View {
-        let snapshot = ExportSelectionContent.snapshot(
+        let review = ExportPresentation.reviewSnapshot(
             importedExport: session.content?.export,
             selection: selection,
             recordedTracks: liveLocation.recordedTracks,
@@ -320,20 +298,22 @@ public struct AppExportView: View {
         LHCard {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(selectionSummaryTitle(snapshot: snapshot))
+                    Text(t("Review Selection"))
                         .font(.subheadline.weight(.semibold))
-                    if snapshot.selectedSourceCount > 0 {
-                        Text(exportFilenamePreview(selection: selection, summaries: summaries))
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.secondary)
-                    }
+                    Text(selectionSummarySubtitle(review: review))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
-                if !summaries.isEmpty {
+                if !selection.isEmpty {
                     Button {
-                        withAnimation { proxy.scrollTo("export.days.section", anchor: .top) }
+                        if !summaries.isEmpty {
+                            withAnimation { proxy.scrollTo("export.days.section", anchor: .top) }
+                        } else {
+                            openDaysReview()
+                        }
                     } label: {
-                        Label(t("Edit Selection"), systemImage: "pencil")
+                        Label(t("Review in Days"), systemImage: "calendar")
                             .font(.caption.weight(.medium))
                     }
                     .buttonStyle(.bordered)
@@ -342,8 +322,7 @@ public struct AppExportView: View {
                 }
             }
 
-            if snapshot.selectedSourceCount > 0 {
-                let selectedSummaries = summaries.filter { selection.isSelected($0.date) }
+            if review.selectedSourceCount > 0 {
                 LazyVGrid(
                     columns: [GridItem(.flexible()), GridItem(.flexible())],
                     spacing: 10
@@ -351,38 +330,37 @@ public struct AppExportView: View {
                     LHMetricCard(
                         icon: "calendar",
                         label: t("Days"),
-                        value: "\(snapshot.selectedDayCount)",
+                        value: "\(review.selectedDayCount)",
                         color: LH2GPXTheme.primaryBlue
                     )
                     LHMetricCard(
                         icon: "location.north.line",
-                        label: t("Routes"),
-                        value: "\(selectedSummaries.reduce(0) { $0 + $1.pathCount })",
+                        label: t("Tracks"),
+                        value: "\(review.routeCount)",
                         color: LH2GPXTheme.routeOrange
                     )
                     LHMetricCard(
                         icon: "calendar.badge.clock",
                         label: t("Period"),
-                        value: selectionPeriodLabel(selection: selection, summaries: summaries),
+                        value: selectionPeriodLabel(review: review),
                         color: LH2GPXTheme.distancePurple
                     )
                     LHMetricCard(
-                        icon: "mappin.and.ellipse",
-                        label: t("Places"),
-                        value: "\(selectedSummaries.reduce(0) { $0 + $1.visitCount })",
+                        icon: "point.topleft.down.curvedto.point.bottomright.up",
+                        label: t("Points"),
+                        value: "\(review.pointCount)",
                         color: LH2GPXTheme.liveMint
                     )
                 }
 
-                // Badge row for routes/waypoints/custom-selection/distance
-                if snapshot.routeCount > 0 || snapshot.waypointCount > 0 || distance > 0 || selection.hasExplicitRouteSelection {
+                if review.routeCount > 0 || review.waypointCount > 0 || distance > 0 || selection.hasExplicitRouteSelection {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            if snapshot.routeCount > 0 {
-                                exportSummaryBadge(title: routeCountText(snapshot.routeCount), systemImage: "location.north.line")
+                            if review.routeCount > 0 {
+                                exportSummaryBadge(title: routeCountText(review.routeCount), systemImage: "location.north.line")
                             }
-                            if snapshot.waypointCount > 0 {
-                                exportSummaryBadge(title: waypointCountText(snapshot.waypointCount), systemImage: "mappin.and.ellipse")
+                            if review.waypointCount > 0 {
+                                exportSummaryBadge(title: waypointCountText(review.waypointCount), systemImage: "mappin.and.ellipse")
                             }
                             if selection.hasExplicitRouteSelection {
                                 exportSummaryBadge(
@@ -398,6 +376,33 @@ public struct AppExportView: View {
                             }
                         }
                     }
+                }
+
+                Text(exportFilenamePreview(selection: selection, summaries: summaries))
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.secondary)
+
+                if let readinessMessage = invalidSelectionMessage(review: review) {
+                    LHContextBar(
+                        message: readinessMessage,
+                        systemImage: "exclamationmark.triangle.fill",
+                        tint: .orange
+                    ) {
+                        openDaysReview()
+                    }
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label(
+                        t("No exportable days or tracks are selected yet."),
+                        systemImage: "square.and.arrow.up.trianglebadge.exclamationmark"
+                    )
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    Text(t("Start from Days to pick one or more dates, or import a file first if your history is still empty."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    selectionFallbackActions
                 }
             }
         }
@@ -488,7 +493,7 @@ public struct AppExportView: View {
     @ViewBuilder
     private var formatCard: some View {
         LHCard {
-            LHSectionHeader(t("Export Format"))
+            LHSectionHeader(t("Choose Format"))
             LazyVGrid(
                 columns: [GridItem(.flexible()), GridItem(.flexible())],
                 spacing: 10
@@ -542,7 +547,7 @@ public struct AppExportView: View {
     @ViewBuilder
     private var contentCard: some View {
         LHCard {
-            LHSectionHeader(t("Content"))
+            LHSectionHeader(t("What to include"))
             VStack(spacing: 8) {
                 ForEach(ExportMode.allCases) { mode in
                     modePill(mode)
@@ -593,6 +598,7 @@ public struct AppExportView: View {
     @ViewBuilder
     private var csvNoteCard: some View {
         LHCard {
+            LHSectionHeader(t("What to include"))
             Label(
                 t("CSV always exports the visible table rows for visits, activities and routes."),
                 systemImage: "tablecells"
@@ -600,6 +606,26 @@ public struct AppExportView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
+    }
+
+    @ViewBuilder
+    private var exportTargetCard: some View {
+        LHCard {
+            LHSectionHeader(t("Export Destination"))
+            VStack(alignment: .leading, spacing: 10) {
+                Label(t("Save or Share"), systemImage: "square.and.arrow.up")
+                    .font(.subheadline.weight(.semibold))
+                Text(exportTargetDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if !hasImportedExport && !liveLocation.recordedTracks.isEmpty {
+                    Text(t("Saved live tracks are exported through the same system sheet and remain local unless you explicitly share the generated file."))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .accessibilityIdentifier("export.target.card")
     }
 
     // MARK: - Filter Content (inside LHExportFilterDisclosure)
@@ -890,6 +916,67 @@ public struct AppExportView: View {
             .clipShape(Capsule())
     }
 
+    @ViewBuilder
+    private func compactPreviewSummary(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
+        let review = ExportPresentation.reviewSnapshot(
+            importedExport: session.content?.export,
+            selection: selection,
+            recordedTracks: liveLocation.recordedTracks,
+            queryFilter: effectiveQueryFilter,
+            mode: effectiveExportMode
+        )
+
+        VStack(alignment: .leading, spacing: 10) {
+            Label(
+                t("No stable map preview is available for the current selection."),
+                systemImage: "map"
+            )
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+
+            Text(ExportPresentation.helperMessage(
+                importedExport: session.content?.export,
+                selection: selection,
+                recordedTracks: liveLocation.recordedTracks,
+                format: selectedFormat,
+                queryFilter: effectiveQueryFilter,
+                mode: effectiveExportMode,
+                language: preferences.appLanguage
+            ))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            if review.selectedSourceCount > 0 {
+                HStack(spacing: 8) {
+                    exportSummaryBadge(title: selectionPeriodLabel(review: review), systemImage: "calendar")
+                    if review.routeCount > 0 {
+                        exportSummaryBadge(title: routeCountText(review.routeCount), systemImage: "location.north.line")
+                    }
+                    if review.pointCount > 0 {
+                        exportSummaryBadge(title: pointCountText(review.pointCount), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var selectionFallbackActions: some View {
+        HStack(spacing: 10) {
+            Button(t("Open Days")) {
+                openDaysReview()
+            }
+            .buttonStyle(.borderedProminent)
+
+            if let onOpenImport {
+                Button(t("Import File")) {
+                    onOpenImport()
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
     // MARK: - Empty State
 
     private var emptyState: some View {
@@ -904,6 +991,7 @@ public struct AppExportView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+            selectionFallbackActions
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(32)
@@ -984,10 +1072,6 @@ public struct AppExportView: View {
         }
     }
 
-    private func selectedRecordedTracks(selection: ExportSelectionState) -> [RecordedTrack] {
-        liveLocation.recordedTracks.filter { selection.isSelected(recordedTrackID: $0.id) }
-    }
-
     private func exportFilenamePreview(selection: ExportSelectionState, summaries: [DaySummary]) -> String {
         ExportPresentation.suggestedFilename(
             selection: selection,
@@ -998,9 +1082,8 @@ public struct AppExportView: View {
         )
     }
 
-    private func selectionPeriodLabel(selection: ExportSelectionState, summaries: [DaySummary]) -> String {
-        let dates = summaries.filter { selection.isSelected($0.date) }.map(\.date).sorted()
-        guard let first = dates.first, let last = dates.last else { return "–" }
+    private func selectionPeriodLabel(review: ExportPresentation.ReviewSnapshot) -> String {
+        guard let first = review.selectedDates.first, let last = review.selectedDates.last else { return "–" }
         if first == last { return String(first.prefix(7)) }
         return "\(first.prefix(7)) – \(last.prefix(7))"
     }
@@ -1012,25 +1095,48 @@ public struct AppExportView: View {
         return "\(explicitDayCount) day\(explicitDayCount == 1 ? "" : "s") with custom routes"
     }
 
-    private func selectionSummaryTitle(snapshot: ExportSelectionSnapshot) -> String {
-        if snapshot.selectedSourceCount == 0 {
-            return preferences.appLanguage.isGerman
-                ? "Inhalt für den Export auswählen"
-                : "Select content for export"
+    private func selectionSummarySubtitle(review: ExportPresentation.ReviewSnapshot) -> String {
+        if review.selectedSourceCount == 0 {
+            return t("Choose the days or saved live tracks you want to review before exporting.")
         }
-        if snapshot.selectedDayCount > 0 && snapshot.selectedRecordedTrackCount == 0 {
-            return preferences.appLanguage.isGerman
-                ? "\(snapshot.selectedDayCount) importierte \(snapshot.selectedDayCount == 1 ? "Tag" : "Tage") ausgewählt"
-                : "\(snapshot.selectedDayCount) imported day\(snapshot.selectedDayCount == 1 ? "" : "s") selected"
+        return ExportPresentation.selectionSummary(
+            selectedDayCount: review.selectedDayCount,
+            selectedRecordedTrackCount: review.selectedRecordedTrackCount,
+            language: preferences.appLanguage
+        )
+    }
+
+    private func invalidSelectionMessage(review: ExportPresentation.ReviewSnapshot) -> String? {
+        switch review.readiness {
+        case .ready:
+            return nil
+        case .nothingSelected:
+            return t("No exportable days or tracks are selected yet.")
+        case .noExportableContent:
+            return ExportPresentation.disabledReason(
+                importedExport: session.content?.export,
+                selection: session.exportSelection,
+                recordedTracks: liveLocation.recordedTracks,
+                queryFilter: effectiveQueryFilter,
+                mode: effectiveExportMode,
+                language: preferences.appLanguage
+            )
         }
-        if snapshot.selectedDayCount == 0 {
-            return preferences.appLanguage.isGerman
-                ? "\(snapshot.selectedRecordedTrackCount) gespeicherte \(snapshot.selectedRecordedTrackCount == 1 ? "Live-Track" : "Live-Tracks") ausgewählt"
-                : "\(snapshot.selectedRecordedTrackCount) saved live track\(snapshot.selectedRecordedTrackCount == 1 ? "" : "s") selected"
+    }
+
+    private var exportTargetDescription: String {
+        if preferences.appLanguage.isGerman {
+            return "Nach dem Tippen auf Export öffnet die Systemfreigabe den echten \(selectedFormat.rawValue)-Export. Dort kannst du die Datei in Dateien sichern oder direkt teilen."
         }
-        return preferences.appLanguage.isGerman
-            ? "\(snapshot.selectedDayCount) importierte \(snapshot.selectedDayCount == 1 ? "Tag" : "Tage") + \(snapshot.selectedRecordedTrackCount) gespeicherte \(snapshot.selectedRecordedTrackCount == 1 ? "Live-Track" : "Live-Tracks") ausgewählt"
-            : "\(snapshot.selectedDayCount) imported day\(snapshot.selectedDayCount == 1 ? "" : "s") + \(snapshot.selectedRecordedTrackCount) saved live track\(snapshot.selectedRecordedTrackCount == 1 ? "" : "s") selected"
+        return "After you tap Export, the system sheet opens the real generated \(selectedFormat.rawValue) file so you can save it to Files or share it directly."
+    }
+
+    private func openDaysReview() {
+        if let onOpenDays {
+            onOpenDays()
+            return
+        }
+        dismiss()
     }
 
     private func prepareExport(selection: ExportSelectionState, summaries: [DaySummary]) {

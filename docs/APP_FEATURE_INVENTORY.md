@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-05 (UI/UX Redesign Batch 2 — Start + Overview)
+Last analysis: 2026-05-05 (UI/UX Redesign Batch 3 — Export Checkout)
 
 Repos in scope:
 - `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper
@@ -278,23 +278,26 @@ Present:
 - saved live tracks can be selected in the same export flow
 - visible global time-range section clarifies that export uses the active app-wide range before local export filters
 - local export filters for imported history by date window, maximum accuracy, required content, activity type, bounding box and polygon
-- export mode picker for `Tracks`, `Waypoints` and `Both`
-- export preview map for the current selection with route and waypoint context
+- export mode picker for `Tracks`, `Waypoints` and `Both` remains present, but is now secondary under `What to include`
+- export preview map for the current selection with route and waypoint context; if the current selection has no stable exportable geometry, the UI falls back to a compact summary instead of rendering a fake map
 - system `fileExporter` flow
 - GPX, KMZ, KML, GeoJSON and CSV generation from selected imported days and selected saved live tracks
 - waypoint export from imported visits plus activity start/end coordinates
 - suggested export filename based on selected days, saved tracks and the active format
-- export summary card with selected source count, route/waypoint count, distance total and filename preview
+- export review card with selected days, selected saved live tracks, route/waypoint/point counts, period summary, distance badges and filename preview
 - disabled export button when nothing is selected or the active mode has no exportable content
 - explicit disabled-reason messaging and clearer marking of days without exportable route data
 - day-detail route subset selections flow into export summary, distance totals and exported imported-day content
-- **Export Checkout Redesign (2026-05-01):** `ScrollView`+`LHPageScaffold` layout replacing the previous `List`-based layout
-- `LHExportStepIndicator` — 4-step linear progress indicator (Auswahl / Format / Inhalt / Fertig) with completed/active/pending node states
-- `LHExportBottomBar` — sticky bottom bar (`.safeAreaInset`) with item count + format summary label and primary export button; optional disabled-reason caption
+- **Export Checkout Redesign Batch 3 (2026-05-05):** Export is now structured as a clear final review flow:
+  - `Review Selection` section with empty/invalid-state fallback and return path to `Days` / `Import`
+  - `Preview` section using the existing map component when real geometry exists
+  - `Choose Format` section for repo-wahr formats (`GPX`, `KMZ`, `KML`, `GeoJSON`, `CSV`)
+  - `Export Destination` section describing the actual system save/share path
+- `LHExportBottomBar` — sticky bottom bar (`.safeAreaInset`) with selection summary (`days + live tracks · format`) and the single primary export button; optional disabled-reason caption
 - `LHExportFilterDisclosure` — collapsible card for Advanced Filters with orange active-state border and chip badge; replaces inline filter section
-- selection summary card with 4-KPI grid: Days / Routes / Period / Places using `LHMetricCard`; "Edit Selection" scrolls to the days card
+- selection review card with 4-KPI grid: Days / Tracks / Period / Points using `LHMetricCard`; `Review in Days` returns to the selectable day list
 - format pills (GPX / KMZ / KML / GeoJSON / CSV) and mode pills (Tracks / Waypoints / Both) with active fill highlight
-- `ExportPresentation.bottomBarSummary` and `ExportPresentation.disabledReason` — new static presentation helpers
+- `ExportPresentation.reviewSnapshot`, `selectionSummary`, `bottomBarSummary` and `disabledReason` drive the Checkout presentation from the existing real export state
 
 Bewusst deaktiviert, aber vorhanden:
 - export architecture can still grow beyond the active `GPX`/`KMZ`/`KML`/`GeoJSON`/`CSV` formats

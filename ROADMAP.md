@@ -4,6 +4,23 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### UI/UX Redesign Batch 3 — Export Checkout (2026-05-05)
+
+Implementiert und getestet:
+- Export-Flow in `AppExportView` als klarer Review-/Checkout-Flow neu geordnet: `Review Selection` → `Preview` → `Choose Format` → `What to include` → `Export Destination`
+- `Review Selection` zeigt echte Auswahlmetriken aus bestehender Projektion: Tage, Zeitraum, Tracks, Punkte sowie Distanz-/Wegpunkt-/Routen-Badges
+- Vorschau nutzt weiter die bestehende Export-Map; ohne stabile Geometrie fällt die UI auf eine kompakte Summary zurück statt eine Fake-Karte zu rendern
+- `Export Destination` erklärt jetzt den realen vorhandenen Systempfad: generierte Datei über `.fileExporter` sichern oder teilen
+- `ExportPresentation.reviewSnapshot(...)` und `selectionSummary(...)` ergänzen die Checkout-Präsentation, ohne neue Exportlogik einzuführen
+- `AppContentSplitView` verdrahtet Rückführung aus dem Export zurück zu `Days` oder `Import`
+- lokaler Nachweis: **881 Tests, 0 Failures**
+
+Nicht als abgeschlossen markieren:
+- keine neue Exportfunktion, kein neues Format, keine neue Serverfunktion
+- keine neue Hardware- oder Landscape-Verifikation für Export
+- iPad-/regular-width Export-Sheet visuell weiter ungeprüft
+- App-Store-Screenshots müssen weiter neu aufgenommen werden; Export-Slot ist nach diesem Batch veraltet
+
 ### UI/UX Redesign Batch 2 — Start + Overview (2026-05-05)
 
 Implementiert und getestet:
