@@ -136,26 +136,44 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
 
     @Binding var state: LHMapHeaderState
     var language: AppLanguagePreference = .english
+    /// When `true`, the control bar is rendered as a semi-transparent overlay
+    /// on top of the map instead of as a separate header strip above it.
+    /// Use this for full-width hero map layouts where the card chrome is absent.
+    var overlayControls: Bool = false
     @ViewBuilder let mapContent: () -> MapContent
 
     public init(
         state: Binding<LHMapHeaderState>,
         language: AppLanguagePreference = .english,
+        overlayControls: Bool = false,
         @ViewBuilder mapContent: @escaping () -> MapContent
     ) {
         self._state    = state
         self.language  = language
+        self.overlayControls = overlayControls
         self.mapContent = mapContent
     }
 
     private func t(_ key: String) -> String { language.localized(key) }
 
     public var body: some View {
-        VStack(spacing: 0) {
-            controlBar
-                .background(LH2GPXTheme.card)
-            if state.shouldRenderMap && !state.isFullscreen {
-                mapContainer
+        Group {
+            if overlayControls {
+                // Hero layout: map fills full width, controls float as overlay
+                ZStack(alignment: .topTrailing) {
+                    if state.shouldRenderMap && !state.isFullscreen {
+                        mapContainer
+                    }
+                    overlayControlBar
+                }
+            } else {
+                VStack(spacing: 0) {
+                    controlBar
+                        .background(LH2GPXTheme.card)
+                    if state.shouldRenderMap && !state.isFullscreen {
+                        mapContainer
+                    }
+                }
             }
         }
         .animation(.easeInOut(duration: 0.25), value: state.visibility)
@@ -209,6 +227,32 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+    }
+
+    /// Semi-transparent control buttons rendered as an overlay on the map
+    /// (used when `overlayControls == true`).
+    private var overlayControlBar: some View {
+        HStack(spacing: 6) {
+            if state.isCompact {
+                iconButton(
+                    systemImage: "chevron.down",
+                    label: t(state.expandButtonLabel)
+                ) { state.expand() }
+            }
+
+            if state.isExpanded {
+                iconButton(
+                    systemImage: "chevron.up",
+                    label: t(state.collapseButtonLabel)
+                ) { state.collapse() }
+
+                iconButton(
+                    systemImage: "arrow.up.left.and.arrow.down.right",
+                    label: t(state.fullscreenButtonLabel)
+                ) { state.enterFullscreen() }
+            }
+        }
+        .padding(8)
     }
 
     private func iconButton(systemImage: String, label: String, action: @escaping () -> Void) -> some View {

@@ -1027,20 +1027,19 @@ public struct AppContentSplitView: View {
     }
 
     private var daysMapHeaderCard: some View {
-        LHCard {
-            LHCollapsibleMapHeader(
-                state: $daysMapHeaderState,
-                language: preferences.appLanguage
-            ) {
-                if #available(iOS 17.0, macOS 14.0, *) {
-                    AppOverviewTracksMapView(
-                        daySummaries: drilldownDaySummaries,
-                        content: session.content,
-                        queryFilter: projectedQueryFilter,
-                        fixedHeight: nil,
-                        showsFullscreenControl: false
-                    )
-                }
+        LHCollapsibleMapHeader(
+            state: $daysMapHeaderState,
+            language: preferences.appLanguage,
+            overlayControls: true
+        ) {
+            if #available(iOS 17.0, macOS 14.0, *) {
+                AppOverviewTracksMapView(
+                    daySummaries: drilldownDaySummaries,
+                    content: session.content,
+                    queryFilter: projectedQueryFilter,
+                    fixedHeight: nil,
+                    showsFullscreenControl: false
+                )
             }
         }
     }
