@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-05 (UI/UX Redesign Batch 3 — Export Checkout)
+Last analysis: 2026-05-05 (Hardware-Verifikation iPhone 15 Pro Max + Screenshot-Update)
 
 Repos in scope:
 - `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper

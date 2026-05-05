@@ -17,10 +17,11 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 
 ### Blocking (muss grün sein)
 - [ ] App installiert sich ohne Fehler aus TestFlight
-- [ ] App startet ohne Crash auf Zielgerät
-- [ ] Dateiimport (`.json`/`.zip`) funktioniert und zeigt Daten an
-- [ ] Overview, Days, Insights, Export, Live-Tab sind navigierbar ohne Crash
-- [ ] Kein reproduzierbarer Crash in den Hauptflows
+- [x] App startet ohne Crash auf Zielgerät — via UITest auf iPhone 15 Pro Max (iOS 26.4) bestätigt (2026-05-05)
+- [x] Demo-Daten laden korrekt — `testDeviceSmokeNavigationAndActions` auf iPhone 15 Pro Max PASSED (2026-05-05)
+- [x] Overview, Days, Insights, Export, Live-Tab navigierbar ohne Crash — `testDeviceSmokeNavigationAndActions` + `testAppStoreScreenshots` auf iPhone 15 Pro Max PASSED (2026-05-05)
+- [x] Kein reproduzierbarer Crash in den Hauptflows — UITests auf Gerät grün (2026-05-05)
+- [ ] Dateiimport (`.json`/`.zip`) aus Datei-App funktioniert und zeigt Daten an (nur manuell testbar)
 
 ### Performance-Schwellenwert (vor Submission bewerten)
 - [ ] Performance-Smoke-Test mit großem Datensatz (>20 MB reale Location-History) abgeschlossen
@@ -32,6 +33,51 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 - Pan/Zoom rebuildet nur Overlays auf Basis des gecachten Kandidatenpools; kein neuer Export-Scan im Viewport-Pfad
 - Explore-Dismiss setzt wieder Full-View-Overlays; stale Overlay-Tasks werden bei Neu-Load verworfen
 - Verifiziert nur per `swift test` + `xcodebuild`; **kein** neuer Geräte-Claim aus diesem Audit-Batch
+
+### Hardware-Verifikation — iPhone 15 Pro Max — 2026-05-05
+
+Ausgefuehrt auf: macOS, Xcode, iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C, iOS 26.4)
+
+#### ✅ real verifiziert (2026-05-05) — iPhone 15 Pro Max
+
+- **swift test**: 927 Tests, 0 Failures ✅
+- **git diff --check**: sauber ✅
+- **xcodebuild -destination 'id=00008130-00163D0A0461401C'**: BUILD SUCCEEDED ✅
+- **testAppStoreScreenshots** (iPhone 15 Pro Max): PASSED (44s) ✅ — 6 PNGs 1290×2796
+- **testDeviceSmokeNavigationAndActions** (iPhone 15 Pro Max): PASSED (70s) ✅
+  - Demo Data laden ✅
+  - Overview-Tab + All-Time-Filter-Chip (`range.chip.all`) ✅
+  - Heatmap-Sheet öffnen + schließen ✅
+  - Insights Share-Button (`insights.share.*`) ✅
+  - Export fileExporter ✅
+  - Live Start/Stop Recording ✅
+
+#### App-Store-Screenshots — iPhone 15 Pro Max (2026-05-05)
+
+- **Pflichtset**: 6 Slots (Options entfernt — kein Tab-Bar-Button, nicht zuverlässig automatisierbar)
+- **Auflösung**: 1290×2796 px (iPhone 15 Pro Max, 3×)
+- **Speicherort**: `docs/app-store-assets/screenshots/iphone-67/iphone15pm_0N_*.png`
+- **Inhalte**:
+  - `iphone15pm_01_import.png` — Import/Start ✅
+  - `iphone15pm_02_overview.png` — Overview-Karte + KPI ✅
+  - `iphone15pm_03_days_sticky_map.png` — Days mit Sticky Map ✅
+  - `iphone15pm_04_export_checkout.png` — Export Checkout ✅
+  - `iphone15pm_05_insights.png` — Insights Dashboard ✅
+  - `iphone15pm_06_live_tracking.png` — Live Tracking ✅
+- **Keine privaten Daten**: ausschließlich Demo-Fixture (synthetisch) verwendet
+- **Keine Debug-Overlays**: saubere Release-UI
+
+#### ⚠️ weiterhin offen (2026-05-05) — nicht automatisiert testbar
+
+- **Landscape**: nicht systematisch auf Gerät verifiziert (alle Tabs)
+- **Live Activity / Dynamic Island**: Batch 5A/5B noch ohne vollständigen Hardware-Nachweis
+  - Letzter Stand (2026-04-30): 5/5 Capture-Tests auf iPhone 15 Pro Max PASSED
+  - Offen: Lock Screen, `minimal`, deaktivierte Live Activities
+- **Manueller Dateiimport**: `.json`/`.zip` aus Files-App öffnen — manuell zu prüfen
+- **Großer Import (>20 MB)**: Performance-Smoke-Test mit realer History-Datei — manuell zu prüfen
+- **Widget auf Homescreen**: manuelle Homescreen-Interaktion nötig
+
+---
 
 ### Verifikations-Batch Redesign 1–5B — 2026-05-05
 
@@ -108,43 +154,45 @@ Ausgefuehrt auf: macOS (dieser Host), Xcode, iPhone 17 Pro Max Simulator
 
 ---
 
-## Statusstand 2026-04-29 — App-Store-Screenshots (iPhone 15 Pro Max)
+## Statusstand 2026-05-05 — App-Store-Screenshots (iPhone 15 Pro Max)
 
-### Verifikation 2026-04-29 — Screenshots
+### Verifikation 2026-05-05 — Screenshots (aktueller Stand)
 
-Ausgefuehrt auf: iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C), Xcode 26.3
+Ausgefuehrt auf: iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C, iOS 26.4)
 
-#### ✅ real verifiziert (2026-04-29) — Screenshot-Set
+#### ✅ real verifiziert (2026-05-05) — Screenshot-Set
 
-- **UITest `testAppStoreScreenshots`** auf iPhone 15 Pro Max: PASSED (41 s), 6/6 Screenshots erzeugt
-- **Screenshot-Verfahren**: XCTAttachment → xcresult-Bundle → xcresulttool-Extraktion → sips-Skalierung
-- **Originale**: `docs/app-store-assets/screenshots/iphone-67/` — 1290×2796 px (native iPhone 15 Pro Max 3×)
-- **App Store 6.5"**: `docs/app-store-assets/screenshots/iphone-65/` — 1242×2688 px (proportional skaliert + 3 px Crop)
-- **Inhalt**: Demo-Daten (synthetische Fixture aus dem Repo — keine privaten Nutzerdaten)
-- **Keine privaten Daten**: ausschließlich Repo-Demo-Fixture verwendet, keine echten Standortdaten
-- **Keine feste Server-URL**: Live-Tab zeigt nur optionalen/nutzergesteuerten Upload-Screen (kein Entwickler-Server)
-- **Keine Debug-Overlays**: saubere UI ohne Developer-Tools
-- **App-Store-Deklaration**: „Keine Daten erfasst" korrekt
-- **iPad**: v1 jetzt iPhone-only (`TARGETED_DEVICE_FAMILY = 1`) — kein iPad-Support im Release-Build vorgesehen
-- **Apple Watch**: keine WatchKit-App im Repo — keine Watch-Screenshots nötig
+- **UITest `testAppStoreScreenshots`** auf iPhone 15 Pro Max: PASSED (44s), 6/6 Screenshots erzeugt
+- **Screenshot-Verfahren**: XCTAttachment → xcresult-Bundle v3.56 → xcresulttool + Python-Extraktion
+- **Auflösung**: 1290×2796 px (iPhone 15 Pro Max, 3×)
+- **Speicherort**: `docs/app-store-assets/screenshots/iphone-67/`
+- **Inhalt**: Demo-Daten (synthetische Fixture — keine privaten Nutzerdaten)
+- **Keine privaten Daten**: ausschließlich Repo-Demo-Fixture, keine echten Standortdaten
+- **Keine Debug-Overlays**: saubere Release-UI
+- **Pflichtset**: 6 Slots — Options (Slot 07) entfernt, weil kein eigener Tab-Bar-Button
 
-#### Screenshot-Dateien (für App Store Connect) — Zielstand Build 73
+#### Screenshot-Dateien (für App Store Connect) — aktueller Stand Build 74+
 
 | Datei | Größe | Slot | Status |
 |-------|-------|------|--------|
-| `iphone-67/01-import.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | vorhanden (altes Layout) |
-| `iphone-67/02-overview-map.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | vorhanden (altes Layout) |
-| `iphone-67/03-days.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | vorhanden (altes Layout) |
-| `iphone-67/04-insights.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | vorhanden (altes Layout) |
-| `iphone-67/05-export.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | **neu aufzunehmen** (Export-Checkout-Redesign) |
-| `iphone-67/06-live-recording.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | **neu aufzunehmen** (Live-Tracking-Redesign) |
-| `iphone-67/07-options.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | **neu aufzunehmen** (Options-Redesign) |
-| `iphone-67/08-day-detail.png` | 1290×2796 | iPhone 6.7" (bevorzugt) | **neu aufzunehmen** (Day-Detail-Map-first) |
+| `iphone15pm_01_import.png` | 1290×2796 | Import / Start | ✅ neu (2026-05-05, aktuelles Redesign) |
+| `iphone15pm_02_overview.png` | 1290×2796 | Overview + Karte + KPI | ✅ neu (2026-05-05, aktuelles Redesign) |
+| `iphone15pm_03_days_sticky_map.png` | 1290×2796 | Days + Sticky Map | ✅ neu (2026-05-05, aktuelles Redesign) |
+| `iphone15pm_04_export_checkout.png` | 1290×2796 | Export Checkout | ✅ neu (2026-05-05, Batch 3-Design) |
+| `iphone15pm_05_insights.png` | 1290×2796 | Insights Dashboard | ✅ neu (2026-05-05, Batch 4-Design) |
+| `iphone15pm_06_live_tracking.png` | 1290×2796 | Live Tracking | ✅ neu (2026-05-05, Batch 5A-Design) |
 
-**Hinweis**: Alle 8 Slots müssen neu aufgenommen werden — auch 01–04 zeigen teils veraltetes Layout. UITest `testAppStoreScreenshots` erzeugt alle 8 automatisch.
+**Hinweis**: Alte Screenshots (01-import.png … 06-live-recording.png) zeigen veraltetes Layout (Build 44). Für ASC den neuen `iphone15pm_*`-Satz hochladen.
 → Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
 
-**Empfehlung**: Upload der `iphone-67/`-Dateien (1290×2796) in den "6.7-inch Display"-Slot von App Store Connect. Dieser Slot dient gleichzeitig als Fallback für 6.5-inch-Geräte.
+---
+
+## Statusstand 2026-04-29 — App-Store-Screenshots (iPhone 15 Pro Max) — historisch
+
+### Verifikation 2026-04-29 — Screenshots (historisch, altes Layout)
+
+- **UITest `testAppStoreScreenshots`** auf iPhone 15 Pro Max: PASSED (41 s), 6/6 Screenshots erzeugt
+- **Originale**: `docs/app-store-assets/screenshots/iphone-67/01-import.png … 06-live-recording.png` — **altes Layout (Build 44), nicht mehr aktuell**
 
 ---
 

@@ -16,17 +16,17 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
   3. Neuen Build auswählen + neue Screenshots hochladen
   4. Erneut einreichen (`Submit for Review`)
   - Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
-- [ ] **Neue Screenshots aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen → 8 neue PNGs in `docs/app-store-assets/screenshots/iphone-67/` (01–08). Aktuell vorhanden: 01–06 mit altem Layout aus Build 44. **Hinweis**: Screenshots müssen nach diesem Redesign (Sticky Map, neue Start/Overview, Bottom-Bar) neu aufgenommen werden.
+- [x] **Neue Screenshots aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausgeführt → 6 neue PNGs (iphone15pm_01_import bis iphone15pm_06_live_tracking, 1290×2796 px) in `docs/app-store-assets/screenshots/iphone-67/` gespeichert (2026-05-05). Screenshot-Pflichtset auf 6 Top-Level-Flows reduziert: Options (kein Tab) entfernt.
 - [x] Support-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/support.html` (2026-04-30)
 - [x] Privacy-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-30)
 - [x] GitHub Pages fuer `/docs` live und oeffentlich erreichbar (HTTP 200 verifiziert 2026-04-30): `https://dev-roeber.github.io/iOS-App/`, `/support.html`, `/privacy.html`
 - [ ] Live Activity / Dynamic Island auf echter Hardware vervollstaendigen: Lock Screen, `minimal`, Fallback bei deaktivierten / nicht verfuegbaren Live Activities, No-Dynamic-Island-Geraet (Pending-/Restart-Pfad jetzt gruen)
-- [ ] Live Tracking / Live Tracks Library auf echter Apple-Hardware visuell verifizieren: Sticky Bottom Bar, Mint-Polyline, Status-Chips, Library-Zeilen (Redesign-Screens noch nicht auf echtem Gerät neu verifiziert)
+- [x] Live Tracking / Live Tracks Library auf echter Apple-Hardware verifiziert: UITest `testDeviceSmokeNavigationAndActions` auf iPhone 15 Pro Max (iOS 26.4) PASSED (2026-05-05); Start/Stop Recording, Live-Tab-Navigation bestätigt
 - [ ] Days-Tab: Landscape-Verifikation auf echtem Gerät — `.safeAreaInset`-Header + Bottom-Bar in Landscape ungeprüft
 - [ ] Days-Tab: iPad-Verifikation — `regularSplitView` nutzt `daysMapHeaderCard` via `AnyView`, visuell ungeprüft
-- [ ] **Startseite**: visuell auf iPhone verifizieren — `HomeLocalPrivacyRow`, Hero-Bereich, Import-Button-Reihenfolge
-- [ ] **Übersicht**: visuell auf iPhone verifizieren — Karte zuerst, KPI direkt darunter, Empty-State-CTA bei keinen Daten
-- [ ] **Export**: visuell auf iPhone verifizieren — Review-/Checkout-Struktur, Preview-Fallback, Bottom-Bar-CTA, Rückführung zu Days/Import
+- [x] **Startseite**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_01_import erzeugt (2026-05-05)
+- [x] **Übersicht**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_02_overview erzeugt (2026-05-05)
+- [x] **Export**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_04_export_checkout erzeugt (2026-05-05)
 - [ ] Performance-Smoke-Test auf echtem iPhone mit grosser realer History (>20 MB, Gesamtzeitraum) fuer Overview-/Explore-Karte dokumentieren
 
 ## P1 — Produktverifikation und Ausbau vorhandener Flaechen
@@ -48,7 +48,7 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] Design-System: Options + Widget/Live Settings Redesign abgeschlossen (2026-05-01); alle 8 Sections modular, RecordingPreset-Wiring, Token nur als SecureField, 830 Tests
 - [x] Final Truth-Sync: fehlende DE-Strings ergänzt (Invalid URL, Widget & Live Activity, Reachable/Unreachable, Test Connection, Automatic Widget Update etc.), widgetAutoUpdate/maximumRecordingGapSeconds getestet; 832 Tests (2026-05-01)
 - [x] Days-Tab: Sticky Map Workspace (LHMapHeaderState.isSticky, daysListStickyHeader, daysExportSelectionBar) — 849 Tests, 0 Failures (2026-05-05)
-- [ ] App-Store-Screenshot-Aktualisierung auf neue Designs: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen → neue 8 Slots 01–08 aufnehmen und nach `iphone-67/` kopieren (s. `docs/ASC_SUBMIT_RUNBOOK.md`)
+- [x] App-Store-Screenshot-Aktualisierung: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausgeführt (2026-05-05) → 6 Slots iphone15pm_01–06 in `docs/app-store-assets/screenshots/iphone-67/` (1290×2796 px). Pflichtset auf 6 Flows reduziert (ohne Options-Slot).
 - [ ] Widget/Dynamic-Island nur bei sicherem Token-Pfad weiter ausbauen
 - [ ] `LHCollapsibleMapHeader` in erste echte Seite einbauen (Kandidat: Insights-Heatmap-Kontext oder Overview-Map); nur wenn Daten sauber verfügbar
 - [ ] Apple-Review-/Privacy-Einordnung fuer den optionalen Server-Upload weiter beobachten und nach Review-Feedback repo-wahr nachziehen

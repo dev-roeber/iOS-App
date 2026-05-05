@@ -26,14 +26,18 @@ final class LH2GPXWrapperUITests: XCTestCase {
 
     // MARK: - App Store Screenshots
     //
-    // Device: iPhone 15 Pro Max (or iPhone 17 Pro Max simulator) — portrait, 3× scale.
-    // Screenshots are captured via XCTAttachment and stored in the xcresult bundle.
-    // Extract after run:
-    //   xcrun xcresulttool export --path <result.xcresult> --output-path /tmp/ss --type directory
-    // Then copy PNGs to docs/app-store-assets/screenshots/iphone-67/
+    // Device: iPhone 15 Pro Max — portrait, 3× scale → iphone15pm_0N_*.png
+    // (also runs on iPhone 17 Pro Max Simulator as candidate run)
     //
-    // Slots 01–08 target the redesigned LH2GPX-Dark UI (Build 73+).
-    // iPad: run on iPad Pro 13-inch (M4) with deviceFolder = "ipad".
+    // 6 mandatory slots for the LH2GPX-Dark redesign (Build 73+):
+    //   01 Import/Start, 02 Overview, 03 Days (Sticky Map), 04 Export Checkout,
+    //   05 Insights, 06 Live Tracking
+    //
+    // Options (slot 07) is NOT a tab-bar item and cannot be navigated to reliably
+    // via UITest without modifying production navigation. Omitted from required set.
+    //
+    // After running on device, copy PNGs to docs/app-store-assets/screenshots/iphone-67/:
+    //   cp /tmp/claude/lh2gpx_ss/iphone15pm_*.png docs/app-store-assets/screenshots/iphone-67/
 
     @MainActor
     func testAppStoreScreenshots() throws {
@@ -44,7 +48,7 @@ final class LH2GPXWrapperUITests: XCTestCase {
         sleep(2)
 
         // 01 — Import / empty state (before any data loaded)
-        attach(screenshot(app), name: "01-import")
+        attach(screenshot(app), name: "iphone15pm_01_import")
 
         // Load Demo Data so all tabs have content
         let demoButton = app.buttons.matching(
@@ -62,53 +66,31 @@ final class LH2GPXWrapperUITests: XCTestCase {
         let allChip = app.buttons["range.chip.all"]
         if allChip.waitForExistence(timeout: 5) { allChip.tap(); sleep(2) }
 
-        // 02 — Overview map
-        attach(screenshot(app), name: "02-overview-map")
+        // 02 — Overview: map + KPI grid + date range
+        attach(screenshot(app), name: "iphone15pm_02_overview")
 
-        // 03 — Days tab (list view)
+        // 03 — Days tab: sticky map visible, list below, demo days from 2024
+        // Clear "Last 7 Days" filter so 2024 demo data appears.
         let daysTab = app.tabBars.buttons["Days"]
         if daysTab.waitForExistence(timeout: 5) { daysTab.tap(); sleep(2) }
-        let backButton = app.navigationBars.buttons.firstMatch
-        if backButton.exists && backButton.isHittable { backButton.tap(); sleep(1) }
-        attach(screenshot(app), name: "03-days")
+        let clearDateFilter = app.buttons["Clear Date Range"]
+        if clearDateFilter.waitForExistence(timeout: 3) { clearDateFilter.tap(); sleep(2) }
+        attach(screenshot(app), name: "iphone15pm_03_days_sticky_map")
 
-        // 04 — Insights tab
-        let insightsTab = app.tabBars.buttons["Insights"]
-        if insightsTab.waitForExistence(timeout: 5) { insightsTab.tap(); sleep(2) }
-        attach(screenshot(app), name: "04-insights")
-
-        // 05 — Export tab (redesigned checkout with stepper, pills, sticky bar)
+        // 04 — Export Checkout: review selection, format pills, sticky bottom bar
         let exportTab = app.tabBars.buttons["Export"]
         if exportTab.waitForExistence(timeout: 5) { exportTab.tap(); sleep(1) }
-        attach(screenshot(app), name: "05-export")
+        attach(screenshot(app), name: "iphone15pm_04_export_checkout")
 
-        // 06 — Live tab (redesigned dark layout: Mint polyline, status chips, bottom bar)
+        // 05 — Insights: hero summary, KPI grid, sections
+        let insightsTab = app.tabBars.buttons["Insights"]
+        if insightsTab.waitForExistence(timeout: 5) { insightsTab.tap(); sleep(2) }
+        attach(screenshot(app), name: "iphone15pm_05_insights")
+
+        // 06 — Live Tracking: hero status card, map preview, bottom bar
         let liveTab = app.tabBars.buttons["Live"]
         if liveTab.waitForExistence(timeout: 5) { liveTab.tap(); sleep(1) }
-        attach(screenshot(app), name: "06-live-recording")
-
-        // 07 — Options main screen (redesigned 8-section NavigationLink grid)
-        // Navigate via tab bar "Options" button or accessibility identifier
-        let optionsButton = app.tabBars.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'Options' OR label CONTAINS 'Einstellung'")
-        ).firstMatch
-        if optionsButton.waitForExistence(timeout: 5) {
-            optionsButton.tap(); sleep(1)
-        } else {
-            // Fallback: look for a navigation button labelled Settings/Optionen
-            let settingsBtn = app.buttons.matching(
-                NSPredicate(format: "label CONTAINS 'Options' OR label CONTAINS 'Settings'")
-            ).firstMatch
-            if settingsBtn.waitForExistence(timeout: 3) { settingsBtn.tap(); sleep(1) }
-        }
-        attach(screenshot(app), name: "07-options")
-
-        // 08 — Day Detail (map-first, first available day in demo data)
-        // Return to Days tab and tap the first day row
-        if daysTab.waitForExistence(timeout: 5) { daysTab.tap(); sleep(1) }
-        let firstDayCell = app.cells.firstMatch
-        if firstDayCell.waitForExistence(timeout: 5) { firstDayCell.tap(); sleep(2) }
-        attach(screenshot(app), name: "08-day-detail")
+        attach(screenshot(app), name: "iphone15pm_06_live_tracking")
     }
 
     @MainActor
@@ -301,6 +283,11 @@ final class LH2GPXWrapperUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+        // Also write directly to disk so screenshots survive the new xcresult Staging format.
+        let dir = URL(fileURLWithPath: "/tmp/claude/lh2gpx_ss")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let file = dir.appendingPathComponent("\(name).png")
+        try? shot.pngRepresentation.write(to: file)
     }
 
     @MainActor

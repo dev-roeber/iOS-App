@@ -1293,6 +1293,7 @@ public struct AppContentSplitView: View {
                 }
             }
         }
+        .accessibilityIdentifier("app.actionsMenu")
     }
 
     private func presentSheet(_ sheet: PresentedSheet) {

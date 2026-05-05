@@ -4,6 +4,25 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Hardware-Verifikation iPhone 15 Pro Max (2026-05-05)
+
+Ausgefuehrt auf: iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C, iOS 26.4)
+
+Implementiert und verifiziert:
+- **swift test**: 927 Tests, 0 Failures ✅
+- **xcodebuild** (iPhone 15 Pro Max): BUILD SUCCEEDED ✅
+- **testAppStoreScreenshots** (iPhone 15 Pro Max): PASSED (44s) ✅ — 6 neue Screenshots 1290×2796
+- **testDeviceSmokeNavigationAndActions** (iPhone 15 Pro Max): PASSED (70s) ✅
+  - Demo-Load, Overview/All-Time, Heatmap, Insights-Share, Export fileExporter, Live Start/Stop ✅
+- **Screenshot-Pflichtset**: 6 Slots (Option 1 — ohne Options-Tab), Dateinamen `iphone15pm_01–06_*.png`
+- **UITest vereinfacht**: Slot 07 (Options) und Slot 08 (Day Detail) aus Pflichtset entfernt
+
+Nicht als abgeschlossen markieren:
+- Landscape auf allen Tabs: weiter ohne Hardware-Nachweis
+- Live Activity / Dynamic Island Batch 5A/5B: Lock Screen, `minimal`, weitere Pfade offen
+- Widget auf Homescreen: manuelle Interaktion nötig
+- Großer Import-Performance-Test: kein 20MB-Fixture im Repo
+
 ### Verifikations-Batch Redesign 1–5B (2026-05-05)
 
 Implementiert und verifiziert:
@@ -14,11 +33,6 @@ Implementiert und verifiziert:
 - **Bugfix UITest**: `insights.section.share` → `insights.share.*` (Identifier-Rename seit Batch 4)
 - **Screenshot-Kandidaten** (Simulator): 7 PNGs in `docs/app-store-assets/screenshots/simulator-iphone17promax/`
 - **Visuell geprüft** (Simulator): Start, Overview, Days (Sticky Map), Insights (Hero), Export (Checkout), Live (Hero+Diagnostics), Day Detail
-
-Nicht als abgeschlossen markieren:
-- Keine neue Hardware-Verifikation (Live Activity, Landscape, Widget)
-- Neue App-Store-Screenshots auf iPhone 15 Pro Max: ausstehend
-- Options-Tab-Screenshot (07): fehlt wegen fehlender Tab-Bar-Kennung im UITest
 
 ### UI/UX Redesign Batch 5B — Live Activity / Dynamic Island / Widget Safety (2026-05-05)
 
