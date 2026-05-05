@@ -2,6 +2,22 @@
 
 ## 2026-05-05
 
+### Stop-Ship-Fixes: Auto-Split, Widget-Daten, Widget-Family (Commit 3469bcc)
+
+- **Bug 1 — LiveTrackRecorder Auto-Split Datenverlust behoben**:
+  - `start()` löscht `splitOffTrack` nicht mehr (zuvor sofortiger Datenverlust nach dem Split)
+  - `handleLocationSamples` draint `splitOffTrack` nach jedem Sample-Batch: persistiert den fertigen Segment-Track, setzt neue `currentRecordingSessionID`, aktualisiert `liveTrackPoints` auf das neue Segment
+  - 4 neue Tests in `LiveTrackRecorderTests` + 2 neue Integrationstests in `LiveLocationFeatureModelTests`
+- **Bug 2 — Home-Widget erhält echte Echtdaten**:
+  - `stopRecordingFlow()` und Split-Drain rufen `updateWidgetData()` auf
+  - `updateWidgetData()` schreibt `WidgetDataStore.save(recording:)` + berechnet und schreibt `saveWeeklyStats()` (Wochenbasis, `Calendar.current`)
+  - `ContentView` reloaded WidgetKit-Timelines via `WidgetCenter.shared.reloadAllTimelines()` bei `preferences.widgetAutoUpdate == true`; `import WidgetKit` ergänzt
+- **Bug 3 — Home-Widget Family-Switch**:
+  - `LH2GPXWidgetEntryView` (neu) mit `@Environment(\.widgetFamily)`: `systemSmall` → `LH2GPXSmallWidgetView`, sonst → `LH2GPXMediumWidgetView`
+  - `LH2GPXHomeWidget.body` nutzt jetzt `LH2GPXWidgetEntryView` statt immer `LH2GPXMediumWidgetView`
+- `swift test`: 933/0 ✅ — `xcodebuild` iPhone_15_Pro_Max (arm64, iOS 26.4): **BUILD SUCCEEDED** ✅
+- Commit `3469bcc`, Branch `main`, Push ✅
+
 ### Xcode Cloud Build 84 — erfolgreich (Version 1.0.1)
 
 - **Build 84**: Xcode Cloud Workflow `Release – Archive & TestFlight` — `Archive - iOS` ✅, `TestFlight-interne Tests - iOS` ✅

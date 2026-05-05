@@ -1,6 +1,6 @@
 # NEXT_STEPS
 
-Stand: 2026-05-05
+Stand: 2026-05-05 (Stop-Ship-Fixes 2026-05-05)
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
@@ -36,6 +36,9 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [ ] Homescreen-Widget auf echter Hardware gezielt verifizieren
 - [ ] Track-Editor-Verhalten gegen reale Export-Erwartung entscheiden und dokumentieren: Mutations bleiben derzeit display-only und fliessen bewusst nicht in Exporte ein
 - [ ] Wrapper-Simulator-Testlauf fuer `LH2GPXWrapperTests` auf diesem Host stabilisieren oder auf anderem Apple-Host gegentesten (`NSMachErrorDomain Code=-308`)
+- [x] **Stop-Ship Bug 1 — Auto-Split Datenverlust** (2026-05-05): `start()` löscht `splitOffTrack` nicht mehr; `handleLocationSamples` draint Split-Track, persistiert ihn als `RecordedTrack` und setzt neue `currentRecordingSessionID`. 4 neue Tests in `LiveTrackRecorderTests`, 2 neue in `LiveLocationFeatureModelTests`.
+- [x] **Stop-Ship Bug 2 — Widget Echtdaten** (2026-05-05): `stopRecordingFlow()` und Split-Drain rufen `updateWidgetData()` auf → `WidgetDataStore.save(recording:)` + `saveWeeklyStats()`. `ContentView` reloaded via `WidgetCenter.shared.reloadAllTimelines()` bei `widgetAutoUpdate == true`.
+- [x] **Stop-Ship Bug 3 — Widget Family-Switch** (2026-05-05): `LH2GPXWidgetEntryView` mit `@Environment(\.widgetFamily)` → `systemSmall` → `LH2GPXSmallWidgetView`, sonst `LH2GPXMediumWidgetView`.
 
 ## P2 — Nachgelagerte Optimierung
 
