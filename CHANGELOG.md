@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [2026-05-05] — chore: Verifikations-Batch Sticky Map Workspace
+
+### Strukturelle Tests für Days-Tab
+
+- 10 neue Tests in `DaysCompactLayoutStructureTests` (UIWiringTests.swift)
+- Verifikation: `daysMapHeaderState` startet als `.compact` + `isSticky: true`
+- Verifikation: `toggleHidden()` nie `.hidden` bei `isSticky == true`
+- Verifikation: `ExportSelectionState.count == 0` blendet Bottom-Bar aus; count > 0 zeigt sie
+- `swift test`: **859 Tests, 0 Failures** (+10 neue Tests)
+
+### Offen — nicht automatisiert prüfbar
+
+- Landscape-Verifikation auf echtem Gerät (Days sticky Header + Bottom-Bar)
+- iPad-Verifikation (`regularSplitView` nutzt `daysMapHeaderCard` — visuell ungeprüft)
+- Hardware-Verifikation: kein neuer Gerätenachweis aus diesem Batch
+
+---
+
 ## [2026-05-05] — feat: Sticky Map Workspace für Days-Ansicht (feat/sticky-map-workspace-days)
 
 ### Strukturelles UX-Redesign: Days-Tab

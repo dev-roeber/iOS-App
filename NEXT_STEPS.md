@@ -22,6 +22,8 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] GitHub Pages fuer `/docs` live und oeffentlich erreichbar (HTTP 200 verifiziert 2026-04-30): `https://dev-roeber.github.io/iOS-App/`, `/support.html`, `/privacy.html`
 - [ ] Live Activity / Dynamic Island auf echter Hardware vervollstaendigen: Lock Screen, `minimal`, Fallback bei deaktivierten / nicht verfuegbaren Live Activities, No-Dynamic-Island-Geraet (Pending-/Restart-Pfad jetzt gruen)
 - [ ] Live Tracking / Live Tracks Library auf echter Apple-Hardware visuell verifizieren: Sticky Bottom Bar, Mint-Polyline, Status-Chips, Library-Zeilen (Redesign-Screens noch nicht auf echtem Gerät neu verifiziert)
+- [ ] Days-Tab: Landscape-Verifikation auf echtem Gerät — `.safeAreaInset`-Header + Bottom-Bar in Landscape ungeprüft
+- [ ] Days-Tab: iPad-Verifikation — `regularSplitView` nutzt `daysMapHeaderCard` via `AnyView`, visuell ungeprüft
 - [ ] Performance-Smoke-Test auf echtem iPhone mit grosser realer History (>20 MB, Gesamtzeitraum) fuer Overview-/Explore-Karte dokumentieren
 
 ## P1 — Produktverifikation und Ausbau vorhandener Flaechen

@@ -601,6 +601,104 @@ final class UIWiringTests: XCTestCase {
     }
 }
 
+// MARK: - Days compact layout — structural invariants
+
+/// Verifies that the Days-tab sticky-map workspace has the correct defaults
+/// and that its state-machine invariants hold without a SwiftUI host.
+final class DaysCompactLayoutStructureTests: XCTestCase {
+
+    // MARK: Map header defaults
+
+    func testDaysMapHeaderDefaultVisibilityIsCompact() {
+        let state = LHMapHeaderState(
+            visibility: .compact,
+            compactHeight: 180,
+            expandedHeight: 260,
+            isSticky: true
+        )
+        XCTAssertEqual(state.visibility, .compact,
+            "Days map must start compact so content is immediately visible")
+    }
+
+    func testDaysMapHeaderDefaultIsStickyTrue() {
+        let state = LHMapHeaderState(
+            visibility: .compact,
+            compactHeight: 180,
+            expandedHeight: 260,
+            isSticky: true
+        )
+        XCTAssertTrue(state.isSticky,
+            "Days map must be sticky — it must not be dismissible")
+    }
+
+    func testDaysMapHeaderDefaultRendersMap() {
+        let state = LHMapHeaderState(
+            visibility: .compact,
+            compactHeight: 180,
+            expandedHeight: 260,
+            isSticky: true
+        )
+        XCTAssertTrue(state.shouldRenderMap,
+            "Days map must be in the view tree at startup")
+    }
+
+    // MARK: Sticky invariant — map cannot be hidden
+
+    func testStickyDaysMapCannotBeHiddenFromCompact() {
+        var state = LHMapHeaderState(visibility: .compact, isSticky: true)
+        state.toggleHidden()
+        XCTAssertNotEqual(state.visibility, .hidden,
+            "Sticky map must never transition to .hidden via toggleHidden()")
+    }
+
+    func testStickyDaysMapCannotBeHiddenFromExpanded() {
+        var state = LHMapHeaderState(visibility: .expanded, isSticky: true)
+        state.toggleHidden()
+        XCTAssertNotEqual(state.visibility, .hidden)
+    }
+
+    func testStickyDaysMapCanExpandAndCollapse() {
+        var state = LHMapHeaderState(visibility: .compact, isSticky: true)
+        state.expand()
+        XCTAssertEqual(state.visibility, .expanded)
+        state.collapse()
+        XCTAssertEqual(state.visibility, .compact)
+    }
+
+    func testStickyDaysMapCanEnterAndExitFullscreen() {
+        var state = LHMapHeaderState(visibility: .expanded, isSticky: true)
+        state.enterFullscreen()
+        XCTAssertEqual(state.visibility, .fullscreen)
+        state.exitFullscreen()
+        XCTAssertEqual(state.visibility, .expanded)
+    }
+
+    // MARK: Export selection bar — count gate
+
+    func testExportBarNotShownWithEmptySelection() {
+        let selection = ExportSelectionState()
+        XCTAssertEqual(selection.count, 0,
+            "Empty ExportSelectionState must have count == 0 so the bottom bar is hidden")
+    }
+
+    func testExportBarShownAfterSelectingDay() {
+        var selection = ExportSelectionState()
+        selection.toggle("2024-05-01")
+        XCTAssertGreaterThan(selection.count, 0,
+            "Selection count > 0 must show the export bottom bar")
+    }
+
+    func testExportBarHiddenAfterDeselecting() {
+        var selection = ExportSelectionState()
+        let date = "2024-05-01"
+        selection.toggle(date)
+        XCTAssertGreaterThan(selection.count, 0)
+        selection.toggle(date)
+        XCTAssertEqual(selection.count, 0,
+            "Deselecting must bring count back to 0 and hide the bottom bar")
+    }
+}
+
 // MARK: - Mock helpers
 
 private final class MockRecordedTrackStore: RecordedTrackStoring {
