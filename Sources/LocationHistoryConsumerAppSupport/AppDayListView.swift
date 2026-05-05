@@ -57,16 +57,13 @@ struct AppDayRow: View {
                     }
                 }
 
-                HStack(spacing: 10) {
-                    metricPill(icon: "mappin.and.ellipse", text: presentation.placeText, tint: LH2GPXTheme.liveMint)
-                    metricPill(icon: "location.north.line", text: presentation.routeText, tint: LH2GPXTheme.routeOrange)
-                    if let distanceText = presentation.distanceText {
-                        metricPill(icon: "ruler", text: distanceText, tint: LH2GPXTheme.distancePurple)
-                    }
-                }
-
-                if !presentation.metrics.isEmpty {
-                    HStack(spacing: 10) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        metricPill(icon: "mappin.and.ellipse", text: presentation.placeText, tint: LH2GPXTheme.liveMint)
+                        metricPill(icon: "location.north.line", text: presentation.routeText, tint: LH2GPXTheme.routeOrange)
+                        if let distanceText = presentation.distanceText {
+                            metricPill(icon: "ruler", text: distanceText, tint: LH2GPXTheme.distancePurple)
+                        }
                         ForEach(presentation.metrics.filter { $0.id == "activities" }) { metric in
                             metricPill(icon: metric.icon, text: metric.text, tint: LH2GPXTheme.primaryBlue)
                         }
@@ -104,7 +101,7 @@ struct AppDayRow: View {
         HStack(spacing: 5) {
             Image(systemName: icon)
             Text(text)
-                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .font(.caption.weight(.medium))
         .foregroundStyle(tint)

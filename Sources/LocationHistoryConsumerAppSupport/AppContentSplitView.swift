@@ -22,8 +22,8 @@ public struct AppContentSplitView: View {
     )
     @State private var daysMapHeaderState = LHMapHeaderState(
         visibility: .compact,
-        compactHeight: 280,
-        expandedHeight: 360,
+        compactHeight: 340,
+        expandedHeight: 420,
         isSticky: true
     )
     @State private var presentedSheet: PresentedSheet?
@@ -250,11 +250,11 @@ public struct AppContentSplitView: View {
 
             NavigationStack(path: $daysNavigationPath) {
                 compactDayList
-                    .navigationTitle(t("Days"))
+                    .navigationTitle("")
                     #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
+                    .toolbarBackground(.hidden, for: .navigationBar)
                     #endif
-                    .searchable(text: $daySearchText, prompt: t("Search by date, weekday or month"))
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
                             actionsMenu
@@ -460,26 +460,55 @@ public struct AppContentSplitView: View {
     }
 
     private var daysListStickyHeader: some View {
+        ZStack(alignment: .top) {
+            // Hero map — extends behind Dynamic Island / status bar
+            daysMapHeaderCard
+                .ignoresSafeArea(.container, edges: .top)
+
+            // Controls overlay — ZStack safe area keeps this below Dynamic Island
+            // (the map behind ignores safe area; this overlay respects it)
+            VStack(spacing: 0) {
+                daysHeroOverlayControls
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+        .accessibilityIdentifier("days.stickyHeader")
+    }
+
+    /// Search bar + context pills rendered as a thinMaterial overlay on the hero map.
+    private var daysHeroOverlayControls: some View {
         VStack(spacing: 0) {
+            // Search bar
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField(t("Search by date, weekday or month"), text: $daySearchText)
+                    .textFieldStyle(.plain)
+                    .foregroundStyle(.primary)
+                if !daySearchText.isEmpty {
+                    Button {
+                        daySearchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+
+            // Context pills row
             HStack(spacing: 8) {
                 compactContextPill(text: daysRangeSummaryText, icon: "calendar", identifier: "days.range")
-                compactContextPill(
-                    text: daySearchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        ? t("Days Search") : daySearchText,
-                    icon: "magnifyingglass",
-                    identifier: "days.search"
-                )
                 Spacer()
             }
             .padding(.horizontal, 16)
-            .padding(.top, 10)
-            .padding(.bottom, 6)
-            daysMapHeaderCard
-            Divider()
-                .background(LH2GPXTheme.separator)
+            .padding(.top, 6)
+            .padding(.bottom, 8)
         }
-        .background(Color.black)
-        .accessibilityIdentifier("days.stickyHeader")
     }
 
     private var daysExportSelectionBar: some View {

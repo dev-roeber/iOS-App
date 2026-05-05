@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2026-05-06
+
+### polish: Days Map Edge-to-Edge Hero with Overlay Controls (Build 93)
+
+- **Edge-to-Edge Hero**: Karte füllt volle Breite und beginnt bei y=0 hinter Dynamic Island/Statusbar (`ignoresSafeArea(.container, edges: .top)` auf `daysMapHeaderCard` im ZStack-Hero)
+- **NavigationBar transparent**: `.toolbarBackground(.hidden, for: .navigationBar)` auf dem compact Days-Tab — kein schwarzer Header-Block mehr über der Karte
+- **Searchbar als Map-Overlay**: Native `.searchable` ersetzt durch Custom TextField in `.thinMaterial`-Container, direkt auf der Karte als ZStack-Overlay (SafeArea-bewusst)
+- **Context-Pill als Map-Overlay**: Date-Range-Pill (bisher unterhalb der NavBar) jetzt ebenfalls als transparentes Overlay auf der Karte
+- **Map-Höhe erhöht**: `compactHeight` 280 → 340 pt, `expandedHeight` 360 → 420 pt — mehr Karte sichtbar
+- **Day-Row Chips nicht mehr abgeschnitten**: `metricPill`-HStack in `AppDayRow` in `ScrollView(.horizontal)` gewrappt; `.lineLimit(1)` durch `.fixedSize(horizontal: true, vertical: false)` ersetzt — "6 visits", "3 routes", "23.2 km" vollständig sichtbar
+- **Chip-Spacing reduziert**: 10 → 8 pt für kompaktere Darstellung; alle 4 Metric-Chips in einer Zeile
+- `swift test`: 933/0 ✅ — `xcodebuild` iPhone 15 Pro Max **BUILD SUCCEEDED** ✅
+
 ## 2026-05-05
 
 ### UI-Layout-Fix Tage-Seite: Suchleiste stabil, Karte größer
