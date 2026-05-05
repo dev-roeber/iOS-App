@@ -702,6 +702,11 @@ enum AppGermanTranslations {
         "Activity Streak": "Aktivitätsserie",
         "Period Comparison": "Periodenvergleich",
         "Import More Data": "Mehr Daten importieren",
+        // Insights Dashboard Redesign Batch 4
+        "active day": "aktiver Tag",
+        "active days": "aktive Tage",
+        "No days match the current filter. Adjust the range or reset it to see insights.": "Keine Tage passen zum aktuellen Filter. Passe den Zeitraum an oder setze ihn zurück.",
+        "Reset Filter": "Filter zurücksetzen",
         // Export Checkout Redesign
         "Selection": "Auswahl",
         "Content": "Inhalt",

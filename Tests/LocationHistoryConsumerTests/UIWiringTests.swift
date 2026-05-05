@@ -790,6 +790,70 @@ final class DaysCompactLayoutStructureTests: XCTestCase {
     }
 }
 
+// MARK: - UI/UX Redesign Batch 4 — Insights Dashboard structural tests
+
+final class InsightsDashboardRedesignBatch4Tests: XCTestCase {
+
+    // MARK: Hero summary: active day count
+
+    func testDashboardActiveDayCountExcludesEmptyDays() {
+        let summaries = [
+            DaySummary(date: "2024-01-01", visitCount: 0, activityCount: 0, pathCount: 0,
+                       totalPathPointCount: 0, totalPathDistanceM: 0, hasContent: false),
+            DaySummary(date: "2024-01-02", visitCount: 1, activityCount: 0, pathCount: 0,
+                       totalPathPointCount: 0, totalPathDistanceM: 0, hasContent: true),
+            DaySummary(date: "2024-01-03", visitCount: 0, activityCount: 1, pathCount: 0,
+                       totalPathPointCount: 0, totalPathDistanceM: 0, hasContent: true),
+        ]
+        XCTAssertEqual(summaries.filter(\.hasContent).count, 2)
+    }
+
+    func testDashboardActiveDayCountZeroForEmptySummaries() {
+        XCTAssertEqual([DaySummary]().filter(\.hasContent).count, 0)
+    }
+
+    // MARK: Hero summary: filter-conditioned empty state
+
+    func testInsightsFilterActiveStateForLast30DaysPreset() {
+        let filter = HistoryDateRangeFilter(preset: .last30Days)
+        XCTAssertTrue(filter.isActive, "last30Days preset must produce an active filter")
+    }
+
+    func testInsightsDefaultFilterIsNotActive() {
+        XCTAssertFalse(HistoryDateRangeFilter.default.isActive)
+    }
+
+    // MARK: Overview section: streak data
+
+    func testInsightsStreakFromEmptySummariesIsZero() {
+        let streak = InsightsStreakPresentation.streak(from: [])
+        XCTAssertEqual(streak.recentStreakDays, 0)
+        XCTAssertEqual(streak.longestStreakDays, 0)
+        XCTAssertEqual(streak.activeDaysCount, 0)
+    }
+
+    func testInsightsStreakLongestDayFromSingleActiveSummary() {
+        let summaries = [
+            DaySummary(date: "2024-05-01", visitCount: 1, activityCount: 0, pathCount: 0,
+                       totalPathPointCount: 0, totalPathDistanceM: 0, hasContent: true),
+        ]
+        let streak = InsightsStreakPresentation.streak(from: summaries)
+        XCTAssertEqual(streak.longestStreakDays, 1)
+        XCTAssertGreaterThan(streak.activeDaysCount, 0)
+    }
+
+    // MARK: Overview section: top days
+
+    func testInsightsTopDaysEmptyFromNoSummaries() {
+        let result = InsightsTopDaysPresentation.topDays(from: [], by: .events, limit: 5)
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    func testInsightsTopDaysAvailableMetricsEmptyFromNoData() {
+        XCTAssertTrue(InsightsTopDaysPresentation.availableMetrics(for: []).isEmpty)
+    }
+}
+
 // MARK: - Mock helpers
 
 private final class MockRecordedTrackStore: RecordedTrackStoring {

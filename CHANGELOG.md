@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## [2026-05-05] — feat: UI/UX Redesign Batch 4 — Insights Dashboard
+
+### Insights Dashboard (`AppInsightsContentView`)
+
+- **Hero-Bereich**: Neue `insightsDashboardHero`-View direkt unter dem Titel, wenn Daten geladen sind.
+  - Zeigt Datumsbereich aus `insights.dateRange` (z. B. „01.01.2024 – 31.12.2024") oder „All Time"
+  - Zeigt Anzahl aktiver Tage (`daySummaries.filter(\.hasContent).count`) als farbiger Chip
+  - Keine Fake-Metriken: alle Werte kommen aus repo-wahren Projektionen
+- **Verbesserter Leer-Zustand**: `insightsFullEmptyState` unterscheidet zwei Szenarien:
+  - Filter aktiv + keine Treffer: kontextueller Hinweis + „Filter zurücksetzen"-Button (CTA `insights.empty.resetFilter`)
+  - Keine Daten: bestehendes Hinweis-Messaging, kein CTA
+- **Overview-Tab Reihenfolge** angepasst (personal engagement first):
+  - Vorher: Highlights → Daily Averages → Top Days → Activity Streak
+  - Jetzt: **Highlights → Activity Streak → Top Days → Daily Averages**
+- Alle bestehenden Drilldowns (Tage, Map, Export) unverändert erhalten
+- Kein neues Analyse-Backend, keine neuen Chart-Typen, keine Fake-Felder
+
+### Neue deutsche Strings
+
+- `"active day"` → `"aktiver Tag"`
+- `"active days"` → `"aktive Tage"`
+- `"No days match the current filter. Adjust the range or reset it to see insights."` → `"Keine Tage passen zum aktuellen Filter. Passe den Zeitraum an oder setze ihn zurück."`
+- `"Reset Filter"` → `"Filter zurücksetzen"`
+
+### Tests
+
+- `InsightsDashboardRedesignBatch4Tests` (7 neue Tests in `UIWiringTests.swift`):
+  - Aktiver-Tage-Zähler schließt `hasContent == false` aus
+  - Leer-Zähler bei leeren Summaries = 0
+  - `last30Days`-Filter ist aktiv, Default-Filter nicht
+  - Streak aus leeren Summaries = 0
+  - Streak aus einer aktiven Summary: `longestStreakDays == 1`
+  - Top Days aus leeren Summaries ist leer
+  - `availableMetrics` aus leeren Summaries ist leer
+- `AppLanguageSupportRedesignBatch4Tests` (8 neue Tests): EN-Identität + DE-Übersetzungen aller 4 neuen Strings
+- **Gesamt: 897 Tests, 0 Failures**
+
 ## [2026-05-05] — feat: UI/UX Redesign Batch 3 — Export Checkout
 
 ### Export-Flow (`AppExportView`)

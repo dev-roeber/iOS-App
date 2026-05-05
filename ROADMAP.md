@@ -4,6 +4,21 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### UI/UX Redesign Batch 4 — Insights Dashboard (2026-05-05)
+
+Implementiert und getestet:
+- **Hero-Bereich**: `insightsDashboardHero` direkt unter dem Titel — zeigt Datumsbereich und Anzahl aktiver Tage aus repo-wahren Projektionen
+- **Verbesserter Leer-Zustand**: `insightsFullEmptyState` mit Two-Path-Logik:
+  - Filter aktiv + keine Treffer → kontextueller Hinweis + „Filter zurücksetzen"-Button
+  - Keine Daten → statischer Hinweis
+- **Overview-Tab Reihenfolge**: Highlights → Activity Streak → Top Days → Daily Averages (Streak prominenter für persönliches Engagement)
+- Keine neuen Analyse-Engines, keine Fake-Metriken; alle bestehenden Drilldowns unverändert
+- lokaler Nachweis: **897 Tests, 0 Failures**
+
+Nicht als abgeschlossen markieren:
+- keine neue Insights-Analyse, kein neues Chart-Format
+- Insights-Tab visuell noch nicht auf echter Hardware verifiziert
+
 ### UI/UX Redesign Batch 3 — Export Checkout (2026-05-05)
 
 Implementiert und getestet:

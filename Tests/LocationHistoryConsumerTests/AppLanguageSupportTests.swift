@@ -306,3 +306,53 @@ final class AppLanguageSupportRedesignBatch2Tests: XCTestCase {
         )
     }
 }
+
+// MARK: - UI/UX Redesign Batch 4 — Insights Dashboard strings
+
+final class AppLanguageSupportRedesignBatch4Tests: XCTestCase {
+
+    private let de = AppLanguagePreference.german
+    private let en = AppLanguagePreference.english
+
+    // English identity
+
+    func testEnglishActiveDaySingular() {
+        XCTAssertEqual(en.localized("active day"), "active day")
+    }
+
+    func testEnglishActiveDaysPlural() {
+        XCTAssertEqual(en.localized("active days"), "active days")
+    }
+
+    func testEnglishResetFilter() {
+        XCTAssertEqual(en.localized("Reset Filter"), "Reset Filter")
+    }
+
+    func testEnglishFilterEmptyMessage() {
+        XCTAssertEqual(
+            en.localized("No days match the current filter. Adjust the range or reset it to see insights."),
+            "No days match the current filter. Adjust the range or reset it to see insights."
+        )
+    }
+
+    // German translations
+
+    func testGermanActiveDaySingular() {
+        XCTAssertEqual(de.localized("active day"), "aktiver Tag")
+    }
+
+    func testGermanActiveDaysPlural() {
+        XCTAssertEqual(de.localized("active days"), "aktive Tage")
+    }
+
+    func testGermanResetFilter() {
+        XCTAssertEqual(de.localized("Reset Filter"), "Filter zurücksetzen")
+    }
+
+    func testGermanFilterEmptyMessage() {
+        XCTAssertEqual(
+            de.localized("No days match the current filter. Adjust the range or reset it to see insights."),
+            "Keine Tage passen zum aktuellen Filter. Passe den Zeitraum an oder setze ihn zurück."
+        )
+    }
+}

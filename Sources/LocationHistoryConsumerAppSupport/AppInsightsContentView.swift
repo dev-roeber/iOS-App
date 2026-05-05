@@ -147,14 +147,40 @@ struct AppInsightsContentView: View {
 
     var body: some View {
         if daySummaries.isEmpty {
-            pageEmptyState(
-                title: t("No Insights Yet"),
-                message: t("This import contains no day entries, so there is nothing meaningful to analyze yet."),
-                systemImage: "chart.line.text.clipboard"
-            )
+            insightsFullEmptyState
         } else {
             loadedBody
         }
+    }
+
+    @ViewBuilder
+    private var insightsFullEmptyState: some View {
+        let message = rangeFilter.isActive
+            ? t("No days match the current filter. Adjust the range or reset it to see insights.")
+            : t("This import contains no day entries, so there is nothing meaningful to analyze yet.")
+        VStack(spacing: 14) {
+            Image(systemName: "chart.line.text.clipboard")
+                .font(.system(size: 36))
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text(t("No Insights Yet"))
+                .font(.headline)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            if rangeFilter.isActive {
+                Button(t("Reset Filter")) {
+                    rangeFilter = HistoryDateRangeFilter.default
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(LH2GPXTheme.primaryBlue)
+                .accessibilityIdentifier("insights.empty.resetFilter")
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 240)
+        .padding(24)
+        .accessibilityIdentifier("insights.emptyState")
     }
 
     @ViewBuilder
@@ -441,6 +467,10 @@ struct AppInsightsContentView: View {
                 .font(.title.weight(.bold))
                 .accessibilityIdentifier("insights.title")
 
+            if !daySummaries.isEmpty {
+                insightsDashboardHero
+            }
+
             if !activeFilterDescriptions.isEmpty {
                 LHContextBar(
                     message: activeFilterDescriptions.joined(separator: " · "),
@@ -451,6 +481,28 @@ struct AppInsightsContentView: View {
 
             kpiGrid
         }
+    }
+
+    private var insightsDashboardHero: some View {
+        let activeDays = daySummaries.filter(\.hasContent).count
+        let dayLabel = t(activeDays == 1 ? "active day" : "active days")
+        let rangeLabel: String
+        if let range = insights.dateRange {
+            rangeLabel = "\(AppDateDisplay.mediumDate(range.firstDate)) – \(AppDateDisplay.mediumDate(range.lastDate))"
+        } else {
+            rangeLabel = t("All Time")
+        }
+        return HStack(spacing: 0) {
+            Label(rangeLabel, systemImage: "calendar")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            Text("\(activeDays) \(dayLabel)")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(LH2GPXTheme.successGreen)
+        }
+        .accessibilityIdentifier("insights.hero.summary")
     }
 
     private var kpiGrid: some View {
@@ -514,6 +566,10 @@ struct AppInsightsContentView: View {
             }
         }
 
+        streakSection
+
+        topDaysSection
+
         insightSection(t("Daily Averages"), icon: "chart.bar.fill") {
             if let dailyAverageHint = InsightsChartSupport.dailyAveragesSectionMessage(dayCount: daySummaries.count) {
                 insightsEmptyCard(
@@ -531,10 +587,6 @@ struct AppInsightsContentView: View {
                 }
             }
         }
-
-        topDaysSection
-
-        streakSection
     }
 
     @ViewBuilder
