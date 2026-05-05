@@ -1,6 +1,6 @@
 # NEXT_STEPS
 
-Stand: 2026-05-06 (Days Edge-to-Edge Hero, Build 93 ausstehend)
+Stand: 2026-05-06 (Days Filter-Panel + DayCard-Polish, Build 94 nötig)
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
@@ -10,11 +10,11 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] **Build 74 / 1.0-Train abgeschlossen**: Version 1.0 (Build 74) bleibt in „Pending Developer Release" — 1.0-Train ist in ASC geschlossen. Builds 80–83 scheiterten wegen geschlossenem 1.0-Train (ITMS-90186/90062), nicht wegen Code-Fehler.
 - [x] **MARKETING_VERSION auf 1.0.1 angehoben** (2026-05-05): `project.pbxproj` alle 8 Konfigurationen auf `1.0.1`; Plists weiterhin via `$(MARKETING_VERSION)`. ASC hat Version `1.0.1` bereits angelegt.
 - [x] **Xcode Cloud Build 84 erfolgreich** (2026-05-05): `1.0.1 (84)` — Archive ✅, TestFlight-interne Tests ✅. Erster valider Build für den 1.0.1-Train.
-- [ ] **Xcode Cloud Build 93 triggern** (Pflicht vor Submit):
-  - Build 92 enthält `beac183` (overlayControls). Der aktuelle Days-Edge-to-Edge-Hero-Commit (Build 93) ist noch nicht in Xcode Cloud.
-  - Build 92 ist veraltet — enthält nicht den Edge-to-Edge-Overlay-Fix.
+- [ ] **Xcode Cloud Build 94 triggern** (Pflicht vor Submit):
+  - Build 93 ist veraltet — enthält den Days-Filter-Panel/DayCard-Polish-Fix nicht.
+  - Neuester Commit: `polish: move days filters below map, tighten day card layout`
   - Xcode Cloud Workflow `Release – Archive & TestFlight` manuell anstoßen.
-- [ ] **Days-Screenshot (iphone15pm_03) neu aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen — Days-Hero-Layout hat sich verändert (Edge-to-Edge Map, Overlay-Searchbar). Neues PNG in `docs/app-store-assets/screenshots/iphone-67/` ablegen.
+- [ ] **Days-Screenshot (iphone15pm_03) neu aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen — Days-Layout hat sich grundlegend verändert (Filter-Panel unterhalb der Karte, breitere DayCards). Neues PNG in `docs/app-store-assets/screenshots/iphone-67/` ablegen.
 - [ ] **Version 1.0.1 in App Store Connect finalisieren** (nach neuem Cloud-Build):
   1. ASC → LH2GPX → Vertrieb → iOS-App Version `1.0.1` öffnen
   2. Neuen Build (≥ 85, nach ce993d9) auswählen, speichern — **nicht Build 84** (enthält ce993d9 nicht)

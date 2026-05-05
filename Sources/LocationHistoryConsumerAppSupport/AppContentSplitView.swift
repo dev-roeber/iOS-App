@@ -378,6 +378,13 @@ public struct AppContentSplitView: View {
         let summaries = filteredDaySummaries
         let groups = groupByMonth(summaries, locale: preferences.appLocale)
         return List {
+            // Filter panel (search + date range) directly below the hero map
+            Section {
+                daysFilterPanel
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
             if let activeDayDrilldownDescription {
                 Section {
                     drilldownBanner(
@@ -460,24 +467,20 @@ public struct AppContentSplitView: View {
     }
 
     private var daysListStickyHeader: some View {
-        ZStack(alignment: .top) {
-            // Hero map — extends behind Dynamic Island / status bar
-            daysMapHeaderCard
-                .ignoresSafeArea(.container, edges: .top)
-
-            // Controls overlay — ZStack safe area keeps this below Dynamic Island
-            // (the map behind ignores safe area; this overlay respects it)
-            VStack(spacing: 0) {
-                daysHeroOverlayControls
-            }
-            .frame(maxWidth: .infinity, alignment: .top)
-        }
-        .accessibilityIdentifier("days.stickyHeader")
+        // Hero map — extends behind Dynamic Island / status bar.
+        // ignoresSafeArea is applied here so the map fills edge-to-edge.
+        // The expand/collapse overlay buttons inside LHCollapsibleMapHeader use
+        // a GeometryReader to read safeAreaInsets and add matching top padding,
+        // keeping them below the Dynamic Island without needing iOS 17 APIs.
+        daysMapHeaderCard
+            .ignoresSafeArea(.container, edges: .top)
+            .accessibilityIdentifier("days.stickyHeader")
     }
 
-    /// Search bar + context pills rendered as a thinMaterial overlay on the hero map.
-    private var daysHeroOverlayControls: some View {
-        VStack(spacing: 0) {
+    /// Compact filter panel placed directly below the hero map in the scroll content.
+    /// Contains the search bar and the date-range context pill.
+    private var daysFilterPanel: some View {
+        VStack(spacing: 6) {
             // Search bar
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
@@ -497,18 +500,16 @@ public struct AppContentSplitView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10))
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
 
-            // Context pills row
+            // Date-range context pill
             HStack(spacing: 8) {
                 compactContextPill(text: daysRangeSummaryText, icon: "calendar", identifier: "days.range")
                 Spacer()
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 6)
-            .padding(.bottom, 8)
         }
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
     }
 
     private var daysExportSelectionBar: some View {
@@ -997,6 +998,9 @@ public struct AppContentSplitView: View {
             isFavorited: favoritedDayIDs.contains(summary.date),
             presentation: presentation
         )
+        .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
         .contextMenu {
             Button {
                 toggleFavoriteDay(summary.date)

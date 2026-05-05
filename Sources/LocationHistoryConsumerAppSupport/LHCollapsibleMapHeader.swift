@@ -159,13 +159,19 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
     public var body: some View {
         Group {
             if overlayControls {
-                // Hero layout: map fills full width, controls float as overlay
-                ZStack(alignment: .topTrailing) {
-                    if state.shouldRenderMap && !state.isFullscreen {
-                        mapContainer
+                // Hero layout: map fills full width, controls float as overlay.
+                // GeometryReader without ignoresSafeArea gives us the safe-area-
+                // inset frame, so the overlay buttons land below Dynamic Island.
+                GeometryReader { geometry in
+                    ZStack(alignment: .topTrailing) {
+                        if state.shouldRenderMap && !state.isFullscreen {
+                            mapContainer
+                        }
+                        overlayControlBar(safeAreaTop: geometry.safeAreaInsets.top)
                     }
-                    overlayControlBar
+                    .frame(height: state.mapFrameHeight ?? geometry.size.height)
                 }
+                .frame(height: state.mapFrameHeight)
             } else {
                 VStack(spacing: 0) {
                     controlBar
@@ -231,7 +237,8 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
 
     /// Semi-transparent control buttons rendered as an overlay on the map
     /// (used when `overlayControls == true`).
-    private var overlayControlBar: some View {
+    /// `safeAreaTop` is the top safe-area inset so buttons land below Dynamic Island.
+    private func overlayControlBar(safeAreaTop: CGFloat = 0) -> some View {
         HStack(spacing: 6) {
             if state.isCompact {
                 iconButton(
@@ -253,6 +260,7 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
             }
         }
         .padding(8)
+        .padding(.top, safeAreaTop)
     }
 
     private func iconButton(systemImage: String, label: String, action: @escaping () -> Void) -> some View {

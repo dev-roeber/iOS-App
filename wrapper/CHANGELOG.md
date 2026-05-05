@@ -2,6 +2,15 @@
 
 ## 2026-05-06
 
+### polish: Days Filter below Map, DayCard Layout tightened (Build 94 nötig)
+
+- **Search + Date-Filter aus dem Map-Overlay entfernt**: Search-Bar und Date-Range-Pill lagen bisher als ZStack-Overlay direkt auf der Karte (und damit teilweise hinter dem Dynamic Island). Beides jetzt als kompakter `daysFilterPanel` direkt unterhalb der Karte im scrollbaren List-Content.
+- **Safe-Zone freihalten**: Die Expand/Collapse-Buttons in `LHCollapsibleMapHeader` (overlayControls-Modus) nutzen jetzt einen `GeometryReader`, der `geometry.safeAreaInsets.top` liest und als `.padding(.top, ...)` auf die Button-Group anwendet — iOS-16-kompatibel, keine `safeAreaPadding`-API nötig.
+- **DayCard horizontales Padding reduziert**: `AppDayRow` von `.padding(14)` auf `.padding(.horizontal, 8).padding(.vertical, 12)` — mehr Breite, Touch-Targets ≥ 44pt erhalten.
+- **DayList Row-Insets verkleinert**: `.listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))` auf allen DayRows (compact + iPad) — dichtere Liste, weniger Luft zwischen Karten.
+- **Separator + Row-Background**: `.listRowSeparator(.hidden)` und `.listRowBackground(Color.clear)` auf DayRows gesetzt — konsistenter mit dem Dark-Design.
+- `swift test`: 933/0 ✅ — `xcodebuild` iPhone 15 Pro Max **BUILD SUCCEEDED** ✅
+
 ### polish: Days Map Edge-to-Edge Hero with Overlay Controls (Build 93)
 
 - **Edge-to-Edge Hero**: Karte füllt volle Breite und beginnt bei y=0 hinter Dynamic Island/Statusbar (`ignoresSafeArea(.container, edges: .top)` auf `daysMapHeaderCard` im ZStack-Hero)

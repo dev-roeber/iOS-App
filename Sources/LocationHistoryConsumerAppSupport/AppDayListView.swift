@@ -71,7 +71,8 @@ struct AppDayRow: View {
                 }
             }
         }
-        .padding(14)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 12)
         .background(Color.black)
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -366,6 +367,9 @@ public struct AppDayListView: View {
             isFavorited: favoriteDayIDs.contains(summary.date),
             presentation: presentation
         )
+        .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
         .tag(summary.date)
         .disabled(!summary.hasContent)
         .accessibilityIdentifier("days.row.\(summary.date)")
