@@ -10,11 +10,11 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] **Build 74 / 1.0-Train abgeschlossen**: Version 1.0 (Build 74) bleibt in „Pending Developer Release" — 1.0-Train ist in ASC geschlossen. Builds 80–83 scheiterten wegen geschlossenem 1.0-Train (ITMS-90186/90062), nicht wegen Code-Fehler.
 - [x] **MARKETING_VERSION auf 1.0.1 angehoben** (2026-05-05): `project.pbxproj` alle 8 Konfigurationen auf `1.0.1`; Plists weiterhin via `$(MARKETING_VERSION)`. ASC hat Version `1.0.1` bereits angelegt.
 - [x] **Xcode Cloud Build 84 erfolgreich** (2026-05-05): `1.0.1 (84)` — Archive ✅, TestFlight-interne Tests ✅. Erster valider Build für den 1.0.1-Train.
-- [ ] **Xcode Cloud Build 94 triggern** (Pflicht vor Submit):
-  - Build 93 ist veraltet — enthält den Days-Filter-Panel/DayCard-Polish-Fix nicht.
-  - Neuester Commit: `polish: move days filters below map, tighten day card layout`
+- [ ] **Xcode Cloud Build 95 triggern** (Pflicht vor Submit):
+  - Build 94 ist veraltet — enthält den Days-Map-Höhe/Lücken-Fix nicht.
+  - Neuester Commit: `polish: increase days map hero height, remove gap above filter panel`
   - Xcode Cloud Workflow `Release – Archive & TestFlight` manuell anstoßen.
-- [ ] **Days-Screenshot (iphone15pm_03) neu aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen — Days-Layout hat sich grundlegend verändert (Filter-Panel unterhalb der Karte, breitere DayCards). Neues PNG in `docs/app-store-assets/screenshots/iphone-67/` ablegen.
+- [ ] **Days-Screenshot (iphone15pm_03) neu aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen — Days-Layout erneut verändert (Map-Höhe 460 pt, keine Lücke über Filter-Panel). Neues PNG in `docs/app-store-assets/screenshots/iphone-67/` ablegen.
 - [ ] **Version 1.0.1 in App Store Connect finalisieren** (nach neuem Cloud-Build):
   1. ASC → LH2GPX → Vertrieb → iOS-App Version `1.0.1` öffnen
   2. Neuen Build (≥ 85, nach ce993d9) auswählen, speichern — **nicht Build 84** (enthält ce993d9 nicht)

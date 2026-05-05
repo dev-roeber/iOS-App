@@ -22,8 +22,8 @@ public struct AppContentSplitView: View {
     )
     @State private var daysMapHeaderState = LHMapHeaderState(
         visibility: .compact,
-        compactHeight: 340,
-        expandedHeight: 420,
+        compactHeight: 460,
+        expandedHeight: 560,
         isSticky: true
     )
     @State private var presentedSheet: PresentedSheet?
@@ -434,6 +434,9 @@ public struct AppContentSplitView: View {
                 }
             }
         }
+        #if os(iOS)
+        .modifier(DaysListSectionSpacingModifier())
+        #endif
         .scrollContentBackground(.hidden)
         .background(Color.black)
         .safeAreaInset(edge: .top, spacing: 0) {
@@ -1468,5 +1471,21 @@ public struct AppContentSplitView: View {
         return formatDistance(summary.totalPathDistanceM, unit: preferences.distanceUnit)
     }
 }
+
+// MARK: - iOS-17+ list section spacing helper
+
+#if os(iOS)
+/// Applies `.listSectionSpacing(0)` on iOS 17+ and is a no-op on earlier
+/// versions where the API is unavailable.
+private struct DaysListSectionSpacingModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, *) {
+            content.listSectionSpacing(0)
+        } else {
+            content
+        }
+    }
+}
+#endif
 
 #endif

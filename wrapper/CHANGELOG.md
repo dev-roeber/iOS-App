@@ -2,7 +2,15 @@
 
 ## 2026-05-06
 
-### polish: Days Filter below Map, DayCard Layout tightened (Build 94 nötig)
+### polish: Days Map-Höhe erhöht, schwarze Lücke über Filter-Panel entfernt (Build 95 nötig)
+
+- **Map-Höhe angehoben**: `daysMapHeaderState.compactHeight` 340 → 460 pt, `expandedHeight` 420 → 560 pt — Map-Unterkante auf iPhone 15 Pro Max nun bei ca. 460 pt ab y=0, innerhalb der Zielmarke.
+- **Schwarze Lücke eliminiert**: SwiftUI-List-Default-Section-Spacing (≈20 pt) zwischen Map-StickyHeader und erstem List-Section entfernt via `DaysListSectionSpacingModifier` (`.listSectionSpacing(0)`, iOS-17-only, no-op auf iOS 16).
+- **iOS-16-Kompatibilität**: Modifier als `private struct DaysListSectionSpacingModifier: ViewModifier` mit `if #available(iOS 17.0, *)` Guard — compiliert auf allen Zielplattformen.
+- Build 94 (Commit 728f50a) ist **veraltet** — enthält diesen Fix nicht. Nächster Submit-Build: **Build 95**.
+- `swift test`: 933/0 ✅ — `xcodebuild` iPhone 15 Pro Max **BUILD SUCCEEDED** ✅
+
+### polish: Days Filter below Map, DayCard Layout tightened (Build 94 nötig — veraltet, Build 94 enthält diesen Fix nicht)
 
 - **Search + Date-Filter aus dem Map-Overlay entfernt**: Search-Bar und Date-Range-Pill lagen bisher als ZStack-Overlay direkt auf der Karte (und damit teilweise hinter dem Dynamic Island). Beides jetzt als kompakter `daysFilterPanel` direkt unterhalb der Karte im scrollbaren List-Content.
 - **Safe-Zone freihalten**: Die Expand/Collapse-Buttons in `LHCollapsibleMapHeader` (overlayControls-Modus) nutzen jetzt einen `GeometryReader`, der `geometry.safeAreaInsets.top` liest und als `.padding(.top, ...)` auf die Button-Group anwendet — iOS-16-kompatibel, keine `safeAreaPadding`-API nötig.
