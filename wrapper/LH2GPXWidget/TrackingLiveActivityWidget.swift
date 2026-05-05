@@ -105,11 +105,7 @@ struct TrackingLiveActivityWidget: Widget {
 
     @ViewBuilder
     private func minimalView(context: ActivityViewContext<TrackingAttributes>) -> some View {
-        let display = selectedDisplay()
-        let primary = primaryValue(for: context)
-        let imageName = context.state.isPaused
-            ? "pause.circle.fill"
-            : (display == .uploadStatus ? primary.systemImageName : primary.systemImageName)
+        let imageName = context.state.isPaused ? "pause.circle.fill" : "location.fill.viewfinder"
         Image(systemName: imageName)
             .foregroundStyle(context.state.isPaused ? .orange : Color.accentColor)
     }

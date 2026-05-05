@@ -4,6 +4,19 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### UI/UX Redesign Batch 5B — Live Activity / Dynamic Island / Widget Safety (2026-05-05)
+
+Implementiert und getestet:
+- **Content-Safety-Review**: `TrackingStatus` (ContentState), `TrackingAttributes` (statisch) und `WidgetDataStore.LastRecording` enthalten keine Koordinaten, Server-URLs oder Bearer-Token — bestätigt durch Codable-Encoding-Tests und Mirror-Reflexion
+- **`minimalView`-Bugfix** (`TrackingLiveActivityWidget.swift`): Tote Bedingung entfernt; Minimal-Icon zeigt nun konsistent `pause.circle.fill` (Pause) oder `location.fill.viewfinder` (aktiv)
+- **Dynamic Island (Compact/Expanded/Lock Screen)**: Kein Änderungsbedarf — Inhalte sind bereits auf Statuswerte und Metriken begrenzt; keine sensitiven Felder
+- 9 neue Safety-Tests (`LiveActivitySafetyBatch5BTests`), lokaler Nachweis: **927 Tests, 0 Failures**
+
+Nicht als abgeschlossen markieren:
+- Keine echte iPhone-/Hardware-Verifikation der Live Activity / Dynamic Island
+- Keine Lock-Screen-Verifikation auf echter Hardware
+- No-Dynamic-Island-Gerät (Pending-/Restart-Pfad) weiter ungeprüft
+
 ### UI/UX Redesign Batch 5A — Live Tracking Foundation (2026-05-05)
 
 Implementiert und getestet:

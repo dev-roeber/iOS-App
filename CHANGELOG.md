@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## [2026-05-05] — feat: UI/UX Redesign Batch 5B — Live Activity / Dynamic Island / Widget Safety
+
+### Inhaltssicherheit (Content Safety Review)
+
+- **`TrackingStatus` (Live Activity ContentState)**: Geprüft und bestätigt — keine Koordinaten, keine Server-URLs, keine Bearer-Token im ContentState. Felder: `isRecording`, `distanceMeters`, `pointCount`, `isPaused`, `uploadQueueCount`, `lastUploadSuccess`, `uploadState`.
+- **`TrackingAttributes` (statisch)**: Nur `trackName` (String) + `startTime` (Date) — kein sensitives Feld.
+- **`WidgetDataStore.LastRecording`**: Nur Datum, Distanz, Dauer, Trackname — kein Koordinatenfeld.
+- **Live Activity / Dynamic Island / Lock Screen**: Kein Koordinaten-, Token- oder Server-URL-Inhalt in keiner Ansicht.
+
+### Bugfix: `minimalView` (Dynamic Island Minimal)
+
+- Tote Bedingung entfernt: `(display == .uploadStatus ? primary.systemImageName : primary.systemImageName)` lieferte immer denselben Wert.
+- Vereinfacht zu `context.state.isPaused ? "pause.circle.fill" : "location.fill.viewfinder"` — klares, konsistentes Icon für die Minimal-Darstellung.
+
+### Neue Safety-Tests (`LiveActivitySafetyBatch5BTests`, 9 Tests)
+
+- JSON-Encoding von `TrackingStatus` enthält keine Koordinat-, Token- oder Server-Schlüssel
+- `Mirror`-Reflexion bestätigt vollständige + sichere Feldliste von `TrackingStatus`
+- JSON-Encoding von `WidgetDataStore.LastRecording` enthält keine Koordinat- oder Token-Schlüssel
+- `uploadState` ist standardmäßig `.disabled` (kein Upload ohne explizite Konfiguration)
+- Alle `LiveActivityUploadState`-Fälle haben nicht-leere, sichere Labels
+
+### Gesamttest-Stand
+
+927 Tests, 0 Failures
+
+---
+
 ## [2026-05-05] — feat: UI/UX Redesign Batch 5A — Live Tracking Foundation
 
 ### Hero/Status-Bereich (`AppLiveTrackingView`)

@@ -312,6 +312,108 @@ final class LiveActivityTests: XCTestCase {
     }
 }
 
+// MARK: - Batch 5B: Live Activity / Widget Content Safety
+
+final class LiveActivitySafetyBatch5BTests: XCTestCase {
+
+    // TrackingStatus JSON must not contain sensitive field names.
+    func testTrackingStatusEncodedJSONHasNoCoordinateKeys() throws {
+        let status = TrackingStatus(isRecording: true, distanceMeters: 500, pointCount: 10)
+        let data = try JSONEncoder().encode(status)
+        let json = String(data: data, encoding: .utf8) ?? ""
+        XCTAssertFalse(json.contains("latitude"),  "Live Activity must not expose latitude")
+        XCTAssertFalse(json.contains("longitude"), "Live Activity must not expose longitude")
+        XCTAssertFalse(json.contains("coordinate"), "Live Activity must not expose coordinates")
+    }
+
+    func testTrackingStatusEncodedJSONHasNoServerURLOrTokenKeys() throws {
+        let status = TrackingStatus(isRecording: true, distanceMeters: 500, pointCount: 10)
+        let data = try JSONEncoder().encode(status)
+        let json = String(data: data, encoding: .utf8) ?? ""
+        XCTAssertFalse(json.contains("url"),    "Live Activity must not expose server URL")
+        XCTAssertFalse(json.contains("token"),  "Live Activity must not expose bearer token")
+        XCTAssertFalse(json.contains("server"), "Live Activity must not expose server address")
+    }
+
+    func testTrackingStatusUploadStateDefaultIsDisabled() {
+        let status = TrackingStatus(isRecording: false, distanceMeters: 0, pointCount: 0)
+        XCTAssertEqual(status.uploadState, .disabled, "Upload must be disabled by default — no server required")
+    }
+
+    func testTrackingStatusPropertyReflectionHasNoCoordinateField() {
+        let status = TrackingStatus(isRecording: false, distanceMeters: 0, pointCount: 0)
+        let mirror = Mirror(reflecting: status)
+        let fieldNames = mirror.children.compactMap { $0.label }
+        XCTAssertFalse(fieldNames.contains("latitude"),  "TrackingStatus must not have a latitude field")
+        XCTAssertFalse(fieldNames.contains("longitude"), "TrackingStatus must not have a longitude field")
+        XCTAssertFalse(fieldNames.contains("token"),     "TrackingStatus must not have a token field")
+        XCTAssertFalse(fieldNames.contains("url"),       "TrackingStatus must not have a URL field")
+    }
+
+    func testWidgetLastRecordingEncodedJSONHasNoCoordinateKeys() throws {
+        let rec = WidgetDataStore.LastRecording(
+            date: Date(timeIntervalSince1970: 0),
+            distanceMeters: 3000,
+            durationSeconds: 900,
+            trackName: "Testrunde"
+        )
+        let data = try JSONEncoder().encode(rec)
+        let json = String(data: data, encoding: .utf8) ?? ""
+        XCTAssertFalse(json.contains("latitude"),   "Widget last recording must not expose latitude")
+        XCTAssertFalse(json.contains("longitude"),  "Widget last recording must not expose longitude")
+        XCTAssertFalse(json.contains("coordinate"), "Widget last recording must not expose coordinates")
+    }
+
+    func testWidgetLastRecordingEncodedJSONHasNoTokenOrURLKeys() throws {
+        let rec = WidgetDataStore.LastRecording(
+            date: Date(timeIntervalSince1970: 0),
+            distanceMeters: 0,
+            durationSeconds: 0,
+            trackName: ""
+        )
+        let data = try JSONEncoder().encode(rec)
+        let json = String(data: data, encoding: .utf8) ?? ""
+        XCTAssertFalse(json.contains("token"),  "Widget last recording must not expose token")
+        XCTAssertFalse(json.contains("server"), "Widget last recording must not expose server URL")
+    }
+
+    func testTrackingStatusUploadStateDisabledHasSafeLabels() {
+        XCTAssertEqual(LiveActivityUploadState.disabled.localizedName, "Disabled")
+        XCTAssertEqual(LiveActivityUploadState.disabled.compactLabel, "Off")
+        XCTAssertFalse(LiveActivityUploadState.disabled.localizedName.contains("http"))
+        XCTAssertFalse(LiveActivityUploadState.disabled.localizedName.contains("token"))
+    }
+
+    func testAllUploadStatesHaveNonEmptyLabels() {
+        for state in LiveActivityUploadState.allCases {
+            XCTAssertFalse(state.localizedName.isEmpty, "\(state) must have non-empty localizedName")
+            XCTAssertFalse(state.compactLabel.isEmpty,  "\(state) must have non-empty compactLabel")
+            XCTAssertFalse(state.systemImageName.isEmpty, "\(state) must have non-empty systemImageName")
+        }
+    }
+
+    func testTrackingStatusRecordingFields() {
+        // Verify the complete field set — ensures no hidden sensitive field was added silently.
+        let status = TrackingStatus(
+            isRecording: true,
+            distanceMeters: 1000,
+            pointCount: 50,
+            isPaused: false,
+            uploadQueueCount: 0,
+            lastUploadSuccess: nil,
+            uploadState: .disabled
+        )
+        let mirror = Mirror(reflecting: status)
+        let fieldNames = Set(mirror.children.compactMap { $0.label })
+        let expectedFields: Set<String> = [
+            "isRecording", "distanceMeters", "pointCount",
+            "isPaused", "uploadQueueCount", "lastUploadSuccess", "uploadState"
+        ]
+        XCTAssertEqual(fieldNames, expectedFields,
+            "TrackingStatus field set changed — review for sensitive data before shipping")
+    }
+}
+
 // MARK: - Test helper: lightweight throttle gate (mirrors ActivityManager's logic)
 
 /// A minimal throttle gate used in tests to verify the update-rate-limiting logic

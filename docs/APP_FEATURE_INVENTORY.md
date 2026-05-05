@@ -185,6 +185,7 @@ Present:
 - saved-track editor supports point editing, midpoint insertion and delete
 - live-recording area links into the separate library instead of duplicating a second inline editor flow
 - **Live Tracking + Library Redesign (2026-05-01):** `AppLiveTrackingView` and `AppRecordedTracksLibraryView` fully ported to LH2GPX dark design system
+- **Live Activity / Dynamic Island / Widget Safety Batch 5B (2026-05-05):** Content-Safety-Review: `TrackingStatus`/`TrackingAttributes`/`WidgetDataStore.LastRecording` enthalten keine Koordinaten, Server-URLs oder Token; `minimalView`-Bug (tote Bedingung) behoben → zeigt konsistent `location.fill.viewfinder` (aktiv) oder `pause.circle.fill` (Pause); 9 neue Safety-Tests
 - **Live Tracking Foundation Batch 5A (2026-05-05):** Hero/Status-Card, collapsible Diagnostics section, 7 new accessibility identifiers
 - `heroStatusCard`: Clear status display at top of Live Tracking screen, derived from `isRecording` / `isAwaitingAuthorization` / `authorization`; states: Recording Active, Requesting Permission, Location Access Denied, Ready to Record, Not Started; identifier: `live.status.hero`
 - `diagnosticsSection`: Collapsible 8-metric diagnostics (was `recordingCard`); tap to expand/collapse; session timer visible in header; identifier: `live.diagnostics.section`
