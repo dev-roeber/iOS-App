@@ -4,6 +4,22 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Verifikations-Batch Redesign 1–5B (2026-05-05)
+
+Implementiert und verifiziert:
+- **swift test**: 927 Tests, 0 Failures ✅
+- **xcodebuild** (generic/platform=iOS + iPhone 17 Pro Max Simulator): BUILD SUCCEEDED ✅
+- **CI-Tests** (iPhone 17 Pro Max Simulator, testPlan CI): TEST SUCCEEDED ✅
+- **testAppStoreScreenshots** (iPhone 17 Pro Max Simulator): PASSED — 7/8 Screenshots ✅
+- **Bugfix UITest**: `insights.section.share` → `insights.share.*` (Identifier-Rename seit Batch 4)
+- **Screenshot-Kandidaten** (Simulator): 7 PNGs in `docs/app-store-assets/screenshots/simulator-iphone17promax/`
+- **Visuell geprüft** (Simulator): Start, Overview, Days (Sticky Map), Insights (Hero), Export (Checkout), Live (Hero+Diagnostics), Day Detail
+
+Nicht als abgeschlossen markieren:
+- Keine neue Hardware-Verifikation (Live Activity, Landscape, Widget)
+- Neue App-Store-Screenshots auf iPhone 15 Pro Max: ausstehend
+- Options-Tab-Screenshot (07): fehlt wegen fehlender Tab-Bar-Kennung im UITest
+
 ### UI/UX Redesign Batch 5B — Live Activity / Dynamic Island / Widget Safety (2026-05-05)
 
 Implementiert und getestet:

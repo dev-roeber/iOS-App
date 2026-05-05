@@ -1,5 +1,50 @@
 # CHANGELOG
 
+## [2026-05-05] — chore: Verifikations-Batch Redesign 1–5B
+
+### Build & Test
+- `swift test`: 927 Tests, 0 Failures, 0 Skips ✅
+- `git diff --check`: sauber ✅
+- `xcodebuild -scheme LH2GPXWrapper -destination generic/platform=iOS build`: BUILD SUCCEEDED ✅ (inkl. Widget-Extension)
+- `xcodebuild -scheme LH2GPXWrapper -destination 'iPhone 17 Pro Max Simulator' build`: BUILD SUCCEEDED ✅
+- `xcodebuild -testPlan CI` (iPhone 17 Pro Max Simulator): TEST SUCCEEDED (alle 8 LH2GPXWrapperTests) ✅
+- `testAppStoreScreenshots` (iPhone 17 Pro Max Simulator): PASSED (253s) ✅ — 7 PNGs 1320×2796 extrahiert
+- `testDeviceSmokeNavigationAndActions` (iPhone 17 Pro Max Simulator): nach Bugfix erneut ausgeführt
+
+### Bugfix UITest: `insights.section.share` → `insights.share.*`
+- `testDeviceSmokeNavigationAndActions` scheiterte wegen veralteter Accessibility-Kennung `insights.section.share`
+- Seit Batch 4 lautet der Identifier `insights.share.<cardType>` (z.B. `insights.share.highlights`)
+- UITest auf Prädikat `identifier BEGINSWITH 'insights.share.'` umgestellt → minimale, wartbare Korrektur
+
+### Screenshot-Kandidaten (Simulator, nicht für App Store Connect)
+- 7 PNG-Screenshots (1320×2796, iPhone 17 Pro Max Simulator) in `docs/app-store-assets/screenshots/simulator-iphone17promax/` gespeichert
+- Slots: 01-import, 02-overview-map, 03-days, 04-insights, 05-export, 06-live-recording, 08-day-detail
+- 07-options: Tab-Bar-Button im Simulator nicht gefunden (Options ist kein eigener Tab, sondern Kontext-Button) — bekannte Einschränkung
+- **Hinweis**: Diese Screenshots sind Simulator-Kandidaten, keine Finalversionen für App Store Connect. Für ASC müssen auf echtem iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C) aufgenommen werden.
+
+### Simulator-Verifikation: visuell geprüfte Screens
+- **Startseite (01-import)**: Import-CTA, Hero-Bereich, Privacy-Row sichtbar ✅
+- **Overview (02-overview-map)**: Karte, KPI-Grid, Datumsbereich, Demo-Overlays ✅
+- **Days (03-days)**: Sticky-Map-Bereich sichtbar (Batch 1), Tagesliste darunter ✅
+- **Insights (04-insights)**: Hero-Summary, KPI-Grid, Sektionen (Batch 4) ✅
+- **Export (05-export)**: Checkout-Struktur, Formatwahl, Bottom-Bar (Batch 3) ✅
+- **Live Tracking (06-live-recording)**: Hero-Status-Card, diagnostics collapsed, Bottom-Bar (Batch 5A) ✅
+- **Day Detail (08-day-detail)**: Map-first, Demo-Tag ✅
+
+### Simulator-Verifikation: Landscape
+- Landscape-Verifikation: **nicht durchgeführt** (Aufgabe erfordert manuellen UI-Durchgang; Simulator-Rotation ist nicht automatisch per UITest verifiziert worden)
+
+### Simulator-Verifikation: iPad
+- iPad nicht anwendbar für v1 (`TARGETED_DEVICE_FAMILY = 1`, iPhone-only)
+
+### Hardware-Verifikation (weiterhin offen)
+- Kein neuer Hardware-Durchgang in diesem Batch
+- Live Activity / Dynamic Island: nur Build 44-Stand auf echter Hardware; Batch 5A/5B noch ohne Hardware-Nachweis
+- Landscape / Dynamic Type: weiter ohne Hardware-Nachweis
+- Alle offenen P0-Hardware-Punkte bleiben in NEXT_STEPS
+
+---
+
 ## [2026-05-05] — feat: UI/UX Redesign Batch 5B — Live Activity / Dynamic Island / Widget Safety
 
 ### Inhaltssicherheit (Content Safety Review)

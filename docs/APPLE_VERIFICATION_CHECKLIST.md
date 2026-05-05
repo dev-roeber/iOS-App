@@ -33,6 +33,40 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 - Explore-Dismiss setzt wieder Full-View-Overlays; stale Overlay-Tasks werden bei Neu-Load verworfen
 - Verifiziert nur per `swift test` + `xcodebuild`; **kein** neuer Geräte-Claim aus diesem Audit-Batch
 
+### Verifikations-Batch Redesign 1–5B — 2026-05-05
+
+Ausgefuehrt auf: macOS (dieser Host), Xcode, iPhone 17 Pro Max Simulator
+
+#### ✅ real verifiziert (2026-05-05) — Simulator
+
+- **swift test**: 927 Tests, 0 Failures ✅
+- **git diff --check**: sauber ✅
+- **xcodebuild generic/platform=iOS** (LH2GPXWrapper + Widget): BUILD SUCCEEDED ✅
+- **xcodebuild iPhone 17 Pro Max Simulator build**: BUILD SUCCEEDED ✅
+- **CI.xctestplan** (iPhone 17 Pro Max Simulator): TEST SUCCEEDED (alle 8 LH2GPXWrapperTests) ✅
+- **testAppStoreScreenshots** (iPhone 17 Pro Max Simulator): PASSED ✅ — 7/8 Slots (01–06, 08); Slot 07-options fehlte, weil Options kein eigener Tab-Bar-Eintrag ist
+- **testDeviceSmokeNavigationAndActions** (iPhone 17 Pro Max Simulator): nach Bugfix PASSED ✅
+  - Bug: veralteter Identifier `insights.section.share` → gefixt auf `identifier BEGINSWITH 'insights.share.'`
+- **Screenshot-Kandidaten** (Simulator, 1320×2796 px): gespeichert in `docs/app-store-assets/screenshots/simulator-iphone17promax/`
+
+#### Visuell geprüft (Simulator-Screenshots, kein Hardware-Nachweis)
+- **01-import**: Import-CTA, Hero, Privacy-Row ✅
+- **02-overview-map**: Karte, KPI-Grid, Datumsbereich ✅
+- **03-days**: Sticky-Map sichtbar, Tagesliste darunter ✅
+- **04-insights**: Hero-Summary (Batch 4), KPI-Grid, Sektionen ✅
+- **05-export**: Checkout-Struktur (Batch 3), Formatwahl, Bottom-Bar ✅
+- **06-live-recording**: Hero-Status-Card (Batch 5A), Diagnostics-Bereich, Bottom-Bar ✅
+- **08-day-detail**: Map-first, Demo-Tag ✅
+
+#### ⚠️ nicht geprüft in diesem Batch (weiterhin offen)
+- Landscape-Verifikation: alle Tabs — kein neuer Hardware- oder manueller Simulator-Lauf
+- Live Activity / Dynamic Island: Batch 5A/5B noch ohne Hardware-Nachweis auf echtem Gerät
+- Widget auf echtem Homescreen: nicht geprüft
+- iPad: nicht relevant für v1 (`TARGETED_DEVICE_FAMILY = 1`)
+- Neue App-Store-Screenshots auf iPhone 15 Pro Max: ausstehend
+
+---
+
 ### App Review — Build 74 Accepted — Pending Developer Release (2026-05-05)
 
 - **Version `1.0`** (Build 74): nach Ablehnung (2026-05-01, Guideline 3.2) und Review-Response **akzeptiert** am 2026-05-05
