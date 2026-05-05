@@ -16,11 +16,12 @@ final class AppSessionStateTests: XCTestCase {
         XCTAssertFalse(state.isLoading)
         XCTAssertTrue(state.hasLoadedContent)
         XCTAssertEqual(state.selectedDate, "2024-05-02")
-        XCTAssertEqual(state.sourceDescription, "Demo fixture: golden_app_export_sample_small.json")
+        // Default fixture gets a friendly "Bundled sample" label instead of the raw filename.
+        XCTAssertEqual(state.sourceDescription, "Demo fixture: Bundled sample")
         XCTAssertEqual(state.message?.title, "Demo data ready")
         XCTAssertEqual(state.presentationState, .demoLoaded)
         XCTAssertEqual(state.sourceSummary.stateTitle, "Demo data loaded")
-        XCTAssertEqual(state.sourceSummary.sourceValue, "Demo fixture: golden_app_export_sample_small.json")
+        XCTAssertEqual(state.sourceSummary.sourceValue, "Demo fixture: Bundled sample")
         XCTAssertEqual(state.sourceSummary.schemaVersion, "1.0")
     }
 

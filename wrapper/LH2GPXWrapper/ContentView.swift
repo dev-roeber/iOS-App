@@ -156,6 +156,24 @@ struct ContentView: View {
                 }
             }
 
+            // Privacy assurance: all processing happens on-device.
+            HStack(spacing: 10) {
+                Image(systemName: "lock.shield")
+                    .foregroundStyle(Color.green)
+                    .font(.caption)
+                    .accessibilityHidden(true)
+                Text(t("Processed locally · JSON, ZIP, GPX, TCX"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color.primary.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .accessibilityIdentifier("home.localNotice")
+            .accessibilityLabel(t("Data processed locally. Supported formats: JSON, ZIP, GPX, TCX"))
+
             Spacer()
         }
         .frame(maxWidth: 480)

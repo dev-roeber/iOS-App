@@ -247,7 +247,12 @@ public struct AppSessionState {
         }
         switch source {
         case let .demoFixture(name):
-            return "Demo fixture: \(name).json"
+            // Show a friendly label for the default demo fixture instead of the
+            // internal filename, which is confusing to users and App Store reviewers.
+            let label = name == AppContentLoader.defaultDemoFixtureName
+                ? "Bundled sample"
+                : name
+            return "Demo fixture: \(label)"
         case let .importedFile(filename):
             return "Imported file: \(filename)"
         }

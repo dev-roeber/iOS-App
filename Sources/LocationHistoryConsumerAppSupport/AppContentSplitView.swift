@@ -116,6 +116,12 @@ public struct AppContentSplitView: View {
                 return nil
             }
 
+            // "Limit: N days" is a server-side export metadata constraint — the user
+            // cannot change it, so displaying it as an active UI filter is confusing.
+            if description.hasPrefix("Limit: ") {
+                return nil
+            }
+
             if let value = description.split(separator: ":", maxSplits: 1).last,
                description.hasPrefix("Max accuracy: ") {
                 return "\(t("Maximum accuracy")):\(value)"
@@ -281,7 +287,12 @@ public struct AppContentSplitView: View {
 
             NavigationStack {
                 insightsPaneContent
-                    .navigationTitle(t("Insights"))
+                    // Empty title: the content's own Text("Insights") header acts as the
+                    // large title so we don't end up with two "Insights" headings.
+                    .navigationTitle("")
+                    #if os(iOS)
+                    .navigationBarTitleDisplayMode(.inline)
+                    #endif
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
                             actionsMenu
@@ -300,7 +311,12 @@ public struct AppContentSplitView: View {
                     onOpenImport: onOpen,
                     onOpenDays: { selectedTab = 1 }
                 )
-                    .navigationTitle(t("Export"))
+                    // Empty title: AppExportView.titleHeaderSection renders its own
+                    // large Text("Export") so we suppress the duplicate NavBar title.
+                    .navigationTitle("")
+                    #if os(iOS)
+                    .navigationBarTitleDisplayMode(.inline)
+                    #endif
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
                             actionsMenu
@@ -1256,7 +1272,10 @@ public struct AppContentSplitView: View {
                         onOpenImport: onOpen
                     )
                         .environmentObject(preferences)
-                        .navigationTitle(t("Export"))
+                        .navigationTitle("")
+                        #if os(iOS)
+                        .navigationBarTitleDisplayMode(.inline)
+                        #endif
                         .toolbar {
                             ToolbarItem(placement: .confirmationAction) {
                                 Button(t("Done")) { presentedSheet = nil }
