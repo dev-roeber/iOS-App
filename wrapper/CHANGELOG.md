@@ -2,6 +2,17 @@
 
 ## 2026-05-05
 
+### UI Polish: Doppeltitel-Fix, Limit-Badge, Demo-Label, Privacy-Banner (Commit ce993d9)
+
+- **Doppeltitel behoben** (Insights + Export): `.navigationTitle("")` + `.navigationBarTitleDisplayMode(.inline)` — kein doppelter Titel mehr in den Sheet-Überschriften
+- **Limit-Badge unterdrückt**: `localizedProjectedFilterDescriptions` blendet „Limit: N days"-Badge aus der UI aus
+- **Demo-Fixture-Label**: Anzeigename von `golden_app_export_sample_small.json` auf `Bundled sample` geändert (nutzerfreundlicher)
+- **Privacy-Banner im Empty State**: `ContentView` zeigt Privacy-Hinweis-Row im leeren Zustand
+- **DemoSessionStateTests**: an neues Demo-Label angepasst
+- `swift test`: 933/0 ✅ — `xcodebuild` iPhone_15_Pro_Max (arm64, iOS 26.4): **BUILD SUCCEEDED** ✅
+- Commit `ce993d9`, Branch `main`, Push ✅
+- **Hinweis**: ce993d9 wurde nach Xcode Cloud Build 84 gepusht. Vor Submit for Review ist ein neuer Xcode Cloud Build erforderlich.
+
 ### Stop-Ship-Fixes: Auto-Split, Widget-Daten, Widget-Family (Commit 3469bcc)
 
 - **Bug 1 — LiveTrackRecorder Auto-Split Datenverlust behoben**:

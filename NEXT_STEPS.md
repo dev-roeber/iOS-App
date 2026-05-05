@@ -10,9 +10,13 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] **Build 74 / 1.0-Train abgeschlossen**: Version 1.0 (Build 74) bleibt in „Pending Developer Release" — 1.0-Train ist in ASC geschlossen. Builds 80–83 scheiterten wegen geschlossenem 1.0-Train (ITMS-90186/90062), nicht wegen Code-Fehler.
 - [x] **MARKETING_VERSION auf 1.0.1 angehoben** (2026-05-05): `project.pbxproj` alle 8 Konfigurationen auf `1.0.1`; Plists weiterhin via `$(MARKETING_VERSION)`. ASC hat Version `1.0.1` bereits angelegt.
 - [x] **Xcode Cloud Build 84 erfolgreich** (2026-05-05): `1.0.1 (84)` — Archive ✅, TestFlight-interne Tests ✅. Erster valider Build für den 1.0.1-Train.
-- [ ] **Version 1.0.1 in App Store Connect finalisieren**:
+- [ ] **Xcode Cloud Build nach UI-Polish-Commit triggern** (Pflicht vor Submit):
+  - Commit `ce993d9` (polish: fix double titles, limit badge, demo label, privacy row) wurde nach Xcode Cloud Build 84 gepusht.
+  - Build 84 enthält diese Fixes **nicht**. Ein neuer Xcode Cloud Build (≥ 85) ist zwingend erforderlich, bevor Submit for Review möglich ist.
+  - Xcode Cloud Workflow `Release – Archive & TestFlight` manuell anstoßen.
+- [ ] **Version 1.0.1 in App Store Connect finalisieren** (nach neuem Cloud-Build):
   1. ASC → LH2GPX → Vertrieb → iOS-App Version `1.0.1` öffnen
-  2. Build `1.0.1 (84)` auswählen, speichern
+  2. Neuen Build (≥ 85, nach ce993d9) auswählen, speichern — **nicht Build 84** (enthält ce993d9 nicht)
   3. Screenshots prüfen: 6 iPhone-15-Pro-Max-PNGs aus `docs/app-store-assets/screenshots/iphone-67/` hochladen (iphone15pm_01–06, 1290×2796 px)
   4. `Zur Prüfung einreichen` (`Submit for Review`)
   - Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
