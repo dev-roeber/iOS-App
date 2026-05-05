@@ -22,8 +22,8 @@ public struct AppContentSplitView: View {
     )
     @State private var daysMapHeaderState = LHMapHeaderState(
         visibility: .compact,
-        compactHeight: 180,
-        expandedHeight: 260,
+        compactHeight: 280,
+        expandedHeight: 360,
         isSticky: true
     )
     @State private var presentedSheet: PresentedSheet?
@@ -252,7 +252,7 @@ public struct AppContentSplitView: View {
                 compactDayList
                     .navigationTitle(t("Days"))
                     #if os(iOS)
-                    .navigationBarTitleDisplayMode(.large)
+                    .navigationBarTitleDisplayMode(.inline)
                     #endif
                     .searchable(text: $daySearchText, prompt: t("Search by date, weekday or month"))
                     .toolbar {
@@ -1028,27 +1028,18 @@ public struct AppContentSplitView: View {
 
     private var daysMapHeaderCard: some View {
         LHCard {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    LHSectionHeader(
-                        t("Map"),
-                        subtitle: daysMapHeaderState.isHidden ? t("Show Map") : daysRangeSummaryText
+            LHCollapsibleMapHeader(
+                state: $daysMapHeaderState,
+                language: preferences.appLanguage
+            ) {
+                if #available(iOS 17.0, macOS 14.0, *) {
+                    AppOverviewTracksMapView(
+                        daySummaries: drilldownDaySummaries,
+                        content: session.content,
+                        queryFilter: projectedQueryFilter,
+                        fixedHeight: nil,
+                        showsFullscreenControl: false
                     )
-                    Spacer()
-                }
-                LHCollapsibleMapHeader(
-                    state: $daysMapHeaderState,
-                    language: preferences.appLanguage
-                ) {
-                    if #available(iOS 17.0, macOS 14.0, *) {
-                        AppOverviewTracksMapView(
-                            daySummaries: drilldownDaySummaries,
-                            content: session.content,
-                            queryFilter: projectedQueryFilter,
-                            fixedHeight: nil,
-                            showsFullscreenControl: false
-                        )
-                    }
                 }
             }
         }

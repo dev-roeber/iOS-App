@@ -2,6 +2,13 @@
 
 ## 2026-05-05
 
+### UI-Layout-Fix Tage-Seite: Suchleiste stabil, Karte größer
+
+- **Suchleiste stabil**: `navigationBarTitleDisplayMode` auf Days-Tab von `.large` → `.inline` — verhindert das Heruntergleiten der iOS-SearchBar beim Scrollen und die Überlagerung des Sticky-Headers
+- **Karte deutlich größer**: `daysMapHeaderState.compactHeight` 180 → 280 pt, `expandedHeight` 260 → 360 pt — die eigentliche Map-Viewport-Fläche entspricht nun ca. 30–33 % des sichtbaren Bereichs
+- **Leerer Streifen eliminiert**: `LHSectionHeader("Map")` aus `daysMapHeaderCard` entfernt — der `LHCollapsibleMapHeader.controlBar` übernimmt die Steuerung; kein doppelter Header mehr
+- `swift test`: 933/0 ✅ — `xcodebuild` iPhone 15 Pro Max (iOS 26.4): **BUILD SUCCEEDED** ✅
+
 ### UI Polish: Doppeltitel-Fix, Limit-Badge, Demo-Label, Privacy-Banner (Commit ce993d9)
 
 - **Doppeltitel behoben** (Insights + Export): `.navigationTitle("")` + `.navigationBarTitleDisplayMode(.inline)` — kein doppelter Titel mehr in den Sheet-Überschriften
