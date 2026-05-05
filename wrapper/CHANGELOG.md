@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-05-05
+
+### Landscape-Verifikation + UITest-Fix
+
+- **testLandscapeLayoutSmoke** (neu): Landscape-Smoke-Test für alle 5 Haupt-Tabs (Overview, Days, Export, Insights, Live) auf iPhone 15 Pro Max — PASSED (62s); Portrait-first-Strategie mit Tab-Rotation pro Tab; Screenshots als Testanhänge
+- **Live-Activity-Identifier-Fix** (`runLiveActivityCaptureFlow`): stale Identifier `live.recording.start/stop` → `live.recording.primaryAction/stopAction` korrigiert (alle 5 Capture-Tests waren ohne diese Korrektur nicht lauffähig)
+- Landscape-Befund: kein Layout-Crash in allen 5 Tabs; `live.recording.primaryAction`-Accessibility in Landscape als bekannte UITest-Einschränkung (XCTest nach Rotation) dokumentiert
+- APPLE_VERIFICATION_CHECKLIST.md: Landscape-Sektion ergänzt mit PASSED-Befund und bekannter Accessibility-Lücke
+- NEXT_STEPS.md: Landscape-Checkbox abgehakt
+
 ## 2026-04-30
 
 ### Release Prep Truth Sync

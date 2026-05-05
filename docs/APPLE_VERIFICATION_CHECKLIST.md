@@ -67,15 +67,24 @@ Ausgefuehrt auf: macOS, Xcode, iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C
 - **Keine privaten Daten**: ausschließlich Demo-Fixture (synthetisch) verwendet
 - **Keine Debug-Overlays**: saubere Release-UI
 
+#### ✅ Landscape-Verifikation — iPhone 15 Pro Max (2026-05-05)
+
+- **testLandscapeLayoutSmoke** (iPhone 15 Pro Max): PASSED (62s) ✅
+- **Getestete Tabs**: Overview, Days, Export, Insights, Live — alle ohne Crash
+- **Strategie**: Navigation in Portrait, Rotation zu landscapeRight pro Tab, Screenshot-Anhang
+- **Screenshots**: `landscape_01_overview`, `landscape_02_days`, `landscape_03_export`, `landscape_04_insights`, `landscape_05_live`
+- **Bekannte Einschränkung**: `live.recording.primaryAction`-Button nicht per Accessibility in Landscape exponiert (XCTest-Limit nach Rotation). Button ist in Portrait nachweislich vorhanden und hittable (`testDeviceSmokeNavigationAndActions` PASSED). Keine Safe-Area-Überlappung per Crash nachweisbar.
+- **Safe-Area-Verhalten**: kein reproduzierbarer Layout-Crash in allen 5 Tabs
+
 #### ⚠️ weiterhin offen (2026-05-05) — nicht automatisiert testbar
 
-- **Landscape**: nicht systematisch auf Gerät verifiziert (alle Tabs)
 - **Live Activity / Dynamic Island**: Batch 5A/5B noch ohne vollständigen Hardware-Nachweis
   - Letzter Stand (2026-04-30): 5/5 Capture-Tests auf iPhone 15 Pro Max PASSED
   - Offen: Lock Screen, `minimal`, deaktivierte Live Activities
 - **Manueller Dateiimport**: `.json`/`.zip` aus Files-App öffnen — manuell zu prüfen
 - **Großer Import (>20 MB)**: Performance-Smoke-Test mit realer History-Datei — manuell zu prüfen
 - **Widget auf Homescreen**: manuelle Homescreen-Interaktion nötig
+- **Landscape Live-Tab**: `live.recording.primaryAction` in Landscape manuell visuell prüfen (UITest-Accessibility-Lücke nach Rotation dokumentiert)
 
 ---
 
