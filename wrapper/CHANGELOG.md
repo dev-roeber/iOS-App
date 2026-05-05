@@ -2,6 +2,15 @@
 
 ## 2026-05-05
 
+### Version-Bump 1.0 → 1.0.1 (ASC Upload-Fix)
+
+- **Root Cause Build 83**: ASC lehnte Upload mit ITMS-90186 (`Invalid Pre-Release Train — 1.0 closed`) + ITMS-90062 (`CFBundleShortVersionString [1.0] must be higher than previously approved [1.0]`) ab. Kein Code-, Signing- oder Xcode-Cloud-Problem.
+- **Fix**: `MARKETING_VERSION` in `project.pbxproj` von `1.0` → `1.0.1` (alle 8 Build-Konfigurationen: LH2GPXWrapper Debug/Release, Widget Debug/Release, Tests Debug/Release, UITests Debug/Release)
+- Plists bleiben unverändert: `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)` — kein hardcodierter Wert
+- `CURRENT_PROJECT_VERSION = 45` bleibt lokaler Fallback; `CI_BUILD_NUMBER` injiziert weiterhin echte Buildnummer via `ci_pre_xcodebuild.sh`
+- ASC Version `1.0.1` bereits angelegt; nächster Xcode Cloud Build (≥ 84) soll unter `1.0.1` hochgeladen werden
+- `swift test`: 927/0 ✅ — `git diff --check`: sauber ✅
+
 ### Landscape-Verifikation + UITest-Fix
 
 - **testLandscapeLayoutSmoke** (neu): Landscape-Smoke-Test für alle 5 Haupt-Tabs (Overview, Days, Export, Insights, Live) auf iPhone 15 Pro Max — PASSED (62s); Portrait-first-Strategie mit Tab-Rotation pro Tab; Screenshots als Testanhänge

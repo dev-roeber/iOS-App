@@ -122,6 +122,15 @@ Ausgefuehrt auf: macOS (dieser Host), Xcode, iPhone 17 Pro Max Simulator
 
 ---
 
+### Xcode Cloud Build 83 — Upload-Fehler (1.0-Train geschlossen) — 2026-05-05
+
+- **Fehler**: ITMS-90186 `Invalid Pre-Release Train — The train version '1.0' is closed for new build submissions` + ITMS-90062 `CFBundleShortVersionString [1.0] must contain a higher version than previously approved version [1.0]`
+- **Ursache**: App Store Connect akzeptiert für Version `1.0` keine neuen Builds mehr — Build 74 wurde für diesen Train akzeptiert und der Train ist damit gesperrt. Kein Code-, Signing-, Archive- oder Xcode-Cloud-Problem.
+- **Fix**: `MARKETING_VERSION` in `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` von `1.0` auf `1.0.1` angehoben (alle 8 Build-Konfigurationen). Plists verwenden weiterhin `$(MARKETING_VERSION)` und `$(CURRENT_PROJECT_VERSION)`.
+- **ASC**: Version `1.0.1` bereits in App Store Connect angelegt.
+- **Nächster Build**: Xcode Cloud Build ≥ 84 soll `CFBundleShortVersionString = 1.0.1` produzieren und den Upload für Version `1.0.1` akzeptieren.
+- **Build 83**: ungültig (falscher Train), ignorieren.
+
 ### App Review — Build 74 Accepted — Pending Developer Release (2026-05-05)
 
 - **Version `1.0`** (Build 74): nach Ablehnung (2026-05-01, Guideline 3.2) und Review-Response **akzeptiert** am 2026-05-05

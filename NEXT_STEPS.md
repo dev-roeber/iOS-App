@@ -7,9 +7,9 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 ## P0 — Release / Review / Hardware-Verifikation
 
 - [x] **Review-Response senden (Guideline 3.2)**: gesendet von Sebastian. Apple hat Build 74 nach Review-Response akzeptiert. Status: **Ausstehende Entwicklerfreigabe (Pending Developer Release)**. Guideline 3.2: resolved. (2026-05-05)
-- [ ] **Build 74 bewusst NICHT veröffentlichen**: Version 1.0 (Build 74) verbleibt in „Pending Developer Release". Keine manuelle Veröffentlichung vor neuem Build.
-- [ ] **Weiterentwicklung fortsetzen**: neue Features/Fixes auf main entwickeln, testen, pushen.
-- [ ] **Neuen Xcode-Cloud-Build erzeugen**: Xcode Cloud Workflow `Release – Archive & TestFlight` manuell starten → neuer Build (≥ 75) erscheint in ASC/TestFlight.
+- [x] **Build 74 / 1.0-Train abgeschlossen**: Version 1.0 (Build 74) bleibt in „Pending Developer Release" — 1.0-Train ist in ASC geschlossen. Builds 80–83 scheiterten wegen geschlossenem 1.0-Train (ITMS-90186/90062), nicht wegen Code-Fehler.
+- [x] **MARKETING_VERSION auf 1.0.1 angehoben** (2026-05-05): `project.pbxproj` alle 8 Konfigurationen auf `1.0.1`; Plists weiterhin via `$(MARKETING_VERSION)`. ASC hat Version `1.0.1` bereits angelegt.
+- [ ] **Neuen Xcode-Cloud-Build erzeugen**: Xcode Cloud Workflow `Release – Archive & TestFlight` manuell starten → Build ≥ 84 mit `1.0.1 (84+)` erscheint in ASC unter Version 1.0.1.
 - [ ] **Neuen Build für Version 1.0 einreichen** (wenn bereit):
   1. In ASC: Version 1.0 → „Developer Reject" (Version aus Release-Prozess entfernen)
   2. Build 74 ist danach nicht mehr in der Review-Queue
