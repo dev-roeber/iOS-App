@@ -60,7 +60,7 @@ public struct AppOptionsView: View {
                 sectionLink(
                     icon: "arrow.up.circle",
                     title: t("Upload"),
-                    description: t("Server URL, token and batch settings"),
+                    description: t("Optional self-hosted upload (off by default)"),
                     color: LH2GPXTheme.warningOrange,
                     identifier: "options.upload"
                 ) {

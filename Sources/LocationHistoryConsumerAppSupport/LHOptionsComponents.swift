@@ -110,7 +110,7 @@ public struct LHUploadSettingsCard: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Toggle(t("Upload to Custom Server"), isOn: $preferences.sendsLiveLocationToServer)
+            Toggle(t("Upload to Your Own Server"), isOn: $preferences.sendsLiveLocationToServer)
                 .accessibilityIdentifier("options.upload.enabled")
 
             if preferences.sendsLiveLocationToServer {

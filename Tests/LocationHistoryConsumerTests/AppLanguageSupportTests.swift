@@ -197,7 +197,7 @@ final class AppLanguageSupportMapHeaderStringsTests: XCTestCase {
     func testGermanOptionsSectionDescriptionStrings() {
         XCTAssertEqual(de.localized("Display, language and import options"),             "Anzeige, Sprache und Importoptionen")
         XCTAssertEqual(de.localized("Accuracy, interval and background recording"),      "Genauigkeit, Intervall und Hintergrundaufzeichnung")
-        XCTAssertEqual(de.localized("Server URL, token and batch settings"),             "Server-URL, Token und Batch-Einstellungen")
+        XCTAssertEqual(de.localized("Optional self-hosted upload (off by default)"),     "Optionaler Upload, selbst gehostet (standardmäßig aus)")
         XCTAssertEqual(de.localized("Dynamic Island value and home widget"),             "Dynamic-Island-Wert und Home Widget")
         XCTAssertEqual(de.localized("Reset all options to defaults"),                   "Alle Optionen zurücksetzen")
     }
@@ -234,6 +234,16 @@ final class AppLanguageSupportMapHeaderStringsTests: XCTestCase {
         XCTAssertEqual(en.localized("Widget & Live Activity"),   "Widget & Live Activity")
         XCTAssertEqual(en.localized("Reachable"),                "Reachable")
         XCTAssertEqual(en.localized("Unreachable"),              "Unreachable")
-        XCTAssertEqual(en.localized("Test Connection"),          "Test Connection")
+        XCTAssertEqual(en.localized("Test Connection"),                         "Test Connection")
+        XCTAssertEqual(en.localized("Upload to Your Own Server"),              "Upload to Your Own Server")
+        XCTAssertEqual(en.localized("Optional self-hosted upload (off by default)"), "Optional self-hosted upload (off by default)")
+    }
+
+    func testGermanConsumerUIClarificationStrings() {
+        XCTAssertEqual(de.localized("Upload to Your Own Server"),              "Auf eigenen Server hochladen")
+        XCTAssertEqual(
+            de.localized("Optional self-hosted upload (off by default)"),
+            "Optionaler Upload, selbst gehostet (standardmäßig aus)"
+        )
     }
 }
