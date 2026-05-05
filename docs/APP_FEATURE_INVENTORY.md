@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-01 (truth sync)
+Last analysis: 2026-05-05 (Guideline 3.2 public audience clarification)
 
 Repos in scope:
 - `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper
@@ -8,6 +8,16 @@ Repos in scope:
 Governance:
 - Only document what is verifiable in repo/app.
 - Do not list wishes, planned work or speculative wrapper behavior as present features.
+
+## Public Audience Statement
+
+LH2GPX is a **public consumer/utility app**. It is not an organization-specific app, a custom app for a business, a client/employee/partner app, or an enterprise tool.
+
+- **Target audience**: any individual who wants to view and export their personal Google Maps location history privately
+- **No account required**: no login, no organization ID, no employee credentials, no partner affiliation
+- **All data stays local**: imported location history never leaves the device; no mandatory cloud sync or server
+- **Optional live recording upload**: disabled by default; requires the user to explicitly configure a self-hosted server URL; no central LH2GPX service exists; no organizational backend
+- **App Store Review context**: version 1.0 (Build 74) was rejected on 2026-05-01 under Guideline 3.2 (Business); review response in progress (`docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`)
 
 ## 1. App-Struktur / Navigation
 

@@ -1,8 +1,21 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-01)
+## Aktiver Stand (2026-05-05)
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
+
+### App Review Ablehnung + Public Audience Clarification (2026-05-05)
+
+Repo-wahr dokumentiert:
+- Apple lehnte Version 1.0 (Build 74) am 2026-05-01 unter **Guideline 3.2 — Business / Other Business Model Issues** ab
+- Submission ID: `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c`
+- Ablehnungsgrund: App wurde fälschlich als organisationsgebundene Lösung eingestuft
+- Sachverhalt: LH2GPX ist eine öffentliche Consumer-/Utility-App für persönliche Google-Maps-Standorthistorie
+- Kein Account, kein Login, keine Organisationszugehörigkeit erforderlich
+- Optionaler Live-Upload = nutzerkonfigurierter Self-hosted-Endpunkt, standardmäßig deaktiviert
+- README, App-Feature-Inventory, TESTFLIGHT_RUNBOOK und APPLE_VERIFICATION_CHECKLIST klargestellt
+- Response-Entwurf erstellt: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`
+- Nächster Schritt: Sebastian sendet Review-Response in ASC; Ergebnis offen
 
 ### Build 73 + Screenshot-Submit-Vorbereitung (2026-05-01)
 

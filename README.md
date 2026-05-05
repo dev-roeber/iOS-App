@@ -4,13 +4,19 @@
 
 ## Was die App macht
 
-LH2GPX importiert Location History aus Google Timeline und exportiert sie als GPX oder TCX.
+**LH2GPX ist eine öffentliche Consumer-/Utility-App für alle, die ihre persönliche Google-Maps-Standorthistorie lokal auswerten und als GPX/KML/CSV exportieren möchten.**
+
+- Kein Account, kein Login, keine Organisationszugehörigkeit erforderlich
+- Alle importierten Daten bleiben lokal auf dem Gerät des Nutzers
+- Kein Pflicht-Server-Upload; die optionale Live-Aufzeichnung mit Server-Upload ist standardmäßig deaktiviert und erfordert explizite Nutzerkonfiguration eines eigenen Endpunkts
+
+Kernfunktionen:
 
 - Google Timeline JSON/ZIP (`location-history.json`, `.zip`) lokal importieren
 - LH2GPX App-Export JSON/ZIP importieren
 - GPX 1.1 und TCX 2.0 direkt importieren (auch innerhalb von ZIPs)
 - Tagesansicht mit interaktiver Karte
-- Tracks als GPX oder TCX exportieren
+- Tracks als GPX, KML, KMZ, GeoJSON oder CSV exportieren
 - Google Maps Export-Hilfe (inline, Schritt-fuer-Schritt)
 
 ## Xcode-Einstieg
@@ -30,7 +36,7 @@ Das Swift Package im Root (`Package.swift`) wird automatisch als lokale Dependen
 - **Import**: Google Timeline JSON/ZIP, LH2GPX App-Export JSON/ZIP, GPX 1.1, TCX 2.0
 - **Tagesansicht**: Days-Liste (absteigend), Day-Detail mit Karte, Suche, Favoriten, Filterchips
 - **Pfadmodus im Day-Detail**: Originalpfad oder vereinfachte Darstellung (`Simplified (Beta)`); im vereinfachten Modus: GPS-Ausreisserfilter (distanzbasiert, PathFilter) + Douglas-Peucker; kein echtes Straßen-/Wege-Snapping
-- **Live-Aufzeichnung**: ActivityKit Live Activity / Dynamic Island (iOS 16.2+ fuer Widget-/Island-UI), Fullscreen-Live-Karte, Follow-Location, optionaler HTTP(S)-Upload
+- **Live-Aufzeichnung**: ActivityKit Live Activity / Dynamic Island (iOS 16.2+ fuer Widget-/Island-UI), Fullscreen-Live-Karte, Follow-Location, optionaler HTTP(S)-Upload an einen selbst betriebenen Endpunkt (standardmäßig deaktiviert, kein zentraler Dienst, keine Organisationsbindung)
 - **Insights**: Overview, Patterns, Breakdowns, KPI-Karten, Top Days, Monatstrends ohne 24-Monats-Cap, Heatmap
 - **Export**: GPX, TCX, KML, KMZ, GeoJSON, CSV; Filter nach Datum, Genauigkeit, Aktivitaetstyp, Bounding Box
 - **Google Maps Export-Hilfe**: Inline-Anleitung fuer iPhone-Export aus Google Maps
@@ -84,7 +90,7 @@ Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weite
 ## Externe Repos (bleiben separat)
 
 - `dev-roeber/LocationHistory2GPX` — Python Producer-Pipeline fuer Google Rohdaten
-- `dev-roeber/lh2gpx-live-receiver` — Live-Receiver-Server fuer optionalen Upload-Endpunkt
+- `dev-roeber/lh2gpx-live-receiver` — Beispiel-/Referenz-Implementierung eines selbst betriebenen Live-Location-Empfängers; rein optional, kein zentraler Dienst, kein Pflichtendpunkt der App
 
 ## CI / Xcode Cloud
 
@@ -100,5 +106,5 @@ Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weite
 - Historien-Track-Editor: Mutations-Reset bei Import-Wechsel ist implementiert (`validateSource`, 2026-04-14); Export ignoriert Mutations bewusst (AppExport ist immutable, Mutations sind display-only)
 - Export ignoriert Mutations bewusst — gelöschte Routen bleiben im GPX/KMZ-Export (AppExport ist immutable; Mutations sind rein display-only)
 - Apple-Portal-/Signing-/TestFlight-/Device-UI-Themen sind auf diesem macOS-Host nicht voll verifizierbar und werden separat dokumentiert
-- Release-/Review-Truth 2026-04-30: App Store Connect zeigt `LH2GPX` Version `1.0` im Status `Warten auf Prüfung`; zur Version gehoert bewusst Build `52`. Xcode Cloud hat bereits erfolgreiche neuere Builds `55`, `56` und `57`, diese werden aber ohne Apple-Feedback oder bestaetigten release-kritischen Fehler nicht nachgereicht.
+- **App-Review-Stand 2026-05-01**: Apple lehnte Version 1.0 (Build 74) unter Guideline 3.2 (Business / Other Business Model Issues) ab; die Ablehnung basierte auf einer Fehleinschätzung als organisationsgebundene App. Die App ist eine öffentliche Consumer-/Utility-App ohne Organisationsbindung. Review-Response-Entwurf liegt in `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`; Einreichung und weiterer Review-Verlauf bleiben offen.
 - Lokales `Release`-Archive fuer `LH2GPXWrapper` ist wieder erzeugbar (`1.0 (45)`), aber der Export-/Upload-Pfad zu TestFlight ist auf diesem Host noch blockiert, weil nur `Apple Development` lokal verfuegbar ist und `xcodebuild -exportArchive` deshalb kein Distribution-Zertifikat findet

@@ -1,6 +1,6 @@
 # TestFlight + App Store Runbook
 
-Stand: 2026-05-01 | Phase 20
+Stand: 2026-05-05 | Phase 20
 
 ---
 
@@ -19,35 +19,35 @@ Stand: 2026-05-01 | Phase 20
 | App Icon | Map-Pin + "LH2GPX", 1024x1024 | Assets.xcassets/AppIcon.appiconset/ |
 | App Review Guidelines | geprueft, mit offenem Wording fuer den optionalen Server-Upload | Abschnitt unten |
 
-### Aktueller ASC-Stand (2026-05-01)
+### Aktueller ASC-Stand (2026-05-05)
 
-- App Store Connect: `LH2GPX` Version `1.0` ist eingereicht
-- Status: `Warten auf Prüfung`
-- Veröffentlichung: manuell
-- auf der Versionsseite sichtbarer Build: **`71`** (von Sebastian bestätigt 2026-05-01)
-- Xcode Cloud Workflow `Release – Archive & TestFlight`: aktuellster erfolgreicher Build: **`73`**
-- Screenshots in ASC: stammen aus Build 71, zeigen altes UI-Layout (vor LH2GPX-Dark-Redesign)
-- **Nächster Schritt (manuell von Sebastian)**: Version aus Prüfung entfernen → Build 73 wählen → neue Screenshots hochladen → erneut einreichen
+- App Store Connect: `LH2GPX` Version `1.0`
+- Status: **`Abgelehnt`** (2026-05-01, Build 74)
+- Ablehnungsgrund: Guideline 3.2 — Business / Other Business Model Issues
+- Submission ID: `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c`
+- Xcode Cloud Workflow `Release – Archive & TestFlight`: aktuellster erfolgreicher Build: **`74`**
+- Screenshots in ASC: aus Build 71, altes UI-Layout — müssen vor erneutem Submit ersetzt werden
+- **Nächster Schritt (manuell von Sebastian)**: Review-Response in ASC senden (Entwurf: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`) → ggf. neu einreichen
 - Runbook für manuelle ASC-Schritte: `docs/ASC_SUBMIT_RUNBOOK.md`
-- Review ist nicht mehr durch Upload blockiert
 - Live Activity / Dynamic Island bleibt für App-Review-Risiko nur partiell hardware-verifiziert
 
 ---
 
 ## App Store Review Guidelines – Pruefergebnis
 
-Geprueft gegen die relevanten Abschnitte (Stand 2026-03):
+Geprueft gegen die relevanten Abschnitte (Stand 2026-05):
 
 | Abschnitt | Befund | Status |
 |-----------|--------|--------|
+| **3.2 Business / Other Business Model Issues** | **Ablehnung 2026-05-01 (Build 74):** Apple sah App als organisationsgebunden. Sachverhalt: LH2GPX ist öffentliche Consumer-App, kein Account/Org-Binding nötig, optionaler Upload = nutzerseitig selbst konfigurierter Endpunkt, standardmäßig OFF. Response-Entwurf: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md` | ❌ Abgelehnt → Response ausstehend |
 | 2.1 App Completeness | vollstaendiger Location-History-Viewer, Demo-Modus vorhanden | ✅ |
 | 2.3.12 Placeholder Content | App Icon: Map-Pin + App-Name (kein Gradient-Placeholder mehr) | ✅ |
 | 4.2 Minimum Functionality | NavigationSplitView, Day-Detail, Map, Import, Demo | ✅ |
-| 5.1.1 Data Collection | standardmaessig lokal, kein Analytics-/Ad-Tracking; optionaler nutzerkonfigurierter HTTPS-Upload fuer akzeptierte Live-Recording-Punkte ist vorhanden; lokale Texte wurden darauf abgestimmt | teilweise |
-| 5.1.2 Privacy Manifests | PrivacyInfo.xcprivacy vorhanden, UserDefaults CA92.1 und `PreciseLocation` fuer optionalen Upload eingetragen; offen bleibt nur die Apple-seitige Scope-/Review-Einordnung dieser Deklaration | teilweise |
+| 5.1.1 Data Collection | standardmaessig lokal, kein Analytics-/Ad-Tracking; optionaler nutzerkonfigurierter HTTPS-Upload fuer akzeptierte Live-Recording-Punkte ist vorhanden; standardmaessig deaktiviert | teilweise |
+| 5.1.2 Privacy Manifests | PrivacyInfo.xcprivacy vorhanden, UserDefaults CA92.1 und `PreciseLocation` fuer optionalen Upload eingetragen; offen bleibt Apple-seitige Einordnung | teilweise |
 | 5.1.5 Location | optionales lokales Live-Recording mit While-In-Use-Start und code-seitiger Background-Unterstuetzung nach `Always Allow`; kein ATT/Ad-Tracking | ✅ |
 
-Aus dem lokalen Code- und Doku-Stand laesst sich kein finaler Review-Freigabeclaim ableiten. Offen bleiben die Apple-seitige Scope-/Review-Einordnung fuer den optionalen Server-Upload, frische Device-Verifikation des erweiterten Location-/Upload-Flows sowie alle Apple-Portal-/ASC-/Signing-Themen, die auf diesem Linux-Host nicht direkt verifizierbar sind.
+Aus dem lokalen Code- und Doku-Stand laesst sich kein finaler Review-Freigabeclaim ableiten. Offene Punkte: Guideline-3.2-Response muss von Sebastian in ASC eingereicht werden; nach positivem Outcome koennen erneute Submission und Screenshots folgen.
 
 ---
 

@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## [2026-05-05] — chore: Guideline 3.2 Public Audience Clarification (fix/review-guideline-3.2-public-audience-clarification)
+
+### App Review Ablehnung dokumentiert
+
+- **Version 1.0 (Build 74)** vom Apple App Review am 2026-05-01 abgelehnt
+- **Submission ID**: `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c`
+- **Ablehnungsgrund**: Guideline 3.2 — Business / Other Business Model Issues
+- **Apple-Einschätzung**: App wurde fälschlich als organisationsgebundene/unternehmensinterne App eingestuft
+- **Sachverhalt**: LH2GPX ist eine öffentliche Consumer-/Utility-App; kein Account, kein Login, keine Org-Zugehörigkeit erforderlich; alle Daten bleiben lokal; optionaler Live-Upload ist nutzerkonfigurierter self-hosted Endpunkt, standardmäßig deaktiviert
+
+### Klarstellungen und neues Dokument
+
+- `README.md`: Consumer-/Utility-Charakter explizit in „Was die App macht" ergänzt; `lh2gpx-live-receiver` als Beispiel-/Referenzimplementierung (nicht zentraler Dienst) klargestellt; Live-Aufzeichnungs-Feature um „kein zentraler Dienst, keine Organisationsbindung" erweitert; aktuellen Review-Status nachgezogen
+- `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`: neu — vollständige Ablehungs-Dokumentation + Response-Entwurf für ASC (EN)
+- `docs/APP_FEATURE_INVENTORY.md`: neuer Abschnitt „Public Audience Statement" — Zielgruppe, kein Account-Zwang, lokale Datenhaltung, Self-hosted-Upload-Natur
+- `docs/APPLE_VERIFICATION_CHECKLIST.md`: Ablehnungsdetails (Build 74, Submission ID, Guideline 3.2) ergänzt; Guidelines-Tabelle um 3.2-Zeile erweitert
+- `docs/ASC_SUBMIT_RUNBOOK.md`: Status auf Abgelehnt (Build 74) aktualisiert; Guideline-3.2-Response als aktuell blockierenden Schritt ergänzt
+- `wrapper/docs/TESTFLIGHT_RUNBOOK.md`: ASC-Stand auf Abgelehnt (Build 74) + Guideline-3.2-Eintrag in Guidelines-Tabelle
+- `NEXT_STEPS.md`: P0 — Review-Response als oberste Priorität; Build-Einreichung erst nach positivem Outcome
+- `ROADMAP.md`: Ablehnung und Clarification-Stand dokumentiert
+
+### Keine Code-Änderungen an Produktlogik oder Tests
+
+- `swift test`: 832 Tests, 0 Failures (unverändert)
+- keine ASC-Aktion ausgeführt — nur Repo-Vorbereitung und Doku
+
 ## [2026-05-01] — chore: Build 73 Screenshot + Submit Prep (release/build-73-screenshots-submit-prep)
 
 ### ASC-Stand aktualisiert

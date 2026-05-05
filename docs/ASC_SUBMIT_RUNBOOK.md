@@ -1,19 +1,22 @@
-# App Store Connect — Submit-Runbook (Build 73)
+# App Store Connect — Submit-Runbook (Build 74 / Guideline 3.2 Response)
 
-Stand: 2026-05-01 | Vorbereitet für Build 73
+Stand: 2026-05-05
 
 ---
 
-## Aktueller ASC-Status (Stand: manuell von Sebastian bestätigt)
+## Aktueller ASC-Status (Stand: 2026-05-05)
 
 | Punkt | Wert |
 |-------|------|
 | Version | 1.0 |
-| Status | `Warten auf Prüfung` |
-| Sichtbarer Build | 71 |
-| Xcode Cloud aktuellster Build | **73** |
+| Status | **`Abgelehnt`** |
+| Ablehnungsdatum | 2026-05-01 |
+| Abgelehnter Build | **74** |
+| Ablehnungsgrund | Guideline 3.2 — Business / Other Business Model Issues |
+| Submission ID | `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c` |
+| Xcode Cloud aktuellster Build | **74** |
 | Screenshots in ASC | Aus Build 71 (altes UI-Layout) |
-| Repo HEAD | `34734ce` — chore: final UI/localization truth sync |
+| Repo HEAD | `ff4c413` — chore: Build 73 screenshot + submit prep |
 | Lokale Build-Nummer (project.pbxproj) | 45 (von Xcode Cloud überschrieben via `ci_pre_xcodebuild.sh`) |
 
 ---
@@ -26,9 +29,22 @@ Die lokale `CURRENT_PROJECT_VERSION = 45` in `project.pbxproj` ist nur der Basis
 
 ---
 
-## Ziel dieser Aktion
+## Aktuell blockierender Schritt: Guideline 3.2 Response
 
-Build 73 als Review-Kandidat einreichen **und** neue Screenshots für das redesignte UI hochladen.
+Vor einem erneuten Submit muss zuerst die Ablehnung adressiert werden:
+
+1. **App Store Connect → Meine Apps → LH2GPX → Version 1.0 → Ergebnis anzeigen / Reply**
+2. Review-Response aus `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md` einfügen
+3. Klarstellen: öffentliche Consumer-App, kein Account/Org-Binding, optionaler Upload = self-hosted, default OFF
+4. Submit der Response abwarten
+
+Erst nach positivem Outcome (oder neuem Feedback) ist ein weiteres Submit sinnvoll.
+
+---
+
+## Ziel des nächsten Submits (nach positivem Review-Response)
+
+Neuester verfügbarer Build + neue Screenshots für das redesignte UI einreichen.
 
 ---
 

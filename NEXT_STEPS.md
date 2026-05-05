@@ -1,14 +1,14 @@
 # NEXT_STEPS
 
-Stand: 2026-05-01
+Stand: 2026-05-05
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
 ## P0 — Release / Review / Hardware-Verifikation
 
-- [ ] **Build 73 einreichen**: Sebastian muss manuell in ASC Version 1.0 aus Prüfung entfernen → Build 73 wählen → neue Screenshots hochladen → erneut einreichen. Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
+- [ ] **Review-Response senden (Guideline 3.2)**: Sebastian muss manuell in ASC → Version 1.0 → Reply to Review — Entwurf: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`. Klarstellen: öffentliche Consumer-App, kein Account/Org-Binding, optionaler Upload = nutzerkonfiguriert self-hosted, default OFF. Ergebnis abwarten und ASC-Status nachziehen.
+- [ ] **Nach positivem Review-Outcome**: neuen Build (aktuell 74) + neue Screenshots einreichen. Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
 - [ ] **Neue Screenshots aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen → 8 neue PNGs in `docs/app-store-assets/screenshots/iphone-67/` (01–08). Aktuell vorhanden: 01–06 mit altem Layout aus Build 44.
-- [ ] **Nach Submit**: neuen ASC-Status (Build 73 + neue Screenshots) Sebastian bestätigen lassen → Doku in APPLE_VERIFICATION_CHECKLIST.md nachziehen
 - [x] Support-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/support.html` (2026-04-30)
 - [x] Privacy-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-30)
 - [x] GitHub Pages fuer `/docs` live und oeffentlich erreichbar (HTTP 200 verifiziert 2026-04-30): `https://dev-roeber.github.io/iOS-App/`, `/support.html`, `/privacy.html`

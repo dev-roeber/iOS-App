@@ -33,22 +33,32 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 - Explore-Dismiss setzt wieder Full-View-Overlays; stale Overlay-Tasks werden bei Neu-Load verworfen
 - Verifiziert nur per `swift test` + `xcodebuild`; **kein** neuer Geräte-Claim aus diesem Audit-Batch
 
-### Beobachtung App Store Connect / Review — Stand 2026-05-01
-- **Version `1.0`**: in App Store Connect eingereicht
-- **Status**: `Warten auf Prüfung`
-- **Veröffentlichung**: manuell
-- **Zur Version sichtbarer Build**: `71` (Stand: von Sebastian bestätigt 2026-05-01)
-- **Xcode Cloud**: Workflow `Release – Archive & TestFlight` zeigt aktuellsten erfolgreichen Build `73`
-- **Screenshots in ASC**: stammen aus Build 71 — zeigen altes UI-Layout (vor LH2GPX-Dark-Redesign); müssen für Build 73 neu aufgenommen und hochgeladen werden
-- **Build-73-Kandidatenstatus**: Build 73 ist in Xcode Cloud erfolgreich; entspricht Repo-Stand `34734ce` (main HEAD nach Final Truth Sync); vor Review-Einreichung muss Sebastian manuell: Version aus Prüfung entfernen → Build 73 wählen → neue Screenshots hochladen → erneut einreichen
+### App Review Ablehnung — 2026-05-01 (Guideline 3.2)
+
+- **Version `1.0`**: eingereicht, **abgelehnt** am 2026-05-01
+- **Build bei Ablehnung**: `74`
+- **Submission ID**: `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c`
+- **Ablehnungsgrund**: Guideline 3.2 — Business / Other Business Model Issues
+- **Apple-Einschätzung**: App wurde als organisationsgebundene / unternehmensinterne Lösung eingestuft
+- **Sachverhalt**: LH2GPX ist eine öffentliche Consumer-/Utility-App; keine Organisationsbindung, kein Pflicht-Account, kein zentraler Server; optionaler Live-Upload ist nutzerkonfiguriert und standardmäßig deaktiviert
+- **Nächster Schritt**: Review-Response über ASC senden (Entwurf: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`)
+- **Review Guidelines — Tabelle ergänzt**:
+
+| Abschnitt | Befund | Status |
+|-----------|--------|--------|
+| 3.2 Business / Other Business Model Issues | App ist öffentliche Consumer-App; kein Account/Login/Org-Binding; optionaler self-hosted Live-Upload ist standardmäßig OFF und erfordert nutzerseitige Konfiguration | Ablehnung → Response ausstehend |
+
+### Beobachtung App Store Connect / Review — Stand 2026-05-01 (vor Ablehnung)
+- **Zur Version sichtbarer Build**: `71`
+- **Xcode Cloud**: aktuellster erfolgreicher Build: `73` / `74`
+- **Screenshots in ASC**: stammen aus Build 71 — zeigen altes UI-Layout (vor LH2GPX-Dark-Redesign)
 - **Screenshot-Runbook**: `docs/ASC_SUBMIT_RUNBOOK.md`
-- **Upload-Blocker**: App Review ist nicht mehr durch fehlenden Upload blockiert
-- **Hardware-Risiko bleibt**: Live Activity / Dynamic Island nur partiell auf echter Hardware verifiziert; Redesign-Screens (Options, Live Tracking, Export Checkout) noch nicht auf echtem Gerät neu verifiziert
+- **Hardware-Risiko bleibt**: Live Activity / Dynamic Island nur partiell auf echter Hardware verifiziert
 
 ### Beobachtung App Store Connect / Review — Stand 2026-04-30 (historisch)
 - **Zur Version sichtbarer Build**: `52`
 - **Xcode Cloud**: Workflow `Release – Archive & TestFlight` zeigt erfolgreiche Builds `55`, `56` und `57`
-- **Review-Entscheidung**: Build `52` blieb bewusst in App Review bis Build 73 bereit
+- **Review-Entscheidung**: Build `52` blieb bewusst in App Review bis Build 73/74 bereit
 
 ### Beobachtung Build 1.0 (44) — Stand 2026-04-29
 - **TestFlight-Verfügbarkeit**: Build 1.0 (44) ist auf iPhone installierbar ✅
