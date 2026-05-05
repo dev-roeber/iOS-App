@@ -29,15 +29,20 @@ public struct LHMapHeaderState: Equatable, Sendable {
     public var visibility: LHMapHeaderVisibility
     public var compactHeight: CGFloat
     public var expandedHeight: CGFloat
+    /// When `true`, the map cannot be fully hidden via `toggleHidden()`.
+    /// Use this for screens where the map must always remain visible.
+    public var isSticky: Bool
 
     public init(
         visibility: LHMapHeaderVisibility = .compact,
         compactHeight: CGFloat  = LHMapHeaderState.defaultCompactHeight,
-        expandedHeight: CGFloat = LHMapHeaderState.defaultExpandedHeight
+        expandedHeight: CGFloat = LHMapHeaderState.defaultExpandedHeight,
+        isSticky: Bool = false
     ) {
         self.visibility    = visibility
         self.compactHeight  = compactHeight
         self.expandedHeight = expandedHeight
+        self.isSticky       = isSticky
     }
 
     // MARK: Derived / performance invariant
@@ -71,7 +76,9 @@ public struct LHMapHeaderState: Equatable, Sendable {
     /// Toggles between fully hidden and compact-visible.
     /// Going from any visible state (compact or expanded) always hides the map.
     /// Going from hidden always restores compact.
+    /// No-op when `isSticky == true` — sticky maps cannot be fully hidden.
     public mutating func toggleHidden() {
+        guard !isSticky else { return }
         visibility = visibility == .hidden ? .compact : .hidden
     }
 
@@ -166,16 +173,18 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
 
     private var controlBar: some View {
         HStack(spacing: 10) {
-            Button(action: { state.toggleHidden() }) {
-                Label(
-                    t(state.toggleButtonLabel),
-                    systemImage: state.isHidden ? "map" : "map.slash"
-                )
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(LH2GPXTheme.primaryBlue)
+            if !state.isSticky {
+                Button(action: { state.toggleHidden() }) {
+                    Label(
+                        t(state.toggleButtonLabel),
+                        systemImage: state.isHidden ? "map" : "map.slash"
+                    )
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(LH2GPXTheme.primaryBlue)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t(state.toggleButtonLabel))
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(t(state.toggleButtonLabel))
 
             Spacer()
 

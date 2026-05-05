@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-05 (Guideline 3.2 public audience clarification)
+Last analysis: 2026-05-05 (sticky map workspace, Days-Tab redesign)
 
 Repos in scope:
 - `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper
@@ -27,6 +27,8 @@ Present:
 - import-first root now uses the visible LH2GPX redesign: large `LH2GPX` title, short subtitle, prominent blue `Import File` primary action, dark help/demo rows and a dark `Recently Used` card
 - shared toolbar `Actions` menu for primary app commands
 - compact layout uses `TabView` with `Overview`, `Days`, `Insights`, `Export` and on iOS 17+ `Live`
+- Days-Tab (compact): sticky Map-Workspace via `.safeAreaInset(edge: .top)` — Karte bleibt oben fixiert, scrollt nicht weg; `LHMapHeaderState.isSticky: true` verhindert Ausblenden
+- Days-Tab (compact): persistente Export-Auswahl-Bottom-Bar via `.safeAreaInset(edge: .bottom)` — erscheint wenn ≥ 1 Tag ausgewählt; direkter Button zu Export-Tab
 - compact tabs each run inside their own `NavigationStack`, including the optional `Live` tab on iOS 17+
 - regular-width layout uses `NavigationSplitView` with a day list and a detail pane
 - regular-width day detail exposes an explicit `Overview` return action above the selected day

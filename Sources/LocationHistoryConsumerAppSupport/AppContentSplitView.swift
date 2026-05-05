@@ -21,9 +21,10 @@ public struct AppContentSplitView: View {
         expandedHeight: 320
     )
     @State private var daysMapHeaderState = LHMapHeaderState(
-        visibility: .hidden,
+        visibility: .compact,
         compactHeight: 180,
-        expandedHeight: 260
+        expandedHeight: 260,
+        isSticky: true
     )
     @State private var presentedSheet: PresentedSheet?
     @StateObject private var pathMutationStore = AppImportedPathMutationStore()
@@ -356,21 +357,6 @@ public struct AppContentSplitView: View {
         let summaries = filteredDaySummaries
         let groups = groupByMonth(summaries, locale: preferences.appLocale)
         return List {
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
-                        compactContextPill(text: daysRangeSummaryText, icon: "calendar", identifier: "days.range")
-                        compactContextPill(
-                            text: daySearchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? t("Days Search") : daySearchText,
-                            icon: "magnifyingglass",
-                            identifier: "days.search"
-                        )
-                    }
-                    daysMapHeaderCard
-                }
-                .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0))
-                .listRowBackground(Color.clear)
-            }
             if let activeDayDrilldownDescription {
                 Section {
                     drilldownBanner(
@@ -391,27 +377,6 @@ public struct AppContentSplitView: View {
             if !availableDayFilterChips.isEmpty || dayListFilter.isActive {
                 Section {
                     AppDayFilterChipsView(filter: $dayListFilter, availableChips: availableDayFilterChips)
-                }
-            }
-            if session.exportSelection.count > 0 {
-                Section {
-                    HStack(spacing: 10) {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundColor(.accentColor)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(compactExportSelectionTitle)
-                                .font(.subheadline.weight(.semibold))
-                            Text(t("Open the Export tab to review or save the current selection."))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button(t("Export")) {
-                            selectedTab = 3
-                        }
-                        .font(.caption.weight(.semibold))
-                    }
-                    .padding(.vertical, 4)
                 }
             }
             if groups.count == 1, let firstGroup = groups.first {
@@ -443,6 +408,14 @@ public struct AppContentSplitView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Color.black)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            daysListStickyHeader
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if session.exportSelection.count > 0 {
+                daysExportSelectionBar
+            }
+        }
         .overlay {
             if session.daySummaries.isEmpty {
                 AppDayListEmptyView()
@@ -463,6 +436,63 @@ public struct AppContentSplitView: View {
                 .padding(24)
             }
         }
+    }
+
+    private var daysListStickyHeader: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                compactContextPill(text: daysRangeSummaryText, icon: "calendar", identifier: "days.range")
+                compactContextPill(
+                    text: daySearchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        ? t("Days Search") : daySearchText,
+                    icon: "magnifyingglass",
+                    identifier: "days.search"
+                )
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 6)
+            daysMapHeaderCard
+            Divider()
+                .background(LH2GPXTheme.separator)
+        }
+        .background(Color.black)
+        .accessibilityIdentifier("days.stickyHeader")
+    }
+
+    private var daysExportSelectionBar: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "square.and.arrow.up")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(LH2GPXTheme.primaryBlue)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(compactExportSelectionTitle)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(t("Open the Export tab to review or save the current selection."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Button(t("Export")) {
+                selectedTab = 3
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(LH2GPXTheme.primaryBlue)
+            .font(.caption.weight(.semibold))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(LH2GPXTheme.elevatedCard)
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(LH2GPXTheme.separator),
+            alignment: .top
+        )
+        .accessibilityIdentifier("days.exportBar")
     }
 
     // MARK: - Regular (iPad) Split View

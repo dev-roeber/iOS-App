@@ -338,3 +338,111 @@ final class LHMapHeaderStateSequenceTests: XCTestCase {
         XCTAssertEqual(state.visibility, .compact)
     }
 }
+
+// MARK: - LHMapHeaderState — sticky (non-dismissible) mode
+
+final class LHMapHeaderStateStickyTests: XCTestCase {
+
+    func testDefaultIsNotSticky() {
+        XCTAssertFalse(LHMapHeaderState().isSticky)
+    }
+
+    func testStickyInitializationStoresFlag() {
+        let sticky = LHMapHeaderState(visibility: .compact, isSticky: true)
+        XCTAssertTrue(sticky.isSticky)
+    }
+
+    func testNonStickyInitializationStoresFlag() {
+        let nonSticky = LHMapHeaderState(visibility: .compact, isSticky: false)
+        XCTAssertFalse(nonSticky.isSticky)
+    }
+
+    // toggleHidden must be a no-op in sticky mode
+
+    func testStickyBlocksToggleHiddenFromCompact() {
+        var state = LHMapHeaderState(visibility: .compact, isSticky: true)
+        state.toggleHidden()
+        XCTAssertEqual(state.visibility, .compact,
+            "Sticky map must not become hidden when toggled from compact")
+    }
+
+    func testStickyBlocksToggleHiddenFromExpanded() {
+        var state = LHMapHeaderState(visibility: .expanded, isSticky: true)
+        state.toggleHidden()
+        XCTAssertEqual(state.visibility, .expanded,
+            "Sticky map must not become hidden when toggled from expanded")
+    }
+
+    func testStickyBlocksToggleHiddenFromFullscreen() {
+        var state = LHMapHeaderState(visibility: .fullscreen, isSticky: true)
+        state.toggleHidden()
+        XCTAssertEqual(state.visibility, .fullscreen,
+            "Sticky map must not become hidden when toggled from fullscreen")
+    }
+
+    // expand/collapse/fullscreen transitions must still work in sticky mode
+
+    func testStickyDoesNotBlockExpand() {
+        var state = LHMapHeaderState(visibility: .compact, isSticky: true)
+        state.expand()
+        XCTAssertEqual(state.visibility, .expanded)
+    }
+
+    func testStickyDoesNotBlockCollapse() {
+        var state = LHMapHeaderState(visibility: .expanded, isSticky: true)
+        state.collapse()
+        XCTAssertEqual(state.visibility, .compact)
+    }
+
+    func testStickyDoesNotBlockEnterFullscreen() {
+        var state = LHMapHeaderState(visibility: .expanded, isSticky: true)
+        state.enterFullscreen()
+        XCTAssertEqual(state.visibility, .fullscreen)
+    }
+
+    func testStickyDoesNotBlockExitFullscreen() {
+        var state = LHMapHeaderState(visibility: .fullscreen, isSticky: true)
+        state.exitFullscreen()
+        XCTAssertEqual(state.visibility, .expanded)
+    }
+
+    // shouldRenderMap invariant must hold in sticky mode
+
+    func testStickyCompactAlwaysRendersMap() {
+        let state = LHMapHeaderState(visibility: .compact, isSticky: true)
+        XCTAssertTrue(state.shouldRenderMap)
+    }
+
+    func testStickyExpandedAlwaysRendersMap() {
+        let state = LHMapHeaderState(visibility: .expanded, isSticky: true)
+        XCTAssertTrue(state.shouldRenderMap)
+    }
+
+    // non-sticky mode must still allow toggleHidden
+
+    func testNonStickyAllowsToggleHiddenFromCompact() {
+        var state = LHMapHeaderState(visibility: .compact, isSticky: false)
+        state.toggleHidden()
+        XCTAssertEqual(state.visibility, .hidden)
+    }
+
+    func testNonStickyAllowsToggleHiddenFromExpanded() {
+        var state = LHMapHeaderState(visibility: .expanded, isSticky: false)
+        state.toggleHidden()
+        XCTAssertEqual(state.visibility, .hidden)
+    }
+
+    // Equatable: isSticky is part of equality
+
+    func testStickyAndNonStickyAreNotEqual() {
+        let sticky    = LHMapHeaderState(visibility: .compact, compactHeight: 180, expandedHeight: 320, isSticky: true)
+        let nonSticky = LHMapHeaderState(visibility: .compact, compactHeight: 180, expandedHeight: 320, isSticky: false)
+        XCTAssertNotEqual(sticky, nonSticky)
+    }
+
+    func testTwoStickyStatesWithSameParamsAreEqual() {
+        let a = LHMapHeaderState(visibility: .compact, compactHeight: 180, expandedHeight: 260, isSticky: true)
+        let b = LHMapHeaderState(visibility: .compact, compactHeight: 180, expandedHeight: 260, isSticky: true)
+        XCTAssertEqual(a, b)
+    }
+}

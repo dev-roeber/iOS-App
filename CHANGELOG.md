@@ -1,5 +1,40 @@
 # CHANGELOG
 
+## [2026-05-05] — feat: Sticky Map Workspace für Days-Ansicht (feat/sticky-map-workspace-days)
+
+### Strukturelles UX-Redesign: Days-Tab
+
+**`LHMapHeaderState.isSticky` — nicht versteckbarer Map-Header-Modus**
+
+- `LHMapHeaderState` um `isSticky: Bool = false` erweitert (rückwärtskompatibel: Default `false`)
+- `toggleHidden()` ist No-Op wenn `isSticky == true` — Map kann nicht ausgeblendet werden
+- Expand / Collapse / Fullscreen bleiben weiterhin verfügbar
+- `LHCollapsibleMapHeader.controlBar`: Toggle-Button wird bei `isSticky` ausgeblendet
+- 16 neue Tests in `LHMapHeaderStateStickyTests` (849 gesamt, 0 Failures)
+
+**Days-Tab: Sticky Map Workspace**
+
+- `daysMapHeaderState` startet ab sofort mit `visibility: .compact` + `isSticky: true` statt `.hidden`
+- Map ist im Days-Tab immer sichtbar (compact ↔ expanded) — kann nicht ausgeblendet werden
+- `compactDayList` restructuriert: Map-Header aus scrollbarer Liste extrahiert
+- `daysListStickyHeader` (neue private View): Map + Kontext-Pills als `.safeAreaInset(edge: .top)` — scrollt nicht mehr mit dem List-Content weg
+- Kontext-Pills (Datumsbereich, Suche) jetzt direkt über der Karte sichtbar
+
+**Days-Tab: Persistente Export-Auswahl-Bottom-Bar**
+
+- `daysExportSelectionBar` (neue private View) als `.safeAreaInset(edge: .bottom)`: erscheint wenn ≥ 1 Tag für Export ausgewählt
+- Zeigt Auswahl-Titel, Kurztext und Button "Export" (direkter Tap springt zu Export-Tab)
+- Ersetzte bisherigen scrollbaren List-Section-Eintrag — ist jetzt persistent sichtbar beim Scrollen
+
+### Keine Breaking Changes
+
+- Alle bestehenden Bindings, States, NavigationPath-Verhalten und Tab-Reselection unverändert
+- `daysMapHeaderCard` bleibt für iPad-Layout über `AnyView(daysMapHeaderCard)` unverändert nutzbar
+- Keine neue State-Quelle, kein neuer GlobalSingleton
+- `swift test`: **849 Tests, 0 Failures** (+16 neue Tests)
+
+---
+
 ## [2026-05-05] — chore: Build 74 Accepted — Pending Developer Release (chore/asc-build74-accepted-pending-release)
 
 ### ASC-Status: Ausstehende Entwicklerfreigabe (Pending Developer Release)

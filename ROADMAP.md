@@ -4,6 +4,20 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Sticky Map Workspace — Days-Tab (2026-05-05)
+
+Implementiert und verifiziert:
+- `LHMapHeaderState.isSticky`: neue Flag, die `toggleHidden()` blockiert — Map bleibt immer sichtbar
+- `daysMapHeaderState` startet mit `.compact` + `isSticky: true` — Days-Map immer visible
+- `daysListStickyHeader`: Map-Header + Kontext-Pills via `.safeAreaInset(edge: .top)` — fixed, scrollt nicht weg
+- `daysExportSelectionBar`: persistente Export-Bottom-Bar via `.safeAreaInset(edge: .bottom)` — erscheint bei Auswahl
+- 16 neue Tests in `LHMapHeaderStateStickyTests`; Gesamt: **849 Tests, 0 Failures**
+
+Nicht als abgeschlossen markieren:
+- Hardware-Verifikation der neuen sticky Map auf echtem Gerät ausstehend
+- App-Store-Screenshots müssen neu aufgenommen werden (zeigen noch altes Layout)
+- Landscape-Verifikation für Days sticky Header ausstehend
+
 ### Build 74 Accepted — Pending Developer Release (2026-05-05)
 
 Repo-wahr dokumentiert:
