@@ -9,12 +9,12 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] **Review-Response senden (Guideline 3.2)**: gesendet von Sebastian. Apple hat Build 74 nach Review-Response akzeptiert. Status: **Ausstehende Entwicklerfreigabe (Pending Developer Release)**. Guideline 3.2: resolved. (2026-05-05)
 - [x] **Build 74 / 1.0-Train abgeschlossen**: Version 1.0 (Build 74) bleibt in „Pending Developer Release" — 1.0-Train ist in ASC geschlossen. Builds 80–83 scheiterten wegen geschlossenem 1.0-Train (ITMS-90186/90062), nicht wegen Code-Fehler.
 - [x] **MARKETING_VERSION auf 1.0.1 angehoben** (2026-05-05): `project.pbxproj` alle 8 Konfigurationen auf `1.0.1`; Plists weiterhin via `$(MARKETING_VERSION)`. ASC hat Version `1.0.1` bereits angelegt.
-- [ ] **Neuen Xcode-Cloud-Build erzeugen**: Xcode Cloud Workflow `Release – Archive & TestFlight` manuell starten → Build ≥ 84 mit `1.0.1 (84+)` erscheint in ASC unter Version 1.0.1.
-- [ ] **Neuen Build für Version 1.0 einreichen** (wenn bereit):
-  1. In ASC: Version 1.0 → „Developer Reject" (Version aus Release-Prozess entfernen)
-  2. Build 74 ist danach nicht mehr in der Review-Queue
-  3. Neuen Build auswählen + neue Screenshots hochladen
-  4. Erneut einreichen (`Submit for Review`)
+- [x] **Xcode Cloud Build 84 erfolgreich** (2026-05-05): `1.0.1 (84)` — Archive ✅, TestFlight-interne Tests ✅. Erster valider Build für den 1.0.1-Train.
+- [ ] **Version 1.0.1 in App Store Connect finalisieren**:
+  1. ASC → LH2GPX → Vertrieb → iOS-App Version `1.0.1` öffnen
+  2. Build `1.0.1 (84)` auswählen, speichern
+  3. Screenshots prüfen: 6 iPhone-15-Pro-Max-PNGs aus `docs/app-store-assets/screenshots/iphone-67/` hochladen (iphone15pm_01–06, 1290×2796 px)
+  4. `Zur Prüfung einreichen` (`Submit for Review`)
   - Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
 - [x] **Neue Screenshots aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausgeführt → 6 neue PNGs (iphone15pm_01_import bis iphone15pm_06_live_tracking, 1290×2796 px) in `docs/app-store-assets/screenshots/iphone-67/` gespeichert (2026-05-05). Screenshot-Pflichtset auf 6 Top-Level-Flows reduziert: Options (kein Tab) entfernt.
 - [x] Support-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/support.html` (2026-04-30)

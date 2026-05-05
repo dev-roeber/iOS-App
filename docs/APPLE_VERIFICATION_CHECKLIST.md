@@ -122,6 +122,15 @@ Ausgefuehrt auf: macOS (dieser Host), Xcode, iPhone 17 Pro Max Simulator
 
 ---
 
+### Xcode Cloud Build 84 — Erfolgreich (Version 1.0.1) — 2026-05-05
+
+- **Build**: `1.0.1 (84)` — Xcode Cloud Workflow `Release – Archive & TestFlight`
+- **Archive - iOS**: ✅ erfolgreich
+- **TestFlight-interne Tests - iOS**: ✅ erfolgreich
+- **ASC-Upload**: akzeptiert — 1.0.1-Train offen, kein ITMS-Fehler
+- **Nächster manueller Schritt**: ASC → Version `1.0.1` → Build `84` auswählen → Screenshots ersetzen → `Submit for Review`
+- **Noch nicht eingereicht**: Version `1.0.1` ist nicht in Review; kein Accepted-Status behauptet
+
 ### Xcode Cloud Build 83 — Upload-Fehler (1.0-Train geschlossen) — 2026-05-05
 
 - **Fehler**: ITMS-90186 `Invalid Pre-Release Train — The train version '1.0' is closed for new build submissions` + ITMS-90062 `CFBundleShortVersionString [1.0] must contain a higher version than previously approved version [1.0]`

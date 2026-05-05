@@ -2,6 +2,15 @@
 
 ## 2026-05-05
 
+### Xcode Cloud Build 84 — erfolgreich (Version 1.0.1)
+
+- **Build 84**: Xcode Cloud Workflow `Release – Archive & TestFlight` — `Archive - iOS` ✅, `TestFlight-interne Tests - iOS` ✅
+- **Version**: `1.0.1 (84)` — erster valider Build für den 1.0.1-Train
+- **Befund**: MARKETING_VERSION-Fix aus Commit `fdd48a9` hat das ITMS-90186/90062-Problem behoben
+- **Nächster manueller Schritt**: In ASC Version `1.0.1` → Build `84` auswählen, Screenshots prüfen/ersetzen (6 iPhone-15-Pro-Max-PNGs aus `docs/app-store-assets/screenshots/iphone-67/`), speichern, `Zur Prüfung einreichen`
+- `swift test`: 927/0 ✅ — `git diff --check`: sauber ✅
+- Build 83 (und 80–82): ungültig, ignorieren — scheiterten an geschlossenem 1.0-Train, nicht an Code
+
 ### Version-Bump 1.0 → 1.0.1 (ASC Upload-Fix)
 
 - **Root Cause Build 83**: ASC lehnte Upload mit ITMS-90186 (`Invalid Pre-Release Train — 1.0 closed`) + ITMS-90062 (`CFBundleShortVersionString [1.0] must be higher than previously approved [1.0]`) ab. Kein Code-, Signing- oder Xcode-Cloud-Problem.
