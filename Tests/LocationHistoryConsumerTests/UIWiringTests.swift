@@ -790,6 +790,74 @@ final class DaysCompactLayoutStructureTests: XCTestCase {
     }
 }
 
+// MARK: - UI/UX Redesign Batch 5A — Live Tracking structural tests
+
+final class LiveTrackingRedesignBatch5ATests: XCTestCase {
+
+    // MARK: LiveLocationAuthorization.allowsForegroundTracking
+
+    func testAuthorizationWhenInUseAllowsForeground() {
+        XCTAssertTrue(LiveLocationAuthorization.authorizedWhenInUse.allowsForegroundTracking)
+    }
+
+    func testAuthorizationAlwaysAllowsForeground() {
+        XCTAssertTrue(LiveLocationAuthorization.authorizedAlways.allowsForegroundTracking)
+    }
+
+    func testAuthorizationDeniedBlocksForeground() {
+        XCTAssertFalse(LiveLocationAuthorization.denied.allowsForegroundTracking)
+    }
+
+    func testAuthorizationRestrictedBlocksForeground() {
+        XCTAssertFalse(LiveLocationAuthorization.restricted.allowsForegroundTracking)
+    }
+
+    func testAuthorizationNotDeterminedBlocksForeground() {
+        XCTAssertFalse(LiveLocationAuthorization.notDetermined.allowsForegroundTracking)
+    }
+
+    // MARK: Upload status: default state (no server configured)
+
+    @MainActor
+    func testUploadStatusSummaryDisabledByDefault() {
+        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+        XCTAssertEqual(model.uploadStatusSummary, "Disabled",
+                       "Server upload must be disabled by default — no token or URL pre-configured")
+    }
+
+    @MainActor
+    func testBearerTokenNotConfiguredByDefault() {
+        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+        XCTAssertFalse(model.hasBearerTokenConfigured,
+                       "Bearer token must not be pre-configured — no secrets in default state")
+    }
+
+    // MARK: Permission title and message: non-empty for all states
+
+    @MainActor
+    func testPermissionTitleNonEmptyForRestrictedState() {
+        // nil client → authorization == .restricted
+        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+        XCTAssertFalse(model.permissionTitle.isEmpty)
+        XCTAssertFalse(model.permissionMessage.isEmpty)
+    }
+
+    // MARK: Hero status: initial model state
+
+    @MainActor
+    func testHeroIsNotRecordingByDefault() {
+        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+        XCTAssertFalse(model.isRecording)
+    }
+
+    @MainActor
+    func testHeroHasNoValidServerConfigByDefault() {
+        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+        XCTAssertFalse(model.hasValidServerUploadConfiguration,
+                       "No endpoint URL or enabled flag set by default")
+    }
+}
+
 // MARK: - UI/UX Redesign Batch 4 — Insights Dashboard structural tests
 
 final class InsightsDashboardRedesignBatch4Tests: XCTestCase {

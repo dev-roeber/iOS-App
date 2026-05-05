@@ -4,6 +4,22 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### UI/UX Redesign Batch 5A — Live Tracking Foundation (2026-05-05)
+
+Implementiert und getestet:
+- **Hero/Status-Card** (`heroStatusCard`): Klare Statusanzeige oben im Live-Tracking-Flow; leitet sich aus `isRecording`, `isAwaitingAuthorization` und `authorization` ab — keine neue State-Logik
+- **Einklappbarer Diagnostics-Bereich** (`diagnosticsSection`): Alle 8 bestehenden Metriken kollabiert hinter einem Tippen-Trigger; `live.diagnostics.section`-Identifier
+- **7 neue Accessibility-Identifier**: `live.status.hero`, `live.map.preview`, `live.recording.primaryAction`, `live.recording.stopAction`, `live.permission.card`, `live.server.status`, `live.diagnostics.section`
+- **Token-Masking**: Bearer-Token bleibt in UI auf "Token set" / "No token" reduziert; kein Wert exposed
+- 11 neue DE-Strings, lokaler Nachweis: **918 Tests, 0 Failures**
+
+Nicht als abgeschlossen markieren:
+- Keine echte iPhone-/Hardware-Verifikation
+- Keine Landscape-/iPad-Verifikation
+- Live Activity / Dynamic Island weiter ungeprüft auf echter Hardware
+- Neue App-Store-Screenshots weiter ausstehend
+- Server-/Token-Konfiguration funktional unverändert (Scope: nur UI)
+
 ### UI/UX Redesign Batch 4 — Insights Dashboard (2026-05-05)
 
 Implementiert und getestet:

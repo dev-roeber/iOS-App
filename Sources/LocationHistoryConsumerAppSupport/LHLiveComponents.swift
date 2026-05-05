@@ -45,7 +45,7 @@ public struct LHLiveBottomBar: View {
             .padding(.horizontal, 16)
             .padding(.top, 10)
             .padding(.bottom, 4)
-            .accessibilityIdentifier(isRecording ? "live.cta.stop" : "live.cta.start")
+            .accessibilityIdentifier(isRecording ? "live.recording.stopAction" : "live.recording.primaryAction")
             .background(.bar)
         }
     }

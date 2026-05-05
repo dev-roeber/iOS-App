@@ -1,5 +1,63 @@
 # CHANGELOG
 
+## [2026-05-05] — feat: UI/UX Redesign Batch 5A — Live Tracking Foundation
+
+### Hero/Status-Bereich (`AppLiveTrackingView`)
+
+- **Neuer `heroStatusCard`**: Klare Statusanzeige ganz oben im Live-Tracking-Flow, vor der Karte.
+  - Status: Recording Active · Requesting Permission · Location Access Denied · Ready to Record · Not Started
+  - Icon + Farbe + klare Erklärung ohne technische Details
+  - Alle Zustände kommen aus `liveLocation.isRecording`, `isAwaitingAuthorization`, `authorization` — keine neuen State-Kopien
+  - Identifier: `live.status.hero`
+
+### Diagnose-Bereich (einklappbar)
+
+- **`diagnosticsSection`** ersetzt `recordingCard` im Layout:
+  - Einklappbar via `isDiagnosticsExpanded` (`@State`)
+  - Zeigt dieselben 8 Metriken (Distance, Duration, Points, Avg Speed, GPS Accuracy, Current Speed, Last Segment, Update Age) — nur wenn aufgeklappt
+  - Session-Timer im Header sichtbar, auch wenn eingeklappt
+  - Identifier: `live.diagnostics.section`
+
+### Neue Accessibility-Identifier
+
+| Element | Identifier |
+|---------|-----------|
+| Hero/Status-Card | `live.status.hero` |
+| Karten-Preview | `live.map.preview` (war `live.map`) |
+| Primäraktion (Start) | `live.recording.primaryAction` (war `live.cta.start`) |
+| Stop-Aktion | `live.recording.stopAction` (war `live.cta.stop`) |
+| Permission-Card | `live.permission.card` (neu) |
+| Server-/Upload-Section | `live.server.status` (neu) |
+| Diagnose-Bereich | `live.diagnostics.section` (neu) |
+
+### Token- und Datenschutz
+
+- Bearer-Token wird nie vollständig angezeigt — UI zeigt nur "Token set" / "No token"
+- `hasBearerTokenConfigured` aus `serverUploadConfiguration.trimmedBearerToken` — kein Wert exposed
+- Kein Token in Logs oder Tests
+
+### Neue deutsche Strings (11)
+
+Diagnostics, Ready to Record, Requesting Permission, Not Started, Location is being tracked and saved locally., Waiting for location access approval., Update location permissions in Settings to start recording., Tap Start Recording to begin a new live track., Tap Start Recording to request location access., Live recording metrics GPS accuracy and update statistics., Tap to view recording metrics and GPS details.
+
+### Tests
+
+- `LiveTrackingRedesignBatch5ATests` (8 Tests in `UIWiringTests.swift`):
+  - `allowsForegroundTracking` für alle 5 Authorization-Zustände
+  - Upload-Status initial = "Disabled" (kein Server konfiguriert)
+  - Bearer-Token initial nicht konfiguriert
+  - Permission-Title/-Message nicht leer bei restricted State
+  - `isRecording` und `hasValidServerUploadConfiguration` initial false
+- `AppLanguageSupportRedesignBatch5ATests` (11 Tests): EN-Identität + DE-Übersetzungen
+- **Gesamt: 918 Tests, 0 Failures**
+
+Nicht als abgeschlossen markieren:
+- Keine echte iPhone-/Hardware-Verifikation durchgeführt
+- Landscape-Verifikation weiter offen
+- iPad regularSplitView weiter ungeprüft
+- Live Activity / Dynamic Island Hardware-Verifikation weiter offen
+- Neue App-Store-Screenshots weiter ausstehend
+
 ## [2026-05-05] — feat: UI/UX Redesign Batch 4 — Insights Dashboard
 
 ### Insights Dashboard (`AppInsightsContentView`)

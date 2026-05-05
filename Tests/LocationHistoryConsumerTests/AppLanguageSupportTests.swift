@@ -307,6 +307,71 @@ final class AppLanguageSupportRedesignBatch2Tests: XCTestCase {
     }
 }
 
+// MARK: - UI/UX Redesign Batch 5A — Live Tracking strings
+
+final class AppLanguageSupportRedesignBatch5ATests: XCTestCase {
+
+    private let de = AppLanguagePreference.german
+    private let en = AppLanguagePreference.english
+
+    // English identity
+
+    func testEnglishDiagnostics() {
+        XCTAssertEqual(en.localized("Diagnostics"), "Diagnostics")
+    }
+
+    func testEnglishReadyToRecord() {
+        XCTAssertEqual(en.localized("Ready to Record"), "Ready to Record")
+    }
+
+    func testEnglishRequestingPermission() {
+        XCTAssertEqual(en.localized("Requesting Permission"), "Requesting Permission")
+    }
+
+    func testEnglishNotStarted() {
+        XCTAssertEqual(en.localized("Not Started"), "Not Started")
+    }
+
+    // German translations
+
+    func testGermanDiagnostics() {
+        XCTAssertEqual(de.localized("Diagnostics"), "Diagnose")
+    }
+
+    func testGermanReadyToRecord() {
+        XCTAssertEqual(de.localized("Ready to Record"), "Bereit zur Aufzeichnung")
+    }
+
+    func testGermanRequestingPermission() {
+        XCTAssertEqual(de.localized("Requesting Permission"), "Berechtigung wird angefordert")
+    }
+
+    func testGermanNotStarted() {
+        XCTAssertEqual(de.localized("Not Started"), "Nicht gestartet")
+    }
+
+    func testGermanLocationIsBeingTracked() {
+        XCTAssertEqual(
+            de.localized("Location is being tracked and saved locally."),
+            "Standort wird aufgezeichnet und lokal gespeichert."
+        )
+    }
+
+    func testGermanTapStartToBeginTrack() {
+        XCTAssertEqual(
+            de.localized("Tap Start Recording to begin a new live track."),
+            "Tippe auf 'Aufzeichnung starten', um einen neuen Live-Track zu beginnen."
+        )
+    }
+
+    func testGermanTapToViewDiagnostics() {
+        XCTAssertEqual(
+            de.localized("Tap to view recording metrics and GPS details."),
+            "Antippen für Aufzeichnungsmetriken und GPS-Details."
+        )
+    }
+}
+
 // MARK: - UI/UX Redesign Batch 4 — Insights Dashboard strings
 
 final class AppLanguageSupportRedesignBatch4Tests: XCTestCase {

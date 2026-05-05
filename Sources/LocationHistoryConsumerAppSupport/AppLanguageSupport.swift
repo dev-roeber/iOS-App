@@ -702,6 +702,18 @@ enum AppGermanTranslations {
         "Activity Streak": "Aktivitätsserie",
         "Period Comparison": "Periodenvergleich",
         "Import More Data": "Mehr Daten importieren",
+        // Live Tracking Redesign Batch 5A
+        "Diagnostics": "Diagnose",
+        "Ready to Record": "Bereit zur Aufzeichnung",
+        "Requesting Permission": "Berechtigung wird angefordert",
+        "Not Started": "Nicht gestartet",
+        "Location is being tracked and saved locally.": "Standort wird aufgezeichnet und lokal gespeichert.",
+        "Waiting for location access approval.": "Warte auf Bestätigung des Standortzugriffs.",
+        "Update location permissions in Settings to start recording.": "Standortberechtigung in Einstellungen anpassen, um die Aufzeichnung zu starten.",
+        "Tap Start Recording to begin a new live track.": "Tippe auf 'Aufzeichnung starten', um einen neuen Live-Track zu beginnen.",
+        "Tap Start Recording to request location access.": "Tippe auf 'Aufzeichnung starten', um Standortzugriff anzufordern.",
+        "Live recording metrics, GPS accuracy and update statistics.": "Aufzeichnungsmetriken, GPS-Genauigkeit und Aktualisierungsstatistiken.",
+        "Tap to view recording metrics and GPS details.": "Antippen für Aufzeichnungsmetriken und GPS-Details.",
         // Insights Dashboard Redesign Batch 4
         "active day": "aktiver Tag",
         "active days": "aktive Tage",

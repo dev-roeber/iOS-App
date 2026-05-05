@@ -23,6 +23,7 @@ public struct AppLiveTrackingView: View {
     @State private var metricSnapshot = LiveTrackingMetricSnapshot.empty
     @State private var polylineCoordinates: [CLLocationCoordinate2D] = []
     @State private var isFullscreenMapPresented = false
+    @State private var isDiagnosticsExpanded = false
 
     private let onOpenSavedTracksLibrary: (() -> Void)?
 
@@ -103,8 +104,9 @@ public struct AppLiveTrackingView: View {
                 if liveLocation.hasInterruptedSession {
                     interruptedSessionBanner
                 }
+                heroStatusCard
                 mapCard
-                recordingCard
+                diagnosticsSection
                 if shouldShowUploadSection {
                     uploadSection
                 }
@@ -125,7 +127,8 @@ public struct AppLiveTrackingView: View {
                     if liveLocation.hasInterruptedSession {
                         interruptedSessionBanner
                     }
-                    recordingCard
+                    heroStatusCard
+                    diagnosticsSection
                     if shouldShowUploadSection {
                         uploadSection
                     }
@@ -133,6 +136,86 @@ public struct AppLiveTrackingView: View {
                     advancedSection
                 }
             }
+        }
+    }
+
+    // MARK: - Hero Status Card
+
+    private var heroStatusCard: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(heroStatusTint.opacity(0.12))
+                    .frame(width: 48, height: 48)
+                Image(systemName: heroStatusIcon)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(heroStatusTint)
+                    .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(heroStatusTitle)
+                    .font(.headline.weight(.semibold))
+                Text(heroStatusSubtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .background(heroStatusTint.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(heroStatusTint.opacity(0.15), lineWidth: 1)
+        )
+        .accessibilityIdentifier("live.status.hero")
+    }
+
+    private var heroStatusIcon: String {
+        if liveLocation.isRecording { return "record.circle.fill" }
+        if liveLocation.isAwaitingAuthorization { return "location.circle" }
+        switch liveLocation.authorization {
+        case .denied, .restricted:       return "location.slash.circle"
+        case .authorizedWhenInUse, .authorizedAlways: return "location.circle.fill"
+        case .notDetermined:             return "location.circle"
+        }
+    }
+
+    private var heroStatusTitle: String {
+        if liveLocation.isRecording { return t("Recording Active") }
+        if liveLocation.isAwaitingAuthorization { return t("Requesting Permission") }
+        switch liveLocation.authorization {
+        case .denied, .restricted:       return t("Location Access Denied")
+        case .authorizedWhenInUse, .authorizedAlways: return t("Ready to Record")
+        case .notDetermined:             return t("Not Started")
+        }
+    }
+
+    private var heroStatusSubtitle: String {
+        if liveLocation.isRecording {
+            return t("Location is being tracked and saved locally.")
+        }
+        if liveLocation.isAwaitingAuthorization {
+            return t("Waiting for location access approval.")
+        }
+        switch liveLocation.authorization {
+        case .denied, .restricted:
+            return t("Update location permissions in Settings to start recording.")
+        case .authorizedWhenInUse, .authorizedAlways:
+            return t("Tap Start Recording to begin a new live track.")
+        case .notDetermined:
+            return t("Tap Start Recording to request location access.")
+        }
+    }
+
+    private var heroStatusTint: Color {
+        if liveLocation.isRecording { return LH2GPXTheme.liveMint }
+        if liveLocation.isAwaitingAuthorization { return .orange }
+        switch liveLocation.authorization {
+        case .denied, .restricted:       return .red
+        case .authorizedWhenInUse, .authorizedAlways: return LH2GPXTheme.primaryBlue
+        case .notDetermined:             return .secondary
         }
     }
 
@@ -433,51 +516,66 @@ public struct AppLiveTrackingView: View {
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .cardChrome()
-        .accessibilityIdentifier("live.map")
+        .accessibilityIdentifier("live.map.preview")
     }
 
-    // MARK: - Recording Card
+    // MARK: - Diagnostics Section (collapsible recording metrics)
 
-    private var recordingCard: some View {
+    private var diagnosticsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(t("Recording"))
-                        .font(.title3.weight(.semibold))
-                    Text(recordingSubtitleText)
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isDiagnosticsExpanded.toggle()
+                }
+            }) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(t("Diagnostics"))
+                            .font(.title3.weight(.semibold))
+                        Text(isDiagnosticsExpanded
+                             ? t("Live recording metrics, GPS accuracy and update statistics.")
+                             : t("Tap to view recording metrics and GPS details."))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if liveLocation.isRecording {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text(t("Session"))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            Text(durationText)
+                                .font(.headline.monospacedDigit())
+                                .foregroundStyle(LH2GPXTheme.liveMint)
+                        }
+                    }
+                    Image(systemName: isDiagnosticsExpanded ? "chevron.up" : "chevron.down")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                }
-                Spacer()
-                if liveLocation.isRecording {
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text(t("Session"))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Text(durationText)
-                            .font(.headline.monospacedDigit())
-                            .foregroundStyle(LH2GPXTheme.liveMint)
-                    }
+                        .padding(.leading, 4)
                 }
             }
+            .buttonStyle(.plain)
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                LHMetricCard(icon: "road.lanes", label: t("Distance"), value: liveDistanceText, color: .purple)
-                    .accessibilityIdentifier("live.metric.distance")
-                LHMetricCard(icon: "clock.fill", label: t("Duration"), value: durationText, color: .blue)
-                    .accessibilityIdentifier("live.metric.duration")
-                LHMetricCard(icon: "point.topleft.down.curvedto.point.bottomright.up", label: t("Points"), value: "\(liveLocation.liveTrackPoints.count)", color: .green)
-                    .accessibilityIdentifier("live.metric.points")
-                LHMetricCard(icon: "chart.line.uptrend.xyaxis", label: t("Average Speed"), value: averageSpeedText, color: .indigo)
-                    .accessibilityIdentifier("live.metric.averageSpeed")
-                LHMetricCard(icon: "scope", label: t("GPS Accuracy"), value: accuracyText, color: accuracyColor)
-                LHMetricCard(icon: "speedometer", label: t("Current Speed"), value: currentSpeedText, color: .orange)
-                LHMetricCard(icon: "arrow.left.and.right.circle", label: t("Last Segment"), value: lastSegmentText, color: .mint)
-                LHMetricCard(icon: "clock.badge.checkmark", label: t("Update Age"), value: updateAgeText, color: .teal)
+            if isDiagnosticsExpanded {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    LHMetricCard(icon: "road.lanes", label: t("Distance"), value: liveDistanceText, color: .purple)
+                        .accessibilityIdentifier("live.metric.distance")
+                    LHMetricCard(icon: "clock.fill", label: t("Duration"), value: durationText, color: .blue)
+                        .accessibilityIdentifier("live.metric.duration")
+                    LHMetricCard(icon: "point.topleft.down.curvedto.point.bottomright.up", label: t("Points"), value: "\(liveLocation.liveTrackPoints.count)", color: .green)
+                        .accessibilityIdentifier("live.metric.points")
+                    LHMetricCard(icon: "chart.line.uptrend.xyaxis", label: t("Average Speed"), value: averageSpeedText, color: .indigo)
+                        .accessibilityIdentifier("live.metric.averageSpeed")
+                    LHMetricCard(icon: "scope", label: t("GPS Accuracy"), value: accuracyText, color: accuracyColor)
+                    LHMetricCard(icon: "speedometer", label: t("Current Speed"), value: currentSpeedText, color: .orange)
+                    LHMetricCard(icon: "arrow.left.and.right.circle", label: t("Last Segment"), value: lastSegmentText, color: .mint)
+                    LHMetricCard(icon: "clock.badge.checkmark", label: t("Update Age"), value: updateAgeText, color: .teal)
+                }
             }
         }
         .cardChrome()
-        .accessibilityIdentifier("live.recording.card")
+        .accessibilityIdentifier("live.diagnostics.section")
     }
 
     // MARK: - Upload Section
@@ -530,6 +628,7 @@ public struct AppLiveTrackingView: View {
             uploadQuickActions
         }
         .cardChrome()
+        .accessibilityIdentifier("live.server.status")
     }
 
     private var uploadQuickActions: some View {
@@ -663,6 +762,7 @@ public struct AppLiveTrackingView: View {
                 systemImage: statusSymbolName,
                 tint: permissionTintColor
             )
+            .accessibilityIdentifier("live.permission.card")
         }
         .cardChrome()
     }
