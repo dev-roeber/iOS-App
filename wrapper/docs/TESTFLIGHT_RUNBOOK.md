@@ -22,12 +22,13 @@ Stand: 2026-05-05 | Phase 20
 ### Aktueller ASC-Stand (2026-05-05)
 
 - App Store Connect: `LH2GPX` Version `1.0`
-- Status: **`Abgelehnt`** (2026-05-01, Build 74)
-- Ablehnungsgrund: Guideline 3.2 — Business / Other Business Model Issues
+- Status: **`Ausstehende Entwicklerfreigabe (Pending Developer Release)`**
+- Guideline 3.2: **Resolved / Accepted** — Build 74 akzeptiert nach Review-Response
 - Submission ID: `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c`
 - Xcode Cloud Workflow `Release – Archive & TestFlight`: aktuellster erfolgreicher Build: **`74`**
 - Screenshots in ASC: aus Build 71, altes UI-Layout — müssen vor erneutem Submit ersetzt werden
-- **Nächster Schritt (manuell von Sebastian)**: Review-Response in ASC senden (Entwurf: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`) → ggf. neu einreichen
+- **App ist nicht live** — Build 74 bewusst nicht veröffentlicht
+- **Nächster Schritt (manuell von Sebastian)**: Weiterentwicklung → neuen Xcode-Cloud-Build erzeugen → Developer Reject in ASC → neuen Build + neue Screenshots einreichen
 - Runbook für manuelle ASC-Schritte: `docs/ASC_SUBMIT_RUNBOOK.md`
 - Live Activity / Dynamic Island bleibt für App-Review-Risiko nur partiell hardware-verifiziert
 
@@ -39,7 +40,7 @@ Geprueft gegen die relevanten Abschnitte (Stand 2026-05):
 
 | Abschnitt | Befund | Status |
 |-----------|--------|--------|
-| **3.2 Business / Other Business Model Issues** | **Ablehnung 2026-05-01 (Build 74):** Apple sah App als organisationsgebunden. Sachverhalt: LH2GPX ist öffentliche Consumer-App, kein Account/Org-Binding nötig, optionaler Upload = nutzerseitig selbst konfigurierter Endpunkt, standardmäßig OFF. Response-Entwurf: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md` | ❌ Abgelehnt → Response ausstehend |
+| **3.2 Business / Other Business Model Issues** | **Abgelehnt 2026-05-01 (Build 74)**; nach Review-Response von Sebastian **akzeptiert 2026-05-05**. LH2GPX ist öffentliche Consumer-App, kein Account/Org-Binding, optionaler self-hosted Upload standardmäßig OFF. | ✅ **Accepted** (2026-05-05) |
 | 2.1 App Completeness | vollstaendiger Location-History-Viewer, Demo-Modus vorhanden | ✅ |
 | 2.3.12 Placeholder Content | App Icon: Map-Pin + App-Name (kein Gradient-Placeholder mehr) | ✅ |
 | 4.2 Minimum Functionality | NavigationSplitView, Day-Detail, Map, Import, Demo | ✅ |
@@ -47,7 +48,8 @@ Geprueft gegen die relevanten Abschnitte (Stand 2026-05):
 | 5.1.2 Privacy Manifests | PrivacyInfo.xcprivacy vorhanden, UserDefaults CA92.1 und `PreciseLocation` fuer optionalen Upload eingetragen; offen bleibt Apple-seitige Einordnung | teilweise |
 | 5.1.5 Location | optionales lokales Live-Recording mit While-In-Use-Start und code-seitiger Background-Unterstuetzung nach `Always Allow`; kein ATT/Ad-Tracking | ✅ |
 
-Aus dem lokalen Code- und Doku-Stand laesst sich kein finaler Review-Freigabeclaim ableiten. Offene Punkte: Guideline-3.2-Response muss von Sebastian in ASC eingereicht werden; nach positivem Outcome koennen erneute Submission und Screenshots folgen.
+Guideline 3.2 ist resolved. Build 74 wurde akzeptiert und steht auf Pending Developer Release.
+Kein offener Ablehnungsgrund. Nächste Schritte: Weiterentwicklung → neuer Build → Developer Reject → erneutes Submit.
 
 ---
 

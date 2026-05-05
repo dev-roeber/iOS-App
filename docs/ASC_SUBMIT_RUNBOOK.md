@@ -1,6 +1,6 @@
-# App Store Connect — Submit-Runbook (Build 74 / Guideline 3.2 Response)
+# App Store Connect — Submit-Runbook
 
-Stand: 2026-05-05
+Stand: 2026-05-05 | **Status: Ausstehende Entwicklerfreigabe (Pending Developer Release)**
 
 ---
 
@@ -9,15 +9,16 @@ Stand: 2026-05-05
 | Punkt | Wert |
 |-------|------|
 | Version | 1.0 |
-| Status | **`Abgelehnt`** |
-| Ablehnungsdatum | 2026-05-01 |
-| Abgelehnter Build | **74** |
-| Ablehnungsgrund | Guideline 3.2 — Business / Other Business Model Issues |
+| **Status** | **`Ausstehende Entwicklerfreigabe (Pending Developer Release)`** |
+| Guideline 3.2 | **Resolved / Accepted** — kein offener Ablehnungsgrund |
+| Accepted-Datum | 2026-05-05 |
+| Ablehnung (historisch) | 2026-05-01, Build 74, Guideline 3.2 |
 | Submission ID | `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c` |
 | Xcode Cloud aktuellster Build | **74** |
-| Screenshots in ASC | Aus Build 71 (altes UI-Layout) |
-| Repo HEAD | `ff4c413` — chore: Build 73 screenshot + submit prep |
+| Screenshots in ASC | Aus Build 71 (altes UI-Layout) — vor neuem Submit ersetzen |
+| Repo HEAD | `3057cfc` — fix: clarify optional self-hosted upload (consumer UI clarification) |
 | Lokale Build-Nummer (project.pbxproj) | 45 (von Xcode Cloud überschrieben via `ci_pre_xcodebuild.sh`) |
+| **App live im Store** | **Nein** — bewusst nicht veröffentlicht |
 
 ---
 
@@ -25,26 +26,37 @@ Stand: 2026-05-05
 
 Xcode Cloud injiziert `CI_BUILD_NUMBER` automatisch in `CFBundleVersion` via `wrapper/ci_scripts/ci_pre_xcodebuild.sh`.
 Die lokale `CURRENT_PROJECT_VERSION = 45` in `project.pbxproj` ist nur der Basis-Fallback für lokale Builds.
-→ **Build 73 in Xcode Cloud** entspricht `CFBundleVersion = 73`, `MARKETING_VERSION = 1.0`.
+→ **Build 74 in Xcode Cloud** entspricht `CFBundleVersion = 74`, `MARKETING_VERSION = 1.0`.
 
 ---
 
-## Aktuell blockierender Schritt: Guideline 3.2 Response
+## Aktueller Plan: Neuen Build einreichen (Build 74 NICHT veröffentlichen)
 
-Vor einem erneuten Submit muss zuerst die Ablehnung adressiert werden:
+Build 74 wurde akzeptiert, soll aber **nicht** als finale Version veröffentlicht werden.
+Weiterentwicklung läuft; vor öffentlichem Release wird ein neuerer Build eingereicht.
 
-1. **App Store Connect → Meine Apps → LH2GPX → Version 1.0 → Ergebnis anzeigen / Reply**
-2. Review-Response aus `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md` einfügen
-3. Klarstellen: öffentliche Consumer-App, kein Account/Org-Binding, optionaler Upload = self-hosted, default OFF
-4. Submit der Response abwarten
+### Schritt 1 — Weiterentwicklung + neuer Xcode-Cloud-Build
 
-Erst nach positivem Outcome (oder neuem Feedback) ist ein weiteres Submit sinnvoll.
+1. Neue Features/Fixes auf main entwickeln, testen, pushen
+2. Xcode Cloud Workflow `Release – Archive & TestFlight` manuell starten
+3. Neuer Build (≥ 75) erscheint automatisch in ASC/TestFlight
+
+### Schritt 2 — Developer Reject (Version aus Release-Prozess entfernen)
+
+1. App Store Connect → Meine Apps → LH2GPX → Version 1.0
+2. Schaltfläche **„Developer Reject"** / **„Ablehnen"** klicken
+3. Status wechselt auf `Bereit zur Einreichung` / `Ready to Submit`
+4. Jetzt können Build, Screenshots und Metadaten bearbeitet werden
+
+### Schritt 3 — Neuen Build + Screenshots einreichen
+
+→ Weiter wie im Abschnitt „Manuelle ASC-Schritte" unten
 
 ---
 
-## Ziel des nächsten Submits (nach positivem Review-Response)
+## Ziel des nächsten Submits
 
-Neuester verfügbarer Build + neue Screenshots für das redesignte UI einreichen.
+Neuester Xcode-Cloud-Build + neue Screenshots (8 Slots, aktuelles Redesign) + ggf. Consumer-UI-Clarification-Stand (ab Build 75+).
 
 ---
 
@@ -112,22 +124,22 @@ done
 
 ### Voraussetzung
 
-Version 1.0 ist aktuell im Status `Warten auf Prüfung`.
-Screenshots und Build **können nicht direkt bearbeitet werden**, solange die Version in der Review-Queue ist.
+Version 1.0 ist aktuell im Status `Ausstehende Entwicklerfreigabe (Pending Developer Release)`.
+Für eine erneute Einreichung muss zuerst ein **Developer Reject** durchgeführt werden (s. Abschnitt oben).
 
 ### Ablauf
 
 1. **App Store Connect öffnen**: https://appstoreconnect.apple.com → Meine Apps → LH2GPX → Version 1.0
 
-2. **Aus Prüfung entfernen**:
-   - Oben im gelben Hinweis-Banner auf `Diese Version aus der Prüfung entfernen` klicken
-   - Alternativ: Schaltfläche `Remove from Review` oben rechts
-   - Warten, bis Status wieder auf `Bereit zur Einreichung` / `Ready to Submit` wechselt
+2. **Developer Reject** (statt „Aus Prüfung entfernen"):
+   - Schaltfläche `Developer Reject` / `Ablehnen` klicken
+   - Warten, bis Status auf `Bereit zur Einreichung` / `Ready to Submit` wechselt
+   - **Hinweis**: Dies entfernt Build 74 aus dem Release-Prozess; neuer Build muss gewählt werden
 
 3. **Build ersetzen**:
-   - Unter `Build` → aktuellen Build 71 entfernen (❌)
-   - `Build hinzufügen` → Build 73 auswählen (muss in TestFlight verfügbar sein)
-   - Falls Build 73 nicht erscheint: in Xcode Cloud prüfen, ob Upload abgeschlossen; ggf. einige Minuten warten
+   - Unter `Build` → aktuellen Build entfernen (❌)
+   - `Build hinzufügen` → neuesten Xcode-Cloud-Build (≥ 75) auswählen
+   - Falls neuer Build nicht erscheint: in Xcode Cloud prüfen, ob Upload abgeschlossen; ggf. einige Minuten warten
 
 4. **Screenshots ersetzen**:
    - Unter `iPhone 6.7-inch Display` → alte Screenshots entfernen

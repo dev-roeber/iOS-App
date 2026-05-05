@@ -6,8 +6,16 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 
 ## P0 — Release / Review / Hardware-Verifikation
 
-- [ ] **Review-Response senden (Guideline 3.2)**: Sebastian muss manuell in ASC → Version 1.0 → Reply to Review — Entwurf: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`. Klarstellen: öffentliche Consumer-App, kein Account/Org-Binding, optionaler Upload = nutzerkonfiguriert self-hosted, default OFF. Ergebnis abwarten und ASC-Status nachziehen.
-- [ ] **Nach positivem Review-Outcome**: neuen Build (aktuell 74) + neue Screenshots einreichen. Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
+- [x] **Review-Response senden (Guideline 3.2)**: gesendet von Sebastian. Apple hat Build 74 nach Review-Response akzeptiert. Status: **Ausstehende Entwicklerfreigabe (Pending Developer Release)**. Guideline 3.2: resolved. (2026-05-05)
+- [ ] **Build 74 bewusst NICHT veröffentlichen**: Version 1.0 (Build 74) verbleibt in „Pending Developer Release". Keine manuelle Veröffentlichung vor neuem Build.
+- [ ] **Weiterentwicklung fortsetzen**: neue Features/Fixes auf main entwickeln, testen, pushen.
+- [ ] **Neuen Xcode-Cloud-Build erzeugen**: Xcode Cloud Workflow `Release – Archive & TestFlight` manuell starten → neuer Build (≥ 75) erscheint in ASC/TestFlight.
+- [ ] **Neuen Build für Version 1.0 einreichen** (wenn bereit):
+  1. In ASC: Version 1.0 → „Developer Reject" (Version aus Release-Prozess entfernen)
+  2. Build 74 ist danach nicht mehr in der Review-Queue
+  3. Neuen Build auswählen + neue Screenshots hochladen
+  4. Erneut einreichen (`Submit for Review`)
+  - Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`
 - [ ] **Neue Screenshots aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen → 8 neue PNGs in `docs/app-store-assets/screenshots/iphone-67/` (01–08). Aktuell vorhanden: 01–06 mit altem Layout aus Build 44.
 - [x] Support-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/support.html` (2026-04-30)
 - [x] Privacy-URL in App Store Connect eingetragen: `https://dev-roeber.github.io/iOS-App/privacy.html` (2026-04-30)

@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## [2026-05-05] — chore: Build 74 Accepted — Pending Developer Release (chore/asc-build74-accepted-pending-release)
+
+### ASC-Status: Ausstehende Entwicklerfreigabe (Pending Developer Release)
+
+- **Version 1.0 (Build 74)**: nach Ablehnung (Guideline 3.2, 2026-05-01) und Review-Response von Sebastian **akzeptiert** durch Apple App Review
+- **Statusverlauf**: Abgelehnt → Wird geprüft → **Ausstehende Entwicklerfreigabe**
+- **Build 74 wird bewusst nicht veröffentlicht**: Sebastian möchte vor öffentlichem Release weiterentwickeln und einen neuen Build einreichen
+- **Guideline 3.2**: als resolved/accepted dokumentiert — kein offener Ablehungsgrund mehr
+- **Keine Live-Schaltung**: App ist nicht im App Store verfügbar; Status bleibt Pending Developer Release
+
+### Doku aktualisiert
+
+- `CHANGELOG.md`: dieser Eintrag
+- `NEXT_STEPS.md`: Review-Response als erledigt markiert; P0 auf Strategie „neuer Build vor öffentlichem Release" umgestellt
+- `ROADMAP.md`: Abschnitt „Build 74 Accepted — Pending Developer Release" ergänzt
+- `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`: Status auf Accepted aktualisiert; Historische-Submissions-Tabelle ergänzt
+- `docs/ASC_SUBMIT_RUNBOOK.md`: Status auf Ausstehende Entwicklerfreigabe; neue Strategie für neuen Build vor Release dokumentiert
+- `docs/APPLE_VERIFICATION_CHECKLIST.md`: Guideline 3.2 auf ✅ Accepted; ASC-Status nachgezogen
+- `wrapper/docs/TESTFLIGHT_RUNBOOK.md`: ASC-Stand auf Pending Developer Release; Guideline 3.2 auf ✅
+
+### Keine Code-Änderungen
+
+- `swift test`: 833 Tests, 0 Failures (unverändert)
+- keine ASC-Aktion ausgeführt — nur Repo-Doku-Sync
+
+---
+
 ## [2026-05-05] — chore: Guideline 3.2 Public Audience Clarification (fix/review-guideline-3.2-public-audience-clarification)
 
 ### App Review Ablehnung dokumentiert

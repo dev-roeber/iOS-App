@@ -33,25 +33,30 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 - Explore-Dismiss setzt wieder Full-View-Overlays; stale Overlay-Tasks werden bei Neu-Load verworfen
 - Verifiziert nur per `swift test` + `xcodebuild`; **kein** neuer Geräte-Claim aus diesem Audit-Batch
 
-### App Review Ablehnung — 2026-05-01 (Guideline 3.2)
+### App Review — Build 74 Accepted — Pending Developer Release (2026-05-05)
 
-- **Version `1.0`**: eingereicht, **abgelehnt** am 2026-05-01
-- **Build bei Ablehnung**: `74`
+- **Version `1.0`** (Build 74): nach Ablehnung (2026-05-01, Guideline 3.2) und Review-Response **akzeptiert** am 2026-05-05
+- **ASC-Status**: `Ausstehende Entwicklerfreigabe (Pending Developer Release)`
+- **Guideline 3.2**: **Resolved / Accepted** — kein offener Ablehnungsgrund
+- **Build 74 wird nicht veröffentlicht**: bewusste Entscheidung; Weiterentwicklung vor öffentlichem Release
+- **App ist nicht live**: nicht im App Store verfügbar
 - **Submission ID**: `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c`
-- **Ablehnungsgrund**: Guideline 3.2 — Business / Other Business Model Issues
+
+### App Review Ablehnung — 2026-05-01 (Guideline 3.2) — historisch
+
+- **Build bei Ablehnung**: `74` — Guideline 3.2 — Business / Other Business Model Issues
 - **Apple-Einschätzung**: App wurde als organisationsgebundene / unternehmensinterne Lösung eingestuft
 - **Sachverhalt**: LH2GPX ist eine öffentliche Consumer-/Utility-App; keine Organisationsbindung, kein Pflicht-Account, kein zentraler Server; optionaler Live-Upload ist nutzerkonfiguriert und standardmäßig deaktiviert
-- **Nächster Schritt**: Review-Response über ASC senden (Entwurf: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`)
-- **Review Guidelines — Tabelle ergänzt**:
+- **Review-Response**: von Sebastian gesendet → Apple hat akzeptiert
+- **Review Guidelines — Tabelle**:
 
 | Abschnitt | Befund | Status |
 |-----------|--------|--------|
-| 3.2 Business / Other Business Model Issues | App ist öffentliche Consumer-App; kein Account/Login/Org-Binding; optionaler self-hosted Live-Upload ist standardmäßig OFF und erfordert nutzerseitige Konfiguration | Ablehnung → Response ausstehend |
+| **3.2 Business / Other Business Model Issues** | App ist öffentliche Consumer-App; kein Account/Login/Org-Binding; optionaler self-hosted Live-Upload ist standardmäßig OFF und erfordert nutzerseitige Konfiguration | ✅ **Accepted** (nach Review-Response 2026-05-05) |
 
-### Beobachtung App Store Connect / Review — Stand 2026-05-01 (vor Ablehnung)
-- **Zur Version sichtbarer Build**: `71`
-- **Xcode Cloud**: aktuellster erfolgreicher Build: `73` / `74`
-- **Screenshots in ASC**: stammen aus Build 71 — zeigen altes UI-Layout (vor LH2GPX-Dark-Redesign)
+### Beobachtung App Store Connect / Review — Stand 2026-05-05
+- **Xcode Cloud**: aktuellster erfolgreicher Build: `74`
+- **Screenshots in ASC**: stammen aus Build 71 — zeigen altes UI-Layout (vor LH2GPX-Dark-Redesign); vor nächstem Submit ersetzen
 - **Screenshot-Runbook**: `docs/ASC_SUBMIT_RUNBOOK.md`
 - **Hardware-Risiko bleibt**: Live Activity / Dynamic Island nur partiell auf echter Hardware verifiziert
 

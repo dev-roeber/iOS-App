@@ -1,6 +1,6 @@
 # App Review Response — Guideline 3.2 (Business)
 
-Stand: 2026-05-05
+Stand: 2026-05-05 | **Status: Accepted — Ausstehende Entwicklerfreigabe**
 
 ---
 
@@ -11,10 +11,13 @@ Stand: 2026-05-05
 | Version | 1.0 |
 | Build | 74 |
 | Submission ID | 1d2cc080-13cd-45cd-b3e0-c0259a75ce5c |
-| Datum | 2026-05-01 |
-| Status | **Abgelehnt** |
+| Datum Ablehnung | 2026-05-01 |
+| Status bei Ablehnung | **Abgelehnt** |
+| Datum Accepted | 2026-05-05 |
+| **Aktueller Status** | **Ausstehende Entwicklerfreigabe (Pending Developer Release)** |
 | Guideline | **3.2 — Business / Other Business Model Issues** |
-| Zusammenfassung | Apple sah die App als Lösung für eine spezifische Organisation/Firma, nicht als öffentliche Consumer-/Utility-App |
+| Guideline 3.2 Ergebnis | **Resolved / Accepted** — kein offener Ablehnungsgrund |
+| Zusammenfassung | Apple sah die App als Lösung für eine spezifische Organisation/Firma; nach Review-Response akzeptiert als öffentliche Consumer-/Utility-App |
 
 ---
 
@@ -66,20 +69,25 @@ LH2GPX ist eine **öffentliche Consumer-App** für Einzelnutzer, die ihre persö
 
 ---
 
-## Nächste Schritte (manuell von Sebastian)
+## Ergebnis (2026-05-05)
 
-1. In App Store Connect → Meine Apps → LH2GPX → Version 1.0 → „Ablehnung anfechten" / „Reply to Review"
-2. Obigen Response-Entwurf einfügen (ggf. anpassen)
-3. Wenn Apple „Needs Developer Action" oder neue Information anfordert: in dieser Datei dokumentieren
-4. Wenn Review erneut gestartet: ASC-Status in Repo nachziehen
+Review-Response von Sebastian in ASC gesendet. Apple hat Build 74 nach erneuter Prüfung **akzeptiert**.
+Guideline 3.2 ist **resolved**. ASC-Status: Ausstehende Entwicklerfreigabe (Pending Developer Release).
 
----
+**Build 74 wird bewusst nicht veröffentlicht.** Nächster Schritt: Weiterentwicklung, neuer Xcode-Cloud-Build,
+dann Developer Reject → neuen Build einreichen. Strategie: `NEXT_STEPS.md` / `docs/ASC_SUBMIT_RUNBOOK.md`.
 
-## Offene Fragen
+## Erledigte Schritte
 
-- Muss Review-Note in ASC die optionale Server-URL-Funktion noch expliziter als rein nutzergesteuert beschreiben?
-- Müssen App-Store-Beschreibung oder Screenshots die Consumer-/Utility-Natur noch stärker betonen?
-- Ist Guideline 3.2 der einzige Ablehnungsgrund, oder gibt es weitere Feedback-Punkte?
+1. ~~In App Store Connect → Meine Apps → LH2GPX → Version 1.0 → „Ablehnung anfechten" / „Reply to Review"~~ ✅ erledigt
+2. ~~Response-Entwurf eingefügt und gesendet~~ ✅ erledigt
+3. Apple-Feedback: Build 74 accepted → Pending Developer Release ✅
+
+## Offene Fragen (geschlossen)
+
+- ~~Muss Review-Note in ASC die optionale Server-URL-Funktion noch expliziter beschreiben?~~ → Nein; Apple hat akzeptiert
+- ~~Müssen Screenshots die Consumer-Natur stärker betonen?~~ → für nächsten Build weiterhin empfohlen
+- ~~Ist Guideline 3.2 der einzige Ablehnungsgrund?~~ → Ja; nach Response akzeptiert
 
 ---
 
@@ -90,4 +98,5 @@ LH2GPX ist eine **öffentliche Consumer-App** für Einzelnutzer, die ihre persö
 | 1.0 | 52 | ~2026-04-30 | Review gestartet (Build 52 in Queue) | — |
 | 1.0 | 71 | ~2026-04-30 | Xcode Cloud Build 71 in ASC | — |
 | 1.0 | 73 | 2026-05-01 | Xcode Cloud Build 73, Zielkandidat | — |
-| 1.0 | **74** | **2026-05-01** | **Abgelehnt — Guideline 3.2** | `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c` |
+| 1.0 | **74** | **2026-05-01** | Abgelehnt — Guideline 3.2 | `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c` |
+| 1.0 | **74** | **2026-05-05** | **Ausstehende Entwicklerfreigabe (Accepted, Pending Developer Release)** — bewusst nicht veröffentlicht | `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c` |

@@ -4,6 +4,17 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Build 74 Accepted — Pending Developer Release (2026-05-05)
+
+Repo-wahr dokumentiert:
+- Apple hat Version 1.0 (Build 74) nach Review-Response **akzeptiert**
+- ASC-Status: **Ausstehende Entwicklerfreigabe (Pending Developer Release)**
+- Statusverlauf: Abgelehnt (2026-05-01) → Wird geprüft → Ausstehende Entwicklerfreigabe
+- **Guideline 3.2**: resolved — kein offener Ablehnungsgrund
+- **Build 74 wird bewusst nicht veröffentlicht**: Weiterentwicklung vor öffentlichem Release geplant
+- Strategie für neuen Build: Developer Reject in ASC → neuen Xcode-Cloud-Build erzeugen → neuen Build + neue Screenshots einreichen
+- App ist **nicht** im App Store live
+
 ### App Review Ablehnung + Public Audience Clarification (2026-05-05)
 
 Repo-wahr dokumentiert:
@@ -15,7 +26,7 @@ Repo-wahr dokumentiert:
 - Optionaler Live-Upload = nutzerkonfigurierter Self-hosted-Endpunkt, standardmäßig deaktiviert
 - README, App-Feature-Inventory, TESTFLIGHT_RUNBOOK und APPLE_VERIFICATION_CHECKLIST klargestellt
 - Response-Entwurf erstellt: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`
-- Nächster Schritt: Sebastian sendet Review-Response in ASC; Ergebnis offen
+- Review-Response von Sebastian gesendet → Apple hat akzeptiert (s. Abschnitt oben)
 
 ### Build 73 + Screenshot-Submit-Vorbereitung (2026-05-01)
 
