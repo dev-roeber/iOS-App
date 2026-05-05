@@ -137,6 +137,72 @@ final class LiveTrackRecorderTests: XCTestCase {
         XCTAssertTrue(didAccept)
     }
 
+    // MARK: - Auto-split (maximumGapSeconds)
+
+    func testAutoSplit_producesSplitOffTrack() {
+        var config = LiveTrackRecorderConfiguration()
+        config.maximumGapSeconds = 60
+        var recorder = LiveTrackRecorder(configuration: config)
+        recorder.start()
+        XCTAssertTrue(recorder.append(sample(offsetSeconds: 0, latitude: 52.52, longitude: 13.40, accuracy: 5)))
+        XCTAssertTrue(recorder.append(sample(offsetSeconds: 12, latitude: 52.5203, longitude: 13.4003, accuracy: 5)))
+
+        // 200 s gap → exceeds maximumGapSeconds → split
+        let didAccept = recorder.append(sample(offsetSeconds: 212, latitude: 52.5210, longitude: 13.4010, accuracy: 5))
+
+        XCTAssertTrue(didAccept)
+        XCTAssertNotNil(recorder.splitOffTrack, "splitOffTrack must be set after gap exceeds maximumGapSeconds")
+        XCTAssertEqual(recorder.splitOffTrack?.points.count, 2)
+        XCTAssertEqual(recorder.points.count, 1)
+    }
+
+    func testAutoSplit_startDoesNotClearPendingSplitOffTrack() {
+        // Regression test: start() must NOT clear splitOffTrack.
+        // The auto-split path calls stop() → assigns splitOffTrack → calls start().
+        // If start() cleared splitOffTrack the caller would never see the split.
+        var config = LiveTrackRecorderConfiguration()
+        config.maximumGapSeconds = 60
+        var recorder = LiveTrackRecorder(configuration: config)
+        recorder.start()
+        XCTAssertTrue(recorder.append(sample(offsetSeconds: 0, latitude: 52.52, longitude: 13.40, accuracy: 5)))
+        XCTAssertTrue(recorder.append(sample(offsetSeconds: 12, latitude: 52.5203, longitude: 13.4003, accuracy: 5)))
+        _ = recorder.append(sample(offsetSeconds: 212, latitude: 52.5210, longitude: 13.4010, accuracy: 5))
+
+        XCTAssertNotNil(recorder.splitOffTrack, "start() must not clear splitOffTrack")
+    }
+
+    func testTakeSplitOffTrack_returnsOnceAndClears() {
+        var config = LiveTrackRecorderConfiguration()
+        config.maximumGapSeconds = 60
+        var recorder = LiveTrackRecorder(configuration: config)
+        recorder.start()
+        XCTAssertTrue(recorder.append(sample(offsetSeconds: 0, latitude: 52.52, longitude: 13.40, accuracy: 5)))
+        XCTAssertTrue(recorder.append(sample(offsetSeconds: 12, latitude: 52.5203, longitude: 13.4003, accuracy: 5)))
+        _ = recorder.append(sample(offsetSeconds: 212, latitude: 52.5210, longitude: 13.4010, accuracy: 5))
+
+        let first = recorder.takeSplitOffTrack()
+        let second = recorder.takeSplitOffTrack()
+
+        XCTAssertNotNil(first)
+        XCTAssertNil(second, "takeSplitOffTrack() must return nil on second call")
+    }
+
+    func testAutoSplit_newSegmentAcceptsSubsequentPoints() {
+        var config = LiveTrackRecorderConfiguration()
+        config.maximumGapSeconds = 60
+        var recorder = LiveTrackRecorder(configuration: config)
+        recorder.start()
+        XCTAssertTrue(recorder.append(sample(offsetSeconds: 0, latitude: 52.52, longitude: 13.40, accuracy: 5)))
+        XCTAssertTrue(recorder.append(sample(offsetSeconds: 12, latitude: 52.5203, longitude: 13.4003, accuracy: 5)))
+        _ = recorder.append(sample(offsetSeconds: 212, latitude: 52.5210, longitude: 13.4010, accuracy: 5)) // split
+
+        // Point in the new segment — should be accepted
+        let didAccept = recorder.append(sample(offsetSeconds: 240, latitude: 52.5220, longitude: 13.4020, accuracy: 5))
+
+        XCTAssertTrue(didAccept)
+        XCTAssertEqual(recorder.points.count, 2)
+    }
+
     private func sample(offsetSeconds: TimeInterval, latitude: Double, longitude: Double, accuracy: Double) -> LiveLocationSample {
         LiveLocationSample(
             latitude: latitude,

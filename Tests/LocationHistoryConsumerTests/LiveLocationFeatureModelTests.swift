@@ -826,7 +826,68 @@ final class LiveLocationFeatureModelTests: XCTestCase {
         }
     }
 
-        private func makeIsolatedUserDefaults() -> UserDefaults {
+    func testAutoSplit_persistsSplitSegmentAndContinuesRecording() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            var config = LiveTrackRecorderConfiguration()
+            config.maximumGapSeconds = 60
+            let model = LiveLocationFeatureModel(
+                client: client,
+                store: store,
+                recorder: LiveTrackRecorder(configuration: config)
+            )
+
+            model.setRecordingEnabled(true)
+            // Two points → form a valid segment
+            client.emit(samples: [
+                sample(offsetSeconds: 0, latitude: 52.52, longitude: 13.40, accuracy: 6),
+                sample(offsetSeconds: 12, latitude: 52.5203, longitude: 13.4003, accuracy: 6),
+            ])
+            // Gap > 60 s → triggers auto-split; third point starts new segment
+            client.emit(samples: [
+                sample(offsetSeconds: 212, latitude: 52.5210, longitude: 13.4010, accuracy: 6),
+            ])
+
+            // Split segment must be persisted immediately
+            XCTAssertEqual(model.recordedTracks.count, 1, "split segment must be persisted without stopping the recording")
+            XCTAssertEqual(store.savedTracks.count, 1)
+            XCTAssertTrue(model.isRecording, "recording must continue after auto-split")
+            XCTAssertEqual(model.liveTrackPoints.count, 1, "current segment starts with the post-gap point")
+        }
+    }
+
+    func testAutoSplit_splitSegmentThenStopPersistsBothTracks() {
+        MainActor.assumeIsolated {
+            let client = TestLiveLocationClient(authorization: .authorizedWhenInUse)
+            let store = InMemoryRecordedTrackStore()
+            var config = LiveTrackRecorderConfiguration()
+            config.maximumGapSeconds = 60
+            let model = LiveLocationFeatureModel(
+                client: client,
+                store: store,
+                recorder: LiveTrackRecorder(configuration: config)
+            )
+
+            model.setRecordingEnabled(true)
+            client.emit(samples: [
+                sample(offsetSeconds: 0, latitude: 52.52, longitude: 13.40, accuracy: 6),
+                sample(offsetSeconds: 12, latitude: 52.5203, longitude: 13.4003, accuracy: 6),
+            ])
+            // Gap → auto-split
+            client.emit(samples: [
+                sample(offsetSeconds: 212, latitude: 52.5210, longitude: 13.4010, accuracy: 6),
+                sample(offsetSeconds: 224, latitude: 52.5215, longitude: 13.4015, accuracy: 6),
+            ])
+            // Stop → second segment persisted
+            model.setRecordingEnabled(false)
+
+            XCTAssertEqual(model.recordedTracks.count, 2, "both segments must be persisted")
+            XCTAssertEqual(store.savedTracks.count, 2)
+        }
+    }
+
+    private func makeIsolatedUserDefaults() -> UserDefaults {
         let suiteName = "test.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         return defaults

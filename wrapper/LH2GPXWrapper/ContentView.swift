@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 import LocationHistoryConsumerAppSupport
 import LocationHistoryConsumerDemoSupport
 import UniformTypeIdentifiers
@@ -69,6 +70,10 @@ struct ContentView: View {
                         }
                     }
             }
+        }
+        .onReceive(liveLocation.$recordedTracks) { _ in
+            guard preferences.widgetAutoUpdate else { return }
+            WidgetCenter.shared.reloadAllTimelines()
         }
         .onOpenURL { url in
             // Handle deep links from Widget (lh2gpx://live) and other sources

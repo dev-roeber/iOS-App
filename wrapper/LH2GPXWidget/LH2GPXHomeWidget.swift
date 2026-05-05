@@ -158,6 +158,22 @@ struct LH2GPXMediumWidgetView: View {
     }
 }
 
+// MARK: - Entry View (dispatches by widget family)
+
+struct LH2GPXWidgetEntryView: View {
+    let entry: LH2GPXEntry
+    @Environment(\.widgetFamily) private var family
+
+    var body: some View {
+        switch family {
+        case .systemSmall:
+            LH2GPXSmallWidgetView(entry: entry)
+        default:
+            LH2GPXMediumWidgetView(entry: entry)
+        }
+    }
+}
+
 // MARK: - Widget Definition
 
 @available(iOS 16.0, *)
@@ -166,7 +182,7 @@ struct LH2GPXHomeWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: LH2GPXProvider()) { entry in
-            LH2GPXMediumWidgetView(entry: entry)
+            LH2GPXWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("LH2GPX")
         .description(WidgetStr.widgetDescription)

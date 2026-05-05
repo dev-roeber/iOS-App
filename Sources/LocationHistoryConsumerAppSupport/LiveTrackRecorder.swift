@@ -68,7 +68,9 @@ public struct LiveTrackRecorder {
         points = []
         accumulatedDistanceM = 0
         isRecording = true
-        splitOffTrack = nil
+        // splitOffTrack is intentionally NOT cleared here: the auto-split path sets it
+        // immediately before calling start(), so clearing it would discard the split track
+        // before the caller has a chance to drain it via takeSplitOffTrack().
     }
 
     public mutating func append(_ sample: LiveLocationSample) -> Bool {

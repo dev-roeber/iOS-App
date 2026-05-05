@@ -476,6 +476,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
         var updatedTracks = recordedTracks
         updatedTracks.insert(persistedTrack, at: 0)
         persistRecordedTracks(updatedTracks)
+        updateWidgetData(newTrack: persistedTrack, allTracks: updatedTracks)
     }
 
     private func handleAuthorizationChange(_ authorization: LiveLocationAuthorization) {
@@ -577,8 +578,28 @@ public final class LiveLocationFeatureModel: ObservableObject {
         }
         self.recorder = recorder
 
+        // Drain any track that was auto-split due to a gap exceeding maximumGapSeconds.
+        if let splitTrack = self.recorder.takeSplitOffTrack() {
+            let captureMode: RecordedTrackCaptureMode = isBackgroundTrackingActive ? .backgroundAlways : .foregroundWhileInUse
+            let corrected = RecordedTrack(
+                id: splitTrack.id,
+                startedAt: splitTrack.startedAt,
+                endedAt: splitTrack.endedAt,
+                dayKey: splitTrack.dayKey,
+                distanceM: splitTrack.distanceM,
+                captureMode: captureMode,
+                points: splitTrack.points
+            )
+            var updated = recordedTracks
+            updated.insert(corrected, at: 0)
+            persistRecordedTracks(updated)
+            updateWidgetData(newTrack: corrected, allTracks: updated)
+            currentRecordingSessionID = UUID()
+            liveTrackPoints = self.recorder.points
+        }
+
         if !acceptedPoints.isEmpty {
-            liveTrackPoints = recorder.points
+            liveTrackPoints = self.recorder.points
             enqueueUpload(points: acceptedPoints)
 
             #if os(iOS)
@@ -824,6 +845,22 @@ public final class LiveLocationFeatureModel: ObservableObject {
 
     private var activeCaptureMode: RecordedTrackCaptureMode {
         isBackgroundTrackingActive ? .backgroundAlways : .foregroundWhileInUse
+    }
+
+    private func updateWidgetData(newTrack: RecordedTrack, allTracks: [RecordedTrack]) {
+        let recording = WidgetDataStore.LastRecording(
+            date: newTrack.endedAt,
+            distanceMeters: newTrack.distanceM,
+            durationSeconds: newTrack.endedAt.timeIntervalSince(newTrack.startedAt),
+            trackName: newTrack.dayKey
+        )
+        WidgetDataStore.save(recording: recording)
+
+        let calendar = Calendar.current
+        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+        let weekTracks = allTracks.filter { $0.startedAt >= startOfWeek }
+        let weeklyKm = weekTracks.reduce(0.0) { $0 + $1.distanceM } / 1000
+        WidgetDataStore.saveWeeklyStats(totalKm: weeklyKm, routeCount: weekTracks.count)
     }
 }
 
