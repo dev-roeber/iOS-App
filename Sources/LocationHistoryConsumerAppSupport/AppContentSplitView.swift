@@ -10,6 +10,7 @@ public struct AppContentSplitView: View {
     @ObservedObject private var liveLocation: LiveLocationFeatureModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var daysNavigationPath = NavigationPath()
+    // Tab tags: 0 = Overview, 1 = Days, 2 = Insights, 3 = Export, 4 = Live.
     @State private var selectedTab = 0
     @State private var daySearchText = ""
     @State private var dayListFilter = DayListFilter.empty
@@ -220,7 +221,7 @@ public struct AppContentSplitView: View {
         .onChange(of: preferences.allowsBackgroundLiveTracking) { _ in syncLiveRecordingSettings() }
         .onChange(of: liveLocation.navigateToLiveTabRequested) { requested in
             guard requested else { return }
-            selectedTab = 3
+            selectedTab = 4
             liveLocation.navigateToLiveTabRequested = false
         }
     }

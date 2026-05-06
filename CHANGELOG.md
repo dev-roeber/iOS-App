@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [2026-05-06] — P0 audit fixes: Live-tab deeplink + TCX export claim
+
+### Was sich geändert hat
+- `Sources/LocationHistoryConsumerAppSupport/AppContentSplitView.swift`: `navigateToLiveTabRequested` setzt jetzt `selectedTab = 4` (Live) statt fälschlich `3` (Export). Widget-Deeplink `lh2gpx://live` landet damit auf dem korrekten Tab. Zusätzlich Tab-Tag-Mapping als Inline-Kommentar dokumentiert (0=Overview, 1=Days, 2=Insights, 3=Export, 4=Live).
+- `README.md`: Export-Format-Liste enthält **kein TCX** mehr — `ExportFormat.swift` definiert nur `gpx`/`kmz`/`kml`/`geoJSON`/`csv`. TCX bleibt unterstütztes **Import**-Format.
+
+### Verifikation
+- `swift test`: 1006 Tests, 2 Skips, 0 Failures.
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+
+### Ehrlich offen
+- Magic-Number-Tab-Tags (0..4) bleiben — keine Enum-Refaktorisierung in diesem Patch (out-of-scope für die zwei P0-Fixes). Der Tag-Mapping-Kommentar reduziert das Risiko, ersetzt aber keine Typ-Sicherheit.
+- Verbleibende P0-Funde aus dem Audit (force-unwraps in GPXImportParser/KeychainHelper, `fatalError` in GPX-Roundtrip, non-exhaustive `AppExportSchemaVersion`, `LH2GPXLoadingBackground` Timeline-paused, ROADMAP-Test-Count-Widerspruch) sind in NEXT_STEPS dokumentiert und noch offen.
+
 ## [2026-05-06] — Performance pass on streaming Google Timeline import (UnsafeBytes tokenizer, 256 KB chunks, autoreleasepool, direct model build — no JSON roundtrip on output side)
 
 ### Was sich geändert hat
