@@ -26,9 +26,6 @@ public struct AppContentSplitView: View {
         expandedHeight: 560,
         isSticky: true
     )
-    /// Captured from a GeometryReader outside the ignoresSafeArea context so
-    /// the overlay controls land below Dynamic Island / status bar on all devices.
-    @State private var daysSafeAreaTop: CGFloat = 59
     @State private var presentedSheet: PresentedSheet?
     @StateObject private var pathMutationStore = AppImportedPathMutationStore()
 
@@ -431,18 +428,7 @@ public struct AppContentSplitView: View {
         .modifier(DaysListSectionSpacingModifier())
         #endif
         .scrollContentBackground(.hidden)
-        .background(
-            // Read the real safe-area inset here — the List is in the correct
-            // safe-area context (NOT inside ignoresSafeArea), so this GeometryReader
-            // returns the actual device top inset (~59 pt on iPhone 15 Pro Max).
-            // geometry.safeAreaInsets.top inside the safeAreaInset/ignoresSafeArea
-            // hero view returns 0, which is why we capture it here and pass it
-            // explicitly to LHCollapsibleMapHeader via daysSafeAreaTop.
-            GeometryReader { geo in
-                Color.black
-                    .onAppear { daysSafeAreaTop = geo.safeAreaInsets.top }
-            }
-        )
+        .background(Color.black)
         .safeAreaInset(edge: .top, spacing: 0) {
             daysListStickyHeader
         }
@@ -1114,12 +1100,27 @@ public struct AppContentSplitView: View {
         favoritedDayIDs = DayFavoritesStore.load()
     }
 
+    /// Real device top safe-area inset read via UIKit — works regardless of
+    /// SwiftUI view hierarchy or ignoresSafeArea context.
+    /// Falls back to 59 pt (iPhone Dynamic Island baseline) on non-iOS targets.
+    private var deviceTopSafeInset: CGFloat {
+        #if os(iOS)
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow }?
+            .safeAreaInsets.top ?? 59
+        #else
+        0
+        #endif
+    }
+
     private var daysMapHeaderCard: some View {
         LHCollapsibleMapHeader(
             state: $daysMapHeaderState,
             language: preferences.appLanguage,
             overlayControls: true,
-            safeAreaTopInset: daysSafeAreaTop
+            safeAreaTopInset: deviceTopSafeInset
         ) {
             if #available(iOS 17.0, macOS 14.0, *) {
                 AppOverviewTracksMapView(
