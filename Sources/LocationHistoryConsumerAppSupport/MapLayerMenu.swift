@@ -101,7 +101,7 @@ public struct MapLayerMenu: View {
             Label(t("Activity"), systemImage: "paintpalette").tag(AppMapTrackColorMode.activity)
             Label(t("Speed"), systemImage: "speedometer").tag(AppMapTrackColorMode.speed)
         } label: {
-            Label(t("Track Colour"), systemImage: "scribble.variable")
+            Label(t("Layer"), systemImage: "scribble.variable")
         }
         .pickerStyle(.menu)
     }

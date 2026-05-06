@@ -248,32 +248,18 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
         .padding(.vertical, 10)
     }
 
-    /// Semi-transparent control buttons rendered as an overlay on the map
-    /// (used when `overlayControls == true`).
-    /// `safeAreaTop` is the top safe-area inset so buttons land below Dynamic Island.
+    /// Hero-layout overlay slot (used when `overlayControls == true`).
+    ///
+    /// Historically rendered chevron-up/down + fullscreen-arrow buttons in the
+    /// top-right corner. Those occluded the unified `MapLayerMenu` trigger
+    /// (`slider.horizontal.3`) on every Hero-Map surface (Übersicht, Tage,
+    /// Einblicke, Export), so the user only saw the layer menu on Live where
+    /// no Hero-Header is in front of the inner map view. We now render an
+    /// empty overlay here; `MapLayerMenu` from the inner map view sits in the
+    /// same slot and is always visible. Vollbild remains reachable via
+    /// `MapLayerMenu`'s toggleFullscreen action where wired by the caller.
     private func overlayControlBar(safeAreaTop: CGFloat = 0) -> some View {
-        HStack(spacing: 6) {
-            if state.isCompact {
-                iconButton(
-                    systemImage: "chevron.down",
-                    label: t(state.expandButtonLabel)
-                ) { state.expand() }
-            }
-
-            if state.isExpanded {
-                iconButton(
-                    systemImage: "chevron.up",
-                    label: t(state.collapseButtonLabel)
-                ) { state.collapse() }
-
-                iconButton(
-                    systemImage: "arrow.up.left.and.arrow.down.right",
-                    label: t(state.fullscreenButtonLabel)
-                ) { state.enterFullscreen() }
-            }
-        }
-        .padding(8)
-        .padding(.top, safeAreaTop + 80)
+        EmptyView()
     }
 
     private func iconButton(systemImage: String, label: String, action: @escaping () -> Void) -> some View {
