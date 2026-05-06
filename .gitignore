@@ -9,3 +9,5 @@ lazygit.tar.gz
 # Xcode user-specific data (device selection, breakpoints, personal preferences)
 xcuserdata/
 *.xcuserstate
+
+.claude/
