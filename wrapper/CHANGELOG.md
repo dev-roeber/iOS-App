@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-05-06 (Memory-Safety-Folgefix: Sniffer-Skip im Auto-Restore)
+
+### fix: skip raw Google Timeline files during auto-restore regardless of size
+- Folgefix zum Memory-Safety-Commit `8abe7ec`: Der vorherige reine 50-MB-Cap erfasste den realen 46-MB-iPhone-Crashfall NICHT (46 < 50). Der ergänzte Sniffer-Skip schließt die Lücke.
+- `Sources/LocationHistoryConsumerAppSupport/AppContentLoader.swift`: Funktion `assertSizeWithinAutoRestoreLimitIfNeeded` umbenannt zu `assertAutoRestoreEligible`. Im Auto-Restore-Modus genügt das Sniffer-Ergebnis (`firstStructuralByte == '['`), um eine rohe Google-Timeline abzulehnen — **unabhängig von der Größe**. Gilt für direkte JSON-Dateien und für ZIPs mit Google-Timeline-Entry (Head-Sniff via begrenztem ZIP-extract-Abbruch).
+- Manueller Import (`autoRestoreMode == false`) bleibt unberührt; bei manueller Auswahl gilt weiter der ehrliche 256-MB-Cap. Ein echter Streaming-Parser fehlt nach wie vor.
+- `userFacingTitle`: "Large Google Timeline import detected" → "Import not auto-restored". `errorDescription` erweitert um den Grund "Raw Google Timeline exports and large files are skipped on launch …".
+- 4 neue Tests in `LargeImportMemorySafetyTests` (`testAutoRestoreSkipsRawGoogleTimelineUnderSizeCap`, `testAutoRestoreSkipsRawGoogleTimelineZipEntryUnderSizeCap`, `testAutoRestoreAllowsSmallAppExportLikeFile`, `testManualLoadAllowsRawGoogleTimeline`) — Suite jetzt 18 Cases.
+- `swift test`: 991 Tests, 2 skipped, 0 failures (vorher 987).
+- **Ehrlich offen:** Manuelle Importe großer roher Google-Timeline-Dateien (>~30–40 MB) bleiben weiterhin riskant — kein echter Streaming-Parser. Hardware-Re-Verifikation des 46-MB-Falls auf iPhone 15 Pro Max steht aus.
+
 ## 2026-05-06 (Memory-Safety-Fix)
 
 ### fix: guard large Google Timeline restore against memory pressure
@@ -12,7 +23,7 @@
 - `swift test`: 987 Tests, 2 skipped, 0 failures.
 - `xcodebuild` (iPhone 17 Pro Max Sim 26.3.1): BUILD SUCCEEDED.
 - Hardware-Verifikation auf iPhone 15 Pro Max mit echter 46-MB-Datei: pending (manuell).
-- **Ehrlich offen:** echter Streaming-/Chunked-Google-Timeline-Parser noch nicht umgesetzt. Manuelle Importe > 50 MB sind weiterhin riskant; im Auto-Restore-Pfad wird der Fix zuverlässig greifen.
+- **Ehrlich offen:** echter Streaming-/Chunked-Google-Timeline-Parser noch nicht umgesetzt. Manuelle Importe > 50 MB sind weiterhin riskant; im Auto-Restore-Pfad wird der Fix zuverlässig greifen. **Nachtrag 2026-05-06 (Folgefix):** Der reine 50-MB-Cap allein war nicht ausreichend — er erfasste den realen 46-MB-Crashfall nicht. Ein zusätzlicher Sniffer-Skip lehnt rohe Google-Timeline-Dateien im Auto-Restore jetzt unabhängig von der Größe ab; siehe Eintrag oben.
 
 ## 2026-05-06 (post-Hero-Map)
 

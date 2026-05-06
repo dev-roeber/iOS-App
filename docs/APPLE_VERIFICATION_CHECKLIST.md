@@ -40,7 +40,7 @@ Ausgefuehrt auf: macOS, Xcode, iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C
 
 #### ✅ real verifiziert (2026-05-05) — iPhone 15 Pro Max
 
-- **swift test**: 927 Tests, 0 Failures ✅ (an diesem Datum; aktueller Stand 2026-05-06 nach Memory-Safety-Fix: 987 Tests, 2 Skips, 0 Failures unter HEAD post-`70254ff`; Zwischenstand 973 nach LH2GPXLoadingBackground, 964 nach Doku-/Wiring-Audit-Polish, 949 unter `93109e0`)
+- **swift test**: 927 Tests, 0 Failures ✅ (an diesem Datum; aktueller Stand 2026-05-06 nach Memory-Safety-Folgefix: 991 Tests, 2 Skips, 0 Failures unter HEAD post-`70254ff`; Zwischenstand 987 nach erstem Memory-Safety-Fix, 973 nach LH2GPXLoadingBackground, 964 nach Doku-/Wiring-Audit-Polish, 949 unter `93109e0`)
 - **git diff --check**: sauber ✅
 - **xcodebuild -destination 'id=00008130-00163D0A0461401C'**: BUILD SUCCEEDED ✅
 - **testAppStoreScreenshots** (iPhone 15 Pro Max): PASSED (44s) ✅ — 6 PNGs 1290×2796
@@ -94,7 +94,7 @@ Ausgefuehrt auf: macOS (dieser Host), Xcode, iPhone 17 Pro Max Simulator
 
 #### ✅ real verifiziert (2026-05-05) — Simulator
 
-- **swift test**: 927 Tests, 0 Failures ✅ (an diesem Datum; aktueller Stand 2026-05-06 nach Memory-Safety-Fix: 987 Tests, 2 Skips, 0 Failures unter HEAD post-`70254ff`; Zwischenstand 973 nach LH2GPXLoadingBackground, 964 nach Doku-/Wiring-Audit-Polish, 949 unter `93109e0`)
+- **swift test**: 927 Tests, 0 Failures ✅ (an diesem Datum; aktueller Stand 2026-05-06 nach Memory-Safety-Folgefix: 991 Tests, 2 Skips, 0 Failures unter HEAD post-`70254ff`; Zwischenstand 987 nach erstem Memory-Safety-Fix, 973 nach LH2GPXLoadingBackground, 964 nach Doku-/Wiring-Audit-Polish, 949 unter `93109e0`)
 - **git diff --check**: sauber ✅
 - **xcodebuild generic/platform=iOS** (LH2GPXWrapper + Widget): BUILD SUCCEEDED ✅
 - **xcodebuild iPhone 17 Pro Max Simulator build**: BUILD SUCCEEDED ✅
@@ -262,7 +262,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 
 #### ⚠️ nicht automatisiert prüfbar (erfordern manuellen Device-Durchgang)
 
-- **Großer Import (>20 MB)**: kein 46-MB-Fixture im Repo; manuell mit echter Location-History-Datei prüfen
+- **Großer Import (>20 MB) / 46-MB-Crashfall**: guarded — Auto-Restore lehnt rohe Google-Timeline-Dateien grundsätzlich (unabhängig von der Größe) per Sniffer-Skip ab und zusätzlich alles über 50 MB per Cap (`AppContentLoader.assertAutoRestoreEligible`, 2026-05-06). Damit ist der 46-MB-Jetsam-Pfad durch den Code geschlossen; manuelle Hardware-Verifikation mit echter 46-MB-`location-history.zip` auf iPhone 15 Pro Max steht aus (kein 46-MB-Fixture im Repo).
 - **Days-Tab**: Day-Detail + Day-Map auf Gerät interaktiv prüfen (im UITest nur als Demo-Nebeneffekt belegt)
 - **Historien-Track-Editor**: Route entfernen, App-Neustart, Mutation prüfen — nicht automatisiert prüfbar
 - **Widget auf Homescreen/Lockscreen**: Widget Target baut, aber Pinnbar-Test erfordert manuelle Homescreen-Interaktion

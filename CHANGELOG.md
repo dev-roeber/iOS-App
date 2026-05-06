@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [2026-05-06] — Memory-Safety Folgefix: Auto-Restore lehnt rohe Google-Timeline-Dateien grundsätzlich ab (Sniffer-Skip)
+
+### Root Cause des Folgefix
+Der vorherige 50-MB-Cap (Commit `8abe7ec`) erfasste den realen 46-MB-iPhone-Crashfall NICHT, weil 46 < 50. Der jetzt ergänzte Sniffer-Skip schließt genau diese Lücke: rohe Google-Timeline-Dateien werden im Auto-Restore grundsätzlich nicht mehr automatisch reimportiert, **unabhängig von der Größe**.
+
+### fix: skip raw Google Timeline files during auto-restore regardless of size
+- `Sources/LocationHistoryConsumerAppSupport/AppContentLoader.swift`: Funktion `assertSizeWithinAutoRestoreLimitIfNeeded` umbenannt zu `assertAutoRestoreEligible`. Im Auto-Restore-Modus genügt das Sniffer-Ergebnis (`firstStructuralByte == '['`), um abzulehnen — gilt sowohl für direkte JSON-Dateien als auch für ZIPs mit Google-Timeline-Entry (Head-Sniff per begrenztem ZIP-extract-Abbruch).
+- Manueller Import (`autoRestoreMode == false`) bleibt unberührt: bei manueller Auswahl gilt weiter der ehrliche 256-MB-Cap. Ein echter Streaming-Parser fehlt nach wie vor.
+- `userFacingTitle`: "Large Google Timeline import detected" → "Import not auto-restored". `errorDescription` erweitert um den Grund "Raw Google Timeline exports and large files are skipped on launch …".
+
+### Tests
+- 4 neue Cases in `Tests/LocationHistoryConsumerTests/LargeImportMemorySafetyTests.swift`:
+  - `testAutoRestoreSkipsRawGoogleTimelineUnderSizeCap` (46 MB direkte Datei)
+  - `testAutoRestoreSkipsRawGoogleTimelineZipEntryUnderSizeCap` (46 MB Timeline in ZIP)
+  - `testAutoRestoreAllowsSmallAppExportLikeFile` (AppExport `{...}` darf weiter restoren)
+  - `testManualLoadAllowsRawGoogleTimeline` (manueller Pfad bleibt frei)
+- Suite-Total: 18 Cases (vorher 14). Gesamt: **991 Tests, 2 skipped, 0 failures** (vorher 987).
+
+### Verifikation
+- `swift test`: 991/2/0 grün (Stand 2026-05-06).
+
+### Ehrlich offen
+- Manuelle Importe großer roher Google-Timeline-Dateien (>~30–40 MB) bleiben weiterhin riskant — kein echter Streaming-Parser.
+- Hardware-Re-Verifikation des 46-MB-Falls auf iPhone 15 Pro Max steht aus (kein Simulator hat den Fall realistisch nachgestellt).
+
 ## [2026-05-06] — Memory-Safety: Auto-Restore-Schutz gegen Jetsam-Kill bei großen Google-Timeline-Imports
 
 ### Root Cause

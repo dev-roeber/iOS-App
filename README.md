@@ -53,7 +53,7 @@ Sources/
   LocationHistoryConsumerDemoSupport/  — Demo-Harness, Golden-Fixture
   LocationHistoryConsumerApp/          — Produkt-App-Einstieg
   LocationHistoryConsumerDemo/         — Demo-Einstieg
-  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 987 Tests, 2 Skips, 0 Failures, 2026-05-06)
+  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 991 Tests, 2 Skips, 0 Failures, 2026-05-06)
 Fixtures/contract/                     — Contract-Fixtures, Golden-JSONs
 wrapper/LH2GPXWrapper.xcodeproj        — Xcode Wrapper (Signing, Bundle, App-Icon)
 docs/                                  — Feature-Inventar, Runbook, Checklisten
@@ -75,7 +75,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
 Aktueller Nachweis:
-- `swift test` → `987` Tests, `2` Skips, `0` Failures (Stand 2026-05-06, HEAD post-`70254ff` nach Memory-Safety-Fix gegen Jetsam-Kill bei großen Google-Timeline-Imports)
+- `swift test` → `991` Tests, `2` Skips, `0` Failures (Stand 2026-05-06, HEAD post-`70254ff` nach Memory-Safety-Folgefix: rohe Google-Timeline-Dateien werden im Auto-Restore grundsätzlich nicht mehr automatisch reimportiert — unabhängig von der Größe (Sniffer-Skip) — zusätzlich zum bestehenden 50-MB-Cap; manuelle Importe bleiben unberührt)
 
 ## Historische Vorstufen
 

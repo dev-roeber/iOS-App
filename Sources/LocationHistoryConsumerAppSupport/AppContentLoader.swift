@@ -11,10 +11,11 @@ public enum AppContentLoaderError: LocalizedError {
     case fileTooLarge(String)
     case jsonNotFoundInZip(String)
     case multipleExportsInZip(String)
-    /// Auto-restore was suppressed because the previously-imported file is a
-    /// large Google Timeline export and re-parsing it on every launch would
-    /// risk an out-of-memory shutdown on iPhone. The user must manually
-    /// re-import when ready to wait for the parse.
+    /// Auto-restore was suppressed because the previously-imported file is
+    /// either a raw Google Timeline export (any size) or another file above
+    /// the auto-restore size ceiling. Re-parsing on every launch would risk
+    /// an out-of-memory shutdown on iPhone. The user must manually re-import
+    /// when ready to wait for the parse.
     case autoRestoreSkippedLargeFile(String)
 
     public var userFacingTitle: String {
@@ -34,7 +35,7 @@ public enum AppContentLoaderError: LocalizedError {
         case .multipleExportsInZip:
             return "Multiple exports found in ZIP"
         case .autoRestoreSkippedLargeFile:
-            return "Large Google Timeline import detected"
+            return "Import not auto-restored"
         }
     }
 
@@ -55,7 +56,7 @@ public enum AppContentLoaderError: LocalizedError {
         case let .multipleExportsInZip(name):
             return "'\(name)' contains multiple compatible location history exports. Place only one LH2GPX export or one Google Timeline JSON per ZIP."
         case let .autoRestoreSkippedLargeFile(name):
-            return "'\(name)' was not restored automatically. Re-parsing a large Google Timeline export on every launch can cause an out-of-memory shutdown. Open it manually when you are ready to wait for the import."
+            return "'\(name)' was not restored automatically. Raw Google Timeline exports and large files are skipped on launch because re-parsing them every time can cause an out-of-memory shutdown. Open it manually when you are ready to wait for the import."
         }
     }
 }
@@ -74,7 +75,7 @@ public enum AppContentLoader {
         autoRestoreMode: Bool = false
     ) async throws -> AppSessionContent {
         return try await Task.detached(priority: .userInitiated) {
-            try assertSizeWithinAutoRestoreLimitIfNeeded(
+            try assertAutoRestoreEligible(
                 url: url,
                 autoRestoreMode: autoRestoreMode
             )
@@ -99,12 +100,22 @@ public enum AppContentLoader {
     /// actively waiting for the parse and will not be surprised by the cost.
     public static let autoRestoreMaxFileSizeBytes: Int64 = 50 * 1024 * 1024
 
-    /// Inspects the URL prior to read. For direct files, checks the on-disk
-    /// size. For `.zip` inputs, uses `ZIPFoundation` to inspect entry
-    /// metadata (uncompressed size) without extracting content. Throws
-    /// `.autoRestoreSkippedLargeFile` when the auto-restore ceiling is
-    /// exceeded — never throws when `autoRestoreMode == false`.
-    private static func assertSizeWithinAutoRestoreLimitIfNeeded(
+    /// Inspects the URL prior to read. Auto-restore must NOT silently
+    /// re-parse raw Google Timeline JSON on every launch — even when the file
+    /// is below the size ceiling — because the converter still does a full
+    /// `JSONSerialization` pass plus an intermediate dictionary tree, and a
+    /// realistic 46 MB export already trips iOS Jetsam on devices with 4 GB
+    /// RAM. Two independent skip conditions therefore apply when
+    /// `autoRestoreMode == true`:
+    ///
+    /// 1. The head bytes look like a top-level JSON array (Google Timeline
+    ///    raw export). Filename does not matter.
+    /// 2. The on-disk size (or any JSON entry's uncompressed size in a ZIP)
+    ///    exceeds `autoRestoreMaxFileSizeBytes`.
+    ///
+    /// Either condition throws `.autoRestoreSkippedLargeFile`. Manual loads
+    /// (`autoRestoreMode == false`) bypass both checks.
+    private static func assertAutoRestoreEligible(
         url: URL,
         autoRestoreMode: Bool
     ) throws {
@@ -113,8 +124,6 @@ public enum AppContentLoader {
         let ext = url.pathExtension.lowercased()
 
         if ext == "zip" {
-            // Cheapest probe: open archive read-only and look at uncompressed
-            // sizes of any candidate JSON entries. We do NOT extract here.
             guard let archive = try? Archive(url: url, accessMode: .read) else {
                 // Treat unreadable archives as auto-restore skip rather than
                 // hard-failing on launch.
@@ -125,16 +134,54 @@ public enum AppContentLoader {
                 if entry.uncompressedSize > UInt64(autoRestoreMaxFileSizeBytes) {
                     throw AppContentLoaderError.autoRestoreSkippedLargeFile(filename)
                 }
+                if let head = sniffEntryHead(archive: archive, entry: entry),
+                   GoogleTimelineConverter.isGoogleTimeline(head) {
+                    throw AppContentLoaderError.autoRestoreSkippedLargeFile(filename)
+                }
             }
             return
         }
 
-        // Direct file (json/gpx/tcx). Stat before any read.
+        // Direct file (json/gpx/tcx). Stat first, then sniff a small head.
         if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
            let size = attrs[.size] as? Int64,
            size > autoRestoreMaxFileSizeBytes {
             throw AppContentLoaderError.autoRestoreSkippedLargeFile(filename)
         }
+        if ext == "json", let head = sniffFileHead(url: url),
+           GoogleTimelineConverter.isGoogleTimeline(head) {
+            throw AppContentLoaderError.autoRestoreSkippedLargeFile(filename)
+        }
+    }
+
+    /// Reads at most `byteLimit` bytes from the start of a file using a
+    /// `FileHandle`. Returns nil on read failure. Does NOT load the whole
+    /// file — used to sniff the JSON top-level kind (`[` vs `{`) before
+    /// committing to a full parse.
+    private static func sniffFileHead(url: URL, byteLimit: Int = 1024) -> Data? {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? handle.close() }
+        return try? handle.read(upToCount: byteLimit)
+    }
+
+    /// Extracts the first ~`byteLimit` bytes of a ZIP entry by aborting the
+    /// `Archive.extract` callback once enough data is buffered. Avoids
+    /// decompressing the entire entry (which for a 60 MB Google Timeline
+    /// would defeat the point of the auto-restore guard).
+    private static func sniffEntryHead(archive: Archive, entry: Entry, byteLimit: Int = 1024) -> Data? {
+        struct StopExtraction: Error {}
+        var collected = Data()
+        do {
+            _ = try archive.extract(entry, bufferSize: 4096) { chunk in
+                collected.append(chunk)
+                if collected.count >= byteLimit { throw StopExtraction() }
+            }
+        } catch is StopExtraction {
+            // Expected — early termination.
+        } catch {
+            return collected.isEmpty ? nil : collected
+        }
+        return collected.isEmpty ? nil : collected
     }
 
     private static func loadZipContent(from url: URL) throws -> AppSessionContent {

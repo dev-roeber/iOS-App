@@ -8,15 +8,16 @@
 
 **Reaktion auf realen Crash:** Xcode meldete auf iPhone 15 Pro Max einen Memory-Issue/Jetsam-Kill für `LH2GPXWrapper` beim App-Start nach Import einer 46 MB Google-Timeline (`location-history.zip`, ~65 k Timeline-Einträge). Auto-Restore re-parste die Datei vollständig im Launch-Pfad mit drei `JSONSerialization`-Vollparses → transienter RAM-Peak ~400–500 MB → Jetsam-fatal.
 
-**Implementiert:**
+**Implementiert (Zwei-Bedingungs-Skip im Auto-Restore-Pfad, Stand 2026-05-06):**
 - Sniffer-basierte Format-Detection (`GoogleTimelineConverter.isGoogleTimeline` + neuer `isJSONObject`) ersetzt drei volle `JSONSerialization`-Parses durch einen 1-KB-Byte-Check.
-- Auto-Restore-Größenschutz: konservatives 50-MB-Cap (`AppContentLoader.autoRestoreMaxFileSizeBytes`), neuer Fehler `autoRestoreSkippedLargeFile`, User-Hinweis "Großer Google-Timeline-Import erkannt — bitte manuell importieren". ZIP-Inspektion via Entry-Metadaten ohne Extraktion.
+- Auto-Restore lehnt im aktuellen Stand ab, **wenn entweder** (a) der Sniffer eine rohe Google-Timeline (`firstStructuralByte == '['`) erkennt — **unabhängig von der Größe** — **oder** (b) die Datei über dem 50-MB-Cap (`AppContentLoader.autoRestoreMaxFileSizeBytes`) liegt. Implementierung in `assertAutoRestoreEligible` (vorher `assertSizeWithinAutoRestoreLimitIfNeeded`); gilt für direkte JSONs und für ZIPs mit Google-Timeline-Entry (Head-Sniff via begrenztem ZIP-extract-Abbruch). Der reine Größencap allein erfasste den realen 46-MB-Crashfall nicht (46 < 50); der Sniffer-Skip schließt diese Lücke.
+- Neuer Fehler `autoRestoreSkippedLargeFile`, userFacingTitle "Import not auto-restored", errorDescription erwähnt jetzt explizit "Raw Google Timeline exports and large files are skipped on launch …". Manueller Import (`autoRestoreMode == false`) bleibt unberührt (256-MB-Cap, kein Sniffer-Skip).
 - Query-Fast-Path: `AppExportQueryFilter.isPassthrough` + `AppExportQueries.projectedDays`-Fast-Path schneidet ~80–130 MB transient pro Aufruf auf 65 k-Tage-Imports.
 - OverviewMap bounded coordinates: `OverviewMapPathCandidate.fullCoordinates` per `strideDecimate` auf max 512 Punkte gekappt — visuell verlustfrei (Douglas-Peucker läuft trotzdem in `makeOverlay`), spart ~70–90 % residenten RAM bei dichten Tracks.
 
-**Verifikation:** `swift test`: 987 Tests, 2 skipped, 0 failures (vorher 973). 14 neue Tests in `LargeImportMemorySafetyTests`. `xcodebuild` (iPhone 17 Pro Max Sim 26.3.1): BUILD SUCCEEDED. Hardware-Verifikation des Schutzpfads auf realer 46-MB-Datei: pending.
+**Verifikation:** `swift test`: 991 Tests, 2 skipped, 0 failures (vorher 987 vor Sniffer-Skip-Folgefix; davor 973). 18 Tests in `LargeImportMemorySafetyTests` (4 neu: raw Google-Timeline-Skip JSON+ZIP unter Cap, AppExport bleibt restorbar, manueller Pfad bleibt frei). `xcodebuild` (iPhone 17 Pro Max Sim 26.3.1): BUILD SUCCEEDED. Hardware-Re-Verifikation des 46-MB-Falls auf iPhone 15 Pro Max steht aus.
 
-**Ehrlich offen:** Echter Streaming-/Chunked-Google-Timeline-Parser noch nicht umgesetzt. `convert(...)` parst weiterhin in einen Foundation-Baum + re-serialisiert; für manuelle Importe > 50 MB greift kein Schutz, da der User dort bewusst wartet. JSON-Streaming-Parser bleibt in NEXT_STEPS verbleibender Arbeitspunkt.
+**Ehrlich offen:** Echter Streaming-/Chunked-Google-Timeline-Parser noch nicht umgesetzt. `convert(...)` parst weiterhin in einen Foundation-Baum + re-serialisiert; manuelle Importe großer roher Google-Timeline-Dateien (>~30–40 MB) bleiben riskant. JSON-Streaming-Parser bleibt in NEXT_STEPS verbleibender Arbeitspunkt.
 
 ### Map / Heatmap / Live Next-Level (2026-05-06)
 

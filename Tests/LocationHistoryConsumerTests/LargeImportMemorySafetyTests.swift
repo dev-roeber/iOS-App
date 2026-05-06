@@ -107,6 +107,86 @@ final class LargeImportMemorySafetyTests: XCTestCase {
         }
     }
 
+    // MARK: - 3b. Auto-restore Google-Timeline-raw guard (independent of size)
+
+    /// Real-world failure case: a ~46 MB Google Timeline JSON sits below the
+    /// 50 MB size cap, but parsing it through GoogleTimelineConverter still
+    /// allocates a full intermediate dictionary tree and Jetsam-kills the
+    /// app on launch. Auto-restore must therefore refuse raw Google Timeline
+    /// files regardless of size.
+    func testAutoRestoreSkipsRawGoogleTimelineUnderSizeCap() async throws {
+        let url = try makeGoogleTimelineLikeFile(
+            name: "location-history.json",
+            payloadByteCount: 46 * 1024 * 1024
+        )
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: url, autoRestoreMode: true)
+            XCTFail("Auto-restore must refuse raw Google Timeline regardless of size")
+        } catch let error as AppContentLoaderError {
+            guard case .autoRestoreSkippedLargeFile = error else {
+                return XCTFail("Expected autoRestoreSkippedLargeFile, got \(error)")
+            }
+        }
+    }
+
+    func testAutoRestoreSkipsRawGoogleTimelineZipEntryUnderSizeCap() async throws {
+        let zipURL = try makeZipWithGoogleTimelineEntry(
+            name: "location-history.json",
+            payloadByteCount: 46 * 1024 * 1024
+        )
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: zipURL, autoRestoreMode: true)
+            XCTFail("Auto-restore must refuse ZIPs containing raw Google Timeline regardless of size")
+        } catch let error as AppContentLoaderError {
+            guard case .autoRestoreSkippedLargeFile = error else {
+                return XCTFail("Expected autoRestoreSkippedLargeFile, got \(error)")
+            }
+        }
+    }
+
+    /// Counter-example: a small AppExport JSON object (`{ ... }`) that is
+    /// not Google Timeline must remain auto-restore eligible. The file here
+    /// is intentionally not a valid AppExport — we only assert that the
+    /// failure path is NOT the auto-restore guard. Actual decoding may fail
+    /// later, which is fine.
+    func testAutoRestoreAllowsSmallAppExportLikeFile() async throws {
+        let url = try makeAppExportLikeFile(name: "app_export.json", payloadByteCount: 256 * 1024)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: url, autoRestoreMode: true)
+            // Decoding will likely fail (synthetic object), but that's not the guard's job.
+        } catch let error as AppContentLoaderError {
+            if case .autoRestoreSkippedLargeFile = error {
+                XCTFail("Small AppExport-like JSON must not trip auto-restore guard")
+            }
+        }
+    }
+
+    /// Manual import of a raw Google Timeline file must still go through —
+    /// the auto-restore-only guards must not bleed into the manual path.
+    func testManualLoadAllowsRawGoogleTimeline() async throws {
+        let url = try makeGoogleTimelineLikeFile(
+            name: "location-history.json",
+            payloadByteCount: 1 * 1024 * 1024
+        )
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: url, autoRestoreMode: false)
+            // May still fail because synthetic payload is not a valid Timeline,
+            // but that failure must NOT be the auto-restore guard.
+        } catch let error as AppContentLoaderError {
+            if case .autoRestoreSkippedLargeFile = error {
+                XCTFail("Manual load must not trip auto-restore guard")
+            }
+        }
+    }
+
     // MARK: - 4. Query fast path
 
     func testProjectedDaysFastPathReturnsSortedDaysWithoutCopying() {
@@ -180,6 +260,93 @@ final class LargeImportMemorySafetyTests: XCTestCase {
             }
         }
         return url
+    }
+
+    /// Writes a file whose first byte is `[` so the sniffer classifies it as
+    /// a Google Timeline raw export, padded to `payloadByteCount` with
+    /// arbitrary bytes.
+    private func makeGoogleTimelineLikeFile(name: String, payloadByteCount: Int) throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent(name)
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        FileManager.default.createFile(atPath: url.path, contents: nil)
+        let handle = try FileHandle(forWritingTo: url)
+        defer { try? handle.close() }
+        // Realistic Google Timeline head, then garbage padding.
+        try handle.write(contentsOf: Data("[{\"startTime\":\"2026-01-01T00:00:00Z\"}".utf8))
+        let chunk = Data(repeating: UInt8(ascii: "x"), count: 1024 * 1024)
+        var written = 38
+        while written < payloadByteCount {
+            let remaining = payloadByteCount - written
+            if remaining >= chunk.count {
+                try handle.write(contentsOf: chunk)
+                written += chunk.count
+            } else {
+                try handle.write(contentsOf: chunk.prefix(remaining))
+                written += remaining
+            }
+        }
+        return url
+    }
+
+    /// Writes a file whose first byte is `{` so the sniffer classifies it as
+    /// an AppExport-like JSON object (not Google Timeline).
+    private func makeAppExportLikeFile(name: String, payloadByteCount: Int) throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent(name)
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        FileManager.default.createFile(atPath: url.path, contents: nil)
+        let handle = try FileHandle(forWritingTo: url)
+        defer { try? handle.close() }
+        try handle.write(contentsOf: Data("{\"schema_version\":\"1.0\",\"_pad\":\"".utf8))
+        let chunk = Data(repeating: UInt8(ascii: "a"), count: 1024 * 1024)
+        var written = 32
+        while written < payloadByteCount {
+            let remaining = payloadByteCount - written
+            if remaining >= chunk.count {
+                try handle.write(contentsOf: chunk)
+                written += chunk.count
+            } else {
+                try handle.write(contentsOf: chunk.prefix(remaining))
+                written += remaining
+            }
+        }
+        try handle.write(contentsOf: Data("\"}".utf8))
+        return url
+    }
+
+    private func makeZipWithGoogleTimelineEntry(name: String, payloadByteCount: Int) throws -> URL {
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("synthetic_timeline.zip")
+        try FileManager.default.createDirectory(
+            at: zipURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        let archive = try Archive(url: zipURL, accessMode: .create)
+        var payload = Data("[{\"startTime\":\"2026-01-01T00:00:00Z\"}".utf8)
+        if payload.count < payloadByteCount {
+            payload.append(Data(repeating: UInt8(ascii: "x"), count: payloadByteCount - payload.count))
+        }
+        try archive.addEntry(
+            with: name,
+            type: .file,
+            uncompressedSize: Int64(payload.count),
+            compressionMethod: .none
+        ) { position, size in
+            let start = Int(position)
+            let end = min(start + size, payload.count)
+            return payload.subdata(in: start..<end)
+        }
+        return zipURL
     }
 
     private func makeZipWithLargeJSONEntry(name: String, payloadByteCount: Int) throws -> URL {
