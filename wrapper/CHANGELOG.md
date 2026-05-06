@@ -2,6 +2,28 @@
 
 ## 2026-05-06
 
+### fix: consolidate Days top workspace + map controls below status bar (Build 96 nötig)
+
+- **Root Cause Statusbar**: Map-Controls (Globe/Fit-to-data) in `AppOverviewTracksMapView.compactMapView` lagen mit nur `.padding(8)` direkt am oberen Map-Rand. Da Days die Map per `.ignoresSafeArea(edges: .top)` hinter Dynamic Island/Statusbar zieht, landeten die Buttons sichtbar im Statusbar-Bereich.
+- **Fix Statusbar**: Neuer Initializer-Param `mapControlTopPadding: CGFloat = 8` (Default unverändert für Overview/Detail). Days reicht `deviceTopSafeInset + 12` durch — Buttons liegen sichtbar unter Dynamic Island.
+- **Root Cause LHCollapsibleMapHeader**: `safeAreaTopInset`-Parameter existierte, wurde aber im Body ignoriert. `geometry.safeAreaInsets.top` liefert in `safeAreaInset/ignoresSafeArea`-Kontexten 0.
+- **Fix LHCollapsibleMapHeader**: `overlayControlBar(safeAreaTop: max(geometry.safeAreaInsets.top, safeAreaTopInset))` — der von außen gemessene Wert wird wirksam.
+- **Konsolidierung Top-Workspace**: Die zwei separaten `.safeAreaInset(edge: .top)`s aus dem vorigen Eintrag (Map + Filter) sind jetzt zu EINEM `safeAreaInset` mit `VStack { daysListStickyHeader; daysFilterPanel }.background(.black)` zusammengefasst. Robuster gegen List-/Section-Header-Insets, kein Gap zwischen den beiden Stickys.
+- **Filter-Padding**: Top-Padding 8 → 4, damit Suchleiste flush an Map sitzt.
+- **Test-Hooks**: Suchfeld bekommt `accessibilityIdentifier("days.searchField")`.
+- `swift test`: 933/0 (2 skipped) ✅
+- `xcodebuild` iPhone 17 Pro Sim 26.3.1: **BUILD SUCCEEDED** ✅
+- `xcodebuild` iPhone 15 Pro Max physisch (UDID 00008130-00163D0A0461401C): **BUILD SUCCEEDED** ✅
+- `devicectl install` + `process launch` auf iPhone 15 Pro Max ✅
+- **Visuelle Verifikation am echten Gerät steht aus** (User testet lokal). Build-96-Einreichung erst nach OK.
+
+### fix: filter panel as second safeAreaInset, eliminates 80pt gap (Build 96 nötig)
+
+- **Root Cause**: 80pt schwarzer Streifen zwischen Map-Unterkante und Searchbar entstand durch List-internes Top-Padding (Nav-Bar-Safe-Area 44pt + First-Section-Header-Inset ~36pt). Weder `.listStyle(.plain)` noch `.ignoresSafeArea(.all)` auf der Map konnten das beheben — beide adressieren nur die Safe-Area-Seite, nicht die List-interne Seite.
+- **Fix**: `daysFilterPanel` komplett aus der List entfernt und als ZWEITES `.safeAreaInset(.top)` direkt unter dem Map-StickyHeader gestapelt. Beide sind jetzt sticky und garantiert flush — Searchbar liegt immer direkt an der Map-Unterkante.
+- **UX-Bonus**: Searchbar + Date/Filter-Chips sind jetzt während des Scrollens immer sichtbar (vorher verschwanden sie beim Hochscrollen).
+- `swift test`: 933/0 ✅ — `xcodebuild` iPhone 15 Pro Max **BUILD SUCCEEDED** ✅
+
 ### polish: compact days controls below map (Build 96 nötig — Build 95 veraltet)
 
 - **Control-Clearance erhöht**: `overlayControlBar` in `LHCollapsibleMapHeader` padded jetzt `.padding(.top, safeAreaTop + 80)` statt `+ 56` — ergibt ~139 pt ab Bildschirmoberkante auf iPhone 15 Pro Max (Dynamic Island). Keine App-Controls mehr im Bereich von Uhrzeit, Akku, Mobilfunk oder Dynamic Island.

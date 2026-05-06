@@ -1,6 +1,6 @@
 # NEXT_STEPS
 
-Stand: 2026-05-06 (compact days controls below map, Build 96 nötig)
+Stand: 2026-05-06 (Days map controls below status bar + flush map/search workspace, Build 96 nötig)
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
@@ -11,9 +11,10 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] **MARKETING_VERSION auf 1.0.1 angehoben** (2026-05-05): `project.pbxproj` alle 8 Konfigurationen auf `1.0.1`; Plists weiterhin via `$(MARKETING_VERSION)`. ASC hat Version `1.0.1` bereits angelegt.
 - [x] **Xcode Cloud Build 84 erfolgreich** (2026-05-05): `1.0.1 (84)` — Archive ✅, TestFlight-interne Tests ✅. Erster valider Build für den 1.0.1-Train.
 - [ ] **Xcode Cloud Build 96 triggern** (Pflicht vor Submit):
-  - Build 95 ist veraltet — enthält den compact-controls-Fix nicht.
-  - Neuester Commit: `polish: compact days controls below map`
+  - Build 95 ist veraltet — enthält weder den compact-controls-Fix noch den Statusbar/flush-Workspace-Fix vom 2026-05-06.
+  - Neuester Commit: `fix: keep days map controls below status bar`
   - Xcode Cloud Workflow `Release – Archive & TestFlight` manuell anstoßen.
+  - Visuelle Verifikation am echten iPhone 15 Pro Max steht noch aus (App ist installiert + gestartet).
 - [ ] **Days-Screenshot (iphone15pm_03) neu aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen — Days-Layout erneut verändert (Control-Clearance, kein schwarzer Gap, kompakter Filter). Neues PNG in `docs/app-store-assets/screenshots/iphone-67/` ablegen.
 - [ ] **Version 1.0.1 in App Store Connect finalisieren** (nach neuem Cloud-Build):
   1. ASC → LH2GPX → Vertrieb → iOS-App Version `1.0.1` öffnen

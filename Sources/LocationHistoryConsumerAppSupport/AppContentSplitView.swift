@@ -422,25 +422,17 @@ public struct AppContentSplitView: View {
         #endif
         .scrollContentBackground(.hidden)
         .background(Color.black)
-        // Order matters (SwiftUI outside-in): the LATER (outer) safeAreaInset
-        // is applied first to the original safe area, so its content sits at
-        // the VERY TOP. The EARLIER (inner) safeAreaInset sees a safe area
-        // that has already been reduced by the outer inset, so its content
-        // sits BELOW the outer inset's content.
-        //
-        // We want, top-to-bottom:
-        //   1. Map sticky header at the very top
-        //   2. Filter panel sticky directly below the map
-        //
-        // Therefore: Filter must be the FIRST (inner) and Map the SECOND (outer).
-        // Both stack as safeAreaInsets so there is GUARANTEED no list internal
-        // padding / section header / nav-bar gap between them or the list rows.
+        // Single top workspace: map sticky header + filter panel stacked together.
+        // Two separate `.safeAreaInset(edge: .top)`s stack reliably in SwiftUI,
+        // but stacking the map (which uses `.ignoresSafeArea(edges: .top)`) with
+        // a second inset has produced gap regressions (List/section header).
+        // One VStack as a single inset eliminates the boundary entirely.
         .safeAreaInset(edge: .top, spacing: 0) {
-            daysFilterPanel
-                .background(Color.black)
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            daysListStickyHeader
+            VStack(spacing: 0) {
+                daysListStickyHeader
+                daysFilterPanel
+            }
+            .background(Color.black)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if session.exportSelection.count > 0 {
@@ -491,6 +483,7 @@ public struct AppContentSplitView: View {
                 TextField(t("Search by date, weekday or month"), text: $daySearchText)
                     .textFieldStyle(.plain)
                     .foregroundStyle(.primary)
+                    .accessibilityIdentifier("days.searchField")
                 if !daySearchText.isEmpty {
                     Button {
                         daySearchText = ""
@@ -527,7 +520,7 @@ public struct AppContentSplitView: View {
             }
         }
         .padding(.horizontal, 12)
-        .padding(.top, 8)
+        .padding(.top, 4)
         .padding(.bottom, 6)
     }
 
@@ -1138,7 +1131,8 @@ public struct AppContentSplitView: View {
                     content: session.content,
                     queryFilter: projectedQueryFilter,
                     fixedHeight: nil,
-                    showsFullscreenControl: false
+                    showsFullscreenControl: false,
+                    mapControlTopPadding: deviceTopSafeInset + 12
                 )
             }
         }

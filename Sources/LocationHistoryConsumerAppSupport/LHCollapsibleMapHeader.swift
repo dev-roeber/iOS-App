@@ -175,7 +175,12 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
                         if state.shouldRenderMap && !state.isFullscreen {
                             mapContainer
                         }
-                        overlayControlBar(safeAreaTop: geometry.safeAreaInsets.top)
+                        // geometry.safeAreaInsets.top is 0 inside .safeAreaInset /
+                        // .ignoresSafeArea contexts — fall back to the explicit
+                        // safeAreaTopInset measured from outside that context.
+                        overlayControlBar(
+                            safeAreaTop: max(geometry.safeAreaInsets.top, safeAreaTopInset)
+                        )
                     }
                     .frame(height: state.mapFrameHeight ?? geometry.size.height)
                 }

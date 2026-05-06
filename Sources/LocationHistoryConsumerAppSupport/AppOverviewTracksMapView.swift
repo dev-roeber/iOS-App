@@ -114,6 +114,11 @@ struct AppOverviewTracksMapView: View {
     let queryFilter: AppExportQueryFilter?
     let fixedHeight: CGFloat?
     let showsFullscreenControl: Bool
+    /// Top padding for the topTrailing map-control overlay.
+    /// Callers that draw the map behind the status bar (e.g. Days hero map with
+    /// `.ignoresSafeArea(edges: .top)`) must pass `safeAreaTop + N` here so the
+    /// controls do not land in Dynamic Island / status bar.
+    let mapControlTopPadding: CGFloat
 
     @State private var model = AppOverviewMapModel()
     @State private var mapPosition: MapCameraPosition = .automatic
@@ -125,13 +130,15 @@ struct AppOverviewTracksMapView: View {
         content: AppSessionContent?,
         queryFilter: AppExportQueryFilter?,
         fixedHeight: CGFloat? = 200,
-        showsFullscreenControl: Bool = true
+        showsFullscreenControl: Bool = true,
+        mapControlTopPadding: CGFloat = 8
     ) {
         self.daySummaries = daySummaries
         self.content = content
         self.queryFilter = queryFilter
         self.fixedHeight = fixedHeight
         self.showsFullscreenControl = showsFullscreenControl
+        self.mapControlTopPadding = mapControlTopPadding
     }
 
     var body: some View {
@@ -215,7 +222,10 @@ struct AppOverviewTracksMapView: View {
                     }
                 }
             }
-            .padding(8)
+            .padding(.top, mapControlTopPadding)
+            .padding(.trailing, 8)
+            .padding(.leading, 8)
+            .padding(.bottom, 8)
         }
         .overlay(alignment: .bottomTrailing) { routeCountBadge }
         .overlay(alignment: .bottomLeading) { optimizedBadge }

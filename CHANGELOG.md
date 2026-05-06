@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## [2026-05-06] — fix: Days-Map-Controls unter Statusbar + Map/Search flush (Build 96 nötig)
+
+### Root Cause
+- Days-Hero-Map nutzt `.ignoresSafeArea(edges: .top)`, damit die Karte unter Dynamic Island/Statusbar reicht. Die Map-Controls (Globe/Fit-to-data) in `AppOverviewTracksMapView.compactMapView` hatten aber nur `.padding(8)` und landeten dadurch sichtbar IM Statusbar-Bereich.
+- Zwischen Karte und Suchleiste entstand ein schwarzer Leerraum, weil `compactDayList` zwei separate `.safeAreaInset(edge: .top)` für Map-Header und Filter-Panel stapelte — gegen List-internes Padding/Section-Header-Inset/Safe-Area schwer zu kontrollieren.
+- `LHCollapsibleMapHeader` besitzt einen `safeAreaTopInset`-Parameter, nutzte ihn aber nicht: im Body wurde nur `geometry.safeAreaInsets.top` verwendet, das in `safeAreaInset/ignoresSafeArea`-Kontexten 0 liefert.
+
+### Fix
+- `AppOverviewTracksMapView`: neuer Parameter `mapControlTopPadding: CGFloat = 8`. Default = altes Verhalten (Overview/Detail unverändert). Days reicht `deviceTopSafeInset + 12` rein → Buttons liegen sichtbar unter Dynamic Island.
+- `compactDayList`: zwei Top-`safeAreaInsets` durch einen einzigen ersetzt, der eine `VStack(spacing: 0) { daysListStickyHeader; daysFilterPanel }.background(.black)` enthält. Kein internes Gap mehr zwischen Karte und Suchleiste.
+- `daysFilterPanel` Top-Padding 8 → 4, damit die Suchleiste flush an der Map sitzt.
+- `LHCollapsibleMapHeader.body`: `overlayControlBar` wird mit `max(geometry.safeAreaInsets.top, safeAreaTopInset)` aufgerufen — der von außen gemessene Wert wird wirksam.
+- Suchfeld bekommt `accessibilityIdentifier("days.searchField")` für UI-Tests.
+
+### Build & Test
+- `swift test`: 933 Tests, 0 Failures, 2 Skipped ✅ (56s)
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1'`: BUILD SUCCEEDED ✅
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS,id=00008130-00163D0A0461401C'`: BUILD SUCCEEDED ✅ (iPhone 15 Pro Max physisch)
+- `xcrun devicectl device install app` + `process launch` auf iPhone 15 Pro Max ✅
+
+### App-Store
+- Build 95 ist veraltet — Build 96 nötig vor Einreichung.
+- App-Store-Screenshots müssen mit Build 96 neu erzeugt werden, da Days-Sticky-Map-Slot betroffen ist.
+
 ## [2026-05-05] — chore: Hardware-Verifikation iPhone 15 Pro Max + Screenshot-Update
 
 ### Build & Test — echtes iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C, iOS 26.4)
