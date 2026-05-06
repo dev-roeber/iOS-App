@@ -1185,21 +1185,38 @@ struct HeatmapViewportKey: Hashable {
         let maxLon = region.center.longitude + (region.span.longitudeDelta / 2.0) + lonPadding
 
         let step = lod.step
+        // Tier 2 PR-A.3: longitude bins are computed in cos(lat)-corrected
+        // coordinates so that a single bin covers approximately the same
+        // metric distance regardless of latitude. The viewport's lon-bin
+        // range therefore needs the same correction.
+        let centerLonScale = HeatmapGridBuilder.lonScale(forLatitude: region.center.latitude)
         self.minLatBin = Int32(floor(minLat / step))
         self.maxLatBin = Int32(floor(maxLat / step))
-        self.minLonBin = Int32(floor(minLon / step))
-        self.maxLonBin = Int32(floor(maxLon / step))
+        self.minLonBin = Int32(floor(minLon * centerLonScale / step))
+        self.maxLonBin = Int32(floor(maxLon * centerLonScale / step))
     }
 }
 
 enum HeatmapGridBuilder {
+    /// Cosine-of-latitude longitude scale, clamped 0.05–1.0 so polar bins
+    /// stay sane (cos(±90°) = 0 would otherwise blow lon bins to infinity).
+    /// Tier 2 PR-A.3: callers multiply lon by this factor before bucketing
+    /// so each bin covers approximately the same metric width as the lat
+    /// step, eliminating the previous Web-Mercator latitude distortion in
+    /// the aggregation grid (not just the rendering).
+    nonisolated static func lonScale(forLatitude latitude: Double) -> Double {
+        let latRad = latitude * .pi / 180.0
+        return max(min(cos(latRad), 1.0), 0.05)
+    }
+
     nonisolated static func computeGrid(for points: [WeightedPoint], lod: HeatmapLOD) -> [GridKey: HeatCell] {
         var grid: [GridKey: Double] = [:]
         let step = lod.step
 
         for point in points {
+            let lonScale = lonScale(forLatitude: point.lat)
             let latBin = Int32(floor(point.lat / step))
-            let lonBin = Int32(floor(point.lon / step))
+            let lonBin = Int32(floor(point.lon * lonScale / step))
             let key = GridKey(lat: latBin, lon: lonBin)
             grid[key, default: 0] += Double(point.weight)
         }
@@ -1266,7 +1283,13 @@ enum HeatmapGridBuilder {
     nonisolated private static func makeCell(for key: GridKey, count: Double, normalized: Double, lod: HeatmapLOD) -> HeatCell {
         let step = lod.step
         let centerLat = (Double(key.lat) * step) + (step / 2.0)
-        let centerLon = (Double(key.lon) * step) + (step / 2.0)
+        // Tier 2 PR-A.3: lon-bin keys live in cos(lat)-corrected coordinates;
+        // back out to true longitude by dividing the corrected centre value
+        // by the lon scale at the cell's centre latitude. lonScale is clamped
+        // ≥ 0.05 so polar cells don't produce extreme back-projections.
+        let centerLonScale = lonScale(forLatitude: centerLat)
+        let centerLonCorrected = (Double(key.lon) * step) + (step / 2.0)
+        let centerLon = centerLonCorrected / centerLonScale
         let cellSpan = step * lod.tileSpanMultiplier
         let displayIntensity = HeatmapVisualStyle.displayIntensity(for: normalized)
 

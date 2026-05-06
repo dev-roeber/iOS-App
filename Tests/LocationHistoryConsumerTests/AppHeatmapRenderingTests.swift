@@ -404,6 +404,42 @@ final class AppHeatmapRenderingTests: XCTestCase {
         XCTAssertEqual(53.144 - coords[2].latitude, 0.005, accuracy: 1e-9, "Lower-right vertex Y")
     }
 
+    func testDensityBinsCosineCorrectLongitudeAtHighLatitude() {
+        // Tier 2 PR-A.3: at higher latitudes a degree of longitude covers
+        // less metric distance than a degree of latitude. The aggregation
+        // grid now scales lon-bin keys by cos(lat) so each bin covers
+        // approximately the same metric width. Two points roughly 6 km
+        // apart at Oldenburg latitude (53° N) should land in distinct
+        // bins under medium LOD (step 0.012° ≈ 1.3 km north-south).
+        // Without the cos correction they could collapse into one bin.
+        let pointA = WeightedPoint(lat: 53.144, lon: 8.214, weight: 1)
+        let pointB = WeightedPoint(lat: 53.144, lon: 8.300, weight: 1)
+        // 0.086° lon at 53° N is roughly 0.086 × 111 km × cos(53°) ≈ 5.7 km.
+        let grid = HeatmapGridBuilder.computeGrid(for: [pointA, pointB], lod: .medium)
+        // Expect at least two distinct bin centres in the longitude direction.
+        let lonCentres = Set(grid.values.map { Double(round($0.coordinate.longitude * 1000)) })
+        XCTAssertGreaterThanOrEqual(lonCentres.count, 2,
+            "Two points 0.086° lon apart at 53° N must occupy at least two distinct lon bins under medium LOD")
+
+        // Sanity: cell centres should sit close to the input longitudes
+        // (within 1 medium step ÷ cos(53°) ≈ 0.020° back-projected width).
+        let cellLons = grid.values.map(\.coordinate.longitude)
+        XCTAssertTrue(cellLons.contains { abs($0 - 8.214) < 0.025 },
+            "A cell should be close to point A's longitude")
+        XCTAssertTrue(cellLons.contains { abs($0 - 8.300) < 0.025 },
+            "A cell should be close to point B's longitude")
+    }
+
+    func testLonScaleClampsAtPoles() {
+        // cos(89°) ≈ 0.017 — small enough to clamp.
+        // cos(90°) = 0   — would otherwise yield a divide-by-zero on back-projection.
+        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 0.0),  1.0,  accuracy: 1e-9)
+        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 53.0), cos(53.0 * .pi / 180), accuracy: 1e-9)
+        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 89.0), 0.05, accuracy: 1e-9, "Clamps near the poles")
+        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 90.0), 0.05, accuracy: 1e-9, "Hard clamp at pole")
+        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: -90.0), 0.05, accuracy: 1e-9, "Hard clamp at south pole")
+    }
+
     func testHexPolygonAcceptsAsymmetricStepForMercatorCorrection() {
         // Tier 2 PR-A.2: The (stepLat, stepLon) overload allows callers to
         // compensate for Web Mercator's cosine-of-latitude longitude shrink.
