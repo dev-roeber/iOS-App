@@ -378,13 +378,6 @@ public struct AppContentSplitView: View {
         let summaries = filteredDaySummaries
         let groups = groupByMonth(summaries, locale: preferences.appLocale)
         return List {
-            // Filter panel (search + chips) in a single zero-inset section directly below the hero map
-            Section {
-                daysFilterPanel
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-            }
             if let activeDayDrilldownDescription {
                 Section {
                     drilldownBanner(
@@ -429,8 +422,18 @@ public struct AppContentSplitView: View {
         #endif
         .scrollContentBackground(.hidden)
         .background(Color.black)
+        // Order matters: the LATER safeAreaInset is applied AFTER the earlier
+        // one, so it sits BELOW the earlier inset's content. We want:
+        //   1. Map sticky header at the very top
+        //   2. Filter panel sticky directly below the map
+        // Both stack as safeAreaInsets so there is GUARANTEED no list internal
+        // padding / section header / nav-bar gap between them or the list rows.
         .safeAreaInset(edge: .top, spacing: 0) {
             daysListStickyHeader
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            daysFilterPanel
+                .background(Color.black)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if session.exportSelection.count > 0 {
