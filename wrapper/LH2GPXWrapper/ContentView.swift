@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var hasPreparedLaunchState = false
     @StateObject private var liveLocation = LiveLocationFeatureModel()
     @StateObject private var preferences = AppPreferences()
+    @StateObject private var loadingProgress = LoadingProgressEngine()
 
     private func t(_ english: String) -> String {
         preferences.localized(english)
@@ -38,7 +39,10 @@ struct ContentView: View {
             } else {
                 NavigationStack {
                     ZStack {
-                        homeBackground
+                        LH2GPXLoadingBackground(progress: loadingProgress.progress) {
+                            homeBackground
+                        }
+                        .ignoresSafeArea()
                         Group {
                             if session.isLoading {
                                 ProgressView(t("Opening location history..."))
@@ -59,6 +63,15 @@ struct ContentView: View {
                     }
                 }
                 .preferredColorScheme(.dark)
+                .onChange(of: session.isLoading) { isLoading in
+                    if isLoading {
+                        loadingProgress.start()
+                    } else if session.content != nil {
+                        loadingProgress.complete()
+                    } else {
+                        loadingProgress.cancel()
+                    }
+                }
             }
         }
         .environmentObject(preferences)
