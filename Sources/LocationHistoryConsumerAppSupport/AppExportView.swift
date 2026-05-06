@@ -259,14 +259,19 @@ public struct AppExportView: View {
 
     @ViewBuilder
     private var exportHeroMapPlaceholder: some View {
+        let hasSelectableItems = !filteredSummaries.isEmpty || !liveLocation.recordedTracks.isEmpty
         VStack(spacing: 12) {
             Image(systemName: "map")
                 .font(.system(size: 38))
                 .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
-            Text(t("No preview yet"))
+            Text(hasSelectableItems
+                 ? t("Pick a day or live track to preview")
+                 : t("No preview yet"))
                 .font(.headline)
-            Text(t("Select at least one day or saved live track to see the export preview here."))
+            Text(hasSelectableItems
+                 ? t("Tap any item below to build your export.")
+                 : t("Select at least one day or saved live track to see the export preview here."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -307,9 +312,10 @@ public struct AppExportView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     if selection.isEmpty {
+                        let hasSelectableItems = !summaries.isEmpty || !liveLocation.recordedTracks.isEmpty
                         LHFilterChip(
-                            title: t("Nothing selected"),
-                            systemImage: "exclamationmark.triangle",
+                            title: hasSelectableItems ? t("Tap to choose") : t("Nothing selected"),
+                            systemImage: hasSelectableItems ? "hand.tap" : "exclamationmark.triangle",
                             isActive: false,
                             action: {}
                         )
@@ -409,7 +415,13 @@ public struct AppExportView: View {
             mode: effectiveExportMode,
             language: preferences.appLanguage
         )
+        let hasSelectableItems = !summaries.isEmpty || !liveLocation.recordedTracks.isEmpty
 
+        if selection.isEmpty && hasSelectableItems {
+            // Suppressed: hero placeholder is the canonical empty surface when
+            // selectable items exist. Avoids duplicate "select something" copy.
+            EmptyView()
+        } else {
         LHCard {
             LHSectionHeader(t("Preview"))
             if selection.isEmpty {
@@ -440,6 +452,7 @@ public struct AppExportView: View {
             } else {
                 compactPreviewSummary(selection: selection, summaries: summaries)
             }
+        }
         }
     }
 
@@ -557,17 +570,28 @@ public struct AppExportView: View {
                     }
                 }
             } else {
+                let hasSelectableItems = !summaries.isEmpty || !liveLocation.recordedTracks.isEmpty
                 VStack(alignment: .leading, spacing: 10) {
-                    Label(
-                        t("No exportable days or tracks are selected yet."),
-                        systemImage: "square.and.arrow.up.trianglebadge.exclamationmark"
-                    )
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    Text(t("Start from Days to pick one or more dates, or import a file first if your history is still empty."))
-                        .font(.caption)
+                    if hasSelectableItems {
+                        Text(t("Tap any day or saved live track below to start your export."))
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Label(
+                            t("No exportable days or tracks are selected yet."),
+                            systemImage: "square.and.arrow.up.trianglebadge.exclamationmark"
+                        )
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
-                    selectionFallbackActions
+                        Text(t("Start from Days to pick one or more dates, or import a file first if your history is still empty."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if hasSelectableItems {
+                        selectionStartActions(summaries: summaries)
+                    } else {
+                        selectionFallbackActions
+                    }
                 }
             }
         }
@@ -625,6 +649,7 @@ public struct AppExportView: View {
                         session.exportSelection.clearRecordedTracks()
                     }
                     .font(.subheadline)
+                    .accessibilityIdentifier("export.liveTracks.deselectAll")
                 } else {
                     Button(t("Select All")) {
                         session.exportSelection.selectAllRecordedTracks(
@@ -632,6 +657,7 @@ public struct AppExportView: View {
                         )
                     }
                     .font(.subheadline)
+                    .accessibilityIdentifier("export.liveTracks.selectAll")
                 }
             }
 
@@ -1142,6 +1168,42 @@ public struct AppExportView: View {
         }
     }
 
+    /// Prominent CTAs shown in the summary card when the user has nothing
+    /// selected yet but selectable items (days or saved live tracks) exist.
+    /// The primary action is `.borderedProminent` to draw the eye toward the
+    /// fastest path to a non-empty selection.
+    @ViewBuilder
+    private func selectionStartActions(summaries: [DaySummary]) -> some View {
+        HStack(spacing: 10) {
+            if !summaries.isEmpty {
+                Button(t("Select All Days")) {
+                    session.exportSelection.selectAll(from: summaries.map(\.date))
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("export.days.selectAll.cta")
+            }
+            if !liveLocation.recordedTracks.isEmpty {
+                if summaries.isEmpty {
+                    Button(t("Select All Tracks")) {
+                        session.exportSelection.selectAllRecordedTracks(
+                            from: liveLocation.recordedTracks.map(\.id)
+                        )
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("export.liveTracks.selectAll.cta")
+                } else {
+                    Button(t("Select All Tracks")) {
+                        session.exportSelection.selectAllRecordedTracks(
+                            from: liveLocation.recordedTracks.map(\.id)
+                        )
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("export.liveTracks.selectAll.cta")
+                }
+            }
+        }
+    }
+
     // MARK: - Empty State
 
     private var emptyState: some View {
@@ -1276,7 +1338,11 @@ public struct AppExportView: View {
         case .ready:
             return nil
         case .nothingSelected:
-            return t("No exportable days or tracks are selected yet.")
+            // Unreachable in practice: `LHContextBar` only renders when
+            // `selectedSourceCount > 0`, which means readiness is never
+            // `.nothingSelected` at this call site. Kept for switch
+            // exhaustiveness; intentionally returns nil.
+            return nil
         case .noExportableContent:
             return ExportPresentation.disabledReason(
                 importedExport: session.content?.export,
