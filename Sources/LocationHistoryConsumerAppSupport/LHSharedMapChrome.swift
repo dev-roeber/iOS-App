@@ -1,11 +1,12 @@
 #if canImport(SwiftUI)
 import SwiftUI
 
-/// Shared map-chrome style-toggle button. Mirrors the inline button used inside
-/// `AppDayMapView` so all map surfaces (Overview, Insights, Export, Live) render
-/// the identical pill. Functionality and appearance must stay byte-equivalent
-/// with the AppDayMapView original — change one, change both.
+/// Legacy single-purpose map style toggle. Superseded by `MapLayerMenu`
+/// which consolidates every map layer control into one right-side dropdown.
+/// Kept only to avoid breaking external Source-Compatibility — internal
+/// callers were migrated.
 @available(iOS 17.0, macOS 14.0, *)
+@available(*, deprecated, message: "Use MapLayerMenu instead — every map surface now uses the unified layer dropdown.")
 public struct LHMapStyleToggleButton: View {
     @EnvironmentObject private var preferences: AppPreferences
 

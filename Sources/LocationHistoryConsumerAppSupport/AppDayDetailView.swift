@@ -294,30 +294,19 @@ public struct AppDayDetailView: View {
         fillHeight: Bool = false
     ) -> some View {
         VStack(spacing: 6) {
-            HStack(spacing: 8) {
-                if !detail.paths.isEmpty {
+            if !detail.paths.isEmpty {
+                HStack(spacing: 8) {
                     Picker(t("Route Display"), selection: $preferences.dayPathDisplayMode) {
                         ForEach(AppDayPathDisplayMode.allCases) { mode in
                             Text(t(mode.label)).tag(mode)
                         }
                     }
                     .pickerStyle(.segmented)
-                } else {
-                    Spacer()
                 }
-                Button {
-                    preferences.preferredMapStyle.toggle()
-                } label: {
-                    Image(systemName: preferences.preferredMapStyle.isHybrid ? "map" : "globe")
-                        .font(.callout)
-                        .padding(7)
-                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-                .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
+                .padding(.horizontal, fillHeight ? 12 : 0)
+                .padding(.top, fillHeight ? 12 : 0)
             }
-            .padding(.horizontal, fillHeight ? 12 : 0)
-            .padding(.top, fillHeight ? 12 : 0)
-            AppDayMapView(mapData: resolvedMapData, fillHeight: fillHeight, showStyleToggle: false)
+            AppDayMapView(mapData: resolvedMapData, fillHeight: fillHeight, showStyleToggle: true)
                 .frame(maxWidth: .infinity)
                 .accessibilityIdentifier("dayDetail.map")
         }

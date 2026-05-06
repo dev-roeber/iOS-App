@@ -153,37 +153,16 @@ public struct AppLiveTrackingView: View {
                     liveLocation.isFollowingLocation = false
                 }
                 .overlay(alignment: .topTrailing) {
-                    VStack(spacing: 8) {
-                        Button(action: { isFullscreenMapPresented = true }) {
-                            Label(t("Fullscreen"), systemImage: "arrow.up.left.and.arrow.down.right")
-                                .labelStyle(.iconOnly)
-                                .font(.subheadline)
-                                .padding(10)
-                                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        }
-                        .accessibilityLabel(t("Open fullscreen map"))
-                        Button(action: {
-                            liveLocation.isFollowingLocation.toggle()
-                            if liveLocation.isFollowingLocation {
-                                centerOnCurrentLocation()
-                            }
-                        }) {
-                            Label(
-                                liveLocation.isFollowingLocation ? t("Follow On") : t("Follow Off"),
-                                systemImage: liveLocation.isFollowingLocation ? "location.fill" : "location"
-                            )
-                            .labelStyle(.iconOnly)
-                            .font(.subheadline)
-                            .padding(10)
-                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .foregroundStyle(liveLocation.isFollowingLocation ? .blue : .secondary)
-                        }
-                        .accessibilityLabel(
-                            liveLocation.isFollowingLocation
-                                ? t("Disable follow mode")
-                                : t("Enable follow mode")
-                        )
-                    }
+                    MapLayerMenu(configuration: MapLayerMenu.Configuration(
+                        showsTrackColor: true,
+                        showsLiveOptions: true,
+                        centerOnLocation: liveLocation.currentLocation == nil ? nil : {
+                            liveLocation.isFollowingLocation = true
+                            centerOnCurrentLocation()
+                        },
+                        toggleFullscreen: { isFullscreenMapPresented = true },
+                        isFullscreenActive: false
+                    ))
                     .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)
                     .padding(.trailing, 8)
                     .padding(.leading, 8)
@@ -487,15 +466,19 @@ public struct AppLiveTrackingView: View {
             ZStack(alignment: .topTrailing) {
                 liveMapContent(height: geometry.size.height)
                     .ignoresSafeArea()
-                Button(action: { isFullscreenMapPresented = false }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
-                        .padding(16)
-                        .background(.thinMaterial, in: Circle())
+                VStack(spacing: 8) {
+                    MapLayerMenu(configuration: MapLayerMenu.Configuration(
+                        showsTrackColor: true,
+                        showsLiveOptions: true,
+                        centerOnLocation: liveLocation.currentLocation == nil ? nil : {
+                            liveLocation.isFollowingLocation = true
+                            centerOnCurrentLocation()
+                        },
+                        toggleFullscreen: { isFullscreenMapPresented = false },
+                        isFullscreenActive: true
+                    ))
                 }
                 .padding(20)
-                .accessibilityLabel(t("Close fullscreen map"))
             }
         }
         .ignoresSafeArea()
@@ -730,37 +713,16 @@ public struct AppLiveTrackingView: View {
                         liveLocation.isFollowingLocation = false
                     }
                     .overlay(alignment: .topTrailing) {
-                        HStack(spacing: 8) {
-                            Button(action: { isFullscreenMapPresented = true }) {
-                                Label(t("Fullscreen"), systemImage: "arrow.up.left.and.arrow.down.right")
-                                    .labelStyle(.iconOnly)
-                                    .font(.subheadline)
-                                    .padding(10)
-                                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            }
-                            .accessibilityLabel(t("Open fullscreen map"))
-                            Button(action: {
-                                liveLocation.isFollowingLocation.toggle()
-                                if liveLocation.isFollowingLocation {
-                                    centerOnCurrentLocation()
-                                }
-                            }) {
-                                Label(
-                                    liveLocation.isFollowingLocation ? t("Follow On") : t("Follow Off"),
-                                    systemImage: liveLocation.isFollowingLocation ? "location.fill" : "location"
-                                )
-                                .labelStyle(.iconOnly)
-                                .font(.subheadline)
-                                .padding(10)
-                                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                .foregroundStyle(liveLocation.isFollowingLocation ? .blue : .secondary)
-                            }
-                            .accessibilityLabel(
-                                liveLocation.isFollowingLocation
-                                    ? t("Disable follow mode")
-                                    : t("Enable follow mode")
-                            )
-                        }
+                        MapLayerMenu(configuration: MapLayerMenu.Configuration(
+                            showsTrackColor: true,
+                            showsLiveOptions: true,
+                            centerOnLocation: liveLocation.currentLocation == nil ? nil : {
+                                liveLocation.isFollowingLocation = true
+                                centerOnCurrentLocation()
+                            },
+                            toggleFullscreen: { isFullscreenMapPresented = true },
+                            isFullscreenActive: false
+                        ))
                         .padding(12)
                     }
                 } else {

@@ -61,38 +61,9 @@ public struct AppDayMapView: View {
 
     @ViewBuilder
     private var mapControlsStack: some View {
-        let mapStyleButton = Button {
-            preferences.preferredMapStyle.toggle()
-        } label: {
-            Image(systemName: preferences.preferredMapStyle.isHybrid ? "map" : "globe")
-                .font(.caption)
-                .padding(7)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        }
-        .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
-
-        let trackColorButton = Button {
-            preferences.mapTrackColorMode = preferences.mapTrackColorMode == .speed ? .activity : .speed
-        } label: {
-            Image(systemName: preferences.mapTrackColorMode == .speed ? "speedometer" : "paintpalette")
-                .font(.caption)
-                .padding(7)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .foregroundStyle(preferences.mapTrackColorMode == .speed ? Color.accentColor : Color.primary)
-        }
-        .accessibilityLabel(t(preferences.mapTrackColorMode == .speed ? "Activity" : "Speed"))
-
-        if verticalMapControls {
-            VStack(spacing: 6) {
-                mapStyleButton
-                trackColorButton
-            }
-        } else {
-            HStack(spacing: 6) {
-                mapStyleButton
-                trackColorButton
-            }
-        }
+        MapLayerMenu(configuration: MapLayerMenu.Configuration(
+            showsTrackColor: true
+        ))
     }
 
     private var mapAccessibilityLabel: String {

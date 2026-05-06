@@ -79,28 +79,7 @@ struct AppExportPreviewMapView: View {
 
     @ViewBuilder
     private var mapControls: some View {
-        if verticalMapControls {
-            VStack(spacing: 6) {
-                styleToggleButton
-            }
-        } else {
-            HStack(spacing: 6) {
-                styleToggleButton
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var styleToggleButton: some View {
-        Button {
-            preferences.preferredMapStyle.toggle()
-        } label: {
-            Image(systemName: preferences.preferredMapStyle.isHybrid ? "map" : "globe")
-                .font(.caption)
-                .padding(7)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        }
-        .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
+        MapLayerMenu()
     }
 
     private var mapAccessibilityLabel: String {

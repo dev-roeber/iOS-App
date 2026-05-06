@@ -224,40 +224,15 @@ struct AppOverviewTracksMapView: View {
 
     @ViewBuilder
     private var mapControlsStack: some View {
-        let buttons: [AnyView] = [
-            AnyView(mapControlButton(
-                systemImage: styleToggleIcon,
-                accessibilityLabel: t("Toggle map style")
-            ) {
-                preferences.preferredMapStyle = preferences.preferredMapStyle.isHybrid ? .standard : .hybrid
-            }),
-            AnyView(mapControlButton(
-                systemImage: "location.viewfinder",
-                accessibilityLabel: t("Fit to data")
-            ) {
+        MapLayerMenu(configuration: MapLayerMenu.Configuration(
+            fitToData: model.dataRegion == nil ? nil : {
                 if let region = model.dataRegion {
                     withAnimation { mapPosition = .region(region) }
                 }
-            })
-        ]
-        let fullscreenButton: AnyView? = showsFullscreenControl ? AnyView(mapControlButton(
-            systemImage: "arrow.up.left.and.arrow.down.right",
-            accessibilityLabel: t("Open fullscreen map")
-        ) {
-            isExpanded = true
-        }) : nil
-
-        if verticalMapControls {
-            VStack(spacing: 6) {
-                ForEach(0..<buttons.count, id: \.self) { idx in buttons[idx] }
-                if let fb = fullscreenButton { fb }
-            }
-        } else {
-            HStack(spacing: 6) {
-                ForEach(0..<buttons.count, id: \.self) { idx in buttons[idx] }
-                if let fb = fullscreenButton { fb }
-            }
-        }
+            },
+            toggleFullscreen: showsFullscreenControl ? { isExpanded = true } : nil,
+            isFullscreenActive: false
+        ))
     }
 
     @ViewBuilder
@@ -454,22 +429,13 @@ struct AppOverviewExploreSheet: View {
         }
         .ignoresSafeArea(edges: .bottom)
         .overlay(alignment: .topTrailing) {
-            HStack(spacing: 6) {
-                exploreControlButton(
-                    systemImage: preferences.preferredMapStyle.isHybrid ? "map" : "globe",
-                    accessibilityLabel: t("Toggle map style")
-                ) {
-                    preferences.preferredMapStyle = preferences.preferredMapStyle.isHybrid ? .standard : .hybrid
-                }
-                exploreControlButton(
-                    systemImage: "location.viewfinder",
-                    accessibilityLabel: t("Fit to data")
-                ) {
+            MapLayerMenu(configuration: MapLayerMenu.Configuration(
+                fitToData: model.dataRegion == nil ? nil : {
                     if let region = model.dataRegion {
                         withAnimation { mapPosition = .region(region) }
                     }
                 }
-            }
+            ))
             .padding(12)
         }
         .overlay(alignment: .bottomTrailing) {

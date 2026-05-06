@@ -14,7 +14,6 @@ public struct AppHeatmapView: View {
     @State private var model: AppHeatmapModel
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var isFirstLoad = true
-    @State private var isPanelExpanded = false
 
     public init(export: AppExport) {
         self.export = export
@@ -26,19 +25,24 @@ public struct AppHeatmapView: View {
     }
 
     public var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
             mapView
+            if model.hasData {
+                MapLayerMenu(configuration: MapLayerMenu.Configuration(
+                    showsHeatmapControls: true,
+                    fitToData: model.dataRegion == nil ? nil : fitToData
+                ))
+                .padding(.top, 12)
+                .padding(.trailing, 12)
+            }
             if model.isCalculating {
                 calculatingOverlay
             }
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
             if model.hasData {
-                controlsPanel
+                statsBadge
             }
         }
         .animation(.easeInOut(duration: 0.25), value: model.visibleCells.count)
-        .animation(.easeInOut(duration: 0.25), value: isPanelExpanded)
         .onAppear {
             if isFirstLoad {
                 model.startPrecomputation(scale: preferences.heatmapScale)
@@ -124,74 +128,26 @@ public struct AppHeatmapView: View {
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
-    // MARK: - Controls panel (collapsible)
+    // MARK: - Stats badge (bottom-leading info chip)
 
     @ViewBuilder
-    private var controlsPanel: some View {
-        VStack(spacing: 0) {
-            // Drag handle
-            Capsule()
-                .fill(Color.secondary.opacity(0.5))
-                .frame(width: 36, height: 5)
-                .padding(.top, 6)
-                .padding(.bottom, 4)
-
-            VStack(alignment: .leading, spacing: 10) {
-                statsHeader
-                opacitySlider
-                if isPanelExpanded {
-                    radiusPicker
-                    palettePicker
-                    scalePicker
+    private var statsBadge: some View {
+        VStack {
+            Spacer()
+            HStack {
+                if !statsDescription.isEmpty {
+                    Text(statsDescription)
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
-                densityLegend
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 10)
-        }
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(alignment: .top) {
-            // Tap target for the entire drag-handle area.
-            Color.clear
-                .frame(height: 22)
-                .contentShape(Rectangle())
-                .onTapGesture { isPanelExpanded.toggle() }
-                .accessibilityLabel(Text(isPanelExpanded ? t("Collapse controls") : t("Expand controls")))
-        }
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
-        .shadow(color: Color.black.opacity(0.10), radius: 14, y: 6)
-        .controlSize(.small)
-    }
-
-    @ViewBuilder
-    private var statsHeader: some View {
-        HStack(spacing: 10) {
-            Button(action: fitToData) {
-                Label(t("Fit to data"), systemImage: "arrow.up.left.and.arrow.down.right")
-                    .labelStyle(.iconOnly)
-                    .frame(width: 28, height: 28)
-            }
-            .buttonStyle(.borderedProminent)
-            .clipShape(Circle())
-            .disabled(model.dataRegion == nil)
-            .accessibilityLabel(Text(t("Fit to data")))
-
-            Button(action: cycleMapStyle) {
-                Image(systemName: preferences.preferredMapStyle.isHybrid ? "globe.europe.africa.fill" : "map")
-                    .frame(width: 28, height: 28)
-            }
-            .buttonStyle(.bordered)
-            .clipShape(Circle())
-            .accessibilityLabel(Text(t("Toggle map style")))
-
-            Spacer(minLength: 6)
-
-            Text(statsDescription)
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .multilineTextAlignment(.trailing)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
         }
     }
 
@@ -213,127 +169,7 @@ public struct AppHeatmapView: View {
         return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 
-    @ViewBuilder
-    private var opacitySlider: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(t("Opacity"))
-                    .font(.caption.weight(.semibold))
-                Spacer()
-                Text("\(Int((preferences.heatmapOpacity * 100).rounded()))%")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            Slider(value: $preferences.heatmapOpacity, in: 0.15...1.0)
-        }
-    }
-
-    @ViewBuilder
-    private var radiusPicker: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(t("Radius"))
-                .font(.caption.weight(.semibold))
-            chipRow(items: AppHeatmapRadiusPreset.allCases) { preset in
-                preferences.heatmapRadius == preset
-            } action: { preset in
-                preferences.heatmapRadius = preset
-            } label: { preset in
-                t(preset.labelKey)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var palettePicker: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(t("Palette"))
-                .font(.caption.weight(.semibold))
-            chipRow(items: AppHeatmapPalettePreference.allCases) { palette in
-                preferences.heatmapPalette == palette
-            } action: { palette in
-                preferences.heatmapPalette = palette
-            } label: { palette in
-                t(palette.labelKey)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var scalePicker: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(t("Scale"))
-                .font(.caption.weight(.semibold))
-            chipRow(items: AppHeatmapScalePreference.allCases) { scale in
-                preferences.heatmapScale == scale
-            } action: { scale in
-                preferences.heatmapScale = scale
-            } label: { scale in
-                t(scale.labelKey)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func chipRow<Item: Hashable & Identifiable>(
-        items: [Item],
-        isSelected: @escaping (Item) -> Bool,
-        action: @escaping (Item) -> Void,
-        label: @escaping (Item) -> String
-    ) -> some View {
-        HStack(spacing: 6) {
-            ForEach(items) { item in
-                Button {
-                    action(item)
-                } label: {
-                    Text(label(item))
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            isSelected(item)
-                                ? Color.accentColor.opacity(0.16)
-                                : Color.secondary.opacity(0.08)
-                        )
-                        .foregroundStyle(isSelected(item) ? Color.accentColor : Color.primary)
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var densityLegend: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(t("Low density"))
-                Spacer()
-                Text(t("High density"))
-            }
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-
-            LinearGradient(
-                colors: [
-                    HeatmapPalette.color(for: 0.05, palette: preferences.heatmapPalette).opacity(0.55),
-                    HeatmapPalette.color(for: 0.25, palette: preferences.heatmapPalette).opacity(0.75),
-                    HeatmapPalette.color(for: 0.50, palette: preferences.heatmapPalette).opacity(0.88),
-                    HeatmapPalette.color(for: 0.78, palette: preferences.heatmapPalette).opacity(0.95),
-                    HeatmapPalette.color(for: 1.00, palette: preferences.heatmapPalette),
-                ],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-            .frame(height: 6)
-            .clipShape(Capsule())
-        }
-    }
-
     // MARK: - Helpers
-
-    private func cycleMapStyle() {
-        preferences.preferredMapStyle = preferences.preferredMapStyle.isHybrid ? .standard : .hybrid
-    }
 
     private func seedInitialViewport(center: CLLocationCoordinate2D) {
         if let region = model.dataRegion {
