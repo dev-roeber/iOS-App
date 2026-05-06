@@ -2,10 +2,18 @@ import Foundation
 import LocationHistoryConsumer
 
 /// Detects and converts Google Location History Timeline JSON (array format)
-/// to the LH2GPX AppExport JSON schema, which can then be decoded by AppExportDecoder.
+/// to the LH2GPX `AppExport` model.
 ///
 /// Supported Google format: the modern Timeline export — an array of objects
 /// with "visit", "activity", or "timelinePath" keys and ISO8601 "startTime"/"endTime".
+///
+/// Both entry points (`convert(data:)` and `convertStreaming(contentsOf:)`)
+/// route through `GoogleTimelineStreamReader` and build `AppExport`'s
+/// `Day`/`Visit`/`Activity`/`Path` model objects directly — no intermediate
+/// `[String: Any]` export tree, no `JSONSerialization.data → AppExportDecoder.decode`
+/// roundtrip on the output side. That roundtrip used to dominate import time
+/// for 50k-element files (one full Foundation tree alloc + JSON encode + JSON
+/// parse + Codable decode pass on tens of MB).
 enum GoogleTimelineConverter {
 
     // MARK: - Public API
@@ -13,12 +21,6 @@ enum GoogleTimelineConverter {
     /// Returns true if the data looks like a Google Timeline export — a JSON
     /// top-level array. Cheap byte-sniffer: skips whitespace + UTF-8 BOM and
     /// checks whether the first non-whitespace byte is `[`.
-    ///
-    /// We deliberately do NOT call `JSONSerialization.jsonObject(with:)` here.
-    /// On a 46 MB Google Timeline JSON the full parse allocates ~150–200 MB
-    /// of transient Foundation objects just to answer "is this an array?",
-    /// which on iOS pushes the wrapper into Jetsam territory before any
-    /// actual import work happens.
     static func isGoogleTimeline(_ data: Data) -> Bool {
         firstStructuralByte(of: data) == UInt8(ascii: "[")
     }
@@ -46,58 +48,125 @@ enum GoogleTimelineConverter {
         return nil
     }
 
-    /// Converts Google Timeline JSON (already in memory) to AppExport.
-    ///
-    /// Even when the bytes are already on the heap (e.g. ZIP-extracted), we
-    /// route through the element-streaming reader instead of doing a single
-    /// `JSONSerialization.jsonObject(with: fullData)`. The streaming variant
-    /// peaks at one element worth of Foundation objects (~few KB) instead of
-    /// the full ~150–200 MB transient tree a 46 MB array produces.
+    /// Converts Google Timeline JSON (already in memory) to `AppExport`.
     static func convert(data: Data) throws -> AppExport {
-        var dayMap: DayMap = [:]
-        var orderedDayKeys: [String] = []
-        var sawValidEntry = false
-
+        var builder = ExportBuilder()
         try GoogleTimelineStreamReader.forEachObjectElement(in: data) { raw in
             guard let entry = raw as? [String: Any] else { return }
-            ingestEntry(entry, dayMap: &dayMap, orderedDayKeys: &orderedDayKeys, sawValidEntry: &sawValidEntry)
+            builder.ingest(entry)
         }
-
-        guard sawValidEntry else { throw ConversionError.notGoogleTimeline }
-        return try finalizeAppExport(dayMap: dayMap, orderedDayKeys: orderedDayKeys)
+        return try builder.finalize()
     }
 
     /// Streams a Google Timeline JSON file from disk and converts it to
-    /// AppExport. Reads the file in 64 KB chunks via `FileHandle`; per-element
-    /// memory peaks at one object (~few KB). Suitable for large user imports
-    /// (≥40 MB) where a full in-memory parse would Jetsam the wrapper.
+    /// `AppExport`. Reads the file in 256 KB chunks via `FileHandle`;
+    /// per-element memory peaks at one object (~few KB).
     static func convertStreaming(contentsOf url: URL) throws -> AppExport {
-        var dayMap: DayMap = [:]
-        var orderedDayKeys: [String] = []
-        var sawValidEntry = false
-
+        var builder = ExportBuilder()
         try GoogleTimelineStreamReader.forEachObjectElement(contentsOf: url) { raw in
             guard let entry = raw as? [String: Any] else { return }
-            ingestEntry(entry, dayMap: &dayMap, orderedDayKeys: &orderedDayKeys, sawValidEntry: &sawValidEntry)
+            builder.ingest(entry)
         }
-
-        guard sawValidEntry else { throw ConversionError.notGoogleTimeline }
-        return try finalizeAppExport(dayMap: dayMap, orderedDayKeys: orderedDayKeys)
-    }
-
-    typealias DayMap = [String: (visits: [[String: Any]], activities: [[String: Any]], paths: [[String: Any]])]
-
-    private static func finalizeAppExport(dayMap: DayMap, orderedDayKeys: [String]) throws -> AppExport {
-        let exportDict = buildExportDict(dayMap: dayMap, orderedDayKeys: orderedDayKeys)
-        let exportData = try JSONSerialization.data(withJSONObject: exportDict)
-        return try AppExportDecoder.decode(data: exportData)
+        return try builder.finalize()
     }
 
     enum ConversionError: Error {
         case notGoogleTimeline
     }
 
-    // MARK: - Date Parsing
+    // MARK: - Builder
+
+    /// Accumulates `Visit`/`Activity`/`Path` model objects per day key as
+    /// entries stream in, then materialises the final `AppExport`.
+    private struct ExportBuilder {
+        private struct DayBucket {
+            var visits: [Visit] = []
+            var activities: [Activity] = []
+            var paths: [Path] = []
+        }
+
+        private var dayMap: [String: DayBucket] = [:]
+        private var orderedDayKeys: [String] = []
+        private var sawValidEntry = false
+
+        mutating func ingest(_ entry: [String: Any]) {
+            guard let startTimeStr = entry["startTime"] as? String,
+                  let startDate = parseISO(startTimeStr) else { return }
+            sawValidEntry = true
+
+            let dayKey = dateFmt.string(from: startDate)
+            let endTimeStr = entry["endTime"] as? String
+
+            if dayMap[dayKey] == nil {
+                dayMap[dayKey] = DayBucket()
+                orderedDayKeys.append(dayKey)
+            }
+
+            if let visitData = entry["visit"] as? [String: Any] {
+                if let v = makeVisit(visitData, startTime: startTimeStr, endTime: endTimeStr) {
+                    dayMap[dayKey]!.visits.append(v)
+                }
+            } else if let activityData = entry["activity"] as? [String: Any] {
+                if let a = makeActivity(activityData, startTime: startTimeStr, endTime: endTimeStr) {
+                    dayMap[dayKey]!.activities.append(a)
+                }
+            } else if let pathData = entry["timelinePath"] as? [[String: Any]] {
+                if let p = makePath(pathData, startTime: startTimeStr, endTime: endTimeStr, startDate: startDate) {
+                    dayMap[dayKey]!.paths.append(p)
+                }
+            }
+        }
+
+        func finalize() throws -> AppExport {
+            guard sawValidEntry else { throw ConversionError.notGoogleTimeline }
+
+            let days: [Day] = orderedDayKeys.sorted().map { key in
+                let bucket = dayMap[key]!
+                return Day(
+                    date: key,
+                    visits: bucket.visits,
+                    activities: bucket.activities,
+                    paths: bucket.paths
+                )
+            }
+
+            let meta = Meta(
+                exportedAt: isoOutput.string(from: Date()),
+                toolVersion: "ios-app-converter/1.0",
+                source: Source(zipBasename: nil, zipPath: nil, inputFormat: "google_timeline"),
+                output: Output(outDir: nil),
+                config: ExportConfig(
+                    mode: nil,
+                    splitMidnight: nil,
+                    splitMode: nil,
+                    exportFormat: nil,
+                    inputFormat: "google_timeline"
+                ),
+                filters: ExportFilters(
+                    fromDate: nil,
+                    toDate: nil,
+                    year: nil,
+                    month: nil,
+                    weekday: nil,
+                    limit: nil,
+                    days: nil,
+                    has: nil,
+                    maxAccuracyM: nil,
+                    activityTypes: nil,
+                    minGapMin: nil
+                )
+            )
+
+            return AppExport(
+                schemaVersion: .v1_0,
+                meta: meta,
+                data: DataBlock(days: days),
+                stats: nil
+            )
+        }
+    }
+
+    // MARK: - Date parsing
 
     private static let isoWithMs: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
@@ -125,7 +194,7 @@ enum GoogleTimelineConverter {
         isoWithMs.date(from: str) ?? isoWithoutMs.date(from: str)
     }
 
-    // MARK: - Geo Parsing
+    // MARK: - Geo parsing
 
     /// Parses "geo:lat,lon" or "geo:lat,lon,alt" strings.
     private static func parseGeo(_ geo: String?) -> (lat: Double, lon: Double)? {
@@ -137,106 +206,6 @@ enum GoogleTimelineConverter {
         return (lat, lon)
     }
 
-    // MARK: - Export Dict Builder
-
-    /// Per-entry ingest used by both the in-memory (`convert(data:)`) and
-    /// disk-streaming (`convertStreaming(contentsOf:)`) paths. Mutates the
-    /// day map in place so we never hold the entire entry list.
-    private static func ingestEntry(
-        _ entry: [String: Any],
-        dayMap: inout DayMap,
-        orderedDayKeys: inout [String],
-        sawValidEntry: inout Bool
-    ) {
-        guard let startTimeStr = entry["startTime"] as? String,
-              let startDate = parseISO(startTimeStr) else { return }
-        sawValidEntry = true
-
-        let dayKey = dateFmt.string(from: startDate)
-        let endTimeStr = entry["endTime"] as? String
-
-        if dayMap[dayKey] == nil {
-            dayMap[dayKey] = (visits: [], activities: [], paths: [])
-            orderedDayKeys.append(dayKey)
-        }
-
-        if let visitData = entry["visit"] as? [String: Any] {
-            if let v = convertVisit(visitData, startTime: startTimeStr, endTime: endTimeStr) {
-                dayMap[dayKey]!.visits.append(v)
-            }
-        } else if let activityData = entry["activity"] as? [String: Any] {
-            if let a = convertActivity(activityData, startTime: startTimeStr, endTime: endTimeStr) {
-                dayMap[dayKey]!.activities.append(a)
-            }
-        } else if let pathData = entry["timelinePath"] as? [[String: Any]] {
-            if let p = convertPath(pathData, startTime: startTimeStr, endTime: endTimeStr, startDate: startDate) {
-                dayMap[dayKey]!.paths.append(p)
-            }
-        }
-    }
-
-    private static func buildExportDict(dayMap: DayMap, orderedDayKeys: [String]) -> [String: Any] {
-        let days: [[String: Any]] = orderedDayKeys.sorted().map { key in
-            let b = dayMap[key]!
-            return ["date": key, "visits": b.visits, "activities": b.activities, "paths": b.paths]
-        }
-
-        return [
-            "schema_version": "1.0",
-            "meta": [
-                "exported_at": isoOutput.string(from: Date()),
-                "tool_version": "ios-app-converter/1.0",
-                "source": ["input_format": "google_timeline"] as [String: Any],
-                "output": [:] as [String: Any],
-                "config": ["input_format": "google_timeline"] as [String: Any],
-                "filters": [:] as [String: Any]
-            ] as [String: Any],
-            "data": ["days": days]
-            // "stats" omitted → decoded as nil
-        ]
-    }
-
-    // MARK: - Entry Converters
-
-    private static func convertVisit(
-        _ visitData: [String: Any],
-        startTime: String,
-        endTime: String?
-    ) -> [String: Any]? {
-        let candidate = visitData["topCandidate"] as? [String: Any]
-        var dict: [String: Any] = ["start_time": startTime, "source_type": "google_timeline"]
-        if let et = endTime { dict["end_time"] = et }
-        if let (lat, lon) = parseGeo(candidate?["placeLocation"] as? String) {
-            dict["lat"] = lat
-            dict["lon"] = lon
-        }
-        if let st = candidate?["semanticType"] as? String { dict["semantic_type"] = st }
-        if let pid = candidate?["placeID"] as? String { dict["place_id"] = pid }
-        return dict
-    }
-
-    private static func convertActivity(
-        _ activityData: [String: Any],
-        startTime: String,
-        endTime: String?
-    ) -> [String: Any]? {
-        let candidate = activityData["topCandidate"] as? [String: Any]
-        var dict: [String: Any] = ["start_time": startTime, "source_type": "google_timeline"]
-        if let et = endTime { dict["end_time"] = et }
-        if let at = candidate?["type"] as? String { dict["activity_type"] = at }
-        // Google exports distanceMeters as either a Number or a String — handle both.
-        if let d = parseDouble(activityData["distanceMeters"]) { dict["distance_m"] = d }
-        if let (lat, lon) = parseGeo(activityData["start"] as? String) {
-            dict["start_lat"] = lat
-            dict["start_lon"] = lon
-        }
-        if let (lat, lon) = parseGeo(activityData["end"] as? String) {
-            dict["end_lat"] = lat
-            dict["end_lon"] = lon
-        }
-        return dict
-    }
-
     /// Handles numeric fields that Google may export as either a Number or a String.
     private static func parseDouble(_ value: Any?) -> Double? {
         if let d = value as? Double { return d }
@@ -244,26 +213,77 @@ enum GoogleTimelineConverter {
         return nil
     }
 
-    private static func convertPath(
+    // MARK: - Direct model builders
+
+    private static func makeVisit(
+        _ visitData: [String: Any],
+        startTime: String,
+        endTime: String?
+    ) -> Visit? {
+        let candidate = visitData["topCandidate"] as? [String: Any]
+        let coord = parseGeo(candidate?["placeLocation"] as? String)
+        return Visit(
+            lat: coord?.lat,
+            lon: coord?.lon,
+            startTime: startTime,
+            endTime: endTime,
+            semanticType: candidate?["semanticType"] as? String,
+            placeID: candidate?["placeID"] as? String,
+            accuracyM: nil,
+            sourceType: "google_timeline"
+        )
+    }
+
+    private static func makeActivity(
+        _ activityData: [String: Any],
+        startTime: String,
+        endTime: String?
+    ) -> Activity? {
+        let candidate = activityData["topCandidate"] as? [String: Any]
+        let start = parseGeo(activityData["start"] as? String)
+        let end = parseGeo(activityData["end"] as? String)
+        return Activity(
+            startTime: startTime,
+            endTime: endTime,
+            startLat: start?.lat,
+            startLon: start?.lon,
+            endLat: end?.lat,
+            endLon: end?.lon,
+            activityType: candidate?["type"] as? String,
+            distanceM: parseDouble(activityData["distanceMeters"]),
+            splitFromMidnight: nil,
+            startAccuracyM: nil,
+            endAccuracyM: nil,
+            sourceType: "google_timeline",
+            flatCoordinates: nil
+        )
+    }
+
+    private static func makePath(
         _ pathData: [[String: Any]],
         startTime: String,
         endTime: String?,
         startDate: Date
-    ) -> [String: Any]? {
-        let points: [[String: Any]] = pathData.compactMap { pt in
+    ) -> Path? {
+        let points: [PathPoint] = pathData.compactMap { pt in
             guard let pointGeo = pt["point"] as? String,
-                  let (lat, lon) = parseGeo(pointGeo) else { return nil }
-            var pointDict: [String: Any] = ["lat": lat, "lon": lon]
+                  let coord = parseGeo(pointGeo) else { return nil }
+            var time: String?
             if let offsetStr = pt["durationMinutesOffsetFromStartTime"] as? String,
                let offset = Double(offsetStr) {
-                let pointDate = startDate.addingTimeInterval(offset * 60)
-                pointDict["time"] = isoOutput.string(from: pointDate)
+                time = isoOutput.string(from: startDate.addingTimeInterval(offset * 60))
             }
-            return pointDict
+            return PathPoint(lat: coord.lat, lon: coord.lon, time: time, accuracyM: nil)
         }
         guard !points.isEmpty else { return nil }
-        var dict: [String: Any] = ["start_time": startTime, "source_type": "google_timeline", "points": points]
-        if let et = endTime { dict["end_time"] = et }
-        return dict
+        return Path(
+            startTime: startTime,
+            endTime: endTime,
+            activityType: nil,
+            distanceM: nil,
+            sourceType: "google_timeline",
+            points: points,
+            flatCoordinates: nil
+        )
     }
 }

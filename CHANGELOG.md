@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [2026-05-06] — Performance pass on streaming Google Timeline import (UnsafeBytes tokenizer, 256 KB chunks, autoreleasepool, direct model build — no JSON roundtrip on output side)
+
+### Was sich geändert hat
+- `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineStreamReader.swift`: Tokenizer läuft jetzt über `Data.withUnsafeBytes` mit direktem `UnsafePointer<UInt8>`-Zugriff statt `Data.Index`-Iteration; tighter Per-Byte-Loop, Cache-freundlicher. Strukturelle Bytevergleiche jetzt mit Hex-Literalen (`0x5B`/`0x7B`/…) statt `UInt8(ascii:)`. `@inline(__always)` auf `processByte` und `isJSONWhitespace`.
+- Default-`chunkSize` von 64 KB → 256 KB.
+- Per-Element `onElement`-Aufruf in `autoreleasepool` gewrappt — verhindert, dass Foundation-Zwischenobjekte (NSString/NSNumber/NSDictionary aus `JSONSerialization.jsonObject`) über den gesamten Import akkumulieren.
+- `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineConverter.swift`: kompletter Umbau auf direkten Model-Build. Neue interne `ExportBuilder`-Struktur akkumuliert direkt `Visit`/`Activity`/`Path`/`PathPoint` pro DayKey; `finalize()` baut `AppExport` direkt mit den neuen public memberwise-Initializern. Damit entfallen auf der Output-Seite ein kompletter `[String: Any]`-Foundation-Tree-Build, eine `JSONSerialization.data(withJSONObject:)`-Pass, eine JSON-Parse-Pass und ein `AppExportDecoder`-Codable-Decode.
+- `Sources/LocationHistoryConsumer/AppExportModels.swift`: neue `public init(...)`-Memberwise-Initializer für `AppExport`, `Meta`, `Source`, `Output`, `ExportConfig`, `ExportFilters`, `DataBlock`, `Visit`, `Activity`. Notwendig, weil die Modelle in einem anderen Modul liegen und der Konverter sie jetzt direkt instanziieren muss. `Day`, `Path`, `PathPoint` hatten bereits public inits.
+
+### Verifikation
+- `swift test`: **1006 Tests, 2 skipped, 0 failures** (gleicher Umfang; bestehende Tests laufen unverändert über die optimierten Pfade — `convert(data:)` ↔ `convertStreaming` Äquivalenz und 5 000-Entry-Synthetik weiterhin grün).
+- Wrapper `xcodebuild` (iPhone 17 Pro Max Sim 26.3.1): BUILD SUCCEEDED.
+
+### Ehrlich offen
+- Kein ZIP-Entry-Streaming: ZIPFoundation extrahiert weiterhin in eine `Data`, dann läuft der Streaming-Reader darauf.
+- Auto-Restore lehnt rohe Google Timeline weiterhin ab.
+- Hardware-Re-Verifikation auf iPhone 15 Pro Max mit echter 46-MB-Datei steht weiterhin aus.
+- Keine Mikro-Benchmarks gemessen — die genannten Einsparungen sind erwartete Größenordnungen / Designziel, kein gemessener Speedup-Faktor.
+
 ## [2026-05-06] — Element-based streaming parser for Google Timeline JSON (manual imports no longer load the full file alongside a JSONSerialization tree)
 
 ### Was sich geändert hat

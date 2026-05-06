@@ -16,6 +16,13 @@ public struct AppExport: Codable {
         case data
         case stats
     }
+
+    public init(schemaVersion: AppExportSchemaVersion, meta: Meta, data: DataBlock, stats: Stats?) {
+        self.schemaVersion = schemaVersion
+        self.meta = meta
+        self.data = data
+        self.stats = stats
+    }
 }
 
 public struct Meta: Codable {
@@ -34,6 +41,22 @@ public struct Meta: Codable {
         case config
         case filters
     }
+
+    public init(
+        exportedAt: String,
+        toolVersion: String,
+        source: Source,
+        output: Output,
+        config: ExportConfig,
+        filters: ExportFilters
+    ) {
+        self.exportedAt = exportedAt
+        self.toolVersion = toolVersion
+        self.source = source
+        self.output = output
+        self.config = config
+        self.filters = filters
+    }
 }
 
 public struct Source: Codable {
@@ -46,6 +69,12 @@ public struct Source: Codable {
         case zipPath = "zip_path"
         case inputFormat = "input_format"
     }
+
+    public init(zipBasename: String?, zipPath: String?, inputFormat: String?) {
+        self.zipBasename = zipBasename
+        self.zipPath = zipPath
+        self.inputFormat = inputFormat
+    }
 }
 
 public struct Output: Codable {
@@ -53,6 +82,10 @@ public struct Output: Codable {
 
     enum CodingKeys: String, CodingKey {
         case outDir = "out_dir"
+    }
+
+    public init(outDir: String?) {
+        self.outDir = outDir
     }
 }
 
@@ -69,6 +102,20 @@ public struct ExportConfig: Codable {
         case splitMode = "split_mode"
         case exportFormat = "export_format"
         case inputFormat = "input_format"
+    }
+
+    public init(
+        mode: String?,
+        splitMidnight: String?,
+        splitMode: String?,
+        exportFormat: [String]?,
+        inputFormat: String?
+    ) {
+        self.mode = mode
+        self.splitMidnight = splitMidnight
+        self.splitMode = splitMode
+        self.exportFormat = exportFormat
+        self.inputFormat = inputFormat
     }
 }
 
@@ -98,10 +145,40 @@ public struct ExportFilters: Codable {
         case activityTypes = "activity_types"
         case minGapMin = "min_gap_min"
     }
+
+    public init(
+        fromDate: String?,
+        toDate: String?,
+        year: Int?,
+        month: Int?,
+        weekday: Int?,
+        limit: Int?,
+        days: [String]?,
+        has: [String]?,
+        maxAccuracyM: Double?,
+        activityTypes: [String]?,
+        minGapMin: Int?
+    ) {
+        self.fromDate = fromDate
+        self.toDate = toDate
+        self.year = year
+        self.month = month
+        self.weekday = weekday
+        self.limit = limit
+        self.days = days
+        self.has = has
+        self.maxAccuracyM = maxAccuracyM
+        self.activityTypes = activityTypes
+        self.minGapMin = minGapMin
+    }
 }
 
 public struct DataBlock: Codable {
     public let days: [Day]
+
+    public init(days: [Day]) {
+        self.days = days
+    }
 }
 
 public struct Day: Codable {
@@ -143,6 +220,26 @@ public struct Visit: Codable {
         case accuracyM = "accuracy_m"
         case sourceType = "source_type"
     }
+
+    public init(
+        lat: Double?,
+        lon: Double?,
+        startTime: String?,
+        endTime: String?,
+        semanticType: String?,
+        placeID: String?,
+        accuracyM: Double?,
+        sourceType: String?
+    ) {
+        self.lat = lat
+        self.lon = lon
+        self.startTime = startTime
+        self.endTime = endTime
+        self.semanticType = semanticType
+        self.placeID = placeID
+        self.accuracyM = accuracyM
+        self.sourceType = sourceType
+    }
 }
 
 public struct Activity: Codable {
@@ -174,6 +271,36 @@ public struct Activity: Codable {
         case endAccuracyM = "end_accuracy_m"
         case sourceType = "source_type"
         case flatCoordinates = "flat_coordinates"
+    }
+
+    public init(
+        startTime: String?,
+        endTime: String?,
+        startLat: Double?,
+        startLon: Double?,
+        endLat: Double?,
+        endLon: Double?,
+        activityType: String?,
+        distanceM: Double?,
+        splitFromMidnight: Bool?,
+        startAccuracyM: Double?,
+        endAccuracyM: Double?,
+        sourceType: String?,
+        flatCoordinates: [Double]?
+    ) {
+        self.startTime = startTime
+        self.endTime = endTime
+        self.startLat = startLat
+        self.startLon = startLon
+        self.endLat = endLat
+        self.endLon = endLon
+        self.activityType = activityType
+        self.distanceM = distanceM
+        self.splitFromMidnight = splitFromMidnight
+        self.startAccuracyM = startAccuracyM
+        self.endAccuracyM = endAccuracyM
+        self.sourceType = sourceType
+        self.flatCoordinates = flatCoordinates
     }
 }
 

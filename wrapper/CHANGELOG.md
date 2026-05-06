@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-05-06 (Performance pass on streaming Google Timeline import — UnsafeBytes tokenizer, 256 KB chunks, autoreleasepool, direct model build)
+
+### perf: tighten streaming Google Timeline pipeline on four axes
+- `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineStreamReader.swift`: Tokenizer läuft jetzt über `Data.withUnsafeBytes` mit direktem `UnsafePointer<UInt8>`-Zugriff statt `Data.Index`-Iteration. Strukturelle Bytevergleiche per Hex-Literal (`0x5B`/`0x7B`/…) statt `UInt8(ascii:)`. `@inline(__always)` auf `processByte` und `isJSONWhitespace`. Default-`chunkSize` 64 KB → **256 KB**. Per-Element `onElement`-Aufruf in `autoreleasepool` gewrappt — verhindert Akkumulation von Foundation-Zwischenobjekten (NSString/NSNumber/NSDictionary aus `JSONSerialization.jsonObject`) über den Importlauf.
+- `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineConverter.swift`: Output-Pfad gibt den `[String: Any]`-Foundation-Tree und den `JSONSerialization`+`AppExportDecoder`-Roundtrip auf. Neue interne `ExportBuilder`-Struktur akkumuliert direkt `Visit`/`Activity`/`Path`/`PathPoint`-Modelle pro DayKey; `finalize()` baut `AppExport` direkt mit den neuen public memberwise-Initializern. Spart auf einer 50k-Entry-Datei: einen kompletten Foundation-Tree-Build, eine JSON-Encode-Pass, eine JSON-Parse-Pass und einen Codable-Decode-Pass.
+- `Sources/LocationHistoryConsumer/AppExportModels.swift`: neue `public init(...)`-Memberwise-Initializer für `AppExport`, `Meta`, `Source`, `Output`, `ExportConfig`, `ExportFilters`, `DataBlock`, `Visit`, `Activity` (Cross-Module-Voraussetzung für den Direct-Model-Build). `Day`, `Path`, `PathPoint` hatten bereits public inits.
+- `swift test`: **1006 Tests, 2 skipped, 0 failures** (gleicher Umfang; bestehende Tests laufen unverändert über die optimierten Pfade).
+- Wrapper `xcodebuild` (iPhone 17 Pro Max Sim 26.3.1): BUILD SUCCEEDED.
+
+**Ehrlich offen:** kein ZIP-Entry-Streaming (ZIPFoundation extrahiert weiterhin in eine `Data`, dann läuft der Reader darauf). Auto-Restore lehnt rohe Google Timeline weiterhin ab. Hardware-Re-Verifikation auf iPhone 15 Pro Max mit echter 46-MB-Datei steht weiterhin aus. Keine Mikro-Benchmarks gemessen — die genannten Einsparungen sind erwartete Größenordnungen / Designziel, kein gemessener Speedup-Faktor.
+
 ## 2026-05-06 (Element-based streaming parser for Google Timeline JSON)
 
 ### feat: streaming reader for raw Google Timeline JSON imports
