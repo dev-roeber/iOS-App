@@ -145,4 +145,23 @@ public struct AppExportQueryFilter: Equatable, Hashable {
         !activityTypes.isEmpty ||
         spatialFilter != nil
     }
+
+    /// True when no constraint is active. Used by query fast paths to skip
+    /// per-day projection allocations on large exports (e.g. 65k+ Google
+    /// Timeline entries) where the per-day copy alone is the dominant
+    /// allocation pressure.
+    public var isPassthrough: Bool {
+        fromDate == nil &&
+        toDate == nil &&
+        year == nil &&
+        month == nil &&
+        weekday == nil &&
+        limit == nil &&
+        days.isEmpty &&
+        requiredContent.isEmpty &&
+        maxAccuracyM == nil &&
+        activityTypes.isEmpty &&
+        minGapMin == nil &&
+        spatialFilter == nil
+    }
 }

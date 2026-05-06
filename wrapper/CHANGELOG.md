@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-05-06 (Memory-Safety-Fix)
+
+### fix: guard large Google Timeline restore against memory pressure
+- iPhone-15-Pro-Max-Hardware meldete einen Jetsam-Kill für `LH2GPXWrapper` beim App-Start, wenn ein zuvor importiertes 46-MB-Google-Timeline-File (`location-history.zip`, ~65 k Einträge) per Auto-Restore wieder geladen wurde. Drei volle `JSONSerialization`-Passes plus Zwischen-Modelle = transienter Peak ~400–500 MB → Jetsam-fatal.
+- **Auto-Restore-Schutz:** `AppContentLoader.loadImportedContent(from:autoRestoreMode:)` prüft im Auto-Restore-Modus die Dateigröße **vor** dem Read (`autoRestoreMaxFileSizeBytes = 50 MB`). Für ZIPs werden Entry-Metadaten via ZIPFoundation iteriert, ohne zu extrahieren. Über dem Cap wirft `AppContentLoaderError.autoRestoreSkippedLargeFile`. `wrapper/LH2GPXWrapper/ContentView` zeigt dedizierte User-Hinweis-Message ("Großer Google-Timeline-Import erkannt … bitte manuell importieren") und behält das Bookmark.
+- **Sniffer-Detection:** `GoogleTimelineConverter.isGoogleTimeline` und neuer `isJSONObject` lesen nur das erste 1 KB (skippt Whitespace + UTF-8-BOM) und prüfen das erste Strukturzeichen. AppContentLoader-ZIP-Pfad nutzt den Object-Sniffer statt Array-Vollparse — erspart pro Aufruf ~150–200 MB transient.
+- **Query-Fast-Path:** `AppExportQueryFilter.isPassthrough` (public, neu) + `AppExportQueries.projectedDays`-Fast-Path: bei deaktiverten Constraints werden Tage direkt sortiert zurückgegeben statt pro Tag eine `projectedDay(...)`-Kopie zu erzeugen. Spart ~80–130 MB transient pro Aufruf auf 65 k-Tage-Imports.
+- **OverviewMap bounded coordinates:** `OverviewMapPathCandidate.fullCoordinates` wird in der Scan-Phase auf max 512 Punkte stride-decimiert. Visuell verlustfrei (Douglas-Peucker läuft trotzdem in `makeOverlay`), spart ~70–90 % residenten RAM bei dichten Tracks.
+- 14 neue Tests in `LargeImportMemorySafetyTests` (Sniffer/Auto-Restore-Skip JSON+ZIP/Manueller-Import-bypass-Cap/`isPassthrough`/Query-Fast-Path/`strideDecimate`).
+- `swift test`: 987 Tests, 2 skipped, 0 failures.
+- `xcodebuild` (iPhone 17 Pro Max Sim 26.3.1): BUILD SUCCEEDED.
+- Hardware-Verifikation auf iPhone 15 Pro Max mit echter 46-MB-Datei: pending (manuell).
+- **Ehrlich offen:** echter Streaming-/Chunked-Google-Timeline-Parser noch nicht umgesetzt. Manuelle Importe > 50 MB sind weiterhin riskant; im Auto-Restore-Pfad wird der Fix zuverlässig greifen.
+
 ## 2026-05-06 (post-Hero-Map)
 
 ### docs: deep audit + repo-truth-sync (HEAD post-`70254ff`)

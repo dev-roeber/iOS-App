@@ -237,13 +237,29 @@ struct AppShellRootView: View {
         }
 
         do {
-            let content = try await AppContentLoader.loadImportedContent(from: url)
+            let content = try await AppContentLoader.loadImportedContent(
+                from: url,
+                autoRestoreMode: source == .autoRestore
+            )
             AppImportStateBridge.rememberImportedFile(url)
             refreshRecentFiles()
             session.show(content: content)
         } catch {
             let title: String
             let message: String
+
+            // Auto-restore skipped a large Google Timeline file — surface the
+            // dedicated user-facing copy regardless of source so the message
+            // is unambiguous.
+            if let loaderError = error as? AppContentLoaderError,
+               case .autoRestoreSkippedLargeFile = loaderError {
+                session.showFailure(
+                    title: loaderError.userFacingTitle,
+                    message: loaderError.localizedDescription,
+                    preserveCurrentContent: session.hasLoadedContent
+                )
+                return
+            }
 
             switch source {
             case .manual:

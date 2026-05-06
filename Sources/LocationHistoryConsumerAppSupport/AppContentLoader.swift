@@ -11,6 +11,11 @@ public enum AppContentLoaderError: LocalizedError {
     case fileTooLarge(String)
     case jsonNotFoundInZip(String)
     case multipleExportsInZip(String)
+    /// Auto-restore was suppressed because the previously-imported file is a
+    /// large Google Timeline export and re-parsing it on every launch would
+    /// risk an out-of-memory shutdown on iPhone. The user must manually
+    /// re-import when ready to wait for the parse.
+    case autoRestoreSkippedLargeFile(String)
 
     public var userFacingTitle: String {
         switch self {
@@ -28,6 +33,8 @@ public enum AppContentLoaderError: LocalizedError {
             return "No export found in ZIP"
         case .multipleExportsInZip:
             return "Multiple exports found in ZIP"
+        case .autoRestoreSkippedLargeFile:
+            return "Large Google Timeline import detected"
         }
     }
 
@@ -47,6 +54,8 @@ public enum AppContentLoaderError: LocalizedError {
             return "'\(name)' does not contain a supported location history export. The ZIP must contain exactly one compatible LH2GPX export JSON, one Google Timeline JSON such as location-history.json, or a GPX/TCX track file."
         case let .multipleExportsInZip(name):
             return "'\(name)' contains multiple compatible location history exports. Place only one LH2GPX export or one Google Timeline JSON per ZIP."
+        case let .autoRestoreSkippedLargeFile(name):
+            return "'\(name)' was not restored automatically. Re-parsing a large Google Timeline export on every launch can cause an out-of-memory shutdown. Open it manually when you are ready to wait for the import."
         }
     }
 }
@@ -57,8 +66,18 @@ public enum AppContentLoader {
     public static let defaultDemoFixtureName = "golden_app_export_sample_small"
 
     /// Loads a user-imported file (`.json`, `.zip`, `.gpx`, or `.tcx`) from the given URL.
-    public static func loadImportedContent(from url: URL) async throws -> AppSessionContent {
+    /// - Parameter autoRestoreMode: When `true`, applies a stricter size cap
+    ///   so a previously-imported large Google Timeline export does not
+    ///   re-trigger an OOM shutdown on every app launch.
+    public static func loadImportedContent(
+        from url: URL,
+        autoRestoreMode: Bool = false
+    ) async throws -> AppSessionContent {
         return try await Task.detached(priority: .userInitiated) {
+            try assertSizeWithinAutoRestoreLimitIfNeeded(
+                url: url,
+                autoRestoreMode: autoRestoreMode
+            )
             let ext = url.pathExtension.lowercased()
             if ext == "zip" {
                 return try loadZipContent(from: url)
@@ -71,6 +90,52 @@ public enum AppContentLoader {
     /// Maximum size (256 MB) for a JSON file or single ZIP entry.
     /// Guards against ZIP-bomb style inputs and OOM while staying well above any realistic export size.
     private static let maxSupportedFileSizeBytes: Int64 = 256 * 1024 * 1024
+
+    /// Conservative ceiling for unattended auto-restore on launch. A 46 MB
+    /// Google Timeline JSON parses through three full `JSONSerialization`
+    /// passes plus intermediate Swift dictionaries — the resulting transient
+    /// peak (~400–500 MB) reliably trips iOS Jetsam on devices with 4 GB RAM.
+    /// Manual imports keep the higher 256 MB cap because the user is then
+    /// actively waiting for the parse and will not be surprised by the cost.
+    public static let autoRestoreMaxFileSizeBytes: Int64 = 50 * 1024 * 1024
+
+    /// Inspects the URL prior to read. For direct files, checks the on-disk
+    /// size. For `.zip` inputs, uses `ZIPFoundation` to inspect entry
+    /// metadata (uncompressed size) without extracting content. Throws
+    /// `.autoRestoreSkippedLargeFile` when the auto-restore ceiling is
+    /// exceeded — never throws when `autoRestoreMode == false`.
+    private static func assertSizeWithinAutoRestoreLimitIfNeeded(
+        url: URL,
+        autoRestoreMode: Bool
+    ) throws {
+        guard autoRestoreMode else { return }
+        let filename = url.lastPathComponent
+        let ext = url.pathExtension.lowercased()
+
+        if ext == "zip" {
+            // Cheapest probe: open archive read-only and look at uncompressed
+            // sizes of any candidate JSON entries. We do NOT extract here.
+            guard let archive = try? Archive(url: url, accessMode: .read) else {
+                // Treat unreadable archives as auto-restore skip rather than
+                // hard-failing on launch.
+                throw AppContentLoaderError.autoRestoreSkippedLargeFile(filename)
+            }
+            for entry in archive {
+                guard isJsonCandidate(entry) else { continue }
+                if entry.uncompressedSize > UInt64(autoRestoreMaxFileSizeBytes) {
+                    throw AppContentLoaderError.autoRestoreSkippedLargeFile(filename)
+                }
+            }
+            return
+        }
+
+        // Direct file (json/gpx/tcx). Stat before any read.
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+           let size = attrs[.size] as? Int64,
+           size > autoRestoreMaxFileSizeBytes {
+            throw AppContentLoaderError.autoRestoreSkippedLargeFile(filename)
+        }
+    }
 
     private static func loadZipContent(from url: URL) throws -> AppSessionContent {
         let zipName = url.lastPathComponent
@@ -92,8 +157,12 @@ public enum AppContentLoader {
         }
 
         // Try to decode each extracted candidate as a valid LH2GPX app export.
+        // Cheap sniff first — LH2GPX export is a JSON object (`{`); skip
+        // arrays without paying for a `JSONSerialization` parse, which on a
+        // 46 MB Google Timeline file would allocate ~150-200 MB of transient
+        // Foundation objects per attempt.
         let valid: [(entry: Entry, export: AppExport)] = extracted.compactMap { item in
-            guard !((try? JSONSerialization.jsonObject(with: item.data)) is [Any]) else { return nil }
+            guard GoogleTimelineConverter.isJSONObject(item.data) else { return nil }
             guard let export = try? AppExportDecoder.decode(data: item.data) else { return nil }
             return (item.entry, export)
         }

@@ -119,7 +119,7 @@ Neu auf Code-Stand 2026-03-20:
 - JSON, ZIP, GPX, TCX koennen per `fileImporter` geoeffnet werden (KML/GeoJSON-Export wird unterstuetzt, der Import-Picker akzeptiert sie aktuell nicht)
 
 Aktueller Server-Truth fuer den eingebundenen Core-Stand:
-- `swift test` im aktiven Repo `iOS-App` lief lokal grün mit `964` Tests, `2` Skips und `0` Failures (Stand 2026-05-06, HEAD post-`70254ff`; vorher 949 am 2026-05-06 09:57)
+- `swift test` im aktiven Repo `iOS-App` lief lokal grün mit `987` Tests, `2` Skips und `0` Failures (Stand 2026-05-06, HEAD post-`70254ff` nach Memory-Safety-Fix; vorher 973 nach LH2GPXLoadingBackground, 964 nach Doku-/Wiring-Audit-Polish, 949 am 2026-05-06 09:57)
 - `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build`: BUILD SUCCEEDED auf macOS lokal, HEAD post-`70254ff` (2026-05-06; iPhone 15 Pro Max ist die physische Hardware-Verifikations-Plattform — kein passender Sim mehr installiert)
 - iPhone 15 Pro Max physisch (UDID `00008130-00163D0A0461401C`, iOS 26.4): `testAppStoreScreenshots`, `testDeviceSmokeNavigationAndActions`, `testLandscapeLayoutSmoke` alle PASSED am 2026-05-05 (Build vor Hero-Map-Rollout); Hero-Map-/LiveStatus-/Export-Fix-Änderungen vom 2026-05-06 noch nicht erneut auf Hardware verifiziert
 

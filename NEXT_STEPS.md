@@ -1,6 +1,6 @@
 # NEXT_STEPS
 
-Stand: 2026-05-06 (HEAD post-`70254ff` — MapLayerMenu unified, Heatmap Tier 2, Tempolayer/Halo, SIGABRT-Fix, Demo-Fixture-Swap, `CURRENT_PROJECT_VERSION = 100` lokal gesetzt; Xcode Cloud Build ≥100 nötig vor Submit)
+Stand: 2026-05-06 (HEAD post-`70254ff` — MapLayerMenu unified, Heatmap Tier 2, Tempolayer/Halo, SIGABRT-Fix, Demo-Fixture-Swap, `CURRENT_PROJECT_VERSION = 100` lokal gesetzt, Auto-Restore-Memory-Schutz für große Google-Timeline-Imports; Xcode Cloud Build ≥100 nötig vor Submit)
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
@@ -37,11 +37,13 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [ ] **Overview Doppel-Header**: Page-Header "Overview" + Card-Titel "Overview" (mit KPI) — Card umbenennen ("Statistics") oder zusammenführen.
 - [ ] **Map-Pill-Overlap**: "200 routes"/"11 routes"-Pill überlappt mit Snapshot-Banner und ersten Range-Chips — Z-Order/Inset überarbeiten.
 - [ ] **Import-Phasen-Progress**: aktuell nur ein generischer Spinner; ContentLoader-API um Phase-Callbacks erweitern (Reading/Parsing/Building).
+- [x] **Memory-Safety: Auto-Restore-Schutz gegen Jetsam-Kill** (2026-05-06): konservativer 50-MB-Cap im Auto-Restore-Pfad (`AppContentLoader.autoRestoreMaxFileSizeBytes`), neuer Error `autoRestoreSkippedLargeFile` mit User-Hinweis "Großer Google-Timeline-Import erkannt … bitte manuell importieren". ZIP-Inspektion via Entry-Metadaten ohne Extraktion. Sniffer-basierte Format-Detection ersetzt 3× `JSONSerialization` durch 1-KB-Byte-Check (`isGoogleTimeline` + `isJSONObject`). Query-Fast-Path in `AppExportQueries.projectedDays` für `isPassthrough`-Filter. OverviewMap-Kandidaten-Storage auf 512 Punkte stride-decimiert. 14 neue Tests in `LargeImportMemorySafetyTests`. `swift test`: 987/2/0.
+- [ ] **Streaming-/Chunked-Google-Timeline-Parser**: aktuell parst `GoogleTimelineConverter.convert(...)` weiterhin das gesamte Array in einen Foundation-Baum und re-serialisiert. Für manuelle Importe > Auto-Restore-Cap (50 MB) ist das funktional, aber kein dauerhafter Schutz. JSON-Streaming-Parser (z.B. via `JSONLines` oder eigener event-driven Reader) noch offen.
 - [ ] **Form-vs-LHCard-Konsistenz Settings**: General/Maps/Import nutzen native `Form`, andere Sub-Views nutzen Custom-`LHCard` — vereinheitlichen.
 - [x] **Startseite**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_01_import erzeugt (2026-05-05)
 - [x] **Übersicht**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_02_overview erzeugt (2026-05-05)
 - [x] **Export**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_04_export_checkout erzeugt (2026-05-05)
-- [ ] Performance-Smoke-Test auf echtem iPhone mit grosser realer History (>20 MB, Gesamtzeitraum) fuer Overview-/Explore-Karte dokumentieren
+- [ ] Performance-Smoke-Test auf echtem iPhone mit grosser realer History (>20 MB, Gesamtzeitraum) fuer Overview-/Explore-Karte dokumentieren — neu motiviert durch Jetsam-Kill bei 46 MB Google-Timeline-Auto-Restore (Auto-Restore-Schutz greift; manueller Import des großen Files muss noch hardware-verifiziert werden)
 
 ## P1 — Produktverifikation und Ausbau vorhandener Flaechen
 

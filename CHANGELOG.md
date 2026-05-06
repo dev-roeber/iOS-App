@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## [2026-05-06] — Memory-Safety: Auto-Restore-Schutz gegen Jetsam-Kill bei großen Google-Timeline-Imports
+
+### Root Cause
+Auf echtem iPhone wurde `LH2GPXWrapper` von iOS Jetsam beendet ("The app LH2GPXWrapper has been killed by the operating system because it is using too much memory"). Wahrscheinlicher Pfad: Auto-Restore beim App-Start lädt eine zuvor importierte Google-Timeline-Datei (`location-history.zip/json`, ~46 MB JSON, ~65 k Timeline-Einträge) erneut komplett ins RAM. Drei volle `JSONSerialization`-Passes (LH2GPX-Detection + `isGoogleTimeline`-Detection + `convert`-Parse) plus Zwischen-Modelle ergeben einen transienten Peak von ~400–500 MB — auf dem iPhone Jetsam-fatal.
+
+### fix: guard large Google Timeline restore against memory pressure
+- **Sniffer-Detection** statt vollständige `JSONSerialization` für Format-Unterscheidung. `GoogleTimelineConverter.isGoogleTimeline` und neuer `isJSONObject` lesen nur das erste 1 KB-Fenster und prüfen das erste Nicht-Whitespace-Zeichen (`[` vs. `{`). Spart pro Aufruf ~150–200 MB transienter Foundation-Allokation. AppContentLoader nutzt den Object-Sniffer im ZIP-Pfad statt eines Array-Vollparses.
+- **Auto-Restore-Größenschutz**: Neue konstante `AppContentLoader.autoRestoreMaxFileSizeBytes = 50 MB`. `loadImportedContent(from:autoRestoreMode:)` wirft `AppContentLoaderError.autoRestoreSkippedLargeFile` bevor irgendetwas eingelesen wird, wenn der Auto-Restore-Pfad eine Datei größer als der Schwellwert sieht. Für ZIPs werden Entry-Metadaten über ZIPFoundation-Iteration inspiziert (keine Extraktion). Manuelle Importe bleiben beim 256-MB-Cap (User wartet bewusst auf den Parse).
+- **Auto-Restore-User-Hinweis**: `AppShellRootView` und `wrapper/LH2GPXWrapper/ContentView` reichen `autoRestoreMode: true` durch und zeigen bei `autoRestoreSkippedLargeFile` die dedizierte Message "Großer Google-Timeline-Import erkannt … bitte manuell importieren". Bookmark wird im Skip-Fall NICHT gelöscht.
+- **Query Fast-Path**: `AppExportQueryFilter.isPassthrough` (neu, public) und `AppExportQueries.projectedDays` Fast-Path. Wenn keine Constraint aktiv ist, gibt `projectedDays` direkt die sortierte `export.data.days`-Liste zurück, ohne pro Tag `projectedDay(...)` mit kopierten Visit-/Activity-/Path-Arrays zu erzeugen. Einsparung auf 65 k-Tage-Imports: ~80–130 MB transient pro Aufruf (Overview/daySummaries/Insights).
+- **OverviewMap bounded coordinates**: `OverviewMapPathCandidate.fullCoordinates` wird jetzt bei der Scan-Phase auf maximal 512 Punkte stride-decimiert, bevor sie in den Kandidaten gespeichert werden. Spart ~70–90 % residenten RAM bei dichten Tracks; visuell verlustfrei, da `makeOverlay(...)` ohnehin Douglas-Peucker anwendet. Score-Berechnung läuft weiter auf den Roh-Koordinaten, damit dichte Pfade nicht ihre Priorität verlieren.
+
+### Tests
+- Neu: `LargeImportMemorySafetyTests` (14 Cases) — Sniffer (Array/Object/BOM/Whitespace/Empty), Auto-Restore-Skip für direkte JSON > 50 MB und ZIP-Entry > 50 MB, Manuelles Laden umgeht den Auto-Restore-Cap nicht, `isPassthrough`-Wahrheitstabelle, Query-Fast-Path liefert sortierte Tage, `OverviewMapPreparation.strideDecimate` respektiert Cap und schont kurze Pfade.
+- Bestehende `GoogleTimelineConverterTests.testDetectsValidGoogleTimelineFormat` bleibt grün (Sniffer-Verhalten ist semantisch kompatibel).
+
+### Verifikation
+- `swift build`: green.
+- `swift test`: 987 Tests, 2 skipped, 0 failures.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build`: BUILD SUCCEEDED.
+- Hardware-Verifikation auf iPhone 15 Pro Max mit echter 46-MB-Google-Timeline: pending (manuell durch Sebastian).
+
+### Ehrlich offen
+- **Kein echter Streaming-Import**: GoogleTimelineConverter parst weiterhin das gesamte Array in einen Foundation-Baum und baut anschließend einen ebenso großen Swift-Dictionary-Baum + re-serialisiert ihn. Für Datei-Größen unter dem Auto-Restore-Cap (≤ 50 MB) bleibt das funktional, ist aber kein dauerhafter Schutz wenn der User manuell ein 100-MB-Google-Timeline öffnet. Streaming-/Chunked-Parser ist in NEXT_STEPS verbleibender Arbeitspunkt.
+- **OverviewMap-Pfad**: `pointBudget = 2_000_000` und `candidateStorageCap = 512` sind Heuristiken, kein hartes Speicher-Budget. Auf Geräten mit < 4 GB RAM und sehr großen Imports ist eine weitere Reduktion nötig.
+
 ## [2026-05-06] — Doku-/Wiring-Audit-Polish (HEAD post-`70254ff`)
 
 ### docs: deep audit + repo-truth-sync (Core + Wrapper)

@@ -4,6 +4,20 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Memory-Safety: Auto-Restore-Schutz gegen Jetsam (2026-05-06, abends)
+
+**Reaktion auf realen Crash:** Xcode meldete auf iPhone 15 Pro Max einen Memory-Issue/Jetsam-Kill für `LH2GPXWrapper` beim App-Start nach Import einer 46 MB Google-Timeline (`location-history.zip`, ~65 k Timeline-Einträge). Auto-Restore re-parste die Datei vollständig im Launch-Pfad mit drei `JSONSerialization`-Vollparses → transienter RAM-Peak ~400–500 MB → Jetsam-fatal.
+
+**Implementiert:**
+- Sniffer-basierte Format-Detection (`GoogleTimelineConverter.isGoogleTimeline` + neuer `isJSONObject`) ersetzt drei volle `JSONSerialization`-Parses durch einen 1-KB-Byte-Check.
+- Auto-Restore-Größenschutz: konservatives 50-MB-Cap (`AppContentLoader.autoRestoreMaxFileSizeBytes`), neuer Fehler `autoRestoreSkippedLargeFile`, User-Hinweis "Großer Google-Timeline-Import erkannt — bitte manuell importieren". ZIP-Inspektion via Entry-Metadaten ohne Extraktion.
+- Query-Fast-Path: `AppExportQueryFilter.isPassthrough` + `AppExportQueries.projectedDays`-Fast-Path schneidet ~80–130 MB transient pro Aufruf auf 65 k-Tage-Imports.
+- OverviewMap bounded coordinates: `OverviewMapPathCandidate.fullCoordinates` per `strideDecimate` auf max 512 Punkte gekappt — visuell verlustfrei (Douglas-Peucker läuft trotzdem in `makeOverlay`), spart ~70–90 % residenten RAM bei dichten Tracks.
+
+**Verifikation:** `swift test`: 987 Tests, 2 skipped, 0 failures (vorher 973). 14 neue Tests in `LargeImportMemorySafetyTests`. `xcodebuild` (iPhone 17 Pro Max Sim 26.3.1): BUILD SUCCEEDED. Hardware-Verifikation des Schutzpfads auf realer 46-MB-Datei: pending.
+
+**Ehrlich offen:** Echter Streaming-/Chunked-Google-Timeline-Parser noch nicht umgesetzt. `convert(...)` parst weiterhin in einen Foundation-Baum + re-serialisiert; für manuelle Importe > 50 MB greift kein Schutz, da der User dort bewusst wartet. JSON-Streaming-Parser bleibt in NEXT_STEPS verbleibender Arbeitspunkt.
+
 ### Map / Heatmap / Live Next-Level (2026-05-06)
 
 Abgeschlossene Arbeit nach Phase 19.27 / nach dem Hardware-Verifikations-Block 2026-05-05, getrennt nach Feature-Themen:

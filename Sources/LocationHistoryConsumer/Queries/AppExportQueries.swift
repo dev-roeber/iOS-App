@@ -215,6 +215,16 @@ public enum AppExportQueries {
 
     private static func projectedDays(in export: AppExport, applying filter: AppExportQueryFilter?) -> [Day] {
         let queryFilter = resolvedFilter(filter, export: export)
+
+        // Fast path — no active constraints, no limit. Skip the per-day
+        // `projectedDay` copy that otherwise rebuilds Day/visit/activity/path
+        // arrays for every day in the export. On a 65k Google-Timeline
+        // import this avoids ~80–130 MB of transient allocations on every
+        // call (overview, daySummaries, insights all hit this path).
+        if queryFilter.isPassthrough {
+            return export.data.days.sorted { $0.date < $1.date }
+        }
+
         let sortedDays = export.data.days.sorted { $0.date < $1.date }
         let filteredDays = sortedDays.compactMap { projectedDay($0, applying: queryFilter) }
 

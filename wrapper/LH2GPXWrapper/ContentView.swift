@@ -284,9 +284,31 @@ struct ContentView: View {
         Task {
             let accessedSecurityScope = url.startAccessingSecurityScopedResource()
             do {
-                let content = try await AppContentLoader.loadImportedContent(from: url)
+                let content = try await AppContentLoader.loadImportedContent(
+                    from: url,
+                    autoRestoreMode: true
+                )
                 if accessedSecurityScope { url.stopAccessingSecurityScopedResource() }
                 session.show(content: content)
+            } catch let loaderError as AppContentLoaderError {
+                if accessedSecurityScope { url.stopAccessingSecurityScopedResource() }
+                if case .autoRestoreSkippedLargeFile = loaderError {
+                    // Keep the bookmark — the user may still want to re-open
+                    // this file manually. Surface an explanatory message
+                    // instead of treating it as a hard failure.
+                    session.showFailure(
+                        title: loaderError.userFacingTitle,
+                        message: loaderError.localizedDescription,
+                        preserveCurrentContent: false
+                    )
+                } else {
+                    ImportBookmarkStore.clear()
+                    session.showFailure(
+                        title: loaderError.userFacingTitle,
+                        message: loaderError.localizedDescription,
+                        preserveCurrentContent: false
+                    )
+                }
             } catch {
                 if accessedSecurityScope { url.stopAccessingSecurityScopedResource() }
                 ImportBookmarkStore.clear()

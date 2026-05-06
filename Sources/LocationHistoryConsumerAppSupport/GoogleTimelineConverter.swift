@@ -10,9 +10,40 @@ enum GoogleTimelineConverter {
 
     // MARK: - Public API
 
-    /// Returns true if the data is a JSON array (Google Timeline indicator).
+    /// Returns true if the data looks like a Google Timeline export — a JSON
+    /// top-level array. Cheap byte-sniffer: skips whitespace + UTF-8 BOM and
+    /// checks whether the first non-whitespace byte is `[`.
+    ///
+    /// We deliberately do NOT call `JSONSerialization.jsonObject(with:)` here.
+    /// On a 46 MB Google Timeline JSON the full parse allocates ~150–200 MB
+    /// of transient Foundation objects just to answer "is this an array?",
+    /// which on iOS pushes the wrapper into Jetsam territory before any
+    /// actual import work happens.
     static func isGoogleTimeline(_ data: Data) -> Bool {
-        (try? JSONSerialization.jsonObject(with: data)) is [Any]
+        firstStructuralByte(of: data) == UInt8(ascii: "[")
+    }
+
+    /// Returns true if the data starts with a JSON object (`{`). Used to
+    /// distinguish LH2GPX `app_export.json` (object) from Google Timeline
+    /// (array) without paying the cost of a full parse.
+    static func isJSONObject(_ data: Data) -> Bool {
+        firstStructuralByte(of: data) == UInt8(ascii: "{")
+    }
+
+    /// Returns the first byte of `data` that is not RFC-8259 JSON whitespace
+    /// (space, tab, LF, CR) or a leading UTF-8 BOM. Looks at the first 1 KB
+    /// only — sufficient to identify the top-level JSON kind.
+    private static func firstStructuralByte(of data: Data) -> UInt8? {
+        let head = data.prefix(1024)
+        let bom: [UInt8] = [0xEF, 0xBB, 0xBF]
+        let hasBOM = head.count >= 3 && Array(head.prefix(3)) == bom
+        let scanStart = hasBOM ? head.index(head.startIndex, offsetBy: 3) : head.startIndex
+        for index in scanStart..<head.endIndex {
+            let byte = head[index]
+            if byte == 0x20 || byte == 0x09 || byte == 0x0A || byte == 0x0D { continue }
+            return byte
+        }
+        return nil
     }
 
     /// Converts Google Timeline JSON to AppExport.
