@@ -160,11 +160,7 @@ struct AppOverviewTracksMapView: View {
             }
         }
         .frame(height: fixedHeight)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
-        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .sheet(isPresented: $isExpanded, onDismiss: {
             // Reset viewport selection when sheet is dismissed so the compact map
             // reflects the full overview region, not the last-explored camera position.
@@ -355,7 +351,7 @@ struct AppOverviewTracksMapView: View {
     }
 
     private var styleToggleIcon: String {
-        preferences.preferredMapStyle.isHybrid ? "map" : "globe.europe.africa"
+        preferences.preferredMapStyle.isHybrid ? "map" : "globe"
     }
 
     private var mapAccessibilityLabel: String {
@@ -444,7 +440,7 @@ struct AppOverviewExploreSheet: View {
         .overlay(alignment: .topTrailing) {
             HStack(spacing: 6) {
                 exploreControlButton(
-                    systemImage: preferences.preferredMapStyle.isHybrid ? "map" : "globe.europe.africa",
+                    systemImage: preferences.preferredMapStyle.isHybrid ? "map" : "globe",
                     accessibilityLabel: t("Toggle map style")
                 ) {
                     preferences.preferredMapStyle = preferences.preferredMapStyle.isHybrid ? .standard : .hybrid

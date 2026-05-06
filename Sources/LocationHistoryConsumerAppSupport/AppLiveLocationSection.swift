@@ -125,14 +125,17 @@ public struct AppLiveLocationSection: View {
         }
         .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
         .overlay(alignment: .topTrailing) {
-            Button(action: centerOnCurrentLocation) {
-                Image(systemName: "location.fill")
-                    .font(.caption)
-                    .padding(8)
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            HStack(spacing: 6) {
+                LHMapStyleToggleButton()
+                Button(action: centerOnCurrentLocation) {
+                    Image(systemName: "location.fill")
+                        .font(.caption)
+                        .padding(8)
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .accessibilityLabel(t("Center on current location"))
             }
             .padding(8)
-            .accessibilityLabel(t("Center on current location"))
         }
     }
 
