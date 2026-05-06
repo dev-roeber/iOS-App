@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## [2026-05-06] — UX-Audit-Batch (Live-Status, Export-Empty-State, Polish)
+
+### feat: konsolidierter LiveStatusResolver
+- Neuer `Sources/LocationHistoryConsumerAppSupport/LiveStatusResolver.swift` (`enum LiveStatus`, `LiveStatusResolver.resolve(...)`); +16 dedizierte Tests in `LiveStatusResolverTests.swift`.
+- Behebt im ScreenRecording sichtbare Widersprüche: gleichzeitig "Location not available" + "Live Location Ready" + "GPS Weak" + "Acquiring permission". Eine dominante Hauptmeldung pro Zustand (Permission/Acquiring/Ready/Recording × Weak/Good).
+- `LiveTrackingPresentation.gpsStatusLabel(nil)` → "GPS Searching" (statt "GPS Weak"). Test umbenannt (testGPSStatusIsWeakWhenNoLocation → testGPSStatusIsSearchingWhenNoLocation).
+- Map-Overlay-Hinweis nur noch sichtbar wenn `liveStatus.isAcquiring` oder `isPermissionState` (statt jedes Mal wenn `currentLocation == nil`).
+- `AppLanguageSupport.swift`: neuer i18n-Key `"GPS Searching"` → DE `"GPS-Suche"`.
+- Erhalten: Recording-Toggle, Follow-Mode + Off-on-Pan, Fullscreen, Upload-Status (orthogonal), Track-Library, Background-Recording-Toggle, Permission-Flow, Privacy/Upload-Defaults.
+
+### fix: Export-Empty-State und CTAs eindeutig
+- Behebt im ScreenRecording sichtbare 4-fache Empty-Messaging (Hero-Placeholder + Hero-Chip + Preview-Card-Label + SummaryCard else) wenn Auswahl leer aber Tracks/Days verfügbar.
+- Eine kanonische Empty-Surface: Hero-Placeholder-Text adaptiert zu "Pick a day or live track to preview" wenn Items selektierbar.
+- Hero-Filter-Chip wechselt zu "Tap to choose" + `hand.tap`-Icon bei selektierbaren Items.
+- `previewCard` und `selectionSummaryCard` else-Branch werden in dieser Konstellation unterdrückt (kein redundanter Text).
+- `Select All`-CTA wird `.borderedProminent` wenn relevant; neue Identifier `export.liveTracks.selectAll`/`.deselectAll`/`export.days.selectAll.cta`/`export.liveTracks.selectAll.cta`.
+- Dead-Branch `.nothingSelected` in `invalidSelectionMessage` entfernt (nicht erreichbar).
+- Erhalten: ExportPreviewDataBuilder-Pipeline, fileExporter (Single + KMZ), LHExportBottomBar, Format-Picker, Advanced Filters, Content-Mode-/CSV-Cards, alle bestehenden Identifier.
+
+### fix: doppelte Karte auf Export-Tab (Hero + Preview-Card)
+- Bei `heroEnabled` rendert die Preview-Card jetzt nur noch Stats/Legend, nicht mehr eine zweite `AppExportPreviewMapView` unterhalb der vollen Hero-Map.
+
+### chore: Polish (low risk)
+- `LHOptionsComponents`: Beschreibung `lineLimit(1) → lineLimit(2) + minimumScaleFactor(0.9)` (DE-Truncation behoben).
+- `AppOptionsView.backgroundToggle`: Caption-Spacing 6→8 + 2pt Top-Padding (Lesbarkeit).
+- `AppInsightsContentView.kpiGrid`: `[GridItem(.flexible()) × 2]` → `GridItem(.adaptive(minimum: 150))` (Dynamic-Type-Robustheit).
+- `AppInsightsContentView.insightsHeroFilterPanel`: Bottom-Padding 6→10 (Filter-Chip/Content-Kollision behoben).
+
+### Build & Test
+- `swift build`: OK (23s) ✅
+- `swift test`: **949 Tests, 2 skipped, 0 failures** (7.7s, +16 vs vorher) ✅
+
+### Offen (nicht Teil dieses Batches)
+- Visuelle Verifikation auf realem iPhone 15 Pro Max (Build 96 nötig).
+- Triple-Range-Picker auf Insights (Hero-Strip + Time-Range-Card + untere Pills): bewusst defer — strukturelle UI-Konsolidierung, eigene Phase.
+- Doppelter "Overview"-Header (Page + Card-Title): defer — Naming-Entscheidung.
+- "200 routes"/"11 routes"-Pill überlappt mit Snapshot-Banner: defer — Z-Stack-Anpassung.
+- Import-Phasen-Progress (Reading/Parsing/Building): defer — touch von ContentLoader-API.
+- Form-vs-LHCard-Konsistenz in Settings: defer — Refactor mehrerer Sub-Views.
+
 ## [2026-05-06] — feat: Hero-Map-Workspace auf Übersicht/Insights/Export/Live ausrollen (Tage-Optik)
 
 ### Neu

@@ -330,7 +330,7 @@ struct AppInsightsContentView: View {
         }
         .padding(.horizontal, 12)
         .padding(.top, 4)
-        .padding(.bottom, 6)
+        .padding(.bottom, 10)
     }
 
     private func insightsHeroRangeChip(
@@ -708,7 +708,7 @@ struct AppInsightsContentView: View {
     }
 
     private var kpiGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
             LHMetricCard(
                 icon: "road.lanes",
                 label: t("Distance"),

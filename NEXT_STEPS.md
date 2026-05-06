@@ -33,6 +33,11 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [ ] **Hero-Map-Workspace iPad/Landscape-Verifikation**: Compact iPhone vereinheitlicht (commit e11d4d7, 2026-05-06) — Übersicht/Insights/Export/Live nutzen Tage-Hero-Stil. iPad-Regular und Landscape behalten Legacy-Pfade; visuelle Verifikation an realem iPad + iPhone-Landscape steht aus.
 - [ ] **Hero-Map-Snapshot-Tests ergänzen**: aktuell nur State/Wiring getestet (`LHMapHeaderTests`, `UIWiringTests`); Layout-Snapshots (Höhen 460/560, Control-Position unter Statusbar, full-bleed Clipping) fehlen.
 - [ ] **Cleanup-Follow-up Hero-Map**: `AppDayDetailView.mapControlRow` ist im Portrait toter Code (Landscape-only). Live `mapCard` (Landscape) und `liveHeroMap` (Portrait) duplizieren Map-Rendering — Konsolidierung in shared ViewBuilder.
+- [ ] **Insights Triple-Range-Picker konsolidieren**: Hero-Strip + "Time Range"-Card + untere Pills steuern denselben Zeitraum — auf einen Picker reduzieren.
+- [ ] **Overview Doppel-Header**: Page-Header "Overview" + Card-Titel "Overview" (mit KPI) — Card umbenennen ("Statistics") oder zusammenführen.
+- [ ] **Map-Pill-Overlap**: "200 routes"/"11 routes"-Pill überlappt mit Snapshot-Banner und ersten Range-Chips — Z-Order/Inset überarbeiten.
+- [ ] **Import-Phasen-Progress**: aktuell nur ein generischer Spinner; ContentLoader-API um Phase-Callbacks erweitern (Reading/Parsing/Building).
+- [ ] **Form-vs-LHCard-Konsistenz Settings**: General/Maps/Import nutzen native `Form`, andere Sub-Views nutzen Custom-`LHCard` — vereinheitlichen.
 - [x] **Startseite**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_01_import erzeugt (2026-05-05)
 - [x] **Übersicht**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_02_overview erzeugt (2026-05-05)
 - [x] **Export**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_04_export_checkout erzeugt (2026-05-05)

@@ -2,6 +2,14 @@
 
 ## 2026-05-06
 
+### feat: LiveStatusResolver + Export-Empty-State-Cleanup + Polish
+- Neuer `LiveStatusResolver` konsolidiert Live-Status (Permission/Acquiring/Ready/Recording × Weak/Good). Eine dominante Hauptmeldung pro Zustand. GPS-Chip "Searching" statt "Weak" wenn kein Fix.
+- Export: Ende der widersprüchlichen Empty-Messages — Hero-Placeholder + Chip + Card adaptieren, `Select All`-CTA prominent.
+- Doppelte Karte auf Export-Tab behoben (Preview-Card unterdrückt Map-Render bei `heroEnabled`).
+- Settings/Insights Quick-Wins: Lesbarkeit der Beschreibungen, KPI-Grid Dynamic-Type-robust.
+- `swift test`: 949 Tests, 2 skipped, 0 failures ✅
+- Privacy/Upload-Defaults und Recording-Verhalten unverändert.
+
 ### feat: Hero-Map-Workspace auf Übersicht/Insights/Export/Live ausrollen (Tage-Optik)
 - Neue gemeinsame Komponente `LHHeroMapWorkspace.swift` (Layout-Konstanten + `lhDeviceTopSafeInset()`).
 - Compact iPhone: Map auf Übersicht/Insights/Export/Live/DayDetail-Portrait läuft jetzt full-bleed unter Status-Bar / Dynamic Island, vertikaler Control-Stack rechts oben, Filter/Range/Format-Chips unter der Map (analog Tage).

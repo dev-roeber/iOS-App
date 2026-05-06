@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-06 (Hero-Map-Workspace auf Übersicht/Insights/Export/Live ausgerollt — Tage-Optik vereinheitlicht)
+Last analysis: 2026-05-06 (UX-Audit-Batch — LiveStatusResolver + Export-Empty-State + Polish; Hero-Map-Workspace bereits ausgerollt)
 
 Repos in scope:
 - `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper

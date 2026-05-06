@@ -34,7 +34,8 @@ public struct LHOptionsSectionRow: View {
                 Text(description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.9)
             }
 
             Spacer()

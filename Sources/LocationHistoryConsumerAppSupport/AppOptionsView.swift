@@ -377,12 +377,13 @@ struct AppLiveRecordingOptionsView: View {
     }
 
     private var backgroundToggle: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Toggle(t("Allow Background Recording"), isOn: $preferences.allowsBackgroundLiveTracking)
                 .accessibilityIdentifier("options.live.background")
             Text(t("Background recording requires Always Allow permission and only affects local live-track recording."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .padding(.top, 2)
         }
     }
 
