@@ -140,7 +140,7 @@ public struct AppLiveTrackingView: View {
             overlayControls: true,
             safeAreaTopInset: lhDeviceTopSafeInset()
         ) {
-            if liveLocation.canDisplayLiveLocation, liveLocation.currentLocation != nil {
+            if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
                 Map(position: $mapPosition) {
                     if let currentLocation = liveLocation.currentLocation {
                         Annotation(t("Current Location"), coordinate: CLLocationCoordinate2D(
@@ -520,7 +520,7 @@ public struct AppLiveTrackingView: View {
 
     @ViewBuilder
     private func liveMapContent(height: CGFloat) -> some View {
-        if liveLocation.canDisplayLiveLocation, liveLocation.currentLocation != nil {
+        if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
             Map(position: $mapPosition) {
                 if let currentLocation = liveLocation.currentLocation {
                     Annotation(t("Current Location"), coordinate: CLLocationCoordinate2D(
@@ -647,7 +647,7 @@ public struct AppLiveTrackingView: View {
             statusChipsRow
 
             Group {
-                if liveLocation.canDisplayLiveLocation, liveLocation.currentLocation != nil {
+                if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
                     Map(position: $mapPosition) {
                         if let currentLocation = liveLocation.currentLocation {
                             Annotation(t("Current Location"), coordinate: CLLocationCoordinate2D(

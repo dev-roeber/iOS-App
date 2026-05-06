@@ -40,7 +40,7 @@ Genutzte Produkte:
 
 - **Bundle Identifier:** `de.roeber.LH2GPXWrapper`
 - **Display Name:** LH2GPX
-- **Version:** 1.0 (lokaler Projektstand Build 45; App Store Connect Version `1.0` steht auf `Warten auf Prüfung` mit bewusstem Review-Build `52`; Xcode Cloud hat zusaetzlich erfolgreiche Builds `55` bis `57`)
+- **Version:** 1.0.1 (`MARKETING_VERSION`); 1.0-Train abgeschlossen — Build 74 in ASC-Status `Pending Developer Release` (akzeptiert nach Review-Response 2026-05-05); 1.0.1-Train Xcode Cloud Build 84 grün; Build 96 vor nächstem Submit nötig (Stand 2026-05-06)
 - **Deployment Target:** iOS 16.0 (App) / iOS 16.2 (Widget)
 - **Signing:** Automatic (Team XAGR3K7XDJ); lokaler Release-Archive-Pfad baut derzeit mit `Apple Development`, weil auf diesem Host keine Distribution-Identitaet verfuegbar ist
 - **App Icon:** Map-Pin + "LH2GPX", 1024x1024 (Interims-Design, kein Gradient-Placeholder mehr)
@@ -119,7 +119,7 @@ Neu auf Code-Stand 2026-03-20:
 - GPX, TCX, KML, GeoJSON koennen per `fileImporter` geoeffnet werden (nicht nur JSON/ZIP)
 
 Aktueller Server-Truth fuer den eingebundenen Core-Stand:
-- `swift test` im aktiven Repo `iOS-App` laeuft auf Linux gruen mit `575` Tests, `2` Skips und `0` Failures (Stand 2026-04-12)
+- `swift test` im aktiven Repo `iOS-App` lief lokal grün mit `949` Tests, `2` Skips und `0` Failures (Stand 2026-05-06; vorher 575 am 2026-04-12)
 - `xcodebuild` ist auf dem Linux-Server nicht verfuegbar; der Wrapper-spezifische Xcode-/Device-Stand ist der letzte Apple-Lauf vom 2026-04-12
 
 Unterstuetztes Import-Format: jede `.json`-Datei oder `.zip`-Datei, die einen gueltigen LH2GPX-App-Export enthaelt, plus Google-Timeline-`location-history.json` / `.zip` aus Google Takeout.
