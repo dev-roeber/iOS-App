@@ -39,10 +39,16 @@ Abgeschlossene Arbeit nach Phase 19.27 / nach dem Hardware-Verifikations-Block 2
 - **Demo-Fixture-Swap** (commit `b1d65cb`): bundled Demo ist jetzt ein realer LH2GPX-Track (Oldenburg → Dänemark).
 - **Build-Number-Bump** (commit `8854eef`): `CURRENT_PROJECT_VERSION = 100` lokal gesetzt; Xcode Cloud Build ≥100 als naechster ASC-Submit-Kandidat.
 
-Frische Verifikation (2026-05-06 nach Doku-/Wiring-Audit):
-- `swift test`: `964` Tests, `2` Skips, `0` Failures.
-- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build`: BUILD SUCCEEDED.
-- iPhone-15-Pro-Max-Hardware-Verifikation für diesen kombinierten Stand: offen (letzte Hardware-Acceptance war 2026-05-05 vor Hero-Map-Rollout).
+Verifikations-Historie für diesen Themenblock (commit-verankert, jüngste zuerst — auflösung des bisherigen 964 vs 1006-Widerspruchs in dieser Datei):
+- HEAD `df7071b` (P0-Audit-Patch: Live-Tab-Deeplink + TCX-Doku-Lüge, 2026-05-06): `swift test` 1006/2/0, `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED.
+- HEAD `04dea98` (Streaming-Performance-Pass, 2026-05-06): 1006/2/0.
+- HEAD `cfa332e` (Streaming-Parser eingeführt, 2026-05-06): 1006/2/0.
+- HEAD `838863c` (Sniffer-Skip-Folgefix, 2026-05-06): 991/2/0.
+- HEAD `8abe7ec` (Memory-Safety-Auto-Restore-Fix, 2026-05-06): 987/2/0.
+- HEAD post-`70254ff` (MapLayerMenu Wiring-Audit-Polish, 2026-05-06 nachmittags): 964/2/0.
+- HEAD post-`70254ff` (vor Doku-Audit, 2026-05-05): 927/2/0 (Hardware-Acceptance iPhone 15 Pro Max).
+
+iPhone-15-Pro-Max-Hardware-Verifikation für jeden Stand ab `8abe7ec`: offen — letzte echte Hardware-Acceptance war 2026-05-05 (HEAD-Vorstufe von `70254ff`). Nachfolgende Builds wurden nur via Simulator (iPhone 17 Pro Max Sim 26.3.1) verifiziert.
 
 ### Hardware-Verifikation iPhone 15 Pro Max (2026-05-05)
 

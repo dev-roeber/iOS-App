@@ -1,7 +1,41 @@
 import Foundation
 
-public enum AppExportSchemaVersion: String, Codable {
-    case v1_0 = "1.0"
+/// Identifies the schema version of an LH2GPX export. Modeled as an
+/// open-ended wrapper around a raw string rather than a closed enum so a
+/// future producer-tool release that bumps the schema (e.g. `"1.1"` or
+/// `"2.0"`) does not make every export unopenable just because this
+/// installed app build doesn't enumerate the new case yet.
+///
+/// Forward-compat policy: unknown schema strings decode successfully here.
+/// Callers that must reject incompatible schemas should branch on
+/// `isSupportedByThisBuild`. Field-level decode errors (renamed keys,
+/// removed properties) still surface through the regular Codable path.
+public struct AppExportSchemaVersion: Codable, Hashable, Sendable {
+    public let rawValue: String
+
+    public init(_ rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.rawValue = try container.decode(String.self)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    /// The schema version this app build was authored against.
+    public static let v1_0 = AppExportSchemaVersion("1.0")
+
+    /// `true` if the raw value matches a schema the current build knows how
+    /// to fully interpret. Future-version exports decode but report `false`
+    /// so the UI can surface a "may not display correctly" hint.
+    public var isSupportedByThisBuild: Bool {
+        rawValue == AppExportSchemaVersion.v1_0.rawValue
+    }
 }
 
 public struct AppExport: Codable {

@@ -49,7 +49,11 @@ public enum KeychainHelper {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,
-            kSecReturnData as String: kCFBooleanTrue!,
+            // `kCFBooleanTrue` is statically a `CFBoolean?` and on every Apple
+            // platform non-nil, but force-unwrapping it is technically UB and
+            // Security.framework can be sandboxed off in App Extensions.
+            // `true as CFBoolean` is the documented, lifetime-safe equivalent.
+            kSecReturnData as String: true as CFBoolean,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
 

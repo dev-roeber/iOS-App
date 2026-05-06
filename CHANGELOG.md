@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [2026-05-06] — P0 audit fixes 3/N: GPX safety, Keychain, schema forward-compat, LoadingBackground frame-rate, ROADMAP truth-pinning
+
+### Was sich geändert hat
+- `Sources/LocationHistoryConsumerAppSupport/GPXImportParser.swift` (P0-2): Force-Cast `as! String` in der Sort-Closure von `buildDaysDict` durch defensives `as? String ?? ""` ersetzt — kein `EXC_BAD_INSTRUCTION`-Crash mehr bei malformiertem GPX.
+- `Sources/LocationHistoryConsumerAppSupport/GPXImportParser.swift` (P0-3): `fatalError` in `makeExport` entfernt. `makeExport` ist jetzt `throws` und wirft bei Roundtrip-Fehler `AppContentLoaderError.decodeFailed(fileName)` statt die App zu killen; `parse(_:fileName:)` propagiert den Fehler (`try makeExport(...)`).
+- `Sources/LocationHistoryConsumerAppSupport/KeychainHelper.swift` (P0-4): `kCFBooleanTrue!` Force-Unwrap durch `true as CFBoolean` ersetzt — kein UB-Risiko mehr in App-Extension-Sandboxes mit eingeschränktem Security.framework.
+- `Sources/LocationHistoryConsumer/AppExportModels.swift` (P0-5): `AppExportSchemaVersion` ist jetzt ein `struct` mit `rawValue: String` statt eines geschlossenen `enum`. Forward-kompatibel: ein zukünftiger Producer-Tool-Build mit `"2.0"` decodiert weiterhin erfolgreich. Neue Property `isSupportedByThisBuild: Bool` markiert unbekannte Schemas. Statische Konstante `.v1_0` bleibt API-kompatibel zu allen Call-Sites.
+- `Sources/LocationHistoryConsumerAppSupport/LH2GPXLoadingBackground.swift` (P0-6): `RoutePulseOverlay`'s `TimelineView` läuft jetzt mit 20 Hz (vorher 30 Hz, ~33 % weniger Timer-Ticks während Imports) und `paused: progress >= 1.0` statt `paused: false` — defensiver Stop, falls die äußere `p < 1.0`-Guard-Bedingung jemals gelockert wird.
+- `ROADMAP.md` (P0-8): Widersprüchlicher Test-Count (964 vs 1006 für denselben Tag) ist aufgelöst. Neuer Verifikations-Historie-Block mit commit-verankerter Auflistung (df7071b 1006/2/0 → 04dea98 1006/2/0 → cfa332e 1006/2/0 → 838863c 991/2/0 → 8abe7ec 987/2/0 → post-70254ff 964/2/0 → post-70254ff 927/2/0). Hardware-Acceptance-Status erhalten.
+
+### Tests
+- `testRejectsUnknownSchemaVersion` in `AppExportGoldenDecodingTests.swift` umgenannt zu `testForwardCompatibleSchemaVersionDecodesAndReportsUnsupported` und Erwartung invertiert (decodiert jetzt, prüft `isSupportedByThisBuild == false`).
+- Neue `Tests/LocationHistoryConsumerTests/AppExportSchemaVersionTests.swift` mit 6 Cases.
+
+### Verifikation
+- `swift test`: **1012 Tests, 2 Skips, 0 Failures** (vorher 1006).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+
+### Ehrlich offen
+- Hardware-Re-Verifikation auf iPhone 15 Pro Max steht weiterhin aus.
+- Mikro-Benchmark für Streaming-Pipeline weiterhin nicht gemessen.
+- 24× P1 + 19× P2 aus dem Audit weiterhin offen.
+- ZIP-Entry-Streaming weiterhin nicht implementiert.
+- TimelineView-Pause-Verhalten ist in der Praxis durch die äußere `p < 1.0`-Guard-Bedingung schon gestoppt; der `paused`-Bind ist defensives Hardening, kein gemessener Speedup.
+
 ## [2026-05-06] — P0 audit fixes: Live-tab deeplink + TCX export claim
 
 ### Was sich geändert hat

@@ -36,7 +36,7 @@ public enum GPXImportParser {
             throw AppContentLoaderError.decodeFailed(fileName)
         }
 
-        return makeExport(trackPoints: xmlParser.trackPoints, waypointVisits: xmlParser.waypointVisits, fileName: fileName, sourceFormat: "gpx")
+        return try makeExport(trackPoints: xmlParser.trackPoints, waypointVisits: xmlParser.waypointVisits, fileName: fileName, sourceFormat: "gpx")
     }
 
     // MARK: - Day grouping
@@ -142,10 +142,23 @@ public enum GPXImportParser {
             ])
         }
 
-        return resultDays.sorted { ($0["date"] as! String) < ($1["date"] as! String) }
+        return resultDays.sorted { lhs, rhs in
+            // `date` is always written as a String by `buildDaysDict`. Defensive
+            // optional cast keeps a malformed entry from crashing the import —
+            // it sorts to the front of the list and would surface during decode
+            // rather than via EXC_BAD_INSTRUCTION.
+            let lhsDate = (lhs["date"] as? String) ?? ""
+            let rhsDate = (rhs["date"] as? String) ?? ""
+            return lhsDate < rhsDate
+        }
     }
 
-    private static func makeExport(trackPoints: [_GPXTrackPoint], waypointVisits: [_GPXWaypoint], fileName: String, sourceFormat: String) -> AppExport {
+    private static func makeExport(
+        trackPoints: [_GPXTrackPoint],
+        waypointVisits: [_GPXWaypoint],
+        fileName: String,
+        sourceFormat: String
+    ) throws -> AppExport {
         let isoOutput = ISO8601DateFormatter()
         let daysArray = buildDaysDict(trackPoints: trackPoints, waypointVisits: waypointVisits)
 
@@ -162,11 +175,16 @@ public enum GPXImportParser {
             "data": ["days": daysArray]
         ]
 
-        guard let exportData = try? JSONSerialization.data(withJSONObject: exportDict),
-              let export = try? AppExportDecoder.decode(data: exportData) else {
-            fatalError("GPXImportParser: failed to round-trip valid export dict")
+        // Roundtrip via JSONSerialization + AppExportDecoder. Failures here
+        // mean the GPX produced a structurally invalid export dict (e.g.
+        // pathological coordinates, NaN). Surface that as a regular import
+        // error instead of crashing the app via fatalError.
+        do {
+            let exportData = try JSONSerialization.data(withJSONObject: exportDict)
+            return try AppExportDecoder.decode(data: exportData)
+        } catch {
+            throw AppContentLoaderError.decodeFailed(fileName)
         }
-        return export
     }
 }
 

@@ -118,7 +118,12 @@ private struct RoutePulseOverlay: View {
     let progress: Double
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: false)) { context in
+        // 20 Hz is plenty for a 4-second ambient sine pulse and frees up a
+        // third of the timer ticks during a parse-heavy import. `paused`
+        // tracks the load progress directly so even if the outer
+        // `p > 0.0 && p < 1.0` guard is ever loosened, the timer halts
+        // when progress reaches completion instead of running forever.
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: progress >= 1.0)) { context in
             let phase = context.date.timeIntervalSinceReferenceDate
             // 4-second pulse cycle. Output range ~[0.35, 1.0] so it never goes dark.
             let cycle = (sin(phase * .pi / 2.0) + 1.0) * 0.5      // 0…1

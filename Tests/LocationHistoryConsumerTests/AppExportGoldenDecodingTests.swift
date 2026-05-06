@@ -70,12 +70,19 @@ final class AppExportGoldenDecodingTests: XCTestCase {
         }
     }
 
-    func testRejectsUnknownSchemaVersion() throws {
+    /// Future-version exports must decode successfully (forward compatibility)
+    /// but report `isSupportedByThisBuild == false` so the UI can warn that
+    /// some fields may not display. Closed-enum behaviour previously made
+    /// every future producer-tool release unopenable on installed app builds —
+    /// see audit P0-5.
+    func testForwardCompatibleSchemaVersionDecodesAndReportsUnsupported() throws {
         let fileURL = try TestSupport.contractFixtureURL(named: "golden_app_export_sample_small.json")
         let data = try Data(contentsOf: fileURL)
         let text = try XCTUnwrap(String(data: data, encoding: .utf8))
-        let invalid = try XCTUnwrap(text.replacingOccurrences(of: "\"schema_version\": \"1.0\"", with: "\"schema_version\": \"9.9\"").data(using: .utf8))
+        let future = try XCTUnwrap(text.replacingOccurrences(of: "\"schema_version\": \"1.0\"", with: "\"schema_version\": \"9.9\"").data(using: .utf8))
 
-        XCTAssertThrowsError(try AppExportDecoder.decode(data: invalid))
+        let export = try AppExportDecoder.decode(data: future)
+        XCTAssertEqual(export.schemaVersion.rawValue, "9.9")
+        XCTAssertFalse(export.schemaVersion.isSupportedByThisBuild)
     }
 }

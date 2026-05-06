@@ -4,6 +4,20 @@ Stand: 2026-05-06 (HEAD post-`70254ff` — MapLayerMenu unified, Heatmap Tier 2,
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
+### Audit-Status 2026-05-06 (P0)
+
+Acht P0-Findings aus `docs/DEEP_AUDIT_2026-05-06.md` sind jetzt umgesetzt:
+- P0-1 Live-Tab-Deeplink (`AppContentSplitView`, vorheriger Patch)
+- P0-2 GPX-Force-Cast `as!` in `GPXImportParser.buildDaysDict` durch defensives `as? String ?? ""` ersetzt
+- P0-3 `fatalError` in `GPXImportParser.makeExport` entfernt — wirft jetzt `AppContentLoaderError.decodeFailed`
+- P0-4 `kCFBooleanTrue!` Force-Unwrap in `KeychainHelper` durch `true as CFBoolean` ersetzt
+- P0-5 `AppExportSchemaVersion` jetzt forward-kompatibel (`struct` mit `rawValue: String`, `isSupportedByThisBuild`); zukünftige Tool-Versionen sind decodierbar, statt mit `unknownSchemaVersion` abgelehnt zu werden
+- P0-6 `LH2GPXLoadingBackground.RoutePulseOverlay`: TimelineView 30 Hz → 20 Hz, `paused: progress >= 1.0` als defensiver Stop
+- P0-7 TCX-Export-Doku-Lüge in `README.md` (vorheriger Patch)
+- P0-8 ROADMAP-Test-Count-Widerspruch (964 vs 1006) per commit-verankerter Verifikations-Historie aufgelöst
+
+Verbleibend offen: 24× P1, 19× P2 aus dem Audit. Hardware-Re-Verifikation auf iPhone 15 Pro Max und Mikro-Benchmark der Streaming-Pipeline stehen weiterhin aus.
+
 ## P0 — Release / Review / Hardware-Verifikation
 
 - [x] **Review-Response senden (Guideline 3.2)**: gesendet von Sebastian. Apple hat Build 74 nach Review-Response akzeptiert. Status: **Ausstehende Entwicklerfreigabe (Pending Developer Release)**. Guideline 3.2: resolved. (2026-05-05)

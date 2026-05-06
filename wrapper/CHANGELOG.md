@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 2026-05-06 (P0 audit fixes 3/N — GPX safety, Keychain, schema forward-compat, LoadingBackground frame-rate, ROADMAP truth-pinning)
+
+### fix/feat: tighten six P0 audit findings on five code axes plus ROADMAP
+- `Sources/LocationHistoryConsumerAppSupport/GPXImportParser.swift` (P0-2): Force-Cast `as! String` in der Sort-Closure von `buildDaysDict` durch `as? String ?? ""` ersetzt — kein `EXC_BAD_INSTRUCTION` mehr bei malformiertem GPX.
+- `Sources/LocationHistoryConsumerAppSupport/GPXImportParser.swift` (P0-3): `fatalError` in `makeExport` entfernt; Funktion ist jetzt `throws` und wirft bei Roundtrip-Fehler `AppContentLoaderError.decodeFailed(fileName)`. `parse(_:fileName:)` propagiert.
+- `Sources/LocationHistoryConsumerAppSupport/KeychainHelper.swift` (P0-4): `kCFBooleanTrue!` Force-Unwrap → `true as CFBoolean`. Kein UB-Risiko mehr in App-Extension-Sandboxes.
+- `Sources/LocationHistoryConsumer/AppExportModels.swift` (P0-5): `AppExportSchemaVersion` jetzt `struct` mit `rawValue: String` (vorher geschlossenes Enum). Forward-kompatibel — `"2.0"` decodiert weiter; neue Property `isSupportedByThisBuild`. `.v1_0` Konstante bleibt API-kompatibel.
+- `Sources/LocationHistoryConsumerAppSupport/LH2GPXLoadingBackground.swift` (P0-6): `RoutePulseOverlay`-TimelineView 30 Hz → 20 Hz; `paused: progress >= 1.0` als defensiver Stop.
+- `ROADMAP.md` (P0-8): Test-Count-Widerspruch (964 vs 1006) aufgelöst, neue commit-verankerte Verifikations-Historie.
+
+### Tests
+- `testRejectsUnknownSchemaVersion` umgenannt zu `testForwardCompatibleSchemaVersionDecodesAndReportsUnsupported` und Erwartung invertiert.
+- Neue `Tests/LocationHistoryConsumerTests/AppExportSchemaVersionTests.swift` mit 6 Cases.
+- `swift test`: **1012 Tests, 2 Skips, 0 Failures** (vorher 1006).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+
+**Ehrlich offen:** Hardware-Re-Verifikation auf iPhone 15 Pro Max steht weiterhin aus. Mikro-Benchmark der Streaming-Pipeline weiterhin nicht gemessen. 24× P1 + 19× P2 aus dem Audit weiterhin offen. ZIP-Entry-Streaming weiterhin nicht implementiert. Der `paused`-Bind in der TimelineView ist defensives Hardening (die äußere `p < 1.0`-Guard greift schon), kein gemessener Speedup.
+
 ## 2026-05-06 (Performance pass on streaming Google Timeline import — UnsafeBytes tokenizer, 256 KB chunks, autoreleasepool, direct model build)
 
 ### perf: tighten streaming Google Timeline pipeline on four axes
