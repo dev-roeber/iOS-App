@@ -19,9 +19,10 @@ enum LiveTrackingPresentation {
 
     // MARK: - GPS Status
 
-    /// Returns "GPS Good" when accuracy is below 30 m, otherwise "GPS Weak".
+    /// Returns "GPS Good" when accuracy is below 30 m, "GPS Weak" when at/above
+    /// the threshold, and "GPS Searching" when no accuracy is available yet.
     static func gpsStatusLabel(accuracyM: Double?) -> String {
-        guard let acc = accuracyM, acc >= 0 else { return "GPS Weak" }
+        guard let acc = accuracyM, acc >= 0 else { return "GPS Searching" }
         return acc < 30 ? "GPS Good" : "GPS Weak"
     }
 

@@ -56,8 +56,8 @@ final class LiveTrackingPresentationTests: XCTestCase {
         XCTAssertEqual(LiveTrackingPresentation.gpsStatusLabel(accuracyM: 80), "GPS Weak")
     }
 
-    func testGPSStatusIsWeakWhenNoLocation() {
-        XCTAssertEqual(LiveTrackingPresentation.gpsStatusLabel(accuracyM: nil), "GPS Weak")
+    func testGPSStatusIsSearchingWhenNoLocation() {
+        XCTAssertEqual(LiveTrackingPresentation.gpsStatusLabel(accuracyM: nil), "GPS Searching")
     }
 
     // MARK: - Upload Section Visibility

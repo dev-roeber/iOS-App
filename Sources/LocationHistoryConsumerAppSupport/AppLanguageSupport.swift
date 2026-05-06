@@ -736,6 +736,7 @@ enum AppGermanTranslations {
         // Live Tracking Redesign
         "GPS Good": "GPS gut",
         "GPS Weak": "GPS schwach",
+        "GPS Searching": "GPS-Suche",
         "Upload Active": "Upload aktiv",
         "Upload Off": "Upload aus",
         "Upload Waiting": "Upload wartet",
