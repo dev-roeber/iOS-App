@@ -13,9 +13,14 @@ public struct AppHeatmapView: View {
     @State private var model: AppHeatmapModel
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var isFirstLoad = true
-    @State private var overlayOpacity = 0.84
+    // P0 video-audit fix 2026-05-06: lower default so basemap detail
+    // stays readable under the overlay (was 0.84 → over-saturated).
+    @State private var overlayOpacity = 0.60
     @State private var radiusPreset: HeatmapRadiusPreset = .balanced
-    @State private var heatmapMode: HeatmapMode = .route
+    // P0 video-audit fix 2026-05-06: density is now default mode. The
+    // routes mode produced an over-saturated white-yellow burst on city
+    // zoom in the recording; density is the more legible default.
+    @State private var heatmapMode: HeatmapMode = .density
 
     public init(export: AppExport) {
         self.export = export
@@ -41,6 +46,10 @@ public struct AppHeatmapView: View {
         .animation(.easeInOut(duration: 0.25), value: model.visibleCells.count)
         .animation(.easeInOut(duration: 0.25), value: model.visibleRouteSegments.count)
         .animation(.easeInOut(duration: 0.25), value: model.visibleRoutePaths.count)
+        // P0 video-audit fix 2026-05-06: soft cross-fade between modes so
+        // the previously hard "old overlay disappears, blank pause, new
+        // overlay snaps in" recompute transition reads as a smooth swap.
+        .animation(.easeInOut(duration: 0.40), value: heatmapMode)
         .onAppear {
             if isFirstLoad {
                 model.updateMode(heatmapMode)
@@ -299,17 +308,22 @@ public struct AppHeatmapView: View {
     }
 
     /// Glow (underlayer): wide, low opacity bloom for luminous halo effect.
+    /// P0 video-audit fix 2026-05-06: max alpha lowered 0.38 → 0.24 so
+    /// stacked glow halos at hotspots stop summing into a saturated burst.
     private func routeGlowOpacity(for path: RoutePath) -> Double {
         let control = HeatmapVisualStyle.remappedControlOpacity(overlayOpacity)
-        let base = 0.20 + path.normalizedIntensity * 0.15
-        return min(max(base * control, 0.08), 0.38)
+        let base = 0.14 + path.normalizedIntensity * 0.10
+        return min(max(base * control, 0.05), 0.24)
     }
 
     /// Core (top layer): bright narrow line at higher opacity.
+    /// P0 video-audit fix 2026-05-06: cap lowered 0.96 → 0.70 and base
+    /// reduced so the brightest visible track at hotspots no longer
+    /// fully blocks the basemap underneath.
     private func routeCoreOpacity(for path: RoutePath) -> Double {
         let control = HeatmapVisualStyle.remappedControlOpacity(overlayOpacity)
-        let base = 0.62 + path.normalizedIntensity * 0.34
-        return min(max(base * control, 0.22), 0.96)
+        let base = 0.42 + path.normalizedIntensity * 0.24
+        return min(max(base * control, 0.16), 0.70)
     }
 
     private func scaledPolygonCoordinates(for cell: HeatCell) -> [CLLocationCoordinate2D] {
@@ -340,11 +354,14 @@ enum HeatmapLOD: CaseIterable {
     case high
 
     var step: Double {
+        // P0 video-audit fix 2026-05-06: high-LOD step shrunk 3× so that on
+        // city/street zoom each hexagon covers ~110 m at 53° N (was ~333 m,
+        // visible in the recording as a single huge cell dominating the view).
         switch self {
         case .macro: return 0.32
         case .low: return 0.08
         case .medium: return 0.012
-        case .high: return 0.003
+        case .high: return 0.001
         }
     }
 
@@ -370,11 +387,15 @@ enum HeatmapLOD: CaseIterable {
     }
 
     var selectionLimit: Int {
+        // High-LOD raised to 1200 because the step shrunk 3× in PR-A.4 —
+        // the same area now contains roughly 9× as many bins, so the
+        // selection cap must keep up to avoid a sparse rendering on
+        // city/street zoom.
         switch self {
         case .macro: return 36
         case .low: return 72
         case .medium: return 280
-        case .high: return 460
+        case .high: return 1200
         }
     }
 
