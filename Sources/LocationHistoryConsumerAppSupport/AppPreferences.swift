@@ -258,6 +258,10 @@ public final class AppPreferences: ObservableObject {
         static let widgetAutoUpdate = "app.preferences.widgetAutoUpdate"
         static let dynamicIslandCompactDisplay = "app.preferences.dynamicIslandCompactDisplay"
         static let maximumRecordingGapSeconds = "app.preferences.maximumRecordingGapSeconds"
+        static let heatmapOpacity = "app.preferences.heatmapOpacity"
+        static let heatmapRadius = "app.preferences.heatmapRadius"
+        static let heatmapPalette = "app.preferences.heatmapPalette"
+        static let heatmapScale = "app.preferences.heatmapScale"
     }
 
     private let userDefaults: UserDefaults
@@ -352,6 +356,24 @@ public final class AppPreferences: ObservableObject {
     /// automatically splits the track. 0 means unlimited (no automatic split).
     @Published public var maximumRecordingGapSeconds: Int {
         didSet { userDefaults.set(maximumRecordingGapSeconds, forKey: Keys.maximumRecordingGapSeconds) }
+    }
+
+    /// Heatmap overlay opacity (0.15…1.0). Persisted so the user's
+    /// preferred density does not reset between sessions.
+    @Published public var heatmapOpacity: Double {
+        didSet { userDefaults.set(heatmapOpacity, forKey: Keys.heatmapOpacity) }
+    }
+
+    @Published public var heatmapRadius: AppHeatmapRadiusPreset {
+        didSet { userDefaults.set(heatmapRadius.rawValue, forKey: Keys.heatmapRadius) }
+    }
+
+    @Published public var heatmapPalette: AppHeatmapPalettePreference {
+        didSet { userDefaults.set(heatmapPalette.rawValue, forKey: Keys.heatmapPalette) }
+    }
+
+    @Published public var heatmapScale: AppHeatmapScalePreference {
+        didSet { userDefaults.set(heatmapScale.rawValue, forKey: Keys.heatmapScale) }
     }
 
     /// Derived preset based on the current accuracy + detail combination.
@@ -492,6 +514,23 @@ public final class AppPreferences: ObservableObject {
         // 0 stored means "unlimited" — default is 300 s (5 minutes)
         let storedGap = userDefaults.object(forKey: Keys.maximumRecordingGapSeconds) as? Int
         self.maximumRecordingGapSeconds = storedGap ?? 300
+        let storedOpacity = userDefaults.object(forKey: Keys.heatmapOpacity) as? Double
+        self.heatmapOpacity = min(max(storedOpacity ?? 0.75, 0.15), 1.0)
+        self.heatmapRadius = Self.loadEnum(
+            AppHeatmapRadiusPreset.self,
+            key: Keys.heatmapRadius,
+            from: userDefaults
+        ) ?? .balanced
+        self.heatmapPalette = Self.loadEnum(
+            AppHeatmapPalettePreference.self,
+            key: Keys.heatmapPalette,
+            from: userDefaults
+        ) ?? .magma
+        self.heatmapScale = Self.loadEnum(
+            AppHeatmapScalePreference.self,
+            key: Keys.heatmapScale,
+            from: userDefaults
+        ) ?? .logarithmic
         syncWidgetLanguagePreference()
         WidgetDataStore.saveDynamicIslandCompactDisplay(loadedDynamicIslandDisplay)
     }
@@ -516,6 +555,10 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.widgetAutoUpdate)
         userDefaults.removeObject(forKey: Keys.dynamicIslandCompactDisplay)
         userDefaults.removeObject(forKey: Keys.maximumRecordingGapSeconds)
+        userDefaults.removeObject(forKey: Keys.heatmapOpacity)
+        userDefaults.removeObject(forKey: Keys.heatmapRadius)
+        userDefaults.removeObject(forKey: Keys.heatmapPalette)
+        userDefaults.removeObject(forKey: Keys.heatmapScale)
 
         distanceUnit = .metric
         startTab = .overview
@@ -535,6 +578,10 @@ public final class AppPreferences: ObservableObject {
         widgetAutoUpdate = true
         dynamicIslandCompactDisplay = .distance
         maximumRecordingGapSeconds = 300
+        heatmapOpacity = 0.75
+        heatmapRadius = .balanced
+        heatmapPalette = .magma
+        heatmapScale = .logarithmic
     }
 
     private func syncWidgetLanguagePreference() {

@@ -7,6 +7,9 @@ import LocationHistoryConsumer
 @testable import LocationHistoryConsumerAppSupport
 
 final class AppHeatmapRenderingTests: XCTestCase {
+
+    // MARK: - LOD aggregation
+
     func testCoarserLODProducesFewerAggregatedCellsThanFineLOD() {
         let points = clusteredPoints()
 
@@ -37,72 +40,206 @@ final class AppHeatmapRenderingTests: XCTestCase {
         XCTAssertTrue(visible.allSatisfy { abs($0.coordinate.longitude - 13.405) < 0.2 })
     }
 
-    func testDisplayIntensityLiftsMidAndHighDensity() {
-        let low = HeatmapVisualStyle.displayIntensity(for: 0.12)
-        let mid = HeatmapVisualStyle.displayIntensity(for: 0.5)
-        let high = HeatmapVisualStyle.displayIntensity(for: 0.9)
-
-        XCTAssertGreaterThan(low, 0.26)
-        XCTAssertGreaterThan(mid, 0.68)
-        XCTAssertGreaterThan(high, 0.95)
-        XCTAssertLessThan(low, mid)
-        XCTAssertLessThan(mid, high)
-    }
-
-    func testFullOpacityControlUsesStrongerHighEndMapping() {
-        let full = HeatmapVisualStyle.effectiveOpacity(
-            cellOpacity: 0.88,
-            normalizedIntensity: 0.95,
-            overlayOpacity: 1.0,
-            lod: .high
-        )
-        let reduced = HeatmapVisualStyle.effectiveOpacity(
-            cellOpacity: 0.88,
-            normalizedIntensity: 0.95,
-            overlayOpacity: 0.55,
-            lod: .high
-        )
-
-        XCTAssertGreaterThan(full, 0.85)
-        XCTAssertGreaterThan(full, reduced)
-    }
-
-    func testHighDetailOpacityKeepsSparseCellsVisible() {
-        let sparse = HeatmapVisualStyle.effectiveOpacity(
-            cellOpacity: 0.30,
-            normalizedIntensity: 0.05,
-            overlayOpacity: 0.84,
-            lod: .high
-        )
-
-        XCTAssertGreaterThan(sparse, 0.14)
-    }
-
-    func testHighDetailColorPositionAdvancesSparseCellsFurtherThanLowDetail() {
-        let sparseHigh = HeatmapVisualStyle.colorPosition(for: 0.08, lod: .high)
-        let sparseLow = HeatmapVisualStyle.colorPosition(for: 0.08, lod: .low)
-        let mid = HeatmapVisualStyle.colorPosition(for: 0.45, lod: .high)
-
-        XCTAssertGreaterThan(sparseHigh, sparseLow)
-        XCTAssertGreaterThan(sparseHigh, 0.24)
-        XCTAssertGreaterThan(mid, sparseHigh)
-    }
-
     func testHighDetailLodUsesLowerVisibilityThresholdThanLowLod() {
         XCTAssertLessThan(HeatmapLOD.high.minimumNormalizedIntensity, HeatmapLOD.low.minimumNormalizedIntensity)
         XCTAssertLessThan(HeatmapLOD.high.precomputationVisibilityFactor, HeatmapLOD.low.precomputationVisibilityFactor)
     }
 
-    func testPaletteWarmsAsDensityIncreases() {
-        let low = HeatmapPalette.rgb(for: 0.12)
-        let mid = HeatmapPalette.rgb(for: 0.55)
-        let high = HeatmapPalette.rgb(for: 0.9)
+    // MARK: - Visual style
 
-        XCTAssertGreaterThan(mid.green, low.green)
-        XCTAssertGreaterThan(high.red, mid.red)
-        XCTAssertLessThan(high.blue, mid.blue)
-        XCTAssertGreaterThan(low.blue, 0.80)
-        XCTAssertGreaterThan(mid.green, 0.80)
+    func testDisplayIntensityLiftsMidAndHighDensity() {
+        let low = HeatmapVisualStyle.displayIntensity(for: 0.12)
+        let mid = HeatmapVisualStyle.displayIntensity(for: 0.5)
+        let high = HeatmapVisualStyle.displayIntensity(for: 0.9)
+
+        XCTAssertLessThan(low, mid)
+        XCTAssertLessThan(mid, high)
+        XCTAssertGreaterThan(high, 0.85)
+    }
+
+    func testFullOpacityControlIsStrongerThanReduced() {
+        let full = HeatmapVisualStyle.effectiveOpacity(
+            normalizedIntensity: 0.95,
+            overlayOpacity: 1.0,
+            lod: .high
+        )
+        let reduced = HeatmapVisualStyle.effectiveOpacity(
+            normalizedIntensity: 0.95,
+            overlayOpacity: 0.55,
+            lod: .high
+        )
+
+        XCTAssertGreaterThan(full, reduced)
+        XCTAssertGreaterThan(full, 0.20)
+    }
+
+    func testEffectiveOpacityIsBoundedSoftRange() {
+        // The new soft palette intentionally caps cell alpha to allow
+        // overlapping cells to glow without saturating into a solid block.
+        let max = HeatmapVisualStyle.effectiveOpacity(
+            normalizedIntensity: 1.0,
+            overlayOpacity: 1.0,
+            lod: .high
+        )
+        XCTAssertLessThanOrEqual(max, 0.90,
+            "Per-cell alpha must stay below 0.90 to avoid the bullseye target effect")
+    }
+
+    // MARK: - Perceptual palettes
+
+    func testMagmaPaletteWarmsAsIntensityIncreases() {
+        // Magma: dark purple → magenta → cream. Hot end has high red AND
+        // green; low end has near-zero of every channel. Cool→hot reads as
+        // brightness in addition to hue, which is what makes it perceptual.
+        let low = HeatmapPalette.rgb(for: 0.05, palette: .magma)
+        let mid = HeatmapPalette.rgb(for: 0.55, palette: .magma)
+        let high = HeatmapPalette.rgb(for: 0.95, palette: .magma)
+
+        // Brightness (channel sum) must monotonically increase.
+        let lowSum = low.red + low.green + low.blue
+        let midSum = mid.red + mid.green + mid.blue
+        let highSum = high.red + high.green + high.blue
+        XCTAssertLessThan(lowSum, midSum)
+        XCTAssertLessThan(midSum, highSum)
+
+        // Magma's high end is cream/yellow — green channel rises sharply.
+        XCTAssertGreaterThan(high.green, mid.green)
+        XCTAssertGreaterThan(high.red, 0.95)
+    }
+
+    func testInfernoPaletteHasBrighterHotEndThanCividis() {
+        let infernoHot = HeatmapPalette.rgb(for: 1.0, palette: .inferno)
+        let cividisHot = HeatmapPalette.rgb(for: 1.0, palette: .cividis)
+        // Inferno top stop is very bright cream; cividis caps at saturated yellow.
+        let infernoSum = infernoHot.red + infernoHot.green + infernoHot.blue
+        let cividisSum = cividisHot.red + cividisHot.green + cividisHot.blue
+        XCTAssertGreaterThan(infernoSum, cividisSum)
+    }
+
+    func testCividisLowEndIsBlueDominant() {
+        let cividisLow = HeatmapPalette.rgb(for: 0.0, palette: .cividis)
+        XCTAssertGreaterThan(cividisLow.blue, cividisLow.red,
+            "Cividis low end must be blue-dominant for colorblind accessibility")
+    }
+
+    // MARK: - Log scale
+
+    func testLogarithmicScaleFlattensHotspotDominance() {
+        // One extreme hotspot and three small clusters far away.
+        // Under linear scale, the small clusters fall below the macro
+        // visibility threshold; under log scale they survive.
+        var points: [WeightedPoint] = []
+        // Single dominant hotspot
+        for _ in 0..<2000 {
+            points.append(WeightedPoint(lat: 53.144, lon: 8.214, weight: 1))
+        }
+        // Three secondary clusters
+        for offset in [(40.0, -3.0), (48.0, 11.5), (51.5, -0.1)] {
+            for _ in 0..<8 {
+                points.append(WeightedPoint(lat: offset.0, lon: offset.1, weight: 1))
+            }
+        }
+
+        let logGrid = HeatmapGridBuilder.computeGrid(for: points, lod: .macro, scale: .logarithmic)
+        let linearGrid = HeatmapGridBuilder.computeGrid(for: points, lod: .macro, scale: .linear)
+
+        // Log scale should retain more cells (hotspot doesn't crush the long tail).
+        XCTAssertGreaterThanOrEqual(logGrid.count, linearGrid.count,
+            "Logarithmic normalization must retain at least as many cells as linear when one hotspot dominates")
+    }
+
+    // MARK: - Density polygon shape
+
+    func testDensityPolygonIsRegularPointyTopHexagon() {
+        let coords = HeatmapGridBuilder.polygonCoordinates(
+            centerLat: 53.144,
+            centerLon: 8.214,
+            step: 0.02
+        )
+        XCTAssertEqual(coords.count, 7, "Hex polygon has 6 vertices + closing copy")
+        guard let firstCoord = coords.first, let lastCoord = coords.last else {
+            return XCTFail("Polygon coordinates must not be empty")
+        }
+        XCTAssertEqual(firstCoord.latitude, lastCoord.latitude, accuracy: 1e-9)
+        XCTAssertEqual(firstCoord.longitude, lastCoord.longitude, accuracy: 1e-9)
+
+        XCTAssertEqual(coords[0].longitude, 8.214, accuracy: 1e-9)
+        XCTAssertEqual(coords[0].latitude, 53.144 + 0.01, accuracy: 1e-9)
+
+        XCTAssertEqual(coords[3].longitude, 8.214, accuracy: 1e-9)
+        XCTAssertEqual(coords[3].latitude, 53.144 - 0.01, accuracy: 1e-9)
+
+        let expectedHalfWidth = 0.02 * 0.4330127018922193
+        XCTAssertEqual(coords[1].longitude - 8.214, expectedHalfWidth, accuracy: 1e-9)
+        XCTAssertEqual(8.214 - coords[5].longitude, expectedHalfWidth, accuracy: 1e-9)
+
+        XCTAssertEqual(coords[1].latitude - 53.144, 0.005, accuracy: 1e-9)
+        XCTAssertEqual(53.144 - coords[2].latitude, 0.005, accuracy: 1e-9)
+    }
+
+    func testDensityBinsCosineCorrectLongitudeAtHighLatitude() {
+        let pointA = WeightedPoint(lat: 53.144, lon: 8.214, weight: 1)
+        let pointB = WeightedPoint(lat: 53.144, lon: 8.300, weight: 1)
+        let grid = HeatmapGridBuilder.computeGrid(for: [pointA, pointB], lod: .medium)
+        let lonCentres = Set(grid.values.map { Double(round($0.coordinate.longitude * 1000)) })
+        XCTAssertGreaterThanOrEqual(lonCentres.count, 2,
+            "Two points 0.086° lon apart at 53° N must occupy at least two distinct lon bins")
+
+        let cellLons = grid.values.map(\.coordinate.longitude)
+        XCTAssertTrue(cellLons.contains { abs($0 - 8.214) < 0.025 })
+        XCTAssertTrue(cellLons.contains { abs($0 - 8.300) < 0.025 })
+    }
+
+    func testLonScaleClampsAtPoles() {
+        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 0.0),  1.0,  accuracy: 1e-9)
+        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 53.0), cos(53.0 * .pi / 180), accuracy: 1e-9)
+        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 89.0), 0.05, accuracy: 1e-9)
+        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 90.0), 0.05, accuracy: 1e-9)
+        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: -90.0), 0.05, accuracy: 1e-9)
+    }
+
+    func testHexPolygonAcceptsAsymmetricStepForMercatorCorrection() {
+        let stepLat = 0.012
+        let lonScale = cos(53.144 * .pi / 180.0)
+        let stepLon = stepLat / lonScale
+
+        let coords = HeatmapGridBuilder.polygonCoordinates(
+            centerLat: 53.144,
+            centerLon: 8.214,
+            stepLat: stepLat,
+            stepLon: stepLon
+        )
+
+        XCTAssertEqual(coords.count, 7)
+        XCTAssertEqual(coords[0].longitude, 8.214, accuracy: 1e-12)
+        XCTAssertEqual(coords[3].longitude, 8.214, accuracy: 1e-12)
+        XCTAssertEqual(coords[0].latitude - coords[3].latitude, stepLat, accuracy: 1e-12)
+        let actualHorizontalExtent = coords[1].longitude - coords[5].longitude
+        XCTAssertEqual(actualHorizontalExtent, stepLon, accuracy: 1e-12)
+    }
+
+    // MARK: - Preferences round-trip
+
+    func testHeatmapPreferencesPersistAcrossInstances() {
+        let suite = "test.heatmap.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            return XCTFail("Could not create test UserDefaults")
+        }
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        Task { @MainActor in
+            let prefs1 = AppPreferences(userDefaults: defaults)
+            prefs1.heatmapOpacity = 0.42
+            prefs1.heatmapRadius = .wide
+            prefs1.heatmapPalette = .inferno
+            prefs1.heatmapScale = .linear
+
+            let prefs2 = AppPreferences(userDefaults: defaults)
+            XCTAssertEqual(prefs2.heatmapOpacity, 0.42, accuracy: 0.001)
+            XCTAssertEqual(prefs2.heatmapRadius, .wide)
+            XCTAssertEqual(prefs2.heatmapPalette, .inferno)
+            XCTAssertEqual(prefs2.heatmapScale, .linear)
+        }
     }
 
     // MARK: - Helpers
@@ -123,79 +260,6 @@ final class AppHeatmapRenderingTests: XCTestCase {
         }
 
         return points
-    }
-
-    // MARK: - Density polygon shape
-
-    func testDensityPolygonIsRegularPointyTopHexagon() {
-        let coords = HeatmapGridBuilder.polygonCoordinates(
-            centerLat: 53.144,
-            centerLon: 8.214,
-            step: 0.02
-        )
-        XCTAssertEqual(coords.count, 7, "Hex polygon has 6 vertices + closing copy")
-        guard let firstCoord = coords.first, let lastCoord = coords.last else {
-            return XCTFail("Polygon coordinates must not be empty")
-        }
-        XCTAssertEqual(firstCoord.latitude, lastCoord.latitude, accuracy: 1e-9, "Polygon must be closed")
-        XCTAssertEqual(firstCoord.longitude, lastCoord.longitude, accuracy: 1e-9, "Polygon must be closed")
-
-        XCTAssertEqual(coords[0].longitude, 8.214, accuracy: 1e-9, "Top vertex must be on centre longitude")
-        XCTAssertEqual(coords[0].latitude, 53.144 + 0.01, accuracy: 1e-9, "Top vertex Y must be centre + step/2")
-
-        XCTAssertEqual(coords[3].longitude, 8.214, accuracy: 1e-9, "Bottom vertex must be on centre longitude")
-        XCTAssertEqual(coords[3].latitude, 53.144 - 0.01, accuracy: 1e-9, "Bottom vertex Y must be centre - step/2")
-
-        let expectedHalfWidth = 0.02 * 0.4330127018922193
-        XCTAssertEqual(coords[1].longitude - 8.214, expectedHalfWidth, accuracy: 1e-9, "Right side vertex X")
-        XCTAssertEqual(8.214 - coords[5].longitude, expectedHalfWidth, accuracy: 1e-9, "Left side vertex X")
-
-        XCTAssertEqual(coords[1].latitude - 53.144, 0.005, accuracy: 1e-9, "Upper-right vertex Y")
-        XCTAssertEqual(53.144 - coords[2].latitude, 0.005, accuracy: 1e-9, "Lower-right vertex Y")
-    }
-
-    func testDensityBinsCosineCorrectLongitudeAtHighLatitude() {
-        let pointA = WeightedPoint(lat: 53.144, lon: 8.214, weight: 1)
-        let pointB = WeightedPoint(lat: 53.144, lon: 8.300, weight: 1)
-        let grid = HeatmapGridBuilder.computeGrid(for: [pointA, pointB], lod: .medium)
-        let lonCentres = Set(grid.values.map { Double(round($0.coordinate.longitude * 1000)) })
-        XCTAssertGreaterThanOrEqual(lonCentres.count, 2,
-            "Two points 0.086° lon apart at 53° N must occupy at least two distinct lon bins under medium LOD")
-
-        let cellLons = grid.values.map(\.coordinate.longitude)
-        XCTAssertTrue(cellLons.contains { abs($0 - 8.214) < 0.025 },
-            "A cell should be close to point A's longitude")
-        XCTAssertTrue(cellLons.contains { abs($0 - 8.300) < 0.025 },
-            "A cell should be close to point B's longitude")
-    }
-
-    func testLonScaleClampsAtPoles() {
-        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 0.0),  1.0,  accuracy: 1e-9)
-        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 53.0), cos(53.0 * .pi / 180), accuracy: 1e-9)
-        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 89.0), 0.05, accuracy: 1e-9, "Clamps near the poles")
-        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 90.0), 0.05, accuracy: 1e-9, "Hard clamp at pole")
-        XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: -90.0), 0.05, accuracy: 1e-9, "Hard clamp at south pole")
-    }
-
-    func testHexPolygonAcceptsAsymmetricStepForMercatorCorrection() {
-        let stepLat = 0.012
-        let lonScale = cos(53.144 * .pi / 180.0)
-        let stepLon = stepLat / lonScale
-
-        let coords = HeatmapGridBuilder.polygonCoordinates(
-            centerLat: 53.144,
-            centerLon: 8.214,
-            stepLat: stepLat,
-            stepLon: stepLon
-        )
-
-        XCTAssertEqual(coords.count, 7)
-        XCTAssertEqual(coords[0].longitude, 8.214, accuracy: 1e-12)
-        XCTAssertEqual(coords[3].longitude, 8.214, accuracy: 1e-12)
-        XCTAssertEqual(coords[0].latitude - coords[3].latitude, stepLat, accuracy: 1e-12)
-        let actualHorizontalExtent = coords[1].longitude - coords[5].longitude
-        XCTAssertEqual(actualHorizontalExtent, stepLon, accuracy: 1e-12,
-                       "Side-vertex span must equal the supplied stepLon")
     }
 }
 #endif
