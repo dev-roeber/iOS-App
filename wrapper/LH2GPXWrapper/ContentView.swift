@@ -37,20 +37,28 @@ struct ContentView: View {
                 )
             } else {
                 NavigationStack {
-                    Group {
-                        if session.isLoading {
-                            ProgressView(t("Opening location history..."))
-                        } else {
-                            emptyStateView
+                    ZStack {
+                        homeBackground
+                        Group {
+                            if session.isLoading {
+                                ProgressView(t("Opening location history..."))
+                                    .tint(.white)
+                                    .foregroundStyle(.white)
+                            } else {
+                                emptyStateView
+                            }
                         }
                     }
                     .navigationTitle("LH2GPX")
+                    .toolbarColorScheme(.dark, for: .navigationBar)
+                    .toolbarBackground(.hidden, for: .navigationBar)
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
                             actionsMenu
                         }
                     }
                 }
+                .preferredColorScheme(.dark)
             }
         }
         .environmentObject(preferences)
@@ -113,23 +121,53 @@ struct ContentView: View {
         }
     }
 
+    private var homeBackground: some View {
+        ZStack {
+            // Base solid colour so any letterboxing on tall iPads still
+            // matches the artwork's deep-blue palette instead of system grey.
+            Color(red: 0.02, green: 0.04, blue: 0.10)
+            Image("HomeBackground")
+                .resizable()
+                .scaledToFill()
+                // Soft vertical legibility ramp: darker at top so the
+                // navigation title reads cleanly, slightly darker at bottom
+                // so the privacy chip and buttons keep their contrast.
+                .overlay(
+                    LinearGradient(
+                        colors: [
+                            Color.black.opacity(0.55),
+                            Color.black.opacity(0.15),
+                            Color.black.opacity(0.55),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+        }
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
+    }
+
     private var emptyStateView: some View {
         VStack(spacing: 20) {
             Spacer()
 
             Image(systemName: "map.fill")
                 .font(.system(size: 56))
-                .foregroundColor(.accentColor)
+                .foregroundStyle(.white)
+                .shadow(color: Color.black.opacity(0.45), radius: 8, y: 2)
                 .accessibilityHidden(true)
 
             VStack(spacing: 8) {
                 Text(t("Import your location history"))
                     .font(.title2.weight(.semibold))
+                    .foregroundStyle(.white)
                 Text(t("Open an app_export.json or .zip from the LocationHistory2GPX tool — or a Google Timeline location-history.json or .zip from Google Takeout."))
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.white.opacity(0.78))
                     .multilineTextAlignment(.center)
             }
+            .shadow(color: Color.black.opacity(0.45), radius: 8, y: 2)
 
             if let message = session.message, message.kind == .error {
                 AppMessageCard(message: message)
@@ -164,13 +202,12 @@ struct ContentView: View {
                     .accessibilityHidden(true)
                 Text(t("Processed locally · JSON, ZIP, GPX, TCX"))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.white.opacity(0.78))
                 Spacer()
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Color.primary.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .accessibilityIdentifier("home.localNotice")
             .accessibilityLabel(t("Data processed locally. Supported formats: JSON, ZIP, GPX, TCX"))
 
