@@ -298,12 +298,6 @@ public struct AppHeatmapView: View {
         )
     }
 
-    private func routeEffectiveOpacity(for seg: RouteSegment) -> Double {
-        let control = HeatmapVisualStyle.remappedControlOpacity(overlayOpacity)
-        let base = 0.55 + seg.normalizedIntensity * 0.40
-        return min(max(base * control, 0.18), 0.96)
-    }
-
     /// Glow (underlayer): wide, low opacity bloom for luminous halo effect.
     private func routeGlowOpacity(for path: RoutePath) -> Double {
         let control = HeatmapVisualStyle.remappedControlOpacity(overlayOpacity)
@@ -354,11 +348,14 @@ enum HeatmapLOD: CaseIterable {
     }
 
     var tileSpanMultiplier: Double {
+        // Increased to 1.25–1.75 so adjacent density cells overlap noticeably,
+        // softening the previously visible Minecraft-block edges. Each LOD's
+        // overlap stays proportional (more at coarse zoom, less at fine zoom).
         switch self {
-        case .macro: return 1.45
-        case .low: return 1.3
-        case .medium: return 1.16
-        case .high: return 1.04
+        case .macro: return 1.75
+        case .low: return 1.55
+        case .medium: return 1.40
+        case .high: return 1.25
         }
     }
 
@@ -429,9 +426,12 @@ enum HeatmapLOD: CaseIterable {
     }
 
     var routeSelectionLimit: Int {
+        // Halved at macro/low so zoomed-out hotspots no longer stack 60 overlapping
+        // glow polylines into a single white lens-flare star artefact. Medium/high
+        // unchanged because at those zooms tracks are spatially separated.
         switch self {
-        case .macro: return 60
-        case .low: return 150
+        case .macro: return 30
+        case .low: return 75
         case .medium: return 300
         case .high: return 500
         }
@@ -448,8 +448,12 @@ enum RoutePalette {
         (0.20, HeatmapRGB(red: 0.0,  green: 0.48, blue: 0.95)),  // vivid blue
         (0.42, HeatmapRGB(red: 0.0,  green: 0.85, blue: 0.95)),  // bright cyan
         (0.65, HeatmapRGB(red: 0.72, green: 0.96, blue: 1.00)),  // ice/light cyan
-        (0.82, HeatmapRGB(red: 1.00, green: 0.95, blue: 0.70)),  // warm white/yellow
-        (1.00, HeatmapRGB(red: 1.00, green: 1.00, blue: 1.00)),  // pure white (hotspot)
+        (0.82, HeatmapRGB(red: 1.00, green: 0.94, blue: 0.70)),  // warm white/yellow
+        // Hotspot top-stop capped below pure white. Multiple stacked glow polylines
+        // were saturating to (1,1,1) at hotspots and producing a lens-flare star
+        // artefact on zoom-out (visible on screenshots 2026-05-06 21:18). A warm
+        // bright cap retains the "luminous" look without the white burnout.
+        (1.00, HeatmapRGB(red: 0.96, green: 0.92, blue: 0.78)),
     ]
 
     nonisolated static func rgb(for normalized: Double) -> HeatmapRGB {
@@ -496,8 +500,10 @@ struct RoutePath: Identifiable {
     let normalizedIntensity: Double
     /// Rendered line width for the core layer (1–8 pt).
     let coreLineWidth: Double
-    /// Rendered line width for the glow underlayer (3× core).
-    var glowLineWidth: Double { coreLineWidth * 3.0 }
+    /// Rendered line width for the glow underlayer (2× core).
+    /// Reduced from 3× — the wider halo plus stacked overlapping tracks at
+    /// hotspots was the dominant contributor to the lens-flare star artefact.
+    var glowLineWidth: Double { coreLineWidth * 2.0 }
     /// Core colour (fully saturated).
     let color: Color
 }

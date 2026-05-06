@@ -283,8 +283,8 @@ final class AppHeatmapRenderingTests: XCTestCase {
 
         guard !paths.isEmpty else { return }
         for path in paths {
-            XCTAssertEqual(path.glowLineWidth, path.coreLineWidth * 3.0, accuracy: 0.001,
-                "Glow width must be exactly 3× the core width for each RoutePath")
+            XCTAssertEqual(path.glowLineWidth, path.coreLineWidth * 2.0, accuracy: 0.001,
+                "Glow width must be exactly 2× the core width for each RoutePath. Reduced from 3× to mitigate the lens-flare star artefact at hotspots — see CHANGELOG 2026-05-06.")
         }
     }
 
