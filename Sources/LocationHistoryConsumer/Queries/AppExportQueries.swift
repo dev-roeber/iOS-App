@@ -707,13 +707,17 @@ public enum AppExportQueries {
         return isoTimestampFormatter.date(from: value) ?? isoTimestampFractionalFormatter.date(from: value)
     }
 
+    private static let utcGregorianCalendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? TimeZone(identifier: "UTC") ?? .current
+        return calendar
+    }()
+
     private static func weekdayForDate(_ date: String) -> Int? {
         guard let parsedDate = dayFormatter.date(from: date) else {
             return nil
         }
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? TimeZone(identifier: "UTC") ?? .current
-        return calendar.component(.weekday, from: parsedDate)
+        return utcGregorianCalendar.component(.weekday, from: parsedDate)
     }
 
     private static func dateYear(_ date: String) -> Int? {

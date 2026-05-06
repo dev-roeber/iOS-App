@@ -67,21 +67,45 @@ enum ExportSelectionContent {
         importedExport: AppExport?,
         selection: ExportSelectionState,
         recordedTracks: [RecordedTrack],
-        queryFilter: AppExportQueryFilter? = nil
+        queryFilter: AppExportQueryFilter? = nil,
+        mutations: ImportedPathMutationSet = .empty
     ) -> [Day] {
         let importedDays = selectedImportedDays(
             in: importedExport,
             selection: selection,
             queryFilter: queryFilter
         )
+        // User-deleted paths in the day-detail view used to be display-only —
+        // the export silently re-included them. Apply the mutation overlay
+        // here so GPX/KML/KMZ/GeoJSON/CSV all honour the deletions exactly
+        // like the day detail.
+        let mutatedImportedDays = importedDays.map { day in
+            applyMutations(day, mutations: mutations)
+        }
         let liveTrackDays = selectedRecordedTrackDays(
             recordedTracks: recordedTracks,
             selection: selection
         )
 
-        return (importedDays + liveTrackDays).sorted { lhs, rhs in
+        return (mutatedImportedDays + liveTrackDays).sorted { lhs, rhs in
             lhs.date < rhs.date
         }
+    }
+
+    /// Removes path indices listed in `mutations` for this day's date. Indices
+    /// out of range and deletions for other days are silently ignored — keeps
+    /// the overlay model resilient to import-source switches.
+    private static func applyMutations(_ day: Day, mutations: ImportedPathMutationSet) -> Day {
+        let deletedIndices = Set(
+            mutations.deletions
+                .filter { $0.dayKey == day.date }
+                .map(\.pathIndex)
+        )
+        guard !deletedIndices.isEmpty else { return day }
+        let kept = day.paths.enumerated()
+            .filter { !deletedIndices.contains($0.offset) }
+            .map(\.element)
+        return Day(date: day.date, visits: day.visits, activities: day.activities, paths: kept)
     }
 
     static func filenameDates(

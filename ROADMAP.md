@@ -4,6 +4,17 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Audit-Verifikation Block 1-4 (2026-05-06, Doku-Train)
+
+19 Audit-Achsen über vier Blöcke (Datenverlust-Wiring, Concurrency, Edge-Case-Crashes, Performance-Hotspots) als erledigt verbucht; Details in `CHANGELOG.md` und `NEXT_STEPS.md`.
+
+- `swift test`: **1012 Tests, 2 Skips, 0 Failures** (unverändert; bestehende Tests laufen über die neuen Pfade — keine neuen Tests in diesem Train).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+- Hardware-Re-Verifikation iPhone 15 Pro Max: weiterhin offen.
+- Mikro-Benchmark der Performance-Optimierungen: weiterhin offen — Designziel, kein gemessener Speedup.
+- Verbleibend offen aus dem Audit: ~7× P1 (P1-3 `WidgetDataStore`-Duplikat, P1-4 `onOpenURL` fehlt im Package-Target, P1-18..P1-24 Test-Lücken), ~19× P2.
+- Track-Editor-Mutations fliessen jetzt in Exporte ein — die bisherige bewusst-offen-Aussage in `README.md` wurde entfernt.
+
 ### Memory-Safety: Auto-Restore-Schutz gegen Jetsam (2026-05-06, abends)
 
 **Reaktion auf realen Crash:** Xcode meldete auf iPhone 15 Pro Max einen Memory-Issue/Jetsam-Kill für `LH2GPXWrapper` beim App-Start nach Import einer 46 MB Google-Timeline (`location-history.zip`, ~65 k Timeline-Einträge). Auto-Restore re-parste die Datei vollständig im Launch-Pfad mit drei `JSONSerialization`-Vollparses → transienter RAM-Peak ~400–500 MB → Jetsam-fatal.

@@ -17,7 +17,14 @@ public enum KMZBuilder {
             type: .file,
             uncompressedSize: Int64(kmlData.count),
             provider: { position, size in
-                kmlData.subdata(in: Int(position)..<Int(position) + size)
+                // Bounds-Guard: schützt vor NSException aus `subdata`, falls
+                // ZIPFoundation jemals einen ungültigen (position, size) liefert.
+                let count = kmlData.count
+                var start = Int(position)
+                start = max(0, min(start, count))
+                let end = min(start + size, count)
+                if start >= end { return Data() }
+                return kmlData.subdata(in: start..<end)
             }
         )
         return try Data(contentsOf: tmpURL)

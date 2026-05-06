@@ -17,6 +17,11 @@ public final class AppImportedPathMutationStore: ObservableObject {
     private let userDefaults: UserDefaults
 
     @Published public private(set) var currentMutations: ImportedPathMutationSet
+    /// `true` if the most recent `persist()` call swallowed a JSON encode
+    /// failure. Surfaced as a banner-friendly flag so the UI can warn the user
+    /// that their deletions may not survive an app kill. Resets to `false` on
+    /// every successful `persist()`.
+    @Published public private(set) var lastPersistFailed: Bool = false
 
     public init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
@@ -58,8 +63,17 @@ public final class AppImportedPathMutationStore: ObservableObject {
     }
 
     private func persist() {
-        if let data = try? JSONEncoder().encode(currentMutations) {
+        // `try? encode` previously swallowed all errors silently. A failure
+        // here means the user's deletions are not persisted across launches,
+        // which under memory pressure is exactly the case where it matters
+        // most. Surface the failure via `lastPersistFailed` so the UI can
+        // flag the divergence; reset on success.
+        do {
+            let data = try JSONEncoder().encode(currentMutations)
             userDefaults.set(data, forKey: Self.userDefaultsKey)
+            if lastPersistFailed { lastPersistFailed = false }
+        } catch {
+            lastPersistFailed = true
         }
     }
 }

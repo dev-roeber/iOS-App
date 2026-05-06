@@ -139,15 +139,20 @@ enum DaySummaryRowPresentationBuilder {
         )
     }
 
+    private static let dayKeyFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
+
+    private static let gregorianCalendar: Calendar = Calendar(identifier: .gregorian)
+
     private static func dayNumber(_ isoDate: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        guard let date = formatter.date(from: isoDate) else {
+        guard let date = dayKeyFormatter.date(from: isoDate) else {
             return String(isoDate.suffix(2))
         }
-        let calendar = Calendar(identifier: .gregorian)
-        return "\(calendar.component(.day, from: date))"
+        return "\(gregorianCalendar.component(.day, from: date))"
     }
 }
 

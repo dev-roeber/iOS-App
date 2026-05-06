@@ -177,9 +177,13 @@ public enum AppContentLoader {
                 if collected.count >= byteLimit { throw StopExtraction() }
             }
         } catch is StopExtraction {
-            // Expected — early termination.
-        } catch {
+            // Expected — early termination after byteLimit reached.
             return collected.isEmpty ? nil : collected
+        } catch {
+            // Echte ZIP-/IO-Fehler dürfen NICHT als erfolgreicher Empty-Parse
+            // durchgereicht werden; sonst behandelt der Aufrufer einen kaputten
+            // Stream wie eine leere, aber gültige Datei. Daher hier nil.
+            return nil
         }
         return collected.isEmpty ? nil : collected
     }

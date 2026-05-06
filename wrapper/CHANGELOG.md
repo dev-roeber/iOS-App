@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## 2026-05-06 (Audit batch — Block 1-4: data-loss wiring + concurrency + edge-case crashes + perf hot-paths)
+
+### fix/feat/perf: 19 Audit-Achsen über vier Blöcke
+
+**Block 1 — Datenverlust / falsche User-Daten (Items 1-6):**
+- `LiveLocationServerUploader.swift`: 30 s Per-Request-Timeout (`requestTimeoutSeconds`) — hängender Server blockiert Upload-Queue nicht mehr bis Jetsam.
+- `AppExportView.swift`: neue init-Parameter `dayListFilter`, `favoritedDayIDs`, `pathMutations` (default `.empty`); `filteredSummaries` wendet Day-Tab-Chips an, `prepareExport` + beide `ExportPreviewDataBuilder.previewData`-Aufrufer reichen `pathMutations` durch — gelöschte Routen verschwinden aus GPX/KMZ/KML/GeoJSON/CSV + Vorschau.
+- `AppContentSplitView.swift`: beide `AppExportView`-Call-Sites übergeben `dayListFilter`, `favoritedDayIDs`, `pathMutationStore.currentMutations`.
+- `AppImportedPathMutationStore.swift`: `persist()` schluckt JSON-Encode-Fehler nicht mehr; `@Published var lastPersistFailed`.
+- `ExportSelectionContent.swift`: neuer Parameter `mutations: ImportedPathMutationSet = .empty` an `exportDays(...)`; private `applyMutations` filtert `Day.paths` ohne Original-Mutation.
+- `ExportPreviewData.swift`: `previewData(...)` erweitert um `mutations`-Parameter.
+
+**Block 2 — Concurrency / Resource-Lecks (Items 7-10):**
+- `ActivityManager.swift`: `_endActivityInternal` Identity-Check auf `activity.id`; `_cancelAllActivitiesInternal`-Task `@MainActor`; `_updateActivityInternal`-Task `[weak self]`.
+- `LiveLocationFeatureModel.swift`: neuer `deinit { uploadTask?.cancel() }`.
+- `AppOptionsView.swift`: `testConnection()` von Completion-Closure auf `Task { @MainActor in await URLSession.shared.data(for:) }` migriert.
+- `AppContentSplitView.swift`: `presentSheet(_:)` nutzt `Task { @MainActor in ... }` statt `DispatchQueue.main.async`.
+
+**Block 3 — Edge-Case-Crashes / stillschweigende Fehler (Items 11-13):**
+- `KMZBuilder.swift`: ZIPFoundation-`provider`-Closure Bounds-Guard gegen `kmlData.count` — kein NSException mehr.
+- `AppContentLoader.swift` (sniffEntryHead): innerer `catch` differenziert `StopExtraction` (collected zurück) von echten ZIPFoundation-Fehlern (`nil` zurück).
+- `ImportBookmarkStore.swift`: `restore(userDefaults:)` ruft `startAccessingSecurityScopedResource()` auf der resolved URL; neue `releaseAccessIfNeeded(url:)`-API.
+
+**Block 4 — Performance-Hotspots (Items 14-19):**
+- `AppDayMapView.swift`: `DayMapRenderData.PathOverlay.simplifiedCoordinates` precomputed im Init (kein 2× Recompute pro Pfad pro Frame); ISO8601-Formatter statisch.
+- `AppExportQueries.swift` + `DaySummaryDisplayOrdering.swift`: Doppel-Sort gefixt (`newestFirst` reverst monoton-asc-Input statt Voll-Sort); `weekdayForDate` mit statischem `utcGregorianCalendar`.
+- `AppInsightsContentView.swift`: `weekdayStats` aus pre-computed `derivedModel.weekdayStatsByMetric: [InsightsWeekdayMetric: [InsightsWeekdayMetricStat]]`; Body-Tick recomputet nicht mehr.
+- `DaySummaryRowPresentation.swift`: `dayKeyFormatter`/`gregorianCalendar` statische `private static let`.
+- `AppHeatmapView.swift`: statischer `baseCountFormatter`; `.continuous` `.onMapCameraChange` entfernt (`.onEnd` reicht).
+- `AppDisplayHelpers.swift`: `weekday(_:locale:)` / `monthYear(_:locale:)` mit `NSCache<NSString, DateFormatter>`.
+
+### Verifikation
+- `swift test`: **1012 Tests, 2 Skips, 0 Failures** (unverändert; bestehende Tests laufen über die neuen Pfade — keine neuen Tests in diesem Train).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+
+**Ehrlich offen:** keine Mikro-Benchmarks der Performance-Optimierungen — Designziel, kein gemessener Speedup-Faktor. Hardware-Re-Verifikation iPhone 15 Pro Max steht aus. Block-1-Mutations-im-Export ändert das bisherige bewusste Verhalten — README-Aussage entfernt. Nicht erledigt: P1-3 (`WidgetDataStore`-Duplikat), P1-4 (`onOpenURL` fehlt im Package-Target), P1-18..P1-24 (Test-Lücken), Live-Activity-Lock-Screen, ZIP-Entry-Streaming.
+
 ## 2026-05-06 (P0 audit fixes 3/N — GPX safety, Keychain, schema forward-compat, LoadingBackground frame-rate, ROADMAP truth-pinning)
 
 ### fix/feat: tighten six P0 audit findings on five code axes plus ROADMAP

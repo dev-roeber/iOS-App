@@ -134,8 +134,12 @@ public struct AppDayMapView: View {
     }
 
     private func displayCoords(for path: DayMapRenderData.PathOverlay) -> [CLLocationCoordinate2D] {
+        // Both branches return precomputed arrays. The simplified coords were
+        // built once in `DayMapRenderData.init`, so the per-frame Map body —
+        // which calls this for halo + core stroke = 2× per path per render —
+        // does not re-run Douglas-Peucker + outlier filtering each frame.
         preferences.dayPathDisplayMode == .mapMatched
-            ? PathSimplification.douglasPeucker(PathFilter.removeOutliers(path.coordinates))
+            ? path.simplifiedCoordinates
             : path.coordinates
     }
 
@@ -152,6 +156,10 @@ private struct DayMapRenderData {
 
     struct PathOverlay {
         let coordinates: [CLLocationCoordinate2D]
+        /// `coordinates` after `PathFilter.removeOutliers` + `PathSimplification.douglasPeucker`.
+        /// Computed once at init so per-frame map rendering does not re-run
+        /// the simplification pass on every body recomputation.
+        let simplifiedCoordinates: [CLLocationCoordinate2D]
         let activityType: String?
         let speedSamples: [TrackSample]
     }
@@ -160,6 +168,14 @@ private struct DayMapRenderData {
     let pathOverlays: [PathOverlay]
     let region: MKCoordinateRegion?
     let hasMapContent: Bool
+
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    private static let isoFallback: ISO8601DateFormatter = ISO8601DateFormatter()
 
     init(mapData: DayMapData) {
         self.visitAnnotations = mapData.visitAnnotations.map {
@@ -171,16 +187,13 @@ private struct DayMapRenderData {
                 semanticType: $0.semanticType
             )
         }
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let isoFallback = ISO8601DateFormatter()
         self.pathOverlays = mapData.pathOverlays.map { overlay in
             let coords = overlay.coordinates.map {
                 CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
             }
             let parsedTimes: [Date?] = overlay.timestamps.map { iso -> Date? in
                 guard let iso else { return nil }
-                return isoFormatter.date(from: iso) ?? isoFallback.date(from: iso)
+                return Self.isoFormatter.date(from: iso) ?? Self.isoFallback.date(from: iso)
             }
             let samples: [TrackSample]
             if parsedTimes.count == coords.count {
@@ -188,8 +201,10 @@ private struct DayMapRenderData {
             } else {
                 samples = []
             }
+            let simplified = PathSimplification.douglasPeucker(PathFilter.removeOutliers(coords))
             return PathOverlay(
                 coordinates: coords,
+                simplifiedCoordinates: simplified,
                 activityType: overlay.activityType,
                 speedSamples: samples
             )

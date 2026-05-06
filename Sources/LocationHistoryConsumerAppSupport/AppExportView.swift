@@ -51,6 +51,18 @@ public struct AppExportView: View {
     @EnvironmentObject private var preferences: AppPreferences
     @Binding var session: AppSessionState
     @ObservedObject private var liveLocation: LiveLocationFeatureModel
+    /// Day-list filter chips (Favorites / With Routes / …) propagated from the
+    /// Days tab so the user's filter selection carries into Export instead of
+    /// silently being ignored.
+    private let dayListFilter: DayListFilter
+    /// Set of day-IDs the user has favorited; needed to evaluate the
+    /// `.favorites` filter chip locally without re-loading from
+    /// `DayFavoritesStore`.
+    private let favoritedDayIDs: Set<String>
+    /// Imported-path deletions to apply to the export pipeline. Previously the
+    /// export silently re-included deleted routes; the day-detail view and the
+    /// generated GPX/KMZ now agree.
+    private let pathMutations: ImportedPathMutationSet
     private let onOpenImport: (() -> Void)?
     private let onOpenDays: (() -> Void)?
     @State private var selectedFormat: ExportFormat = .gpx
@@ -83,15 +95,21 @@ public struct AppExportView: View {
     public init(
         session: Binding<AppSessionState>,
         liveLocation: LiveLocationFeatureModel,
+        dayListFilter: DayListFilter = .empty,
+        favoritedDayIDs: Set<String> = [],
+        pathMutations: ImportedPathMutationSet = .empty,
         onOpenImport: (() -> Void)? = nil,
         onOpenDays: (() -> Void)? = nil,
         heroEnabled: Bool = false
     ) {
-        self._session      = session
-        self._liveLocation = ObservedObject(wrappedValue: liveLocation)
-        self.onOpenImport  = onOpenImport
-        self.onOpenDays    = onOpenDays
-        self.heroEnabled   = heroEnabled
+        self._session         = session
+        self._liveLocation    = ObservedObject(wrappedValue: liveLocation)
+        self.dayListFilter    = dayListFilter
+        self.favoritedDayIDs  = favoritedDayIDs
+        self.pathMutations    = pathMutations
+        self.onOpenImport     = onOpenImport
+        self.onOpenDays       = onOpenDays
+        self.heroEnabled      = heroEnabled
     }
 
     private func t(_ english: String) -> String {
@@ -228,7 +246,8 @@ public struct AppExportView: View {
             selection: selection,
             recordedTracks: liveLocation.recordedTracks,
             queryFilter: effectiveQueryFilter,
-            mode: effectiveExportMode
+            mode: effectiveExportMode,
+            mutations: pathMutations
         )
 
         LHCollapsibleMapHeader(
@@ -404,7 +423,8 @@ public struct AppExportView: View {
             selection: selection,
             recordedTracks: liveLocation.recordedTracks,
             queryFilter: effectiveQueryFilter,
-            mode: effectiveExportMode
+            mode: effectiveExportMode,
+            mutations: pathMutations
         )
         let presentation = MapPresentation.exportPreview(
             previewData,
@@ -1389,7 +1409,8 @@ public struct AppExportView: View {
             importedExport: session.content?.export,
             selection: selection,
             recordedTracks: liveLocation.recordedTracks,
-            queryFilter: effectiveQueryFilter
+            queryFilter: effectiveQueryFilter,
+            mutations: pathMutations
         )
 
         guard !exportDays.isEmpty else {
@@ -1463,9 +1484,18 @@ public struct AppExportView: View {
     }
 
     private var filteredSummaries: [DaySummary] {
-        DaySummaryDisplayOrdering.newestFirst(
-            session.content?.daySummaries(applying: effectiveQueryFilter) ?? []
-        )
+        let raw = session.content?.daySummaries(applying: effectiveQueryFilter) ?? []
+        // Apply the Days-tab filter chips (Favorites / With Routes / …) so the
+        // user's day-list filter carries into the Export checkout list.
+        let chipFiltered: [DaySummary]
+        if dayListFilter.isActive {
+            chipFiltered = raw.filter {
+                dayListFilter.passes(summary: $0, isFavorited: favoritedDayIDs.contains($0.date))
+            }
+        } else {
+            chipFiltered = raw
+        }
+        return DaySummaryDisplayOrdering.newestFirst(chipFiltered)
     }
 
     private var dateOptions: [String] {

@@ -20,13 +20,15 @@ enum ExportPreviewDataBuilder {
         selection: ExportSelectionState,
         recordedTracks: [RecordedTrack],
         queryFilter: AppExportQueryFilter? = nil,
-        mode: ExportMode
+        mode: ExportMode,
+        mutations: ImportedPathMutationSet = .empty
     ) -> ExportPreviewData {
         let exportDays = ExportSelectionContent.exportDays(
             importedExport: importedExport,
             selection: selection,
             recordedTracks: recordedTracks,
-            queryFilter: queryFilter
+            queryFilter: queryFilter,
+            mutations: mutations
         )
 
         let waypointAnnotations = mode.includesWaypoints

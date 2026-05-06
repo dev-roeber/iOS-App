@@ -16,7 +16,40 @@ Acht P0-Findings aus `docs/DEEP_AUDIT_2026-05-06.md` sind jetzt umgesetzt:
 - P0-7 TCX-Export-Doku-Lüge in `README.md` (vorheriger Patch)
 - P0-8 ROADMAP-Test-Count-Widerspruch (964 vs 1006) per commit-verankerter Verifikations-Historie aufgelöst
 
-Verbleibend offen: 24× P1, 19× P2 aus dem Audit. Hardware-Re-Verifikation auf iPhone 15 Pro Max und Mikro-Benchmark der Streaming-Pipeline stehen weiterhin aus.
+Verbleibend offen: ~7× P1 (P1-3 `WidgetDataStore`-Duplikat, P1-4 `onOpenURL` fehlt im Package-Target, P1-18..P1-24 Test-Lücken), ~19× P2. Hardware-Re-Verifikation auf iPhone 15 Pro Max und Mikro-Benchmark der Streaming-Pipeline stehen weiterhin aus.
+
+### Audit-Batch 2026-05-06 (Block 1-4) — 19 Achsen erledigt
+
+19 Audit-Achsen aus den Blöcken 1-4 sind in diesem Doku-Train als erledigt verbucht (`swift test` 1012/2/0 unverändert; `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED):
+
+**Block 1 — Datenverlust / falsche User-Daten (Audit-Items 1-4 erledigt):**
+- [x] Item 1: 30 s Per-Request-Timeout in `LiveLocationServerUploader` — hängender Server blockiert Upload-Queue nicht mehr.
+- [x] Item 2: `AppExportView` filtert jetzt nach `dayListFilter`, `favoritedDayIDs`, `pathMutations` (Default `.empty`) — Day-Tab-Filter und gelöschte Routen wirken in GPX/KMZ/KML/GeoJSON/CSV-Exports + Vorschau.
+- [x] Item 3: `AppContentSplitView` reicht `dayListFilter`, `favoritedDayIDs`, `pathMutationStore.currentMutations` an beide `AppExportView`-Call-Sites.
+- [x] Item 4: `AppImportedPathMutationStore.persist()` verschluckt Encode-Fehler nicht mehr — `@Published var lastPersistFailed`.
+
+**Block 2 — Concurrency / Resource-Lecks (Audit-Items 5-8 erledigt):**
+- [x] Item 5: `ActivityManager._endActivityInternal` Identity-Check; `_cancelAllActivitiesInternal` `@MainActor`; `_updateActivityInternal` `[weak self]`.
+- [x] Item 6: `LiveLocationFeatureModel.deinit` cancelt `uploadTask`.
+- [x] Item 7: `AppOptionsView.testConnection()` auf `Task { @MainActor in ... }` migriert.
+- [x] Item 8: `AppContentSplitView.presentSheet(_:)` auf `Task { @MainActor in ... }` migriert.
+
+**Block 3 — Edge-Case-Crashes / stillschweigende Fehler (Audit-Items 9-11 erledigt):**
+- [x] Item 9: `KMZBuilder` Bounds-Guard in ZIPFoundation-`provider`-Closure.
+- [x] Item 10: `AppContentLoader.sniffEntryHead` differenziert `StopExtraction` von echten ZIPFoundation-Fehlern — kein leerer „valider"-Export mehr durch verschluckte Read-Fehler.
+- [x] Item 11: `ImportBookmarkStore.restore(userDefaults:)` ruft `startAccessingSecurityScopedResource()` auf der resolved URL auf; neue API `releaseAccessIfNeeded(url:)`.
+
+**Block 4 — Performance-Hotspots (Audit-Items 12-19 erledigt):**
+- [x] Item 12: `DayMapRenderData.PathOverlay.simplifiedCoordinates` precomputed im Init.
+- [x] Item 13: Doppel-Sort gefixt in `AppExportQueries.projectedDays` + `DaySummaryDisplayOrdering.newestFirst` (O(n) Reverse statt O(n log n) Sort auf monoton-asc-Input).
+- [x] Item 14: `AppInsightsContentView.weekdayStats` aus `derivedModel.weekdayStatsByMetric` gelesen, Pre-Computation in `refreshDerivedModel`.
+- [x] Item 15: `DaySummaryRowPresentation`-Formatter sind jetzt `private static let`.
+- [x] Item 16: `AppHeatmapView.formatCount` mit statischem `baseCountFormatter`; `.continuous`-CameraChange-Handler entfernt.
+- [x] Item 17: `DayMapRenderData.init` ISO8601-Formatter als statische Properties.
+- [x] Item 18: `AppExportQueries.weekdayForDate` mit statischem `utcGregorianCalendar`.
+- [x] Item 19: `AppDisplayHelpers.weekday(_:locale:)` / `monthYear(_:locale:)` nutzen `NSCache<NSString, DateFormatter>`.
+
+Nicht in diesem Train erledigt (weiterhin offen): P1-3 (`WidgetDataStore`-Duplikat), P1-4 (`onOpenURL` fehlt im Package-Target), P1-18..P1-24 (Test-Lücken), Hardware-Verifikation iPhone 15 Pro Max, ZIP-Entry-Streaming, Mikro-Benchmark, Live-Activity-Lock-Screen.
 
 ## P0 — Release / Review / Hardware-Verifikation
 
@@ -65,7 +98,7 @@ Verbleibend offen: 24× P1, 19× P2 aus dem Audit. Hardware-Re-Verifikation auf 
 - [ ] Chart-Share / ImageRenderer auf Apple-Hardware gezielt verifizieren
 - [ ] app-weite Landscape-Verifikation fuer `Overview`, `Days`, `Insights`, `Export`, `Live`
 - [ ] Homescreen-Widget auf echter Hardware gezielt verifizieren
-- [ ] Track-Editor-Verhalten gegen reale Export-Erwartung entscheiden und dokumentieren: Mutations bleiben derzeit display-only und fliessen bewusst nicht in Exporte ein
+- [x] Track-Editor-Verhalten gegen reale Export-Erwartung: Mutations fliessen jetzt in Exporte ein (Audit-Batch 2026-05-06, Block 1 Items 2-3, 5-6) — `AppExportView`/`ExportSelectionContent`/`ExportPreviewData` reichen `pathMutations` durch, gelöschte Routen verschwinden aus GPX/KMZ/KML/GeoJSON/CSV.
 - [ ] Wrapper-Simulator-Testlauf fuer `LH2GPXWrapperTests` auf diesem Host stabilisieren oder auf anderem Apple-Host gegentesten (`NSMachErrorDomain Code=-308`)
 - [x] **Stop-Ship Bug 1 — Auto-Split Datenverlust** (2026-05-05): `start()` löscht `splitOffTrack` nicht mehr; `handleLocationSamples` draint Split-Track, persistiert ihn als `RecordedTrack` und setzt neue `currentRecordingSessionID`. 4 neue Tests in `LiveTrackRecorderTests`, 2 neue in `LiveLocationFeatureModelTests`.
 - [x] **Stop-Ship Bug 2 — Widget Echtdaten** (2026-05-05): `stopRecordingFlow()` und Split-Drain rufen `updateWidgetData()` auf → `WidgetDataStore.save(recording:)` + `saveWeeklyStats()`. `ContentView` reloaded via `WidgetCenter.shared.reloadAllTimelines()` bei `widgetAutoUpdate == true`.

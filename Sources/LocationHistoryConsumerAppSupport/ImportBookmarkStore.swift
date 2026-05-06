@@ -35,6 +35,9 @@ public enum ImportBookmarkStore {
     /// Resolves the stored bookmark and returns the URL.
     /// Automatically refreshes a stale bookmark if possible.
     /// Returns nil if no bookmark is stored, the bookmark is invalid, or the file is gone.
+    ///
+    /// Convention: Returns a URL with security-scoped access already started;
+    /// the caller MUST call `releaseAccessIfNeeded(url:)` when done reading.
     public static func restore(userDefaults: UserDefaults = .standard) -> URL? {
         guard let data = userDefaults.data(forKey: bookmarkKey) else {
             return nil
@@ -53,6 +56,10 @@ public enum ImportBookmarkStore {
             clear(userDefaults: userDefaults)
             return nil
         }
+
+        // Start security-scoped access immediately so the caller can read
+        // safely. On iOS this is harmless if not strictly required.
+        _ = url.startAccessingSecurityScopedResource()
 
         if isStale {
             // Try to refresh the bookmark while we still have access.
@@ -80,6 +87,14 @@ public enum ImportBookmarkStore {
             return nil
         }
         return url
+        #endif
+    }
+
+    /// Releases security-scoped access previously started by `restore(userDefaults:)`.
+    /// Safe to call on any platform; on non-Apple platforms this is a no-op.
+    public static func releaseAccessIfNeeded(url: URL) {
+        #if os(macOS) || os(iOS)
+        url.stopAccessingSecurityScopedResource()
         #endif
     }
 

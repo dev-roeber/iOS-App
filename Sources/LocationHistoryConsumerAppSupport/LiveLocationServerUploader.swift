@@ -96,12 +96,20 @@ public final class HTTPSLiveLocationServerUploader: LiveLocationServerUploading 
         self.encoder.outputFormatting = [.sortedKeys]
     }
 
+    /// Per-request timeout (seconds). URLSession.shared defaults to 60 s for
+    /// connect and **7 days** for resource — a hung server would otherwise
+    /// block the in-flight upload until iOS terminated the app, while live
+    /// recording silently dropped the oldest queued points to stay under the
+    /// 10 k cap. 30 s is generous for a JSON batch upload but bounded enough
+    /// that the queue can recover by retrying with a fresh task.
+    public static let requestTimeoutSeconds: TimeInterval = 30
+
     public func upload(
         request: LiveLocationUploadRequest,
         to endpoint: URL,
         bearerToken: String?
     ) async throws {
-        var urlRequest = URLRequest(url: endpoint)
+        var urlRequest = URLRequest(url: endpoint, timeoutInterval: HTTPSLiveLocationServerUploader.requestTimeoutSeconds)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let bearerToken {

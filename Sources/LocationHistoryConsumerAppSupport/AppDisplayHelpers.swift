@@ -111,10 +111,18 @@ enum AppDateDisplay {
         weekdayFormatter.string(from: date)
     }
 
+    private static let weekdayFormatterCache = NSCache<NSString, DateFormatter>()
+    private static let monthYearFormatterCache = NSCache<NSString, DateFormatter>()
+
     static func weekday(_ date: Date, locale: Locale) -> String {
+        let key = locale.identifier as NSString
+        if let cached = weekdayFormatterCache.object(forKey: key) {
+            return cached.string(from: date)
+        }
         let formatter = DateFormatter()
         formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("EEEE")
+        weekdayFormatterCache.setObject(formatter, forKey: key)
         return formatter.string(from: date)
     }
 
@@ -123,9 +131,14 @@ enum AppDateDisplay {
     }
 
     static func monthYear(_ date: Date, locale: Locale) -> String {
+        let key = locale.identifier as NSString
+        if let cached = monthYearFormatterCache.object(forKey: key) {
+            return cached.string(from: date)
+        }
         let formatter = DateFormatter()
         formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("LLLL yyyy")
+        monthYearFormatterCache.setObject(formatter, forKey: key)
         return formatter.string(from: date)
     }
 }

@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## [2026-05-06] — Audit batch — Block 1-4: data-loss wiring + concurrency + edge-case crashes + perf hot-paths
+
+### Was sich geändert hat (19 Achsen, gruppiert nach Block)
+
+**Block 1 — Datenverlust / falsche User-Daten:**
+1. `Sources/LocationHistoryConsumerAppSupport/LiveLocationServerUploader.swift`: HTTP-Upload-Request bekommt jetzt 30 s Per-Request-Timeout (`HTTPSLiveLocationServerUploader.requestTimeoutSeconds`). Vorher Default 60 s connect / 7 Tage resource — hängender Server konnte Upload-Queue bis Jetsam blockieren, Live-Recording droppte währenddessen die ältesten Punkte.
+2. `Sources/LocationHistoryConsumerAppSupport/AppExportView.swift`: neue init-Parameter `dayListFilter: DayListFilter`, `favoritedDayIDs: Set<String>`, `pathMutations: ImportedPathMutationSet` (default `.empty`). `filteredSummaries` wendet die Day-Tab-Filter-Chips an. `prepareExport` und beide `ExportPreviewDataBuilder.previewData`-Aufrufer reichen `pathMutations` jetzt durch — user-gelöschte Routen verschwinden aus GPX/KMZ/KML/GeoJSON/CSV-Exports und aus der Export-Vorschau (vorher kamen sie zurück).
+3. `Sources/LocationHistoryConsumerAppSupport/AppContentSplitView.swift`: beide `AppExportView`-Call-Sites (compact NavigationStack + Sheet-Variante) übergeben jetzt `dayListFilter`, `favoritedDayIDs`, `pathMutationStore.currentMutations`.
+4. `Sources/LocationHistoryConsumerAppSupport/AppImportedPathMutationStore.swift`: `persist()` schluckt JSON-Encode-Fehler nicht mehr lautlos. Neue `@Published var lastPersistFailed: Bool`; bei Erfolg zurückgesetzt. UI kann den Flag für ein Banner abfragen.
+5. `Sources/LocationHistoryConsumerAppSupport/ExportSelectionContent.swift`: neuer Parameter `mutations: ImportedPathMutationSet = .empty` an `exportDays(...)`. Private `applyMutations(_:mutations:)` filtert die `Day.paths`-Indizes pro Tag, ohne den Originalexport zu mutieren.
+6. `Sources/LocationHistoryConsumerAppSupport/ExportPreviewData.swift`: `previewData(...)` erweitert um `mutations: ImportedPathMutationSet = .empty`.
+
+**Block 2 — Concurrency / Resource-Lecks:**
+7. `Sources/LocationHistoryConsumerAppSupport/ActivityManager.swift`: `_endActivityInternal` macht Identity-Check auf `activity.id` bevor `_currentActivityBox = nil` gesetzt wird — verspätete End-Tasks blenden eine zwischenzeitlich gestartete neue Live Activity nicht mehr aus. `_cancelAllActivitiesInternal`-Task läuft auf `@MainActor`. `_updateActivityInternal`-Task hat `[weak self]`.
+8. `Sources/LocationHistoryConsumerAppSupport/LiveLocationFeatureModel.swift`: neuer `deinit { uploadTask?.cancel() }` — URLSession-Tasks akkumulieren nicht mehr bei häufigem View-Rebuild.
+9. `Sources/LocationHistoryConsumerAppSupport/AppOptionsView.swift`: `testConnection()` von URLSession-Completion-Closure + `DispatchQueue.main.async` auf `Task { @MainActor in await URLSession.shared.data(for:) }` migriert. Kein Struct-`self`-Capture mehr aus Background-Thread.
+10. `Sources/LocationHistoryConsumerAppSupport/AppContentSplitView.swift`: `presentSheet(_:)` nutzt `Task { @MainActor in ... }` statt `DispatchQueue.main.async`. Konsistent mit Swift-Concurrency-Modell.
+
+**Block 3 — Edge-Case-Crashes / stillschweigende Fehler:**
+11. `Sources/LocationHistoryConsumerAppSupport/KMZBuilder.swift`: ZIPFoundation-`provider`-Closure bekommt Bounds-Guard. `subdata(in: start..<end)` wird gegen `kmlData.count` geclamped; ungültige Slice-Anforderung gibt leeres `Data()` zurück statt NSException.
+12. `Sources/LocationHistoryConsumerAppSupport/AppContentLoader.swift` (sniffEntryHead): innerer `catch` differenziert jetzt zwischen `StopExtraction` (bewusster Stop, gibt collected zurück) und echten ZIPFoundation-Fehlern (gibt `nil` zurück). Kein leerer „valider"-Export mehr durch verschluckte Read-Fehler.
+13. `Sources/LocationHistoryConsumerAppSupport/ImportBookmarkStore.swift`: `restore(userDefaults:)` ruft `startAccessingSecurityScopedResource()` auf der resolved URL selbst auf. Neue API `releaseAccessIfNeeded(url:)` für den Caller-Cleanup. Doc-Comment dokumentiert die Konvention.
+
+**Block 4 — Performance-Hotspots:**
+14. `Sources/LocationHistoryConsumerAppSupport/AppDayMapView.swift`: `DayMapRenderData.PathOverlay` hält jetzt `simplifiedCoordinates` (Douglas-Peucker + Outlier-Filter) precomputed beim Init — `displayCoords` liefert nur noch den passenden Cache statt 2× pro Pfad pro Frame neu zu berechnen.
+15. `Sources/LocationHistoryConsumer/AppExportQueries.swift` + `Sources/LocationHistoryConsumerAppSupport/DaySummaryDisplayOrdering.swift`: Doppel-Sort gefixt. `projectedDays` bleibt asc-sortiert (Insights braucht das); `newestFirst` erkennt monoton-asc-sortierten Input und reverst statt voll zu sortieren — O(n) statt O(n log n) auf dem Hot-Path.
+16. `Sources/LocationHistoryConsumerAppSupport/AppInsightsContentView.swift`: `weekdayStats` wird aus `derivedModel.weekdayStatsByMetric: [InsightsWeekdayMetric: [InsightsWeekdayMetricStat]]` gelesen. Pre-Computation aller verfügbaren Metric-Varianten in `refreshDerivedModel`. Body-Tick recomputet nicht mehr.
+17. `Sources/LocationHistoryConsumerAppSupport/DaySummaryRowPresentation.swift`: `dayKeyFormatter` und `gregorianCalendar` sind jetzt statische `private static let` statt per-Row-Allokation.
+18. `Sources/LocationHistoryConsumerAppSupport/AppHeatmapView.swift`: `formatCount` nutzt einen statischen `baseCountFormatter`, setzt nur `locale`. `.continuous` `.onMapCameraChange`-Handler entfernt — `.onEnd` reicht.
+19. `Sources/LocationHistoryConsumerAppSupport/AppDayMapView.swift` (zusätzlich): zwei `ISO8601DateFormatter()` in `DayMapRenderData.init` als statische Properties herausgehoben. `Sources/LocationHistoryConsumer/AppExportQueries.swift`: `weekdayForDate` nutzt einen statischen `utcGregorianCalendar`. `Sources/LocationHistoryConsumerAppSupport/AppDisplayHelpers.swift`: `weekday(_:locale:)` und `monthYear(_:locale:)` nutzen jetzt einen `NSCache<NSString, DateFormatter>` statt pro Aufruf einen neuen DateFormatter.
+
+### Verifikation
+- `swift test`: **1012 Tests, 2 Skips, 0 Failures** (unverändert; bestehende Tests laufen über die neuen Pfade — keine neuen Tests in diesem Train, das ist eigene Folge-Arbeit).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+
+### Ehrlich offen
+- Keine Mikro-Benchmarks der Performance-Optimierungen — Designziel, kein gemessener Speedup-Faktor.
+- Hardware-Re-Verifikation iPhone 15 Pro Max steht weiterhin aus.
+- Block-1-Mutations-im-Export ändert das bisherige bewusste Verhalten ("Export ignoriert Mutations bewusst") — README/CHANGELOG-Aussage entfernt bzw. umgekehrt.
+- Live-Activity-Lock-Screen, ZIP-Entry-Streaming, Mikro-Benchmark, restliche P1/P2-Audit-Items bleiben offen.
+- Nicht erledigt in diesem Train: P1-3 (`WidgetDataStore`-Duplikat), P1-4 (`onOpenURL` fehlt im Package-Target), P1-18..P1-24 (Test-Lücken).
+
 ## [2026-05-06] — P0 audit fixes 3/N: GPX safety, Keychain, schema forward-compat, LoadingBackground frame-rate, ROADMAP truth-pinning
 
 ### Was sich geändert hat

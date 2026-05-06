@@ -21,6 +21,13 @@ struct AppInsightsContentView: View {
         let highlightItems: [InsightsHighlightItem]
         let streakStat: InsightsStreakStat
         let periodComparisonStat: InsightsPeriodComparisonStat?
+        /// Pre-computed weekday stats per metric. The Insights body referenced
+        /// `InsightsChartSupport.weekdayStats(...)` from three call sites (live
+        /// chart, fallback message, share strip) — without caching that ran a
+        /// fresh scan over every DaySummary on every body tick. Computing all
+        /// (≤5) metric variants once at refresh time is ~free compared to the
+        /// recompute it replaces.
+        let weekdayStatsByMetric: [InsightsWeekdayMetric: [InsightsWeekdayMetricStat]]
     }
 
     @EnvironmentObject private var preferences: AppPreferences
@@ -98,9 +105,10 @@ struct AppInsightsContentView: View {
         }
 
         let builtTrendItems = InsightsMonthlyTrendPresentation.items(from: daySummaries, locale: preferences.appLocale)
+        let builtWeekdayMetrics = InsightsChartSupport.availableWeekdayMetrics(for: daySummaries)
         return InsightsDerivedModel(
             trendItems: builtTrendItems,
-            availableWeekdayMetrics: InsightsChartSupport.availableWeekdayMetrics(for: daySummaries),
+            availableWeekdayMetrics: builtWeekdayMetrics,
             availablePeriodMetrics: InsightsChartSupport.availablePeriodMetrics(for: insights.periodBreakdown),
             availableTopDayMetrics: InsightsTopDaysPresentation.availableMetrics(for: daySummaries),
             summaryCards: buildSummaryCards(trendItemCount: builtTrendItems.count),
@@ -110,8 +118,29 @@ struct AppInsightsContentView: View {
                 currentSummaries: daySummaries,
                 allSummaries: allDaySummaries,
                 rangeFilter: rangeFilter
+            ),
+            weekdayStatsByMetric: Self.buildWeekdayStatsByMetric(
+                summaries: daySummaries,
+                metrics: builtWeekdayMetrics,
+                locale: preferences.appLocale
             )
         )
+    }
+
+    private static func buildWeekdayStatsByMetric(
+        summaries: [DaySummary],
+        metrics: [InsightsWeekdayMetric],
+        locale: Locale
+    ) -> [InsightsWeekdayMetric: [InsightsWeekdayMetricStat]] {
+        var result: [InsightsWeekdayMetric: [InsightsWeekdayMetricStat]] = [:]
+        for metric in metrics {
+            result[metric] = InsightsChartSupport.weekdayStats(
+                from: summaries,
+                metric: metric,
+                locale: locale
+            )
+        }
+        return result
     }
 
     private var trendItems: [InsightsMonthlyTrendItem] {
@@ -123,7 +152,14 @@ struct AppInsightsContentView: View {
     }
 
     private var weekdayStats: [InsightsWeekdayMetricStat] {
-        InsightsChartSupport.weekdayStats(
+        // Cached lookup — see `InsightsDerivedModel.weekdayStatsByMetric`.
+        // Falls back to an on-the-fly compute if the metric was added to the
+        // selection set after refreshDerivedModel last ran (defensive — the
+        // refresh handlers cover every state change in practice).
+        if let cached = resolvedDerivedModel.weekdayStatsByMetric[weekdayMetric] {
+            return cached
+        }
+        return InsightsChartSupport.weekdayStats(
             from: daySummaries,
             metric: weekdayMetric,
             locale: preferences.appLocale
@@ -529,6 +565,11 @@ struct AppInsightsContentView: View {
                 currentSummaries: daySummaries,
                 allSummaries: allDaySummaries,
                 rangeFilter: rangeFilter
+            ),
+            weekdayStatsByMetric: Self.buildWeekdayStatsByMetric(
+                summaries: daySummaries,
+                metrics: builtWeekdayMetrics,
+                locale: preferences.appLocale
             )
         )
 

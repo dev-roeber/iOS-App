@@ -138,7 +138,8 @@ public final class ActivityManager {
         )
         let updatedContent = ActivityContent(state: updatedState, staleDate: nil)
 
-        Task {
+        Task { [weak self] in
+            _ = self
             await activity.update(updatedContent)
         }
     }
@@ -168,15 +169,18 @@ public final class ActivityManager {
             staleDate: Date().addingTimeInterval(5)
         )
 
+        let endingActivityID = activity.id
         Task {
             await activity.end(finalContent, dismissalPolicy: .after(Date().addingTimeInterval(5)))
-            self._currentActivityBox = nil
+            if (self._currentActivityBox as? Activity<TrackingAttributes>)?.id == endingActivityID {
+                self._currentActivityBox = nil
+            }
         }
     }
 
     @available(iOS 16.2, *)
     private func _cancelAllActivitiesInternal() {
-        Task {
+        Task { @MainActor in
             for activity in Activity<TrackingAttributes>.activities {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }

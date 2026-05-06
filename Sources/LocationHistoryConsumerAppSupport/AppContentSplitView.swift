@@ -309,6 +309,9 @@ public struct AppContentSplitView: View {
                 AppExportView(
                     session: $session,
                     liveLocation: liveLocation,
+                    dayListFilter: dayListFilter,
+                    favoritedDayIDs: favoritedDayIDs,
+                    pathMutations: pathMutationStore.currentMutations,
                     onOpenImport: onOpen,
                     onOpenDays: { selectedTab = 1 },
                     heroEnabled: true
@@ -1409,6 +1412,9 @@ public struct AppContentSplitView: View {
                     AppExportView(
                         session: $session,
                         liveLocation: liveLocation,
+                        dayListFilter: dayListFilter,
+                        favoritedDayIDs: favoritedDayIDs,
+                        pathMutations: pathMutationStore.currentMutations,
                         onOpenImport: onOpen
                     )
                         .environmentObject(preferences)
@@ -1456,7 +1462,11 @@ public struct AppContentSplitView: View {
     }
 
     private func presentSheet(_ sheet: PresentedSheet) {
-        DispatchQueue.main.async {
+        // SwiftUI views are already MainActor-isolated; the legacy
+        // `DispatchQueue.main.async` hop here was a redundant pre-Swift-Concurrency
+        // workaround. The Task-MainActor form is the documented modern equivalent
+        // and avoids one queue hop per sheet present.
+        Task { @MainActor in
             presentedSheet = sheet
         }
     }

@@ -479,18 +479,19 @@ struct AppUploadOptionsView: View {
             )
         }
 
-        URLSession.shared.dataTask(with: request) { _, response, error in
-            DispatchQueue.main.async {
-                self.isTestingConnection = false
-                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode < 500 {
-                    self.connectionTestResult = .reachable
-                } else if error == nil, response != nil {
-                    self.connectionTestResult = .reachable
+        Task { @MainActor in
+            defer { isTestingConnection = false }
+            do {
+                let (_, response) = try await URLSession.shared.data(for: request)
+                if let http = response as? HTTPURLResponse, http.statusCode < 500 {
+                    connectionTestResult = .reachable
                 } else {
-                    self.connectionTestResult = .unreachable
+                    connectionTestResult = .reachable
                 }
+            } catch {
+                connectionTestResult = .unreachable
             }
-        }.resume()
+        }
     }
 
     private func t(_ english: String) -> String { preferences.localized(english) }

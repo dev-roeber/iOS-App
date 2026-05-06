@@ -112,6 +112,10 @@ public final class LiveLocationFeatureModel: ObservableObject {
         }
     }
 
+    deinit {
+        uploadTask?.cancel()
+    }
+
     public var canDisplayLiveLocation: Bool {
         authorization.allowsForegroundTracking
     }

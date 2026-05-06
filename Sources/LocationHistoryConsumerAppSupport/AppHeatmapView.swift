@@ -81,9 +81,6 @@ public struct AppHeatmapView: View {
         .onMapCameraChange(frequency: .onEnd) { context in
             model.updateForRegion(context.region)
         }
-        .onMapCameraChange(frequency: .continuous) { context in
-            model.debounceUpdateForRegion(context.region)
-        }
     }
 
     private var densityMapStyle: MapStyle {
@@ -157,9 +154,14 @@ public struct AppHeatmapView: View {
         return "\(pointsLabel) · \(daysLabel)"
     }
 
+    private static let baseCountFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        return f
+    }()
+
     private func formatCount(_ value: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
+        let formatter = Self.baseCountFormatter
         formatter.locale = preferences.appLocale
         return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
