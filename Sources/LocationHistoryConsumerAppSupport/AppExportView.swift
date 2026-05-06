@@ -420,16 +420,21 @@ public struct AppExportView: View {
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
             } else if previewData.hasMapContent {
-                if #available(iOS 17.0, macOS 14.0, *) {
-                    AppExportPreviewMapView(previewData: previewData)
-                        .accessibilityIdentifier("export.map.preview")
-                } else {
-                    Label(
-                        t("Map preview requires a newer Apple platform version, but the export summary below still reflects the current selection."),
-                        systemImage: "map"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                // When heroEnabled the map is already rendered full-bleed via
+                // safeAreaInset(.top); only show stats/legend here to avoid a
+                // duplicated map. Empty/legacy paths keep the inline map.
+                if !heroEnabled {
+                    if #available(iOS 17.0, macOS 14.0, *) {
+                        AppExportPreviewMapView(previewData: previewData)
+                            .accessibilityIdentifier("export.map.preview")
+                    } else {
+                        Label(
+                            t("Map preview requires a newer Apple platform version, but the export summary below still reflects the current selection."),
+                            systemImage: "map"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
                 }
                 MapSectionSupplementaryView(presentation: presentation)
             } else {
