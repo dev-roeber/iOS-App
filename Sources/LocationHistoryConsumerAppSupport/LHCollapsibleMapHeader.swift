@@ -140,17 +140,25 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
     /// on top of the map instead of as a separate header strip above it.
     /// Use this for full-width hero map layouts where the card chrome is absent.
     var overlayControls: Bool = false
+    /// Explicit top safe-area inset for overlay control placement.
+    /// Must be supplied from OUTSIDE any ignoresSafeArea context —
+    /// geometry.safeAreaInsets.top returns 0 inside .safeAreaInset/.ignoresSafeArea
+    /// views, so callers must capture it from a correctly-scoped GeometryReader
+    /// and pass it here. Defaults to 59 (iPhone Dynamic Island baseline).
+    var safeAreaTopInset: CGFloat = 59
     @ViewBuilder let mapContent: () -> MapContent
 
     public init(
         state: Binding<LHMapHeaderState>,
         language: AppLanguagePreference = .english,
         overlayControls: Bool = false,
+        safeAreaTopInset: CGFloat = 59,
         @ViewBuilder mapContent: @escaping () -> MapContent
     ) {
         self._state    = state
         self.language  = language
         self.overlayControls = overlayControls
+        self.safeAreaTopInset = safeAreaTopInset
         self.mapContent = mapContent
     }
 

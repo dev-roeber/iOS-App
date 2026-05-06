@@ -26,6 +26,9 @@ public struct AppContentSplitView: View {
         expandedHeight: 560,
         isSticky: true
     )
+    /// Captured from a GeometryReader outside the ignoresSafeArea context so
+    /// the overlay controls land below Dynamic Island / status bar on all devices.
+    @State private var daysSafeAreaTop: CGFloat = 59
     @State private var presentedSheet: PresentedSheet?
     @StateObject private var pathMutationStore = AppImportedPathMutationStore()
 
@@ -428,7 +431,18 @@ public struct AppContentSplitView: View {
         .modifier(DaysListSectionSpacingModifier())
         #endif
         .scrollContentBackground(.hidden)
-        .background(Color.black)
+        .background(
+            // Read the real safe-area inset here — the List is in the correct
+            // safe-area context (NOT inside ignoresSafeArea), so this GeometryReader
+            // returns the actual device top inset (~59 pt on iPhone 15 Pro Max).
+            // geometry.safeAreaInsets.top inside the safeAreaInset/ignoresSafeArea
+            // hero view returns 0, which is why we capture it here and pass it
+            // explicitly to LHCollapsibleMapHeader via daysSafeAreaTop.
+            GeometryReader { geo in
+                Color.black
+                    .onAppear { daysSafeAreaTop = geo.safeAreaInsets.top }
+            }
+        )
         .safeAreaInset(edge: .top, spacing: 0) {
             daysListStickyHeader
         }
@@ -461,10 +475,10 @@ public struct AppContentSplitView: View {
 
     private var daysListStickyHeader: some View {
         // Hero map — extends behind Dynamic Island / status bar.
-        // ignoresSafeArea is applied here so the map fills edge-to-edge.
-        // The expand/collapse overlay buttons inside LHCollapsibleMapHeader use
-        // a GeometryReader to read safeAreaInsets and add matching top padding,
-        // keeping them below the Dynamic Island without needing iOS 17 APIs.
+        // ignoresSafeArea is applied so the map fills edge-to-edge.
+        // daysSafeAreaTop is read by a GeometryReader on the List (outside this
+        // ignoresSafeArea context) and passed explicitly so controls land below
+        // Dynamic Island / status bar on all devices.
         daysMapHeaderCard
             .ignoresSafeArea(.container, edges: .top)
             .accessibilityIdentifier("days.stickyHeader")
@@ -1104,7 +1118,8 @@ public struct AppContentSplitView: View {
         LHCollapsibleMapHeader(
             state: $daysMapHeaderState,
             language: preferences.appLanguage,
-            overlayControls: true
+            overlayControls: true,
+            safeAreaTopInset: daysSafeAreaTop
         ) {
             if #available(iOS 17.0, macOS 14.0, *) {
                 AppOverviewTracksMapView(
