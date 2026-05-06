@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## [2026-05-07] — Audit batch — Block 1-2: WidgetSharedKeys consolidation, onOpenURL in package target, ZIP-entry streaming, import-phase progress
+
+### Was sich geändert hat (7 Achsen, gruppiert nach Block)
+
+**Block 1 — Wiring / Config:**
+1. `Sources/LocationHistoryConsumerAppSupport/WidgetSharedKeys.swift` (NEU): public `enum WidgetSharedKeys` als Single-Source-of-Truth für App-Group-Suite-Name + UserDefaults-Key-Konstanten. Ersetzt String-Literale.
+2. `Sources/LocationHistoryConsumerAppSupport/WidgetDataStore.swift` und `wrapper/LH2GPXWidget/WidgetDataStore.swift` referenzieren jetzt `WidgetSharedKeys.*` statt String-Literale. Methoden-Surface inhaltlich identisch; Doku-Comment dokumentiert die Mirror-Pflicht zwischen beiden Dateien. Wichtig: `wrapper/LH2GPXWidget/WidgetDataStore.swift` hatte `saveDynamicIslandCompactDisplay` nicht — jetzt ergänzt (P1-3 Audit-Lücke geschlossen).
+3. `Sources/LocationHistoryConsumerApp/AppShellRootView.swift`: neuer `.onOpenURL { handleDeepLink($0) }`-Modifier + `handleDeepLink(_:)`. Spiegelt das Wrapper-Target-Verhalten — `lh2gpx://live` springt jetzt auch im Package-App-Target (Tests, Demo, `Package.swift`-Build) den Live-Tab an (P1-4 erledigt).
+4. Deployment-Target-Inkonsistenz dokumentiert: App 16.0 vs Widget 16.2 (Live Activities erfordern 16.2). Note in `wrapper/README.md`.
+
+**Block 2 — Streaming-Folge:**
+5. `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineStreamReader.swift`: neue public `IncrementalParser`-Klasse (stateful chunk-fed Parser).
+6. `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineConverter.swift`: neue API `incrementalStreamConverter()` + `IncrementalStreamConverter`-Wrapper.
+7. `Sources/LocationHistoryConsumerAppSupport/AppContentLoader.swift`:
+   - `loadZipContent` nutzt `streamGoogleTimelineCandidateIfApplicable` als Early-Path. Sniff der ersten 1 KB jedes JSON-Entries — bei genau einem Google-Timeline-Entry und keinem LH2GPX-Object-Entry läuft `Archive.extract { chunk in converter.feed(chunk) }` direkt durch den Streaming-Parser. **Peak RAM für ZIP-Google-Timeline jetzt ~ein Element (~few KB) statt der vollen entpackten Datei.** Audit P1-5 erledigt.
+   - `loadImportedContent` neuer `onPhase: ((ImportPhase) -> Void)?`-Parameter. Phasen `.reading` → `.parsing` → `.building` werden während des Imports gefeuert.
+   - Neuer public `enum ImportPhase { case reading, parsing, building }`.
+8. `Sources/LocationHistoryConsumerAppSupport/LoadingProgressEngine.swift`: `@Published var phase: ImportPhase?`. Neue Methode `setPhase(_:)`. `cancel()`/`complete()` setzen Phase auf nil.
+9. `wrapper/LH2GPXWrapper/ContentView.swift`:
+   - `loadImportedFile(at:)` reicht `onPhase`-Closure an `loadingProgress.setPhase(_:)` weiter (über MainActor-Hop).
+   - ProgressView zeigt `loadingPhaseLabel` mit lokalisierten Strings (`"Reading file…"`, `"Parsing entries…"`, `"Building model…"`, Fallback `"Opening location history..."`).
+
+**Tests neu:**
+- `Tests/LocationHistoryConsumerTests/GoogleTimelineStreamReaderTests.swift`: 2 neue Cases (`testIncrementalParserAcrossArbitraryChunkBoundaries`, `testIncrementalParserMatchesInMemoryPath`).
+- `Tests/LocationHistoryConsumerTests/GoogleTimelineStreamReaderPerformanceTests.swift` (NEU): 3 XCTest-`measure`-Cases (disk-streaming, in-memory, incremental small chunks). Nur Baseline-Logging, kein fail-on-regression bar.
+
+### Verifikation
+- `swift test`: **1017 Tests, 2 Skips, 0 Failures** (vorher 1012; 5 neue Cases).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+
+### Ehrlich offen
+- Mikro-Benchmarks sind Baseline-Logging, kein gemessener Speedup-Faktor — kein fail-on-regression bar.
+- ZIP-Streaming greift nur bei genau einem Google-Timeline-Entry und keinem LH2GPX-Object-Entry. Mehrfach-Timeline-/Mixed-ZIPs fallen auf den Legacy-Extract-and-Decode-Pfad zurück.
+- Hardware-Re-Verifikation iPhone 15 Pro Max steht weiterhin aus.
+- Auto-Restore-Pfad reicht den `onPhase`-Callback nicht durch (User wartet dort nicht aktiv) — bewusste Entscheidung.
+- Verbleibend offen aus dem Audit: 7× P1-Test-Lücken (P1-18..P1-24), ~19× P2.
+
 ## [2026-05-06] — Audit batch — Block 1-4: data-loss wiring + concurrency + edge-case crashes + perf hot-paths
 
 ### Was sich geändert hat (19 Achsen, gruppiert nach Block)

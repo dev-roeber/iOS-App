@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 2026-05-07 (Audit batch — Block 1-2: WidgetSharedKeys consolidation, onOpenURL in package target, ZIP-entry streaming, import-phase progress)
+
+### fix/feat: 7 Audit-Achsen über zwei Blöcke
+
+**Block 1 — Wiring / Config:**
+- `Sources/LocationHistoryConsumerAppSupport/WidgetSharedKeys.swift` (NEU): public `enum` als Single-Source-of-Truth für App-Group-Suite-Name und UserDefaults-Key-Konstanten — ersetzt String-Literale.
+- `Sources/LocationHistoryConsumerAppSupport/WidgetDataStore.swift` und `wrapper/LH2GPXWidget/WidgetDataStore.swift` referenzieren jetzt `WidgetSharedKeys.*`. Wrapper-Mirror um `saveDynamicIslandCompactDisplay` ergänzt — beide Mirrors decken jetzt dieselbe Methoden-Surface (P1-3 erledigt).
+- `Sources/LocationHistoryConsumerApp/AppShellRootView.swift`: `.onOpenURL { handleDeepLink($0) }` + `handleDeepLink(_:)`. `lh2gpx://live` springt jetzt auch im Package-App-Target den Live-Tab an (P1-4 erledigt).
+- Deployment-Target-Inkonsistenz dokumentiert: App 16.0 vs Widget 16.2 (Live Activities erfordern 16.2) — bewusste Entscheidung, in `wrapper/README.md` als Note verankert.
+
+**Block 2 — Streaming-Folge:**
+- `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineStreamReader.swift`: neue public `IncrementalParser` (stateful chunk-fed Parser).
+- `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineConverter.swift`: neue API `incrementalStreamConverter()` + `IncrementalStreamConverter`.
+- `Sources/LocationHistoryConsumerAppSupport/AppContentLoader.swift`: `loadZipContent` nutzt `streamGoogleTimelineCandidateIfApplicable` als Early-Path (Sniff der ersten 1 KB jedes JSON-Entries; greift bei genau einem Google-Timeline-Entry und keinem LH2GPX-Object-Entry) — Peak RAM für ZIP-Google-Timeline jetzt ~ein Element statt voller entpackter Datei (P1-5 erledigt). `loadImportedContent` mit `onPhase: ((ImportPhase) -> Void)?`. Neuer public `enum ImportPhase { reading, parsing, building }`.
+- `Sources/LocationHistoryConsumerAppSupport/LoadingProgressEngine.swift`: `@Published var phase: ImportPhase?`, `setPhase(_:)`; `cancel()`/`complete()` setzen Phase auf nil.
+- `wrapper/LH2GPXWrapper/ContentView.swift`: `loadImportedFile(at:)` reicht `onPhase`-Closure an `loadingProgress.setPhase(_:)`. ProgressView zeigt lokalisiertes `loadingPhaseLabel` ("Reading file…", "Parsing entries…", "Building model…", Fallback "Opening location history...").
+
+**Tests neu:**
+- `GoogleTimelineStreamReaderTests`: 2 neue Cases (`testIncrementalParserAcrossArbitraryChunkBoundaries`, `testIncrementalParserMatchesInMemoryPath`).
+- `GoogleTimelineStreamReaderPerformanceTests` (NEU): 3 XCTest-`measure`-Cases (disk-streaming, in-memory, incremental small chunks). Baseline-Logging, kein fail-on-regression bar.
+
+### Verifikation
+- `swift test`: **1017 Tests, 2 Skips, 0 Failures** (vorher 1012; 5 neue Cases).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+
+**Ehrlich offen:** Mikro-Benchmarks sind Baseline-Logging, kein gemessener Speedup-Faktor. ZIP-Streaming greift nur bei genau einem Google-Timeline-Entry und keinem LH2GPX-Object-Entry — Mixed-ZIPs fallen auf den Legacy-Pfad. Hardware-Re-Verifikation iPhone 15 Pro Max steht aus. Auto-Restore reicht den `onPhase`-Callback bewusst nicht durch. Verbleibend offen: 7× P1-Test-Lücken (P1-18..P1-24), ~19× P2.
+
 ## 2026-05-06 (Audit batch — Block 1-4: data-loss wiring + concurrency + edge-case crashes + perf hot-paths)
 
 ### fix/feat/perf: 19 Audit-Achsen über vier Blöcke

@@ -207,6 +207,49 @@ final class GoogleTimelineStreamReaderTests: XCTestCase {
         XCTAssertEqual(totalVisits, entryCount)
     }
 
+    /// IncrementalParser path: feed chunks across element boundaries and
+    /// confirm we still see every element exactly once. Mirrors the byte-level
+    /// scenario the ZIP-streaming path produces.
+    func testIncrementalParserAcrossArbitraryChunkBoundaries() throws {
+        let json = Data(#"""
+        [{"startTime":"2026-01-01T00:00:00Z","note":"} ] inside string"},{"startTime":"2026-01-02T00:00:00Z","timelinePath":[{"point":"geo:1,2"}]},{"startTime":"2026-01-03T00:00:00Z"}]
+        """#.utf8)
+
+        var collected: [[String: Any]] = []
+        let parser = GoogleTimelineStreamReader.IncrementalParser()
+        // 7-byte chunks force boundary splits inside strings, depths, escapes.
+        let chunkSize = 7
+        var offset = 0
+        while offset < json.count {
+            let end = min(offset + chunkSize, json.count)
+            try parser.feed(json.subdata(in: offset..<end)) { raw in
+                if let dict = raw as? [String: Any] { collected.append(dict) }
+            }
+            offset = end
+        }
+        try parser.finish()
+        XCTAssertEqual(collected.count, 3)
+        XCTAssertEqual(collected[0]["note"] as? String, "} ] inside string")
+    }
+
+    /// IncrementalParser equivalence to the in-memory `forEachObjectElement(in:)`.
+    func testIncrementalParserMatchesInMemoryPath() throws {
+        let url = try writeSyntheticTimelineFile(entryCount: 200)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let data = try Data(contentsOf: url)
+
+        var bulkCount = 0
+        try GoogleTimelineStreamReader.forEachObjectElement(in: data) { _ in bulkCount += 1 }
+
+        var streamCount = 0
+        let parser = GoogleTimelineStreamReader.IncrementalParser()
+        try parser.feed(data) { _ in streamCount += 1 }
+        try parser.finish()
+
+        XCTAssertEqual(bulkCount, streamCount)
+        XCTAssertEqual(bulkCount, 200)
+    }
+
     /// `convert(data:)` must remain functionally equivalent — both paths
     /// share the same per-entry ingest and finalisation helpers.
     func testConvertDataMatchesStreaming() throws {

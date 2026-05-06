@@ -4,6 +4,18 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Audit-Verifikation Block 1-2-Train (2026-05-07, Doku-Train, HEAD pending — Commit folgt)
+
+7 Audit-Achsen aus Block 1 (Wiring/Config) und Block 2 (Streaming-Folge) als erledigt verbucht; Details in `CHANGELOG.md` und `NEXT_STEPS.md`.
+
+- `swift test`: **1017 Tests, 2 Skips, 0 Failures** (+5 gegenüber 1012; 2 neue `IncrementalParser`-Cases in `GoogleTimelineStreamReaderTests` plus 3 `measure`-Cases in neuer `GoogleTimelineStreamReaderPerformanceTests`).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+- Inhalt:
+  - Block 1: `WidgetSharedKeys.swift` (NEU) als Single-Source-of-Truth für App-Group-Suite + UserDefaults-Keys; beide `WidgetDataStore.swift`-Mirrors konsumieren die Konstanten (Wrapper-Mirror ergänzt um `saveDynamicIslandCompactDisplay`); P1-3 erledigt. `AppShellRootView` bekommt `.onOpenURL { handleDeepLink($0) }` im Package-App-Target — P1-4 erledigt. Deployment-Target-Inkonsistenz (App 16.0 vs Widget 16.2) bewusst, in `wrapper/README.md` notiert.
+  - Block 2: ZIP-Entry-Streaming für Google Timeline (`AppContentLoader.streamGoogleTimelineCandidateIfApplicable`, Sniffer-basiert, greift bei genau einem Google-Timeline-Entry und keinem LH2GPX-Object-Entry); `GoogleTimelineStreamReader.IncrementalParser` + `GoogleTimelineConverter.incrementalStreamConverter()`. Import-Phasen-Progress (`enum ImportPhase { reading, parsing, building }`, `LoadingProgressEngine.phase`, lokalisierte Labels im Wrapper-`ContentView`). Mikro-Benchmark als XCTest-`measure`-Baseline (kein fail-on-regression bar).
+- Hardware-Re-Verifikation iPhone 15 Pro Max: weiterhin offen.
+- Verbleibend offen aus dem Audit: 7× P1 (P1-18..P1-24 Test-Lücken), ~19× P2.
+
 ### Audit-Verifikation Block 1-4 (2026-05-06, Doku-Train)
 
 19 Audit-Achsen über vier Blöcke (Datenverlust-Wiring, Concurrency, Edge-Case-Crashes, Performance-Hotspots) als erledigt verbucht; Details in `CHANGELOG.md` und `NEXT_STEPS.md`.

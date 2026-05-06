@@ -61,6 +61,21 @@ public enum AppContentLoaderError: LocalizedError {
     }
 }
 
+/// Coarse import-pipeline phases surfaced to UI via the optional
+/// `loadImportedContent(...,onPhase:)` callback. Granular enough to give
+/// users feedback ("we're reading the bytes" vs "we're building the model")
+/// without inviting per-element flicker. Each phase fires at most once per
+/// `loadImportedContent` call.
+public enum ImportPhase: String, Equatable, Sendable {
+    /// File is being opened, sized, and sniffed. Cheap.
+    case reading
+    /// JSON / GPX / TCX / ZIP entries are being decoded element-by-element.
+    /// Dominant phase for large Google Timeline imports.
+    case parsing
+    /// Per-day buckets are being collapsed into the final `AppExport` model.
+    case building
+}
+
 /// Decodes imported location-history files (JSON or ZIP) and fixtures into `AppSessionContent`.
 public enum AppContentLoader {
     /// Name of the bundled demo fixture used by default when no file is imported.
@@ -70,20 +85,27 @@ public enum AppContentLoader {
     /// - Parameter autoRestoreMode: When `true`, applies a stricter size cap
     ///   so a previously-imported large Google Timeline export does not
     ///   re-trigger an OOM shutdown on every app launch.
+    /// - Parameter onPhase: Optional callback fired on the loader's
+    ///   background queue when the pipeline transitions between coarse
+    ///   phases (`reading` → `parsing` → `building`). UI listeners must
+    ///   marshal back to the main actor themselves.
     public static func loadImportedContent(
         from url: URL,
-        autoRestoreMode: Bool = false
+        autoRestoreMode: Bool = false,
+        onPhase: (@Sendable (ImportPhase) -> Void)? = nil
     ) async throws -> AppSessionContent {
         return try await Task.detached(priority: .userInitiated) {
+            onPhase?(.reading)
             try assertAutoRestoreEligible(
                 url: url,
                 autoRestoreMode: autoRestoreMode
             )
             let ext = url.pathExtension.lowercased()
             if ext == "zip" {
-                return try loadZipContent(from: url)
+                return try loadZipContent(from: url, onPhase: onPhase)
             }
-            let export = try decodeFile(at: url, sourceName: url.lastPathComponent)
+            onPhase?(.parsing)
+            let export = try decodeFile(at: url, sourceName: url.lastPathComponent, onPhase: onPhase)
             return AppSessionContent(export: export, source: .importedFile(filename: url.lastPathComponent))
         }.value
     }
@@ -188,7 +210,7 @@ public enum AppContentLoader {
         return collected.isEmpty ? nil : collected
     }
 
-    private static func loadZipContent(from url: URL) throws -> AppSessionContent {
+    private static func loadZipContent(from url: URL, onPhase: (@Sendable (ImportPhase) -> Void)? = nil) throws -> AppSessionContent {
         let zipName = url.lastPathComponent
         let archive: Archive
         do {
@@ -199,6 +221,23 @@ public enum AppContentLoader {
 
         // Collect JSON candidates, excluding macOS resource forks, hidden files, and oversized entries.
         let candidates = archive.filter { isJsonCandidate($0) }
+
+        // Early Google-Timeline streaming path. We sniff the first 1 KB of
+        // each JSON candidate (without decompressing the rest) to look for a
+        // top-level array. If exactly one candidate is a raw Google Timeline
+        // and no candidate looks like an LH2GPX object, we stream-decompress
+        // that single entry through the incremental converter — peak RAM is
+        // then ~one element (~few KB) instead of the full uncompressed entry
+        // size sitting in `extracted` alongside the Foundation tree.
+        onPhase?(.parsing)
+        if let streamed = try streamGoogleTimelineCandidateIfApplicable(
+            candidates: candidates,
+            archive: archive,
+            zipName: zipName,
+            onPhase: onPhase
+        ) {
+            return streamed
+        }
 
         // Extract each JSON candidate once; reuse the Data for both LH2GPX and Google Timeline attempts.
         let extracted: [(entry: Entry, data: Data)] = candidates.compactMap { entry in
@@ -293,6 +332,66 @@ public enum AppContentLoader {
         throw AppContentLoaderError.jsonNotFoundInZip(zipName)
     }
 
+    /// Inspects each JSON candidate's first ~1 KB to classify it as Google
+    /// Timeline (`[`) or LH2GPX-shaped (`{`). If exactly one Timeline entry
+    /// is present and **no** entry looks like an LH2GPX object, the entry is
+    /// stream-decompressed straight through the per-element converter.
+    /// Returns the loaded `AppSessionContent`, or `nil` to signal that the
+    /// caller should continue with the existing extract-then-decode path.
+    private static func streamGoogleTimelineCandidateIfApplicable(
+        candidates: [Entry],
+        archive: Archive,
+        zipName: String,
+        onPhase: (@Sendable (ImportPhase) -> Void)? = nil
+    ) throws -> AppSessionContent? {
+        var timelineEntries: [Entry] = []
+        var sawObjectShapedEntry = false
+
+        for entry in candidates {
+            guard let head = sniffEntryHead(archive: archive, entry: entry) else { continue }
+            if GoogleTimelineConverter.isGoogleTimeline(head) {
+                timelineEntries.append(entry)
+            } else if GoogleTimelineConverter.isJSONObject(head) {
+                sawObjectShapedEntry = true
+            }
+        }
+
+        // Defer to the legacy extract-and-decode path if there is any object-
+        // shaped candidate (likely an LH2GPX export) or anything other than
+        // a single Timeline entry.
+        guard !sawObjectShapedEntry else { return nil }
+
+        let chosen: Entry
+        switch timelineEntries.count {
+        case 0:
+            return nil
+        case 1:
+            chosen = timelineEntries[0]
+        default:
+            // Multiple Timeline-shaped entries: prefer the canonical filename
+            // if exactly one matches; otherwise let the legacy path emit the
+            // proper "multiple exports" error.
+            guard let preferred = timelineEntries.first(where: {
+                ($0.path as NSString).lastPathComponent == "location-history.json"
+            }) else {
+                return nil
+            }
+            chosen = preferred
+        }
+
+        let converter = GoogleTimelineConverter.incrementalStreamConverter()
+        do {
+            _ = try archive.extract(chosen, bufferSize: 256 * 1024) { chunk in
+                try converter.feed(chunk)
+            }
+            onPhase?(.building)
+            let export = try converter.finalize()
+            return AppSessionContent(export: export, source: .importedFile(filename: zipName))
+        } catch {
+            throw AppContentLoaderError.decodeFailed(zipName)
+        }
+    }
+
     private static func isJsonCandidate(_ entry: Entry) -> Bool {
         guard entry.type == .file else { return false }
         guard entry.uncompressedSize <= maxSupportedFileSizeBytes else { return false }
@@ -331,7 +430,7 @@ public enum AppContentLoader {
         return AppSessionContent(export: export, source: source)
     }
 
-    private static func decodeFile(at url: URL, sourceName: String) throws -> AppExport {
+    private static func decodeFile(at url: URL, sourceName: String, onPhase: (@Sendable (ImportPhase) -> Void)? = nil) throws -> AppExport {
         // Size check before loading into memory
         if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
            let size = attributes[.size] as? Int64,
@@ -347,7 +446,9 @@ public enum AppContentLoader {
         if let head = peekFileHead(url: url, byteLimit: 1024) {
             if GoogleTimelineConverter.isGoogleTimeline(head) {
                 do {
-                    return try GoogleTimelineConverter.convertStreaming(contentsOf: url)
+                    let result = try GoogleTimelineConverter.convertStreaming(contentsOf: url)
+                    onPhase?(.building)
+                    return result
                 } catch {
                     throw AppContentLoaderError.unsupportedFormat(sourceName)
                 }

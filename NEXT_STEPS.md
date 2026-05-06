@@ -16,7 +16,7 @@ Acht P0-Findings aus `docs/DEEP_AUDIT_2026-05-06.md` sind jetzt umgesetzt:
 - P0-7 TCX-Export-Doku-Lüge in `README.md` (vorheriger Patch)
 - P0-8 ROADMAP-Test-Count-Widerspruch (964 vs 1006) per commit-verankerter Verifikations-Historie aufgelöst
 
-Verbleibend offen: ~7× P1 (P1-3 `WidgetDataStore`-Duplikat, P1-4 `onOpenURL` fehlt im Package-Target, P1-18..P1-24 Test-Lücken), ~19× P2. Hardware-Re-Verifikation auf iPhone 15 Pro Max und Mikro-Benchmark der Streaming-Pipeline stehen weiterhin aus.
+Verbleibend offen: ~7× P1 (P1-18..P1-24 Test-Lücken), ~19× P2. P1-3 (`WidgetDataStore`-Duplikat) und P1-4 (`onOpenURL` fehlt im Package-Target) im Doku-Train 2026-05-07 erledigt. ZIP-Entry-Streaming (Audit-Folge) erledigt 2026-05-07. Mikro-Benchmark als Baseline-Logging hinzugekommen (kein fail-on-regression bar). Hardware-Re-Verifikation auf iPhone 15 Pro Max steht weiterhin aus.
 
 ### Audit-Batch 2026-05-06 (Block 1-4) — 19 Achsen erledigt
 
@@ -49,7 +49,22 @@ Verbleibend offen: ~7× P1 (P1-3 `WidgetDataStore`-Duplikat, P1-4 `onOpenURL` fe
 - [x] Item 18: `AppExportQueries.weekdayForDate` mit statischem `utcGregorianCalendar`.
 - [x] Item 19: `AppDisplayHelpers.weekday(_:locale:)` / `monthYear(_:locale:)` nutzen `NSCache<NSString, DateFormatter>`.
 
-Nicht in diesem Train erledigt (weiterhin offen): P1-3 (`WidgetDataStore`-Duplikat), P1-4 (`onOpenURL` fehlt im Package-Target), P1-18..P1-24 (Test-Lücken), Hardware-Verifikation iPhone 15 Pro Max, ZIP-Entry-Streaming, Mikro-Benchmark, Live-Activity-Lock-Screen.
+Nicht in diesem Train erledigt (weiterhin offen): P1-18..P1-24 (Test-Lücken), Hardware-Verifikation iPhone 15 Pro Max, Live-Activity-Lock-Screen.
+
+### Audit-Batch 2026-05-07 (Block 1-2 Wiring + Streaming-Folge) — 7 Achsen erledigt
+
+7 Audit-Achsen in diesem Doku-Train als erledigt verbucht (`swift test` 1017/2/0; +5 neue Cases gegenüber 1012; `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED):
+
+**Block 1 — Wiring / Config:**
+- [x] `WidgetSharedKeys.swift` (NEU) als Single-Source-of-Truth für App-Group-Suite + UserDefaults-Keys; `Sources/.../WidgetDataStore.swift` und `wrapper/LH2GPXWidget/WidgetDataStore.swift` referenzieren die Konstanten; `saveDynamicIslandCompactDisplay` ist im Wrapper-Mirror ergänzt (P1-3 erledigt).
+- [x] `AppShellRootView.swift` mit `.onOpenURL { handleDeepLink($0) }` im Package-App-Target — `lh2gpx://live` springt jetzt auch dort den Live-Tab an (P1-4 erledigt).
+- [x] Deployment-Target-Inkonsistenz (App 16.0 vs Widget 16.2) als bewusste Entscheidung in `wrapper/README.md` notiert (Live Activities erfordern 16.2).
+
+**Block 2 — Streaming-Folge:**
+- [x] **ZIP-Entry-Streaming** für Google Timeline implementiert (`AppContentLoader.streamGoogleTimelineCandidateIfApplicable`): Sniffer-basiert, greift bei genau einem Google-Timeline-Entry und keinem LH2GPX-Object-Entry; Peak RAM auf ~ein Element statt voller entpackter Datei (P1-5 erledigt).
+- [x] `GoogleTimelineStreamReader.IncrementalParser` (stateful chunk-fed) plus `GoogleTimelineConverter.incrementalStreamConverter()`/`IncrementalStreamConverter`.
+- [x] **Import-Phasen-Progress**: `AppContentLoader.loadImportedContent` mit `onPhase: ((ImportPhase) -> Void)?` und `enum ImportPhase { reading, parsing, building }`; `LoadingProgressEngine.phase` + `setPhase(_:)`; `wrapper/.../ContentView.swift` zeigt lokalisiertes Phase-Label. Auto-Restore-Pfad reicht den Callback bewusst nicht durch.
+- [x] **Mikro-Benchmark**: `GoogleTimelineStreamReaderPerformanceTests` (3 `measure`-Cases) — Baseline-Logging, kein fail-on-regression bar, kein gemessener Speedup-Faktor.
 
 ## P0 — Release / Review / Hardware-Verifikation
 
@@ -83,10 +98,10 @@ Nicht in diesem Train erledigt (weiterhin offen): P1-3 (`WidgetDataStore`-Duplik
 - [ ] **Insights Triple-Range-Picker konsolidieren**: Hero-Strip + "Time Range"-Card + untere Pills steuern denselben Zeitraum — auf einen Picker reduzieren.
 - [ ] **Overview Doppel-Header**: Page-Header "Overview" + Card-Titel "Overview" (mit KPI) — Card umbenennen ("Statistics") oder zusammenführen.
 - [ ] **Map-Pill-Overlap**: "200 routes"/"11 routes"-Pill überlappt mit Snapshot-Banner und ersten Range-Chips — Z-Order/Inset überarbeiten.
-- [ ] **Import-Phasen-Progress**: aktuell nur ein generischer Spinner; ContentLoader-API um Phase-Callbacks erweitern (Reading/Parsing/Building).
+- [x] **Import-Phasen-Progress** (2026-05-07): `AppContentLoader.loadImportedContent` hat `onPhase: ((ImportPhase) -> Void)?`-Parameter; `enum ImportPhase { reading, parsing, building }`; `LoadingProgressEngine.phase` + `setPhase(_:)`; Wrapper-`ContentView` zeigt lokalisiertes Phase-Label. Auto-Restore reicht den Callback bewusst nicht durch.
 - [x] **Memory-Safety: Auto-Restore-Schutz gegen Jetsam-Kill** (2026-05-06): kombinierter Schutz im Auto-Restore-Pfad (`AppContentLoader.assertAutoRestoreEligible`) — (a) Sniffer-Skip für rohe Google-Timeline-Dateien (`firstStructuralByte == '['`) **unabhängig von der Größe**, gilt für direkte JSONs und ZIP-Einträge (Head-Sniff via begrenztem ZIP-extract-Abbruch); (b) zusätzlicher 50-MB-Cap (`autoRestoreMaxFileSizeBytes`) für sonstige große Dateien. Neuer Error `autoRestoreSkippedLargeFile`, userFacingTitle "Import not auto-restored". Manueller Import bleibt vom Sniffer-Skip unberührt (256-MB-Cap). Sniffer-basierte Format-Detection ersetzt 3× `JSONSerialization` durch 1-KB-Byte-Check (`isGoogleTimeline` + `isJSONObject`). Query-Fast-Path in `AppExportQueries.projectedDays` für `isPassthrough`-Filter. OverviewMap-Kandidaten-Storage auf 512 Punkte stride-decimiert. 18 Tests in `LargeImportMemorySafetyTests`. `swift test`: 991/2/0.
 - [ ] **46-MB-Crashfall — Hardware-Re-Verifikation**: durch Sniffer-Skip im Auto-Restore-Pfad guarded (rohe Google-Timeline wird unabhängig von der Größe nicht mehr auto-restored, deckt 46 < 50 MB-Lücke). Hardware-Re-Verifikation auf iPhone 15 Pro Max mit echter 46-MB-`location-history.zip` steht aus (kein Simulator hat den Fall realistisch nachgestellt).
-- [~] **Streaming-/Chunked-Google-Timeline-Parser**: implementiert für direkte JSON-Imports (2026-05-06) — `GoogleTimelineStreamReader` (FileHandle, jetzt 256-KB-Chunks, UnsafeBytes-Tokenizer mit `@inline(__always)`-Hot-Path und Hex-Literalen, 8-MB-Element-Cap) plus `GoogleTimelineConverter.convertStreaming(contentsOf:)`; `AppContentLoader.decodeFile` sniffed `[` und geht direkt in den URL-Pfad ohne `Data(contentsOf:)`. **Direct-Model-Build umgesetzt (2026-05-06):** `GoogleTimelineConverter` baut `AppExport`/`Day`/`Visit`/`Activity`/`Path` jetzt direkt über public memberwise-Initializer; der frühere `[String: Any]`-Tree + `JSONSerialization`-Encode + Re-Decode auf der Output-Seite entfällt. Per-Element-`onElement` läuft in `autoreleasepool`, damit Foundation-Zwischenobjekte nicht akkumulieren. **Offen:** Mikro-Benchmark (kein gemessener Speedup-Faktor — bislang nur erwartete Größenordnungen) und Hardware-Re-Verifikation auf iPhone 15 Pro Max mit echter 46-MB-Datei. ZIP-Entry-Streaming bleibt aus (ZIPFoundation extrahiert weiterhin in `Data`). Auto-Restore lehnt rohe Google-Timeline-Dateien weiterhin ab.
+- [~] **Streaming-/Chunked-Google-Timeline-Parser**: implementiert für direkte JSON-Imports (2026-05-06) — `GoogleTimelineStreamReader` (FileHandle, jetzt 256-KB-Chunks, UnsafeBytes-Tokenizer mit `@inline(__always)`-Hot-Path und Hex-Literalen, 8-MB-Element-Cap) plus `GoogleTimelineConverter.convertStreaming(contentsOf:)`; `AppContentLoader.decodeFile` sniffed `[` und geht direkt in den URL-Pfad ohne `Data(contentsOf:)`. **Direct-Model-Build umgesetzt (2026-05-06):** `GoogleTimelineConverter` baut `AppExport`/`Day`/`Visit`/`Activity`/`Path` jetzt direkt über public memberwise-Initializer; der frühere `[String: Any]`-Tree + `JSONSerialization`-Encode + Re-Decode auf der Output-Seite entfällt. Per-Element-`onElement` läuft in `autoreleasepool`, damit Foundation-Zwischenobjekte nicht akkumulieren. **Offen:** Mikro-Benchmark (kein gemessener Speedup-Faktor — bislang nur erwartete Größenordnungen) und Hardware-Re-Verifikation auf iPhone 15 Pro Max mit echter 46-MB-Datei. ZIP-Entry-Streaming wurde am 2026-05-07 ergänzt (Sniffer-basiert; greift bei genau einem Google-Timeline-Entry, kein Mixed-ZIP — Peak RAM auf ~ein Element). Mikro-Benchmark als `XCTest`-`measure`-Baseline ergänzt (kein fail-on-regression bar; weiterhin kein gemessener Speedup-Faktor). Auto-Restore lehnt rohe Google-Timeline-Dateien weiterhin ab.
 - [ ] **Form-vs-LHCard-Konsistenz Settings**: General/Maps/Import nutzen native `Form`, andere Sub-Views nutzen Custom-`LHCard` — vereinheitlichen.
 - [x] **Startseite**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_01_import erzeugt (2026-05-05)
 - [x] **Übersicht**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_02_overview erzeugt (2026-05-05)

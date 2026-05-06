@@ -70,6 +70,35 @@ enum GoogleTimelineConverter {
         return try builder.finalize()
     }
 
+    /// Returns a stateful streaming context for chunk-by-chunk callers — used
+    /// in particular by the ZIP path so a Google Timeline entry inside a ZIP
+    /// no longer needs to be extracted to a full in-memory `Data` before
+    /// parsing. Caller `feed`s chunks (e.g. from `Archive.extract`) and
+    /// terminates with `finalize()` to obtain the resulting `AppExport`.
+    static func incrementalStreamConverter() -> IncrementalStreamConverter {
+        IncrementalStreamConverter()
+    }
+
+    /// Builder-shaped wrapper around `GoogleTimelineStreamReader.IncrementalParser`
+    /// plus the per-entry `ExportBuilder`. Designed to be fed via
+    /// ZIPFoundation's `Archive.extract { chunk in … }` callback.
+    final class IncrementalStreamConverter {
+        private let parser = GoogleTimelineStreamReader.IncrementalParser()
+        private var builder = ExportBuilder()
+
+        func feed(_ chunk: Data) throws {
+            try parser.feed(chunk) { raw in
+                guard let entry = raw as? [String: Any] else { return }
+                builder.ingest(entry)
+            }
+        }
+
+        func finalize() throws -> AppExport {
+            try parser.finish()
+            return try builder.finalize()
+        }
+    }
+
     enum ConversionError: Error {
         case notGoogleTimeline
     }

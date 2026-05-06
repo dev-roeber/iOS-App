@@ -26,6 +26,19 @@ struct ContentView: View {
         preferences.localized(english)
     }
 
+    /// User-facing import phase string. Falls back to the legacy "Opening …"
+    /// label when no phase is reported yet (very fast imports, fixture loads).
+    private var loadingPhaseLabel: String {
+        guard let phase = loadingProgress.phase else {
+            return t("Opening location history...")
+        }
+        switch phase {
+        case .reading:  return t("Reading file…")
+        case .parsing:  return t("Parsing entries…")
+        case .building: return t("Building model…")
+        }
+    }
+
     var body: some View {
         Group {
             if session.content != nil {
@@ -45,7 +58,7 @@ struct ContentView: View {
                         .ignoresSafeArea()
                         Group {
                             if session.isLoading {
-                                ProgressView(t("Opening location history..."))
+                                ProgressView(loadingPhaseLabel)
                                     .tint(.white)
                                     .foregroundStyle(.white)
                             } else {
@@ -349,7 +362,12 @@ struct ContentView: View {
                 }
             }
             do {
-                let content = try await AppContentLoader.loadImportedContent(from: url)
+                let content = try await AppContentLoader.loadImportedContent(
+                    from: url,
+                    onPhase: { phase in
+                        Task { @MainActor in loadingProgress.setPhase(phase) }
+                    }
+                )
                 ImportBookmarkStore.save(url: url)
                 _ = RecentFilesStore.add(url: url)
                 session.show(content: content)

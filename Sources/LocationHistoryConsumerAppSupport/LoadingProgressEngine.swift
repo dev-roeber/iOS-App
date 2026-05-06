@@ -21,6 +21,12 @@ import Combine
 @MainActor
 public final class LoadingProgressEngine: ObservableObject {
     @Published public private(set) var progress: Double = 0.0
+    /// Coarse pipeline phase reported by `AppContentLoader.loadImportedContent`
+    /// via its `onPhase` callback. `nil` until the first phase fires; resets
+    /// to `nil` on `cancel()` and `complete()`. UI surfaces this as a label
+    /// next to the spinner so users see "Reading…" → "Parsing…" → "Building…"
+    /// instead of a generic spinner during multi-second large imports.
+    @Published public private(set) var phase: ImportPhase?
 
     private var timer: Timer?
     /// Maximum value the timer-driven phase will approach. `complete()` is the
@@ -54,11 +60,18 @@ public final class LoadingProgressEngine: ObservableObject {
         timer = t
     }
 
+    /// Records the current pipeline phase. Idempotent for the same value.
+    public func setPhase(_ next: ImportPhase) {
+        guard phase != next else { return }
+        phase = next
+    }
+
     /// Snap to `1.0` and stop the timer. Safe to call multiple times.
     public func complete() {
         timer?.invalidate()
         timer = nil
         progress = 1.0
+        phase = nil
     }
 
     /// Stop the timer and zero the value. Use for error / cancellation paths.
@@ -66,6 +79,7 @@ public final class LoadingProgressEngine: ObservableObject {
         timer?.invalidate()
         timer = nil
         progress = 0.0
+        phase = nil
     }
 
     public func reset() { cancel() }

@@ -91,7 +91,22 @@ struct AppShellRootView: View {
         .task {
             await attemptAutoRestoreIfNeeded()
         }
+        .onOpenURL { url in
+            // Mirrors the wrapper-target ContentView handler so the package
+            // app target (used in tests, demo, and the Package.swift build)
+            // also routes lh2gpx://live deep links into the Live tab. Was
+            // a wiring P1: without this, only the LH2GPXWrapper Xcode build
+            // recognised widget deeplinks.
+            handleDeepLink(url)
+        }
     }
+    }
+
+    private func handleDeepLink(_ url: URL) {
+        guard url.scheme == "lh2gpx" else { return }
+        if url.host == "live" {
+            liveLocation.navigateToLiveTabRequested = true
+        }
     }
 
     @ViewBuilder

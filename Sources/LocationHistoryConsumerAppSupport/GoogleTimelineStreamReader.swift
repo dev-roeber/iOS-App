@@ -92,6 +92,38 @@ public enum GoogleTimelineStreamReader {
         try parser.feed(data, onElement: onElement)
         try parser.finish()
     }
+
+    /// Stateful incremental parser for callers that produce data in arbitrary
+    /// chunks — for example, ZIPFoundation's `Archive.extract(_:bufferSize:)`
+    /// callback delivering decompressed bytes one buffer at a time.
+    /// Audit P1-5 / Block 2: previously the only way to consume a Google
+    /// Timeline JSON inside a ZIP was to extract the entry to a full `Data`
+    /// first, doubling peak RAM. With this incremental parser, callers can
+    /// pump chunks straight from the ZIP into the per-element pipeline so
+    /// peak memory matches the file-on-disk path.
+    public final class IncrementalParser {
+        private var parser: TopLevelArrayParser
+        private var finished = false
+
+        public init(limits: Limits = Limits()) {
+            self.parser = TopLevelArrayParser(maxElementBytes: limits.maxElementBytes)
+        }
+
+        /// Feeds the next chunk of input. Throws on the first malformed byte
+        /// or when an element exceeds `Limits.maxElementBytes`. `onElement`
+        /// is invoked once per top-level object as it is closed.
+        public func feed(_ chunk: Data, onElement: (Any) throws -> Void) throws {
+            try parser.feed(chunk, onElement: onElement)
+        }
+
+        /// Asserts that the closing `]` has been seen. Call exactly once
+        /// after the last `feed`. Throws if input was truncated mid-element.
+        public func finish() throws {
+            guard !finished else { return }
+            try parser.finish()
+            finished = true
+        }
+    }
 }
 
 // MARK: - State machine
