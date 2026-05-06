@@ -32,6 +32,18 @@ struct AppInsightsContentView: View {
     let allDaySummaries: [DaySummary]
     let activeFilterDescriptions: [String]
     let onDrilldown: ((InsightsDrilldownAction) -> Void)?
+    /// Optional session content used to render the cross-app Hero-Map at the top
+    /// of the Insights screen on iPhone (compact). Pass `session.content` from the
+    /// router; nil falls back to a no-hero layout (used in tests / unit previews).
+    let heroContent: AppSessionContent?
+    /// Optional projected query filter combined into the Hero-Map. Use the same
+    /// projected filter that produces `daySummaries` so the map shows exactly
+    /// the routes the rest of the screen analyses.
+    let heroQueryFilter: AppExportQueryFilter?
+    /// Compact width-class flag. When `true`, the Hero-Map workspace (map +
+    /// filter strip) is pinned via `safeAreaInset(.top)` matching the Days /
+    /// Overview / Live treatment. iPad / regular layouts keep the legacy stack.
+    let heroEnabled: Bool
     @Binding private var rangeFilter: HistoryDateRangeFilter
 
     @State private var activityMetric: ActivityMetric = .count
@@ -45,6 +57,12 @@ struct AppInsightsContentView: View {
     @State private var shareSheetPayload: InsightsRenderedSharePayload?
     @State private var shareError: String?
     @State private var derivedModel: InsightsDerivedModel?
+    @State private var insightsMapHeaderState = LHMapHeaderState(
+        visibility: .compact,
+        compactHeight: LHHeroMapLayout.compactHeight,
+        expandedHeight: LHHeroMapLayout.expandedHeight,
+        isSticky: true
+    )
 
     init(
         insights: ExportInsights,
@@ -52,13 +70,19 @@ struct AppInsightsContentView: View {
         allDaySummaries: [DaySummary] = [],
         rangeFilter: Binding<HistoryDateRangeFilter> = .constant(.default),
         activeFilterDescriptions: [String]? = nil,
-        onDrilldown: ((InsightsDrilldownAction) -> Void)? = nil
+        onDrilldown: ((InsightsDrilldownAction) -> Void)? = nil,
+        heroContent: AppSessionContent? = nil,
+        heroQueryFilter: AppExportQueryFilter? = nil,
+        heroEnabled: Bool = false
     ) {
         self.insights = insights
         self.daySummaries = daySummaries
         self.allDaySummaries = allDaySummaries
         self.activeFilterDescriptions = activeFilterDescriptions ?? insights.activeFilterDescriptions
         self.onDrilldown = onDrilldown
+        self.heroContent = heroContent
+        self.heroQueryFilter = heroQueryFilter
+        self.heroEnabled = heroEnabled
         self._rangeFilter = rangeFilter
     }
 
@@ -148,9 +172,218 @@ struct AppInsightsContentView: View {
     var body: some View {
         if daySummaries.isEmpty {
             insightsFullEmptyState
+        } else if heroEnabled {
+            heroLoadedBody
         } else {
             loadedBody
         }
+    }
+
+    /// Compact-width body wrapped in the cross-app Hero-Map workspace.
+    /// Map is pinned to the top via `safeAreaInset(.top)`; the inner ScrollView
+    /// of `loadedBody` is replaced by an outer ScrollView that owns the
+    /// `ignoresSafeArea(.top)` layout so the map fills the status-bar region
+    /// edge-to-edge — identical to the Overview / Days / Live treatment.
+    @ViewBuilder
+    private var heroLoadedBody: some View {
+        ScrollView {
+            insightsBodyContent(isLandscape: false)
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.black)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            VStack(spacing: 0) {
+                insightsHeroMap
+                insightsHeroFilterPanel
+            }
+            .background(Color.black)
+        }
+        .ignoresSafeArea(edges: .top)
+        .onAppear { refreshDerivedModel() }
+        .onChange(of: insights) { _ in refreshDerivedModel() }
+        .onChange(of: daySummaries) { _ in refreshDerivedModel() }
+        .onChange(of: rangeFilter) { _ in refreshDerivedModel() }
+        .onChange(of: preferences.distanceUnit) { _ in refreshDerivedModel() }
+        .onChange(of: preferences.appLanguage) { _ in refreshDerivedModel() }
+        .confirmationDialog(
+            pendingDrilldownTitle,
+            isPresented: Binding(
+                get: { !pendingDrilldownTargets.isEmpty },
+                set: { if !$0 { pendingDrilldownTargets = [] } }
+            ),
+            titleVisibility: .visible
+        ) {
+            ForEach(pendingDrilldownTargets) { target in
+                Button(t(target.label)) {
+                    pendingDrilldownTargets = []
+                    onDrilldown?(target.action)
+                }
+            }
+            Button(t("Cancel"), role: .cancel) {
+                pendingDrilldownTargets = []
+            }
+        } message: {
+            Text(t("Choose where to continue with this insight."))
+        }
+        .sheet(item: $shareSheetPayload) { payload in
+            NavigationStack {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(payload.title)
+                        .font(.headline)
+                    Text(payload.filename)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    ShareLink(item: payload.url) {
+                        Label(t("Share Chart"), systemImage: "square.and.arrow.up")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .accessibilityIdentifier("insights.share.chart")
+                    .buttonStyle(.borderedProminent)
+                    Spacer()
+                }
+                .padding()
+                .navigationTitle(t("Share"))
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(t("Done")) {
+                            shareSheetPayload = nil
+                        }
+                    }
+                }
+            }
+        }
+        .alert(
+            t("Share Failed"),
+            isPresented: Binding(
+                get: { shareError != nil },
+                set: { if !$0 { shareError = nil } }
+            )
+        ) {
+            Button(t("OK"), role: .cancel) {
+                shareError = nil
+            }
+        } message: {
+            Text(shareError ?? "")
+        }
+    }
+
+    /// Edge-to-edge tracks Hero-Map. Reuses `AppOverviewTracksMapView` so the
+    /// route rendering and viewport-aware overlay simplification stay identical
+    /// to Overview / Days. Map controls go vertical and land BELOW the
+    /// LHCollapsibleMapHeader chevron via the shared layout offset.
+    @ViewBuilder
+    private var insightsHeroMap: some View {
+        LHCollapsibleMapHeader(
+            state: $insightsMapHeaderState,
+            language: preferences.appLanguage,
+            overlayControls: true,
+            safeAreaTopInset: lhDeviceTopSafeInset()
+        ) {
+            if #available(iOS 17.0, macOS 14.0, *) {
+                AppOverviewTracksMapView(
+                    daySummaries: daySummaries,
+                    content: heroContent,
+                    queryFilter: heroQueryFilter,
+                    fixedHeight: nil,
+                    showsFullscreenControl: false,
+                    mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset,
+                    verticalMapControls: true
+                )
+            }
+        }
+        .accessibilityIdentifier("insights.map.header")
+    }
+
+    /// Compact filter strip pinned directly under the Hero-Map. Mirrors the
+    /// Overview hero filter so the user can re-scope the active range without
+    /// scrolling down to `AppHistoryDateRangeControl`.
+    @ViewBuilder
+    private var insightsHeroFilterPanel: some View {
+        VStack(spacing: 6) {
+            Text(t("Insights"))
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityAddTraits(.isHeader)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    insightsHeroRangeChip(.last7Days, identifier: "insights.hero.range.last7Days")
+                    insightsHeroRangeChip(.last30Days, identifier: "insights.hero.range.last30Days")
+                    insightsHeroRangeChip(.last90Days, identifier: "insights.hero.range.last90Days")
+                    insightsHeroRangeChip(.thisYear, identifier: "insights.hero.range.thisYear")
+                    if rangeFilter.isActive {
+                        Button(t("Reset")) {
+                            rangeFilter = HistoryDateRangeFilter.default
+                        }
+                        .buttonStyle(.plain)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(LH2GPXTheme.primaryBlue)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(LH2GPXTheme.elevatedCard)
+                        .clipShape(Capsule())
+                        .accessibilityIdentifier("insights.hero.range.reset")
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
+    }
+
+    private func insightsHeroRangeChip(
+        _ preset: HistoryDateRangePreset,
+        identifier: String
+    ) -> some View {
+        LHFilterChip(
+            title: t(preset.title),
+            systemImage: "calendar",
+            isActive: rangeFilter.preset == preset
+        ) {
+            rangeFilter = HistoryDateRangeFilter(preset: preset)
+        }
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// Common scroll-content body shared by both `loadedBody` and `heroLoadedBody`.
+    /// Excludes the outer ScrollView so the caller can either provide its own
+    /// (Hero pattern) or the legacy GeometryReader-driven layout.
+    @ViewBuilder
+    private func insightsBodyContent(isLandscape: Bool) -> some View {
+        let twoColumnGrid: [GridItem] = [GridItem(.flexible()), GridItem(.flexible())]
+        let oneColumnGrid: [GridItem] = [GridItem(.flexible())]
+        VStack(alignment: .leading, spacing: 22) {
+            headerSection
+            AppHistoryDateRangeControl(filter: $rangeFilter)
+                .accessibilityIdentifier("insights.range")
+            if !hasAnyMeaningfulInsightSection {
+                insightsEmptyCard(
+                    title: t("Limited Insight Data"),
+                    message: t("The import loaded correctly, but it does not contain enough structured data for the current insight views yet."),
+                    systemImage: "chart.bar.xaxis"
+                )
+            }
+            Picker("", selection: $surfaceMode) {
+                ForEach(InsightsSurfaceMode.allCases, id: \.self) { mode in
+                    Text(t(mode.rawValue)).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("insights.surface.picker")
+            if isLandscape {
+                LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 16) {
+                    insightsModeContent
+                }
+            } else {
+                LazyVGrid(columns: oneColumnGrid, spacing: 16) {
+                    insightsModeContent
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 20)
     }
 
     @ViewBuilder
@@ -261,39 +494,8 @@ struct AppInsightsContentView: View {
 
     @ViewBuilder
     private func insightsScrollContent(isLandscape: Bool) -> some View {
-        let twoColumnGrid: [GridItem] = [GridItem(.flexible()), GridItem(.flexible())]
-        let oneColumnGrid: [GridItem] = [GridItem(.flexible())]
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                headerSection
-                AppHistoryDateRangeControl(filter: $rangeFilter)
-                .accessibilityIdentifier("insights.range")
-                if !hasAnyMeaningfulInsightSection {
-                    insightsEmptyCard(
-                        title: t("Limited Insight Data"),
-                        message: t("The import loaded correctly, but it does not contain enough structured data for the current insight views yet."),
-                        systemImage: "chart.bar.xaxis"
-                    )
-                }
-                Picker("", selection: $surfaceMode) {
-                    ForEach(InsightsSurfaceMode.allCases, id: \.self) { mode in
-                        Text(t(mode.rawValue)).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("insights.surface.picker")
-                if isLandscape {
-                    LazyVGrid(columns: twoColumnGrid, alignment: .leading, spacing: 16) {
-                        insightsModeContent
-                    }
-                } else {
-                    LazyVGrid(columns: oneColumnGrid, spacing: 16) {
-                        insightsModeContent
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 20)
+            insightsBodyContent(isLandscape: isLandscape)
         }
     }
 

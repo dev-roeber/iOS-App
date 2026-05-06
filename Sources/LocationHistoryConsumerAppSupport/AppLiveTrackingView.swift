@@ -24,6 +24,12 @@ public struct AppLiveTrackingView: View {
     @State private var polylineCoordinates: [CLLocationCoordinate2D] = []
     @State private var isFullscreenMapPresented = false
     @State private var isDiagnosticsExpanded = false
+    @State private var liveMapHeaderState = LHMapHeaderState(
+        visibility: .compact,
+        compactHeight: LHHeroMapLayout.compactHeight,
+        expandedHeight: LHHeroMapLayout.expandedHeight,
+        isSticky: true
+    )
 
     private let onOpenSavedTracksLibrary: (() -> Void)?
 
@@ -105,7 +111,6 @@ public struct AppLiveTrackingView: View {
                     interruptedSessionBanner
                 }
                 heroStatusCard
-                mapCard
                 diagnosticsSection
                 if shouldShowUploadSection {
                     uploadSection
@@ -114,6 +119,140 @@ public struct AppLiveTrackingView: View {
                 advancedSection
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.black)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            VStack(spacing: 0) {
+                liveHeroMap
+                liveHeroFilterPanel
+            }
+            .background(Color.black)
+        }
+        .ignoresSafeArea(edges: .top)
+    }
+
+    // MARK: - Hero Map (portrait)
+
+    private var liveHeroMap: some View {
+        LHCollapsibleMapHeader(
+            state: $liveMapHeaderState,
+            language: preferences.appLanguage,
+            overlayControls: true,
+            safeAreaTopInset: lhDeviceTopSafeInset()
+        ) {
+            if liveLocation.canDisplayLiveLocation, liveLocation.currentLocation != nil {
+                Map(position: $mapPosition) {
+                    if let currentLocation = liveLocation.currentLocation {
+                        Annotation(t("Current Location"), coordinate: CLLocationCoordinate2D(
+                            latitude: currentLocation.latitude,
+                            longitude: currentLocation.longitude
+                        )) {
+                            ZStack {
+                                Circle()
+                                    .fill(locationDotColor.opacity(0.18))
+                                    .frame(width: 42, height: 42)
+                                Circle()
+                                    .fill(locationDotColor)
+                                    .frame(width: 15, height: 15)
+                                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                            }
+                        }
+                    }
+                    if liveLocation.liveTrackShouldRender {
+                        MapPolyline(coordinates: polylineCoordinates)
+                            .stroke(LH2GPXTheme.liveMint,
+                                    style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
+                    }
+                }
+                .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onMapCameraChange { _ in
+                    liveLocation.isFollowingLocation = false
+                }
+                .overlay(alignment: .topTrailing) {
+                    VStack(spacing: 8) {
+                        Button(action: { isFullscreenMapPresented = true }) {
+                            Label(t("Fullscreen"), systemImage: "arrow.up.left.and.arrow.down.right")
+                                .labelStyle(.iconOnly)
+                                .font(.subheadline)
+                                .padding(10)
+                                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .accessibilityLabel(t("Open fullscreen map"))
+                        Button(action: {
+                            liveLocation.isFollowingLocation.toggle()
+                            if liveLocation.isFollowingLocation {
+                                centerOnCurrentLocation()
+                            }
+                        }) {
+                            Label(
+                                liveLocation.isFollowingLocation ? t("Follow On") : t("Follow Off"),
+                                systemImage: liveLocation.isFollowingLocation ? "location.fill" : "location"
+                            )
+                            .labelStyle(.iconOnly)
+                            .font(.subheadline)
+                            .padding(10)
+                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .foregroundStyle(liveLocation.isFollowingLocation ? .blue : .secondary)
+                        }
+                        .accessibilityLabel(
+                            liveLocation.isFollowingLocation
+                                ? t("Disable follow mode")
+                                : t("Enable follow mode")
+                        )
+                    }
+                    .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)
+                    .padding(.trailing, 8)
+                    .padding(.leading, 8)
+                    .padding(.bottom, 8)
+                }
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "location.slash")
+                        .font(.system(size: 38))
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                    Text(t("Location not available"))
+                        .font(.headline)
+                    Text(t("Start recording to request location access and see your position here."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.secondary.opacity(0.06))
+            }
+        }
+        .accessibilityIdentifier("live.map.preview")
+    }
+
+    private var liveHeroFilterPanel: some View {
+        VStack(spacing: 6) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(t("Live Map"))
+                        .font(.title3.weight(.semibold))
+                    Text(mapSubtitleText)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if let lastSampleDate = metricSnapshot.lastSampleDate {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(t("Last Fix"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text(AppDateDisplay.abbreviatedDateTime(lastSampleDate))
+                            .font(.caption.monospacedDigit())
+                    }
+                }
+            }
+            statusChipsRow
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
     }
 
     private var landscapeLayout: some View {

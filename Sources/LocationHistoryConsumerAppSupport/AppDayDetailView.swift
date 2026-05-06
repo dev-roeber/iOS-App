@@ -23,6 +23,12 @@ public struct AppDayDetailView: View {
     let onRemovePath: ((Int) -> Void)?
     @State private var confirmRemovePathIndex: Int? = nil
     @State private var selectedSegment: DayDetailSegment = .overview
+    @State private var dayMapHeaderState = LHMapHeaderState(
+        visibility: .compact,
+        compactHeight: LHHeroMapLayout.compactHeight,
+        expandedHeight: LHHeroMapLayout.expandedHeight,
+        isSticky: true
+    )
 
     public init(
         detail: DayDetailViewState?,
@@ -128,12 +134,25 @@ public struct AppDayDetailView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            // Portrait
+            // Portrait — Hero-Map pattern: sticky collapsible map header + filter panel
+            // pinned to the top via .safeAreaInset, content scrolls beneath.
             ScrollView {
                 portraitContentView(detail: filteredDetail, resolvedMapData: resolvedMapData)
                     .padding(.horizontal)
                     .padding(.vertical, 16)
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.black)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    if #available(iOS 17.0, macOS 14.0, *) {
+                        dayHeroMap(resolvedMapData: resolvedMapData)
+                    }
+                    dayHeroFilterPanel(detail: filteredDetail)
+                }
+                .background(Color.black)
+            }
+            .ignoresSafeArea(edges: .top)
         }
     }
 
@@ -190,28 +209,9 @@ public struct AppDayDetailView: View {
 
     @ViewBuilder
     private func portraitContentView(detail: DayDetailViewState, resolvedMapData: DayMapData) -> some View {
+        // Map and date/time-range header now live in the sticky hero header / filter
+        // panel above this scroll content. Empty-state branches still bypass this view.
         VStack(alignment: .leading, spacing: 24) {
-            #if canImport(MapKit)
-            if #available(iOS 17.0, macOS 14.0, *) {
-                mapControlRow(detail: detail, resolvedMapData: resolvedMapData)
-            } else {
-                Label(t("Map view requires iOS 17 or later."), systemImage: "map")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            #endif
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(AppDateDisplay.weekday(detail.date))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(AppDateDisplay.longDate(detail.date))
-                    .font(.title2.weight(.semibold))
-                    .accessibilityIdentifier("dayDetail.title")
-                dayTimeRange(detail)
-            }
-
             metricGrid(detail)
             dayActionsSection(detail)
             segmentControl(detail)
@@ -231,6 +231,56 @@ public struct AppDayDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Hero map header for the portrait day-detail view. Mirrors the days-list pattern
+    /// in `AppContentSplitView.daysMapHeaderCard`.
+    @available(iOS 17.0, macOS 14.0, *)
+    @ViewBuilder
+    private func dayHeroMap(resolvedMapData: DayMapData) -> some View {
+        LHCollapsibleMapHeader(
+            state: $dayMapHeaderState,
+            language: preferences.appLanguage,
+            overlayControls: true,
+            safeAreaTopInset: lhDeviceTopSafeInset()
+        ) {
+            AppDayMapView(
+                mapData: resolvedMapData,
+                fillHeight: true,
+                showStyleToggle: true,
+                mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset,
+                verticalMapControls: true
+            )
+            .accessibilityIdentifier("dayDetail.map")
+        }
+        .accessibilityIdentifier("dayDetail.stickyHeader")
+    }
+
+    /// Filter panel pinned beneath the hero map header. Surfaces the date / weekday /
+    /// time-range block plus the route-display segmented picker (if paths exist).
+    @ViewBuilder
+    private func dayHeroFilterPanel(detail: DayDetailViewState) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(AppDateDisplay.weekday(detail.date))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text(AppDateDisplay.longDate(detail.date))
+                .font(.title3.weight(.semibold))
+                .accessibilityIdentifier("dayDetail.title")
+            dayTimeRange(detail)
+            if !detail.paths.isEmpty {
+                Picker(t("Route Display"), selection: $preferences.dayPathDisplayMode) {
+                    ForEach(AppDayPathDisplayMode.allCases) { mode in
+                        Text(t(mode.label)).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
     }
 
     /// Combined control row: route-display picker (when paths exist) + map style toggle,

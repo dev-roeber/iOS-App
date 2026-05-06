@@ -13,12 +13,27 @@ public struct AppDayMapView: View {
     /// When `false` the built-in style-toggle button is hidden so the caller can
     /// place it inline in its own control row.
     var showStyleToggle: Bool = true
+    /// Top padding for the topTrailing map-control overlay. Defaults to 8 (legacy behavior).
+    /// Hero-map callers pass a value combining the device safe-area inset and the
+    /// shared `LHHeroMapLayout.mapControlTopOffset` so controls clear the chevron.
+    var mapControlTopPadding: CGFloat = 8
+    /// When `true` the topTrailing controls are stacked vertically (VStack), preparing for
+    /// additional buttons in the future. Default `false` keeps the legacy horizontal layout.
+    var verticalMapControls: Bool = false
     @State private var renderData: DayMapRenderData
 
-    public init(mapData: DayMapData, fillHeight: Bool = false, showStyleToggle: Bool = true) {
+    public init(
+        mapData: DayMapData,
+        fillHeight: Bool = false,
+        showStyleToggle: Bool = true,
+        mapControlTopPadding: CGFloat = 8,
+        verticalMapControls: Bool = false
+    ) {
         self.mapData = mapData
         self.fillHeight = fillHeight
         self.showStyleToggle = showStyleToggle
+        self.mapControlTopPadding = mapControlTopPadding
+        self.verticalMapControls = verticalMapControls
         self._renderData = State(initialValue: DayMapRenderData(mapData: mapData))
     }
 
@@ -30,22 +45,36 @@ public struct AppDayMapView: View {
                 .clipShape(RoundedRectangle(cornerRadius: fillHeight ? 0 : 12, style: .continuous))
                 .overlay(alignment: .topTrailing) {
                     if showStyleToggle {
-                        Button {
-                            preferences.preferredMapStyle.toggle()
-                        } label: {
-                            Image(systemName: preferences.preferredMapStyle.isHybrid ? "map" : "globe")
-                                .font(.caption)
-                                .padding(7)
-                                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        }
-                        .padding(8)
-                        .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
+                        mapControlsStack
+                            .padding(.top, mapControlTopPadding)
+                            .padding(.trailing, 8)
+                            .padding(.leading, 8)
+                            .padding(.bottom, 8)
                     }
                 }
                 .accessibilityLabel(mapAccessibilityLabel)
                 .onChange(of: mapData) { _, newValue in
                     renderData = DayMapRenderData(mapData: newValue)
                 }
+        }
+    }
+
+    @ViewBuilder
+    private var mapControlsStack: some View {
+        let toggleButton = Button {
+            preferences.preferredMapStyle.toggle()
+        } label: {
+            Image(systemName: preferences.preferredMapStyle.isHybrid ? "map" : "globe")
+                .font(.caption)
+                .padding(7)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
+
+        if verticalMapControls {
+            VStack(spacing: 6) { toggleButton }
+        } else {
+            HStack(spacing: 6) { toggleButton }
         }
     }
 

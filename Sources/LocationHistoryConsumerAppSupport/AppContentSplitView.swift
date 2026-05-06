@@ -17,13 +17,14 @@ public struct AppContentSplitView: View {
     @State private var overviewShowOnlyFavorites: Bool = false
     @State private var overviewMapHeaderState = LHMapHeaderState(
         visibility: .compact,
-        compactHeight: 220,
-        expandedHeight: 320
+        compactHeight: LHHeroMapLayout.compactHeight,
+        expandedHeight: LHHeroMapLayout.expandedHeight,
+        isSticky: true
     )
     @State private var daysMapHeaderState = LHMapHeaderState(
         visibility: .compact,
-        compactHeight: 460,
-        expandedHeight: 560,
+        compactHeight: LHHeroMapLayout.compactHeight,
+        expandedHeight: LHHeroMapLayout.expandedHeight,
         isSticky: true
     )
     @State private var presentedSheet: PresentedSheet?
@@ -229,19 +230,17 @@ public struct AppContentSplitView: View {
     private var compactTabView: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
-                ScrollView {
-                    overviewPaneContent
-                }
-                .background(Color.black.ignoresSafeArea())
-                .navigationTitle("")
-                #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-                #endif
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        actionsMenu
+                compactOverview
+                    .navigationTitle("")
+                    #if os(iOS)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbarBackground(.hidden, for: .navigationBar)
+                    #endif
+                    .toolbar {
+                        ToolbarItem(placement: .primaryAction) {
+                            actionsMenu
+                        }
                     }
-                }
             }
             .tabItem {
                 Label(t("Overview"), systemImage: "chart.bar.doc.horizontal")
@@ -292,6 +291,7 @@ public struct AppContentSplitView: View {
                     .navigationTitle("")
                     #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
+                    .toolbarBackground(.hidden, for: .navigationBar)
                     #endif
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
@@ -309,13 +309,15 @@ public struct AppContentSplitView: View {
                     session: $session,
                     liveLocation: liveLocation,
                     onOpenImport: onOpen,
-                    onOpenDays: { selectedTab = 1 }
+                    onOpenDays: { selectedTab = 1 },
+                    heroEnabled: true
                 )
                     // Empty title: AppExportView.titleHeaderSection renders its own
                     // large Text("Export") so we suppress the duplicate NavBar title.
                     .navigationTitle("")
                     #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
+                    .toolbarBackground(.hidden, for: .navigationBar)
                     #endif
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) {
@@ -643,6 +645,36 @@ public struct AppContentSplitView: View {
         return projectedDaySummaries.filter { favoritedDayIDs.contains($0.date) }
     }
 
+    /// Container for the Overview tab on iPhone (compact width).
+    /// When days are present, applies the Hero-Map pattern:
+    /// sticky map + filter panel as a single top safeAreaInset, with the
+    /// whole ScrollView ignoring the top safe area so the map fills behind
+    /// Dynamic Island / status bar — identical to the Days tab layout.
+    /// Empty / loading states keep the legacy layout (no hero map).
+    @ViewBuilder
+    private var compactOverview: some View {
+        if session.hasDays {
+            ScrollView {
+                overviewPaneContent
+            }
+            .scrollContentBackground(.hidden)
+            .background(Color.black)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    overviewHeroMap
+                    overviewHeroFilterPanel
+                }
+                .background(Color.black)
+            }
+            .ignoresSafeArea(edges: .top)
+        } else {
+            ScrollView {
+                overviewPaneContent
+            }
+            .background(Color.black.ignoresSafeArea())
+        }
+    }
+
     @ViewBuilder
     private var overviewPaneContent: some View {
         LHPageScaffold(horizontalPadding: 18, verticalPadding: 18, spacing: 18) {
@@ -666,17 +698,17 @@ public struct AppContentSplitView: View {
                 hasDays: session.hasDays
             )
 
-            // Map first — most prominent element when data is present
-            if session.hasDays {
-                overviewMapCard
-            }
+            // Map is hoisted into the Hero-Workspace via `compactOverview`
+            // when `session.hasDays`. We do not duplicate it here.
 
-            // KPI strip immediately below the map
+            // KPI strip — first prominent metric block in the scroll content
             if let overview = projectedOverview, let insights = projectedInsights {
                 overviewKPISection(overview: overview, insights: insights)
             }
 
-            // Range / filter controls after map and KPIs
+            // Detailed range / filter card — kept for richer controls (Reset,
+            // Heatmap, Favorites). The Hero-Filter-Panel above only carries
+            // a compact range-chip strip.
             if session.hasDays {
                 overviewRangeCard
             }
@@ -696,6 +728,71 @@ public struct AppContentSplitView: View {
 
             liveTracksOverviewSection
         }
+    }
+
+    /// Sticky Hero-Map for the Overview tab. Mirrors `daysMapHeaderCard` so
+    /// both tabs share an identical edge-to-edge map experience.
+    @ViewBuilder
+    private var overviewHeroMap: some View {
+        LHCollapsibleMapHeader(
+            state: $overviewMapHeaderState,
+            language: preferences.appLanguage,
+            overlayControls: true,
+            safeAreaTopInset: lhDeviceTopSafeInset()
+        ) {
+            if #available(iOS 17.0, macOS 14.0, *) {
+                AppOverviewTracksMapView(
+                    daySummaries: overviewFilteredDaySummaries,
+                    content: session.content,
+                    queryFilter: projectedQueryFilter,
+                    fixedHeight: nil,
+                    showsFullscreenControl: false,
+                    mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset,
+                    verticalMapControls: true
+                )
+            }
+        }
+        .accessibilityIdentifier("overview.map.header")
+    }
+
+    /// Compact filter strip pinned directly under the Hero-Map.
+    /// Carries the most-used range chips so users can re-scope without
+    /// scrolling down to the detailed range card. Heatmap / Favorites
+    /// remain in `overviewRangeCard` to keep this strip lightweight.
+    @ViewBuilder
+    private var overviewHeroFilterPanel: some View {
+        VStack(spacing: 6) {
+            Text(t("Overview"))
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityAddTraits(.isHeader)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    overviewRangeChip(.last7Days, identifier: "overview.hero.range.last7Days")
+                    overviewRangeChip(.last30Days, identifier: "overview.hero.range.last30Days")
+                    overviewRangeChip(.last90Days, identifier: "overview.hero.range.last90Days")
+                    overviewRangeChip(.thisYear, identifier: "overview.hero.range.thisYear")
+                    if session.historyDateRangeFilter.isActive {
+                        Button(t("Reset")) {
+                            session.historyDateRangeFilter.reset()
+                        }
+                        .buttonStyle(.plain)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(LH2GPXTheme.primaryBlue)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(LH2GPXTheme.elevatedCard)
+                        .clipShape(Capsule())
+                        .accessibilityIdentifier("overview.hero.range.reset")
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
     }
 
     private var overviewEmptyCallToAction: some View {
@@ -775,43 +872,6 @@ public struct AppContentSplitView: View {
             }
         }
         .accessibilityIdentifier("overview.range.card")
-    }
-
-    @ViewBuilder
-    private var overviewMapCard: some View {
-        LHCard {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    LHSectionHeader(
-                        t("Map"),
-                        subtitle: overviewMapHeaderState.isHidden ? t("Show Map") : t("Simplified preview · export complete")
-                    )
-                    Spacer()
-                    Button(t("Heatmap")) {
-                        presentSheet(.heatmap)
-                    }
-                    .buttonStyle(.plain)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(LH2GPXTheme.primaryBlue)
-                }
-
-                LHCollapsibleMapHeader(
-                    state: $overviewMapHeaderState,
-                    language: preferences.appLanguage
-                ) {
-                    if #available(iOS 17.0, macOS 14.0, *) {
-                        AppOverviewTracksMapView(
-                            daySummaries: overviewFilteredDaySummaries,
-                            content: session.content,
-                            queryFilter: projectedQueryFilter,
-                            fixedHeight: nil,
-                            showsFullscreenControl: false
-                        )
-                    }
-                }
-                .accessibilityIdentifier("overview.map.header")
-            }
-        }
     }
 
     private func overviewRangeChip(_ preset: HistoryDateRangePreset, identifier: String) -> some View {
@@ -1105,20 +1165,9 @@ public struct AppContentSplitView: View {
         favoritedDayIDs = DayFavoritesStore.load()
     }
 
-    /// Real device top safe-area inset read via UIKit — works regardless of
-    /// SwiftUI view hierarchy or ignoresSafeArea context.
-    /// Falls back to 59 pt (iPhone Dynamic Island baseline) on non-iOS targets.
-    private var deviceTopSafeInset: CGFloat {
-        #if os(iOS)
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first { $0.isKeyWindow }?
-            .safeAreaInsets.top ?? 59
-        #else
-        0
-        #endif
-    }
+    /// Convenience accessor for the package-wide `lhDeviceTopSafeInset()` helper.
+    /// Kept as an instance accessor so existing call sites stay unchanged.
+    private var deviceTopSafeInset: CGFloat { lhDeviceTopSafeInset() }
 
     private var daysMapHeaderCard: some View {
         LHCollapsibleMapHeader(
@@ -1129,15 +1178,14 @@ public struct AppContentSplitView: View {
         ) {
             if #available(iOS 17.0, macOS 14.0, *) {
                 // Day map controls go vertical and BELOW the LHCollapsibleMapHeader
-                // chevron-button (which sits at safeAreaTop + 80, ~44pt tall plus
-                // breathing room). 130pt offset clears it cleanly on every device.
+                // chevron-button. Offset comes from shared LHHeroMapLayout.
                 AppOverviewTracksMapView(
                     daySummaries: drilldownDaySummaries,
                     content: session.content,
                     queryFilter: projectedQueryFilter,
                     fixedHeight: nil,
                     showsFullscreenControl: false,
-                    mapControlTopPadding: deviceTopSafeInset + 130,
+                    mapControlTopPadding: deviceTopSafeInset + LHHeroMapLayout.mapControlTopOffset,
                     verticalMapControls: true
                 )
             }
@@ -1238,7 +1286,10 @@ public struct AppContentSplitView: View {
                 allDaySummaries: session.daySummaries,
                 rangeFilter: $session.historyDateRangeFilter,
                 activeFilterDescriptions: localizedProjectedFilterDescriptions,
-                onDrilldown: applyInsightsDrilldown
+                onDrilldown: applyInsightsDrilldown,
+                heroContent: session.content,
+                heroQueryFilter: projectedQueryFilter,
+                heroEnabled: horizontalSizeClass == .compact
             )
         } else {
             VStack(spacing: 12) {

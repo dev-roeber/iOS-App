@@ -74,17 +74,26 @@ public struct AppExportView: View {
     #if canImport(UniformTypeIdentifiers)
     @State private var exportContentType: UTType = .gpx
     #endif
+    @State private var exportMapHeaderState = LHMapHeaderState(
+        visibility: .compact,
+        compactHeight: LHHeroMapLayout.compactHeight,
+        expandedHeight: LHHeroMapLayout.expandedHeight,
+        isSticky: true
+    )
+    private let heroEnabled: Bool
 
     public init(
         session: Binding<AppSessionState>,
         liveLocation: LiveLocationFeatureModel,
         onOpenImport: (() -> Void)? = nil,
-        onOpenDays: (() -> Void)? = nil
+        onOpenDays: (() -> Void)? = nil,
+        heroEnabled: Bool = false
     ) {
         self._session      = session
         self._liveLocation = ObservedObject(wrappedValue: liveLocation)
         self.onOpenImport  = onOpenImport
         self.onOpenDays    = onOpenDays
+        self.heroEnabled   = heroEnabled
     }
 
     private func t(_ english: String) -> String {
@@ -121,63 +130,214 @@ public struct AppExportView: View {
 
     @ViewBuilder
     private func checkoutLayout(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LHPageScaffold(spacing: 14) {
-                    titleHeaderSection
-                        .accessibilityIdentifier("export.title")
-
-                    if insightsExportDrilldownDescription != nil {
-                        insightsDrilldownCard
+        if heroEnabled {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LHPageScaffold(spacing: 14) {
+                        checkoutScrollContent(selection: selection, summaries: summaries, proxy: proxy)
                     }
-
-                    if hasImportedExport {
-                        rangeFilterCard
-                            .accessibilityIdentifier("export.range.card")
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Color.black)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    exportHeroMap(selection: selection, summaries: summaries)
+                    exportHeroFilterPanel(selection: selection, summaries: summaries)
+                }
+                .background(Color.black)
+            }
+            .safeAreaInset(edge: .bottom) {
+                bottomBar(selection: selection, summaries: summaries)
+            }
+            .ignoresSafeArea(edges: .top)
+        } else {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LHPageScaffold(spacing: 14) {
+                        checkoutScrollContent(selection: selection, summaries: summaries, proxy: proxy)
                     }
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                bottomBar(selection: selection, summaries: summaries)
+            }
+        }
+    }
 
-                    selectionSummaryCard(selection: selection, summaries: summaries, proxy: proxy)
-                        .accessibilityIdentifier("export.selection.card")
+    @ViewBuilder
+    private func checkoutScrollContent(
+        selection: ExportSelectionState,
+        summaries: [DaySummary],
+        proxy: ScrollViewProxy
+    ) -> some View {
+        titleHeaderSection
+            .accessibilityIdentifier("export.title")
 
-                    previewCard(selection: selection, summaries: summaries)
+        if insightsExportDrilldownDescription != nil {
+            insightsDrilldownCard
+        }
 
-                    if !summaries.isEmpty {
-                        daysCard(summaries: summaries, selection: selection)
-                            .id("export.days.section")
-                    }
+        if hasImportedExport {
+            rangeFilterCard
+                .accessibilityIdentifier("export.range.card")
+        }
 
-                    if !liveLocation.recordedTracks.isEmpty {
-                        liveTracksCard(selection: selection)
-                            .accessibilityIdentifier("export.liveTracks.card")
-                    }
+        selectionSummaryCard(selection: selection, summaries: summaries, proxy: proxy)
+            .accessibilityIdentifier("export.selection.card")
 
-                    formatCard
-                        .accessibilityIdentifier("export.format.card")
+        previewCard(selection: selection, summaries: summaries)
 
-                    if selectedFormat == .csv {
-                        csvNoteCard
+        if !summaries.isEmpty {
+            daysCard(summaries: summaries, selection: selection)
+                .id("export.days.section")
+        }
+
+        if !liveLocation.recordedTracks.isEmpty {
+            liveTracksCard(selection: selection)
+                .accessibilityIdentifier("export.liveTracks.card")
+        }
+
+        formatCard
+            .accessibilityIdentifier("export.format.card")
+
+        if selectedFormat == .csv {
+            csvNoteCard
+        } else {
+            contentCard
+                .accessibilityIdentifier("export.content.card")
+        }
+
+        exportTargetCard
+
+        if hasImportedExport {
+            LHExportFilterDisclosure(
+                title: t("Advanced Filters"),
+                isActive: !activeFilterDescriptions.isEmpty,
+                startsExpanded: !activeFilterDescriptions.isEmpty
+            ) {
+                filterContent
+            }
+        }
+    }
+
+    // MARK: - Hero Map (compact width)
+
+    @ViewBuilder
+    private func exportHeroMap(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
+        let previewData = ExportPreviewDataBuilder.previewData(
+            importedExport: session.content?.export,
+            selection: selection,
+            recordedTracks: liveLocation.recordedTracks,
+            queryFilter: effectiveQueryFilter,
+            mode: effectiveExportMode
+        )
+
+        LHCollapsibleMapHeader(
+            state: $exportMapHeaderState,
+            language: preferences.appLanguage,
+            overlayControls: true,
+            safeAreaTopInset: lhDeviceTopSafeInset()
+        ) {
+            if previewData.hasMapContent {
+                if #available(iOS 17.0, macOS 14.0, *) {
+                    AppExportPreviewMapView(
+                        previewData: previewData,
+                        fillContainer: true,
+                        mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset,
+                        verticalMapControls: true
+                    )
+                } else {
+                    exportHeroMapPlaceholder
+                }
+            } else {
+                exportHeroMapPlaceholder
+            }
+        }
+        .accessibilityIdentifier("export.map.header")
+    }
+
+    @ViewBuilder
+    private var exportHeroMapPlaceholder: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "map")
+                .font(.system(size: 38))
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text(t("No preview yet"))
+                .font(.headline)
+            Text(t("Select at least one day or saved live track to see the export preview here."))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.secondary.opacity(0.06))
+    }
+
+    @ViewBuilder
+    private func exportHeroFilterPanel(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
+        let review = ExportPresentation.reviewSnapshot(
+            importedExport: session.content?.export,
+            selection: selection,
+            recordedTracks: liveLocation.recordedTracks,
+            queryFilter: effectiveQueryFilter,
+            mode: effectiveExportMode
+        )
+
+        VStack(spacing: 6) {
+            HStack(spacing: 12) {
+                Text(t("Export"))
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityAddTraits(.isHeader)
+
+                Text(selectedFormat.rawValue.uppercased())
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(LH2GPXTheme.primaryBlue)
+                    .clipShape(Capsule())
+                    .accessibilityIdentifier("export.hero.formatPill")
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    if selection.isEmpty {
+                        LHFilterChip(
+                            title: t("Nothing selected"),
+                            systemImage: "exclamationmark.triangle",
+                            isActive: false,
+                            action: {}
+                        )
                     } else {
-                        contentCard
-                            .accessibilityIdentifier("export.content.card")
-                    }
-
-                    exportTargetCard
-
-                    if hasImportedExport {
-                        LHExportFilterDisclosure(
-                            title: t("Advanced Filters"),
-                            isActive: !activeFilterDescriptions.isEmpty,
-                            startsExpanded: !activeFilterDescriptions.isEmpty
-                        ) {
-                            filterContent
+                        if review.selectedDayCount > 0 {
+                            LHFilterChip(
+                                title: "\(review.selectedDayCount) \(t("days"))",
+                                systemImage: "calendar",
+                                isActive: false,
+                                action: {}
+                            )
+                        }
+                        if review.selectedRecordedTrackCount > 0 {
+                            LHFilterChip(
+                                title: "\(review.selectedRecordedTrackCount) \(t("tracks"))",
+                                systemImage: "point.topleft.down.curvedto.point.bottomright.up",
+                                isActive: false,
+                                action: {}
+                            )
                         }
                     }
                 }
             }
         }
-        .safeAreaInset(edge: .bottom) {
-            bottomBar(selection: selection, summaries: summaries)
-        }
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
+        .accessibilityIdentifier("export.hero.filterPanel")
     }
 
     // MARK: - Title Header
