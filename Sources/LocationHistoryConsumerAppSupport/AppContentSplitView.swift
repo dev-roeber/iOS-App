@@ -422,18 +422,25 @@ public struct AppContentSplitView: View {
         #endif
         .scrollContentBackground(.hidden)
         .background(Color.black)
-        // Order matters: the LATER safeAreaInset is applied AFTER the earlier
-        // one, so it sits BELOW the earlier inset's content. We want:
+        // Order matters (SwiftUI outside-in): the LATER (outer) safeAreaInset
+        // is applied first to the original safe area, so its content sits at
+        // the VERY TOP. The EARLIER (inner) safeAreaInset sees a safe area
+        // that has already been reduced by the outer inset, so its content
+        // sits BELOW the outer inset's content.
+        //
+        // We want, top-to-bottom:
         //   1. Map sticky header at the very top
         //   2. Filter panel sticky directly below the map
+        //
+        // Therefore: Filter must be the FIRST (inner) and Map the SECOND (outer).
         // Both stack as safeAreaInsets so there is GUARANTEED no list internal
         // padding / section header / nav-bar gap between them or the list rows.
         .safeAreaInset(edge: .top, spacing: 0) {
-            daysListStickyHeader
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
             daysFilterPanel
                 .background(Color.black)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            daysListStickyHeader
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if session.exportSelection.count > 0 {
