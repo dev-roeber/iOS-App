@@ -1,6 +1,6 @@
 # NEXT_STEPS
 
-Stand: 2026-05-06 (Days Filter-Panel + DayCard-Polish, Build 94 nötig)
+Stand: 2026-05-06 (compact days controls below map, Build 96 nötig)
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
@@ -10,14 +10,14 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] **Build 74 / 1.0-Train abgeschlossen**: Version 1.0 (Build 74) bleibt in „Pending Developer Release" — 1.0-Train ist in ASC geschlossen. Builds 80–83 scheiterten wegen geschlossenem 1.0-Train (ITMS-90186/90062), nicht wegen Code-Fehler.
 - [x] **MARKETING_VERSION auf 1.0.1 angehoben** (2026-05-05): `project.pbxproj` alle 8 Konfigurationen auf `1.0.1`; Plists weiterhin via `$(MARKETING_VERSION)`. ASC hat Version `1.0.1` bereits angelegt.
 - [x] **Xcode Cloud Build 84 erfolgreich** (2026-05-05): `1.0.1 (84)` — Archive ✅, TestFlight-interne Tests ✅. Erster valider Build für den 1.0.1-Train.
-- [ ] **Xcode Cloud Build 95 triggern** (Pflicht vor Submit):
-  - Build 94 ist veraltet — enthält den Days-Map-Höhe/Lücken-Fix nicht.
-  - Neuester Commit: `polish: increase days map hero height, remove gap above filter panel`
+- [ ] **Xcode Cloud Build 96 triggern** (Pflicht vor Submit):
+  - Build 95 ist veraltet — enthält den compact-controls-Fix nicht.
+  - Neuester Commit: `polish: compact days controls below map`
   - Xcode Cloud Workflow `Release – Archive & TestFlight` manuell anstoßen.
-- [ ] **Days-Screenshot (iphone15pm_03) neu aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen — Days-Layout erneut verändert (Map-Höhe 460 pt, keine Lücke über Filter-Panel). Neues PNG in `docs/app-store-assets/screenshots/iphone-67/` ablegen.
+- [ ] **Days-Screenshot (iphone15pm_03) neu aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen — Days-Layout erneut verändert (Control-Clearance, kein schwarzer Gap, kompakter Filter). Neues PNG in `docs/app-store-assets/screenshots/iphone-67/` ablegen.
 - [ ] **Version 1.0.1 in App Store Connect finalisieren** (nach neuem Cloud-Build):
   1. ASC → LH2GPX → Vertrieb → iOS-App Version `1.0.1` öffnen
-  2. Neuen Build (≥ 85, nach ce993d9) auswählen, speichern — **nicht Build 84** (enthält ce993d9 nicht)
+  2. Neuen Build (**≥ 96**, nach diesem Commit) auswählen, speichern — **nicht Build 95 oder früher**
   3. Screenshots prüfen: 6 iPhone-15-Pro-Max-PNGs aus `docs/app-store-assets/screenshots/iphone-67/` hochladen (iphone15pm_01–06, 1290×2796 px)
   4. `Zur Prüfung einreichen` (`Submit for Review`)
   - Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`

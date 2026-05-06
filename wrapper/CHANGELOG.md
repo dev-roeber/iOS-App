@@ -2,7 +2,15 @@
 
 ## 2026-05-06
 
-### polish: Days Map-Höhe erhöht, schwarze Lücke über Filter-Panel entfernt (Build 95 nötig)
+### polish: compact days controls below map (Build 96 nötig — Build 95 veraltet)
+
+- **Control-Clearance erhöht**: `overlayControlBar` in `LHCollapsibleMapHeader` padded jetzt `.padding(.top, safeAreaTop + 80)` statt `+ 56` — ergibt ~139 pt ab Bildschirmoberkante auf iPhone 15 Pro Max (Dynamic Island). Keine App-Controls mehr im Bereich von Uhrzeit, Akku, Mobilfunk oder Dynamic Island.
+- **Schwarze Lücke zwischen Map und Searchbar entfernt**: Root Cause war der `.insetGrouped` List-Default-Style mit seinem Top-Content-Inset. Fix: `.listStyle(.plain)` auf `compactDayList` — Searchbar beginnt jetzt direkt unter der Karte.
+- **Filter-Panel kompaktiert**: `compactContextPill` (passive Datumsanzeige) durch interaktive `HistoryDateRangeFilterBar` direkt im Chip-Row ersetzt. Die separate `HistoryDateRangeFilterBar`-Section (die bei aktivem Filter zusätzlich erschien und "Last 7 Days" doppelt anzeigte) entfernt. Eine Zeile statt zwei für den Datumsfilter.
+- Build 95 (Commit c5a81f7) ist **veraltet** — enthält diesen Fix nicht. Nächster Submit-Build: **Build 96**.
+- `swift test`: 933/0 ✅ — `xcodebuild` iPhone 15 Pro Max **BUILD SUCCEEDED** ✅
+
+### polish: Days Map-Höhe erhöht, schwarze Lücke über Filter-Panel entfernt (Build 95 nötig — veraltet)
 
 - **Map-Höhe angehoben**: `daysMapHeaderState.compactHeight` 340 → 460 pt, `expandedHeight` 420 → 560 pt — Map-Unterkante auf iPhone 15 Pro Max nun bei ca. 460 pt ab y=0, innerhalb der Zielmarke.
 - **Schwarze Lücke eliminiert**: SwiftUI-List-Default-Section-Spacing (≈20 pt) zwischen Map-StickyHeader und erstem List-Section entfernt via `DaysListSectionSpacingModifier` (`.listSectionSpacing(0)`, iOS-17-only, no-op auf iOS 16).

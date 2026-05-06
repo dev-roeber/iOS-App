@@ -378,7 +378,7 @@ public struct AppContentSplitView: View {
         let summaries = filteredDaySummaries
         let groups = groupByMonth(summaries, locale: preferences.appLocale)
         return List {
-            // Filter panel (search + date range) directly below the hero map
+            // Filter panel (search + chips) in a single zero-inset section directly below the hero map
             Section {
                 daysFilterPanel
                     .listRowInsets(EdgeInsets())
@@ -391,20 +391,9 @@ public struct AppContentSplitView: View {
                         description: activeDayDrilldownDescription,
                         clearAction: clearActiveDayDrilldown
                     )
-                }
-            }
-            if session.historyDateRangeFilter.isActive {
-                Section {
-                    HStack(spacing: 10) {
-                        HistoryDateRangeFilterBar(filter: $session.historyDateRangeFilter)
-                        Spacer()
-                    }
-                    .padding(.vertical, 2)
-                }
-            }
-            if !availableDayFilterChips.isEmpty || dayListFilter.isActive {
-                Section {
-                    AppDayFilterChipsView(filter: $dayListFilter, availableChips: availableDayFilterChips)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
             }
             if groups.count == 1, let firstGroup = groups.first {
@@ -434,6 +423,7 @@ public struct AppContentSplitView: View {
                 }
             }
         }
+        .listStyle(.plain)
         #if os(iOS)
         .modifier(DaysListSectionSpacingModifier())
         #endif
@@ -481,9 +471,9 @@ public struct AppContentSplitView: View {
     }
 
     /// Compact filter panel placed directly below the hero map in the scroll content.
-    /// Contains the search bar and the date-range context pill.
+    /// Contains the search bar, date-range context pill, and filter chips — all in one compact block.
     private var daysFilterPanel: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 4) {
             // Search bar
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
@@ -504,15 +494,63 @@ public struct AppContentSplitView: View {
             .padding(.vertical, 8)
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10))
 
-            // Date-range context pill
-            HStack(spacing: 8) {
-                compactContextPill(text: daysRangeSummaryText, icon: "calendar", identifier: "days.range")
-                Spacer()
+            // Chips row: interactive date-range chip + filter chips inline
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    HistoryDateRangeFilterBar(filter: $session.historyDateRangeFilter)
+                    let visibleChips = availableDayFilterChips.filter { [.hasRoutes, .favorites, .exportable].contains($0) }
+                    if !visibleChips.isEmpty || dayListFilter.isActive {
+                        compactFilterChip(
+                            title: t("All"),
+                            isActive: !dayListFilter.isActive,
+                            identifier: "days.filter.all"
+                        ) { dayListFilter.clearAll() }
+                        ForEach(visibleChips) { chip in
+                            compactFilterChip(
+                                title: compactChipTitle(chip),
+                                isActive: dayListFilter.activeChips.contains(chip),
+                                identifier: compactChipIdentifier(chip)
+                            ) { dayListFilter.toggle(chip) }
+                        }
+                    }
+                }
             }
         }
         .padding(.horizontal, 12)
         .padding(.top, 8)
-        .padding(.bottom, 4)
+        .padding(.bottom, 6)
+    }
+
+    private func compactChipTitle(_ chip: DayListFilterChip) -> String {
+        switch chip {
+        case .favorites:  return t("Favorites")
+        case .hasRoutes:  return t("With Routes")
+        case .exportable: return t("Exported")
+        case .hasVisits, .hasDistance: return t("All")
+        }
+    }
+
+    private func compactChipIdentifier(_ chip: DayListFilterChip) -> String {
+        switch chip {
+        case .favorites:  return "days.filter.favorites"
+        case .hasRoutes:  return "days.filter.routes"
+        case .exportable: return "days.filter.exported"
+        case .hasVisits, .hasDistance: return "days.filter.all"
+        }
+    }
+
+    private func compactFilterChip(title: String, isActive: Bool, identifier: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isActive ? Color.black : LH2GPXTheme.textSecondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isActive ? LH2GPXTheme.liveMint : LH2GPXTheme.elevatedCard)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
     }
 
     private var daysExportSelectionBar: some View {

@@ -260,7 +260,7 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
             }
         }
         .padding(8)
-        .padding(.top, safeAreaTop)
+        .padding(.top, safeAreaTop + 80)
     }
 
     private func iconButton(systemImage: String, label: String, action: @escaping () -> Void) -> some View {
