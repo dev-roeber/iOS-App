@@ -466,7 +466,7 @@ public struct AppContentSplitView: View {
         // ignoresSafeArea context) and passed explicitly so controls land below
         // Dynamic Island / status bar on all devices.
         daysMapHeaderCard
-            .ignoresSafeArea(.container, edges: .top)
+            .ignoresSafeArea(edges: .top)
             .accessibilityIdentifier("days.stickyHeader")
     }
 
