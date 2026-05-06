@@ -117,10 +117,29 @@ public struct AppLiveLocationSection: View {
             }
 
             if liveLocation.liveTrackShouldRender {
-                MapPolyline(coordinates: liveLocation.liveTrackPoints.map {
+                let coords = liveLocation.liveTrackPoints.map {
                     CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-                })
-                .stroke(.green, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                }
+                MapPolyline(coordinates: coords)
+                    .stroke(
+                        Color.white.opacity(MapTrackStyle.haloOpacity),
+                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live * MapTrackStyle.haloMultiplier)
+                    )
+                if preferences.liveBreadcrumbFadeEnabled {
+                    ForEach(Array(LiveBreadcrumbFade.buckets(from: coords).enumerated()), id: \.offset) { _, bucket in
+                        MapPolyline(coordinates: bucket.coordinates)
+                            .stroke(
+                                LH2GPXTheme.liveMint.opacity(bucket.alpha),
+                                style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
+                            )
+                    }
+                } else {
+                    MapPolyline(coordinates: coords)
+                        .stroke(
+                            LH2GPXTheme.liveMint,
+                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
+                        )
+                }
             }
         }
         .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))

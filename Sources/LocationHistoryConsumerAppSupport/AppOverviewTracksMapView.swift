@@ -191,7 +191,15 @@ struct AppOverviewTracksMapView: View {
         Map(position: $mapPosition) {
             ForEach(Array(model.renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
                 MapPolyline(coordinates: path.coordinates)
-                    .stroke(MapPalette.routeColor(for: path.activityType), lineWidth: 2)
+                    .stroke(
+                        Color.white.opacity(MapTrackStyle.haloOpacity),
+                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview * MapTrackStyle.haloMultiplier)
+                    )
+                MapPolyline(coordinates: path.coordinates)
+                    .stroke(
+                        MapPalette.routeColor(for: path.activityType),
+                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview)
+                    )
             }
         }
         .mapStyle(mapStyle)
@@ -429,7 +437,15 @@ struct AppOverviewExploreSheet: View {
         Map(position: $mapPosition) {
             ForEach(Array(model.renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
                 MapPolyline(coordinates: path.coordinates)
-                    .stroke(MapPalette.routeColor(for: path.activityType), lineWidth: 2)
+                    .stroke(
+                        Color.white.opacity(MapTrackStyle.haloOpacity),
+                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview * MapTrackStyle.haloMultiplier)
+                    )
+                MapPolyline(coordinates: path.coordinates)
+                    .stroke(
+                        MapPalette.routeColor(for: path.activityType),
+                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview)
+                    )
             }
         }
         .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)

@@ -262,6 +262,10 @@ public final class AppPreferences: ObservableObject {
         static let heatmapRadius = "app.preferences.heatmapRadius"
         static let heatmapPalette = "app.preferences.heatmapPalette"
         static let heatmapScale = "app.preferences.heatmapScale"
+        static let mapTrackColorMode = "app.preferences.mapTrackColorMode"
+        static let liveAccuracyCircleEnabled = "app.preferences.liveAccuracyCircleEnabled"
+        static let livePulseEnabled = "app.preferences.livePulseEnabled"
+        static let liveBreadcrumbFadeEnabled = "app.preferences.liveBreadcrumbFadeEnabled"
     }
 
     private let userDefaults: UserDefaults
@@ -374,6 +378,27 @@ public final class AppPreferences: ObservableObject {
 
     @Published public var heatmapScale: AppHeatmapScalePreference {
         didSet { userDefaults.set(heatmapScale.rawValue, forKey: Keys.heatmapScale) }
+    }
+
+    /// Track colour mode for map polylines: semantic activity colour vs.
+    /// speed-coloured gradient ("Tempolayer").
+    @Published public var mapTrackColorMode: AppMapTrackColorMode {
+        didSet { userDefaults.set(mapTrackColorMode.rawValue, forKey: Keys.mapTrackColorMode) }
+    }
+
+    /// Whether the live tracking map shows the GPS accuracy circle.
+    @Published public var liveAccuracyCircleEnabled: Bool {
+        didSet { userDefaults.set(liveAccuracyCircleEnabled, forKey: Keys.liveAccuracyCircleEnabled) }
+    }
+
+    /// Whether the live user-location dot pulses while recording.
+    @Published public var livePulseEnabled: Bool {
+        didSet { userDefaults.set(livePulseEnabled, forKey: Keys.livePulseEnabled) }
+    }
+
+    /// Whether the live breadcrumb trail fades the older points to less alpha.
+    @Published public var liveBreadcrumbFadeEnabled: Bool {
+        didSet { userDefaults.set(liveBreadcrumbFadeEnabled, forKey: Keys.liveBreadcrumbFadeEnabled) }
     }
 
     /// Derived preset based on the current accuracy + detail combination.
@@ -531,6 +556,14 @@ public final class AppPreferences: ObservableObject {
             key: Keys.heatmapScale,
             from: userDefaults
         ) ?? .logarithmic
+        self.mapTrackColorMode = Self.loadEnum(
+            AppMapTrackColorMode.self,
+            key: Keys.mapTrackColorMode,
+            from: userDefaults
+        ) ?? .activity
+        self.liveAccuracyCircleEnabled = userDefaults.object(forKey: Keys.liveAccuracyCircleEnabled) as? Bool ?? true
+        self.livePulseEnabled = userDefaults.object(forKey: Keys.livePulseEnabled) as? Bool ?? true
+        self.liveBreadcrumbFadeEnabled = userDefaults.object(forKey: Keys.liveBreadcrumbFadeEnabled) as? Bool ?? true
         syncWidgetLanguagePreference()
         WidgetDataStore.saveDynamicIslandCompactDisplay(loadedDynamicIslandDisplay)
     }
@@ -559,6 +592,10 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.heatmapRadius)
         userDefaults.removeObject(forKey: Keys.heatmapPalette)
         userDefaults.removeObject(forKey: Keys.heatmapScale)
+        userDefaults.removeObject(forKey: Keys.mapTrackColorMode)
+        userDefaults.removeObject(forKey: Keys.liveAccuracyCircleEnabled)
+        userDefaults.removeObject(forKey: Keys.livePulseEnabled)
+        userDefaults.removeObject(forKey: Keys.liveBreadcrumbFadeEnabled)
 
         distanceUnit = .metric
         startTab = .overview
@@ -582,6 +619,10 @@ public final class AppPreferences: ObservableObject {
         heatmapRadius = .balanced
         heatmapPalette = .magma
         heatmapScale = .logarithmic
+        mapTrackColorMode = .activity
+        liveAccuracyCircleEnabled = true
+        livePulseEnabled = true
+        liveBreadcrumbFadeEnabled = true
     }
 
     private func syncWidgetLanguagePreference() {

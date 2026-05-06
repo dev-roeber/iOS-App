@@ -47,11 +47,20 @@ public struct DayMapPathOverlay: Equatable {
     public let coordinates: [DayMapCoordinate]
     public let activityType: String?
     public let distanceM: Double?
+    /// Optional ISO-8601 timestamps parallel to `coordinates`. When present
+    /// they enable speed-coloured rendering ("Tempolayer"). May be empty.
+    public let timestamps: [String?]
 
-    public init(coordinates: [DayMapCoordinate], activityType: String?, distanceM: Double?) {
+    public init(
+        coordinates: [DayMapCoordinate],
+        activityType: String?,
+        distanceM: Double?,
+        timestamps: [String?] = []
+    ) {
         self.coordinates = coordinates
         self.activityType = activityType
         self.distanceM = distanceM
+        self.timestamps = timestamps
     }
 }
 
@@ -89,11 +98,13 @@ public enum DayMapDataExtractor {
 
         let pathOverlays = detail.paths.compactMap { path -> DayMapPathOverlay? in
             let coords = path.points.map { DayMapCoordinate(lat: $0.lat, lon: $0.lon) }
+            let timestamps = path.points.map { $0.time }
             guard coords.count >= 2 else { return nil }
             return DayMapPathOverlay(
                 coordinates: coords,
                 activityType: path.activityType,
-                distanceM: path.distanceM
+                distanceM: path.distanceM,
+                timestamps: timestamps
             )
         }
 

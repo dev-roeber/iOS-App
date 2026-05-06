@@ -22,8 +22,10 @@ public struct AppLiveTrackingView: View {
     @State private var now = Date()
     @State private var metricSnapshot = LiveTrackingMetricSnapshot.empty
     @State private var polylineCoordinates: [CLLocationCoordinate2D] = []
+    @State private var trackSamples: [TrackSample] = []
     @State private var isFullscreenMapPresented = false
     @State private var isDiagnosticsExpanded = false
+    @State private var pulseScale: CGFloat = 1.0
     @State private var liveMapHeaderState = LHMapHeaderState(
         visibility: .compact,
         compactHeight: LHHeroMapLayout.compactHeight,
@@ -142,27 +144,9 @@ public struct AppLiveTrackingView: View {
         ) {
             if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
                 Map(position: $mapPosition) {
-                    if let currentLocation = liveLocation.currentLocation {
-                        Annotation(t("Current Location"), coordinate: CLLocationCoordinate2D(
-                            latitude: currentLocation.latitude,
-                            longitude: currentLocation.longitude
-                        )) {
-                            ZStack {
-                                Circle()
-                                    .fill(locationDotColor.opacity(0.18))
-                                    .frame(width: 42, height: 42)
-                                Circle()
-                                    .fill(locationDotColor)
-                                    .frame(width: 15, height: 15)
-                                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                            }
-                        }
-                    }
-                    if liveLocation.liveTrackShouldRender {
-                        MapPolyline(coordinates: polylineCoordinates)
-                            .stroke(LH2GPXTheme.liveMint,
-                                    style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
-                    }
+                    liveAccuracyCircleContent
+                    liveTrackContent
+                    liveCurrentLocationAnnotation
                 }
                 .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -522,27 +506,9 @@ public struct AppLiveTrackingView: View {
     private func liveMapContent(height: CGFloat) -> some View {
         if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
             Map(position: $mapPosition) {
-                if let currentLocation = liveLocation.currentLocation {
-                    Annotation(t("Current Location"), coordinate: CLLocationCoordinate2D(
-                        latitude: currentLocation.latitude,
-                        longitude: currentLocation.longitude
-                    )) {
-                        ZStack {
-                            Circle()
-                                .fill(locationDotColor.opacity(0.18))
-                                .frame(width: 42, height: 42)
-                            Circle()
-                                .fill(locationDotColor)
-                                .frame(width: 15, height: 15)
-                                .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                        }
-                    }
-                }
-                if liveLocation.liveTrackShouldRender {
-                    MapPolyline(coordinates: polylineCoordinates)
-                        .stroke(LH2GPXTheme.liveMint,
-                                style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
-                }
+                liveAccuracyCircleContent
+                liveTrackContent
+                liveCurrentLocationAnnotation
             }
             .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
             .frame(maxWidth: .infinity)
@@ -570,6 +536,100 @@ public struct AppLiveTrackingView: View {
 
     private var locationDotColor: Color {
         liveLocation.isRecording ? LH2GPXTheme.liveMint : LH2GPXTheme.primaryBlue
+    }
+
+    // MARK: - Live map content helpers
+
+    @MapContentBuilder
+    private var liveCurrentLocationAnnotation: some MapContent {
+        if let currentLocation = liveLocation.currentLocation {
+            Annotation(t("Current Location"), coordinate: CLLocationCoordinate2D(
+                latitude: currentLocation.latitude,
+                longitude: currentLocation.longitude
+            )) {
+                ZStack {
+                    if liveLocation.isRecording, preferences.livePulseEnabled {
+                        Circle()
+                            .fill(locationDotColor.opacity(0.30))
+                            .frame(width: 42, height: 42)
+                            .scaleEffect(pulseScale)
+                            .opacity(2.0 - Double(pulseScale))
+                            .animation(
+                                .easeInOut(duration: 1.4).repeatForever(autoreverses: true),
+                                value: pulseScale
+                            )
+                            .onAppear { pulseScale = 1.55 }
+                            .onDisappear { pulseScale = 1.0 }
+                    } else {
+                        Circle()
+                            .fill(locationDotColor.opacity(0.18))
+                            .frame(width: 42, height: 42)
+                    }
+                    Circle()
+                        .fill(locationDotColor)
+                        .frame(width: 15, height: 15)
+                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                }
+            }
+        }
+    }
+
+    /// GPS accuracy circle around the current location. Stroked, not filled,
+    /// so it shows precision without obscuring the basemap.
+    @MapContentBuilder
+    private var liveAccuracyCircleContent: some MapContent {
+        if preferences.liveAccuracyCircleEnabled,
+           let location = liveLocation.currentLocation,
+           location.horizontalAccuracyM > 0,
+           location.horizontalAccuracyM < 500 {
+            MapCircle(
+                center: CLLocationCoordinate2D(
+                    latitude: location.latitude,
+                    longitude: location.longitude
+                ),
+                radius: location.horizontalAccuracyM
+            )
+            .foregroundStyle(locationDotColor.opacity(0.10))
+            .stroke(locationDotColor.opacity(0.45), lineWidth: 1)
+        }
+    }
+
+    /// Live trail. Renders speed-coloured segments when the user has chosen
+    /// the Tempolayer; otherwise a 3-bucket alpha fade so the older parts of
+    /// the trail look subdued and the freshest segment stays solid.
+    @MapContentBuilder
+    private var liveTrackContent: some MapContent {
+        if liveLocation.liveTrackShouldRender, !polylineCoordinates.isEmpty {
+            // Halo
+            MapPolyline(coordinates: polylineCoordinates)
+                .stroke(
+                    Color.white.opacity(MapTrackStyle.haloOpacity),
+                    style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live * MapTrackStyle.haloMultiplier)
+                )
+            if preferences.mapTrackColorMode == .speed, trackSamples.count >= 2 {
+                ForEach(SpeedTrackBuilder.segments(from: trackSamples)) { segment in
+                    MapPolyline(coordinates: [segment.start, segment.end])
+                        .stroke(
+                            SpeedColors.color(for: segment.normalizedSpeed),
+                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
+                        )
+                }
+            } else if preferences.liveBreadcrumbFadeEnabled {
+                ForEach(Array(LiveBreadcrumbFade.buckets(from: polylineCoordinates).enumerated()), id: \.offset) { _, bucket in
+                    MapPolyline(coordinates: bucket.coordinates)
+                        .stroke(
+                            LH2GPXTheme.liveMint.opacity(bucket.alpha),
+                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
+                        )
+                }
+            } else {
+                MapPolyline(coordinates: polylineCoordinates)
+                    .stroke(
+                        LH2GPXTheme.liveMint,
+                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
+                    )
+            }
+        }
     }
 
     // MARK: - Status Chips
@@ -1148,6 +1208,12 @@ public struct AppLiveTrackingView: View {
     private func refreshTrackPresentationState() {
         polylineCoordinates = liveLocation.liveTrackPoints.map {
             CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+        }
+        trackSamples = liveLocation.liveTrackPoints.map {
+            TrackSample(
+                coordinate: CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude),
+                timestamp: $0.timestamp
+            )
         }
         if liveLocation.isRecording {
             recordingStartDate = liveLocation.liveTrackPoints.first?.timestamp ?? recordingStartDate ?? Date()

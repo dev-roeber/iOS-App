@@ -55,7 +55,15 @@ struct AppExportPreviewMapView: View {
             }
             ForEach(Array(renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
                 MapPolyline(coordinates: path.coordinates)
-                .stroke(MapPalette.routeColor(for: path.activityType), lineWidth: 4)
+                    .stroke(
+                        Color.white.opacity(MapTrackStyle.haloOpacity),
+                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.export * MapTrackStyle.haloMultiplier)
+                    )
+                MapPolyline(coordinates: path.coordinates)
+                    .stroke(
+                        MapPalette.routeColor(for: path.activityType),
+                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.export)
+                    )
             }
         }
         .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)

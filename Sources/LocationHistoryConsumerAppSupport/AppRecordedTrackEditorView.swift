@@ -113,10 +113,16 @@ struct AppRecordedTrackEditorView: View {
                 }
 
                 if draft.points.count >= 2 {
-                    MapPolyline(coordinates: draft.points.map {
+                    let editorCoords = draft.points.map {
                         CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-                    })
-                    .stroke(.blue, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                    }
+                    MapPolyline(coordinates: editorCoords)
+                        .stroke(
+                            Color.white.opacity(MapTrackStyle.haloOpacity),
+                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.editor * MapTrackStyle.haloMultiplier)
+                        )
+                    MapPolyline(coordinates: editorCoords)
+                        .stroke(.blue, style: MapTrackStyle.stroke(width: MapTrackStyle.Width.editor))
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
@@ -174,10 +180,16 @@ struct AppRecordedTrackEditorView: View {
                 }
 
                 if draft.points.count >= 2 {
-                    MapPolyline(coordinates: draft.points.map {
+                    let editorCoords = draft.points.map {
                         CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-                    })
-                    .stroke(.blue, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                    }
+                    MapPolyline(coordinates: editorCoords)
+                        .stroke(
+                            Color.white.opacity(MapTrackStyle.haloOpacity),
+                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.editor * MapTrackStyle.haloMultiplier)
+                        )
+                    MapPolyline(coordinates: editorCoords)
+                        .stroke(.blue, style: MapTrackStyle.stroke(width: MapTrackStyle.Width.editor))
                 }
             }
             .frame(height: 220)

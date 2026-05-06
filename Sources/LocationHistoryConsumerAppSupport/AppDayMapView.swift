@@ -61,7 +61,7 @@ public struct AppDayMapView: View {
 
     @ViewBuilder
     private var mapControlsStack: some View {
-        let toggleButton = Button {
+        let mapStyleButton = Button {
             preferences.preferredMapStyle.toggle()
         } label: {
             Image(systemName: preferences.preferredMapStyle.isHybrid ? "map" : "globe")
@@ -71,10 +71,27 @@ public struct AppDayMapView: View {
         }
         .accessibilityLabel(t(preferences.preferredMapStyle.isHybrid ? "Switch to standard map" : "Switch to satellite map"))
 
+        let trackColorButton = Button {
+            preferences.mapTrackColorMode = preferences.mapTrackColorMode == .speed ? .activity : .speed
+        } label: {
+            Image(systemName: preferences.mapTrackColorMode == .speed ? "speedometer" : "paintpalette")
+                .font(.caption)
+                .padding(7)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .foregroundStyle(preferences.mapTrackColorMode == .speed ? Color.accentColor : Color.primary)
+        }
+        .accessibilityLabel(t(preferences.mapTrackColorMode == .speed ? "Activity" : "Speed"))
+
         if verticalMapControls {
-            VStack(spacing: 6) { toggleButton }
+            VStack(spacing: 6) {
+                mapStyleButton
+                trackColorButton
+            }
         } else {
-            HStack(spacing: 6) { toggleButton }
+            HStack(spacing: 6) {
+                mapStyleButton
+                trackColorButton
+            }
         }
     }
 
@@ -99,16 +116,36 @@ public struct AppDayMapView: View {
 
     @ViewBuilder
     private func mapContent(region: MKCoordinateRegion) -> some View {
+        let useSpeed = preferences.mapTrackColorMode == .speed
         Map(initialPosition: .region(MKCoordinateRegion(
             center: region.center,
             span: region.span
         ))) {
+            // Halo underlayer for every path — improves contrast on hybrid maps.
             ForEach(Array(renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
-                let coords: [CLLocationCoordinate2D] = preferences.dayPathDisplayMode == .mapMatched
-                    ? PathSimplification.douglasPeucker(PathFilter.removeOutliers(path.coordinates))
-                    : path.coordinates
-                MapPolyline(coordinates: coords)
-                .stroke(MapPalette.routeColor(for: path.activityType), lineWidth: 3)
+                MapPolyline(coordinates: displayCoords(for: path))
+                    .stroke(
+                        Color.white.opacity(MapTrackStyle.haloOpacity),
+                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.day * MapTrackStyle.haloMultiplier)
+                    )
+            }
+            // Core stroke — speed-coloured segments OR activity-coloured polyline.
+            ForEach(Array(renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
+                if useSpeed, !path.speedSamples.isEmpty {
+                    ForEach(SpeedTrackBuilder.segments(from: path.speedSamples)) { segment in
+                        MapPolyline(coordinates: [segment.start, segment.end])
+                            .stroke(
+                                SpeedColors.color(for: segment.normalizedSpeed),
+                                style: MapTrackStyle.stroke(width: MapTrackStyle.Width.day)
+                            )
+                    }
+                } else {
+                    MapPolyline(coordinates: displayCoords(for: path))
+                        .stroke(
+                            MapPalette.routeColor(for: path.activityType),
+                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.day)
+                        )
+                }
             }
 
             ForEach(Array(renderData.visitAnnotations.enumerated()), id: \.offset) { _, visit in
@@ -120,6 +157,12 @@ public struct AppDayMapView: View {
             }
         }
         .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
+    }
+
+    private func displayCoords(for path: DayMapRenderData.PathOverlay) -> [CLLocationCoordinate2D] {
+        preferences.dayPathDisplayMode == .mapMatched
+            ? PathSimplification.douglasPeucker(PathFilter.removeOutliers(path.coordinates))
+            : path.coordinates
     }
 
     private func t(_ english: String) -> String {
@@ -136,6 +179,7 @@ private struct DayMapRenderData {
     struct PathOverlay {
         let coordinates: [CLLocationCoordinate2D]
         let activityType: String?
+        let speedSamples: [TrackSample]
     }
 
     let visitAnnotations: [VisitAnnotation]
@@ -153,12 +197,27 @@ private struct DayMapRenderData {
                 semanticType: $0.semanticType
             )
         }
-        self.pathOverlays = mapData.pathOverlays.map {
-            PathOverlay(
-                coordinates: $0.coordinates.map {
-                    CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                },
-                activityType: $0.activityType
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let isoFallback = ISO8601DateFormatter()
+        self.pathOverlays = mapData.pathOverlays.map { overlay in
+            let coords = overlay.coordinates.map {
+                CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+            }
+            let parsedTimes: [Date?] = overlay.timestamps.map { iso -> Date? in
+                guard let iso else { return nil }
+                return isoFormatter.date(from: iso) ?? isoFallback.date(from: iso)
+            }
+            let samples: [TrackSample]
+            if parsedTimes.count == coords.count {
+                samples = zip(coords, parsedTimes).map { TrackSample(coordinate: $0.0, timestamp: $0.1) }
+            } else {
+                samples = []
+            }
+            return PathOverlay(
+                coordinates: coords,
+                activityType: overlay.activityType,
+                speedSamples: samples
             )
         }
         self.region = mapData.fittedRegion.map {
