@@ -1,13 +1,36 @@
 # ROADMAP
 
-## Aktueller Stand (2026-03-31)
+## Aktueller Stand (2026-05-06, HEAD post-`70254ff`)
+
+### 2026-05-06 — MapLayerMenu, Heatmap Next-Level, Build 100
+
+**Abgeschlossen seit Phase 19.51:**
+- App Groups Entitlements + Widget-Datenaustausch (2026-04-12)
+- `MARKETING_VERSION` auf `1.0.1` angehoben; ASC Build 74 (1.0-Train) akzeptiert, Status `Pending Developer Release`
+- 1.0.1-Train Xcode Cloud Build 84 grün
+- Hero-Map-Workspace: kollabierbarer Map-Header, Dynamic-Island-Padding, Status-Bar-Versatz
+- LiveStatusResolver: Live-Tab-Polish, fileExporter-Fix
+- Heatmap-Tier 1+2: Magma/Inferno-Palette, Log-Scale, Hexagon-Polygone (pointy-top), Mercator+cos(lat)-Korrektur, Soft-Glow-Cells, Lens-Flare entfernt
+- Routes-Modus aus Heatmap entfernt
+- Maps next-level: Tempolayer (Speed-Coloring), Halo-Strokes, Live-Polish
+- Home Screen: Electric-Lightning-Background-Asset
+- SIGABRT-Defensivguards beim Live-Tracking-Launch
+- **MapLayerMenu (commit `70254ff`):** unified Right-Side-Dropdown loest standalone Style-Toggle, Heatmap-Bottom-Sheet, Follow-Pill, Fullscreen-Close-X und Capsule-Chip-Cluster auf allen Map-Surfaces ab; `LHMapStyleToggleButton` deprecated; Opacity snappt auf 25/50/75/100% Presets
+- **Doku-/Wiring-Audit + Polish (2026-05-06):** Day-Map mit `mapPosition`-State + Fit-to-Data, Export-Preview Fit-to-Data, Overview `isFullscreenActive` korrekt verdrahtet, tote Parameter (`verticalMapControls`, `showStyleToggle`) und Helfer entfernt, Live-Tracking Landscape-Card nutzt geteilte `liveAccuracyCircleContent`/`liveTrackContent`/`liveCurrentLocationAnnotation`, Heatmap-Overlay-Pattern auf `.overlay` vereinheitlicht
+- `CURRENT_PROJECT_VERSION` auf `100` (commit `8854eef`); Xcode Cloud Build ≥100 vor naechstem Submit noetig
+
+**Frische Verifikation (2026-05-06):**
+- `swift test`: `964` Tests, `2` Skips, `0` Failures
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build`: BUILD SUCCEEDED
+
+## Historischer Stand (2026-03-31)
 
 ### Repo-Truth-Zusammenfassung
 Die letzte real belegte Apple-/Device-Verifikation bleibt der dokumentierte Apple-Stand vom 2026-03-17 beziehungsweise 2026-03-30; in diesem Audit wurde kein neuer Apple-Host-Lauf vorgetaeuscht.
 Der Audit-Block vom 2026-03-31 ist in dieser Revision eingearbeitet: Heatmap, `Live`-Tab, Upload-Batching, Wrapper-Auto-Restore, Default-Endpunkt und Teststatus sind jetzt dokumentarisch an den aktuellen Code angeglichen.
 Diese ROADMAP trennt ab hier explizit zwischen `fertig`, `implementiert aber noch nicht voll verifiziert` und `noch nicht umgesetzt`.
 Historische Phasen weiter unten bleiben als Zeitstrahl stehen; wenn spaetere Commits fruehere Zwischenstaende ueberholt haben, gilt der aktuelle Kopfblock als massgeblicher Repo-Truth.
-Der frische Host-Nachweis dieses Audits ist Linux-only: der eingebundene Core-Stand laeuft mit `swift test` auf diesem Host gruen (`228` Tests, `2` Skips und `0` Failures), `git diff --check` ist sauber, und `xcodebuild` ist hier nicht verfuegbar.
+Der frische Host-Nachweis dieses 2026-03-31-Audits war Linux-only: der eingebundene Core-Stand lief mit `swift test` auf diesem Host gruen (`228` Tests, `2` Skips, `0` Failures); `xcodebuild` war hier nicht verfuegbar. Aktualisierter macOS-Nachweis siehe oben unter „Aktueller Stand (2026-05-06)".
 
 ### Repo-wahr abgeschlossen
 
@@ -50,8 +73,8 @@ Der frische Host-Nachweis dieses Audits ist Linux-only: der eingebundene Core-St
   Die Insights-Seite ist segmentiert (`Overview`, `Patterns`, `Breakdowns`) und `Days` ist repo-wahr `neu -> alt` sortiert.
   Offen bleiben frische Apple-UI-Nachweise fuer die neue Informationsarchitektur, Chart-Lesbarkeit und das aktualisierte Day-Navigationsverhalten auf echter Hardware.
 - **Linux-/Apple-Teststatus**
-  Der aktuelle Server-Check gegen den eingebundenen Core-Stand ist gruen:
-  `swift test` im Core-Repo laeuft auf Linux mit `228` ausgefuehrten Tests, `2` Skips und `0` Failures.
+  Der aktuelle Check gegen den eingebundenen Core-Stand ist gruen:
+  `swift test` im Core-Repo laeuft macOS-lokal mit `964` ausgefuehrten Tests, `2` Skips und `0` Failures (Stand 2026-05-06, HEAD post-`70254ff`; historisch: 228 Tests am 2026-03-31 auf Linux).
   Apple-only Heatmap-Renderingstests sind fuer non-Apple-Plattformen korrekt ausgeblendet und blockieren den Linux-Lauf nicht mehr.
   Der zuletzt dokumentierte Apple-CLI-Stand bleibt historisch der 2026-03-30:
   `xcodebuild build -scheme LH2GPXWrapper -destination generic/platform=iOS`: BUILD SUCCEEDED.
@@ -81,7 +104,7 @@ Apple-/ASC-/TestFlight-/Release-Themen bleiben geparkt. iPad bleibt nachrangig. 
 **Datum:** 2026-03-30
 **Ziel:** Audit-belegte P0/P1-Probleme beheben, Apple-Build-/Testlage auf belastbaren Stand bringen, Doku repo-wahr synchronisieren.
 
-- [x] Wrapper-SPM-Pfad korrigiert: `../../../Code/...` auf `../LocationHistory2GPX-iOS`
+- [x] Wrapper-SPM-Pfad korrigiert: ehemals `../../../Code/...` → mehrere Zwischenstaende (`../LocationHistory2GPX-iOS`, `../..`) → aktueller Stand `..` (commit `379b835`, zeigt vom `wrapper/`-Ordner auf den Repo-Root mit `Package.swift`)
 - [x] Privacy-Text in TestFlight-Runbook sachlich korrekt formuliert (kein "alle Daten lokal")
 - [x] README Privacy-Aussage und Review-Status nuechterner formuliert
 - [x] `xcodebuild build -scheme LH2GPXWrapper -destination generic/platform=iOS`: BUILD SUCCEEDED

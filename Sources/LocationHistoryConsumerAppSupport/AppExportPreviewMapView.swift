@@ -10,20 +10,24 @@ struct AppExportPreviewMapView: View {
     let previewData: ExportPreviewData
     let fillContainer: Bool
     let mapControlTopPadding: CGFloat
-    let verticalMapControls: Bool
     @State private var renderData: ExportPreviewRenderData
+    @State private var mapPosition: MapCameraPosition
 
     init(
         previewData: ExportPreviewData,
         fillContainer: Bool = false,
-        mapControlTopPadding: CGFloat = 8,
-        verticalMapControls: Bool = false
+        mapControlTopPadding: CGFloat = 8
     ) {
         self.previewData = previewData
         self.fillContainer = fillContainer
         self.mapControlTopPadding = mapControlTopPadding
-        self.verticalMapControls = verticalMapControls
-        self._renderData = State(initialValue: ExportPreviewRenderData(previewData: previewData))
+        let initialRender = ExportPreviewRenderData(previewData: previewData)
+        self._renderData = State(initialValue: initialRender)
+        if let region = initialRender.region {
+            self._mapPosition = State(initialValue: .region(region))
+        } else {
+            self._mapPosition = State(initialValue: .automatic)
+        }
     }
 
     var body: some View {
@@ -38,17 +42,19 @@ struct AppExportPreviewMapView: View {
                 }
                 .accessibilityLabel(mapAccessibilityLabel)
                 .onChange(of: previewData) { _, newValue in
-                    renderData = ExportPreviewRenderData(previewData: newValue)
+                    let newRender = ExportPreviewRenderData(previewData: newValue)
+                    renderData = newRender
+                    if let region = newRender.region {
+                        withAnimation { mapPosition = .region(region) }
+                    }
                 }
         }
     }
 
     @ViewBuilder
     private func mapContent(region: MKCoordinateRegion) -> some View {
-        let map = Map(initialPosition: .region(MKCoordinateRegion(
-            center: region.center,
-            span: region.span
-        ))) {
+        let map = Map(position: $mapPosition) {
+            let _ = region
             ForEach(Array(renderData.waypointAnnotations.enumerated()), id: \.offset) { _, annotation in
                 Marker(annotation.semanticType ?? "Waypoint", coordinate: annotation.coordinate)
                 .tint(MapPalette.visitColor(for: annotation.semanticType))
@@ -79,7 +85,13 @@ struct AppExportPreviewMapView: View {
 
     @ViewBuilder
     private var mapControls: some View {
-        MapLayerMenu()
+        MapLayerMenu(configuration: MapLayerMenu.Configuration(
+            fitToData: renderData.region == nil ? nil : {
+                if let region = renderData.region {
+                    withAnimation { mapPosition = .region(region) }
+                }
+            }
+        ))
     }
 
     private var mapAccessibilityLabel: String {

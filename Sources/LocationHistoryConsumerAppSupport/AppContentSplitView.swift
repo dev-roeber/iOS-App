@@ -747,8 +747,7 @@ public struct AppContentSplitView: View {
                     queryFilter: projectedQueryFilter,
                     fixedHeight: nil,
                     showsFullscreenControl: false,
-                    mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset,
-                    verticalMapControls: true
+                    mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset
                 )
             }
         }
@@ -1185,8 +1184,7 @@ public struct AppContentSplitView: View {
                     queryFilter: projectedQueryFilter,
                     fixedHeight: nil,
                     showsFullscreenControl: false,
-                    mapControlTopPadding: deviceTopSafeInset + LHHeroMapLayout.mapControlTopOffset,
-                    verticalMapControls: true
+                    mapControlTopPadding: deviceTopSafeInset + LHHeroMapLayout.mapControlTopOffset
                 )
             }
         }

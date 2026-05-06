@@ -25,23 +25,27 @@ public struct AppHeatmapView: View {
     }
 
     public var body: some View {
-        ZStack(alignment: .topTrailing) {
-            mapView
-            if model.hasData {
-                MapLayerMenu(configuration: MapLayerMenu.Configuration(
-                    showsHeatmapControls: true,
-                    fitToData: model.dataRegion == nil ? nil : fitToData
-                ))
-                .padding(.top, 12)
-                .padding(.trailing, 12)
+        mapView
+            .overlay(alignment: .topTrailing) {
+                if model.hasData {
+                    MapLayerMenu(configuration: MapLayerMenu.Configuration(
+                        showsHeatmapControls: true,
+                        fitToData: model.dataRegion == nil ? nil : fitToData
+                    ))
+                    .padding(.top, 8)
+                    .padding(.trailing, 8)
+                }
             }
-            if model.isCalculating {
-                calculatingOverlay
+            .overlay(alignment: .bottom) {
+                if model.isCalculating {
+                    calculatingOverlay
+                }
             }
-            if model.hasData {
-                statsBadge
+            .overlay(alignment: .bottomLeading) {
+                if model.hasData {
+                    statsBadge
+                }
             }
-        }
         .animation(.easeInOut(duration: 0.25), value: model.visibleCells.count)
         .onAppear {
             if isFirstLoad {
@@ -111,20 +115,17 @@ public struct AppHeatmapView: View {
 
     @ViewBuilder
     private var calculatingOverlay: some View {
-        VStack {
-            Spacer()
-            HStack(spacing: 8) {
-                ProgressView()
-                    .controlSize(.small)
-                Text(t("Computing heatmap…"))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(.thinMaterial, in: Capsule())
-            .padding()
+        HStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+            Text(t("Computing heatmap…"))
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(.thinMaterial, in: Capsule())
+        .padding()
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
@@ -132,22 +133,16 @@ public struct AppHeatmapView: View {
 
     @ViewBuilder
     private var statsBadge: some View {
-        VStack {
-            Spacer()
-            HStack {
-                if !statsDescription.isEmpty {
-                    Text(statsDescription)
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 12)
+        if !statsDescription.isEmpty {
+            Text(statsDescription)
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
         }
     }
 

@@ -242,8 +242,7 @@ public struct AppExportView: View {
                     AppExportPreviewMapView(
                         previewData: previewData,
                         fillContainer: true,
-                        mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset,
-                        verticalMapControls: true
+                        mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset
                     )
                 } else {
                     exportHeroMapPlaceholder

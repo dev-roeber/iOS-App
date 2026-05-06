@@ -286,8 +286,7 @@ struct AppInsightsContentView: View {
                     queryFilter: heroQueryFilter,
                     fixedHeight: nil,
                     showsFullscreenControl: false,
-                    mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset,
-                    verticalMapControls: true
+                    mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset
                 )
             }
         }

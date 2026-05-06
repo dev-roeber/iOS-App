@@ -247,9 +247,7 @@ public struct AppDayDetailView: View {
             AppDayMapView(
                 mapData: resolvedMapData,
                 fillHeight: true,
-                showStyleToggle: true,
-                mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset,
-                verticalMapControls: true
+                mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset
             )
             .accessibilityIdentifier("dayDetail.map")
         }
@@ -306,7 +304,7 @@ public struct AppDayDetailView: View {
                 .padding(.horizontal, fillHeight ? 12 : 0)
                 .padding(.top, fillHeight ? 12 : 0)
             }
-            AppDayMapView(mapData: resolvedMapData, fillHeight: fillHeight, showStyleToggle: true)
+            AppDayMapView(mapData: resolvedMapData, fillHeight: fillHeight)
                 .frame(maxWidth: .infinity)
                 .accessibilityIdentifier("dayDetail.map")
         }

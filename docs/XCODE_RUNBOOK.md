@@ -221,9 +221,9 @@ ASC-Truth (2026-05-06, aktuell):
 - Builds `80`–`83` (1.0-Train) wurden wegen geschlossenem Train mit ITMS-90186 / ITMS-90062 verworfen — kein Code-Fehler
 - `MARKETING_VERSION` auf `1.0.1` angehoben; ASC hat Version `1.0.1` angelegt
 - Xcode Cloud Build `84` (1.0.1) erfolgreich (Archive ✓, TestFlight Internal ✓)
-- Build `95` ist veraltet — Build `96` (oder höher) muss vor dem nächsten Submit aus Xcode Cloud getriggert werden, damit der Hero-Map-/LiveStatus-/Export-Fix-Stand vom 2026-05-06 enthalten ist
-- `swift test`: 949 Tests, 2 Skips, 0 Failures (lokal HEAD f2e1d21)
-- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build`: BUILD SUCCEEDED (lokal HEAD f2e1d21)
+- Build `95` ist veraltet — `CURRENT_PROJECT_VERSION` lokal auf `100` angehoben (commit `8854eef`); Build `≥100` muss vor dem nächsten Submit aus Xcode Cloud getriggert werden, damit der MapLayerMenu-/Heatmap-Tier-2-/Tempolayer-/SIGABRT-Fix-Stand vom 2026-05-06 enthalten ist
+- `swift test`: 964 Tests, 2 Skips, 0 Failures (lokal HEAD post-`70254ff`, 2026-05-06 nach Doku-/Wiring-Audit-Polish; vorher 949 unter `93109e0`)
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build`: BUILD SUCCEEDED (lokal HEAD post-`70254ff`, 2026-05-06)
 
 Frischer Host-Truth (2026-03-31, historisch):
 

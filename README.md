@@ -53,7 +53,7 @@ Sources/
   LocationHistoryConsumerDemoSupport/  — Demo-Harness, Golden-Fixture
   LocationHistoryConsumerApp/          — Produkt-App-Einstieg
   LocationHistoryConsumerDemo/         — Demo-Einstieg
-  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 949 Tests, 2 Skips, 0 Failures)
+  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 964 Tests, 2 Skips, 0 Failures, 2026-05-06)
 Fixtures/contract/                     — Contract-Fixtures, Golden-JSONs
 wrapper/LH2GPXWrapper.xcodeproj        — Xcode Wrapper (Signing, Bundle, App-Icon)
 docs/                                  — Feature-Inventar, Runbook, Checklisten
@@ -75,7 +75,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
 Aktueller Nachweis:
-- `swift test` → `949` Tests, `2` Skips, `0` Failures (Stand 2026-05-06)
+- `swift test` → `964` Tests, `2` Skips, `0` Failures (Stand 2026-05-06, HEAD post-`70254ff` nach MapLayerMenu-Wiring-Audit)
 
 ## Historische Vorstufen
 
@@ -106,6 +106,6 @@ Die folgenden Repos sind historische Vorstufen und werden nicht mehr aktiv weite
 - Historien-Track-Editor: Mutations-Reset bei Import-Wechsel ist implementiert (`validateSource`, 2026-04-14); Export ignoriert Mutations bewusst (AppExport ist immutable, Mutations sind display-only)
 - Export ignoriert Mutations bewusst — gelöschte Routen bleiben im GPX/KMZ-Export (AppExport ist immutable; Mutations sind rein display-only)
 - Apple-Portal-/Signing-/TestFlight-/Device-UI-Themen sind auf diesem macOS-Host nicht voll verifizierbar und werden separat dokumentiert
-- **App-Review-Stand**: Apple lehnte Version 1.0 (Build 74) am 2026-05-01 unter Guideline 3.2 (Business / Other Business Model Issues) ab; die Ablehnung basierte auf einer Fehleinschätzung als organisationsgebundene App. Review-Response wurde am 2026-05-05 gesendet und akzeptiert — Build 74 steht jetzt auf `Pending Developer Release`. Der 1.0-Train ist damit abgeschlossen; Folge-Train ist 1.0.1 (Cloud-Build 84 erfolgreich, Build ≥96 nötig vor nächstem Submit). Response-Entwurf: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`.
-- TestFlight-Submission läuft jetzt über Xcode Cloud (1.0.1-Train, Build 84 grün); der frühere lokale Blocker (`xcodebuild -exportArchive` ohne Distribution-Zertifikat) wird damit umgangen. Lokales `Release`-Archive bleibt für Smoke-Builds nutzbar (zuletzt erzeugbar als `1.0 (45)`-Snapshot am 2026-04-30, vor MARKETING_VERSION-Bump auf 1.0.1).
-- **Hardware-Verifikation auf iPhone 15 Pro Max**: am 2026-05-05 als letzte Hardware-Acceptance gefahren (`testAppStoreScreenshots`, `testDeviceSmokeNavigationAndActions`, `testLandscapeLayoutSmoke` PASSED). Hero-Map-Workspace + LiveStatusResolver + Export-Empty-State + fileExporter-Fix (alle 2026-05-06) sind nur statisch + via Simulator (`xcodebuild` iPhone 17 Pro Max Sim BUILD SUCCEEDED) verifiziert — eine erneute Hardware-Verifikation steht aus.
+- **App-Review-Stand**: Apple lehnte Version 1.0 (Build 74) am 2026-05-01 unter Guideline 3.2 (Business / Other Business Model Issues) ab; die Ablehnung basierte auf einer Fehleinschätzung als organisationsgebundene App. Review-Response wurde am 2026-05-05 gesendet und akzeptiert — Build 74 steht jetzt auf `Pending Developer Release`. Der 1.0-Train ist damit abgeschlossen; Folge-Train ist 1.0.1 (Cloud-Build 84 erfolgreich, `CURRENT_PROJECT_VERSION = 100` lokal gesetzt, Build ≥100 aus Xcode Cloud nötig vor nächstem Submit). Response-Entwurf: `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`.
+- TestFlight-Submission läuft jetzt über Xcode Cloud (1.0.1-Train, Build 84 grün); der frühere lokale Blocker (`xcodebuild -exportArchive` ohne Distribution-Zertifikat) wird damit umgangen. Lokales `Release`-Archive bleibt für Smoke-Builds nutzbar (zuletzt erzeugbar als `1.0 (45)`-Snapshot am 2026-04-30, vor MARKETING_VERSION-Bump auf 1.0.1; aktueller lokaler Build-Stempel ist `1.0.1 (100)`).
+- **Hardware-Verifikation auf iPhone 15 Pro Max**: am 2026-05-05 als letzte Hardware-Acceptance gefahren (`testAppStoreScreenshots`, `testDeviceSmokeNavigationAndActions`, `testLandscapeLayoutSmoke` PASSED). Hero-Map-Workspace, LiveStatusResolver, Export-Empty-State, fileExporter-Fix, Heatmap-Tier-1/2, Tempolayer/Halo-Strokes, SIGABRT-Defensivguards, MapLayerMenu (alle 2026-05-06) sind nur statisch + via Simulator (`xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED, 964 Tests grün) verifiziert — eine erneute Hardware-Verifikation steht aus.

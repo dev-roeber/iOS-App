@@ -10,31 +10,28 @@ public struct AppDayMapView: View {
     /// When `true` the map fills available height (for landscape side-by-side layouts).
     /// When `false` (default) the map uses a fixed 280 pt portrait height.
     var fillHeight: Bool = false
-    /// When `false` the built-in style-toggle button is hidden so the caller can
-    /// place it inline in its own control row.
-    var showStyleToggle: Bool = true
     /// Top padding for the topTrailing map-control overlay. Defaults to 8 (legacy behavior).
     /// Hero-map callers pass a value combining the device safe-area inset and the
     /// shared `LHHeroMapLayout.mapControlTopOffset` so controls clear the chevron.
     var mapControlTopPadding: CGFloat = 8
-    /// When `true` the topTrailing controls are stacked vertically (VStack), preparing for
-    /// additional buttons in the future. Default `false` keeps the legacy horizontal layout.
-    var verticalMapControls: Bool = false
     @State private var renderData: DayMapRenderData
+    @State private var mapPosition: MapCameraPosition
 
     public init(
         mapData: DayMapData,
         fillHeight: Bool = false,
-        showStyleToggle: Bool = true,
-        mapControlTopPadding: CGFloat = 8,
-        verticalMapControls: Bool = false
+        mapControlTopPadding: CGFloat = 8
     ) {
         self.mapData = mapData
         self.fillHeight = fillHeight
-        self.showStyleToggle = showStyleToggle
         self.mapControlTopPadding = mapControlTopPadding
-        self.verticalMapControls = verticalMapControls
-        self._renderData = State(initialValue: DayMapRenderData(mapData: mapData))
+        let initialRender = DayMapRenderData(mapData: mapData)
+        self._renderData = State(initialValue: initialRender)
+        if let region = initialRender.region {
+            self._mapPosition = State(initialValue: .region(region))
+        } else {
+            self._mapPosition = State(initialValue: .automatic)
+        }
     }
 
     public var body: some View {
@@ -44,17 +41,19 @@ public struct AppDayMapView: View {
                 .frame(maxHeight: fillHeight ? .infinity : nil)
                 .clipShape(RoundedRectangle(cornerRadius: fillHeight ? 0 : 12, style: .continuous))
                 .overlay(alignment: .topTrailing) {
-                    if showStyleToggle {
-                        mapControlsStack
-                            .padding(.top, mapControlTopPadding)
-                            .padding(.trailing, 8)
-                            .padding(.leading, 8)
-                            .padding(.bottom, 8)
-                    }
+                    mapControlsStack
+                        .padding(.top, mapControlTopPadding)
+                        .padding(.trailing, 8)
+                        .padding(.leading, 8)
+                        .padding(.bottom, 8)
                 }
                 .accessibilityLabel(mapAccessibilityLabel)
                 .onChange(of: mapData) { _, newValue in
-                    renderData = DayMapRenderData(mapData: newValue)
+                    let newRender = DayMapRenderData(mapData: newValue)
+                    renderData = newRender
+                    if let region = newRender.region {
+                        withAnimation { mapPosition = .region(region) }
+                    }
                 }
         }
     }
@@ -62,7 +61,12 @@ public struct AppDayMapView: View {
     @ViewBuilder
     private var mapControlsStack: some View {
         MapLayerMenu(configuration: MapLayerMenu.Configuration(
-            showsTrackColor: true
+            showsTrackColor: true,
+            fitToData: renderData.region == nil ? nil : {
+                if let region = renderData.region {
+                    withAnimation { mapPosition = .region(region) }
+                }
+            }
         ))
     }
 
@@ -88,10 +92,9 @@ public struct AppDayMapView: View {
     @ViewBuilder
     private func mapContent(region: MKCoordinateRegion) -> some View {
         let useSpeed = preferences.mapTrackColorMode == .speed
-        Map(initialPosition: .region(MKCoordinateRegion(
-            center: region.center,
-            span: region.span
-        ))) {
+        Map(position: $mapPosition) {
+            // region parameter retained for legacy callers; mapPosition is the source of truth
+            let _ = region
             // Halo underlayer for every path — improves contrast on hybrid maps.
             ForEach(Array(renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
                 MapPolyline(coordinates: displayCoords(for: path))

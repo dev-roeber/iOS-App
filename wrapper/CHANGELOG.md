@@ -1,5 +1,57 @@
 # CHANGELOG
 
+## 2026-05-06 (post-Hero-Map)
+
+### docs: deep audit + repo-truth-sync (HEAD post-`70254ff`)
+- Wrapper-Doku Datei-fuer-Datei und Zeile-fuer-Zeile gegen Code abgeglichen.
+- README: SPM-Pfad `../..` → `..` korrigiert (war seit `379b835` falsch dokumentiert); `fileImporter`-Aussage auf reale `allowedContentTypes` `[.json, .zip, .gpx, .tcx]` korrigiert (KML/GeoJSON sind Export-only); ASC-/Build-Status auf `CURRENT_PROJECT_VERSION = 100` aktualisiert.
+- ROADMAP/NEXT_STEPS: Test-Zahl `228` (Linux, 2026-03-31) → `964` (macOS, 2026-05-06). Phase 19.53 als abgeschlossen markiert.
+- xcode-test.yml: Kommentar zum SPM-relativePath korrigiert.
+
+### feat: unify map layer controls into single right-side dropdown (commit `70254ff`)
+- Neue Komponente `MapLayerMenu.swift` (Configuration-driven Dropdown) konsolidiert ALLE Map-Layer-Controls (Map-Style, Track-Color, Live-Optionen, Heatmap-Palette/Scale/Radius/Opacity, Fit-to-Data, Center-on-Location, Fullscreen).
+- `LHMapStyleToggleButton` als `@available(*, deprecated)` markiert.
+- Heatmap-Bottom-Sheet, Capsule-Chip-Cluster, Follow-Pill, Fullscreen-Close-X, standalone Style-Toggles und Fit-Buttons auf allen Map-Surfaces entfernt — durch das Menü ersetzt.
+- Heatmap-Opacity snappt auf `25 / 50 / 75 / 100 %` Presets (Slider war im SwiftUI-Menu nicht moeglich).
+- Heatmap-Stats bleiben als kleines bottom-leading Badge (Punkte · Tage · Datumsbereich).
+- Tote Parameter (`verticalMapControls`, `showStyleToggle`) und Hilfsfunktionen (`mapControlButton`, `exploreControlButton`, `styleToggleIcon`) entfernt; alle Aufrufer aktualisiert.
+- Day-Map nutzt jetzt `mapPosition`-State (statt statisches `initialPosition`) — Viewport springt bei Tag-Wechsel und Fit-to-Data ist verdrahtet.
+- Export-Preview Fit-to-Data ergänzt; Overview `isFullscreenActive` korrekt an `isExpanded` gebunden.
+- Live-Tracking Landscape-Card und Fullscreen nutzen jetzt die geteilten `liveAccuracyCircleContent` / `liveTrackContent` / `liveCurrentLocationAnnotation` MapContent-Builder — vorher hat das Landscape-Layout `MapLayerMenu`-Flags ignoriert (Speed-Coloring, Fade-Buckets, Accuracy-Circle).
+- Heatmap-Overlay-Pattern auf einheitliches `.overlay(alignment:)` umgestellt; Padding repo-weit auf `8 pt`.
+- Build green: `swift test` 964/2/0; Wrapper-`xcodebuild` (iPhone 17 Pro Max Sim 26.3.1) BUILD SUCCEEDED.
+
+### fix: defensive guards against SIGABRT on launch (commit `74300a6`)
+- Live-Tracking-Domain mit Defensiv-Guards gegen seltene Crash-Pfade beim App-Start.
+
+### feat: maps next-level — Tempolayer, halo strokes, live polish (commit `ab054c7`)
+- SpeedColors-Tempolayer als optionales Track-Coloring (cool→warm).
+- Halo-Understrokes für bessere Kontraste auf Hybrid-Maps; Track-Width-Hierarchie nach Kontext (live > day > overview > export).
+
+### feat: home screen — electric lightning background (commit `fa006cd`)
+- `HomeBackground.imageset` für den Start-Bildschirm der Wrapper-App.
+
+### feat: heatmap next-level — Magma palette, log-scale, soft-glow cells (commit `9118ac6`)
+- Magma/Inferno-Paletten (perzeptuell uniform); Log-Scale-Aggregation; Soft-Glow-Cells via Radialgradient — bullseye-Ringe und harte Hex-Kanten visuell aufgelöst.
+
+### feat: remove Routes mode from heatmap entirely (commit `fc3ccc5`)
+- Routes-Modus aus der Heatmap entfernt; ausschliesslich Density.
+
+### fix: heatmap P0 follow-up batches (commits `825a3de`, `50b4c58`, `bbd9e3b`, `f5de284`)
+- Vier Verifikations-Batches mit Defaults für Streetzoom, weniger Burnout, sane low-density-Sichtbarkeit.
+
+### feat: heatmap density Tier 2 — pointy-top hexagons + Mercator + cos(lat) (commits `a2f50bc`, `2e1c928`, `6a7c361`)
+- Pointy-top Hexagon-Polygone als Tile-Geometrie; Mercator-Latitude-Korrektur; cos(lat)-Bin-Aggregation.
+
+### fix: heatmap Tier 1 — kill lens-flare, soften block edges, fix i18n (commit `e7a2379`)
+- Lens-Flare-Star entfernt; weichere Tile-Kanten; deutsche Lokalisierung der Heatmap-Beschriftungen korrigiert.
+
+### feat: replace bundled demo fixture with real recorded LH2GPX track (commit `b1d65cb`)
+- Bundled Demo-Fixture jetzt ein realer aufgezeichneter LH2GPX-Track (Oldenburg → Dänemark).
+
+### chore: bump build number 96 → 100 (commit `8854eef`)
+- `CURRENT_PROJECT_VERSION` auf `100` in pbxproj (alle 8 Build-Konfigurationen); `CFBundleVersion = 100` hartcodiert in beiden Info.plist-Dateien (App + Widget). Naechster ASC-Submit-Kandidat: Build ≥100 aus Xcode Cloud.
+
 ## 2026-05-06
 
 ### feat: LiveStatusResolver + Export-Empty-State-Cleanup + Polish

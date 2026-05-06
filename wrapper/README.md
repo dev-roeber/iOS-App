@@ -20,14 +20,14 @@ Xcode-Wrapper-Projekt fuer die iOS-App von LocationHistory2GPX.
 | Inhalt | Swift Package: Decoder, Queries, AppSupport, DemoSupport | Xcode-Projekt: App-Target, Bundle-Config, Assets |
 | Build | `swift build` / `swift test` im Root | `xcodebuild` mit `-project wrapper/LH2GPXWrapper.xcodeproj` |
 | Tests | Unit-Tests via SwiftPM | Xcode-Unit- und UI-Tests |
-| Abhaengigkeit | eigenstaendig | haengt vom Core ab (lokale SPM-Referenz `../..`) |
+| Abhaengigkeit | eigenstaendig | haengt vom Core ab (lokale SPM-Referenz `..`) |
 
 ## SPM-Abhaengigkeit
 
 Das Xcode-Projekt referenziert den Core als lokales Swift Package:
 
 ```
-../..
+..
 ```
 
 (relativ zum `wrapper/`-Verzeichnis; zeigt auf den Monorepo-Root mit `Package.swift`)
@@ -40,7 +40,7 @@ Genutzte Produkte:
 
 - **Bundle Identifier:** `de.roeber.LH2GPXWrapper`
 - **Display Name:** LH2GPX
-- **Version:** 1.0.1 (`MARKETING_VERSION`); 1.0-Train abgeschlossen — Build 74 in ASC-Status `Pending Developer Release` (akzeptiert nach Review-Response 2026-05-05); 1.0.1-Train Xcode Cloud Build 84 grün; Build 96 vor nächstem Submit nötig (Stand 2026-05-06)
+- **Version:** 1.0.1 (`MARKETING_VERSION`); 1.0-Train abgeschlossen — Build 74 in ASC-Status `Pending Developer Release` (akzeptiert nach Review-Response 2026-05-05); 1.0.1-Train Xcode Cloud Build 84 grün; `CURRENT_PROJECT_VERSION = 100` lokal gesetzt (commit `8854eef`, 2026-05-06), Xcode Cloud Build ≥100 vor nächstem Submit nötig (Stand 2026-05-06)
 - **Deployment Target:** iOS 16.0 (App) / iOS 16.2 (Widget)
 - **Signing:** Automatic (Team XAGR3K7XDJ); lokaler Release-Archive-Pfad baut derzeit mit `Apple Development`, weil auf diesem Host keine Distribution-Identitaet verfuegbar ist
 - **App Icon:** Map-Pin + "LH2GPX", 1024x1024 (Interims-Design, kein Gradient-Placeholder mehr)
@@ -116,11 +116,11 @@ Neu auf Code-Stand 2026-03-20:
 - Deep Link `lh2gpx://live` navigiert direkt zum Live-Tab (z.B. aus dem Widget)
 - URL-Scheme `lh2gpx://` ist per `CFBundleURLTypes` in `Config/Info.plist` registriert
 - App Groups (`group.de.roeber.LH2GPXWrapper`) fuer Widget-Datenaustausch konfiguriert (Entitlements in `LH2GPXWrapper/` und `LH2GPXWidget/`)
-- GPX, TCX, KML, GeoJSON koennen per `fileImporter` geoeffnet werden (nicht nur JSON/ZIP)
+- JSON, ZIP, GPX, TCX koennen per `fileImporter` geoeffnet werden (KML/GeoJSON-Export wird unterstuetzt, der Import-Picker akzeptiert sie aktuell nicht)
 
 Aktueller Server-Truth fuer den eingebundenen Core-Stand:
-- `swift test` im aktiven Repo `iOS-App` lief lokal grün mit `949` Tests, `2` Skips und `0` Failures (Stand 2026-05-06; vorher 575 am 2026-04-12)
-- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build`: BUILD SUCCEEDED auf macOS lokal, HEAD f2e1d21 (2026-05-06)
+- `swift test` im aktiven Repo `iOS-App` lief lokal grün mit `964` Tests, `2` Skips und `0` Failures (Stand 2026-05-06, HEAD post-`70254ff`; vorher 949 am 2026-05-06 09:57)
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build`: BUILD SUCCEEDED auf macOS lokal, HEAD post-`70254ff` (2026-05-06; iPhone 15 Pro Max ist die physische Hardware-Verifikations-Plattform — kein passender Sim mehr installiert)
 - iPhone 15 Pro Max physisch (UDID `00008130-00163D0A0461401C`, iOS 26.4): `testAppStoreScreenshots`, `testDeviceSmokeNavigationAndActions`, `testLandscapeLayoutSmoke` alle PASSED am 2026-05-05 (Build vor Hero-Map-Rollout); Hero-Map-/LiveStatus-/Export-Fix-Änderungen vom 2026-05-06 noch nicht erneut auf Hardware verifiziert
 
 Unterstuetztes Import-Format: jede `.json`-Datei oder `.zip`-Datei, die einen gueltigen LH2GPX-App-Export enthaelt, plus Google-Timeline-`location-history.json` / `.zip` aus Google Takeout.
@@ -131,8 +131,8 @@ iPad: bewusst spaeter.
 
 ## TestFlight + App Store Readiness
 
-Lokal verifiziert (2026-04-30):
-- `xcodebuild archive` erfolgreich (`1.0 (45)`)
+Lokal verifiziert (2026-04-30, historisch — nach Build-Bumps inzwischen `1.0.1 (100)`):
+- `xcodebuild archive` erfolgreich (`1.0 (45)` zum damaligen Zeitpunkt)
 - `PrivacyInfo.xcprivacy` deklariert UserDefaults-Zugriff (CA92.1) und `PreciseLocation` fuer den optionalen Live-Upload
 
 Offen:
@@ -157,7 +157,7 @@ Aktueller ASC-Truth (Stand 2026-05-06):
 - Builds `80`–`83` (1.0-Train) wurden wegen geschlossenem Train mit ITMS-90186 / ITMS-90062 verworfen — kein Code-Fehler
 - `MARKETING_VERSION` im `project.pbxproj` ist auf `1.0.1` angehoben; ASC hat Version `1.0.1` angelegt
 - Xcode Cloud Build `84` (1.0.1-Train) ist erfolgreich (Archive ✓, TestFlight Internal ✓)
-- Build `95` ist veraltet — Build `96` (oder höher) muss vor dem nächsten Submit aus Xcode Cloud getriggert werden, damit der Hero-Map-/LiveStatus-/Export-Fix-Stand vom 2026-05-06 enthalten ist
+- Build `95` ist veraltet — `CURRENT_PROJECT_VERSION` lokal auf `100` angehoben (commit `8854eef`); Build `≥100` muss aus Xcode Cloud getriggert werden, damit der MapLayerMenu-/Heatmap-/Tempolayer-/SIGABRT-Fix-Stand vom 2026-05-06 enthalten ist
 
 Weiterhin manuell / ASC-abhaengig:
 - App Store Connect Projekt anlegen

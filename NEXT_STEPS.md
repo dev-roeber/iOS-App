@@ -1,6 +1,6 @@
 # NEXT_STEPS
 
-Stand: 2026-05-06 (Hero-Map-Workspace auf Übersicht/Insights/Export/Live ausgerollt — Tage-Optik; Build 96 nötig vor Submit)
+Stand: 2026-05-06 (HEAD post-`70254ff` — MapLayerMenu unified, Heatmap Tier 2, Tempolayer/Halo, SIGABRT-Fix, Demo-Fixture-Swap, `CURRENT_PROJECT_VERSION = 100` lokal gesetzt; Xcode Cloud Build ≥100 nötig vor Submit)
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
@@ -10,15 +10,15 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] **Build 74 / 1.0-Train abgeschlossen**: Version 1.0 (Build 74) bleibt in „Pending Developer Release" — 1.0-Train ist in ASC geschlossen. Builds 80–83 scheiterten wegen geschlossenem 1.0-Train (ITMS-90186/90062), nicht wegen Code-Fehler.
 - [x] **MARKETING_VERSION auf 1.0.1 angehoben** (2026-05-05): `project.pbxproj` alle 8 Konfigurationen auf `1.0.1`; Plists weiterhin via `$(MARKETING_VERSION)`. ASC hat Version `1.0.1` bereits angelegt.
 - [x] **Xcode Cloud Build 84 erfolgreich** (2026-05-05): `1.0.1 (84)` — Archive ✅, TestFlight-interne Tests ✅. Erster valider Build für den 1.0.1-Train.
-- [ ] **Xcode Cloud Build 96 triggern** (Pflicht vor Submit):
-  - Build 95 ist veraltet — enthält weder den compact-controls-Fix noch den Statusbar/flush-Workspace-Fix vom 2026-05-06.
-  - Neuester Commit: `fix: keep days map controls below status bar`
+- [ ] **Xcode Cloud Build ≥100 triggern** (Pflicht vor Submit):
+  - Build 95 ist veraltet; `CURRENT_PROJECT_VERSION` lokal auf `100` angehoben (commit `8854eef`, 2026-05-06).
+  - Neuester Commit-Stand: `feat: unify map layer controls into single right-side dropdown` (`70254ff`) plus Doku-/Wiring-Audit-Polish.
   - Xcode Cloud Workflow `Release – Archive & TestFlight` manuell anstoßen.
   - Visuelle Verifikation am echten iPhone 15 Pro Max steht noch aus (App ist installiert + gestartet).
 - [ ] **Days-Screenshot (iphone15pm_03) neu aufnehmen**: UITest `testAppStoreScreenshots` auf iPhone 15 Pro Max ausführen — Days-Layout erneut verändert (Control-Clearance, kein schwarzer Gap, kompakter Filter). Neues PNG in `docs/app-store-assets/screenshots/iphone-67/` ablegen.
 - [ ] **Version 1.0.1 in App Store Connect finalisieren** (nach neuem Cloud-Build):
   1. ASC → LH2GPX → Vertrieb → iOS-App Version `1.0.1` öffnen
-  2. Neuen Build (**≥ 96**, nach diesem Commit) auswählen, speichern — **nicht Build 95 oder früher**
+  2. Neuen Build (**≥ 100**, nach diesem Commit) auswählen, speichern — **nicht Build 95 oder früher**
   3. Screenshots prüfen: 6 iPhone-15-Pro-Max-PNGs aus `docs/app-store-assets/screenshots/iphone-67/` hochladen (iphone15pm_01–06, 1290×2796 px)
   4. `Zur Prüfung einreichen` (`Submit for Review`)
   - Runbook: `docs/ASC_SUBMIT_RUNBOOK.md`

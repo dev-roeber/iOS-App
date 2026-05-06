@@ -119,12 +119,6 @@ struct AppOverviewTracksMapView: View {
     /// `.ignoresSafeArea(edges: .top)`) must pass `safeAreaTop + N` here so the
     /// controls do not land in Dynamic Island / status bar.
     let mapControlTopPadding: CGFloat
-    /// When `true`, render Globe + Fit-to-data + (optional) Fullscreen buttons
-    /// stacked vertically (a column) instead of horizontally (a row).
-    /// Use this when another set of overlay controls (e.g. the LHCollapsibleMapHeader
-    /// chevron) already occupies the top-right corner — vertical layout puts the
-    /// map controls cleanly below that header chevron rather than next to it.
-    let verticalMapControls: Bool
 
     @State private var model = AppOverviewMapModel()
     @State private var mapPosition: MapCameraPosition = .automatic
@@ -137,8 +131,7 @@ struct AppOverviewTracksMapView: View {
         queryFilter: AppExportQueryFilter?,
         fixedHeight: CGFloat? = 200,
         showsFullscreenControl: Bool = true,
-        mapControlTopPadding: CGFloat = 8,
-        verticalMapControls: Bool = false
+        mapControlTopPadding: CGFloat = 8
     ) {
         self.daySummaries = daySummaries
         self.content = content
@@ -146,7 +139,6 @@ struct AppOverviewTracksMapView: View {
         self.fixedHeight = fixedHeight
         self.showsFullscreenControl = showsFullscreenControl
         self.mapControlTopPadding = mapControlTopPadding
-        self.verticalMapControls = verticalMapControls
     }
 
     var body: some View {
@@ -231,26 +223,8 @@ struct AppOverviewTracksMapView: View {
                 }
             },
             toggleFullscreen: showsFullscreenControl ? { isExpanded = true } : nil,
-            isFullscreenActive: false
+            isFullscreenActive: isExpanded
         ))
-    }
-
-    @ViewBuilder
-    private func mapControlButton(
-        systemImage: String,
-        accessibilityLabel: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.white)
-                .frame(width: 28, height: 28)
-                .background(.black.opacity(0.4))
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(accessibilityLabel)
     }
 
     private var routeCountBadge: some View {
@@ -331,10 +305,6 @@ struct AppOverviewTracksMapView: View {
 
     private var mapStyle: MapStyle {
         preferences.preferredMapStyle.isHybrid ? .hybrid : .standard
-    }
-
-    private var styleToggleIcon: String {
-        preferences.preferredMapStyle.isHybrid ? "map" : "globe"
     }
 
     private var mapAccessibilityLabel: String {
@@ -462,24 +432,6 @@ struct AppOverviewExploreSheet: View {
             }
             .padding(12)
         }
-    }
-
-    @ViewBuilder
-    private func exploreControlButton(
-        systemImage: String,
-        accessibilityLabel: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.white)
-                .frame(width: 32, height: 32)
-                .background(.black.opacity(0.4))
-                .clipShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(accessibilityLabel)
     }
 
     private func t(_ english: String) -> String {

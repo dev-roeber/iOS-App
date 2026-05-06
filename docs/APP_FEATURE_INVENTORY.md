@@ -17,7 +17,7 @@ LH2GPX is a **public consumer/utility app**. It is not an organization-specific 
 - **No account required**: no login, no organization ID, no employee credentials, no partner affiliation
 - **All data stays local**: imported location history never leaves the device; no mandatory cloud sync or server
 - **Optional live recording upload**: disabled by default; requires the user to explicitly configure a self-hosted server URL; no central LH2GPX service exists; no organizational backend
-- **App Store Review context**: version 1.0 (Build 74) was rejected on 2026-05-01 under Guideline 3.2 (Business); review response sent and accepted — Build 74 status now **Pending Developer Release** (2026-05-05). 1.0.1-Train started, Cloud-Build 84 successful, Build 96 required before next submit.
+- **App Store Review context**: version 1.0 (Build 74) was rejected on 2026-05-01 under Guideline 3.2 (Business); review response sent and accepted — Build 74 status now **Pending Developer Release** (2026-05-05). 1.0.1-Train started, Cloud-Build 84 successful, `CURRENT_PROJECT_VERSION = 100` locally set (commit `8854eef`); Xcode Cloud Build ≥100 required before next submit.
 
 ## 1. App-Struktur / Navigation
 
@@ -143,14 +143,15 @@ Present:
 - fitted region computed from available coordinates
 - visit-marker tinting by semantic type
 - route color coding by activity type
-- map style toggle between standard and satellite hybrid
+- **Unified `MapLayerMenu` dropdown (2026-05-06, commit `70254ff`):** alle Map-Layer-Controls auf jeder Map-Surface laufen über ein einziges Right-Side-Dropdown (SF Symbol `slider.horizontal.3`, oben rechts mit `.padding(8)`). Ersetzt: standalone `LHMapStyleToggleButton` (deprecated), Heatmap-Bottom-Sheet, Capsule-Chip-Cluster (Palette/Scale/Radius), Follow-Pill, Fullscreen-Close-X-Button, Fit-to-Data-Button. Configuration-driven über `MapLayerMenu.Configuration` (showsTrackColor / showsLiveOptions / showsHeatmapControls / fitToData / centerOnLocation / toggleFullscreen / isFullscreenActive).
+- Heatmap-Opacity in `MapLayerMenu` als 4-Stufen-Picker `25 % / 50 % / 75 % / 100 %` (Slider war im SwiftUI-`Menu` nicht möglich); Snap-to-nearest-Preset auf Read.
 - live-location map with current-position marker and live polyline while recording
-- recenter/follow action for the live-location map
-- fullscreen live map mode
-- dedicated `Heatmap` sheet for imported history on iOS 17+/macOS 14+ with precomputed LOD grids, smoothed aggregated polygon cells, viewport-capped cell selection, calmer low-zoom rendering, local opacity/radius controls, `fit to data`, a small density legend, and stronger nonlinear opacity/intensity/color mapping with earlier low-/mid-density hue separation so sparse detail zoom stays visible and more differentiated instead of fading to near-grey
-- Heatmap Mode and Radius controls rendered as Capsule chip buttons (matching `AppDayFilterChipsView` style); control overlay is scrollable in landscape via `ScrollView(.vertical)`
+- center-on-location action for the live-location map (verfügbar wenn `currentLocation != nil`); aktiviert Follow-Mode als Seiteneffekt
+- fullscreen live map mode (über `MapLayerMenu` toggleFullscreen geöffnet/geschlossen; `isFullscreenActive: true` in der Fullscreen-Karte ändert das Label)
+- dedicated `Heatmap` sheet for imported history on iOS 17+/macOS 14+ with precomputed LOD grids, smoothed aggregated polygon cells, viewport-capped cell selection, calmer low-zoom rendering, fit-to-data + heatmap controls (palette, scale, radius, opacity) via `MapLayerMenu`, and stronger nonlinear opacity/intensity/color mapping with earlier low-/mid-density hue separation so sparse detail zoom stays visible and more differentiated instead of fading to near-grey
+- Heatmap-Stats verbleiben als kleines `bottom-leading` Info-Badge (Punkte · Tage · Datumsbereich); Bottom-Sheet mit Drag-Handle/Expand/Collapse wurde entfernt.
 
-- path display mode toggle in day-detail map: `.original` (raw coordinates) vs. `.mapMatched` (`Simplified`); persisted via `AppDayPathDisplayMode` in UserDefaults; Steuerzeile kombiniert Picker + Map-Style-Toggle in einer `mapControlRow` (kein separates Globe-Overlay mehr)
+- path display mode toggle in day-detail map: `.original` (raw coordinates) vs. `.mapMatched` (`Simplified`); persisted via `AppDayPathDisplayMode` in UserDefaults; Picker `Route Display` ist Inhaltsfilter (nicht Layer-Style) und sitzt im Filter-Panel über bzw. neben der Karte, nicht im Layer-Menü.
 - in `.mapMatched` mode: GPS outlier pre-filter (`PathFilter.removeOutliers`, distance-based, default maxJumpMeters=5000) applied before Douglas-Peucker simplification (epsilon=15m); fallback to original sequence if fewer than 2 points remain after filtering
 - NOTE: no road/path network snapping; `Simplified` is geometric simplification + outlier filtering only
 - Layout-Bugfix 2026-04-14: `GeometryReader` aus `AppDayRow` (List-Overlap-Bug) und `AppDayDetailView.contentView` (zero-height-Bug in ScrollView) entfernt; outer `ScrollView` aus compact Nav-Destination entfernt; Layout-Erkennung jetzt via `@Environment(\.verticalSizeClass)`
@@ -197,7 +198,7 @@ Present:
 - upload quick actions: pause button with `live.cta.pause`; saved-tracks: `live.savedTracks.preview`, `live.savedTracks.openAll`
 - Token masking: `LHUploadSettingsCard` shows "Token set" / "No token" only — bearer token value never displayed in UI, logs, or tests
 - `AppRecordedTracksLibraryView` uses `ScrollView` + `LHPageScaffold` replacing the previous `List`; navigation title "Live Tracks"; `liveTracks.title`, `liveTracks.info`, `liveTracks.list`, `liveTracks.row.<index>`, `liveTracks.newTrack` accessibility identifiers
-- `LiveTrackingPresentation.gpsStatusLabel(accuracyM:)` — returns `"GPS Good"` (< 30 m) or `"GPS Weak"`
+- `LiveTrackingPresentation.gpsStatusLabel(accuracyM:)` — returns `"GPS Good"` (< 30 m), `"GPS Weak"` (≥ 30 m), or `"GPS Searching"` (when `accuracyM == nil`, i.e. no fix yet)
 - `LiveTrackingPresentation.uploadSectionVisible(sendsToServer:pendingCount:statusMessage:)` — visibility predicate for the upload section
 - **Options + Widget/Live Settings Redesign (2026-05-01):** `AppOptionsView` vollständig auf NavigationLink-Grid mit 8 modularen Section-Rows umgestellt
 - `RecordingPreset` enum (`battery`, `balanced`, `precise`, `custom`) als Computed-Property auf `AppPreferences`; deterministisch aus `liveTrackingAccuracy` + `liveTrackingDetail`; kein neuer UserDefaults-Key

@@ -14,7 +14,7 @@ jobs:
 
       # In the monorepo the Core Swift Package lives at the repo root.
       # The Xcode project at wrapper/LH2GPXWrapper.xcodeproj references it
-      # via relativePath = "../.." which resolves to the repo root.
+      # via relativePath = ".." (one level up from wrapper/, i.e. the repo root).
       # No separate clone of the Core package is needed.
 
       - name: Run Tests

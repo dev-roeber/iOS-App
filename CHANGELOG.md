@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## [2026-05-06] — Doku-/Wiring-Audit-Polish (HEAD post-`70254ff`)
+
+### docs: deep audit + repo-truth-sync (Core + Wrapper)
+- Datei-fuer-Datei und Zeile-fuer-Zeile Truth-Check der gesamten Repo- und Wrapper-Doku gegen den Code.
+- Aktualisiert: README, NEXT_STEPS, ROADMAP, docs/APP_FEATURE_INVENTORY, docs/XCODE_APP_PREPARATION, docs/XCODE_RUNBOOK, docs/APPLE_VERIFICATION_CHECKLIST, wrapper/README, wrapper/NEXT_STEPS, wrapper/ROADMAP, wrapper/CHANGELOG, wrapper/.github/workflows/xcode-test.yml.
+- Korrigiert: SPM-Pfad-Behauptungen (`../..` → `..`), Build-Number (`96` / `45` → `100`), Test-Zahl (`228` / `949` → `964`), gpsStatusLabel-Beschreibung (3-wertig statt 2-wertig), Heatmap-Capsule-Chip-Beschreibung (jetzt MapLayerMenu), Wrapper-CI-Dateiname (`swift-test.yml` → `xcode-test.yml`), `fileImporter` `allowedContentTypes` (KML/GeoJSON sind Export-only).
+
+### refactor: MapLayerMenu Wiring-Audit-Polish
+- `AppDayMapView`: `mapPosition` als `@State`-`MapCameraPosition` (statt statisches `initialPosition`); Viewport springt jetzt bei Tag-Wechsel, `fitToData` an `MapLayerMenu` verdrahtet.
+- `AppExportPreviewMapView`: `mapPosition`-State + `fitToData` ergänzt; Configuration jetzt nicht mehr leer.
+- `AppOverviewTracksMapView`: `isFullscreenActive: false` → `isFullscreenActive: isExpanded` (Label folgt Sheet-State); tote Funktionen `mapControlButton`, `exploreControlButton`, `styleToggleIcon` entfernt.
+- `AppHeatmapView`: ZStack-Pattern auf `.overlay(alignment:)` umgestellt (verhindert mögliche Verdeckung durch Calculating-Overlay); Padding `12pt → 8pt` einheitlich.
+- `AppLiveTrackingView`: Landscape-`mapCard` und `fullscreenMapView` nutzen jetzt die geteilten `liveAccuracyCircleContent` / `liveTrackContent` / `liveCurrentLocationAnnotation` MapContent-Builder — vorher hat das Landscape-Layout `MapLayerMenu`-Flags (Speed-Coloring, Fade-Buckets, Accuracy-Circle) komplett ignoriert; Padding repo-weit `8pt`.
+- `AppLiveLocationSection`: `showsTrackColor: true` entfernt — das Rendering dieser Section ignoriert `mapTrackColorMode` per Design (es gibt nur Live-Mint + optionales Fading).
+- Tote Parameter `verticalMapControls` (in 3 Views, 4 Aufrufern) und `showStyleToggle` (in `AppDayMapView`, 2 Aufrufern) entfernt.
+
+### Verifikation
+- `swift build`: green.
+- `swift test`: 964 Tests, 2 skipped, 0 failures (vorher 949 unter `93109e0`).
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build`: BUILD SUCCEEDED.
+
 ## [2026-05-06] — UX-Audit-Batch (Live-Status, Export-Empty-State, Polish)
 
 ### feat: konsolidierter LiveStatusResolver

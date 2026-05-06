@@ -5,7 +5,7 @@
 **Hinweis zum Auftrag**: Die im Auftragstext genannten Linux-Pfade `/home/sebastian/repos/LocationHistory2GPX-iOS` und `/home/sebastian/repos/LH2GPXWrapper` existieren auf diesem System nicht. Der aktive Repo-Stand ist `dev-roeber/iOS-App` auf macOS (siehe README L82-88: `LocationHistory2GPX-iOS` und `LH2GPXWrapper` sind explizit als historische Repos markiert).
 **Branch**: `main`
 **Start-HEAD**: `f2e1d21`
-**End-HEAD**: wird am Ende dieses Audits ergänzt
+**End-HEAD**: `93109e0` (docs: deep audit and truth-sync project documentation, 2026-05-06 09:57). **Folge-Audit (post-Audit-Doku-Sync, 2026-05-06 Abend)**: HEAD post-`70254ff` hat den Doku-Stand nach MapLayerMenu, Heatmap-Tier-2, Tempolayer, SIGABRT-Fix, Build-Bump 96→100 und MapLayerMenu-Wiring-Polish erneut nachgezogen — siehe `CHANGELOG.md` und `ROADMAP.md`.
 **Auditor**: Claude Code (Opus 4.7)
 
 ---
@@ -175,4 +175,4 @@ git diff --check: clean (vor diesem Audit; nach diesem Audit ebenfalls erwartet 
 ---
 
 **Audit abgeschlossen**: 2026-05-06.
-**End-HEAD**: wird beim Commit dieser Audit-Sync gesetzt — siehe Commit-Hash im Push-Output.
+**End-HEAD**: `93109e0` (docs: deep audit and truth-sync project documentation, 2026-05-06 09:57).

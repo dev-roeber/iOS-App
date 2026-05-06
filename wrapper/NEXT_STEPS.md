@@ -9,7 +9,7 @@ Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschl
 - [x] fileImporter GPX/TCX: `allowedContentTypes` in `ContentView.swift` auf `[.json, .zip, .gpx, .tcx]` erweitert; `UTType.tcx` Extension in Core hinzugefuegt
 - [x] Deep Link `lh2gpx://live`: `CFBundleURLTypes` in `Info.plist`, `onOpenURL`-Handler, `navigateToLiveTabRequested` + `AppContentSplitView` onChange-Observer
 - [x] Widget-/Live-Activity-Lokalisierung: harte deutsche Texte ersetzt; Widget bevorzugt via App Group gespiegelte `AppLanguagePreference`, Geraetesprache als Fallback
-- [x] Wrapper-/Widget-Build in CI: `.github/workflows/swift-test.yml` baut `LH2GPXWrapper` inkl. eingebettetem `LH2GPXWidget`
+- [x] Wrapper-/Widget-Build in CI: `wrapper/.github/workflows/xcode-test.yml` baut `LH2GPXWrapper` inkl. eingebettetem `LH2GPXWidget` (Core-Tests laufen separat in `.github/workflows/swift-test.yml`)
 - [x] Widget-/Dynamic-Island-Einstellungen im Optionen-Menue sichtbar verdrahtet
 
 ## 1. Phase 19.51 – Live / Upload / Insights / Days auf Apple verifizieren
@@ -21,7 +21,7 @@ Bereits drin:
 - der dedizierte `Live`-Tab wurde visuell und funktional deutlich ausgebaut: klarere Map-/Recording-/Upload-/Library-Hierarchie, Status-Chips, Quick Actions und mehr Live-Metriken
 - der optionale Server-Upload zeigt Queue-, Failure- und Last-Success-Zustaende und unterstuetzt Pause/Resume sowie manuellen Queue-Flush
 - die Insights-Seite bietet segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) sowie KPI-Karten, Highlight-Karten, `Top Days`, Monatstrends und umschaltbare Distanz-/Route-/Event-Muster
-- frischer Linux-Mindestnachweis fuer den eingebundenen Core-Stand liegt vor: `swift test` mit `228` Tests, `2` Skips und `0` Failures
+- frischer macOS-lokaler Nachweis fuer den eingebundenen Core-Stand liegt vor: `swift test` mit `964` Tests, `2` Skips und `0` Failures (HEAD post-`70254ff`, 2026-05-06)
 
 Fehlt noch:
 - frische Apple-UI-Verifikation fuer den neuen `Live`-Tab inklusive Upload-Zustaenden, Quick Actions und groesserem Stat-Set
@@ -48,17 +48,13 @@ Fehlt noch:
 
 ## 3. Phase 19.53 – Frischen Apple-CLI-Gegenlauf fuer den aktuellen Stand nachziehen
 
-Status: **offen**
+Status: **abgeschlossen**
 
-Bereits drin:
-- historische Apple-CLI-Nachweise fuer 2026-03-30 sind dokumentiert
-- der frische Linux-Mindestnachweis fuer den eingebundenen Core-Stand ist `swift test`: `228` Tests, `2` Skips und `0` Failures
+- macOS-lokal frisch verifiziert (2026-05-06, HEAD post-`70254ff`):
+  - `swift test`: `964` Tests, `2` Skips, `0` Failures
+  - `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build`: BUILD SUCCEEDED
 - Apple-only Heatmap-Renderingstests sind fuer non-Apple-Plattformen korrekt gegated
 - die frueheren Test-vs-Code-Drifts (`minimumBatchSize`, Keychain-first, Gedankenstrich-Formatierung) sind repo-wahr bereinigt
-
-Fehlt noch:
-- frischer `xcodebuild`-Gegenlauf fuer genau diesen konsolidierten Wrapper-Stand; auf diesem Linux-Server derzeit nicht moeglich
-- aktualisierter Apple-CLI-Nachweis fuer Core (`LocationHistoryConsumerApp` / `LocationHistoryConsumer-Package`) und Wrapper (`LH2GPXWrapper`) auf einem Apple-Host
 
 ## 4. Phase 19.54 – Background-Recording auf echtem iPhone verifizieren
 

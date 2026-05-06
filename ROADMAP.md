@@ -1,8 +1,29 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-06)
+## Aktiver Stand (2026-05-06, HEAD post-`70254ff`)
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
+
+### Map / Heatmap / Live Next-Level (2026-05-06)
+
+Abgeschlossene Arbeit nach Phase 19.27 / nach dem Hardware-Verifikations-Block 2026-05-05, getrennt nach Feature-Themen:
+
+- **MapLayerMenu (commit `70254ff`)**: alle Map-Layer-Controls auf jeder Map-Surface laufen über ein einziges Right-Side-Dropdown. Ersetzt `LHMapStyleToggleButton` (deprecated), Heatmap-Bottom-Sheet, Capsule-Chip-Cluster, Follow-Pill, Fullscreen-Close-X, standalone Style-/Fit-/Center-Buttons.
+- **MapLayerMenu Wiring-Audit-Polish (Doku-Audit 2026-05-06 Abend)**: Day-Map mit `mapPosition`-State + Fit-to-Data, Export-Preview Fit-to-Data, Overview `isFullscreenActive` korrekt verdrahtet, Live-Tracking Landscape-Card nutzt geteilte MapContent-Helpers, Heatmap-Overlay-Pattern vereinheitlicht, tote Parameter (`verticalMapControls`, `showStyleToggle`) entfernt.
+- **Heatmap Tier 1 + 2** (commits `e7a2379`, `a2f50bc`, `2e1c928`, `6a7c361`): Lens-Flare entfernt, weichere Kanten, i18n-Fix; pointy-top Hexagon-Polygone; Mercator-Korrektur; cos(lat)-Bin-Aggregation.
+- **Heatmap P0 Follow-up Batches** (commits `f5de284`, `bbd9e3b`, `50b4c58`, `825a3de`): sane defaults für Streetzoom, weniger Burnout.
+- **Heatmap Next-Level** (commit `9118ac6`): Magma/Inferno-Paletten, Log-Scale, Soft-Glow-Cells.
+- **Routes-Modus aus Heatmap entfernt** (commit `fc3ccc5`): Density-only.
+- **Maps next-level** (commit `ab054c7`): Tempolayer (Speed-Coloring), Halo-Strokes, Live-Polish.
+- **Home-Screen Lightning-Background** (commit `fa006cd`).
+- **SIGABRT-Defensivguards** (commit `74300a6`): defensive Patterns gegen Crash beim Live-Tracking-Launch.
+- **Demo-Fixture-Swap** (commit `b1d65cb`): bundled Demo ist jetzt ein realer LH2GPX-Track (Oldenburg → Dänemark).
+- **Build-Number-Bump** (commit `8854eef`): `CURRENT_PROJECT_VERSION = 100` lokal gesetzt; Xcode Cloud Build ≥100 als naechster ASC-Submit-Kandidat.
+
+Frische Verifikation (2026-05-06 nach Doku-/Wiring-Audit):
+- `swift test`: `964` Tests, `2` Skips, `0` Failures.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build`: BUILD SUCCEEDED.
+- iPhone-15-Pro-Max-Hardware-Verifikation für diesen kombinierten Stand: offen (letzte Hardware-Acceptance war 2026-05-05 vor Hero-Map-Rollout).
 
 ### Hardware-Verifikation iPhone 15 Pro Max (2026-05-05)
 

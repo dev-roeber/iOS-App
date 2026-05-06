@@ -151,7 +151,6 @@ public struct AppLiveLocationSection: View {
         .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
         .overlay(alignment: .topTrailing) {
             MapLayerMenu(configuration: MapLayerMenu.Configuration(
-                showsTrackColor: true,
                 showsLiveOptions: true,
                 centerOnLocation: liveLocation.currentLocation == nil ? nil : centerOnCurrentLocation
             ))

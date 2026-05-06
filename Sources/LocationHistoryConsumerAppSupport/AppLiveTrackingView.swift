@@ -463,10 +463,9 @@ public struct AppLiveTrackingView: View {
 
     private var fullscreenMapView: some View {
         GeometryReader { geometry in
-            ZStack(alignment: .topTrailing) {
-                liveMapContent(height: geometry.size.height)
-                    .ignoresSafeArea()
-                VStack(spacing: 8) {
+            liveMapContent(height: geometry.size.height)
+                .ignoresSafeArea()
+                .overlay(alignment: .topTrailing) {
                     MapLayerMenu(configuration: MapLayerMenu.Configuration(
                         showsTrackColor: true,
                         showsLiveOptions: true,
@@ -477,9 +476,9 @@ public struct AppLiveTrackingView: View {
                         toggleFullscreen: { isFullscreenMapPresented = false },
                         isFullscreenActive: true
                     ))
+                    .padding(.top, lhDeviceTopSafeInset() + 8)
+                    .padding(.trailing, 8)
                 }
-                .padding(20)
-            }
         }
         .ignoresSafeArea()
     }
@@ -685,27 +684,9 @@ public struct AppLiveTrackingView: View {
             Group {
                 if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
                     Map(position: $mapPosition) {
-                        if let currentLocation = liveLocation.currentLocation {
-                            Annotation(t("Current Location"), coordinate: CLLocationCoordinate2D(
-                                latitude: currentLocation.latitude,
-                                longitude: currentLocation.longitude
-                            )) {
-                                ZStack {
-                                    Circle()
-                                        .fill(locationDotColor.opacity(0.18))
-                                        .frame(width: 42, height: 42)
-                                    Circle()
-                                        .fill(locationDotColor)
-                                        .frame(width: 15, height: 15)
-                                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                                }
-                            }
-                        }
-                        if liveLocation.liveTrackShouldRender {
-                            MapPolyline(coordinates: polylineCoordinates)
-                                .stroke(LH2GPXTheme.liveMint,
-                                        style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
-                        }
+                        liveAccuracyCircleContent
+                        liveTrackContent
+                        liveCurrentLocationAnnotation
                     }
                     .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
                     .frame(height: 290)
@@ -723,7 +704,7 @@ public struct AppLiveTrackingView: View {
                             toggleFullscreen: { isFullscreenMapPresented = true },
                             isFullscreenActive: false
                         ))
-                        .padding(12)
+                        .padding(8)
                     }
                 } else {
                     VStack(spacing: 12) {
