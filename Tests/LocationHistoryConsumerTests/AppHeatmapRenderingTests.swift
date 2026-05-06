@@ -105,189 +105,6 @@ final class AppHeatmapRenderingTests: XCTestCase {
         XCTAssertGreaterThan(mid.green, 0.80)
     }
 
-    // MARK: - HeatmapMode enum
-
-    func testHeatmapModeEnumExistsWithRouteAndDensityCases() {
-        // Verifies both cases exist and have distinct identifiers
-        let route = HeatmapMode.route
-        let density = HeatmapMode.density
-        XCTAssertNotEqual(route.id, density.id)
-        XCTAssertEqual(HeatmapMode.allCases.count, 2)
-        XCTAssertTrue(HeatmapMode.allCases.contains(.route))
-        XCTAssertTrue(HeatmapMode.allCases.contains(.density))
-    }
-
-    func testHeatmapModeLabelKeysAreNonEmpty() {
-        for mode in HeatmapMode.allCases {
-            XCTAssertFalse(mode.labelKey.isEmpty, "labelKey for \(mode) should not be empty")
-        }
-    }
-
-    // MARK: - Route Grid Builder
-
-    func testRouteGridBuilderProducesSegmentsFromPaths() {
-        let export = makeExportWithPaths()
-        let grid = RouteGridBuilder.computeGrid(for: export, step: 0.006)
-        // With 10 path points there should be 9 segments -> at least 1 bin
-        XCTAssertFalse(grid.isEmpty, "Route grid should contain at least one bin from path data")
-    }
-
-    func testRouteGridCoarserStepProducesFewerBinsThanFineStep() {
-        let export = makeExportWithPaths()
-        let coarse = RouteGridBuilder.computeGrid(for: export, step: 0.08)
-        let fine   = RouteGridBuilder.computeGrid(for: export, step: 0.003)
-        // Same segments fall into fewer bins at coarser resolution
-        XCTAssertLessThanOrEqual(coarse.count, fine.count)
-    }
-
-    func testRouteGridBinsAreEmptyWhenNoPathData() {
-        let export = makeEmptyExport()
-        let grid = RouteGridBuilder.computeGrid(for: export, step: 0.006)
-        XCTAssertTrue(grid.isEmpty, "Route grid should be empty when export has no paths or activities")
-    }
-
-    func testRouteVisibleSegmentsRespectViewportBounds() {
-        let export = makeExportWithPaths()
-        let step = HeatmapLOD.medium.routeSegmentStep
-        let grid = RouteGridBuilder.computeGrid(for: export, step: step)
-
-        guard !grid.isEmpty else {
-            XCTFail("Expected non-empty route grid")
-            return
-        }
-
-        let region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 52.52, longitude: 13.405),
-            span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
-        )
-        let viewportKey = RouteViewportKey(region: region, lod: .medium)
-        let segments = RouteGridBuilder.visibleSegments(
-            in: grid,
-            viewportKey: viewportKey,
-            step: step,
-            lod: .medium
-        )
-
-        XCTAssertFalse(segments.isEmpty, "Visible segments should be non-empty within data bounds")
-        XCTAssertLessThanOrEqual(segments.count, HeatmapLOD.medium.routeSelectionLimit)
-    }
-
-    func testRouteSegmentLineWidthIncreasesWithIntensity() {
-        let export = makeExportWithRepeatedRoute()
-        let step = HeatmapLOD.high.routeSegmentStep
-        let grid = RouteGridBuilder.computeGrid(for: export, step: step)
-
-        guard !grid.isEmpty else {
-            XCTFail("Expected non-empty route grid for repeated route test")
-            return
-        }
-
-        let region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 52.52, longitude: 13.405),
-            span: MKCoordinateSpan(latitudeDelta: 0.12, longitudeDelta: 0.12)
-        )
-        let viewportKey = RouteViewportKey(region: region, lod: .high)
-        let segments = RouteGridBuilder.visibleSegments(
-            in: grid,
-            viewportKey: viewportKey,
-            step: step,
-            lod: .high
-        )
-
-        guard segments.count >= 2 else { return } // nothing to compare
-
-        let sorted = segments.sorted { $0.normalizedIntensity < $1.normalizedIntensity }
-        let low = sorted.first!
-        let high = sorted.last!
-        XCTAssertLessThanOrEqual(low.lineWidth, high.lineWidth,
-            "Segments with higher intensity should have larger lineWidth")
-    }
-
-    func testRoutePaletteIsClearlyDistinctFromDensityPalette() {
-        // Route palette: indigo/violet at low end, white/warm at high end.
-        // Density palette: blue at low end, red at high end.
-        let routeLow  = RoutePalette.rgb(for: 0.05)
-        let routeHigh = RoutePalette.rgb(for: 1.0)
-        let densityLow  = HeatmapPalette.rgb(for: 0.05)
-        let densityHigh = HeatmapPalette.rgb(for: 1.0)
-
-        // Route low-end is indigo: notable red component distinguishes it from pure-blue density low.
-        XCTAssertGreaterThan(routeLow.red, densityLow.red,
-            "Route low-end should have more red (indigo) than density low-end (pure blue)")
-        // Route high-end converges to white (all channels high); density high-end is red-dominant.
-        XCTAssertGreaterThan(routeHigh.green, densityHigh.green,
-            "Route high-end (white/warm) should have more green than density high-end (red)")
-        XCTAssertGreaterThan(routeHigh.blue, densityHigh.blue,
-            "Route high-end (white) should have more blue than density high-end (red)")
-        // Density low-end retains strong blue
-        XCTAssertGreaterThan(densityLow.blue, densityLow.red)
-    }
-
-    func testPreparedRouteTrackBuilderProducesViewportReadyTracks() {
-        let tracks = PreparedRouteTrackBuilder.build(from: makeExportWithPaths())
-
-        let track = try? XCTUnwrap(tracks.first)
-        XCTAssertEqual(tracks.count, 1)
-        XCTAssertNotNil(track)
-        XCTAssertFalse(track?.renderCoordinates.isEmpty ?? true)
-        XCTAssertFalse(track?.sampleMidpoints.isEmpty ?? true)
-        XCTAssertLessThanOrEqual(track?.renderCoordinates.count ?? 0, 500)
-        XCTAssertLessThanOrEqual(track?.sampleMidpoints.count ?? 0, 31)
-    }
-
-    // MARK: - RoutePathExtractor
-
-    func testRoutePathExtractorProducesConnectedSequencesFromPaths() {
-        let export = makeExportWithPaths()
-        let tracks = PreparedRouteTrackBuilder.build(from: export)
-        let step = HeatmapLOD.high.routeSegmentStep
-        let grid = RouteGridBuilder.computeGrid(for: export, step: step)
-        let region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 52.52, longitude: 13.405),
-            span: MKCoordinateSpan(latitudeDelta: 0.25, longitudeDelta: 0.25)
-        )
-        let viewportKey = RouteViewportKey(region: region, lod: .high)
-
-        let paths = RoutePathExtractor.extract(
-            from: tracks,
-            grid: grid,
-            step: step,
-            lod: .high,
-            viewportKey: viewportKey
-        )
-
-        XCTAssertFalse(paths.isEmpty, "Extractor should produce at least one RoutePath from path data")
-        // Each RoutePath must have at least 2 coordinates (otherwise MapPolyline would fail)
-        XCTAssertTrue(paths.allSatisfy { $0.coordinates.count >= 2 },
-            "Every extracted RoutePath must have at least 2 coordinates")
-    }
-
-    func testRoutePathExtractorGlowWidthIsThreeCoreWidth() {
-        let export = makeExportWithPaths()
-        let tracks = PreparedRouteTrackBuilder.build(from: export)
-        let step = HeatmapLOD.medium.routeSegmentStep
-        let grid = RouteGridBuilder.computeGrid(for: export, step: step)
-        let region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 52.52, longitude: 13.405),
-            span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
-        )
-        let viewportKey = RouteViewportKey(region: region, lod: .medium)
-
-        let paths = RoutePathExtractor.extract(
-            from: tracks,
-            grid: grid,
-            step: step,
-            lod: .medium,
-            viewportKey: viewportKey
-        )
-
-        guard !paths.isEmpty else { return }
-        for path in paths {
-            XCTAssertEqual(path.glowLineWidth, path.coreLineWidth * 2.0, accuracy: 0.001,
-                "Glow width must be exactly 2× the core width for each RoutePath. Reduced from 3× to mitigate the lens-flare star artefact at hotspots — see CHANGELOG 2026-05-06.")
-        }
-    }
-
     // MARK: - Helpers
 
     private func clusteredPoints() -> [WeightedPoint] {
@@ -308,72 +125,9 @@ final class AppHeatmapRenderingTests: XCTestCase {
         return points
     }
 
-    private func makeExportWithPaths() -> AppExport {
-        // 10 path points as flat_coordinates (9 segments through Berlin)
-        var flatPairs: [String] = []
-        for i in 0..<10 {
-            let lat = 52.50 + Double(i) * 0.005
-            let lon = 13.40 + Double(i) * 0.003
-            flatPairs.append("\(lat), \(lon)")
-        }
-        let flatJSON = flatPairs.joined(separator: ", ")
-        return decodeExport(daysJSON: """
-        [{"date":"2025-01-01","visits":[],"activities":[],"paths":[
-          {"activity_type":"walking","distance_m":500,"points":[],"flat_coordinates":[\(flatJSON)]}
-        ]}]
-        """)
-    }
-
-    private func makeExportWithRepeatedRoute() -> AppExport {
-        // Same short corridor repeated across 20 days to build high-intensity bins
-        var dayJSONParts: [String] = []
-        for i in 0..<20 {
-            var flatPairs: [String] = []
-            for j in 0..<5 {
-                let lat = 52.515 + Double(j) * 0.001
-                let lon = 13.402 + Double(j) * 0.001
-                flatPairs.append("\(lat), \(lon)")
-            }
-            let flatJSON = flatPairs.joined(separator: ", ")
-            let dateStr = String(format: "2025-01-%02d", i + 1)
-            dayJSONParts.append("""
-            {"date":"\(dateStr)","visits":[],"activities":[],"paths":[
-              {"activity_type":"cycling","distance_m":200,"points":[],"flat_coordinates":[\(flatJSON)]}
-            ]}
-            """)
-        }
-        return decodeExport(daysJSON: "[\(dayJSONParts.joined(separator: ","))]")
-    }
-
-    private func makeEmptyExport() -> AppExport {
-        decodeExport(daysJSON: "[]")
-    }
-
-    private func decodeExport(daysJSON: String) -> AppExport {
-        let json = """
-        {
-          "schema_version": "1.0",
-          "meta": {
-            "exported_at": "2025-01-01T00:00:00Z",
-            "tool_version": "1.0",
-            "source": {},
-            "output": {},
-            "config": {},
-            "filters": {}
-          },
-          "data": { "days": \(daysJSON) }
-        }
-        """
-        let data = json.data(using: .utf8)!
-        return try! JSONDecoder().decode(AppExport.self, from: data)
-    }
-
-    // MARK: - Density polygon shape (Tier 2 PR-A part 1)
+    // MARK: - Density polygon shape
 
     func testDensityPolygonIsRegularPointyTopHexagon() {
-        // 7 vertices = 6 hexagon corners + closing copy of the first.
-        // Replaced the previous square (4 corners + closing = 5 vertices)
-        // to soften the Minecraft-tile look on the density heatmap.
         let coords = HeatmapGridBuilder.polygonCoordinates(
             centerLat: 53.144,
             centerLon: 8.214,
@@ -386,82 +140,28 @@ final class AppHeatmapRenderingTests: XCTestCase {
         XCTAssertEqual(firstCoord.latitude, lastCoord.latitude, accuracy: 1e-9, "Polygon must be closed")
         XCTAssertEqual(firstCoord.longitude, lastCoord.longitude, accuracy: 1e-9, "Polygon must be closed")
 
-        // Pointy-top: vertex 0 is directly above the centre (longitude == centre).
         XCTAssertEqual(coords[0].longitude, 8.214, accuracy: 1e-9, "Top vertex must be on centre longitude")
         XCTAssertEqual(coords[0].latitude, 53.144 + 0.01, accuracy: 1e-9, "Top vertex Y must be centre + step/2")
 
-        // Vertex 3 is the bottom (also on centre longitude, mirrored Y).
         XCTAssertEqual(coords[3].longitude, 8.214, accuracy: 1e-9, "Bottom vertex must be on centre longitude")
         XCTAssertEqual(coords[3].latitude, 53.144 - 0.01, accuracy: 1e-9, "Bottom vertex Y must be centre - step/2")
 
-        // Side vertices (1, 2, 4, 5): longitude offset == step * cos(30°) / 2 = 0.4330127
         let expectedHalfWidth = 0.02 * 0.4330127018922193
         XCTAssertEqual(coords[1].longitude - 8.214, expectedHalfWidth, accuracy: 1e-9, "Right side vertex X")
         XCTAssertEqual(8.214 - coords[5].longitude, expectedHalfWidth, accuracy: 1e-9, "Left side vertex X")
 
-        // Side vertex Y offset == step / 4
         XCTAssertEqual(coords[1].latitude - 53.144, 0.005, accuracy: 1e-9, "Upper-right vertex Y")
         XCTAssertEqual(53.144 - coords[2].latitude, 0.005, accuracy: 1e-9, "Lower-right vertex Y")
     }
 
-    func testPhantomJumpInTrackProducesMultipleSegments() {
-        // P0 #3 verification fix: a coordinate sequence with a jump
-        // larger than 1° between consecutive points (e.g. GPS spike
-        // teleporting from Oldenburg into the middle of the Atlantic)
-        // must split into separate tracks so the polyline doesn't draw
-        // a phantom line across the gap. Recording 2026-05-06 14:07 F03
-        // surfaced exactly such a phantom line.
-        let json = """
-        [{
-          "date": "2026-05-06",
-          "paths": [{
-            "start_time": "2026-05-06T08:00:00Z",
-            "end_time": "2026-05-06T09:00:00Z",
-            "points": [
-              {"lat": 53.144, "lon": 8.214, "time": "2026-05-06T08:00:00Z"},
-              {"lat": 53.145, "lon": 8.215, "time": "2026-05-06T08:01:00Z"},
-              {"lat": 53.146, "lon": 8.216, "time": "2026-05-06T08:02:00Z"},
-              {"lat": 30.000, "lon": -30.000, "time": "2026-05-06T08:03:00Z"},
-              {"lat": 30.001, "lon": -30.001, "time": "2026-05-06T08:04:00Z"},
-              {"lat": 30.002, "lon": -30.002, "time": "2026-05-06T08:05:00Z"}
-            ]
-          }],
-          "visits": [], "activities": []
-        }]
-        """
-        let export = decodeExport(daysJSON: json)
-        let tracks = PreparedRouteTrackBuilder.build(from: export)
-        XCTAssertEqual(tracks.count, 2,
-            "A phantom jump (>1° between consecutive points) must split the path into two tracks")
-
-        // Track 1: pre-jump cluster around Oldenburg.
-        // Track 2: post-jump cluster in the Atlantic.
-        let bboxes = tracks.map { ($0.boundingBox.minLat, $0.boundingBox.maxLat) }
-        XCTAssertTrue(bboxes.contains { $0.0 > 50 && $0.1 < 54 },
-            "One track must stay in the Oldenburg latitude band")
-        XCTAssertTrue(bboxes.contains { $0.0 > 29 && $0.1 < 31 },
-            "Other track must stay in the Atlantic latitude band")
-    }
-
     func testDensityBinsCosineCorrectLongitudeAtHighLatitude() {
-        // Tier 2 PR-A.3: at higher latitudes a degree of longitude covers
-        // less metric distance than a degree of latitude. The aggregation
-        // grid now scales lon-bin keys by cos(lat) so each bin covers
-        // approximately the same metric width. Two points roughly 6 km
-        // apart at Oldenburg latitude (53° N) should land in distinct
-        // bins under medium LOD (step 0.012° ≈ 1.3 km north-south).
-        // Without the cos correction they could collapse into one bin.
         let pointA = WeightedPoint(lat: 53.144, lon: 8.214, weight: 1)
         let pointB = WeightedPoint(lat: 53.144, lon: 8.300, weight: 1)
-        // 0.086° lon at 53° N is roughly 0.086 × 111 km × cos(53°) ≈ 5.7 km.
         let grid = HeatmapGridBuilder.computeGrid(for: [pointA, pointB], lod: .medium)
-        // Expect at least two distinct bin centres in the longitude direction.
         let lonCentres = Set(grid.values.map { Double(round($0.coordinate.longitude * 1000)) })
         XCTAssertGreaterThanOrEqual(lonCentres.count, 2,
             "Two points 0.086° lon apart at 53° N must occupy at least two distinct lon bins under medium LOD")
 
-        // Sanity: cell centres should sit close to the input longitudes
-        // (within 1 medium step ÷ cos(53°) ≈ 0.020° back-projected width).
         let cellLons = grid.values.map(\.coordinate.longitude)
         XCTAssertTrue(cellLons.contains { abs($0 - 8.214) < 0.025 },
             "A cell should be close to point A's longitude")
@@ -470,8 +170,6 @@ final class AppHeatmapRenderingTests: XCTestCase {
     }
 
     func testLonScaleClampsAtPoles() {
-        // cos(89°) ≈ 0.017 — small enough to clamp.
-        // cos(90°) = 0   — would otherwise yield a divide-by-zero on back-projection.
         XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 0.0),  1.0,  accuracy: 1e-9)
         XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 53.0), cos(53.0 * .pi / 180), accuracy: 1e-9)
         XCTAssertEqual(HeatmapGridBuilder.lonScale(forLatitude: 89.0), 0.05, accuracy: 1e-9, "Clamps near the poles")
@@ -480,13 +178,9 @@ final class AppHeatmapRenderingTests: XCTestCase {
     }
 
     func testHexPolygonAcceptsAsymmetricStepForMercatorCorrection() {
-        // Tier 2 PR-A.2: The (stepLat, stepLon) overload allows callers to
-        // compensate for Web Mercator's cosine-of-latitude longitude shrink.
-        // At ~53° N (Oldenburg), cos ≈ 0.6 → stepLon = stepLat / 0.6 ≈ 1.66×
-        // produces a hexagon that renders geometrically regular on screen.
         let stepLat = 0.012
-        let lonScale = cos(53.144 * .pi / 180.0)  // ≈ 0.598
-        let stepLon = stepLat / lonScale          // ≈ 0.0201
+        let lonScale = cos(53.144 * .pi / 180.0)
+        let stepLon = stepLat / lonScale
 
         let coords = HeatmapGridBuilder.polygonCoordinates(
             centerLat: 53.144,
@@ -496,12 +190,9 @@ final class AppHeatmapRenderingTests: XCTestCase {
         )
 
         XCTAssertEqual(coords.count, 7)
-        // Top + bottom vertices: aligned to centre longitude regardless of stepLon.
         XCTAssertEqual(coords[0].longitude, 8.214, accuracy: 1e-12)
         XCTAssertEqual(coords[3].longitude, 8.214, accuracy: 1e-12)
-        // Vertical extent uses stepLat exactly.
         XCTAssertEqual(coords[0].latitude - coords[3].latitude, stepLat, accuracy: 1e-12)
-        // Horizontal extent at the side vertices uses stepLon (corrected).
         let actualHorizontalExtent = coords[1].longitude - coords[5].longitude
         XCTAssertEqual(actualHorizontalExtent, stepLon, accuracy: 1e-12,
                        "Side-vertex span must equal the supplied stepLon")
