@@ -119,6 +119,12 @@ struct AppOverviewTracksMapView: View {
     /// `.ignoresSafeArea(edges: .top)`) must pass `safeAreaTop + N` here so the
     /// controls do not land in Dynamic Island / status bar.
     let mapControlTopPadding: CGFloat
+    /// When `true`, render Globe + Fit-to-data + (optional) Fullscreen buttons
+    /// stacked vertically (a column) instead of horizontally (a row).
+    /// Use this when another set of overlay controls (e.g. the LHCollapsibleMapHeader
+    /// chevron) already occupies the top-right corner — vertical layout puts the
+    /// map controls cleanly below that header chevron rather than next to it.
+    let verticalMapControls: Bool
 
     @State private var model = AppOverviewMapModel()
     @State private var mapPosition: MapCameraPosition = .automatic
@@ -131,7 +137,8 @@ struct AppOverviewTracksMapView: View {
         queryFilter: AppExportQueryFilter?,
         fixedHeight: CGFloat? = 200,
         showsFullscreenControl: Bool = true,
-        mapControlTopPadding: CGFloat = 8
+        mapControlTopPadding: CGFloat = 8,
+        verticalMapControls: Bool = false
     ) {
         self.daySummaries = daySummaries
         self.content = content
@@ -139,6 +146,7 @@ struct AppOverviewTracksMapView: View {
         self.fixedHeight = fixedHeight
         self.showsFullscreenControl = showsFullscreenControl
         self.mapControlTopPadding = mapControlTopPadding
+        self.verticalMapControls = verticalMapControls
     }
 
     var body: some View {
@@ -198,40 +206,55 @@ struct AppOverviewTracksMapView: View {
         }
         .accessibilityLabel(mapAccessibilityLabel)
         .overlay(alignment: .topTrailing) {
-            HStack(spacing: 6) {
-                mapControlButton(
-                    systemImage: styleToggleIcon,
-                    accessibilityLabel: t("Toggle map style")
-                ) {
-                    preferences.preferredMapStyle = preferences.preferredMapStyle.isHybrid ? .standard : .hybrid
-                }
-                mapControlButton(
-                    systemImage: "location.viewfinder",
-                    accessibilityLabel: t("Fit to data")
-                ) {
-                    if let region = model.dataRegion {
-                        withAnimation { mapPosition = .region(region) }
-                    }
-                }
-                if showsFullscreenControl {
-                    mapControlButton(
-                        systemImage: "arrow.up.left.and.arrow.down.right",
-                        accessibilityLabel: t("Open fullscreen map")
-                    ) {
-                        isExpanded = true
-                    }
-                }
-            }
-            .padding(.top, mapControlTopPadding)
-            .padding(.trailing, 8)
-            .padding(.leading, 8)
-            .padding(.bottom, 8)
+            mapControlsStack
+                .padding(.top, mapControlTopPadding)
+                .padding(.trailing, 8)
+                .padding(.leading, 8)
+                .padding(.bottom, 8)
         }
         .overlay(alignment: .bottomTrailing) { routeCountBadge }
         .overlay(alignment: .bottomLeading) { optimizedBadge }
     }
 
     // MARK: - Controls
+
+    @ViewBuilder
+    private var mapControlsStack: some View {
+        let buttons: [AnyView] = [
+            AnyView(mapControlButton(
+                systemImage: styleToggleIcon,
+                accessibilityLabel: t("Toggle map style")
+            ) {
+                preferences.preferredMapStyle = preferences.preferredMapStyle.isHybrid ? .standard : .hybrid
+            }),
+            AnyView(mapControlButton(
+                systemImage: "location.viewfinder",
+                accessibilityLabel: t("Fit to data")
+            ) {
+                if let region = model.dataRegion {
+                    withAnimation { mapPosition = .region(region) }
+                }
+            })
+        ]
+        let fullscreenButton: AnyView? = showsFullscreenControl ? AnyView(mapControlButton(
+            systemImage: "arrow.up.left.and.arrow.down.right",
+            accessibilityLabel: t("Open fullscreen map")
+        ) {
+            isExpanded = true
+        }) : nil
+
+        if verticalMapControls {
+            VStack(spacing: 6) {
+                ForEach(0..<buttons.count, id: \.self) { idx in buttons[idx] }
+                if let fb = fullscreenButton { fb }
+            }
+        } else {
+            HStack(spacing: 6) {
+                ForEach(0..<buttons.count, id: \.self) { idx in buttons[idx] }
+                if let fb = fullscreenButton { fb }
+            }
+        }
+    }
 
     @ViewBuilder
     private func mapControlButton(

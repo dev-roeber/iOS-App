@@ -423,10 +423,11 @@ public struct AppContentSplitView: View {
         .scrollContentBackground(.hidden)
         .background(Color.black)
         // Single top workspace: map sticky header + filter panel stacked together.
-        // Two separate `.safeAreaInset(edge: .top)`s stack reliably in SwiftUI,
-        // but stacking the map (which uses `.ignoresSafeArea(edges: .top)`) with
-        // a second inset has produced gap regressions (List/section header).
-        // One VStack as a single inset eliminates the boundary entirely.
+        // The whole list ignores the top safe area so the inset workspace starts
+        // flush at y=0 — this lets the map fill the status-bar region without the
+        // mismatched layout-slot/visible-height gap that `.ignoresSafeArea` on
+        // just the map produces. Map controls remain below the status bar via
+        // `mapControlTopPadding: deviceTopSafeInset + 12`.
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
                 daysListStickyHeader
@@ -434,6 +435,7 @@ public struct AppContentSplitView: View {
             }
             .background(Color.black)
         }
+        .ignoresSafeArea(edges: .top)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if session.exportSelection.count > 0 {
                 daysExportSelectionBar
@@ -462,13 +464,13 @@ public struct AppContentSplitView: View {
     }
 
     private var daysListStickyHeader: some View {
-        // Hero map — extends behind Dynamic Island / status bar.
-        // ignoresSafeArea is applied so the map fills edge-to-edge.
-        // daysSafeAreaTop is read by a GeometryReader on the List (outside this
-        // ignoresSafeArea context) and passed explicitly so controls land below
-        // Dynamic Island / status bar on all devices.
+        // Hero map. The whole compactDayList uses `.ignoresSafeArea(edges: .top)`
+        // so the safeAreaInset workspace starts at y=0 of the screen — that lets
+        // the map fill the status-bar region edge-to-edge while keeping its
+        // full layout-height inside the inset. Result: filter panel sits flush
+        // under the map (no black gap from a 460pt slot vs. ~400pt visible map).
+        // Controls remain readable thanks to `mapControlTopPadding: safeAreaTop + 12`.
         daysMapHeaderCard
-            .ignoresSafeArea(edges: .top)
             .accessibilityIdentifier("days.stickyHeader")
     }
 
@@ -1126,13 +1128,17 @@ public struct AppContentSplitView: View {
             safeAreaTopInset: deviceTopSafeInset
         ) {
             if #available(iOS 17.0, macOS 14.0, *) {
+                // Day map controls go vertical and BELOW the LHCollapsibleMapHeader
+                // chevron-button (which sits at safeAreaTop + 80, ~44pt tall plus
+                // breathing room). 130pt offset clears it cleanly on every device.
                 AppOverviewTracksMapView(
                     daySummaries: drilldownDaySummaries,
                     content: session.content,
                     queryFilter: projectedQueryFilter,
                     fixedHeight: nil,
                     showsFullscreenControl: false,
-                    mapControlTopPadding: deviceTopSafeInset + 12
+                    mapControlTopPadding: deviceTopSafeInset + 130,
+                    verticalMapControls: true
                 )
             }
         }
