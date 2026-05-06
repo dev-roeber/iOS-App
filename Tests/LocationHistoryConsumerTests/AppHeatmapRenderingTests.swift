@@ -367,5 +367,41 @@ final class AppHeatmapRenderingTests: XCTestCase {
         let data = json.data(using: .utf8)!
         return try! JSONDecoder().decode(AppExport.self, from: data)
     }
+
+    // MARK: - Density polygon shape (Tier 2 PR-A part 1)
+
+    func testDensityPolygonIsRegularPointyTopHexagon() {
+        // 7 vertices = 6 hexagon corners + closing copy of the first.
+        // Replaced the previous square (4 corners + closing = 5 vertices)
+        // to soften the Minecraft-tile look on the density heatmap.
+        let coords = HeatmapGridBuilder.polygonCoordinates(
+            centerLat: 53.144,
+            centerLon: 8.214,
+            step: 0.02
+        )
+        XCTAssertEqual(coords.count, 7, "Hex polygon has 6 vertices + closing copy")
+        guard let firstCoord = coords.first, let lastCoord = coords.last else {
+            return XCTFail("Polygon coordinates must not be empty")
+        }
+        XCTAssertEqual(firstCoord.latitude, lastCoord.latitude, accuracy: 1e-9, "Polygon must be closed")
+        XCTAssertEqual(firstCoord.longitude, lastCoord.longitude, accuracy: 1e-9, "Polygon must be closed")
+
+        // Pointy-top: vertex 0 is directly above the centre (longitude == centre).
+        XCTAssertEqual(coords[0].longitude, 8.214, accuracy: 1e-9, "Top vertex must be on centre longitude")
+        XCTAssertEqual(coords[0].latitude, 53.144 + 0.01, accuracy: 1e-9, "Top vertex Y must be centre + step/2")
+
+        // Vertex 3 is the bottom (also on centre longitude, mirrored Y).
+        XCTAssertEqual(coords[3].longitude, 8.214, accuracy: 1e-9, "Bottom vertex must be on centre longitude")
+        XCTAssertEqual(coords[3].latitude, 53.144 - 0.01, accuracy: 1e-9, "Bottom vertex Y must be centre - step/2")
+
+        // Side vertices (1, 2, 4, 5): longitude offset == step * cos(30°) / 2 = 0.4330127
+        let expectedHalfWidth = 0.02 * 0.4330127018922193
+        XCTAssertEqual(coords[1].longitude - 8.214, expectedHalfWidth, accuracy: 1e-9, "Right side vertex X")
+        XCTAssertEqual(8.214 - coords[5].longitude, expectedHalfWidth, accuracy: 1e-9, "Left side vertex X")
+
+        // Side vertex Y offset == step / 4
+        XCTAssertEqual(coords[1].latitude - 53.144, 0.005, accuracy: 1e-9, "Upper-right vertex Y")
+        XCTAssertEqual(53.144 - coords[2].latitude, 0.005, accuracy: 1e-9, "Lower-right vertex Y")
+    }
 }
 #endif

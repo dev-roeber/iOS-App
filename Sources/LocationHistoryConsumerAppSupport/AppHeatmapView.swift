@@ -1272,16 +1272,39 @@ enum HeatmapGridBuilder {
         )
     }
 
+    /// Pointy-top regular hexagon centred at (centerLat, centerLon).
+    /// `step` is the vertical extent (top-vertex → bottom-vertex);
+    /// horizontal extent equals `step * sqrt(3)/2 ≈ 0.866 * step`.
+    ///
+    /// Hex shape replaces the previous square polygon to soften the
+    /// "Minecraft" tile look visible on the 2026-05-06 21:18 screenshots
+    /// and aligns the renderer with established density-map conventions
+    /// (Strava / Mapbox / Foursquare). The aggregation pipeline still
+    /// bins by lat/lon grid for now — true axial-coord hex aggregation
+    /// is a follow-up (Tier 2 PR-A part 2).
     nonisolated static func polygonCoordinates(centerLat: Double, centerLon: Double, step: Double) -> [CLLocationCoordinate2D] {
-        let halfLat = step / 2.0
-        let halfLon = step / 2.0
-
+        // Normal pointy-top hexagon: 6 vertices + closing copy of the first.
+        // Vertex angles measured from north (0°) clockwise:
+        //   0°, 60°, 120°, 180°, 240°, 300°
+        // For a pointy-top hex this places vertex 0 directly above the centre.
+        let halfHeight = step / 2.0                     // 1/2 of vertical diameter
+        let halfWidth = step * 0.4330127018922193       // 1/2 of horizontal extent (= cos 30° * halfHeight*2)
+        let quarterHeight = step / 4.0                  // 1/4 of vertical diameter
         return [
-            CLLocationCoordinate2D(latitude: centerLat - halfLat, longitude: centerLon - halfLon),
-            CLLocationCoordinate2D(latitude: centerLat - halfLat, longitude: centerLon + halfLon),
-            CLLocationCoordinate2D(latitude: centerLat + halfLat, longitude: centerLon + halfLon),
-            CLLocationCoordinate2D(latitude: centerLat + halfLat, longitude: centerLon - halfLon),
-            CLLocationCoordinate2D(latitude: centerLat - halfLat, longitude: centerLon - halfLon),
+            // top
+            CLLocationCoordinate2D(latitude: centerLat + halfHeight, longitude: centerLon),
+            // upper-right
+            CLLocationCoordinate2D(latitude: centerLat + quarterHeight, longitude: centerLon + halfWidth),
+            // lower-right
+            CLLocationCoordinate2D(latitude: centerLat - quarterHeight, longitude: centerLon + halfWidth),
+            // bottom
+            CLLocationCoordinate2D(latitude: centerLat - halfHeight, longitude: centerLon),
+            // lower-left
+            CLLocationCoordinate2D(latitude: centerLat - quarterHeight, longitude: centerLon - halfWidth),
+            // upper-left
+            CLLocationCoordinate2D(latitude: centerLat + quarterHeight, longitude: centerLon - halfWidth),
+            // close
+            CLLocationCoordinate2D(latitude: centerLat + halfHeight, longitude: centerLon),
         ]
     }
 }
