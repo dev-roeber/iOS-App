@@ -209,12 +209,21 @@ Frischer Host-Truth (2026-04-29) — macOS, Xcode 26.3, iPhone 15 Pro Max (ios 2
 - Widget-Embed-Phase: `LH2GPXWidget.appex` wird mit `CodeSignOnCopy` eingebettet
 - `git diff --check` / `git status --short` nur fuer den jeweils aktuellen Arbeitsstand wiederholen; fruehere Gruen-Angaben waren Zwischenstaende und gelten nicht pauschal fuer spaetere Worktrees
 
-ASC-Truth (2026-04-30):
+ASC-Truth (2026-04-30, historisch):
 - `LH2GPX` Version `1.0` ist in App Store Connect eingereicht und steht auf `Warten auf Prüfung`
 - auf der Versionsseite ist bewusst Build `52` sichtbar
 - der Xcode-Cloud-Workflow `Release – Archive & TestFlight` zeigt erfolgreiche Builds `55`, `56`, `57`
 - Review-Entscheidung: Build `52` bleibt in App Review; kein Nachreichen von `57` ohne Apple-Feedback oder bestaetigten release-kritischen Fehler
 - App Review ist nicht mehr am Upload-Schritt blockiert, aber fuer Live Activity / Dynamic Island weiter nicht voll hardware-verifiziert
+
+ASC-Truth (2026-05-06, aktuell):
+- Build `74` (Version 1.0) ist nach Review-Response am 2026-05-05 **akzeptiert**, ASC-Status `Pending Developer Release` — bewusst nicht freigegeben; 1.0-Train geschlossen
+- Builds `80`–`83` (1.0-Train) wurden wegen geschlossenem Train mit ITMS-90186 / ITMS-90062 verworfen — kein Code-Fehler
+- `MARKETING_VERSION` auf `1.0.1` angehoben; ASC hat Version `1.0.1` angelegt
+- Xcode Cloud Build `84` (1.0.1) erfolgreich (Archive ✓, TestFlight Internal ✓)
+- Build `95` ist veraltet — Build `96` (oder höher) muss vor dem nächsten Submit aus Xcode Cloud getriggert werden, damit der Hero-Map-/LiveStatus-/Export-Fix-Stand vom 2026-05-06 enthalten ist
+- `swift test`: 949 Tests, 2 Skips, 0 Failures (lokal HEAD f2e1d21)
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build`: BUILD SUCCEEDED (lokal HEAD f2e1d21)
 
 Frischer Host-Truth (2026-03-31, historisch):
 

@@ -120,7 +120,8 @@ Neu auf Code-Stand 2026-03-20:
 
 Aktueller Server-Truth fuer den eingebundenen Core-Stand:
 - `swift test` im aktiven Repo `iOS-App` lief lokal grün mit `949` Tests, `2` Skips und `0` Failures (Stand 2026-05-06; vorher 575 am 2026-04-12)
-- `xcodebuild` ist auf dem Linux-Server nicht verfuegbar; der Wrapper-spezifische Xcode-/Device-Stand ist der letzte Apple-Lauf vom 2026-04-12
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build`: BUILD SUCCEEDED auf macOS lokal, HEAD f2e1d21 (2026-05-06)
+- iPhone 15 Pro Max physisch (UDID `00008130-00163D0A0461401C`, iOS 26.4): `testAppStoreScreenshots`, `testDeviceSmokeNavigationAndActions`, `testLandscapeLayoutSmoke` alle PASSED am 2026-05-05 (Build vor Hero-Map-Rollout); Hero-Map-/LiveStatus-/Export-Fix-Änderungen vom 2026-05-06 noch nicht erneut auf Hardware verifiziert
 
 Unterstuetztes Import-Format: jede `.json`-Datei oder `.zip`-Datei, die einen gueltigen LH2GPX-App-Export enthaelt, plus Google-Timeline-`location-history.json` / `.zip` aus Google Takeout.
 
@@ -151,10 +152,12 @@ Lokal abgeschlossen (2026-04-29):
 - `ITSAppUsesNonExemptEncryption = false`: in App + Widget Info.plist gesetzt
 - iPad: fuer v1 aktuell nicht im Release-Build vorgesehen (`TARGETED_DEVICE_FAMILY = 1`); iPad-Screenshots sind deshalb nicht erforderlich
 
-Aktueller ASC-Truth:
-- Version `1.0` ist eingereicht und steht auf `Warten auf Prüfung`
-- Build `52` bleibt bewusst in Review
-- Builds `55`, `56`, `57` sind in Xcode Cloud erfolgreich, werden aber ohne Apple-Feedback oder bestaetigten release-kritischen Fehler nicht nachgereicht
+Aktueller ASC-Truth (Stand 2026-05-06):
+- Version `1.0` Build `74` ist nach Review-Response (2026-05-05) **akzeptiert**, ASC-Status `Pending Developer Release` — bewusst nicht freigegeben, 1.0-Train damit geschlossen
+- Builds `80`–`83` (1.0-Train) wurden wegen geschlossenem Train mit ITMS-90186 / ITMS-90062 verworfen — kein Code-Fehler
+- `MARKETING_VERSION` im `project.pbxproj` ist auf `1.0.1` angehoben; ASC hat Version `1.0.1` angelegt
+- Xcode Cloud Build `84` (1.0.1-Train) ist erfolgreich (Archive ✓, TestFlight Internal ✓)
+- Build `95` ist veraltet — Build `96` (oder höher) muss vor dem nächsten Submit aus Xcode Cloud getriggert werden, damit der Hero-Map-/LiveStatus-/Export-Fix-Stand vom 2026-05-06 enthalten ist
 
 Weiterhin manuell / ASC-abhaengig:
 - App Store Connect Projekt anlegen

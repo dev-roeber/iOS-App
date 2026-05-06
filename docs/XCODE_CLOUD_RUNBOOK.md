@@ -84,14 +84,19 @@ App Store Connect konfiguriert werden — keine YAML-Dateien.
 - keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`
 - keine feste Release-`CODE_SIGN_IDENTITY`
 - Widget-Embed via `CodeSignOnCopy`
-- `CURRENT_PROJECT_VERSION = 45`
+- `CURRENT_PROJECT_VERSION` lokal weiter `45`; Cloud-Builds nutzen `CI_BUILD_NUMBER` (zuletzt 84 grün, ≥96 vor Submit)
 
-### Aktueller ASC-/Cloud-Truth
+### Aktueller ASC-/Cloud-Truth (Stand 2026-05-06)
 
-- App Store Connect zeigt `LH2GPX` Version `1.0` im Status `Warten auf Prüfung`
-- auf der Versionsseite bleibt bewusst Build `52` in Review
-- Xcode Cloud hat erfolgreiche neuere Builds `55`, `56`, `57`
-- ohne Apple-Feedback oder bestaetigten release-kritischen Fehler wird kein neuerer Build proaktiv nachgereicht
+- Build `74` (Version 1.0) ist nach Review-Response am 2026-05-05 **akzeptiert**, ASC-Status `Pending Developer Release` — 1.0-Train damit abgeschlossen, bewusst nicht freigegeben
+- Builds `80`–`83` (1.0-Train) wurden mit ITMS-90186 / ITMS-90062 verworfen, weil der Train geschlossen war (kein Code-Fehler)
+- `MARKETING_VERSION` ist auf `1.0.1` angehoben; ASC hat Version `1.0.1` angelegt
+- Xcode Cloud Build `84` (1.0.1) erfolgreich, in TestFlight Internal angekommen
+- Build `95` ist veraltet (vor Hero-Map / LiveStatusResolver / Export-Fix); Build `96` muss vor dem nächsten Submit aus Cloud getriggert werden
+
+### Historischer ASC-/Cloud-Truth (2026-04-30)
+
+- App Store Connect zeigte `LH2GPX` Version `1.0` im Status `Warten auf Prüfung`, Build `52` in Review, Cloud-Builds `55`–`57` ohne Apple-Feedback nicht nachgereicht (Stand vor Review-Response).
 
 ### Wichtig: App Store Connect Pflichtfelder (vor erstem Upload)
 

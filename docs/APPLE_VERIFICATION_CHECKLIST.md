@@ -40,7 +40,7 @@ Ausgefuehrt auf: macOS, Xcode, iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C
 
 #### ✅ real verifiziert (2026-05-05) — iPhone 15 Pro Max
 
-- **swift test**: 927 Tests, 0 Failures ✅
+- **swift test**: 927 Tests, 0 Failures ✅ (an diesem Datum; aktueller Stand 2026-05-06: 949 Tests, 2 Skips, 0 Failures)
 - **git diff --check**: sauber ✅
 - **xcodebuild -destination 'id=00008130-00163D0A0461401C'**: BUILD SUCCEEDED ✅
 - **testAppStoreScreenshots** (iPhone 15 Pro Max): PASSED (44s) ✅ — 6 PNGs 1290×2796
@@ -94,7 +94,7 @@ Ausgefuehrt auf: macOS (dieser Host), Xcode, iPhone 17 Pro Max Simulator
 
 #### ✅ real verifiziert (2026-05-05) — Simulator
 
-- **swift test**: 927 Tests, 0 Failures ✅
+- **swift test**: 927 Tests, 0 Failures ✅ (an diesem Datum; aktueller Stand 2026-05-06: 949 Tests, 2 Skips, 0 Failures)
 - **git diff --check**: sauber ✅
 - **xcodebuild generic/platform=iOS** (LH2GPXWrapper + Widget): BUILD SUCCEEDED ✅
 - **xcodebuild iPhone 17 Pro Max Simulator build**: BUILD SUCCEEDED ✅

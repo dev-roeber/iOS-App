@@ -44,7 +44,7 @@ Alternativ kann das Verzeichnis in Xcode geoeffnet werden. Die produktnahe App-S
 - kein Cloud-/Account-Sync fuer importierte History; optionaler Server-Upload ist separat, standardmaessig deaktiviert und Apple-Review-seitig weiter nicht voll eingeordnet
 - kein Auto-Resume laufender Live-Tracks; Background-Recording und End-to-End-Upload wurden historisch auf echter Apple-Hardware verifiziert, sind aber nicht als vollstaendige Gesamtverifikation aller heutigen Review-Pfade zu lesen
 
-**Hinweis Wrapper:** Der Xcode-Wrapper unter `wrapper/LH2GPXWrapper.xcodeproj` ist bereits vollständig mit Info.plist, Bundle-Identifier `de.roeber.LH2GPXWrapper`, Signing-Team `XAGR3K7XDJ`, Deployment Target iOS 16.0 (App + Unit-Tests) / 16.2 (Widget), `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` und `ITSAppUsesNonExemptEncryption = false` (App + Widget Info.plist) ausgestattet. Fuer den Release-/App-Store-Pfad ist der Repo-Truth ab 2026-04-30: `CODE_SIGN_STYLE = Automatic`, keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`, keine explizite Release-`CODE_SIGN_IDENTITY`, `CURRENT_PROJECT_VERSION = 45`, Widget-Embed via `CodeSignOnCopy`. App Store Connect zeigt fuer `LH2GPX` inzwischen Version `1.0` im Status `Warten auf Prüfung`; auf der Versionsseite ist bewusst Build `52` sichtbar, waehrend Xcode Cloud erfolgreiche Builds `55` bis `57` ausweist. Lokal ist `xcodebuild archive` wieder erfolgreich; `xcodebuild -exportArchive` bleibt auf diesem Host mangels Distribution-Zertifikat blockiert. Die Aussage "kein `.xcodeproj`" gilt nur für den Core-Package-Root, nicht für das Monorepo insgesamt.
+**Hinweis Wrapper:** Der Xcode-Wrapper unter `wrapper/LH2GPXWrapper.xcodeproj` ist bereits vollständig mit Info.plist, Bundle-Identifier `de.roeber.LH2GPXWrapper`, Signing-Team `XAGR3K7XDJ`, Deployment Target iOS 16.0 (App + Unit-Tests) / 16.2 (Widget), `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` und `ITSAppUsesNonExemptEncryption = false` (App + Widget Info.plist) ausgestattet. Fuer den Release-/App-Store-Pfad ist der Repo-Truth: `CODE_SIGN_STYLE = Automatic`, keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`, keine explizite Release-`CODE_SIGN_IDENTITY`, `MARKETING_VERSION = 1.0.1` (seit 2026-05-05), `CURRENT_PROJECT_VERSION` lokal `45` (Cloud-Builds nutzen `CI_BUILD_NUMBER`), Widget-Embed via `CodeSignOnCopy`. ASC-Truth (Stand 2026-05-06): Build `74` (Version 1.0) ist nach Review-Response **akzeptiert**, Status `Pending Developer Release`; 1.0-Train geschlossen, Folge-Train `1.0.1` aktiv mit erfolgreichem Cloud-Build `84` (Build `96` muss vor nächstem Submit getriggert werden, damit Hero-Map-/LiveStatus-/Export-Fix-Stand 2026-05-06 enthalten ist). Lokal ist `xcodebuild archive` für `1.0`-Snapshot historisch (2026-04-30) erfolgreich; `xcodebuild -exportArchive` bleibt auf diesem Host mangels Distribution-Zertifikat blockiert, deshalb läuft Submit jetzt über Xcode Cloud. Die Aussage "kein `.xcodeproj`" gilt nur für den Core-Package-Root, nicht für das Monorepo insgesamt.
 
 ## Export-Compliance
 
@@ -70,9 +70,9 @@ Damit sind beim App-Store-Upload **keine Export-Compliance-Unterlagen** erforder
 
 Unter Linux ist ehrlich verifiziert:
 
-- `swift test` (647 Tests, 0 Failures am 2026-04-29)
-- Linux-Build der SwiftPM-Targets
-- Linux-Fallback-Mains der Apple-UI-nahen Executables
+- `swift test` (949 Tests, 2 Skips, 0 Failures am 2026-05-06; historisch: 647 am 2026-04-29)
+- Linux-Build der SwiftPM-Targets (historisch — Repo läuft inzwischen primär lokal auf macOS)
+- Linux-Fallback-Mains der Apple-UI-nahen Executables (historisch)
 
 Unter Linux ist nicht verifiziert:
 
