@@ -404,6 +404,45 @@ final class AppHeatmapRenderingTests: XCTestCase {
         XCTAssertEqual(53.144 - coords[2].latitude, 0.005, accuracy: 1e-9, "Lower-right vertex Y")
     }
 
+    func testPhantomJumpInTrackProducesMultipleSegments() {
+        // P0 #3 verification fix: a coordinate sequence with a jump
+        // larger than 1° between consecutive points (e.g. GPS spike
+        // teleporting from Oldenburg into the middle of the Atlantic)
+        // must split into separate tracks so the polyline doesn't draw
+        // a phantom line across the gap. Recording 2026-05-06 14:07 F03
+        // surfaced exactly such a phantom line.
+        let json = """
+        [{
+          "date": "2026-05-06",
+          "paths": [{
+            "start_time": "2026-05-06T08:00:00Z",
+            "end_time": "2026-05-06T09:00:00Z",
+            "points": [
+              {"lat": 53.144, "lon": 8.214, "time": "2026-05-06T08:00:00Z"},
+              {"lat": 53.145, "lon": 8.215, "time": "2026-05-06T08:01:00Z"},
+              {"lat": 53.146, "lon": 8.216, "time": "2026-05-06T08:02:00Z"},
+              {"lat": 30.000, "lon": -30.000, "time": "2026-05-06T08:03:00Z"},
+              {"lat": 30.001, "lon": -30.001, "time": "2026-05-06T08:04:00Z"},
+              {"lat": 30.002, "lon": -30.002, "time": "2026-05-06T08:05:00Z"}
+            ]
+          }],
+          "visits": [], "activities": []
+        }]
+        """
+        let export = decodeExport(daysJSON: json)
+        let tracks = PreparedRouteTrackBuilder.build(from: export)
+        XCTAssertEqual(tracks.count, 2,
+            "A phantom jump (>1° between consecutive points) must split the path into two tracks")
+
+        // Track 1: pre-jump cluster around Oldenburg.
+        // Track 2: post-jump cluster in the Atlantic.
+        let bboxes = tracks.map { ($0.boundingBox.minLat, $0.boundingBox.maxLat) }
+        XCTAssertTrue(bboxes.contains { $0.0 > 50 && $0.1 < 54 },
+            "One track must stay in the Oldenburg latitude band")
+        XCTAssertTrue(bboxes.contains { $0.0 > 29 && $0.1 < 31 },
+            "Other track must stay in the Atlantic latitude band")
+    }
+
     func testDensityBinsCosineCorrectLongitudeAtHighLatitude() {
         // Tier 2 PR-A.3: at higher latitudes a degree of longitude covers
         // less metric distance than a degree of latitude. The aggregation

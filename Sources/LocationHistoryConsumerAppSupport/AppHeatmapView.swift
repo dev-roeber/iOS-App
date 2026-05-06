@@ -356,15 +356,15 @@ enum HeatmapLOD: CaseIterable {
     case high
 
     var step: Double {
-        // P0 video-audit fix 2026-05-06: high-LOD step shrunk 3× so each
-        // hexagon covers ~110 m at 53° N (was ~333 m, visible in the
-        // recording as a single huge cell dominating the view).
-        // P0 follow-up #2: macro step grown 0.32° → 1.0° so cells stay
-        // visible at world/continent zoom. The previous 0.32° produced
-        // sub-pixel cells on a 1290 px world view, which is why the
-        // verification recording showed blank heatmap on the first frame.
+        // High-LOD step (~110 m at 53° N): so each hex hits roughly one
+        // city block at the deepest zoom; was 333 m before P0 #1.
+        // Macro-LOD step grown 1.0° → 2.5° in P0 follow-up #3 because
+        // verification 14:07 showed even 1.0° (~110 km) cells were
+        // sub-pixel on a 1290 px world map. 2.5° (~280 km) is reliably
+        // multi-pixel visible at world zoom while still aggregating a
+        // typical 50–500 k point import into a few dozen macro cells.
         switch self {
-        case .macro: return 1.0
+        case .macro: return 2.5
         case .low: return 0.08
         case .medium: return 0.012
         case .high: return 0.001
@@ -463,17 +463,20 @@ enum HeatmapLOD: CaseIterable {
     }
 
     var routeSelectionLimit: Int {
-        // Verification 2026-05-06 still showed a creamy white burst at city
-        // zoom even after halving + alpha-cap fixes — overlapping tracks
-        // accumulate even with source-over alpha because the per-track
-        // peak colour itself is bright. Halve again at every LOD; with
-        // ≤15 tracks at macro and ≤40 at low, any single hotspot can no
-        // longer pile dozens of overlapping bright glows on the same pixel.
+        // Sweet-spot found across three verification iterations:
+        // - Tier 1 dropped macro 60 → 30 (lens-flare star).
+        // - P0 #2 dropped to 15/40/150/250 (creamy burst at city zoom).
+        // - P0 #3 raises medium 150 → 250 because verification 14:07 showed
+        //   the medium-zoom routes mode rendering empty over Europe — the
+        //   prior cap was too aggressive for that band. Macro/low stay
+        //   tight (15/40) because that's where the burst-prone overlap
+        //   happens. High raises 250 → 350 to keep enough detail at the
+        //   deepest zoom where tracks are spatially separated anyway.
         switch self {
         case .macro: return 15
         case .low: return 40
-        case .medium: return 150
-        case .high: return 250
+        case .medium: return 250
+        case .high: return 350
         }
     }
 }
@@ -576,35 +579,70 @@ struct PreparedRouteTrack {
 
 enum PreparedRouteTrackBuilder {
     private static let maxPolylinePoints = 500
+    /// Maximum step between two consecutive coordinates in a single track,
+    /// in degrees — about 100 km. A jump larger than this is treated as a
+    /// GPS spike / teleport and splits the track at that point so the
+    /// resulting MapPolyline doesn't draw a phantom line straight across
+    /// the Atlantic. Verification 14:07 frame F03 surfaced exactly such
+    /// a phantom line in routes mode.
+    private static let phantomJumpThresholdDegrees = 1.0
 
     nonisolated static func build(from export: AppExport) -> [PreparedRouteTrack] {
         var tracks: [PreparedRouteTrack] = []
 
-        func appendTrack(from coordinates: [CLLocationCoordinate2D]) {
-            guard let track = makeTrack(from: coordinates) else {
-                return
+        func appendSegments(from coordinates: [CLLocationCoordinate2D]) {
+            for segment in splitOnPhantomJumps(coordinates) {
+                if let track = makeTrack(from: segment) {
+                    tracks.append(track)
+                }
             }
-            tracks.append(track)
         }
 
         for day in export.data.days {
             for path in day.paths {
                 if let flats = path.flatCoordinates, flats.count >= 4 {
-                    appendTrack(from: flatToCoords(flats))
+                    appendSegments(from: flatToCoords(flats))
                 } else if path.points.count >= 2 {
-                    appendTrack(from: path.points.map {
+                    appendSegments(from: path.points.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
                     })
                 }
             }
             for activity in day.activities {
                 if let flats = activity.flatCoordinates, flats.count >= 4 {
-                    appendTrack(from: flatToCoords(flats))
+                    appendSegments(from: flatToCoords(flats))
                 }
             }
         }
 
         return tracks
+    }
+
+    /// Splits the coordinate sequence wherever two consecutive points are
+    /// further apart than `phantomJumpThresholdDegrees`. Each resulting
+    /// segment with ≥ 2 points becomes its own track; very short tail
+    /// fragments are dropped automatically by `makeTrack`'s minimum check.
+    nonisolated private static func splitOnPhantomJumps(
+        _ coordinates: [CLLocationCoordinate2D]
+    ) -> [[CLLocationCoordinate2D]] {
+        guard coordinates.count >= 2 else { return [coordinates] }
+        let threshold = phantomJumpThresholdDegrees
+        var segments: [[CLLocationCoordinate2D]] = []
+        var current: [CLLocationCoordinate2D] = [coordinates[0]]
+        for i in 1..<coordinates.count {
+            let prev = coordinates[i - 1]
+            let now = coordinates[i]
+            let dLat = abs(now.latitude - prev.latitude)
+            let dLon = abs(now.longitude - prev.longitude)
+            if dLat > threshold || dLon > threshold {
+                if current.count >= 2 { segments.append(current) }
+                current = [now]
+            } else {
+                current.append(now)
+            }
+        }
+        if current.count >= 2 { segments.append(current) }
+        return segments
     }
 
     nonisolated private static func makeTrack(from coordinates: [CLLocationCoordinate2D]) -> PreparedRouteTrack? {
