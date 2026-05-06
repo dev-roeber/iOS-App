@@ -20,38 +20,46 @@ public extension UTType {
     static var tcx: UTType {
         UTType(filenameExtension: "tcx") ?? .xml
     }
+
+    static var kmz: UTType {
+        UTType(filenameExtension: "kmz") ?? .zip
+    }
 }
 
-/// A write-only `FileDocument` wrapper for XML-based export content.
+/// A write-only `FileDocument` wrapper for export content.
 ///
-/// Used with SwiftUI's `.fileExporter` modifier to let the user save or share
-/// an export file via the system share sheet / Files app.
+/// Carries raw `Data` so a single `.fileExporter` modifier can serve all
+/// export formats (GPX, KML, GeoJSON, CSV, KMZ). Stacking two `.fileExporter`
+/// modifiers on the same view hierarchy is unreliable in SwiftUI — one of
+/// the two presentations may be silently swallowed. Routing every format
+/// through this type lets the call site present a single exporter.
 struct ExportDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.gpx, .kml, .geoJSON, .csv] }
+    static var readableContentTypes: [UTType] { [.gpx, .kml, .geoJSON, .csv, .kmz] }
 
-    let content: String
+    let data: Data
     let suggestedFilename: String
 
-    init(content: String, suggestedFilename: String) {
-        self.content = content
+    init(data: Data, suggestedFilename: String) {
+        self.data = data
         self.suggestedFilename = suggestedFilename
     }
 
-    /// Required by the protocol; GPX documents are write-only in this app.
+    init(content: String, suggestedFilename: String) {
+        self.data = content.data(using: .utf8) ?? Data()
+        self.suggestedFilename = suggestedFilename
+    }
+
+    /// Required by the protocol; documents are write-only in this app.
     init(configuration: ReadConfiguration) throws {
-        guard let data = configuration.file.regularFileContents,
-              let text = String(data: data, encoding: .utf8) else {
+        guard let fileData = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)
         }
-        self.content = text
+        self.data = fileData
         self.suggestedFilename = "import.xml"
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        guard let data = content.data(using: .utf8) else {
-            throw CocoaError(.fileWriteInapplicableStringEncoding)
-        }
-        return FileWrapper(regularFileWithContents: data)
+        FileWrapper(regularFileWithContents: data)
     }
 }
 #endif

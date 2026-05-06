@@ -68,8 +68,6 @@ public struct AppExportView: View {
     @State private var polygonCoordinatesText: String = ""
     @State private var isExporting = false
     @State private var exportDocument: ExportDocument?
-    @State private var kmzExportDocument: KMZExportDocument?
-    @State private var isExportingKMZ = false
     @State private var exportError: String?
     #if canImport(UniformTypeIdentifiers)
     @State private var exportContentType: UTType = .gpx
@@ -1233,23 +1231,27 @@ public struct AppExportView: View {
     ) -> some View {
         content()
             #if canImport(UniformTypeIdentifiers)
+            // Single fileExporter routes all formats through ExportDocument
+            // (Data-backed). Stacking two .fileExporter modifiers on the same
+            // view hierarchy is unreliable in SwiftUI — one presentation may
+            // be silently swallowed, which previously made the Export button
+            // appear to do nothing for the format associated with the loser
+            // of that race.
             .fileExporter(
                 isPresented: $isExporting,
                 document: exportDocument,
                 contentType: exportContentType,
                 defaultFilename: exportDocument?.suggestedFilename ?? "lh2gpx-export.\(selectedFormat.fileExtension)"
             ) { result in
-                if case let .failure(error) = result { exportError = error.localizedDescription }
+                if case let .failure(error) = result {
+                    let nsError = error as NSError
+                    let isUserCancelled = nsError.domain == NSCocoaErrorDomain
+                        && nsError.code == CocoaError.userCancelled.rawValue
+                    if !isUserCancelled {
+                        exportError = error.localizedDescription
+                    }
+                }
                 exportDocument = nil
-            }
-            .fileExporter(
-                isPresented: $isExportingKMZ,
-                document: kmzExportDocument,
-                contentType: .kmz,
-                defaultFilename: kmzExportDocument?.suggestedFilename ?? "lh2gpx-export.kmz"
-            ) { result in
-                if case let .failure(error) = result { exportError = error.localizedDescription }
-                kmzExportDocument = nil
             }
             #endif
             .alert(t("Export Failed"), isPresented: Binding(
@@ -1399,11 +1401,14 @@ public struct AppExportView: View {
         if selectedFormat == .kmz {
             do {
                 let kmzData = try KMZBuilder.build(from: exportDays, mode: effectiveExportMode)
-                kmzExportDocument = KMZExportDocument(
+                exportDocument = ExportDocument(
                     data: kmzData,
                     suggestedFilename: exportFilenamePreview(selection: selection, summaries: summaries)
                 )
-                isExportingKMZ = true
+                #if canImport(UniformTypeIdentifiers)
+                exportContentType = .kmz
+                #endif
+                isExporting = true
             } catch {
                 exportError = t("KMZ export failed. The archive could not be created.")
             }
