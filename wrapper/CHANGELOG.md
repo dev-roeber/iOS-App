@@ -2,6 +2,14 @@
 
 ## 2026-05-06
 
+### feat: Hero-Map-Workspace auf Übersicht/Insights/Export/Live ausrollen (Tage-Optik)
+- Neue gemeinsame Komponente `LHHeroMapWorkspace.swift` (Layout-Konstanten + `lhDeviceTopSafeInset()`).
+- Compact iPhone: Map auf Übersicht/Insights/Export/Live/DayDetail-Portrait läuft jetzt full-bleed unter Status-Bar / Dynamic Island, vertikaler Control-Stack rechts oben, Filter/Range/Format-Chips unter der Map (analog Tage).
+- Bestehende Funktionen (Heatmap, fileExporter, Recording/Follow/Fullscreen, ExportPreviewDataBuilder, AppOverviewMapModel-Pan-Invariante) erhalten.
+- iPad/Regular + Landscape: Legacy-Pfade unverändert.
+- `swift test`: 933 Tests, 2 skipped, 0 failures ✅
+- App-Store: Build 96 noch nötig vor Submit; Visual-Verifikation auf echtem Gerät offen.
+
 ### fix: consolidate Days top workspace + map controls below status bar (Build 96 nötig)
 
 - **Root Cause Statusbar**: Map-Controls (Globe/Fit-to-data) in `AppOverviewTracksMapView.compactMapView` lagen mit nur `.padding(8)` direkt am oberen Map-Rand. Da Days die Map per `.ignoresSafeArea(edges: .top)` hinter Dynamic Island/Statusbar zieht, landeten die Buttons sichtbar im Statusbar-Bereich.

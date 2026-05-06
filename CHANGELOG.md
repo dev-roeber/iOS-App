@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## [2026-05-06] — feat: Hero-Map-Workspace auf Übersicht/Insights/Export/Live ausrollen (Tage-Optik)
+
+### Neu
+- `Sources/LocationHistoryConsumerAppSupport/LHHeroMapWorkspace.swift` (neu): geteilte Layout-Konstanten (`compactHeight=460`, `expandedHeight=560`, `mapControlTopOffset=130`) + `lhDeviceTopSafeInset()`-Helper, der den realen `UIWindow.safeAreaInsets.top` liest (in `safeAreaInset`/`ignoresSafeArea`-Kontexten ist `geometry.safeAreaInsets.top == 0`).
+
+### Geändert (compact iPhone)
+- **Übersicht** (`AppContentSplitView`): Map als full-bleed Hero über `safeAreaInset(.top)`, alter `overviewMapCard` entfernt; Heatmap-Button bleibt im `overviewRangeCard` erhalten. iPad/Regular und Landscape unverändert.
+- **Insights** (`AppInsightsContentView`): neuer `heroEnabled`-Pfad mit Hero-Map + Range-Chip-Filter; alle `.onChange`/`.sheet`/`.alert`/`.confirmationDialog`-Modifier auf den neuen Pfad gespiegelt.
+- **Export** (`AppExportView` + `AppExportPreviewMapView`): `heroEnabled` schaltet Hero-Map mit Format-Pill + Tage/Tracks-Chips frei; `fileExporter`, `bottomBar`, Format-Picker, Advanced Filters, `ExportPreviewDataBuilder`-Quelle, `effectiveQueryFilter`/`effectiveExportMode`/`session.exportSelection`/`liveLocation.recordedTracks` unverändert verdrahtet.
+- **Live** (`AppLiveTrackingView`): Portrait erhält `liveHeroMap` (Polyline + Follow-Toggle + Fullscreen-Button + locationDot) + `liveHeroFilterPanel`; Landscape `mapCard`, Recording-Toggle, Permission-Flow, Background-Recording, Upload-Status, Track-Library, Follow-Off-on-Pan-Verhalten erhalten.
+- **Tage-Detail** (`AppDayDetailView`): Portrait nutzt jetzt `safeAreaInset(.top)` mit `dayHeroMap` + `dayHeroFilterPanel`; Landscape unverändert.
+- **`AppDayMapView`**: zusätzliche Init-Parameter `mapControlTopPadding` und `verticalMapControls`; Style-Toggle in `mapControlsStack`-Builder ausgelagert. Defaults erhalten Legacy-Verhalten.
+
+### Erhalten
+- `projectedQueryFilter`, `overviewFilteredDaySummaries`, `AppOverviewMapModel` Pan-without-rescan-Invariante, Heatmap-Button, fileExporter (Single + KMZ), Recording-/Background-Toggles, Upload-Status, Track-Library, Follow-Mode, Fullscreen-Map, alle Sheets/Alerts/Drilldowns.
+
+### Build & Test
+- `swift build`: OK (1.08s) ✅
+- `swift test`: **933 Tests, 2 skipped, 0 failures** (7.0s) ✅
+
+### Offene Punkte
+- iPad regularSplitView + Landscape: Legacy-Pfade unverändert, separate visuelle Verifikation nötig.
+- Snapshot/Visual-Tests für Hero-Map-Layout fehlen weiterhin.
+- `AppDayDetailView.mapControlRow` ist im Portrait toter Code (Landscape-only) — Cleanup als Follow-up.
+- Live `mapCard` (Landscape) und `liveHeroMap` (Portrait) duplizieren Map-Rendering — Konsolidierung als Follow-up.
+
 ## [2026-05-06] — fix: Days-Map-Controls unter Statusbar + Map/Search flush (Build 96 nötig)
 
 ### Root Cause

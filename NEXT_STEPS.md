@@ -1,6 +1,6 @@
 # NEXT_STEPS
 
-Stand: 2026-05-06 (Days map controls below status bar + flush map/search workspace, Build 96 nötig)
+Stand: 2026-05-06 (Hero-Map-Workspace auf Übersicht/Insights/Export/Live ausgerollt — Tage-Optik; Build 96 nötig vor Submit)
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
@@ -30,6 +30,9 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 - [x] Live Tracking / Live Tracks Library auf echter Apple-Hardware verifiziert: UITest `testDeviceSmokeNavigationAndActions` auf iPhone 15 Pro Max (iOS 26.4) PASSED (2026-05-05); Start/Stop Recording, Live-Tab-Navigation bestätigt
 - [x] Days-Tab: Landscape-Verifikation auf echtem Gerät — `testLandscapeLayoutSmoke` auf iPhone 15 Pro Max PASSED (62s), 5 Tabs ohne Crash (2026-05-05); Live-Start-Button Accessibility in Landscape als UITest-Limit dokumentiert
 - [ ] Days-Tab: iPad-Verifikation — `regularSplitView` nutzt `daysMapHeaderCard` via `AnyView`, visuell ungeprüft
+- [ ] **Hero-Map-Workspace iPad/Landscape-Verifikation**: Compact iPhone vereinheitlicht (commit e11d4d7, 2026-05-06) — Übersicht/Insights/Export/Live nutzen Tage-Hero-Stil. iPad-Regular und Landscape behalten Legacy-Pfade; visuelle Verifikation an realem iPad + iPhone-Landscape steht aus.
+- [ ] **Hero-Map-Snapshot-Tests ergänzen**: aktuell nur State/Wiring getestet (`LHMapHeaderTests`, `UIWiringTests`); Layout-Snapshots (Höhen 460/560, Control-Position unter Statusbar, full-bleed Clipping) fehlen.
+- [ ] **Cleanup-Follow-up Hero-Map**: `AppDayDetailView.mapControlRow` ist im Portrait toter Code (Landscape-only). Live `mapCard` (Landscape) und `liveHeroMap` (Portrait) duplizieren Map-Rendering — Konsolidierung in shared ViewBuilder.
 - [x] **Startseite**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_01_import erzeugt (2026-05-05)
 - [x] **Übersicht**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_02_overview erzeugt (2026-05-05)
 - [x] **Export**: auf iPhone 15 Pro Max verifiziert — Screenshot iphone15pm_04_export_checkout erzeugt (2026-05-05)

@@ -1,6 +1,6 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-05 (Hardware-Verifikation iPhone 15 Pro Max + Screenshot-Update)
+Last analysis: 2026-05-06 (Hero-Map-Workspace auf Übersicht/Insights/Export/Live ausgerollt — Tage-Optik vereinheitlicht)
 
 Repos in scope:
 - `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper
@@ -17,7 +17,7 @@ LH2GPX is a **public consumer/utility app**. It is not an organization-specific 
 - **No account required**: no login, no organization ID, no employee credentials, no partner affiliation
 - **All data stays local**: imported location history never leaves the device; no mandatory cloud sync or server
 - **Optional live recording upload**: disabled by default; requires the user to explicitly configure a self-hosted server URL; no central LH2GPX service exists; no organizational backend
-- **App Store Review context**: version 1.0 (Build 74) was rejected on 2026-05-01 under Guideline 3.2 (Business); review response in progress (`docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`)
+- **App Store Review context**: version 1.0 (Build 74) was rejected on 2026-05-01 under Guideline 3.2 (Business); review response sent and accepted — Build 74 status now **Pending Developer Release** (2026-05-05). 1.0.1-Train started, Cloud-Build 84 successful, Build 96 required before next submit.
 
 ## 1. App-Struktur / Navigation
 
