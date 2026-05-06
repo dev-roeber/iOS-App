@@ -313,10 +313,20 @@ public struct AppHeatmapView: View {
     }
 
     private func scaledPolygonCoordinates(for cell: HeatCell) -> [CLLocationCoordinate2D] {
-        HeatmapGridBuilder.polygonCoordinates(
+        let stepLat = cell.cellSpan * radiusPreset.scale
+        // Web-Mercator longitude scale: a degree of longitude shrinks with cos(lat).
+        // To keep the hexagon visually round at any latitude (Oldenburg 53° N
+        // → cos ≈ 0.60, polar regions much smaller), the longitudinal extent
+        // must compensate for that. Clamp the divisor at 0.05 so polar bins
+        // don't blow up to absurd widths.
+        let latRad = cell.coordinate.latitude * .pi / 180.0
+        let lonScale = max(cos(latRad), 0.05)
+        let stepLon = stepLat / lonScale
+        return HeatmapGridBuilder.polygonCoordinates(
             centerLat: cell.coordinate.latitude,
             centerLon: cell.coordinate.longitude,
-            step: cell.cellSpan * radiusPreset.scale
+            stepLat: stepLat,
+            stepLon: stepLon
         )
     }
 }
@@ -1273,39 +1283,73 @@ enum HeatmapGridBuilder {
     }
 
     /// Pointy-top regular hexagon centred at (centerLat, centerLon).
-    /// `step` is the vertical extent (top-vertex → bottom-vertex);
-    /// horizontal extent equals `step * sqrt(3)/2 ≈ 0.866 * step`.
+    /// `stepLat` is the vertical extent in degrees (top-vertex → bottom-vertex).
+    /// `stepLon` is the horizontal extent across the hexagon's widest axis
+    /// (between the two side vertices) in degrees.
     ///
-    /// Hex shape replaces the previous square polygon to soften the
+    /// Callers must supply a `stepLon` that is cosine-corrected for the
+    /// current centre latitude (`stepLat / cos(latRad)`) so the rendered
+    /// hexagon appears geometrically regular on screen — Web Mercator
+    /// shrinks longitude with latitude, so equal degree extents would
+    /// render as a horizontally-flattened hexagon at higher latitudes.
+    /// At the Oldenburg latitude (~53° N) the correction is ~1.66×,
+    /// near the poles much larger; callers must clamp the divisor.
+    ///
+    /// Hex shape replaced the previous square polygon to soften the
     /// "Minecraft" tile look visible on the 2026-05-06 21:18 screenshots
     /// and aligns the renderer with established density-map conventions
     /// (Strava / Mapbox / Foursquare). The aggregation pipeline still
-    /// bins by lat/lon grid for now — true axial-coord hex aggregation
-    /// is a follow-up (Tier 2 PR-A part 2).
-    nonisolated static func polygonCoordinates(centerLat: Double, centerLon: Double, step: Double) -> [CLLocationCoordinate2D] {
-        // Normal pointy-top hexagon: 6 vertices + closing copy of the first.
-        // Vertex angles measured from north (0°) clockwise:
-        //   0°, 60°, 120°, 180°, 240°, 300°
-        // For a pointy-top hex this places vertex 0 directly above the centre.
-        let halfHeight = step / 2.0                     // 1/2 of vertical diameter
-        let halfWidth = step * 0.4330127018922193       // 1/2 of horizontal extent (= cos 30° * halfHeight*2)
-        let quarterHeight = step / 4.0                  // 1/4 of vertical diameter
+    /// bins by lat/lon grid; true axial-coord hex aggregation is the
+    /// next sub-step (Tier 2 PR-A.3).
+    nonisolated static func polygonCoordinates(
+        centerLat: Double,
+        centerLon: Double,
+        stepLat: Double,
+        stepLon: Double
+    ) -> [CLLocationCoordinate2D] {
+        // Pointy-top hexagon: 6 vertices + closing copy of the first.
+        let halfHeightLat = stepLat / 2.0               // top↔bottom vertices
+        let quarterHeightLat = stepLat / 4.0            // side vertex Y offset
+        // Horizontal half-axis = (sqrt(3)/2) × radius. With stepLon being the
+        // full horizontal extent, the side vertex sits at stepLon/2 from centre.
+        let halfWidthLon = stepLon / 2.0
         return [
             // top
-            CLLocationCoordinate2D(latitude: centerLat + halfHeight, longitude: centerLon),
+            CLLocationCoordinate2D(latitude: centerLat + halfHeightLat, longitude: centerLon),
             // upper-right
-            CLLocationCoordinate2D(latitude: centerLat + quarterHeight, longitude: centerLon + halfWidth),
+            CLLocationCoordinate2D(latitude: centerLat + quarterHeightLat, longitude: centerLon + halfWidthLon),
             // lower-right
-            CLLocationCoordinate2D(latitude: centerLat - quarterHeight, longitude: centerLon + halfWidth),
+            CLLocationCoordinate2D(latitude: centerLat - quarterHeightLat, longitude: centerLon + halfWidthLon),
             // bottom
-            CLLocationCoordinate2D(latitude: centerLat - halfHeight, longitude: centerLon),
+            CLLocationCoordinate2D(latitude: centerLat - halfHeightLat, longitude: centerLon),
             // lower-left
-            CLLocationCoordinate2D(latitude: centerLat - quarterHeight, longitude: centerLon - halfWidth),
+            CLLocationCoordinate2D(latitude: centerLat - quarterHeightLat, longitude: centerLon - halfWidthLon),
             // upper-left
-            CLLocationCoordinate2D(latitude: centerLat + quarterHeight, longitude: centerLon - halfWidth),
+            CLLocationCoordinate2D(latitude: centerLat + quarterHeightLat, longitude: centerLon - halfWidthLon),
             // close
-            CLLocationCoordinate2D(latitude: centerLat + halfHeight, longitude: centerLon),
+            CLLocationCoordinate2D(latitude: centerLat + halfHeightLat, longitude: centerLon),
         ]
+    }
+
+    /// Convenience overload preserving the original (degree-uniform) signature
+    /// for tests and callers that don't yet apply Mercator latitude correction.
+    /// Internally treats `step` as both stepLat and stepLon — the rendered
+    /// hexagon will appear horizontally compressed at non-equatorial latitudes.
+    /// Prefer the (stepLat, stepLon) variant in production code.
+    nonisolated static func polygonCoordinates(
+        centerLat: Double,
+        centerLon: Double,
+        step: Double
+    ) -> [CLLocationCoordinate2D] {
+        // Equatorial hex: stepLon equals stepLat * cos 30° = stepLat * 0.866 to
+        // keep the legacy pointy-top regular hex when no latitude correction
+        // is supplied. Tests verify exactly this geometry.
+        polygonCoordinates(
+            centerLat: centerLat,
+            centerLon: centerLon,
+            stepLat: step,
+            stepLon: step * 0.8660254037844387
+        )
     }
 }
 

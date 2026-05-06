@@ -403,5 +403,33 @@ final class AppHeatmapRenderingTests: XCTestCase {
         XCTAssertEqual(coords[1].latitude - 53.144, 0.005, accuracy: 1e-9, "Upper-right vertex Y")
         XCTAssertEqual(53.144 - coords[2].latitude, 0.005, accuracy: 1e-9, "Lower-right vertex Y")
     }
+
+    func testHexPolygonAcceptsAsymmetricStepForMercatorCorrection() {
+        // Tier 2 PR-A.2: The (stepLat, stepLon) overload allows callers to
+        // compensate for Web Mercator's cosine-of-latitude longitude shrink.
+        // At ~53° N (Oldenburg), cos ≈ 0.6 → stepLon = stepLat / 0.6 ≈ 1.66×
+        // produces a hexagon that renders geometrically regular on screen.
+        let stepLat = 0.012
+        let lonScale = cos(53.144 * .pi / 180.0)  // ≈ 0.598
+        let stepLon = stepLat / lonScale          // ≈ 0.0201
+
+        let coords = HeatmapGridBuilder.polygonCoordinates(
+            centerLat: 53.144,
+            centerLon: 8.214,
+            stepLat: stepLat,
+            stepLon: stepLon
+        )
+
+        XCTAssertEqual(coords.count, 7)
+        // Top + bottom vertices: aligned to centre longitude regardless of stepLon.
+        XCTAssertEqual(coords[0].longitude, 8.214, accuracy: 1e-12)
+        XCTAssertEqual(coords[3].longitude, 8.214, accuracy: 1e-12)
+        // Vertical extent uses stepLat exactly.
+        XCTAssertEqual(coords[0].latitude - coords[3].latitude, stepLat, accuracy: 1e-12)
+        // Horizontal extent at the side vertices uses stepLon (corrected).
+        let actualHorizontalExtent = coords[1].longitude - coords[5].longitude
+        XCTAssertEqual(actualHorizontalExtent, stepLon, accuracy: 1e-12,
+                       "Side-vertex span must equal the supplied stepLon")
+    }
 }
 #endif
