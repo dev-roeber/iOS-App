@@ -13,9 +13,11 @@ public struct AppHeatmapView: View {
     @State private var model: AppHeatmapModel
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var isFirstLoad = true
-    // P0 video-audit fix 2026-05-06: lower default so basemap detail
-    // stays readable under the overlay (was 0.84 → over-saturated).
-    @State private var overlayOpacity = 0.60
+    // P0 follow-up 2026-05-06 #2: 0.84 was too high (everything saturated),
+    // 0.60 was too low (user slid to 100% throughout the verification
+    // recording). Settled at 0.75 — a clear primary surface without
+    // burying basemap detail.
+    @State private var overlayOpacity = 0.75
     @State private var radiusPreset: HeatmapRadiusPreset = .balanced
     // P0 video-audit fix 2026-05-06: density is now default mode. The
     // routes mode produced an over-saturated white-yellow burst on city
@@ -354,11 +356,15 @@ enum HeatmapLOD: CaseIterable {
     case high
 
     var step: Double {
-        // P0 video-audit fix 2026-05-06: high-LOD step shrunk 3× so that on
-        // city/street zoom each hexagon covers ~110 m at 53° N (was ~333 m,
-        // visible in the recording as a single huge cell dominating the view).
+        // P0 video-audit fix 2026-05-06: high-LOD step shrunk 3× so each
+        // hexagon covers ~110 m at 53° N (was ~333 m, visible in the
+        // recording as a single huge cell dominating the view).
+        // P0 follow-up #2: macro step grown 0.32° → 1.0° so cells stay
+        // visible at world/continent zoom. The previous 0.32° produced
+        // sub-pixel cells on a 1290 px world view, which is why the
+        // verification recording showed blank heatmap on the first frame.
         switch self {
-        case .macro: return 0.32
+        case .macro: return 1.0
         case .low: return 0.08
         case .medium: return 0.012
         case .high: return 0.001
@@ -457,14 +463,17 @@ enum HeatmapLOD: CaseIterable {
     }
 
     var routeSelectionLimit: Int {
-        // Halved at macro/low so zoomed-out hotspots no longer stack 60 overlapping
-        // glow polylines into a single white lens-flare star artefact. Medium/high
-        // unchanged because at those zooms tracks are spatially separated.
+        // Verification 2026-05-06 still showed a creamy white burst at city
+        // zoom even after halving + alpha-cap fixes — overlapping tracks
+        // accumulate even with source-over alpha because the per-track
+        // peak colour itself is bright. Halve again at every LOD; with
+        // ≤15 tracks at macro and ≤40 at low, any single hotspot can no
+        // longer pile dozens of overlapping bright glows on the same pixel.
         switch self {
-        case .macro: return 30
-        case .low: return 75
-        case .medium: return 300
-        case .high: return 500
+        case .macro: return 15
+        case .low: return 40
+        case .medium: return 150
+        case .high: return 250
         }
     }
 }
@@ -479,12 +488,13 @@ enum RoutePalette {
         (0.20, HeatmapRGB(red: 0.0,  green: 0.48, blue: 0.95)),  // vivid blue
         (0.42, HeatmapRGB(red: 0.0,  green: 0.85, blue: 0.95)),  // bright cyan
         (0.65, HeatmapRGB(red: 0.72, green: 0.96, blue: 1.00)),  // ice/light cyan
-        (0.82, HeatmapRGB(red: 1.00, green: 0.94, blue: 0.70)),  // warm white/yellow
-        // Hotspot top-stop capped below pure white. Multiple stacked glow polylines
-        // were saturating to (1,1,1) at hotspots and producing a lens-flare star
-        // artefact on zoom-out (visible on screenshots 2026-05-06 21:18). A warm
-        // bright cap retains the "luminous" look without the white burnout.
-        (1.00, HeatmapRGB(red: 0.96, green: 0.92, blue: 0.78)),
+        (0.78, HeatmapRGB(red: 0.98, green: 0.85, blue: 0.42)),  // golden yellow
+        // Hotspot top-stop pulled further back from cream toward saturated
+        // amber. Verification 2026-05-06 #2 showed the previous (0.96,
+        // 0.92, 0.78) cream still summing to a perceived white burst when
+        // multiple overlapping tracks pile up. Amber summed-with-amber
+        // remains amber instead of going white-cream.
+        (1.00, HeatmapRGB(red: 0.92, green: 0.62, blue: 0.18)),
     ]
 
     nonisolated static func rgb(for normalized: Double) -> HeatmapRGB {
