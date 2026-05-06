@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-05-06 (Element-based streaming parser for Google Timeline JSON)
+
+### feat: streaming reader for raw Google Timeline JSON imports
+- Manuelle Imports laden die Datei nicht länger komplett zusammen mit einem `JSONSerialization`-Tree.
+- Neue Datei `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineStreamReader.swift`: `forEachObjectElement(contentsOf url:)` streamt Top-Level-Array-Elemente via FileHandle in 64-KB-Chunks; pro Element wird nur ein Object-Slice an `JSONSerialization.jsonObject(with:)` übergeben. Schwester-Variante `forEachObjectElement(in data:)` für ZIP-extrahierte Daten. State-Machine-Tokenizer mit String-/Escape-/Depth-Tracking, BOM-Skip, RFC-8259-Whitespace. Hard-Cap pro Element 8 MB → `StreamError.elementTooLarge`. Errors: `notArray`, `malformedJSON`, `ioFailure`, `elementTooLarge`.
+- `GoogleTimelineConverter.swift`: `convert(data:)` läuft jetzt intern über den Streaming-Reader; neue API `convertStreaming(contentsOf url:)` für direkte JSON-Datei-Imports ohne Full-Data-Load. Ingest in `ingestEntry(...)` gemeinsam für beide Pfade.
+- `AppContentLoader.swift`: `decodeFile(at:sourceName:)` sniffed die ersten 1 KB; bei `[` direkt in `convertStreaming(contentsOf:)`. Auto-Restore-Skip-Verhalten unverändert (Streaming ist speichersicher, aber Sekunden bis Minuten — bewusst nutzergesteuert).
+- Tests neu: `Tests/LocationHistoryConsumerTests/GoogleTimelineStreamReaderTests.swift` mit 15 Cases (Happy Path, BOM/Whitespace, String mit `}]`, escaped Quote, nested Path, Error-Pfade, byte-by-byte-Chunking-Boundary-Test, 5 000-Entry-Synthetik, `convert(data:)` ↔ `convertStreaming` Äquivalenz).
+- `swift test`: **1006 Tests, 2 skipped, 0 failures** (vorher 991).
+
+**Ehrlich offen:** ZIP-Entry-Streaming bleibt aus — ZIPFoundation extrahiert weiterhin in eine `Data`, dann läuft der Streaming-Reader darauf (Memory-Peak ≈ Größe der entpackten Datei, aber ohne zusätzlichen 150–200-MB-`JSONSerialization`-Tree). Hardware-Re-Verifikation auf iPhone 15 Pro Max mit echter 46-MB-Datei steht aus. Auto-Restore lehnt rohe Google Timeline weiterhin ab. Bei >500 k Entries bleibt das einmalig aufgebaute `dayMap` ein nichttriviales RAM-Plateau, aber Größenordnungen unter dem alten Pfad.
+
 ## 2026-05-06 (Memory-Safety-Folgefix: Sniffer-Skip im Auto-Restore)
 
 ### fix: skip raw Google Timeline files during auto-restore regardless of size

@@ -335,6 +335,21 @@ public enum AppContentLoader {
             throw AppContentLoaderError.fileTooLarge(sourceName)
         }
 
+        // Cheap head-sniff before committing to a full Data load. For Google
+        // Timeline raw JSON we hand the URL straight to the streaming
+        // converter — that path peaks at ~one element worth of Foundation
+        // objects (a few KB) instead of holding the whole file in memory
+        // alongside the JSONSerialization tree.
+        if let head = peekFileHead(url: url, byteLimit: 1024) {
+            if GoogleTimelineConverter.isGoogleTimeline(head) {
+                do {
+                    return try GoogleTimelineConverter.convertStreaming(contentsOf: url)
+                } catch {
+                    throw AppContentLoaderError.unsupportedFormat(sourceName)
+                }
+            }
+        }
+
         let data: Data
         do {
             data = try Data(contentsOf: url)
@@ -343,6 +358,16 @@ public enum AppContentLoader {
         }
 
         return try decodeData(data, sourceName: sourceName)
+    }
+
+    /// Reads at most `byteLimit` bytes from the start of a file. Used to
+    /// classify the top-level JSON kind (`[` vs `{`) before committing to a
+    /// full read. Distinct from `sniffFileHead` (auto-restore guard) so each
+    /// caller can pick its own byte limit and error semantics.
+    private static func peekFileHead(url: URL, byteLimit: Int) -> Data? {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? handle.close() }
+        return try? handle.read(upToCount: byteLimit)
     }
 
     /// Decodes raw data into an `AppExport`, routing by format detection.

@@ -46,19 +46,49 @@ enum GoogleTimelineConverter {
         return nil
     }
 
-    /// Converts Google Timeline JSON to AppExport.
-    /// Builds an intermediate JSON dictionary matching the AppExport schema,
-    /// then decodes it via AppExportDecoder — no model initializer changes needed.
+    /// Converts Google Timeline JSON (already in memory) to AppExport.
+    ///
+    /// Even when the bytes are already on the heap (e.g. ZIP-extracted), we
+    /// route through the element-streaming reader instead of doing a single
+    /// `JSONSerialization.jsonObject(with: fullData)`. The streaming variant
+    /// peaks at one element worth of Foundation objects (~few KB) instead of
+    /// the full ~150–200 MB transient tree a 46 MB array produces.
     static func convert(data: Data) throws -> AppExport {
-        guard let entries = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else {
-            throw ConversionError.notGoogleTimeline
-        }
-        // Require at least one entry with a parseable startTime; otherwise this is not
-        // a recognisable Google Timeline export (e.g. empty array, random JSON array).
-        let hasValidEntry = entries.contains { ($0["startTime"] as? String).flatMap(parseISO) != nil }
-        guard hasValidEntry else { throw ConversionError.notGoogleTimeline }
+        var dayMap: DayMap = [:]
+        var orderedDayKeys: [String] = []
+        var sawValidEntry = false
 
-        let exportDict = buildExportDict(from: entries)
+        try GoogleTimelineStreamReader.forEachObjectElement(in: data) { raw in
+            guard let entry = raw as? [String: Any] else { return }
+            ingestEntry(entry, dayMap: &dayMap, orderedDayKeys: &orderedDayKeys, sawValidEntry: &sawValidEntry)
+        }
+
+        guard sawValidEntry else { throw ConversionError.notGoogleTimeline }
+        return try finalizeAppExport(dayMap: dayMap, orderedDayKeys: orderedDayKeys)
+    }
+
+    /// Streams a Google Timeline JSON file from disk and converts it to
+    /// AppExport. Reads the file in 64 KB chunks via `FileHandle`; per-element
+    /// memory peaks at one object (~few KB). Suitable for large user imports
+    /// (≥40 MB) where a full in-memory parse would Jetsam the wrapper.
+    static func convertStreaming(contentsOf url: URL) throws -> AppExport {
+        var dayMap: DayMap = [:]
+        var orderedDayKeys: [String] = []
+        var sawValidEntry = false
+
+        try GoogleTimelineStreamReader.forEachObjectElement(contentsOf: url) { raw in
+            guard let entry = raw as? [String: Any] else { return }
+            ingestEntry(entry, dayMap: &dayMap, orderedDayKeys: &orderedDayKeys, sawValidEntry: &sawValidEntry)
+        }
+
+        guard sawValidEntry else { throw ConversionError.notGoogleTimeline }
+        return try finalizeAppExport(dayMap: dayMap, orderedDayKeys: orderedDayKeys)
+    }
+
+    typealias DayMap = [String: (visits: [[String: Any]], activities: [[String: Any]], paths: [[String: Any]])]
+
+    private static func finalizeAppExport(dayMap: DayMap, orderedDayKeys: [String]) throws -> AppExport {
+        let exportDict = buildExportDict(dayMap: dayMap, orderedDayKeys: orderedDayKeys)
         let exportData = try JSONSerialization.data(withJSONObject: exportDict)
         return try AppExportDecoder.decode(data: exportData)
     }
@@ -109,38 +139,43 @@ enum GoogleTimelineConverter {
 
     // MARK: - Export Dict Builder
 
-    private static func buildExportDict(from entries: [[String: Any]]) -> [String: Any] {
-        // Group entries by local calendar date of startTime, preserving insertion order.
-        var dayMap: [String: (visits: [[String: Any]], activities: [[String: Any]], paths: [[String: Any]])] = [:]
-        var orderedDayKeys: [String] = []
+    /// Per-entry ingest used by both the in-memory (`convert(data:)`) and
+    /// disk-streaming (`convertStreaming(contentsOf:)`) paths. Mutates the
+    /// day map in place so we never hold the entire entry list.
+    private static func ingestEntry(
+        _ entry: [String: Any],
+        dayMap: inout DayMap,
+        orderedDayKeys: inout [String],
+        sawValidEntry: inout Bool
+    ) {
+        guard let startTimeStr = entry["startTime"] as? String,
+              let startDate = parseISO(startTimeStr) else { return }
+        sawValidEntry = true
 
-        for entry in entries {
-            guard let startTimeStr = entry["startTime"] as? String,
-                  let startDate = parseISO(startTimeStr) else { continue }
+        let dayKey = dateFmt.string(from: startDate)
+        let endTimeStr = entry["endTime"] as? String
 
-            let dayKey = dateFmt.string(from: startDate)
-            let endTimeStr = entry["endTime"] as? String
-
-            if dayMap[dayKey] == nil {
-                dayMap[dayKey] = (visits: [], activities: [], paths: [])
-                orderedDayKeys.append(dayKey)
-            }
-
-            if let visitData = entry["visit"] as? [String: Any] {
-                if let v = convertVisit(visitData, startTime: startTimeStr, endTime: endTimeStr) {
-                    dayMap[dayKey]!.visits.append(v)
-                }
-            } else if let activityData = entry["activity"] as? [String: Any] {
-                if let a = convertActivity(activityData, startTime: startTimeStr, endTime: endTimeStr) {
-                    dayMap[dayKey]!.activities.append(a)
-                }
-            } else if let pathData = entry["timelinePath"] as? [[String: Any]] {
-                if let p = convertPath(pathData, startTime: startTimeStr, endTime: endTimeStr, startDate: startDate) {
-                    dayMap[dayKey]!.paths.append(p)
-                }
-            }
+        if dayMap[dayKey] == nil {
+            dayMap[dayKey] = (visits: [], activities: [], paths: [])
+            orderedDayKeys.append(dayKey)
         }
 
+        if let visitData = entry["visit"] as? [String: Any] {
+            if let v = convertVisit(visitData, startTime: startTimeStr, endTime: endTimeStr) {
+                dayMap[dayKey]!.visits.append(v)
+            }
+        } else if let activityData = entry["activity"] as? [String: Any] {
+            if let a = convertActivity(activityData, startTime: startTimeStr, endTime: endTimeStr) {
+                dayMap[dayKey]!.activities.append(a)
+            }
+        } else if let pathData = entry["timelinePath"] as? [[String: Any]] {
+            if let p = convertPath(pathData, startTime: startTimeStr, endTime: endTimeStr, startDate: startDate) {
+                dayMap[dayKey]!.paths.append(p)
+            }
+        }
+    }
+
+    private static func buildExportDict(dayMap: DayMap, orderedDayKeys: [String]) -> [String: Any] {
         let days: [[String: Any]] = orderedDayKeys.sorted().map { key in
             let b = dayMap[key]!
             return ["date": key, "visits": b.visits, "activities": b.activities, "paths": b.paths]

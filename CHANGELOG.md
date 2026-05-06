@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [2026-05-06] — Element-based streaming parser for Google Timeline JSON (manual imports no longer load the full file alongside a JSONSerialization tree)
+
+### Was sich geändert hat
+- Neue Datei `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineStreamReader.swift` mit `GoogleTimelineStreamReader.forEachObjectElement(contentsOf url:)` (FileHandle, 64-KB-Chunks, Top-Level-Array-Tokenizer mit String-/Escape-/Depth-Tracking, BOM-Skip, RFC-8259-Whitespace) und Schwester-Variante `forEachObjectElement(in data:)` für ZIP-extrahierte Daten. Pro Element wird nur ein Object-Slice an `JSONSerialization.jsonObject(with:)` übergeben. Hard-Cap pro Element 8 MB → `StreamError.elementTooLarge`. Errors: `notArray`, `malformedJSON`, `ioFailure`, `elementTooLarge`.
+- `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineConverter.swift`: `convert(data:)` läuft jetzt intern über den Streaming-Reader (kein voller Foundation-Tree mehr); neue API `convertStreaming(contentsOf url:)` für direkte JSON-Datei-Imports ohne Full-Data-Load. Per-Entry-Ingest in `ingestEntry(...)` ausgelagert; beide Pfade (Data + URL) teilen Ingest und finale Export-Dict-Erzeugung.
+- `Sources/LocationHistoryConsumerAppSupport/AppContentLoader.swift`: `decodeFile(at:sourceName:)` sniffed die ersten 1 KB; bei erkannter Google-Timeline (`[`) geht es direkt in `convertStreaming(contentsOf:)` ohne `Data(contentsOf:)`. Auto-Restore-Skip-Verhalten bleibt unverändert (rohe Google Timeline werden weiterhin nicht auto-restored — Streaming ist speichersicher, aber dauert mehrere Sekunden bis Minuten).
+- Tests neu: `Tests/LocationHistoryConsumerTests/GoogleTimelineStreamReaderTests.swift` mit 15 Cases (Happy Path, BOM/Whitespace, String mit `}]`, escaped Quote, nested Path, Error-Pfade, byte-by-byte-Chunking-Boundary-Test, 5 000-Entry-Synthetik, `convert(data:)` ↔ `convertStreaming` Äquivalenz).
+
+### Verifikation
+- `swift test`: **1006 Tests, 2 skipped, 0 failures** (vorher 991), Stand 2026-05-06.
+
+### Ehrlich offen
+- Kein Streaming aus ZIP-Entries: ZIPFoundation extrahiert weiterhin in eine `Data`, dann läuft der Streaming-Reader darauf — Memory-Peak entspricht weiterhin grob der Größe der entpackten Datei, aber ohne zusätzlichen 150–200-MB-`JSONSerialization`-Tree.
+- Auto-Restore lehnt rohe Google Timeline weiterhin ab; das Streaming ist für **manuelle** Importe gebaut.
+- Hardware-Re-Verifikation auf iPhone 15 Pro Max mit echter 46-MB-Datei steht aus.
+- Beim Streaming wird das finale Export-Dict (`dayMap`) einmal komplett aufgebaut und für `AppExportDecoder` re-encoded — bei extrem vielen Entries (>500 k) bleibt das ein nichttriviales RAM-Plateau, aber Größenordnungen unter dem alten Pfad.
+
 ## [2026-05-06] — Memory-Safety Folgefix: Auto-Restore lehnt rohe Google-Timeline-Dateien grundsätzlich ab (Sniffer-Skip)
 
 ### Root Cause des Folgefix

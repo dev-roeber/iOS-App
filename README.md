@@ -53,7 +53,7 @@ Sources/
   LocationHistoryConsumerDemoSupport/  — Demo-Harness, Golden-Fixture
   LocationHistoryConsumerApp/          — Produkt-App-Einstieg
   LocationHistoryConsumerDemo/         — Demo-Einstieg
-  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 991 Tests, 2 Skips, 0 Failures, 2026-05-06)
+  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 1006 Tests, 2 Skips, 0 Failures, 2026-05-06)
 Fixtures/contract/                     — Contract-Fixtures, Golden-JSONs
 wrapper/LH2GPXWrapper.xcodeproj        — Xcode Wrapper (Signing, Bundle, App-Icon)
 docs/                                  — Feature-Inventar, Runbook, Checklisten
@@ -75,7 +75,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
 Aktueller Nachweis:
-- `swift test` → `991` Tests, `2` Skips, `0` Failures (Stand 2026-05-06, HEAD post-`70254ff` nach Memory-Safety-Folgefix: rohe Google-Timeline-Dateien werden im Auto-Restore grundsätzlich nicht mehr automatisch reimportiert — unabhängig von der Größe (Sniffer-Skip) — zusätzlich zum bestehenden 50-MB-Cap; manuelle Importe bleiben unberührt)
+- `swift test` → `1006` Tests, `2` Skips, `0` Failures (Stand 2026-05-06, HEAD post-`70254ff` nach Streaming-Parser-Einführung — `GoogleTimelineStreamReader` plus `GoogleTimelineConverter.convertStreaming(contentsOf:)` für direkte JSON-Imports ohne Full-Data-Load; vorher 991 nach Memory-Safety-Folgefix; Auto-Restore lehnt rohe Google-Timeline-Dateien weiterhin grundsätzlich ab — unabhängig von der Größe (Sniffer-Skip) — zusätzlich zum bestehenden 50-MB-Cap; manuelle Importe nutzen jetzt den element-basierten Streaming-Reader; ZIP-Entry-Streaming und Hardware-Re-Verifikation 46-MB-Datei auf iPhone 15 Pro Max bleiben offen)
 
 ## Historische Vorstufen
 

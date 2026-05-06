@@ -15,9 +15,11 @@
 - Query-Fast-Path: `AppExportQueryFilter.isPassthrough` + `AppExportQueries.projectedDays`-Fast-Path schneidet ~80–130 MB transient pro Aufruf auf 65 k-Tage-Imports.
 - OverviewMap bounded coordinates: `OverviewMapPathCandidate.fullCoordinates` per `strideDecimate` auf max 512 Punkte gekappt — visuell verlustfrei (Douglas-Peucker läuft trotzdem in `makeOverlay`), spart ~70–90 % residenten RAM bei dichten Tracks.
 
-**Verifikation:** `swift test`: 991 Tests, 2 skipped, 0 failures (vorher 987 vor Sniffer-Skip-Folgefix; davor 973). 18 Tests in `LargeImportMemorySafetyTests` (4 neu: raw Google-Timeline-Skip JSON+ZIP unter Cap, AppExport bleibt restorbar, manueller Pfad bleibt frei). `xcodebuild` (iPhone 17 Pro Max Sim 26.3.1): BUILD SUCCEEDED. Hardware-Re-Verifikation des 46-MB-Falls auf iPhone 15 Pro Max steht aus.
+**Verifikation:** `swift test`: 1006 Tests, 2 skipped, 0 failures (vorher 991 vor Streaming-Parser; 987 vor Sniffer-Skip-Folgefix; davor 973). 18 Tests in `LargeImportMemorySafetyTests` (4 neu: raw Google-Timeline-Skip JSON+ZIP unter Cap, AppExport bleibt restorbar, manueller Pfad bleibt frei). `xcodebuild` (iPhone 17 Pro Max Sim 26.3.1): BUILD SUCCEEDED. Hardware-Re-Verifikation des 46-MB-Falls auf iPhone 15 Pro Max steht aus.
 
-**Ehrlich offen:** Echter Streaming-/Chunked-Google-Timeline-Parser noch nicht umgesetzt. `convert(...)` parst weiterhin in einen Foundation-Baum + re-serialisiert; manuelle Importe großer roher Google-Timeline-Dateien (>~30–40 MB) bleiben riskant. JSON-Streaming-Parser bleibt in NEXT_STEPS verbleibender Arbeitspunkt.
+**Streaming-Parser ergänzt (2026-05-06):** `GoogleTimelineStreamReader` (FileHandle, 64-KB-Chunks, Element-Tokenizer mit String-/Escape-/Depth-Tracking, BOM-Skip, 8-MB-Element-Hard-Cap) plus `GoogleTimelineConverter.convertStreaming(contentsOf url:)`. `AppContentLoader.decodeFile` sniffed `[` und geht direkt in den URL-Pfad ohne `Data(contentsOf:)`. `convert(data:)` läuft jetzt intern ebenfalls über den Reader. 15 neue Tests (`GoogleTimelineStreamReaderTests`).
+
+**Ehrlich offen:** ZIP-Entry-Streaming nicht umgesetzt — ZIPFoundation extrahiert weiterhin in eine `Data`, der Streaming-Reader läuft danach darauf (Memory-Peak ≈ Größe der entpackten Datei, aber kein zusätzlicher 150–200-MB-`JSONSerialization`-Tree). Auto-Restore lehnt rohe Google-Timeline-Dateien weiterhin ab (Streaming ist speichersicher, aber Sekunden bis Minuten — bewusst nutzergesteuert). Hardware-Re-Verifikation des 46-MB-Falls auf iPhone 15 Pro Max steht aus. Bei sehr vielen Entries (>500 k) bleibt das einmalig aufgebaute Export-`dayMap` ein nichttriviales RAM-Plateau, aber Größenordnungen unter dem alten Pfad.
 
 ### Map / Heatmap / Live Next-Level (2026-05-06)
 
