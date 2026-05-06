@@ -406,8 +406,14 @@ enum HeatmapLOD: CaseIterable {
     }
 
     var minimumNormalizedIntensity: Double {
+        // P0 follow-up #4: macro threshold lowered 0.09 → 0.025 so the
+        // world view (verification 14:31 IMG_4178) shows more than just
+        // the single dominant home cell. With one extreme hotspot the
+        // global max dominates so all secondary regions normalise below
+        // 9 % — at 2.5 % they survive and the world map renders the user's
+        // travel footprint instead of one isolated dot.
         switch self {
-        case .macro: return 0.09
+        case .macro: return 0.025
         case .low: return 0.032
         case .medium: return 0.010
         case .high: return 0.0045
@@ -446,7 +452,14 @@ enum HeatmapLOD: CaseIterable {
     }
 
     static func optimalLOD(for spanDelta: Double) -> HeatmapLOD {
-        if spanDelta > 7.5 { return .macro }
+        // P0 follow-up #4: macro threshold raised 7.5° → 12° so macro
+        // only kicks in for true world / large-continent zoom. Between
+        // 1° and 12° the previous setup forced macro at country zoom,
+        // making the resolution jump macro (2.5°) → low (0.08°)
+        // visible as an abrupt block-detail transition. With macro
+        // reserved for spanDelta > 12°, the country-zoom band uses
+        // low throughout and the user sees a continuous progression.
+        if spanDelta > 12.0 { return .macro }
         if spanDelta > 1.0 { return .low }
         if spanDelta > 0.12 { return .medium }
         return .high
