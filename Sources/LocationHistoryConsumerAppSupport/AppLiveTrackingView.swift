@@ -208,13 +208,13 @@ public struct AppLiveTrackingView: View {
                 }
             } else {
                 VStack(spacing: 12) {
-                    Image(systemName: "location.slash")
+                    Image(systemName: mapOverlayIcon)
                         .font(.system(size: 38))
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
-                    Text(t("Location not available"))
+                    Text(mapOverlayTitle)
                         .font(.headline)
-                    Text(t("Start recording to request location access and see your position here."))
+                    Text(mapOverlaySubtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -311,50 +311,127 @@ public struct AppLiveTrackingView: View {
         .accessibilityIdentifier("live.status.hero")
     }
 
+    // MARK: - Consolidated Live Status
+
+    /// Single dominant status used by hero card, map overlay and GPS chip
+    /// so they never disagree. See `LiveStatusResolver`.
+    private var liveStatus: LiveStatus {
+        LiveStatusResolver.resolve(
+            authorization: liveLocation.authorization,
+            isAwaitingAuthorization: liveLocation.isAwaitingAuthorization,
+            isRecording: liveLocation.isRecording,
+            needsAlwaysUpgrade: liveLocation.needsAlwaysAuthorizationUpgrade,
+            currentAccuracyM: liveLocation.currentLocation?.horizontalAccuracyM
+        )
+    }
+
     private var heroStatusIcon: String {
-        if liveLocation.isRecording { return "record.circle.fill" }
-        if liveLocation.isAwaitingAuthorization { return "location.circle" }
-        switch liveLocation.authorization {
-        case .denied, .restricted:       return "location.slash.circle"
-        case .authorizedWhenInUse, .authorizedAlways: return "location.circle.fill"
-        case .notDetermined:             return "location.circle"
+        switch liveStatus {
+        case .recordingAcquiring, .recordingWeak, .recordingGood:
+            return "record.circle.fill"
+        case .permissionRequired(awaiting: true):
+            return "location.circle"
+        case .permissionRequired(awaiting: false):
+            return "location.circle"
+        case .permissionDenied, .permissionRestricted:
+            return "location.slash.circle"
+        case .backgroundUpgradePending:
+            return "location.circle"
+        case .acquiringFix:
+            return "location.circle"
+        case .readyWeak, .readyGood:
+            return "location.circle.fill"
         }
     }
 
     private var heroStatusTitle: String {
-        if liveLocation.isRecording { return t("Recording Active") }
-        if liveLocation.isAwaitingAuthorization { return t("Requesting Permission") }
-        switch liveLocation.authorization {
-        case .denied, .restricted:       return t("Location Access Denied")
-        case .authorizedWhenInUse, .authorizedAlways: return t("Ready to Record")
-        case .notDetermined:             return t("Not Started")
+        switch liveStatus {
+        case .recordingAcquiring, .recordingWeak, .recordingGood:
+            return t("Recording Active")
+        case .permissionRequired(awaiting: true):
+            return t("Requesting Permission")
+        case .permissionRequired(awaiting: false):
+            return t("Permission required")
+        case .permissionDenied, .permissionRestricted:
+            return t("Location Access Denied")
+        case .backgroundUpgradePending:
+            return t("Ready to Record")
+        case .acquiringFix:
+            return t("Acquiring fix")
+        case .readyWeak, .readyGood:
+            return t("Ready to Record")
         }
     }
 
     private var heroStatusSubtitle: String {
-        if liveLocation.isRecording {
+        switch liveStatus {
+        case .recordingAcquiring:
+            return t("Waiting for first GPS location…")
+        case .recordingWeak, .recordingGood:
             return t("Location is being tracked and saved locally.")
-        }
-        if liveLocation.isAwaitingAuthorization {
+        case .permissionRequired(awaiting: true):
             return t("Waiting for location access approval.")
-        }
-        switch liveLocation.authorization {
-        case .denied, .restricted:
+        case .permissionRequired(awaiting: false):
+            return t("Tap below to grant access")
+        case .permissionDenied, .permissionRestricted:
             return t("Update location permissions in Settings to start recording.")
-        case .authorizedWhenInUse, .authorizedAlways:
+        case .backgroundUpgradePending:
             return t("Tap Start Recording to begin a new live track.")
-        case .notDetermined:
-            return t("Tap Start Recording to request location access.")
+        case .acquiringFix:
+            return t("Waiting for first GPS location…")
+        case .readyWeak, .readyGood:
+            return t("Tap Start Recording to begin a new live track.")
         }
     }
 
     private var heroStatusTint: Color {
-        if liveLocation.isRecording { return LH2GPXTheme.liveMint }
-        if liveLocation.isAwaitingAuthorization { return .orange }
-        switch liveLocation.authorization {
-        case .denied, .restricted:       return .red
-        case .authorizedWhenInUse, .authorizedAlways: return LH2GPXTheme.primaryBlue
-        case .notDetermined:             return .secondary
+        switch liveStatus {
+        case .recordingAcquiring, .recordingWeak, .recordingGood:
+            return LH2GPXTheme.liveMint
+        case .permissionRequired(awaiting: true):
+            return .orange
+        case .permissionRequired(awaiting: false):
+            return .secondary
+        case .permissionDenied, .permissionRestricted:
+            return .red
+        case .backgroundUpgradePending:
+            return .orange
+        case .acquiringFix:
+            return .orange
+        case .readyWeak, .readyGood:
+            return LH2GPXTheme.primaryBlue
+        }
+    }
+
+    /// Title shown inside the map overlay placeholder, derived from `liveStatus`.
+    private var mapOverlayTitle: String {
+        switch liveStatus {
+        case .permissionDenied, .permissionRestricted:
+            return t("Location not available")
+        case .permissionRequired:
+            return t("Location not available")
+        case .acquiringFix, .recordingAcquiring:
+            return t("Acquiring location fix…")
+        default:
+            return t("Location not available")
+        }
+    }
+
+    private var mapOverlaySubtitle: String {
+        switch liveStatus {
+        case .acquiringFix, .recordingAcquiring:
+            return t("Waiting for first GPS location…")
+        default:
+            return t("Start recording to request location access and see your position here.")
+        }
+    }
+
+    private var mapOverlayIcon: String {
+        switch liveStatus {
+        case .acquiringFix, .recordingAcquiring:
+            return "location.circle"
+        default:
+            return "location.slash"
         }
     }
 
@@ -635,13 +712,13 @@ public struct AppLiveTrackingView: View {
                     }
                 } else {
                     VStack(spacing: 12) {
-                        Image(systemName: "location.slash")
+                        Image(systemName: mapOverlayIcon)
                             .font(.system(size: 38))
                             .foregroundStyle(.secondary)
                             .accessibilityHidden(true)
-                        Text(t("Location not available"))
+                        Text(mapOverlayTitle)
                             .font(.headline)
-                        Text(t("Start recording to request location access and see your position here."))
+                        Text(mapOverlaySubtitle)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -895,13 +972,15 @@ public struct AppLiveTrackingView: View {
             Toggle(t("Background Recording"), isOn: $preferences.allowsBackgroundLiveTracking)
                 .font(.subheadline)
 
-            LHInsightBanner(
-                title: t(liveLocation.permissionTitle),
-                message: t(liveLocation.permissionMessage),
-                systemImage: statusSymbolName,
-                tint: permissionTintColor
-            )
-            .accessibilityIdentifier("live.permission.card")
+            if liveStatus.isPermissionState {
+                LHInsightBanner(
+                    title: t(liveLocation.permissionTitle),
+                    message: t(liveLocation.permissionMessage),
+                    systemImage: statusSymbolName,
+                    tint: permissionTintColor
+                )
+                .accessibilityIdentifier("live.permission.card")
+            }
         }
         .cardChrome()
     }
