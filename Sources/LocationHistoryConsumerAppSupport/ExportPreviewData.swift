@@ -43,13 +43,15 @@ enum ExportPreviewDataBuilder {
             ? exportDays.flatMap { day in
                 day.paths.compactMap { path -> DayMapPathOverlay? in
                     let coordinates = path.points.map { DayMapCoordinate(lat: $0.lat, lon: $0.lon) }
+                    let timestamps = path.points.map { $0.time }
                     guard coordinates.count >= 2 else {
                         return nil
                     }
                     return DayMapPathOverlay(
                         coordinates: coordinates,
                         activityType: path.activityType,
-                        distanceM: path.distanceM
+                        distanceM: path.distanceM,
+                        timestamps: timestamps
                     )
                 }
             }

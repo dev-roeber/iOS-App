@@ -150,6 +150,45 @@ final class MapTrackStylingTests: XCTestCase {
         XCTAssertGreaterThan(MapTrackStyle.haloMultiplier, 1.0)
     }
 
+    // MARK: - MapCoordinateGuard
+
+    func testCoordinateGuardRejectsNaN() {
+        XCTAssertFalse(MapCoordinateGuard.isValid(.init(latitude: .nan, longitude: 8)))
+        XCTAssertFalse(MapCoordinateGuard.isValid(.init(latitude: 53, longitude: .nan)))
+    }
+
+    func testCoordinateGuardRejectsInfinity() {
+        XCTAssertFalse(MapCoordinateGuard.isValid(.init(latitude: .infinity, longitude: 8)))
+        XCTAssertFalse(MapCoordinateGuard.isValid(.init(latitude: 53, longitude: -.infinity)))
+    }
+
+    func testCoordinateGuardRejectsOutOfRangeLatitude() {
+        XCTAssertFalse(MapCoordinateGuard.isValid(.init(latitude: 91, longitude: 0)))
+        XCTAssertFalse(MapCoordinateGuard.isValid(.init(latitude: -91, longitude: 0)))
+    }
+
+    func testCoordinateGuardRejectsAppleInvalidSentinel() {
+        // kCLLocationCoordinate2DInvalid: lat = lon = -180.
+        XCTAssertFalse(MapCoordinateGuard.isValid(.init(latitude: -180, longitude: -180)))
+    }
+
+    func testCoordinateGuardAcceptsRealisticCoordinate() {
+        XCTAssertTrue(MapCoordinateGuard.isValid(.init(latitude: 53.144, longitude: 8.214)))
+    }
+
+    func testCoordinateGuardSanitizeStripsBadEntriesFromList() {
+        let mixed: [CLLocationCoordinate2D] = [
+            .init(latitude: 53.0, longitude: 8.0),
+            .init(latitude: .nan, longitude: 8.0),
+            .init(latitude: 53.1, longitude: 8.1),
+            .init(latitude: -180, longitude: -180),
+            .init(latitude: 53.2, longitude: 8.2),
+        ]
+        let sanitized = MapCoordinateGuard.sanitize(mixed)
+        XCTAssertEqual(sanitized.count, 3)
+        XCTAssertTrue(sanitized.allSatisfy(MapCoordinateGuard.isValid))
+    }
+
     // MARK: - Helper
 
     private func sample(_ lat: Double, _ lon: Double, _ time: Date) -> TrackSample {

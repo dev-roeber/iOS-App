@@ -25,7 +25,6 @@ public struct AppLiveTrackingView: View {
     @State private var trackSamples: [TrackSample] = []
     @State private var isFullscreenMapPresented = false
     @State private var isDiagnosticsExpanded = false
-    @State private var pulseScale: CGFloat = 1.0
     @State private var liveMapHeaderState = LHMapHeaderState(
         visibility: .compact,
         compactHeight: LHHeroMapLayout.compactHeight,
@@ -542,44 +541,34 @@ public struct AppLiveTrackingView: View {
 
     @MapContentBuilder
     private var liveCurrentLocationAnnotation: some MapContent {
-        if let currentLocation = liveLocation.currentLocation {
+        if let currentLocation = liveLocation.currentLocation,
+           currentLocation.latitude.isFinite,
+           currentLocation.longitude.isFinite {
             Annotation(t("Current Location"), coordinate: CLLocationCoordinate2D(
                 latitude: currentLocation.latitude,
                 longitude: currentLocation.longitude
             )) {
-                ZStack {
-                    if liveLocation.isRecording, preferences.livePulseEnabled {
-                        Circle()
-                            .fill(locationDotColor.opacity(0.30))
-                            .frame(width: 42, height: 42)
-                            .scaleEffect(pulseScale)
-                            .opacity(2.0 - Double(pulseScale))
-                            .animation(
-                                .easeInOut(duration: 1.4).repeatForever(autoreverses: true),
-                                value: pulseScale
-                            )
-                            .onAppear { pulseScale = 1.55 }
-                            .onDisappear { pulseScale = 1.0 }
-                    } else {
-                        Circle()
-                            .fill(locationDotColor.opacity(0.18))
-                            .frame(width: 42, height: 42)
-                    }
-                    Circle()
-                        .fill(locationDotColor)
-                        .frame(width: 15, height: 15)
-                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                }
+                LiveLocationDot(
+                    color: locationDotColor,
+                    pulseEnabled: liveLocation.isRecording && preferences.livePulseEnabled
+                )
             }
         }
     }
 
     /// GPS accuracy circle around the current location. Stroked, not filled,
-    /// so it shows precision without obscuring the basemap.
+    /// so it shows precision without obscuring the basemap. Defensive guards
+    /// against CoreLocation's invalid sentinels — horizontalAccuracy can be
+    /// `-1` ("invalid"), NaN, or wildly large; MapCircle aborts on any of
+    /// those. Coordinates must also be finite (NaN/±Inf trap MapKit's
+    /// projection on iOS 17).
     @MapContentBuilder
     private var liveAccuracyCircleContent: some MapContent {
         if preferences.liveAccuracyCircleEnabled,
            let location = liveLocation.currentLocation,
+           location.latitude.isFinite,
+           location.longitude.isFinite,
+           location.horizontalAccuracyM.isFinite,
            location.horizontalAccuracyM > 0,
            location.horizontalAccuracyM < 500 {
             MapCircle(
@@ -597,11 +586,13 @@ public struct AppLiveTrackingView: View {
     /// Live trail. Renders speed-coloured segments when the user has chosen
     /// the Tempolayer; otherwise a 3-bucket alpha fade so the older parts of
     /// the trail look subdued and the freshest segment stays solid.
+    /// MapPolyline aborts under iOS 17 if the input has fewer than two
+    /// finite coordinates — guard that here as a single source of truth.
     @MapContentBuilder
     private var liveTrackContent: some MapContent {
-        if liveLocation.liveTrackShouldRender, !polylineCoordinates.isEmpty {
-            // Halo
-            MapPolyline(coordinates: polylineCoordinates)
+        let safeCoords = MapCoordinateGuard.sanitize(polylineCoordinates)
+        if liveLocation.liveTrackShouldRender, safeCoords.count >= 2 {
+            MapPolyline(coordinates: safeCoords)
                 .stroke(
                     Color.white.opacity(MapTrackStyle.haloOpacity),
                     style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live * MapTrackStyle.haloMultiplier)
@@ -615,15 +606,17 @@ public struct AppLiveTrackingView: View {
                         )
                 }
             } else if preferences.liveBreadcrumbFadeEnabled {
-                ForEach(Array(LiveBreadcrumbFade.buckets(from: polylineCoordinates).enumerated()), id: \.offset) { _, bucket in
-                    MapPolyline(coordinates: bucket.coordinates)
-                        .stroke(
-                            LH2GPXTheme.liveMint.opacity(bucket.alpha),
-                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
-                        )
+                ForEach(Array(LiveBreadcrumbFade.buckets(from: safeCoords).enumerated()), id: \.offset) { _, bucket in
+                    if bucket.coordinates.count >= 2 {
+                        MapPolyline(coordinates: bucket.coordinates)
+                            .stroke(
+                                LH2GPXTheme.liveMint.opacity(bucket.alpha),
+                                style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
+                            )
+                    }
                 }
             } else {
-                MapPolyline(coordinates: polylineCoordinates)
+                MapPolyline(coordinates: safeCoords)
                     .stroke(
                         LH2GPXTheme.liveMint,
                         style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
@@ -1247,6 +1240,46 @@ public struct AppLiveTrackingView: View {
             }
             recordingStartDate = nil
             recordingDuration = 0
+        }
+    }
+}
+
+// MARK: - LiveLocationDot
+
+/// Pulsing user-location dot for the live tracking maps. State + animation
+/// are owned by this view (not the parent's @MapContentBuilder closure) so
+/// the iOS 17 "modifying state during view update" precondition cannot
+/// fire from the Annotation's content closure. The animation kicks off via
+/// `.task` on the first appearance — `.task` is documented to run after
+/// the view has been added to the hierarchy, sidestepping the in-update
+/// boundary that `onAppear` can land in inside MapContentBuilder.
+@available(iOS 17.0, macOS 14.0, *)
+private struct LiveLocationDot: View {
+    let color: Color
+    let pulseEnabled: Bool
+
+    @State private var isPulsing = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(color.opacity(pulseEnabled ? 0.30 : 0.18))
+                .frame(width: 42, height: 42)
+                .scaleEffect(pulseEnabled && isPulsing ? 1.55 : 1.0)
+                .opacity(pulseEnabled && isPulsing ? 0.0 : 1.0)
+                .animation(
+                    pulseEnabled
+                        ? .easeInOut(duration: 1.4).repeatForever(autoreverses: false)
+                        : .default,
+                    value: isPulsing
+                )
+            Circle()
+                .fill(color)
+                .frame(width: 15, height: 15)
+                .overlay(Circle().stroke(Color.white, lineWidth: 2))
+        }
+        .task(id: pulseEnabled) {
+            isPulsing = pulseEnabled
         }
     }
 }

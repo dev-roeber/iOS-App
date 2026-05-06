@@ -2,6 +2,28 @@
 import SwiftUI
 import MapKit
 
+// MARK: - Coordinate sanitisation
+
+/// Filters out coordinates that would crash MapKit's projection pipeline on
+/// iOS 17. NaN, ±Inf, lat outside ±90°, lon outside ±180°, and Apple's
+/// `kCLLocationCoordinate2DInvalid` (lat = lon = -180) are all rejected.
+/// Fed by every production polyline before it reaches MapPolyline so a
+/// single misbehaving GPS sample can no longer abort the renderer.
+public enum MapCoordinateGuard {
+    public static func isValid(_ c: CLLocationCoordinate2D) -> Bool {
+        guard c.latitude.isFinite, c.longitude.isFinite else { return false }
+        guard c.latitude >= -90, c.latitude <= 90 else { return false }
+        guard c.longitude >= -180, c.longitude <= 180 else { return false }
+        // Apple's invalid sentinel: both axes set to -180.
+        if c.latitude == -180 && c.longitude == -180 { return false }
+        return true
+    }
+
+    public static func sanitize(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
+        coordinates.filter(isValid)
+    }
+}
+
 // MARK: - Track styling constants
 
 /// Shared visual constants for polyline rendering across all map views.

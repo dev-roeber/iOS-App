@@ -117,28 +117,34 @@ public struct AppLiveLocationSection: View {
             }
 
             if liveLocation.liveTrackShouldRender {
-                let coords = liveLocation.liveTrackPoints.map {
-                    CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-                }
-                MapPolyline(coordinates: coords)
-                    .stroke(
-                        Color.white.opacity(MapTrackStyle.haloOpacity),
-                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live * MapTrackStyle.haloMultiplier)
-                    )
-                if preferences.liveBreadcrumbFadeEnabled {
-                    ForEach(Array(LiveBreadcrumbFade.buckets(from: coords).enumerated()), id: \.offset) { _, bucket in
-                        MapPolyline(coordinates: bucket.coordinates)
+                let coords = MapCoordinateGuard.sanitize(
+                    liveLocation.liveTrackPoints.map {
+                        CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+                    }
+                )
+                if coords.count >= 2 {
+                    MapPolyline(coordinates: coords)
+                        .stroke(
+                            Color.white.opacity(MapTrackStyle.haloOpacity),
+                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live * MapTrackStyle.haloMultiplier)
+                        )
+                    if preferences.liveBreadcrumbFadeEnabled {
+                        ForEach(Array(LiveBreadcrumbFade.buckets(from: coords).enumerated()), id: \.offset) { _, bucket in
+                            if bucket.coordinates.count >= 2 {
+                                MapPolyline(coordinates: bucket.coordinates)
+                                    .stroke(
+                                        LH2GPXTheme.liveMint.opacity(bucket.alpha),
+                                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
+                                    )
+                            }
+                        }
+                    } else {
+                        MapPolyline(coordinates: coords)
                             .stroke(
-                                LH2GPXTheme.liveMint.opacity(bucket.alpha),
+                                LH2GPXTheme.liveMint,
                                 style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
                             )
                     }
-                } else {
-                    MapPolyline(coordinates: coords)
-                        .stroke(
-                            LH2GPXTheme.liveMint,
-                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.live)
-                        )
                 }
             }
         }
