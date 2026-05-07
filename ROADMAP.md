@@ -1,16 +1,16 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-07, HEAD `5c69afe`)
+## Aktiver Stand (2026-05-07, HEAD `3811bc3`)
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
-### Verifikation P1-Hardening-Train (2026-05-07, HEAD pending — Commit folgt)
+### Verifikation P1-Hardening-Train (2026-05-07, HEAD `3811bc3`)
 
 P1-Hardening-Train: B1 distanceText! safe-unwrap in `DaySummaryRowPresentation` + B2 `[weak self]` in `AppOverviewMapModel.rebuildOverlays` + B3 Upload-URL-Validation in `AppPreferences.liveLocationServerUploadURLString` (akzeptiert `https://`, `localhost`, `127.0.0.1`, `[::1]`; rejected http remote / garbage; Reset auf `oldValue` per Re-Entrancy-Flag) + 8 neue Tests in `AppPreferencesUploadURLValidationTests.swift`. Token-Property + Keychain unverändert.
 
 - `swift test`: **1065 Tests, 2 Skips, 0 Failures** (+8 gegenüber 1057).
 - Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
-- HEAD: pending — Commit folgt.
+- HEAD: `3811bc3`.
 - Hardware-Re-Verifikation iPhone 15 Pro Max: weiterhin offen.
 
 ### Verifikation UX/Layout-Train + Mock-Helper (2026-05-07, HEAD `5c69afe`)

@@ -75,7 +75,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
 Aktueller Nachweis:
-- `swift test` → `1065` Tests, `2` Skips, `0` Failures (Stand 2026-05-07, HEAD pending — P1-Hardening-Train: distanceText\!-safe-unwrap, weak self in AppOverviewMapModel, Upload-URL-Validation + 8 neue URL-Validation-Tests).
+- `swift test` → `1065` Tests, `2` Skips, `0` Failures (Stand 2026-05-07, HEAD `3811bc3` — P1-Hardening-Train: distanceText\!-safe-unwrap, weak self in AppOverviewMapModel, Upload-URL-Validation + 8 neue URL-Validation-Tests).
 - Vorher 1057 Tests (HEAD `5c69afe`, UX/Layout + Mock-Helper).
 - Vorher 1045 Tests (HEAD `e3dae15`, Phase 1-5 Audit-Train).
 - Hardware-Re-Verifikation iPhone 15 Pro Max bleibt für jeden Stand seit 2026-05-05 offen.

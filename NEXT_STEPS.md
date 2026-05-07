@@ -1,6 +1,6 @@
 # NEXT_STEPS
 
-Stand: 2026-05-06 (HEAD post-`70254ff` — MapLayerMenu unified, Heatmap Tier 2, Tempolayer/Halo, SIGABRT-Fix, Demo-Fixture-Swap, `CURRENT_PROJECT_VERSION = 100` lokal gesetzt, Auto-Restore-Memory-Schutz für große Google-Timeline-Imports; Xcode Cloud Build ≥100 nötig vor Submit)
+Stand: 2026-05-07 (HEAD `3811bc3` — P1-Hardening-Train: distanceText! safe-unwrap, `[weak self]` in `AppOverviewMapModel.rebuildOverlays`, Upload-URL-Validation in `AppPreferences` + 8 neue URL-Validation-Tests, Doku-Wahrheits-Sync. `swift test` 1065/2/0; Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED. Hardware-Re-Verifikation iPhone 15 Pro Max für diesen HEAD steht weiter aus; ASC/TestFlight-Status nicht geprüft; 46-MB-Crashfall geräteseitig nicht validiert. Xcode Cloud Build ≥100 weiterhin nötig vor Submit.)
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
@@ -125,7 +125,7 @@ Nicht in diesem Train erledigt (weiterhin offen): P1-18..P1-24 (Test-Lücken), H
 
 ### P1-Hardening-Train 2026-05-07 — 3 Achsen erledigt + 8 neue Tests
 
-P1-Hardening-Train (`swift test` **1065/2/0**; +8 Cases gegenüber 1057; Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED; HEAD pending — Commit folgt):
+P1-Hardening-Train (`swift test` **1065/2/0**; +8 Cases gegenüber 1057; Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED; HEAD `3811bc3`):
 
 - [x] **B1 distanceText! Force-Unwrap entfernt** (2026-05-07): `DaySummaryRowPresentation.swift:88-103` — `formatDistance` (non-optional) in lokale Konstante gebunden; Verhalten unverändert.
 - [x] **B2 weak self in AppOverviewMapModel** (2026-05-07): `AppOverviewTracksMapView.swift` — `rebuildOverlays` Task-Closures von `[self]` auf `[weak self]` mit `guard let self else { return }` vor MainActor-Writes; Race-Token-Logik unverändert.
@@ -136,7 +136,7 @@ P1-Hardening-Train (`swift test` **1065/2/0**; +8 Cases gegenüber 1057; Wrapper
 
 ### UX/Layout-Train + Mock-Helper 2026-05-07 — 6 Achsen erledigt
 
-6 Achsen in diesem Train als erledigt verbucht (`swift test` **1057/2/0**; +12 Cases gegenüber 1045 — neue Hero-Map-Layout-Tests; Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED; HEAD pending — Commit folgt):
+6 Achsen in diesem Train als erledigt verbucht (`swift test` **1057/2/0**; +12 Cases gegenüber 1045 — neue Hero-Map-Layout-Tests; Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED; HEAD `5c69afe`):
 
 - [x] **Mock-Client extrahiert** — neuer File `Tests/LocationHistoryConsumerTests/Helpers/MockLiveLocationClient.swift` (`MockLiveLocationClient`, `InMemoryRecordedTrackStore`, `emitLocationSamples`-Convenience). `LiveLocationFeatureModelStateTransitionTests` und `LiveLocationFeatureModelTests` nutzen den geteilten Helper. Mock-Client-Refactor (Folge zu Phase 1-5 Item 7) damit erledigt.
 - [x] **Insights Triple-Range-Picker konsolidiert** — `AppInsightsContentView.swift` zeigt im `heroEnabled`-Pfad nur den Hero-Strip; Card + innere Pills ausgeblendet. Legacy/iPad-Pfad behält Card als Fallback.

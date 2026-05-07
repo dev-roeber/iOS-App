@@ -3,7 +3,7 @@
 ## [2026-05-07] — P1 release-readiness fix: doc-truth sync + stability hardening
 
 ### Doku-Wahrheits-Sync
-- ROADMAP.md Aktiver-Stand-Header auf HEAD `5c69afe`, Datum 2026-05-07 gesetzt.
+- ROADMAP.md Aktiver-Stand-Header auf HEAD `3811bc3`, Datum 2026-05-07 gesetzt (in einem Folge-Doku-Sync direkt nach diesem Commit nochmal von `5c69afe` auf `3811bc3` korrigiert).
 - Alle `pending — Commit folgt`-Verifikations-Blöcke mit echten HEAD-Hashes aufgefüllt.
 - README.md:78 lange Test-Nachweis-Zeile auf chronologische 3-Stufen-History gekürzt.
 - README UI-Begriffe an echte UI-Labels angeglichen: `Simplified` (kein Beta-Suffix), `Rectangle / Bounding Box`, exakte Banner-Labels.
@@ -37,7 +37,7 @@
 ### Verifikation
 - `swift test`: **1057 Tests, 2 Skips, 0 Failures** (vorher 1045).
 - Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: **BUILD SUCCEEDED**.
-- HEAD: pending — Commit folgt.
+- HEAD: `5c69afe`.
 
 ### Ehrlich offen
 - Form-vs-LHCard nur teilweise (5/8 Sub-Views auf Form, 3 bewusst auf LHCard wegen Custom-Preview-Karten).
