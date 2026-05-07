@@ -268,6 +268,38 @@ final class GoogleTimelineStreamReaderTests: XCTestCase {
         XCTAssertEqual(dataVisits, entryCount)
     }
 
+    /// Regression for the 2026-05-07 iPhone 15 Pro Max Jetsam-kill: parsing a
+    /// 46 MB Google Timeline ZIP died because `JSONSerialization.jsonObject(with:)`
+    /// ran outside the per-element `autoreleasepool`, so transient Foundation
+    /// objects accumulated across 65k elements. The fix moves the parse call
+    /// inside the pool and shrinks the element buffer after outliers. This
+    /// test exercises both: a high element count plus a large-element outlier
+    /// followed by more small elements (the capacity-retention pathology).
+    func testHighElementCountWithLargeOutlierSucceeds() throws {
+        let entryCount = 50_000
+        // Insert a 1 MB filler element midway through the stream so the
+        // element buffer must shrink afterwards rather than retain the
+        // outlier capacity for the remaining 25k entries.
+        let outlierFiller = String(repeating: "x", count: 1_000_000)
+        var json = "["
+        json.reserveCapacity(entryCount * 64)
+        for i in 0..<entryCount {
+            if i > 0 { json.append(",") }
+            if i == entryCount / 2 {
+                json.append("{\"startTime\":\"2026-01-15T00:00:00Z\",\"filler\":\"\(outlierFiller)\"}")
+            } else {
+                json.append("{\"startTime\":\"2026-01-01T00:00:0\(i % 10)Z\",\"i\":\(i)}")
+            }
+        }
+        json.append("]")
+
+        var seen = 0
+        try GoogleTimelineStreamReader.forEachObjectElement(in: Data(json.utf8)) { _ in
+            seen += 1
+        }
+        XCTAssertEqual(seen, entryCount)
+    }
+
     // MARK: - Helpers
 
     private func writeJSONFile(content: String) throws -> URL {

@@ -1,9 +1,10 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-07, HEAD `b91a933`)
+## Aktiver Stand (2026-05-07, HEAD pending — Commit folgt)
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
-- Manual Release Risk Acceptance Protocol angelegt in `docs/APPLE_VERIFICATION_CHECKLIST.md` — manuelle Hardware-Abnahme der 4 nicht automatisierbaren Restrisiken (46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout, ASC / TestFlight / Apple Review) muss durch den Tester durchgeführt werden bevor Submit. Acceptance-Anker HEAD `b91a933`. Checkboxen leer (kein Test-Ergebnis).
+- **Großimport-Jetsam-Kill (P0)** auf iPhone 15 Pro Max (iOS 26.4) am 2026-05-07 reproduziert: 46 MB `location-history.zip` (~64.926 Entries) → `IDEDebugSessionErrorDomain Code 11`. Root Cause: `JSONSerialization.jsonObject(with: element)` in `GoogleTimelineStreamReader.TopLevelArrayParser.processByte` lief außerhalb des `autoreleasepool`. Fix: Parse + Ingest jetzt im selben `autoreleasepool`; nach Outliern > 64 KB wird `element` neu reserviert. Neuer Regressionstest deckt 50.000 Elemente + 1-MB-Outlier ab. `swift test` 1078/2/0. Hardware-Retest mit der originalen 46-MB-ZIP auf iPhone 15 Pro Max **steht aus**; 46-MB-Punkt der Manual-Risk-Checkliste bleibt FAILED bis Tester-Bestätigung.
+- Manual Release Risk Acceptance Protocol angelegt in `docs/APPLE_VERIFICATION_CHECKLIST.md` — manuelle Hardware-Abnahme der 4 nicht automatisierbaren Restrisiken (46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout, ASC / TestFlight / Apple Review) muss durch den Tester durchgeführt werden bevor Submit. Acceptance-Anker HEAD `b91a933` (Protokoll-Anlage); 46-MB-Sektion durch heutigen Hardware-Befund von „not verified" auf FAILED hochgesetzt. Checkboxen leer (kein Test-Ergebnis).
 
 ### Verifikation Post-Fix Hardware-Re-Run iPhone 15 Pro Max (2026-05-07, HEAD pending — Commit folgt)
 

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-05-07 (fix: drain autorelease objects during timeline stream parsing)
+
+iPhone 15 Pro Max (iOS 26.4) reproduzierte beim manuellen Import einer 46 MB `location-history.zip` (~64.926 Entries) einen Jetsam-Kill (`IDEDebugSessionErrorDomain Code 11`). Root Cause: in `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineStreamReader.swift` lief `JSONSerialization.jsonObject(with: element)` außerhalb des `autoreleasepool` — der Pool umschloss nur das nachgelagerte `onElement(parsed)`. Dadurch akkumulierten transiente Foundation-Objekte über alle Top-Level-Elemente. Fix: Parse + Ingest laufen jetzt im selben `autoreleasepool`; nach Outliern > 64 KB wird `element` neu reserviert. Neuer Regressionstest `testHighElementCountWithLargeOutlierSucceeds` (50k Elemente + 1-MB-Outlier). `swift test` 1078/2/0 (+1). Hardware-Retest mit der originalen 46-MB-ZIP auf iPhone 15 Pro Max steht aus; 46-MB-Punkt der Manual-Risk-Checkliste bleibt **FAILED**, bis Tester ihn nachweislich grün bestätigt.
+
 ## 2026-05-07 (Manual release risk acceptance protocol added)
 
 Reine Doku — keine Code-Änderung. Siehe Hauptblock in `docs/APPLE_VERIFICATION_CHECKLIST.md` („Manual Release Risk Acceptance Protocol — HEAD `b91a933`") sowie `CHANGELOG.md` (Top-Eintrag 2026-05-07). Deckt 4 nicht automatisierbare Restrisiken: 46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout, ASC / TestFlight / Apple Review. Checkboxen leer — durch Tester auszufüllen. `swift test` 1077/2/0 unverändert.

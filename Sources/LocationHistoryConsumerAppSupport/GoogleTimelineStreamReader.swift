@@ -243,19 +243,32 @@ private struct TopLevelArrayParser {
             if byte == 0x7D || byte == 0x5D { // '}' ']'
                 depth -= 1
                 if depth == 0 {
-                    let parsed: Any
-                    do {
-                        parsed = try JSONSerialization.jsonObject(with: element)
-                    } catch {
-                        throw GoogleTimelineStreamReader.StreamError.malformedJSON
-                    }
-                    // Wrap per-element work in an autoreleasepool so the
-                    // intermediate Foundation objects (NSString, NSNumber,
-                    // NSDictionary, NSArray) don't accumulate across the
-                    // whole import — on a 50k-element file that adds up to
-                    // hundreds of MB of autorelease pressure otherwise.
+                    // Both JSONSerialization parsing AND the onElement ingest
+                    // must run inside the same autoreleasepool. JSONSerialization
+                    // creates transient autoreleased Foundation objects
+                    // (NSString/NSNumber/NSDictionary/NSArray) — if the pool
+                    // only wraps onElement, those parse-time objects pile up
+                    // across all 65k elements and trip Jetsam on real hardware
+                    // (reproduced 2026-05-07 on iPhone 15 Pro Max with a 46 MB
+                    // location-history.zip).
                     try autoreleasepool {
+                        let parsed: Any
+                        do {
+                            parsed = try JSONSerialization.jsonObject(with: element)
+                        } catch {
+                            throw GoogleTimelineStreamReader.StreamError.malformedJSON
+                        }
                         try onElement(parsed)
+                    }
+                    // After an outlier-sized element we may be holding onto a
+                    // multi-MB Data capacity for the rest of the import. Cap
+                    // the kept capacity at 64 KB so a single huge element
+                    // doesn't permanently inflate the parser's footprint.
+                    if element.count > 64 * 1024 {
+                        element = Data()
+                        element.reserveCapacity(8 * 1024)
+                    } else {
+                        element.removeAll(keepingCapacity: true)
                     }
                     state = .inArray
                 }

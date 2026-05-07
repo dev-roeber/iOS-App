@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## [2026-05-07] — fix: drain autorelease objects during timeline stream parsing
+
+### Hardware-Befund
+- iPhone 15 Pro Max (iOS 26.4, Xcode 26.3), 46 MB `location-history.zip` (~64.926 Timeline-Entries) reproduzierte beim manuellen Import einen Jetsam-Kill: `IDEDebugSessionErrorDomain Code 11 — “The app ‘LH2GPXWrapper’ has been killed by the operating system because it is using too much memory.”` (Timestamp 2026-05-07T13:38:37+02:00).
+- Damit war der bislang als „not verified" geführte 46-MB-Punkt der Manual-Risk-Checkliste real **FAILED**.
+
+### Root Cause
+- `GoogleTimelineStreamReader.TopLevelArrayParser.processByte` rief `JSONSerialization.jsonObject(with: element)` **außerhalb** des `autoreleasepool` auf — der Pool umschloss nur das nachgelagerte `onElement`. Die transienten Foundation-Objekte (`NSString` / `NSNumber` / `NSDictionary` / `NSArray`) aus dem Parser akkumulierten dadurch über alle ~65k Top-Level-Elemente und sprengten unter iOS den App-Speicher.
+- Sekundär: nach einem großen Outlier-Element behielt `element.removeAll(keepingCapacity: true)` die volle Outlier-Capacity für den Rest des Imports im RAM.
+
+### Fix
+- `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineStreamReader.swift`: `JSONSerialization.jsonObject(with: element)` läuft jetzt **gemeinsam** mit `onElement(parsed)` in demselben `autoreleasepool { ... }`. Zusätzlich: nach Elementen > 64 KB wird `element` durch eine frisch reservierte 8-KB-Data ersetzt, statt nur Inhalt zu leeren — damit kann ein einzelner Ausreißer die Parser-Footprint nicht permanent inflationieren.
+- ZIP-Streaming-Pfad und direkter JSON-Streaming-Pfad bleiben unverändert. Kein Rückfall auf Full-Tree-`JSONSerialization`.
+
+### Tests
+- Neu: `GoogleTimelineStreamReaderTests.testHighElementCountWithLargeOutlierSucceeds` — 50.000 Elemente plus 1-MB-Outlier in der Mitte, verifiziert vollständigen Durchlauf (0,87 s).
+- `swift test`: **1078/2/0** (vorher 1077/2/0). `git diff --check` clean.
+
+### Restrisiko / Hardware-Retest
+- Code-seitig adressiert; Release-Build-Hardware-Retest mit der originalen 46-MB-ZIP auf iPhone 15 Pro Max steht aus und bleibt der Verifikationsschritt für die Manual-Risk-Checkliste. Der Punkt **bleibt FAILED**, bis ein Tester ihn nachweislich grün bestätigt.
+
 ## [2026-05-07] — Manual release risk acceptance protocol added (no code change)
 
 ### Doku
