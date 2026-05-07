@@ -629,6 +629,15 @@ struct AppTechnicalOptionsView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             } header: { Text(t("Technical")) }
               footer: { Text(t("Resets all app preferences to their default values. Live tracks and imported data are not affected.")) }
+
+            Section {
+                LabeledContent(t("Version")) { Text(AppBuildInfo.shared.marketingVersion) }
+                LabeledContent(t("Build")) { Text(AppBuildInfo.shared.buildNumber) }
+                if let sha = AppBuildInfo.shared.gitCommitSHA {
+                    LabeledContent(t("Commit")) { Text(sha).font(.system(.body, design: .monospaced)) }
+                }
+            } header: { Text(t("Build Info")) }
+              footer: { Text(t("Shown so testers can verify which build is running on the device when reproducing memory or import issues.")) }
         }
         .navigationTitle(t("Technical"))
     }

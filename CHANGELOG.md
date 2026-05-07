@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## [2026-05-07] — fix: reduce memory peak after large timeline import
+
+### Hardware-Befund (zweiter Fail)
+- iPhone 15 Pro Max (iPhone16,2, iOS 26.4 / 23E246, Xcode 26.3, macOS 15.7), 46 MB `location-history.zip` lieferte trotz Autoreleasepool-Fix `cd77f97` erneut Jetsam-Kill: `IDEDebugSessionErrorDomain Code 11`, „The app ‘LH2GPXWrapper’ has been killed by the operating system because it is using too much memory.“ (Timestamp 2026-05-07T14:14:36+02:00, Operation duration 216.606 ms vs. 232.341 ms beim ersten Fail).
+- Damit war klar: der Peak liegt **nach** dem JSON-Streaming (Konverter-Finalize, Session-Init, erste UI-Materialisierung), nicht nur im Parser.
+
+### Root Cause (Top-Hypothese)
+- `AppSessionContent.init` rief unmittelbar `AppExportQueries.daySummaries(from:)` mit voller `projectedDays`-Projektion auf — bei ~65k Entries auf ~100 Tagen ein Peak-Allokationspfad direkt nach dem Import.
+- `AppSessionState.show(content:)` triggerte zusätzlich `content.overview` (lazy → voller Overview-Pass) nur, um per `inputFormat == "google_timeline"` einen Title-Text auszuwählen.
+- `GoogleTimelineConverter.ExportBuilder.finalize()` kopierte beim Materialisieren des finalen `[Day]`-Arrays jeden `DayBucket` aus der `dayMap`, statt ihn herauszunehmen — die Tagespuffer blieben für den ganzen Loader-Scope am Leben.
+- `IncrementalStreamConverter.finalize()` hielt den befüllten `ExportBuilder` weiter, auch nachdem das `AppExport` zurückgegeben wurde.
+- `PathDistanceCalculator.effectiveDistance(for: Path)` baute pro Aufruf temporäre `[(lat, lon)]`-Arrays über alle Pfadpunkte auf.
+
+### Fix
+- `Sources/LocationHistoryConsumerAppSupport/AppSessionState.swift`: `AppSessionContent.init` ermittelt `selectedDate` jetzt direkt aus `export.data.days` per einfacher Datumsmaximierung — ohne `daySummaries`-Materialisierung. `show(content:)` liest `inputFormat` aus `content.export.meta.source.inputFormat` / `meta.config.inputFormat`, statt `content.overview` zu erzwingen.
+- `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineConverter.swift`: `ExportBuilder.finalize()` ist jetzt `mutating` und benutzt `dayMap.removeValue(forKey:)`, sodass jeder Bucket nach dem Move freigegeben wird; `dayMap` und `orderedDayKeys` werden am Ende explizit `removeAll(keepingCapacity: false)`. `IncrementalStreamConverter.finalize()` ersetzt seinen internen `builder` nach Erhalt des `AppExport` durch eine frische Instanz.
+- `Sources/LocationHistoryConsumer/Queries/PathDistanceCalculator.swift`: neue `effectiveDistance(for: Path)`-Implementierung iteriert direkt über `path.points` bzw. `path.flatCoordinates` (haversine inline), keine temporären Tuple-Arrays mehr.
+- `Sources/LocationHistoryConsumerAppSupport/ImportMemoryProbe.swift` (neu): DEBUG-/Diagnostic-Memory-Probe via `mach_task_self_` + `task_info(TASK_VM_INFO)`, gated auf Launch-Argument bzw. Environment `LH2GPX_IMPORT_MEMORY_LOG=1`. Probe-Punkte in `AppContentLoader.loadImportedContent` und im ZIP-Streaming-Pfad (`beforeExtract`, `chunk=N` alle 64 Chunks, `beforeFinalize`, `afterFinalize`, `afterSessionInit`). Logs greppbar als `[LH2GPX_MEMORY]`.
+- `Sources/LocationHistoryConsumerAppSupport/AppBuildInfo.swift` (neu) + `AppOptionsView`-Section „Build Info“ in `AppTechnicalOptionsView` (Marketing-Version, Build, optional Git-Commit). `wrapper/Config/Info.plist` bringt Schlüssel `GitCommitSHA` mit Build-Setting-Platzhalter `$(GIT_COMMIT_SHA)` — beim Hardware-Test über `xcodebuild GIT_COMMIT_SHA=$(git rev-parse --short HEAD) …` injizierbar; ohne Injection bleibt das Feld leer und nur Version/Build sind sichtbar.
+
+### Tests
+- Neu in `DemoSessionStateTests`: `testInitPicksNewestContentfulDateWithoutEagerSummaries`, `testInitFallsBackToNewestEmptyDateWhenNoContentfulDayExists`, `testShowPicksGoogleTimelineTitleFromMetaInputFormat`.
+- `swift test`: **1081/2/0** (vorher 1078/2/0). `git diff --check` clean. `swift build` clean.
+
+### Restrisiko / Hardware-Retest
+- Code-Fix adressiert die wahrscheinlichste Top-Hypothese, ist aber kein Beweis für Release-Build-Verhalten unter realer iOS-Memory-Pressure. Der 46-MB-Punkt der Manual-Risk-Checkliste **bleibt FAILED** bis Tester den Release-Build (ohne Debugger / View-Debugging) auf iPhone 15 Pro Max grün durchläuft.
+- Empfohlener nächster Tester-Lauf: zuerst Debug mit `LH2GPX_IMPORT_MEMORY_LOG=1` zur Peak-Phase-Lokalisierung, dann Release-Build ohne Debugger.
+- Für die Build-Identität: Build-Setting `GIT_COMMIT_SHA=<short-sha>` setzen oder den SHA in der „Build Info“-Sektion der App-Optionen prüfen, sonst ist nicht eindeutig belegbar, welcher Code wirklich auf dem Gerät läuft.
+
 ## [2026-05-07] — fix: drain autorelease objects during timeline stream parsing
 
 ### Hardware-Befund

@@ -95,6 +95,7 @@ public enum AppContentLoader {
         onPhase: (@Sendable (ImportPhase) -> Void)? = nil
     ) async throws -> AppSessionContent {
         return try await Task.detached(priority: .userInitiated) {
+            ImportMemoryProbe.log("loader.start \(url.lastPathComponent)")
             onPhase?(.reading)
             try assertAutoRestoreEligible(
                 url: url,
@@ -102,11 +103,16 @@ public enum AppContentLoader {
             )
             let ext = url.pathExtension.lowercased()
             if ext == "zip" {
-                return try loadZipContent(from: url, onPhase: onPhase)
+                let content = try loadZipContent(from: url, onPhase: onPhase)
+                ImportMemoryProbe.log("loader.end zip")
+                return content
             }
             onPhase?(.parsing)
             let export = try decodeFile(at: url, sourceName: url.lastPathComponent, onPhase: onPhase)
-            return AppSessionContent(export: export, source: .importedFile(filename: url.lastPathComponent))
+            ImportMemoryProbe.log("loader.afterDecode")
+            let content = AppSessionContent(export: export, source: .importedFile(filename: url.lastPathComponent))
+            ImportMemoryProbe.log("loader.afterSessionInit")
+            return content
         }.value
     }
 
@@ -381,12 +387,22 @@ public enum AppContentLoader {
 
         let converter = GoogleTimelineConverter.incrementalStreamConverter()
         do {
+            ImportMemoryProbe.log("zipStream.beforeExtract")
+            var streamedChunks = 0
             _ = try archive.extract(chosen, bufferSize: 256 * 1024) { chunk in
                 try converter.feed(chunk)
+                streamedChunks += 1
+                if streamedChunks % 64 == 0 {
+                    ImportMemoryProbe.log("zipStream.chunk=\(streamedChunks)")
+                }
             }
+            ImportMemoryProbe.log("zipStream.beforeFinalize")
             onPhase?(.building)
             let export = try converter.finalize()
-            return AppSessionContent(export: export, source: .importedFile(filename: zipName))
+            ImportMemoryProbe.log("zipStream.afterFinalize days=\(export.data.days.count)")
+            let content = AppSessionContent(export: export, source: .importedFile(filename: zipName))
+            ImportMemoryProbe.log("zipStream.afterSessionInit")
+            return content
         } catch {
             throw AppContentLoaderError.decodeFailed(zipName)
         }

@@ -95,7 +95,14 @@ enum GoogleTimelineConverter {
 
         func finalize() throws -> AppExport {
             try parser.finish()
-            return try builder.finalize()
+            let result = try builder.finalize()
+            // Drop the builder's internal dayMap as soon as we have the final
+            // export. Without this the per-day buckets stay alive for the
+            // entire lifetime of the loader scope, doubling the post-stream
+            // memory footprint right when AppSessionContent / queries start
+            // allocating their own projections.
+            builder = ExportBuilder()
+            return result
         }
     }
 
@@ -146,18 +153,30 @@ enum GoogleTimelineConverter {
             }
         }
 
-        func finalize() throws -> AppExport {
+        mutating func finalize() throws -> AppExport {
             guard sawValidEntry else { throw ConversionError.notGoogleTimeline }
 
-            let days: [Day] = orderedDayKeys.sorted().map { key in
-                let bucket = dayMap[key]!
-                return Day(
+            // Move buckets out of `dayMap` instead of copying them. With ~65k
+            // entries spread over ~100 days, copying each bucket here doubled
+            // the working set right at the import-completion peak. Using
+            // `removeValue(forKey:)` lets ARC drop the bucket as soon as it's
+            // moved into the final `Day` value.
+            let sortedKeys = orderedDayKeys.sorted()
+            var days: [Day] = []
+            days.reserveCapacity(sortedKeys.count)
+            for key in sortedKeys {
+                guard let bucket = dayMap.removeValue(forKey: key) else { continue }
+                days.append(Day(
                     date: key,
                     visits: bucket.visits,
                     activities: bucket.activities,
                     paths: bucket.paths
-                )
+                ))
             }
+            // Both backing stores are no longer needed — release them eagerly
+            // so the `AppExport` we hand back is the only retained copy.
+            dayMap.removeAll(keepingCapacity: false)
+            orderedDayKeys.removeAll(keepingCapacity: false)
 
             let meta = Meta(
                 exportedAt: isoOutput.string(from: Date()),

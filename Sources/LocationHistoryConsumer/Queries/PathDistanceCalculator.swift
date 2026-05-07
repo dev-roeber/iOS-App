@@ -73,13 +73,70 @@ public enum PathDistanceCalculator {
 // MARK: - Convenience wrappers for the canonical model types
 
 public extension PathDistanceCalculator {
-    /// Effective distance for an `AppExport`-side `Path`.
+    /// Effective distance for an `AppExport`-side `Path`. Iterates points and
+    /// flatCoordinates directly (no `[(lat, lon)]` copy) so summing distances
+    /// for paths with hundreds of thousands of points doesn't allocate.
     static func effectiveDistance(for path: Path) -> Double {
-        effectiveDistance(
-            rawDistanceM: path.distanceM,
-            points: path.points.map { (lat: $0.lat, lon: $0.lon) },
-            flatCoordinates: path.flatCoordinates
-        )
+        if let raw = path.distanceM, raw.isFinite, raw > 0 {
+            return raw
+        }
+        if path.points.count >= 2 {
+            return polylineDistanceMetersFromPathPoints(path.points)
+        }
+        if let flat = path.flatCoordinates, flat.count >= 4 {
+            return polylineDistanceMetersFromFlat(flat)
+        }
+        return 0
+    }
+
+    private static func polylineDistanceMetersFromPathPoints(_ points: [PathPoint]) -> Double {
+        let earthRadiusMeters = 6_371_000.0
+        var total = 0.0
+        var iterator = points.makeIterator()
+        guard let first = iterator.next() else { return 0 }
+        var prevLat = first.lat
+        var prevLon = first.lon
+        while let current = iterator.next() {
+            let lat1 = prevLat * .pi / 180.0
+            let lat2 = current.lat * .pi / 180.0
+            let dLat = (current.lat - prevLat) * .pi / 180.0
+            let dLon = (current.lon - prevLon) * .pi / 180.0
+            let sinDLat = sin(dLat / 2)
+            let sinDLon = sin(dLon / 2)
+            let a = sinDLat * sinDLat + cos(lat1) * cos(lat2) * sinDLon * sinDLon
+            let c = 2 * atan2(sqrt(a), sqrt(1 - a))
+            total += earthRadiusMeters * c
+            prevLat = current.lat
+            prevLon = current.lon
+        }
+        return total
+    }
+
+    private static func polylineDistanceMetersFromFlat(_ flat: [Double]) -> Double {
+        let earthRadiusMeters = 6_371_000.0
+        var total = 0.0
+        let pairCount = flat.count / 2
+        guard pairCount >= 2 else { return 0 }
+        var prevLat = flat[0]
+        var prevLon = flat[1]
+        var i = 2
+        while i + 1 < flat.count {
+            let curLat = flat[i]
+            let curLon = flat[i + 1]
+            let lat1 = prevLat * .pi / 180.0
+            let lat2 = curLat * .pi / 180.0
+            let dLat = (curLat - prevLat) * .pi / 180.0
+            let dLon = (curLon - prevLon) * .pi / 180.0
+            let sinDLat = sin(dLat / 2)
+            let sinDLon = sin(dLon / 2)
+            let a = sinDLat * sinDLat + cos(lat1) * cos(lat2) * sinDLon * sinDLon
+            let c = 2 * atan2(sqrt(a), sqrt(1 - a))
+            total += earthRadiusMeters * c
+            prevLat = curLat
+            prevLon = curLon
+            i += 2
+        }
+        return total
     }
 
     /// Effective distance for the projected day-detail `PathItem`. Mirrors

@@ -17,22 +17,43 @@ Bei Ablehnung eines Punktes: konkreten Bug + Reproduktionsschritte unter „Befu
 
 ### Sektion 1 — 46-MB-Crashfall (Großimport auf echtem iPhone)
 
-**Status 2026-05-07: FAILED → Code-Fix verfügbar, Hardware-Retest steht aus**
+**Status 2026-05-07 (zweiter Hardware-Fail): FAILED → erweiterter Code-Fix verfügbar, Hardware-Retest steht weiter aus**
 
-Reproduzierter Hardware-Befund am 2026-05-07T13:38:37+02:00 auf iPhone 15 Pro Max (`iPhone16,2`, iOS 26.4 / 23E246), Xcode 26.3:
+Zweiter reproduzierter Hardware-Fail am 2026-05-07T14:14:36+02:00 auf iPhone 15 Pro Max (`iPhone16,2`, iOS 26.4 / 23E246), Xcode 26.3, macOS 15.7 — **trotz** Autoreleasepool-Fix in `cd77f97`:
+- App: `LH2GPXWrapper` (Bundle `de.roeber.LH2GPXWrapper`).
+- Datei: `~/Downloads/location-history.zip` (~46 MB; ~64.926 Top-Level-Timeline-Entries).
+- Fehler: `IDEDebugSessionErrorDomain Code 11 — “The app ‘LH2GPXWrapper’ has been killed by the operating system because it is using too much memory.”`
+- Operation duration: **216.606 ms** (vorher 232.341 ms — gleiche Größenordnung; der Peak hat sich nicht ausreichend reduziert).
+
+Damit wurde klar: der Memory-Peak liegt **nach** dem JSON-Streaming. Top-Hypothese (durch Code-Lesung bestätigt) — vier zusätzliche Allokationspfade direkt nach dem Streaming:
+1. `AppSessionContent.init` rief `AppExportQueries.daySummaries(from:)` mit voller `projectedDays`-Projektion auf, nur um `selectedDate` zu bestimmen — bei ~65k Entries auf ~100 Tagen 80–130 MB transienter Allokationen.
+2. `AppSessionState.show(content:)` triggerte `content.overview` (lazy → voller Overview-Pass) nur, um den Title-Text bei Google-Timeline-Imports zu wählen.
+3. `GoogleTimelineConverter.ExportBuilder.finalize()` kopierte alle Day-Buckets aus der `dayMap`, statt sie herauszunehmen — Tagespuffer blieben für den ganzen Loader-Scope am Leben.
+4. `IncrementalStreamConverter.finalize()` hielt seinen befüllten Builder darüber hinaus.
+5. `PathDistanceCalculator.effectiveDistance(for: Path)` baute pro Aufruf temporäre `[(lat, lon)]`-Arrays über alle Punkte.
+
+Erweiterter Code-Fix in HEAD pending (Commit folgt direkt nach diesem Doku-Update):
+1. `AppSessionContent.init` ermittelt `selectedDate` direkt aus `export.data.days` per einfacher Datumsmaximierung — keine `daySummaries`-Materialisierung mehr im Init.
+2. `AppSessionState.show(content:)` liest `inputFormat` aus `content.export.meta.source.inputFormat` / `meta.config.inputFormat`, statt `content.overview` zu erzwingen.
+3. `ExportBuilder.finalize()` ist `mutating` und benutzt `dayMap.removeValue(forKey:)` + abschließendes `removeAll(keepingCapacity: false)`. `IncrementalStreamConverter.finalize()` ersetzt seinen internen Builder nach Erhalt des `AppExport` durch eine frische Instanz.
+4. Neue `PathDistanceCalculator.effectiveDistance(for: Path)`-Implementierung iteriert direkt über `points` bzw. `flatCoordinates` (haversine inline, ohne Tuple-Array-Kopien).
+5. **Diagnostik**: neue `ImportMemoryProbe` (mach `task_vm_info`), gated auf Launch-Argument bzw. Environment `LH2GPX_IMPORT_MEMORY_LOG=1`. Probe-Punkte im ZIP-Streaming-Pfad (`beforeExtract`, alle 64 Chunks, `beforeFinalize`, `afterFinalize` mit Day-Count, `afterSessionInit`) und im Loader-Entry/Exit. Logs greppbar als `[LH2GPX_MEMORY]`.
+6. **Build-Identität**: neuer `AppBuildInfo` + Sektion „Build Info“ in den App-Optionen (`Settings → Technical`) zeigt Marketing-Version, Build, optional Git-Commit-SHA. SHA wird in `wrapper/Config/Info.plist` als Placeholder `GitCommitSHA = $(GIT_COMMIT_SHA)` ausgeschrieben — beim Hardware-Test über `xcodebuild GIT_COMMIT_SHA=$(git rev-parse --short HEAD)` injizierbar; ohne Injection bleibt das Feld leer und nur Version/Build sind sichtbar.
+7. Drei neue Regressionstests in `DemoSessionStateTests` (selectedDate-Pick, leerer Fallback, Title aus `meta.source.inputFormat`). `swift test` 1081/2/0.
+
+**Empfohlene Tester-Sequenz beim Retest**:
+1. Erst Build identifizieren — App öffnen, Settings → Technical → „Build Info“: Marketing-Version, Build und (falls Build-Setting `GIT_COMMIT_SHA` gesetzt war) Commit-SHA prüfen, mit dem getesteten Git-HEAD vergleichen.
+2. Erst Debug-Run mit Run-Argument `LH2GPX_IMPORT_MEMORY_LOG=1` (Run Scheme → Arguments). Import durchführen, in der Xcode-Console alle Zeilen mit `[LH2GPX_MEMORY]` loggen — wenn der Build erneut Jetsam-killt, beweist das letzte gelogde `[LH2GPX_MEMORY]`-Label die Peak-Phase.
+3. Wenn Debug grün: Release-Build **ohne Debugger / View-Debugging** auf demselben Gerät mit derselben 46-MB-`location-history.zip` ziehen. Erst dann gilt diese Sektion potenziell als PASSED.
+
+Reproduzierter Erst-Hardware-Befund am 2026-05-07T13:38:37+02:00 (vor `cd77f97`):
 - App: `LH2GPXWrapper` (Bundle `de.roeber.LH2GPXWrapper`).
 - Datei: `~/Downloads/location-history.zip` (~46 MB unkomprimiert; ~64.926 Top-Level-Timeline-Entries).
 - Fehler: `IDEDebugSessionErrorDomain Code 11 — “The app ‘LH2GPXWrapper’ has been killed by the operating system because it is using too much memory.”`
 - Operation duration: 232.341 ms.
+- Erst-Root-Cause: `JSONSerialization.jsonObject(with: element)` lief außerhalb des `autoreleasepool`. Behoben in `cd77f97` (notwendig, aber nicht hinreichend — siehe zweiter Fail oben).
 
-Root Cause: `JSONSerialization.jsonObject(with: element)` in `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineStreamReader.swift` (`TopLevelArrayParser.processByte`) lief **außerhalb** des `autoreleasepool` — der Pool umschloss nur das nachgelagerte `onElement(parsed)`. Dadurch akkumulierten transiente Foundation-Objekte (`NSString`/`NSNumber`/`NSDictionary`/`NSArray`) über alle ~65k Top-Level-Elemente und sprengten unter iOS den App-Speicher. Sekundär hielt `element.removeAll(keepingCapacity: true)` die Capacity nach Outlier-Elementen permanent hoch.
-
-Code-Fix in HEAD pending (Commit folgt direkt nach diesem Doku-Update):
-1. `JSONSerialization.jsonObject(with: element)` läuft jetzt **gemeinsam** mit `onElement(parsed)` in demselben `autoreleasepool { ... }`.
-2. Nach Elementen > 64 KB wird `element` durch eine frisch reservierte 8-KB-Data ersetzt, statt nur Inhalt zu leeren.
-3. Neuer Regressionstest `GoogleTimelineStreamReaderTests.testHighElementCountWithLargeOutlierSucceeds` (50.000 Elemente + 1-MB-Outlier in der Mitte) verifiziert vollständigen Durchlauf.
-
-Solange der Hardware-Retest mit der originalen 46-MB-`location-history.zip` auf iPhone 15 Pro Max (iOS 26.4) nicht durch einen Tester nachweislich grün bestätigt ist, bleibt diese Sektion **FAILED**. Der Codefix adressiert die wahrscheinliche Hauptursache, ist aber kein Beweis dafür, dass das Release-Build-Verhalten unter realer iOS-Speicherlast okay ist.
+Solange der Hardware-Retest mit der originalen 46-MB-`location-history.zip` auf iPhone 15 Pro Max (iOS 26.4) **als Release-Build ohne Debugger** nicht durch einen Tester nachweislich grün bestätigt ist, bleibt diese Sektion **FAILED**. Der erweiterte Codefix adressiert die wahrscheinliche Hauptursache, ist aber kein Beweis dafür, dass das Release-Build-Verhalten unter realer iOS-Speicherlast okay ist.
 
 Tipp für den Tester, falls die App beim nächsten Start sofort wieder denselben Bookmark/Import zieht: einmalig in Xcode Run Arguments `LH2GPX_UI_TESTING` und `LH2GPX_RESET_PERSISTENCE` setzen, App starten, schließen, Arguments wieder entfernen — alternativ App vom iPhone löschen und neu installieren.
 

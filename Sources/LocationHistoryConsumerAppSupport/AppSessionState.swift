@@ -96,15 +96,27 @@ public final class AppSessionContent {
     public init(export: AppExport, source: AppContentSource) {
         self.export = export
         self.source = source
-        
-        // Eagerly compute selectedDate based on the newest contentful day.
-        let summaries = DaySummaryDisplayOrdering.newestFirst(
-            AppExportQueries.daySummaries(from: export)
-        )
-        self.selectedDate = summaries.first(where: \.hasContent)?.date ?? summaries.first?.date
-        
-        // Now that all non-lazy stored properties are initialized, we can populate the lazy storage.
-        self.daySummaries = summaries
+
+        // Pick selectedDate from the raw `Day` array directly. We deliberately
+        // avoid building daySummaries / running `projectedDays` here: on a 65k
+        // entry Google Timeline import the summaries pass allocates 80–130 MB
+        // of intermediate arrays, which combined with the still-live importer
+        // working set was the post-streaming memory peak that triggered Jetsam
+        // on iPhone 15 Pro Max (2026-05-07 hardware fail).
+        let days = export.data.days
+        var newestContentful: String? = nil
+        var newestAny: String? = nil
+        for day in days {
+            if newestAny == nil || day.date > newestAny! {
+                newestAny = day.date
+            }
+            if !day.visits.isEmpty || !day.activities.isEmpty || !day.paths.isEmpty {
+                if newestContentful == nil || day.date > newestContentful! {
+                    newestContentful = day.date
+                }
+            }
+        }
+        self.selectedDate = newestContentful ?? newestAny
     }
 
     /// Returns the projected `[Day]` for the given filter, computing once per
@@ -449,7 +461,12 @@ public struct AppSessionState {
         let title: String
         if content.source == .demoFixture(name: AppContentLoader.defaultDemoFixtureName) {
             title = "Demo data ready"
-        } else if content.overview.inputFormat == "google_timeline" {
+        } else if content.export.meta.source.inputFormat == "google_timeline"
+                    || content.export.meta.config.inputFormat == "google_timeline" {
+            // Read inputFormat directly from meta so we don't trigger lazy
+            // `overview` materialisation (a full projectedDays pass) just to
+            // pick a localized title — this was part of the post-stream peak
+            // that Jetsam-killed the app on iPhone 15 Pro Max (2026-05-07).
             title = "Google Timeline loaded"
         } else {
             title = "Location history ready"

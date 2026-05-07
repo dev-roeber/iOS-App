@@ -18,6 +18,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>100</string>
+	<key>GitCommitSHA</key>
+	<string>$(GIT_COMMIT_SHA)</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Your location is used only inside LH2GPX to continue a live track you started manually, even when the app is no longer in the foreground.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

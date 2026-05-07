@@ -244,6 +244,59 @@ final class AppSessionStateTests: XCTestCase {
         XCTAssertEqual(idleState.sourceSummary.sourceValue, "None")
     }
 
+    /// Regression: after the 2026-05-07 hardware Jetsam re-fail we made
+    /// `AppSessionContent.init` derive `selectedDate` directly from
+    /// `export.data.days` instead of building the full daySummaries projection.
+    /// Verify the picked date still matches the newest contentful day (the
+    /// rule the eager-summary path used to enforce) and that the empty-only
+    /// fallback still produces a valid date.
+    func testInitPicksNewestContentfulDateWithoutEagerSummaries() {
+        let export = exportWith(days: """
+        { "date": "2024-01-01", "visits": [], "activities": [], "paths": [] },
+        { "date": "2024-01-02", "visits": [
+            {"lat": 1.0, "lon": 2.0, "start_time": "2024-01-02T10:00:00Z", "end_time": "2024-01-02T11:00:00Z"}
+        ], "activities": [], "paths": [] },
+        { "date": "2024-01-03", "visits": [], "activities": [], "paths": [] }
+        """)
+        let content = AppSessionContent(export: export, source: .importedFile(filename: "synth.json"))
+        XCTAssertEqual(content.selectedDate, "2024-01-02")
+    }
+
+    func testInitFallsBackToNewestEmptyDateWhenNoContentfulDayExists() {
+        let export = exportWith(days: """
+        { "date": "2024-02-01", "visits": [], "activities": [], "paths": [] },
+        { "date": "2024-02-03", "visits": [], "activities": [], "paths": [] },
+        { "date": "2024-02-02", "visits": [], "activities": [], "paths": [] }
+        """)
+        let content = AppSessionContent(export: export, source: .importedFile(filename: "synth.json"))
+        XCTAssertEqual(content.selectedDate, "2024-02-03")
+    }
+
+    /// `show(content:)` no longer touches `content.overview` — verify the
+    /// Google-Timeline title is picked from `meta.source.inputFormat` even if
+    /// the overview lazy property was never materialised.
+    func testShowPicksGoogleTimelineTitleFromMetaInputFormat() {
+        let json = """
+        {
+          "schema_version": "1.0",
+          "meta": {
+            "exported_at": "2024-01-01T00:00:00Z",
+            "tool_version": "1.0",
+            "source": {"input_format": "google_timeline"},
+            "output": {}, "config": {}, "filters": {}
+          },
+          "data": { "days": [
+            { "date": "2024-01-02", "visits": [], "activities": [], "paths": [] }
+          ] }
+        }
+        """
+        let export = try! AppExportDecoder.decode(data: Data(json.utf8))
+        let content = AppSessionContent(export: export, source: .importedFile(filename: "loc.json"))
+        var state = AppSessionState()
+        state.show(content: content)
+        XCTAssertEqual(state.message?.title, "Google Timeline loaded")
+    }
+
     private func loadDemoContent(fixtureName: String, source: AppContentSource) throws -> AppSessionContent {
         let url = try TestSupport.contractFixtureURL(named: fixtureName)
         let export = try AppExportDecoder.decode(contentsOf: url)
