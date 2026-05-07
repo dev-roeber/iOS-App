@@ -4,6 +4,14 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Audit-Verifikation Phase 1-5 Audit-Train (2026-05-07, HEAD `20877ae`)
+
+Phase 1-5 Audit-Train (Items 2-15) über zwei Commits — `21b4026` (Phase 1: items 3, 4, 5, 6, 8) + `20877ae` (Phase 2-5: items 7, 11+2, 9, 10, 12, 13+14+15). Inhalt: `projectedDays`-Cache, Mutations-Index, Race-Token, Live-Map-Dedup, `@testable`-Cleanup-Folge, Mock-Client + State-Transition-Tests, `LH2GPXAppFlow` Drift-Extraction + Auto-Restore-Phasen, API-Naming als additives Importing-Protokoll (kein Rename), `wrapper/CI.xctestplan` SwiftPM-Coverage als SKIP dokumentiert (pbxproj-Integration zu fragil), `Tests/README.md` Update, Doku-Truth-Cleanup. Details in `CHANGELOG.md` und `NEXT_STEPS.md`.
+
+- `swift test`: **1045 Tests, 2 Skips, 0 Failures** (+1 gegenüber 1044; Mock-Refactor in Item 7 ersetzt Placeholder-Case durch zwei echte Cases — netto +1).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+- Hardware-Re-Verifikation iPhone 15 Pro Max: weiterhin offen.
+
 ### Audit-Verifikation Bündel B+C+D+A (2026-05-07, Doku-Train, HEAD pending — Commit folgt)
 
 22 Audit-Achsen aus den Bündeln B (Dead-Code), C (Performance-Restposten), D (Architektur), A (Test-Härtung) als erledigt verbucht; Details in `CHANGELOG.md` und `NEXT_STEPS.md`.

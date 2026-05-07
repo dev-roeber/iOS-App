@@ -100,7 +100,28 @@ Nicht in diesem Train erledigt (weiterhin offen): P1-18..P1-24 (Test-Lücken), H
 - [x] (extra) `ExportMutationsAndFilterTests.swift` (4 Cases): Mutations respektiert, empty leaves unchanged, hasRoutes-Chip, favorites-Parameter.
 - [x] (extra) `ZIPGoogleTimelineStreamingPathTests.swift` (3 Cases): Timeline-Entry, AppExport-Fallback, Mixed-ZIP.
 
-**Verbleibend offen aus dem Audit:** P2-8 (Live-Duplicate-Refactor, bewusst nicht angefasst), P2-16 (API-Naming), P2-18 (HeatmapGridBuilder MapKit-Entkopplung), P2-17 (CI.xctestplan SKIP), Mock-Client-Refactor in `LiveLocationFeatureModelStateTransitionTests`. Hardware-Re-Verifikation iPhone 15 Pro Max bleibt offen.
+**Verbleibend offen aus dem Audit:** P2-8 (Live-Duplicate-Refactor, bewusst nicht angefasst), P2-18 (HeatmapGridBuilder MapKit-Entkopplung). Hardware-Re-Verifikation iPhone 15 Pro Max bleibt offen.
+
+### Audit-Batch 2026-05-07 (Phase 1-5, items 2-15) — 14 Achsen erledigt
+
+14 Audit-Achsen über zwei Commits in diesem Train (`swift test` **1045/2/0**; +1 Case gegenüber 1044 — Mock-Refactor in Item 7 ersetzt einen Placeholder-Case durch zwei echte Cases, netto +1; Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED). Commits: `21b4026` (Phase 1) + `20877ae` (Phase 2-5).
+
+**Phase 1 — `21b4026`:**
+- [x] **Item 3** — `projectedDays`-Cache (Memoization, Re-Compute nur bei Input-Änderung).
+- [x] **Item 4** — Mutations-Index (O(1)-Lookup im `AppImportedPathMutationStore`).
+- [x] **Item 5** — Race-Token (Stale-Result-Guard in async Filter-/Day-Switch-Pfaden).
+- [x] **Item 6** — Live-Map-Dedup (geteilte Map-Render-Helper im Live-Feature).
+- [x] **Item 8** — `@testable import` → `import` Cleanup-Folge.
+
+**Phase 2-5 — `20877ae`:**
+- [x] **Item 7** — Mock-Client + State-Transition-Tests (Mock extrahiert; Placeholder ersetzt durch zwei echte Cases; netto +1 Case).
+- [x] **Item 11 + Item 2** — `LH2GPXAppFlow` extrahiert (Drift Wrapper ↔ Package-App-Einstieg) plus Auto-Restore-Phasen.
+- [x] **Item 9** — API-Naming (sanft umgesetzt — kein Rename, additives Importing-Protokoll).
+- [~] **Item 10** — `wrapper/CI.xctestplan` SwiftPM-Coverage **SKIP** — pbxproj-Integration zu fragil, out-of-scope.
+- [x] **Item 12** — `Tests/README.md` aktualisiert.
+- [x] **Items 13/14/15** — Doku-Truth-Cleanup (ROADMAP/NEXT_STEPS/CHANGELOG/README/wrapper-Docs/Apple-Checklist konsistent).
+
+**Verbleibend offen:** Item 10 als bekannte SKIP, Hardware-Re-Verifikation iPhone 15 Pro Max, alle Hardware-Items, plus die noch nicht angefassten UX-P1 (P1-31..P1-40 falls nummeriert).
 
 ## P0 — Release / Review / Hardware-Verifikation
 

@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 2026-05-07 (Audit batch — Phase 1-5: caching/index/race-token/live-map dedup, drift-extraction, importing-protocol, mock-state-tests, doc-truth-cleanup)
+
+### refactor/perf/test/docs: 14 Audit-Achsen über zwei Commits
+
+Zwei Commits gepusht: `21b4026` (Phase 1) und `20877ae` (Phase 2-5).
+
+**Phase 1 — `21b4026` (5 Achsen):**
+- **Item 3** — `projectedDays`-Cache (Memoization).
+- **Item 4** — Mutations-Index in `AppImportedPathMutationStore` (O(1)-Lookup).
+- **Item 5** — Race-Token in async Filter-/Day-Switch-Pfaden.
+- **Item 6** — Live-Map-Dedup (geteilte Map-Render-Helper).
+- **Item 8** — `@testable import` → `import` Cleanup-Folge.
+
+**Phase 2-5 — `20877ae` (9 Achsen):**
+- **Item 7** — Mock-Client + State-Transition-Tests (Mock extrahiert; Placeholder ersetzt durch zwei echte Cases — netto +1 Case).
+- **Item 11 + Item 2** — `LH2GPXAppFlow` extrahiert (Drift Wrapper ↔ Package-App-Einstieg) plus Auto-Restore-Phasen.
+- **Item 9** — API-Naming als additives Importing-Protokoll umgesetzt (kein Rename, Folgerisiken vermieden).
+- **Item 10 (SKIP)** — `wrapper/CI.xctestplan` SwiftPM-Coverage: pbxproj-Integration zu fragil, weiterhin out-of-scope. `.github/workflows/swift-test.yml` deckt SwiftPM-Suite ab.
+- **Item 12** — `Tests/README.md` aktualisiert.
+- **Items 13/14/15** — Doku-Truth-Cleanup (ROADMAP/NEXT_STEPS/CHANGELOG/README/wrapper-Docs/Apple-Checklist).
+
+### Verifikation
+- `swift test`: **1045 Tests, 2 Skips, 0 Failures** (vorher 1044; +1 Case durch Mock-Refactor in Item 7).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: **BUILD SUCCEEDED**.
+
+**Ehrlich offen:** Item 9 als additives Protokoll (kein Rename). Item 10 als bekannte SKIP. Hardware-Re-Verifikation iPhone 15 Pro Max steht weiterhin aus.
+
 ## 2026-05-07 (Audit batch — Bündel B+C+D+A: dead-code removal, perf restposten, @testable cleanup, test hardening)
 
 ### refactor/perf/test: 22 Audit-Achsen über vier Bündel

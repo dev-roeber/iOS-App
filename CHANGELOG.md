@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## [2026-05-07] — Audit batch — Phase 1-5: caching/index/race-token/live-map dedup, drift-extraction, importing-protocol, mock-state-tests, doc-truth-cleanup
+
+### Was sich geändert hat (14 Achsen, gruppiert nach Phase 1 + Phase 2-5)
+
+Zwei Commits gepusht: `21b4026` (Phase 1: items 3, 4, 5, 6, 8) und `20877ae` (Phase 2-5: items 7, 11+2, 9, 10, 12, 13+14+15).
+
+**Phase 1 (commit `21b4026`) — Caching, Index, Race-Token, Live-Map-Dedup, @testable-Cleanup (5 Achsen):**
+1. **Item 3** — `projectedDays`-Caching: Memoization in `AppExportQueries`, Re-Compute nur bei tatsächlichen Input-Änderungen.
+2. **Item 4** — Mutations-Index in `AppImportedPathMutationStore`: O(1)-Lookup statt linearer Scan über alle Mutations.
+3. **Item 5** — Race-Token in async Pfaden: Stale-Result-Guards beim Filter-/Day-Switch.
+4. **Item 6** — Live-Map-Dedup: Konsolidierung des doppelt gerenderten Map-Pfades im Live-Feature.
+5. **Item 8** — `@testable import` → reines `import` für ein weiteres Test-File (Cleanup-Folge).
+
+**Phase 2-5 (commit `20877ae`) — Drift-Extraction, Importing-Protokoll, Mock-State-Tests, Doku-Truth (9 Achsen):**
+6. **Item 7** — Mock-Client + State-Transition-Tests: Mock-Client aus dem Test-File extrahiert; Placeholder-Case ersetzt durch zwei echte State-Transition-Cases (netto +1 Case statt +2 — siehe Verifikation).
+7. **Item 11 + Item 2** — `LH2GPXAppFlow` extrahiert (Drift zwischen Wrapper- und Package-App-Einstieg) plus Auto-Restore-Phasen-Plumbing zusammengefasst.
+8. **Item 9** — API-Naming als additives Importing-Protokoll umgesetzt — **kein Rename**, sanft additiv (Folgerisiken vermieden).
+9. **Item 10** — `wrapper/CI.xctestplan` SwiftPM-Coverage: **als SKIP dokumentiert** — pbxproj-Integration zu fragil, weiterhin out-of-scope.
+10. **Item 12** — `Tests/README.md` aktualisiert (Test-Layout, neue Files, Mock-Client-Pfad).
+11. **Item 13 + Item 14 + Item 15** — Doku-Truth-Cleanup: ROADMAP/NEXT_STEPS/CHANGELOG/README/wrapper-Docs/Apple-Verification-Checklist auf konsistente Test-Zahlen und HEAD-Stand gebracht.
+
+### Verifikation
+- `swift test`: **1045 Tests, 2 Skips, 0 Failures** (vorher 1044). Mock-Refactor (Item 7) ersetzte einen Placeholder-Case durch zwei echte Cases — netto +1.
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: **BUILD SUCCEEDED**.
+- Commits: `21b4026` (Phase 1) + `20877ae` (Phase 2-5).
+
+### Ehrlich offen
+- **Item 9 / API-Naming:** als additives Importing-Protokoll umgesetzt — kein Rename. Bestehende Call-Sites unverändert.
+- **Item 10 / `wrapper/CI.xctestplan` SwiftPM-Coverage:** als SKIP dokumentiert; pbxproj-Integration zu fragil für diesen Train. `.github/workflows/swift-test.yml` deckt die SwiftPM-Suite weiterhin separat ab.
+- **Hardware-Re-Verifikation iPhone 15 Pro Max** steht weiterhin aus (kein Hardware-Lauf in diesem Train).
+
 ## [2026-05-07] — Audit batch — Bündel B+C+D+A: dead-code removal, perf restposten, @testable cleanup, test hardening
 
 ### Was sich geändert hat (22 Achsen, gruppiert nach Bündel)
