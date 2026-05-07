@@ -61,6 +61,17 @@
 - Primär: nativer lokaler Lauf mit `swift test`
 - Docker ist kein Standardworkflow dieses Repos mehr
 
+## Distance Semantics
+
+Path-Distanz wird konsistent zwischen Summary, Day-Detail und Insights berechnet. Single-Source-of-Truth ist `PathDistanceCalculator` in `Sources/LocationHistoryConsumer/Queries/PathDistanceCalculator.swift`. Fallback-Reihenfolge:
+
+1. **Explizit**: raw `distanceM > 0` aus dem Contract gewinnt.
+2. **Polyline**: andernfalls Haversine-Summe ueber `points` (≥ 2 Punkte).
+3. **flatCoordinates**: andernfalls Haversine-Summe ueber `flatCoordinates` (≥ 2 Punkte).
+4. **0**: andernfalls 0.
+
+`DayDetailViewState.PathItem.effectiveDistanceM: Double` traegt das Resultat fuer die UI (immer berechnet bei Konstruktion). Raw `distanceM: Double?` bleibt zusaetzlich erhalten, damit Caller zwischen „Exporter hat nichts gemeldet" (`nil`) und „Exporter hat 0 oder positiven Wert gemeldet" unterscheiden koennen.
+
 ## Read-only Query-Layer
 
 Die Query-Schicht in `Sources/LocationHistoryConsumer/Queries/` ist bewusst consumer-only:

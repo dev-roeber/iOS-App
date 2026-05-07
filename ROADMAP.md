@@ -4,6 +4,18 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Verifikation Day-Detail-Distance-Fix (2026-05-07, HEAD pending — Commit folgt)
+
+P0/P1-Bug: Day-Detail-Ansicht zeigte „Distance 0" für Routen mit sichtbarer Geometrie, während Insights/Übersicht korrekte Distanzen zeigten. Root Cause: `AppExportQueries.summary` nutzte `effectiveDistance(for: path)`-Fallback (raw `distanceM > 0` ODER Polyline aus Punkten), aber `DayDetailViewState.PathItem` führte nur raw `distanceM` und `DayDetailPresentation` summierte `path.distanceM ?? 0`. Google-Timeline-`timelinePath`-Imports liefern oft `distanceM == nil` aber valide `points` — daher 0 km im Detail.
+
+Fix: neue `PathDistanceCalculator` (Single-Source-of-Truth, `Sources/LocationHistoryConsumer/Queries/PathDistanceCalculator.swift`, inline Haversine ohne CoreLocation); `DayDetailViewState.PathItem.effectiveDistanceM: Double` (non-optional, immer berechnet, raw `distanceM: Double?` bleibt); `AppExportQueries.dayDetail(...)` setzt `effectiveDistanceM` über Calculator; `DayDetailPresentation` liest `effectiveDistanceM` an 5 Stellen (KPI-Card, Route-Subtitle, Summary-Aggregation, Section-Subtitle, Dominant-Mode, Route-Intensity). Bestehende `DayMapDataTests` und `ImportedPathMutationTests` mit `effectiveDistanceM:`-Parameter ergänzt. `DayDetailPresentationTests.testRoutePresentationKeepsPointCountAsConcreteMetric` von 2-Chip auf 3-Chip-Erwartung angepasst (Distance-Chip erscheint jetzt korrekt). 12 neue Cases in `PathDistanceCalculatorTests` (Calculator-Semantik raw>0 wins, nil/zero/negative/NaN fallback, polyline/flatCoordinates fallback, too-few-points, Wrapper-Verhalten, Summary↔DayDetail-Konsistenz-Regression).
+
+- `swift test`: **1077 Tests, 2 Skips, 0 Failures** (+12 gegenüber 1065).
+- Device-Smoke iPhone 15 Pro Max (iOS 26.4): `testDeviceSmokeNavigationAndActions` PASSED (75s).
+- HEAD: pending — Commit folgt.
+- Volle 3-UITest-Suite (testAppStoreScreenshots / testLandscapeLayoutSmoke) für aktuellen HEAD nicht erneut gefahren — nur Smoke-Navigation post-Fix verifiziert.
+- Weiterhin offen: 46-MB-Crashfall geräteseitig nach Fix nicht erneut validiert; Live Activity / Lock Screen / iPad / ASC / TestFlight nicht geprüft.
+
 ### Verifikation Hardware-Re-Verifikation iPhone 15 Pro Max (2026-05-07, HEAD pending — Commit folgt)
 
 Hardware-Re-Verifikation iPhone 15 Pro Max nach 44pt-Hit-Target-Fix in `HistoryDateRangeFilterBar`. Während des ersten Hardware-Runs (HEAD `7cc2e97`) als P1-UX-Bug gefunden: clear-date-range Button (xmark.circle.fill) hatte 12×12pt Hit-Area (unter Apple HIG 44pt-Minimum, XCUITest „Failed to not hittable"). Fix: `.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())` um das Button-Image; visible Glyph unverändert.

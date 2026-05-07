@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2026-05-07 (fix: day-detail distance consistency — P0/P1 bug)
+
+### Bug
+Day-Detail zeigte „Distance 0" für Routen mit sichtbarer Geometrie, obwohl Insights/Übersicht korrekte Distanzen lieferten. Root Cause: Summary nutzte `effectiveDistance`-Fallback, Detail-Pfad las nur raw `distanceM`. Google-Timeline-`timelinePath`-Imports trafen das, weil ihr `distanceM == nil` aber valide `points`.
+
+### Fix
+- PathDistanceCalculator als Single-Source-of-Truth (neue Datei in LocationHistoryConsumer/Queries).
+- DayDetailViewState.PathItem bekommt `effectiveDistanceM: Double` (immer berechnet); raw `distanceM` bleibt für Caller die zwischen „nichts gemeldet" und „expliziter Wert" unterscheiden müssen.
+- DayDetailPresentation liest `effectiveDistanceM` an allen 5 Stellen (KPI-Card, Route-Subtitle, Summary-Aggregat, Section-Subtitle, Dominant-Mode, Route-Intensity).
+- 12 neue Cases in PathDistanceCalculatorTests inkl. Summary↔DayDetail-Konsistenz-Regression.
+
+### Verifikation
+- swift test: 1077/2/0 (+12 gegenüber 1065).
+- Device-Smoke iPhone 15 Pro Max (iOS 26.4): testDeviceSmokeNavigationAndActions PASSED.
+
+### Weiterhin offen
+- 46-MB-Crashfall geräteseitig nach Fix nicht erneut validiert
+- Live Activity / Lock Screen / iPad / ASC / TestFlight nicht geprüft
+
 ## 2026-05-07 (Hardware re-verification on iPhone 15 Pro Max + 44pt clear-date-range hit-target fix)
 
 ### Hardware-Bug + Fix

@@ -104,7 +104,16 @@ final class DayDetailPresentationTests: XCTestCase {
         let presentation = DayDetailPresentation.routeCard(for: route, unit: .metric)
 
         XCTAssertEqual(presentation.title, "Walking Route")
-        XCTAssertEqual(presentation.chips.map { $0.text }, ["3 points", "24 min"])
+        // After the day-detail effective-distance fix the route card now
+        // surfaces the polyline-derived distance even when the exporter
+        // omitted `distanceM` (Google Timeline `timelinePath` shape). The
+        // chip text format is `"<n> points"`, `"<distance>"`, `"<duration>"`.
+        let chipTexts = presentation.chips.map { $0.text }
+        XCTAssertEqual(chipTexts.count, 3)
+        XCTAssertEqual(chipTexts[0], "3 points")
+        XCTAssertTrue(chipTexts[1].hasSuffix(" km") || chipTexts[1].hasSuffix(" m"),
+                      "expected a distance chip with km/m unit, got \(chipTexts[1])")
+        XCTAssertEqual(chipTexts[2], "24 min")
         XCTAssertNil(presentation.note)
     }
 

@@ -77,14 +77,16 @@ struct DayDetailTimelineEntryPresentation: Equatable, Identifiable {
 
 enum DayDetailPresentation {
     static func kpis(detail: DayDetailViewState, unit: AppDistanceUnitPreference) -> [DayDetailKPIItemPresentation] {
-        [
+        // `effectiveDistanceM` falls back to polyline-derived metres when the
+        // exporter omitted `distanceM` (Google Timeline `timelinePath` is the
+        // typical case), so day-detail KPIs match Insights/Overview totals.
+        let totalDistance = detail.paths.reduce(0) { $0 + $1.effectiveDistanceM }
+        return [
             .init(
                 id: "distance",
                 icon: "ruler",
                 label: "Distance",
-                value: detail.paths.reduce(0) { $0 + ($1.distanceM ?? 0) } > 0
-                    ? formatDistance(detail.paths.reduce(0) { $0 + ($1.distanceM ?? 0) }, unit: unit)
-                    : "0"
+                value: totalDistance > 0 ? formatDistance(totalDistance, unit: unit) : "0"
             ),
             .init(id: "routes", icon: "location.north.line", label: "Routes", value: "\(detail.paths.count)"),
             .init(id: "activities", icon: "figure.walk", label: "Activities", value: "\(detail.activities.count)"),
@@ -127,11 +129,14 @@ enum DayDetailPresentation {
 
         let routeEvents: [Event] = detail.paths.compactMap { path in
             guard let start = path.startTime.flatMap(AppTimeDisplay.date(_:)) else { return nil }
+            // Use effective distance so the timeline label matches the
+            // metric-card and never reports 0 km for geometry-only paths.
+            let subtitle = path.effectiveDistanceM > 0 ? formatDistance(path.effectiveDistanceM, unit: .metric) : nil
             return Event(
                 date: start,
                 kind: .drive,
                 title: "Drive",
-                subtitle: path.distanceM.map { formatDistance($0, unit: .metric) },
+                subtitle: subtitle,
                 timeText: AppTimeDisplay.timeRange(start: path.startTime, end: path.endTime)
             )
         }
@@ -192,7 +197,7 @@ enum DayDetailPresentation {
             .init(icon: "location.north.line", value: "\(detail.paths.count)", label: "Routes"),
         ]
 
-        let totalDistanceM = detail.paths.reduce(0) { $0 + ($1.distanceM ?? 0) }
+        let totalDistanceM = detail.paths.reduce(0) { $0 + $1.effectiveDistanceM }
         if totalDistanceM > 0 {
             items.append(.init(icon: "road.lanes", value: formatDistance(totalDistanceM, unit: unit), label: "Distance"))
         }
@@ -286,8 +291,8 @@ enum DayDetailPresentation {
             )
         ]
 
-        if let distanceM = path.distanceM, distanceM > 0 {
-            let distanceText = formatDistance(distanceM, unit: unit)
+        if path.effectiveDistanceM > 0 {
+            let distanceText = formatDistance(path.effectiveDistanceM, unit: unit)
             chips.append(.init(icon: "ruler", text: distanceText, accessibilityLabel: "Distance \(distanceText)"))
         }
         if let durationText = AppTimeDisplay.duration(start: path.startTime, end: path.endTime) {
@@ -295,7 +300,7 @@ enum DayDetailPresentation {
         }
 
         let note: String?
-        if path.distanceM == nil && AppTimeDisplay.duration(start: path.startTime, end: path.endTime) == nil {
+        if path.effectiveDistanceM == 0 && AppTimeDisplay.duration(start: path.startTime, end: path.endTime) == nil {
             note = "This route only carries sampled track points."
         } else {
             note = nil
@@ -357,7 +362,7 @@ enum DayDetailPresentation {
         unit: AppDistanceUnitPreference
     ) -> String? {
         let totalPoints = paths.reduce(0) { $0 + $1.pointCount }
-        let totalDistanceM = paths.reduce(0) { $0 + ($1.distanceM ?? 0) }
+        let totalDistanceM = paths.reduce(0) { $0 + $1.effectiveDistanceM }
         var parts: [String] = ["\(totalPoints) point\(totalPoints == 1 ? "" : "s")"]
         if totalDistanceM > 0 {
             parts.append(formatDistance(totalDistanceM, unit: unit))
@@ -387,7 +392,7 @@ enum DayDetailPresentation {
         }
 
         let pathMode = dominantActivityType(
-            detail.paths.map { ($0.activityType, $0.distanceM ?? 0, durationInterval(start: $0.startTime, end: $0.endTime) ?? 0) }
+            detail.paths.map { ($0.activityType, $0.effectiveDistanceM, durationInterval(start: $0.startTime, end: $0.endTime) ?? 0) }
         )
         if let pathMode {
             return "Main route \(displayNameForActivityType(pathMode))"
@@ -480,7 +485,10 @@ enum DayDetailPresentation {
     private static func routeIntensity(_ path: DayDetailViewState.PathItem) -> Double? {
         let pointScore = Double(path.pointCount) / 24
         let durationScore = (durationInterval(start: path.startTime, end: path.endTime) ?? 0) / 5400
-        let distanceScore = (path.distanceM ?? 0) / 10000
+        // effectiveDistanceM picks up polyline-derived metres for paths that
+        // came in without distanceM, so the heatmap intensity stays
+        // consistent with the metric card and the overview totals.
+        let distanceScore = path.effectiveDistanceM / 10000
         let score = max(pointScore, durationScore, distanceScore)
         guard score > 0 else {
             return nil

@@ -117,7 +117,7 @@ final class DayMapDataTests: XCTestCase {
             paths: [
                 DayDetailViewState.PathItem(
                     startTime: nil, endTime: nil, activityType: "WALKING",
-                    distanceM: 10, pointCount: 1, sourceType: nil,
+                    distanceM: 10, effectiveDistanceM: 10, pointCount: 1, sourceType: nil,
                     points: [
                         DayDetailViewState.PathPointItem(lat: 52.52, lon: 13.41, time: nil, accuracyM: nil)
                     ]
@@ -160,7 +160,7 @@ final class DayMapDataTests: XCTestCase {
             paths: [
                 DayDetailViewState.PathItem(
                     startTime: nil, endTime: nil, activityType: "WALKING",
-                    distanceM: 0, pointCount: 0, sourceType: nil,
+                    distanceM: 0, effectiveDistanceM: 0, pointCount: 0, sourceType: nil,
                     points: []
                 )
             ],

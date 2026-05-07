@@ -22,6 +22,7 @@ final class ImportedPathMutationTests: XCTestCase {
             endTime: nil,
             activityType: "WALKING",
             distanceM: 100.0,
+            effectiveDistanceM: 100.0,
             pointCount: pointCount,
             sourceType: nil,
             points: points

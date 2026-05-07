@@ -88,6 +88,7 @@ public enum AppExportQueries {
                 endTime: path.endTime,
                 activityType: path.activityType,
                 distanceM: path.distanceM,
+                effectiveDistanceM: PathDistanceCalculator.effectiveDistance(for: path),
                 pointCount: path.points.count,
                 sourceType: path.sourceType,
                 points: path.points.map {

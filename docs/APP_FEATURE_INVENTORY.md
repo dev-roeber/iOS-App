@@ -1,6 +1,8 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-06 (UX-Audit-Batch — LiveStatusResolver + Export-Empty-State + Polish; Hero-Map-Workspace bereits ausgerollt)
+Last analysis: 2026-05-07 (Day-Detail-Distance-Bug-Fix — Day-Detail nutzt jetzt `effectiveDistanceM` (Polyline-Fallback bei `distanceM == nil`); konsistent mit Summary/Insights. `PathDistanceCalculator` als zentralisierte Distance-Semantik, Single-Source-of-Truth für raw>0-vs-Polyline-Fallback in `Sources/LocationHistoryConsumer/Queries/PathDistanceCalculator.swift`.)
+
+Davor: 2026-05-06 (UX-Audit-Batch — LiveStatusResolver + Export-Empty-State + Polish; Hero-Map-Workspace bereits ausgerollt)
 
 Repos in scope:
 - `dev-roeber/iOS-App`: active repo truth for the integrated app + wrapper
