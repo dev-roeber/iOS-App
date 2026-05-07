@@ -1,8 +1,9 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-07, HEAD pending — Commit folgt)
+## Aktiver Stand (2026-05-07, HEAD `b91a933`)
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
+- Manual Release Risk Acceptance Protocol angelegt in `docs/APPLE_VERIFICATION_CHECKLIST.md` — manuelle Hardware-Abnahme der 4 nicht automatisierbaren Restrisiken (46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout, ASC / TestFlight / Apple Review) muss durch den Tester durchgeführt werden bevor Submit. Acceptance-Anker HEAD `b91a933`. Checkboxen leer (kein Test-Ergebnis).
 
 ### Verifikation Post-Fix Hardware-Re-Run iPhone 15 Pro Max (2026-05-07, HEAD pending — Commit folgt)
 

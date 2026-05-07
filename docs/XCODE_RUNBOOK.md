@@ -14,6 +14,10 @@ Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 
 Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmentierte `Insights`, gespeicherte lokale Live-Tracks und optionalen nutzergesteuerten Upload akzeptierter Live-Recording-Punkte. Weiterhin nicht Teil dieses Runbooks sind Producer-Logik, Cloud-/Account-Sync fuer importierte History und unbewiesene Apple-Review-Claims.
 
+## Manuelle Release-Risiko-Abnahme
+
+Manuelle Release-Risiko-Abnahme: siehe `docs/APPLE_VERIFICATION_CHECKLIST.md` Block „Manual Release Risk Acceptance Protocol". Deckt 46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout sowie ASC / TestFlight / Apple Review — alles vor App-Store-Submission durch Tester abzuhaken.
+
 ## Voraussetzungen
 
 - macOS mit Xcode und SwiftPM-Unterstuetzung fuer Swift Tools 5.9

@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [2026-05-07] — Manual release risk acceptance protocol added (no code change)
+
+### Doku
+- docs/APPLE_VERIFICATION_CHECKLIST.md: neuer „Manual Release Risk Acceptance Protocol — HEAD `b91a933`"-Block. Deckt 4 nicht automatisierbare Restrisiken: 46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout, ASC / TestFlight / Apple Review. Checkboxen leer — wird beim Tester ausgefüllt.
+- docs/XCODE_RUNBOOK.md: Verweis-Note auf den Protokoll-Block.
+
+### Verifikation
+- swift test: 1077/2/0 (unverändert).
+- git diff --check: clean.
+- Keine Code-Änderungen in diesem Commit.
+
+### Hinweis
+Die Checkliste ist kein Test-Ergebnis. Solange sie nicht durch einen Tester abgehakt ist, gelten alle 4 Punkte als „nicht verifiziert".
+
 ## [2026-05-07] — Post-fix hardware re-verification on iPhone 15 Pro Max
 
 Pure verification pass after the day-detail distance fix (commit `853d8d3`). No code changes.

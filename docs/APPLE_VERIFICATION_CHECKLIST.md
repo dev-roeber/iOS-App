@@ -1,5 +1,154 @@
 # Apple Verification Checklist
 
+## Manual Release Risk Acceptance Protocol — HEAD `b91a933`
+
+### Übersicht
+
+Dieser Block bündelt die vier nicht automatisierbaren Restrisiken, die vor einer App-Store-Submission **manuell durch einen Tester auf echter Hardware bzw. im Apple-Portal** abgenommen werden müssen. Die automatisierte Verifikation auf HEAD `b91a933` ist bereits grün (`swift test` 1077/2/0; `testAppStoreScreenshots` / `testDeviceSmokeNavigationAndActions` / `testLandscapeLayoutSmoke` PASSED auf iPhone 15 Pro Max, iOS 26.4) — diese Checkliste deckt **nur** die Lücken ab, die `swift test` und UITests prinzipiell nicht abdecken können.
+
+Die Checkboxen unten sind **bewusst leer**. Codex/Agent darf hier nichts vorab abhaken — es ist kein Test-Ergebnis. Solange ein Punkt nicht durch einen Tester abgehakt und mit Datum, Initialen, Build-Hash und Befund versehen ist, gilt er als „nicht verifiziert".
+
+**Acceptance-Anker:** HEAD `b91a933` (main, gepusht).
+**Aktive App-Version:** 1.0.1 (Build 100), Bundle `de.roeber.LH2GPXWrapper`, Team `XAGR3K7XDJ`.
+
+Bei Ablehnung eines Punktes: konkreten Bug + Reproduktionsschritte unter „Befund" eintragen und im Verlauf vermerken, ob daraus ein Codefix-Auftrag an Codex/Agent abgeleitet werden muss.
+
+---
+
+### Sektion 1 — 46-MB-Crashfall (Großimport auf echtem iPhone)
+
+**Vorbereitung & Schritte**
+
+- [ ] `~/Downloads/location-history.zip` (45 MB JSON unkomprimiert) auf echtes iPhone übertragen via AirDrop / iCloud Drive / Files
+- [ ] App auf Gerät starten, über Import-Sheet `fileImporter` öffnen und die ZIP auswählen
+- [ ] Import durchlaufen lassen (Phasen-Indikator beobachten)
+- [ ] Nach Import durch Days-Liste, Tagesdetail, Insights navigieren
+- [ ] Export-Flow nach Import auslösen (mindestens GPX)
+
+**Akzeptanzkriterien**
+
+- [ ] Kein Crash, kein Jetsam-Kill während Import
+- [ ] Import-Phasen-Indikator durchläuft sichtbar von Start bis Abschluss
+- [ ] Days-Liste ist nach Import nutzbar (Scroll, Tap auf Day)
+- [ ] Tagesdetail-Distanz ist NICHT 0, wenn Route in der Karte sichtbar ist
+- [ ] Insights-Werte plausibel (Modes, Distanzen, Zeiten ungleich Null bei reisefähigen Tagen)
+- [ ] GPX-Export nach Import erzeugt eine valide Datei (mind. öffnen / sharen möglich)
+
+| Feld | Wert |
+| --- | --- |
+| Datum | |
+| Tester (Initialen) | |
+| Build / Version | 1.0.1 (100) — HEAD `b91a933` |
+| Gerät / iOS | |
+| Befund | |
+| Auffälligkeiten | |
+| Akzeptiert / Abgelehnt | |
+| Codefix-Auftrag nötig? | |
+
+---
+
+### Sektion 2 — Live Activity / Dynamic Island / Lock Screen
+
+**Vorbereitung & Schritte**
+
+- [ ] Recording im Live-Tab starten; Always-Permission-Dialog auslösen (ggf. App vorher zurücksetzen, um Dialog zu erzwingen)
+- [ ] Dialog-Wortlaut bei Erstaktivierung wörtlich notieren (siehe Befund-Feld)
+- [ ] Dynamic Island im **compact**-State und im **expanded**-State sichten
+- [ ] Lock Screen sperren und Live Activity dort sichten
+- [ ] Recording sauber beenden (Stop-Button)
+
+**Akzeptanzkriterien**
+
+- [ ] Always-Permission-Dialog erscheint und ist akzeptierbar
+- [ ] Dynamic Island sichtbar in compact + expanded ohne Layout-Brüche
+- [ ] Lock Screen Live Activity sichtbar und lesbar
+- [ ] Stop/End-Verhalten clean — Activity verschwindet, kein Geist-State
+- [ ] Kein Crash bei Start oder Stop
+
+| Feld | Wert |
+| --- | --- |
+| Datum | |
+| Tester (Initialen) | |
+| Build / Version | 1.0.1 (100) — HEAD `b91a933` |
+| Gerät / iOS | |
+| Permission-Dialog-Wortlaut | |
+| Befund | |
+| Auffälligkeiten | |
+| Akzeptiert / Abgelehnt | |
+| Codefix-Auftrag nötig? | |
+
+---
+
+### Sektion 3 — iPad-Layout
+
+**Vorbereitung & Schritte**
+
+- [ ] iPad verfügbar? (Falls nein: unten als „nicht durchgeführt" eintragen und Sektion abschließen)
+- [ ] App auf iPad installieren (TestFlight oder Xcode-Run)
+- [ ] App starten, Days-Tab öffnen
+- [ ] Hero-Map-Workspace prüfen (Splitview, Karte, Days-Liste nebeneinander)
+
+**Akzeptanzkriterien**
+
+- [ ] Days-Tab rendert ohne Layout-Brüche
+- [ ] Hero-Map-Workspace zeigt Karte + Days korrekt nebeneinander
+- [ ] Keine abgeschnittenen Controls oder unzugänglichen Bereiche
+- [ ] Kein Crash beim Wechsel zwischen Tabs
+
+| Feld | Wert |
+| --- | --- |
+| Datum | |
+| Tester (Initialen) | |
+| Build / Version | 1.0.1 (100) — HEAD `b91a933` |
+| iPad-Modell / iPadOS | |
+| Durchgeführt? (Ja / Nein — kein iPad) | |
+| Befund | |
+| Auffälligkeiten | |
+| Akzeptiert / Abgelehnt / Nicht durchgeführt | |
+| Codefix-Auftrag nötig? | |
+
+---
+
+### Sektion 4 — ASC / TestFlight / Apple Review
+
+**Vorbereitung & Schritte**
+
+- [ ] App Store Connect öffnen, aktuellen Build-Status der App-Version prüfen
+- [ ] Status `1.0` Build 74 dokumentieren (was zeigt ASC?)
+- [ ] Status `1.0.1`-Train (aktuell Build 100) dokumentieren
+- [ ] TestFlight-Build-Liste sichten und letzten verfügbaren Build notieren
+- [ ] Nächsten Submit-Schritt festhalten (z. B. Xcode Cloud Build ≥ 100 hochladen)
+
+**Akzeptanzkriterien**
+
+- [ ] ASC-Status für `1.0` Build 74 dokumentiert
+- [ ] ASC-Status für `1.0.1`-Train dokumentiert
+- [ ] TestFlight-Build-Liste dokumentiert
+- [ ] Nächster Submit-Schritt (oder „nicht geprüft") explizit eingetragen
+
+| Feld | Wert |
+| --- | --- |
+| Datum | |
+| Tester (Initialen) | |
+| Build / Version (Acceptance-Anker) | 1.0.1 (100) — HEAD `b91a933` |
+| ASC-Status `1.0` Build 74 | |
+| ASC-Status `1.0.1`-Train | |
+| TestFlight-Build-Liste | |
+| Nächster Submit-Schritt | |
+| Auffälligkeiten | |
+| Akzeptiert / Abgelehnt / Nicht geprüft | |
+| Codefix-Auftrag nötig? | |
+
+---
+
+### Verlauf — Ablehnungen & Codefix-Aufträge
+
+| Datum | Sektion | Tester | Bug / Reproduktionsschritte | Codefix-Auftrag (ja/nein) | Codex-Auftrags-ID |
+| --- | --- | --- | --- | --- | --- |
+| | | | | | |
+
+---
+
 ## Zweck
 
 Diese Checkliste trennt klar zwischen:
