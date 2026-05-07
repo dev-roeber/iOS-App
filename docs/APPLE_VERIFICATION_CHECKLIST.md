@@ -34,6 +34,35 @@ Mindestanforderungen, die vor einer App-Store-Einreichung auf einem echten iPhon
 - Explore-Dismiss setzt wieder Full-View-Overlays; stale Overlay-Tasks werden bei Neu-Load verworfen
 - Verifiziert nur per `swift test` + `xcodebuild`; **kein** neuer Geräte-Claim aus diesem Audit-Batch
 
+### Hardware-Verifikation — iPhone 15 Pro Max — 2026-05-07
+
+Ausgefuehrt auf: macOS, Xcode 26.3 (Build 17C529), iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C, iOS 26.4)
+
+- App: 1.0.1 (100), Bundle `de.roeber.LH2GPXWrapper`, Team XAGR3K7XDJ
+- HEAD: pending — Commit folgt
+
+#### ✅ real verifiziert (2026-05-07) — iPhone 15 Pro Max
+
+- **testAppStoreScreenshots** (iPhone 15 Pro Max, iOS 26.4): PASSED (42.9s) ✅
+- **testDeviceSmokeNavigationAndActions** (iPhone 15 Pro Max, iOS 26.4): PASSED (72.2s) ✅
+- **testLandscapeLayoutSmoke** (iPhone 15 Pro Max, iOS 26.4): PASSED (830s, Landscape-Rotation langsam aber grün) ✅
+- **swift test**: 1065 Tests, 2 Skips, 0 Failures (unverändert)
+- **Wrapper xcodebuild auf iPhone 15 Pro Max**: BUILD + TEST SUCCEEDED ✅
+
+#### Bug-Befund + Fix (Hardware-Run #1 → Run #2)
+
+Hardware-Run #1 (HEAD `7cc2e97`) zeigte: `testAppStoreScreenshots` und `testLandscapeLayoutSmoke` FAILED — XCUITest reportete „Failed to not hittable" für den Clear-Date-Range-Button (`xmark.circle.fill` in `HistoryDateRangeFilterBar`). Hit-Area war 12×12pt — unter Apple HIG-Mindestmaß 44×44pt und auf Hardware nicht zuverlässig tap-fähig. Fix: `.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())` um das Button-Image; visible Glyph unverändert. Hardware-Run #2 (HEAD pending — Commit folgt): alle drei UITests grün.
+
+#### Weiterhin offen (nicht in diesem Run geprüft)
+
+- 46-MB-Crashfall geräteseitig: `~/Downloads/location-history.zip` (45 MB JSON) erfordert manuellen iPhone-Import via AirDrop/iCloud + Tap durch fileImporter — kein automatisierbarer UITest dafür.
+- Live Activity / Dynamic Island / Lock-Screen visuell: kein UITest startet eine echte Live Recording, da Always-Permission-Dialog Hardware-Interaktion braucht; `testLiveActivityHardwareCapture*` nicht im Pflichtset gefahren.
+- Per-Tab visuelle Layout-Begutachtung: UITests prüfen nur Existenz/Tappability, nicht visuelle Korrektheit.
+- ASC / TestFlight-Status: nicht geprüft.
+- Apple Review Status: nicht geprüft.
+
+---
+
 ### Hardware-Verifikation — iPhone 15 Pro Max — 2026-05-05
 
 Ausgefuehrt auf: macOS, Xcode, iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C, iOS 26.4)

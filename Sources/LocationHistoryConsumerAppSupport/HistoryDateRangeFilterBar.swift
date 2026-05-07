@@ -42,6 +42,14 @@ public struct HistoryDateRangeFilterBar: View {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)
                         .font(.subheadline)
+                        // Expand the hit area beyond the 12×12 pt glyph so
+                        // the button passes Apple's 44 pt touch-target HIG
+                        // and is reliably hittable on hardware (real
+                        // iPhone 15 Pro Max UITest run reported the button
+                        // as not-hittable at 132×514 / 12×12). The visible
+                        // glyph stays unchanged, only the tap area grows.
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(t("Clear Date Range"))

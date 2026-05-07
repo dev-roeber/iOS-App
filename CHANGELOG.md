@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [2026-05-07] — Hardware re-verification on iPhone 15 Pro Max + 44pt clear-date-range hit-target fix
+
+### Hardware-Bug + Fix
+- HistoryDateRangeFilterBar: clear-date-range button (xmark.circle.fill) had a 12×12pt hit area, below Apple's 44pt HIG minimum and unhittable in real-device automation. Added `.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())` so the visible glyph stays unchanged but the tap area meets HIG.
+
+### Hardware-Verifikation iPhone 15 Pro Max (iOS 26.4, HEAD pending — Commit folgt)
+- testAppStoreScreenshots: PASSED (42.9s)
+- testDeviceSmokeNavigationAndActions: PASSED (72.2s)
+- testLandscapeLayoutSmoke: PASSED (830s)
+
+### Verifikation
+- swift test: 1065/2/0 (unverändert).
+- Wrapper xcodebuild auf iPhone 15 Pro Max: BUILD + TEST SUCCEEDED.
+
+### Weiterhin offen
+- 46-MB-Crashfall geräteseitig (manueller iPhone-Import nötig, kein UITest)
+- Live Activity / Dynamic Island / Lock-Screen visuelle Verifikation (Always-Permission braucht UI)
+- ASC / TestFlight / Apple Review nicht geprüft
+
 ## [2026-05-07] — P1 release-readiness fix: doc-truth sync + stability hardening
 
 ### Doku-Wahrheits-Sync

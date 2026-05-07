@@ -1,8 +1,21 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-07, HEAD `3811bc3`)
+## Aktiver Stand (2026-05-07, HEAD pending — Commit folgt)
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
+
+### Verifikation Hardware-Re-Verifikation iPhone 15 Pro Max (2026-05-07, HEAD pending — Commit folgt)
+
+Hardware-Re-Verifikation iPhone 15 Pro Max nach 44pt-Hit-Target-Fix in `HistoryDateRangeFilterBar`. Während des ersten Hardware-Runs (HEAD `7cc2e97`) als P1-UX-Bug gefunden: clear-date-range Button (xmark.circle.fill) hatte 12×12pt Hit-Area (unter Apple HIG 44pt-Minimum, XCUITest „Failed to not hittable"). Fix: `.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())` um das Button-Image; visible Glyph unverändert.
+
+- testAppStoreScreenshots (iPhone 15 Pro Max, iOS 26.4): PASSED (42.9s)
+- testDeviceSmokeNavigationAndActions (iPhone 15 Pro Max, iOS 26.4): PASSED (72.2s)
+- testLandscapeLayoutSmoke (iPhone 15 Pro Max, iOS 26.4): PASSED (830s)
+- `swift test`: **1065 Tests, 2 Skips, 0 Failures** (unverändert).
+- Wrapper xcodebuild iPhone 15 Pro Max: BUILD + TEST SUCCEEDED.
+- Xcode 26.3 (17C529); App 1.0.1 (100); Bundle `de.roeber.LH2GPXWrapper`; Team XAGR3K7XDJ.
+- HEAD: pending — Commit folgt.
+- Weiterhin offen: 46-MB-Crashfall geräteseitig (manueller Import nötig, kein UITest), Live Activity / Dynamic Island / Lock-Screen-Visuals (Always-Permission braucht UI), ASC / TestFlight / Apple Review nicht geprüft.
 
 ### Verifikation P1-Hardening-Train (2026-05-07, HEAD `3811bc3`)
 

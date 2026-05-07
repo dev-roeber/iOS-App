@@ -86,6 +86,20 @@ Die App nutzt die Produkt-UI aus dem Core-Repo (`LocationHistoryConsumerAppSuppo
 
 ## Lokaler iPhone-Betrieb
 
+### Hardware-Acceptance — iPhone 15 Pro Max (2026-05-07, HEAD pending — Commit folgt)
+
+Hardware-Re-Verifikation auf iPhone 15 Pro Max (iOS 26.4, UDID `00008130-00163D0A0461401C`), Xcode 26.3 (17C529), App 1.0.1 (100), Bundle `de.roeber.LH2GPXWrapper`, Team XAGR3K7XDJ:
+
+- `testAppStoreScreenshots`: PASSED (42.9s)
+- `testDeviceSmokeNavigationAndActions`: PASSED (72.2s)
+- `testLandscapeLayoutSmoke`: PASSED (830s)
+- `swift test`: 1065 Tests, 2 Skips, 0 Failures (unverändert)
+- Wrapper xcodebuild auf iPhone 15 Pro Max: BUILD + TEST SUCCEEDED
+
+Während des Runs P1-UX-Bug gefunden und gefixt: `HistoryDateRangeFilterBar` clear-date-range Button (`xmark.circle.fill`) hatte 12×12pt Hit-Area — unter Apple HIG-Mindestmaß 44×44pt und auf Hardware nicht zuverlässig tap-fähig (XCUITest „Failed to not hittable"). Fix: `.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())` um das Button-Image; visible Glyph unverändert.
+
+Weiterhin offen: 46-MB-Crashfall geräteseitig (manueller Import nötig, kein UITest); Live Activity / Dynamic Island / Lock-Screen visuell (Always-Permission braucht UI); ASC / TestFlight / Apple Review nicht geprüft.
+
 Verifiziert (2026-03-17):
 - `xcodebuild build` erfolgreich (generic/platform=iOS)
 - iPhone 15 Pro Max + iPhone 12 Pro Max: Deploy, Demo, Karte, Day-Detail, Scrollen
