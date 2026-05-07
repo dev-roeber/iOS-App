@@ -1,23 +1,23 @@
 import Foundation
 import LocationHistoryConsumer
 
-struct RecordedTrackEditorDraft: Equatable {
-    let originalTrack: RecordedTrack
-    var points: [RecordedTrackPoint]
+public struct RecordedTrackEditorDraft: Equatable {
+    public let originalTrack: RecordedTrack
+    public var points: [RecordedTrackPoint]
 
     private let calendar: Calendar
 
-    init(track: RecordedTrack, calendar: Calendar = .autoupdatingCurrent) {
+    public init(track: RecordedTrack, calendar: Calendar = .autoupdatingCurrent) {
         self.originalTrack = track
         self.points = track.points
         self.calendar = calendar
     }
 
-    var isModified: Bool {
+    public var isModified: Bool {
         points != originalTrack.points
     }
 
-    var validationMessage: String? {
+    public var validationMessage: String? {
         if points.count < 2 {
             return "A saved track needs at least 2 points."
         }
@@ -31,30 +31,30 @@ struct RecordedTrackEditorDraft: Equatable {
         return nil
     }
 
-    var distanceM: Double {
+    public var distanceM: Double {
         totalDistance(points: points)
     }
 
-    var pointCount: Int {
+    public var pointCount: Int {
         points.count
     }
 
-    var dayKey: String {
+    public var dayKey: String {
         guard let first = points.first else {
             return originalTrack.dayKey
         }
         return dayFormatter.string(from: first.timestamp)
     }
 
-    var startedAt: Date {
+    public var startedAt: Date {
         points.first?.timestamp ?? originalTrack.startedAt
     }
 
-    var endedAt: Date {
+    public var endedAt: Date {
         points.last?.timestamp ?? originalTrack.endedAt
     }
 
-    var savedTrack: RecordedTrack? {
+    public var savedTrack: RecordedTrack? {
         guard validationMessage == nil else {
             return nil
         }
@@ -70,11 +70,11 @@ struct RecordedTrackEditorDraft: Equatable {
         )
     }
 
-    mutating func reset() {
+    public mutating func reset() {
         points = originalTrack.points
     }
 
-    mutating func updateCoordinate(
+    public mutating func updateCoordinate(
         at index: Int,
         latitude: Double? = nil,
         longitude: Double? = nil
@@ -92,7 +92,7 @@ struct RecordedTrackEditorDraft: Equatable {
         )
     }
 
-    mutating func updateAccuracy(at index: Int, horizontalAccuracyM: Double) {
+    public mutating func updateAccuracy(at index: Int, horizontalAccuracyM: Double) {
         guard points.indices.contains(index) else {
             return
         }
@@ -106,7 +106,7 @@ struct RecordedTrackEditorDraft: Equatable {
         )
     }
 
-    mutating func deletePoints(at offsets: IndexSet) {
+    public mutating func deletePoints(at offsets: IndexSet) {
         for index in offsets.sorted(by: >) {
             guard points.indices.contains(index) else {
                 continue
@@ -115,7 +115,7 @@ struct RecordedTrackEditorDraft: Equatable {
         }
     }
 
-    mutating func insertMidpoint(after index: Int) {
+    public mutating func insertMidpoint(after index: Int) {
         guard points.indices.contains(index), index < points.count - 1 else {
             return
         }

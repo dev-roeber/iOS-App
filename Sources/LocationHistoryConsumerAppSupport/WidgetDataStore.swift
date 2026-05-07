@@ -10,13 +10,20 @@ import Foundation
 /// every key live in exactly one source-of-truth file — a key drift that
 /// would silently break Live Activity / widget reads is now a compile error.
 public struct WidgetDataStore {
-    static var suiteName: String { WidgetSharedKeys.suiteName }
+    public static var suiteName: String { WidgetSharedKeys.suiteName }
 
     public struct LastRecording: Codable {
         public var date: Date
         public var distanceMeters: Double
         public var durationSeconds: Double
         public var trackName: String
+
+        public init(date: Date, distanceMeters: Double, durationSeconds: Double, trackName: String) {
+            self.date = date
+            self.distanceMeters = distanceMeters
+            self.durationSeconds = durationSeconds
+            self.trackName = trackName
+        }
 
         public var formattedDistance: String {
             distanceMeters >= 1000

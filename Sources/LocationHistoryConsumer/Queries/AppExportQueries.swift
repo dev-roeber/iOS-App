@@ -6,8 +6,13 @@ public enum AppExportQueries {
     }
 
     public static func overview(from export: AppExport, applying filter: AppExportQueryFilter?) -> ExportOverview {
-        let days = projectedDays(in: export, applying: filter)
+        overview(from: export, precomputedDays: projectedDays(in: export, applying: filter))
+    }
 
+    /// Build an overview from a previously projected `[Day]` array, skipping the
+    /// projection pass. Used by `AppSessionContent` to share a cached `[Day]`
+    /// across overview/daySummaries/insights for the same filter.
+    public static func overview(from export: AppExport, precomputedDays days: [Day]) -> ExportOverview {
         return ExportOverview(
             schemaVersion: export.schemaVersion.rawValue,
             exportedAt: export.meta.exportedAt,
@@ -29,6 +34,11 @@ public enum AppExportQueries {
 
     public static func daySummaries(from export: AppExport, applying filter: AppExportQueryFilter?) -> [DaySummary] {
         projectedDays(in: export, applying: filter).map(summary(for:))
+    }
+
+    /// Build day summaries from a previously projected `[Day]` array.
+    public static func daySummaries(from export: AppExport, precomputedDays days: [Day]) -> [DaySummary] {
+        days.map(summary(for:))
     }
 
     public static func dayDetail(for date: String, in export: AppExport) -> DayDetailViewState? {
@@ -147,7 +157,20 @@ public enum AppExportQueries {
 
     public static func insights(from export: AppExport, applying filter: AppExportQueryFilter?) -> ExportInsights {
         let queryFilter = resolvedFilter(filter, export: export)
-        let days = projectedDays(in: export, applying: queryFilter)
+        return insights(
+            from: export,
+            precomputedDays: projectedDays(in: export, applying: queryFilter),
+            resolvedFilter: queryFilter
+        )
+    }
+
+    /// Build insights from a previously projected `[Day]` array with the
+    /// already-resolved (non-nil) filter. Skips the projection pass.
+    public static func insights(
+        from export: AppExport,
+        precomputedDays days: [Day],
+        resolvedFilter queryFilter: AppExportQueryFilter
+    ) -> ExportInsights {
         let summaries = days.map(summary(for:))
         let dayCount = days.count
 
@@ -220,11 +243,11 @@ public enum AppExportQueries {
         var distanceM = 0.0
     }
 
-    private static func resolvedFilter(_ filter: AppExportQueryFilter?, export: AppExport) -> AppExportQueryFilter {
+    public static func resolvedFilter(_ filter: AppExportQueryFilter?, export: AppExport) -> AppExportQueryFilter {
         filter ?? AppExportQueryFilter(exportFilters: export.meta.filters)
     }
 
-    private static func projectedDays(in export: AppExport, applying filter: AppExportQueryFilter?) -> [Day] {
+    public static func projectedDays(in export: AppExport, applying filter: AppExportQueryFilter?) -> [Day] {
         let queryFilter = resolvedFilter(filter, export: export)
 
         // Fast path — no active constraints, no limit. Skip the per-day

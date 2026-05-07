@@ -1,5 +1,5 @@
 import XCTest
-@testable import LocationHistoryConsumerAppSupport
+import LocationHistoryConsumerAppSupport
 
 final class RecordedTrackEditorPresentationTests: XCTestCase {
     func testSummaryUsesReadableTimeRangeAndMetrics() {

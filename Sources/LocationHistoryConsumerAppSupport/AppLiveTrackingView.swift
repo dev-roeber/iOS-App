@@ -142,48 +142,19 @@ public struct AppLiveTrackingView: View {
             safeAreaTopInset: lhDeviceTopSafeInset()
         ) {
             if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
-                Map(position: $mapPosition) {
-                    liveAccuracyCircleContent
-                    liveTrackContent
-                    liveCurrentLocationAnnotation
-                }
-                .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onMapCameraChange { _ in
-                    liveLocation.isFollowingLocation = false
-                }
-                .overlay(alignment: .topTrailing) {
-                    MapLayerMenu(configuration: MapLayerMenu.Configuration(
-                        showsTrackColor: true,
-                        showsLiveOptions: true,
-                        centerOnLocation: liveLocation.currentLocation == nil ? nil : {
-                            liveLocation.isFollowingLocation = true
-                            centerOnCurrentLocation()
-                        },
-                        toggleFullscreen: { isFullscreenMapPresented = true },
-                        isFullscreenActive: false
-                    ))
-                    .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)
-                    .padding(.trailing, 8)
-                    .padding(.leading, 8)
-                    .padding(.bottom, 8)
-                }
+                liveMapBase
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .overlay(alignment: .topTrailing) {
+                        liveMapLayerMenu
+                            .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)
+                            .padding(.trailing, 8)
+                            .padding(.leading, 8)
+                            .padding(.bottom, 8)
+                    }
             } else {
-                VStack(spacing: 12) {
-                    Image(systemName: mapOverlayIcon)
-                        .font(.system(size: 38))
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                    Text(mapOverlayTitle)
-                        .font(.headline)
-                    Text(mapOverlaySubtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.secondary.opacity(0.06))
+                liveMapPlaceholderContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.secondary.opacity(0.06))
             }
         }
         .accessibilityIdentifier("live.map.preview")
@@ -655,6 +626,51 @@ public struct AppLiveTrackingView: View {
         }
     }
 
+    // MARK: - Shared Live Map Building Blocks
+
+    @ViewBuilder
+    private var liveMapBase: some View {
+        Map(position: $mapPosition) {
+            liveAccuracyCircleContent
+            liveTrackContent
+            liveCurrentLocationAnnotation
+        }
+        .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
+        .onMapCameraChange { _ in
+            liveLocation.isFollowingLocation = false
+        }
+    }
+
+    private var liveMapLayerMenu: MapLayerMenu {
+        MapLayerMenu(configuration: MapLayerMenu.Configuration(
+            showsTrackColor: true,
+            showsLiveOptions: true,
+            centerOnLocation: liveLocation.currentLocation == nil ? nil : {
+                liveLocation.isFollowingLocation = true
+                centerOnCurrentLocation()
+            },
+            toggleFullscreen: { isFullscreenMapPresented = true },
+            isFullscreenActive: false
+        ))
+    }
+
+    @ViewBuilder
+    private var liveMapPlaceholderContent: some View {
+        VStack(spacing: 12) {
+            Image(systemName: mapOverlayIcon)
+                .font(.system(size: 38))
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text(mapOverlayTitle)
+                .font(.headline)
+            Text(mapOverlaySubtitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+        }
+    }
+
     // MARK: - Map Card
 
     private var mapCard: some View {
@@ -683,46 +699,17 @@ public struct AppLiveTrackingView: View {
 
             Group {
                 if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
-                    Map(position: $mapPosition) {
-                        liveAccuracyCircleContent
-                        liveTrackContent
-                        liveCurrentLocationAnnotation
-                    }
-                    .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
-                    .frame(height: 290)
-                    .onMapCameraChange { _ in
-                        liveLocation.isFollowingLocation = false
-                    }
-                    .overlay(alignment: .topTrailing) {
-                        MapLayerMenu(configuration: MapLayerMenu.Configuration(
-                            showsTrackColor: true,
-                            showsLiveOptions: true,
-                            centerOnLocation: liveLocation.currentLocation == nil ? nil : {
-                                liveLocation.isFollowingLocation = true
-                                centerOnCurrentLocation()
-                            },
-                            toggleFullscreen: { isFullscreenMapPresented = true },
-                            isFullscreenActive: false
-                        ))
-                        .padding(8)
-                    }
+                    liveMapBase
+                        .frame(height: 290)
+                        .overlay(alignment: .topTrailing) {
+                            liveMapLayerMenu
+                                .padding(8)
+                        }
                 } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: mapOverlayIcon)
-                            .font(.system(size: 38))
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true)
-                        Text(mapOverlayTitle)
-                            .font(.headline)
-                        Text(mapOverlaySubtitle)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 20)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 220)
-                    .background(Color.secondary.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    liveMapPlaceholderContent
+                        .frame(maxWidth: .infinity, minHeight: 220)
+                        .background(Color.secondary.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

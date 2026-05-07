@@ -3,22 +3,36 @@ import Foundation
 import SwiftUI
 #endif
 
-struct SavedTrackMetricPresentation: Identifiable, Equatable {
-    let id: String
-    let icon: String
-    let text: String
-    let accessibilityLabel: String
+public struct SavedTrackMetricPresentation: Identifiable, Equatable {
+    public let id: String
+    public let icon: String
+    public let text: String
+    public let accessibilityLabel: String
+
+    public init(id: String, icon: String, text: String, accessibilityLabel: String) {
+        self.id = id
+        self.icon = icon
+        self.text = text
+        self.accessibilityLabel = accessibilityLabel
+    }
 }
 
-struct SavedTrackRowPresentation: Equatable {
-    let title: String
-    let timeRangeText: String?
-    let metrics: [SavedTrackMetricPresentation]
-    let accessibilityLabel: String
+public struct SavedTrackRowPresentation: Equatable {
+    public let title: String
+    public let timeRangeText: String?
+    public let metrics: [SavedTrackMetricPresentation]
+    public let accessibilityLabel: String
+
+    public init(title: String, timeRangeText: String?, metrics: [SavedTrackMetricPresentation], accessibilityLabel: String) {
+        self.title = title
+        self.timeRangeText = timeRangeText
+        self.metrics = metrics
+        self.accessibilityLabel = accessibilityLabel
+    }
 }
 
-enum SavedTrackPresentation {
-    static func row(
+public enum SavedTrackPresentation {
+    public static func row(
         for track: RecordedTrack,
         unit: AppDistanceUnitPreference,
         language: AppLanguagePreference = .english

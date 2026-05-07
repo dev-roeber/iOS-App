@@ -1,13 +1,20 @@
 import Foundation
 import LocationHistoryConsumer
 
-struct LiveTrackingMetricSnapshot: Equatable {
-    let totalDistanceM: Double
-    let currentSpeedKMH: Double?
-    let lastSegmentDistanceM: Double?
-    let lastSampleDate: Date?
+public struct LiveTrackingMetricSnapshot: Equatable {
+    public let totalDistanceM: Double
+    public let currentSpeedKMH: Double?
+    public let lastSegmentDistanceM: Double?
+    public let lastSampleDate: Date?
 
-    static let empty = LiveTrackingMetricSnapshot(
+    public init(totalDistanceM: Double, currentSpeedKMH: Double?, lastSegmentDistanceM: Double?, lastSampleDate: Date?) {
+        self.totalDistanceM = totalDistanceM
+        self.currentSpeedKMH = currentSpeedKMH
+        self.lastSegmentDistanceM = lastSegmentDistanceM
+        self.lastSampleDate = lastSampleDate
+    }
+
+    public static let empty = LiveTrackingMetricSnapshot(
         totalDistanceM: 0,
         currentSpeedKMH: nil,
         lastSegmentDistanceM: nil,
@@ -15,13 +22,13 @@ struct LiveTrackingMetricSnapshot: Equatable {
     )
 }
 
-enum LiveTrackingPresentation {
+public enum LiveTrackingPresentation {
 
     // MARK: - GPS Status
 
     /// Returns "GPS Good" when accuracy is below 30 m, "GPS Weak" when at/above
     /// the threshold, and "GPS Searching" when no accuracy is available yet.
-    static func gpsStatusLabel(accuracyM: Double?) -> String {
+    public static func gpsStatusLabel(accuracyM: Double?) -> String {
         guard let acc = accuracyM, acc >= 0 else { return "GPS Searching" }
         return acc < 30 ? "GPS Good" : "GPS Weak"
     }
@@ -29,7 +36,7 @@ enum LiveTrackingPresentation {
     // MARK: - Upload Section Visibility
 
     /// Returns true when the upload section should be shown.
-    static func uploadSectionVisible(
+    public static func uploadSectionVisible(
         sendsToServer: Bool,
         pendingCount: Int,
         statusMessage: String?
@@ -39,7 +46,7 @@ enum LiveTrackingPresentation {
 
     // MARK: - Metrics
 
-    static func metrics(
+    public static func metrics(
         points: [RecordedTrackPoint],
         currentLocation: LiveLocationSample?
     ) -> LiveTrackingMetricSnapshot {

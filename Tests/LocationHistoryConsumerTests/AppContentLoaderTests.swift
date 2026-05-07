@@ -1,6 +1,6 @@
 import XCTest
 import ZIPFoundation
-@testable import LocationHistoryConsumerAppSupport
+import LocationHistoryConsumerAppSupport
 
 final class AppContentLoaderTests: XCTestCase {
 

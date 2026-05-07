@@ -55,17 +55,27 @@ public final class AppSessionContent {
         let filter: AppExportQueryFilter?
     }
 
+    /// Tiny LRU for cached `[Day]` projections keyed by the resolved filter.
+    /// Eight entries comfortably cover the realistic filter variation in this
+    /// app (a handful of date-range presets crossed with a small set of
+    /// activity-type toggles); beyond that we evict in insertion order.
+    private static let projectedDaysCacheLimit = 8
+
     public let export: AppExport
     public private(set) lazy var overview: ExportOverview = {
-        AppExportQueries.overview(from: export)
+        AppExportQueries.overview(from: export, precomputedDays: cachedProjectedDays(for: nil))
     }()
     public private(set) lazy var daySummaries: [DaySummary] = {
         DaySummaryDisplayOrdering.newestFirst(
-            AppExportQueries.daySummaries(from: export)
+            AppExportQueries.daySummaries(from: export, precomputedDays: cachedProjectedDays(for: nil))
         )
     }()
     public private(set) lazy var insights: ExportInsights = {
-        AppExportQueries.insights(from: export)
+        AppExportQueries.insights(
+            from: export,
+            precomputedDays: cachedProjectedDays(for: nil),
+            resolvedFilter: AppExportQueries.resolvedFilter(nil, export: export)
+        )
     }()
     public let selectedDate: String?
     public let source: AppContentSource
@@ -74,6 +84,14 @@ public final class AppSessionContent {
     private var filteredInsightsCache: [ProjectionCacheKey: ExportInsights] = [:]
     private var dayDetailCache: [DayDetailCacheKey: DayDetailViewState] = [:]
     private var dayMapDataCache: [DayDetailCacheKey: DayMapData] = [:]
+
+    /// Cached `[Day]` projections shared across overview/daySummaries/insights/findDay
+    /// for the same resolved filter. Keyed by the resolved (non-nil) filter so a
+    /// `nil` caller and a caller that explicitly passes the export's default filter
+    /// hit the same entry.
+    private var projectedDaysCache: [AppExportQueryFilter: [Day]] = [:]
+    /// Insertion order of `projectedDaysCache` keys for LRU-style eviction.
+    private var projectedDaysCacheOrder: [AppExportQueryFilter] = []
 
     public init(export: AppExport, source: AppContentSource) {
         self.export = export
@@ -89,6 +107,32 @@ public final class AppSessionContent {
         self.daySummaries = summaries
     }
 
+    /// Returns the projected `[Day]` for the given filter, computing once per
+    /// resolved filter and reusing the result across overview/daySummaries/
+    /// insights/findDay. Bounded LRU keeps memory in check.
+    private func cachedProjectedDays(for filter: AppExportQueryFilter?) -> [Day] {
+        let resolved = AppExportQueries.resolvedFilter(filter, export: export)
+        if let cached = projectedDaysCache[resolved] {
+            // Refresh LRU position.
+            if let index = projectedDaysCacheOrder.firstIndex(of: resolved) {
+                projectedDaysCacheOrder.remove(at: index)
+            }
+            projectedDaysCacheOrder.append(resolved)
+            return cached
+        }
+
+        let projected = AppExportQueries.projectedDays(in: export, applying: resolved)
+        projectedDaysCache[resolved] = projected
+        projectedDaysCacheOrder.append(resolved)
+
+        if projectedDaysCacheOrder.count > AppSessionContent.projectedDaysCacheLimit {
+            let evicted = projectedDaysCacheOrder.removeFirst()
+            projectedDaysCache.removeValue(forKey: evicted)
+        }
+
+        return projected
+    }
+
     public func overview(applying filter: AppExportQueryFilter?) -> ExportOverview {
         guard let filter else {
             return overview
@@ -99,7 +143,10 @@ public final class AppSessionContent {
             return cached
         }
 
-        let projected = AppExportQueries.overview(from: export, applying: filter)
+        let projected = AppExportQueries.overview(
+            from: export,
+            precomputedDays: cachedProjectedDays(for: filter)
+        )
         filteredOverviewCache[key] = projected
         return projected
     }
@@ -115,7 +162,10 @@ public final class AppSessionContent {
         }
 
         let projected = DaySummaryDisplayOrdering.newestFirst(
-            AppExportQueries.daySummaries(from: export, applying: filter)
+            AppExportQueries.daySummaries(
+                from: export,
+                precomputedDays: cachedProjectedDays(for: filter)
+            )
         )
         filteredDaySummariesCache[key] = projected
         return projected
@@ -131,7 +181,12 @@ public final class AppSessionContent {
             return cached
         }
 
-        let projected = AppExportQueries.insights(from: export, applying: filter)
+        let resolved = AppExportQueries.resolvedFilter(filter, export: export)
+        let projected = AppExportQueries.insights(
+            from: export,
+            precomputedDays: cachedProjectedDays(for: resolved),
+            resolvedFilter: resolved
+        )
         filteredInsightsCache[key] = projected
         return projected
     }

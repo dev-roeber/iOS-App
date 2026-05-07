@@ -4,31 +4,54 @@ import LocationHistoryConsumer
 import SwiftUI
 #endif
 
-struct RecordedTrackEditorMetricPresentation: Identifiable, Equatable {
-    let id: String
-    let icon: String
-    let text: String
-    let accessibilityLabel: String
+public struct RecordedTrackEditorMetricPresentation: Identifiable, Equatable {
+    public let id: String
+    public let icon: String
+    public let text: String
+    public let accessibilityLabel: String
+
+    public init(id: String, icon: String, text: String, accessibilityLabel: String) {
+        self.id = id
+        self.icon = icon
+        self.text = text
+        self.accessibilityLabel = accessibilityLabel
+    }
 }
 
-struct RecordedTrackEditorSummaryPresentation: Equatable {
-    let title: String
-    let timeRangeText: String?
-    let metrics: [RecordedTrackEditorMetricPresentation]
-    let note: String
-    let validationMessage: String?
+public struct RecordedTrackEditorSummaryPresentation: Equatable {
+    public let title: String
+    public let timeRangeText: String?
+    public let metrics: [RecordedTrackEditorMetricPresentation]
+    public let note: String
+    public let validationMessage: String?
+
+    public init(title: String, timeRangeText: String?, metrics: [RecordedTrackEditorMetricPresentation], note: String, validationMessage: String?) {
+        self.title = title
+        self.timeRangeText = timeRangeText
+        self.metrics = metrics
+        self.note = note
+        self.validationMessage = validationMessage
+    }
 }
 
-struct RecordedTrackPointPresentation: Equatable {
-    let title: String
-    let roleLabel: String?
-    let timeText: String
-    let coordinateText: String
-    let metrics: [RecordedTrackEditorMetricPresentation]
+public struct RecordedTrackPointPresentation: Equatable {
+    public let title: String
+    public let roleLabel: String?
+    public let timeText: String
+    public let coordinateText: String
+    public let metrics: [RecordedTrackEditorMetricPresentation]
+
+    public init(title: String, roleLabel: String?, timeText: String, coordinateText: String, metrics: [RecordedTrackEditorMetricPresentation]) {
+        self.title = title
+        self.roleLabel = roleLabel
+        self.timeText = timeText
+        self.coordinateText = coordinateText
+        self.metrics = metrics
+    }
 }
 
-enum RecordedTrackEditorPresentation {
-    static func summary(
+public enum RecordedTrackEditorPresentation {
+    public static func summary(
         draft: RecordedTrackEditorDraft,
         unit: AppDistanceUnitPreference
     ) -> RecordedTrackEditorSummaryPresentation {
@@ -73,7 +96,7 @@ enum RecordedTrackEditorPresentation {
         )
     }
 
-    static func point(
+    public static func point(
         at index: Int,
         in draft: RecordedTrackEditorDraft,
         unit: AppDistanceUnitPreference
