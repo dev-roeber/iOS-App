@@ -1,5 +1,5 @@
 import XCTest
-@testable import LocationHistoryConsumerAppSupport
+import LocationHistoryConsumerAppSupport
 
 // MARK: - LHMapHeaderVisibility
 

@@ -1,5 +1,5 @@
 import XCTest
-@testable import LocationHistoryConsumerAppSupport
+import LocationHistoryConsumerAppSupport
 
 final class DayFavoritesStoreTests: XCTestCase {
     private var defaults: UserDefaults!

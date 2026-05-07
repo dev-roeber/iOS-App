@@ -137,19 +137,22 @@ enum HeatmapGridBuilder {
 
         if visible.isEmpty { return [] }
 
+        // Single sort + reverse: previously we sorted descending, trimmed,
+        // then sorted ascending — two O(n log n) passes on the same array.
+        // Sort ascending once and keep the *tail* (highest-intensity cells)
+        // when we're past the LOD limit; the array is already in render
+        // order (cold→hot) so brightest cells composite on top.
         visible.sort {
             if $0.normalizedIntensity == $1.normalizedIntensity {
-                return $0.count > $1.count
+                return $0.count < $1.count
             }
-            return $0.normalizedIntensity > $1.normalizedIntensity
+            return $0.normalizedIntensity < $1.normalizedIntensity
         }
 
         if visible.count > viewportKey.lod.selectionLimit {
-            visible = Array(visible.prefix(viewportKey.lod.selectionLimit))
+            visible = Array(visible.suffix(viewportKey.lod.selectionLimit))
         }
 
-        // Render cold→hot so brightest cells composite on top of dim ones.
-        visible.sort { $0.normalizedIntensity < $1.normalizedIntensity }
         return visible
     }
 

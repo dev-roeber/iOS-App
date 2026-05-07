@@ -106,7 +106,18 @@ public enum AppExportQueries {
     }
 
     public static func findDay(on date: String, in export: AppExport, applying filter: AppExportQueryFilter?) -> Day? {
-        projectedDays(in: export, applying: filter).first { $0.date == date }
+        let queryFilter = resolvedFilter(filter, export: export)
+
+        // Hot path — opening DayDetail with no active filter previously paid
+        // a full `projectedDays` projection (sort + per-day rebuild) just to
+        // pick a single date. With a passthrough filter we skip the
+        // projection and scan `export.data.days` directly: O(n) work without
+        // any per-day allocation.
+        if queryFilter.isPassthrough {
+            return export.data.days.first { $0.date == date }
+        }
+
+        return projectedDays(in: export, applying: filter).first { $0.date == date }
     }
 
     public static func days(in export: AppExport, from startDate: String? = nil, to endDate: String? = nil) -> [Day] {

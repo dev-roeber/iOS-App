@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## 2026-05-07 (Audit batch — Bündel B+C+D+A: dead-code removal, perf restposten, @testable cleanup, test hardening)
+
+### refactor/perf/test: 22 Audit-Achsen über vier Bündel
+
+**Bündel B — Dead-Code (~158 Zeilen weniger):**
+- `Sources/LocationHistoryConsumerAppSupport/AppDayDetailView.swift`: `quickStat(_:label:icon:color:)` (~21 Zeilen) und `private struct DayTimelineView` (~123 Zeilen) entfernt — beide ohne Caller.
+- `Sources/LocationHistoryConsumerAppSupport/AppContentSplitView.swift`: `activeFiltersSection(_:)` (~14 Zeilen, kein Caller) entfernt.
+- `Sources/LocationHistoryConsumerAppSupport/LHSharedMapChrome.swift`: gesamte Datei gelöscht. **`LHMapStyleToggleButton` public API entfernt** — keine externen Caller bekannt, war seit MapLayerMenu-Train `@available(*, deprecated)`, durch `MapLayerMenu` ersetzt. P2-8 (Live `mapCard`/`liveHeroMap` Duplikate) bewusst nicht angefasst — Audit-Beschreibung war ungenau, `mapControlRow` hat realen Caller.
+
+**Bündel C — Perf-Restposten:**
+- `AppOverviewTracksMapView.swift`: `OverviewMapRenderData: Equatable` mit Hand-`==` (totalRouteCount/isOptimized/isLoading/pathOverlays + center.lat/lon + span.deltas); `approximateDistance(for:)` inline Haversine (Erdradius 6 371 000 m) statt `CLLocation`-Allokation pro Coord-Pair.
+- `HeatmapGridBuilder.swift`: Doppel-Sort durch Single-Sort + `suffix`-Trim ersetzt; Render-Reihenfolge cold→hot bleibt.
+- `AppExportQueries.swift`: `findDay(on:in:applying:)` Fast-Path für `isPassthrough`-Filter — DayDetail-Open ohne volle `projectedDays`-Projektion.
+
+**Bündel D — Architektur:**
+- `wrapper/CI.xctestplan` **unverändert (SKIP)** — referenziert `LH2GPXWrapper.xcodeproj`-containerPath, kann SwiftPM-Test-Target `LocationHistoryConsumerPackageTests` ohne pbxproj-Integration nicht aufnehmen. `.github/workflows/swift-test.yml` deckt SwiftPM-Suite weiterhin ab.
+- `@testable import` → reines `import` für 15 Test-Files (DayFavoritesStoreTests, RecentFilesStoreTests, LiveLocationFeatureModelTests, HistoryDateRangeFilterTests, ExportSelectionRouteTests, RecordingIntervalPreferenceTests, AppLanguageSupportTests, ImportBookmarkStoreTests, ChartShareHelperTests, LHMapHeaderTests, LiveStatusResolverTests, LoadingProgressEngineTests, RecordedTrackStoreTests, LiveTrackRecorderTests, InsightsDrilldownTests). 7 weitere Files behalten `@testable` (internal nötig).
+- API-Naming-Vereinheitlichung (P2-16) und `HeatmapGridBuilder` MapKit-Entkopplung (P2-18) bewusst out-of-scope — public-API-Renames mit Folgerisiken.
+
+**Bündel A — Test-Härtung (9 neue Test-Files, 27 neue Cases):**
+- `AppExportDecoderErrorTests` (5), `GPXImportParserErrorTests` (3), `TCXImportParserErrorTests` (2), `GPXRoundTripTests` (2), `AppExportQueriesFilterCombinationTests` (4), `AppHeatmapModelEdgeCaseTests` (3), `LiveLocationFeatureModelStateTransitionTests` (1 Placeholder; Mock-Client-Refactor pending), `ExportMutationsAndFilterTests` (4), `ZIPGoogleTimelineStreamingPathTests` (3).
+
+### Verifikation
+- `swift test`: **1044 Tests, 2 Skips, 0 Failures** (vorher 1017; +27 Cases).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+
+**Ehrlich offen:** API-Naming (P2-16) und HeatmapGridBuilder MapKit-Entkopplung (P2-18) bewusst not done. `wrapper/CI.xctestplan` SKIP (pbxproj-Integration out-of-scope). `LiveLocationFeatureModelStateTransitionTests` ist 1 Placeholder, Mock-Client-Refactor steht aus. Audit-Item P2-8 bewusst nicht angefasst. Hardware-Re-Verifikation iPhone 15 Pro Max steht aus.
+
 ## 2026-05-07 (Audit batch — Block 1-2: WidgetSharedKeys consolidation, onOpenURL in package target, ZIP-entry streaming, import-phase progress)
 
 ### fix/feat: 7 Audit-Achsen über zwei Blöcke

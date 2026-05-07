@@ -66,6 +66,42 @@ Nicht in diesem Train erledigt (weiterhin offen): P1-18..P1-24 (Test-Lücken), H
 - [x] **Import-Phasen-Progress**: `AppContentLoader.loadImportedContent` mit `onPhase: ((ImportPhase) -> Void)?` und `enum ImportPhase { reading, parsing, building }`; `LoadingProgressEngine.phase` + `setPhase(_:)`; `wrapper/.../ContentView.swift` zeigt lokalisiertes Phase-Label. Auto-Restore-Pfad reicht den Callback bewusst nicht durch.
 - [x] **Mikro-Benchmark**: `GoogleTimelineStreamReaderPerformanceTests` (3 `measure`-Cases) — Baseline-Logging, kein fail-on-regression bar, kein gemessener Speedup-Faktor.
 
+### Audit-Batch 2026-05-07 (Bündel B+C+D+A) — 22 Achsen erledigt
+
+22 Audit-Achsen aus den Bündeln B (Dead-Code), C (Performance-Restposten), D (Architektur), A (Test-Härtung) als erledigt verbucht (`swift test` **1044/2/0**; +27 Cases gegenüber 1017; Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED):
+
+**Bündel B — Dead-Code (5 Items, ~158 Zeilen weniger):**
+- [x] **P2-5**: `AppDayDetailView.quickStat(_:label:icon:color:)` (~21 Zeilen, kein Caller) entfernt.
+- [x] **P2-6**: `AppDayDetailView.DayTimelineView` (~123 Zeilen, kein Caller) entfernt.
+- [x] **P2-7**: `AppContentSplitView.activeFiltersSection(_:)` (~14 Zeilen, kein Caller) entfernt.
+- [x] **P2-9**: `LHSharedMapChrome.swift` gelöscht — `LHMapStyleToggleButton` public API entfernt (war deprecated, keine externen Caller bekannt, durch `MapLayerMenu` ersetzt).
+- [ ] **P2-8** (bewusst nicht angefasst): Live `mapCard` (Landscape) und `liveHeroMap` (Portrait) Duplikat-Refactor. `mapControlRow` hat realen Caller in `landscapeMapColumn` — Audit-Beschreibung war ungenau.
+
+**Bündel C — Perf-Restposten (4 Items):**
+- [x] **P2-10**: `OverviewMapRenderData: Equatable` mit Hand-`==` (totalRouteCount/isOptimized/isLoading/pathOverlays + center.lat/lon + span.deltas).
+- [x] **P2-11**: `approximateDistance(for:)` inline Haversine (Erdradius 6 371 000 m) — keine `CLLocation`-Allokation mehr im Distance-Fallback.
+- [x] **P2-12**: `HeatmapGridBuilder` Single-Sort + `suffix`-Trim statt Doppel-Sort.
+- [x] **P2-13**: `AppExportQueries.findDay(on:in:applying:)` Fast-Path für `isPassthrough`-Filter — DayDetail-Open ohne volle `projectedDays`-Projektion.
+
+**Bündel D — Architektur (4 Items):**
+- [~] **P2-17 (SKIP)**: `wrapper/CI.xctestplan` unverändert. Test-Plan referenziert `LH2GPXWrapper.xcodeproj`-containerPath; SwiftPM-Test-Target `LocationHistoryConsumerPackageTests` ohne pbxproj-Integration nicht aufnehmbar. `.github/workflows/swift-test.yml` deckt SwiftPM-Suite weiterhin separat ab.
+- [x] **P2-19**: `@testable import` → reines `import` für **15 von 22 Test-Files** (APIs sind dort vollständig public): `DayFavoritesStoreTests`, `RecentFilesStoreTests`, `LiveLocationFeatureModelTests`, `HistoryDateRangeFilterTests`, `ExportSelectionRouteTests`, `RecordingIntervalPreferenceTests`, `AppLanguageSupportTests`, `ImportBookmarkStoreTests`, `ChartShareHelperTests`, `LHMapHeaderTests`, `LiveStatusResolverTests`, `LoadingProgressEngineTests`, `RecordedTrackStoreTests`, `LiveTrackRecorderTests`, `InsightsDrilldownTests`. 7 Files behalten `@testable` (internal-Symbole nötig): `AppContentLoaderTests`, `AppPreferencesTests`, `LiveActivityTests`, `LiveTrackingPresentationTests`, `RecordedTrackEditorDraftTests`, `RecordedTrackEditorPresentationTests`, `SavedTracksPresentationTests`, `WidgetDataStoreTests`.
+- [ ] **P2-16** (bewusst nicht angefasst): API-Naming-Vereinheitlichung `parse`/`convert`/`decode`/`load` — public-API-Rename mit Folgerisiken.
+- [ ] **P2-18** (bewusst nicht angefasst): `HeatmapGridBuilder` MapKit-Entkopplung — public-API-Rename mit Folgerisiken.
+
+**Bündel A — Test-Härtung (9 neue Test-Files, 27 neue Cases):**
+- [x] **P1-18**: `AppExportDecoderErrorTests.swift` (5 Cases): leere Data, korrupter JSON, missing data/meta/schema_version.
+- [x] **P1-19**: `GPXImportParserErrorTests.swift` (3 Cases): malformed XML, leere Trackpoints, nicht parsebare Timestamps.
+- [x] **P1-20**: `TCXImportParserErrorTests.swift` (2 Cases): malformed XML, leere Trackpoints. `exportRoundTripFailed` defensive Branch dokumentiert geskippt.
+- [x] **P1-21**: `GPXRoundTripTests.swift` (2 Cases): Track-Coordinates 1e-6, Waypoints.
+- [x] **P1-22**: `AppExportQueriesFilterCombinationTests.swift` (4 Cases): date+accuracy, activityType+date, accuracy+activityType, Dreifach-Kombi.
+- [x] **P1-23**: `AppHeatmapModelEdgeCaseTests.swift` (3 Cases): empty/single-day/no-paths.
+- [x] **P1-24**: `LiveLocationFeatureModelStateTransitionTests.swift` (1 Placeholder-Case) — Mock-Client `private` im bestehenden Test-File; Refactor pending; explicit-doc-comment im Test.
+- [x] (extra) `ExportMutationsAndFilterTests.swift` (4 Cases): Mutations respektiert, empty leaves unchanged, hasRoutes-Chip, favorites-Parameter.
+- [x] (extra) `ZIPGoogleTimelineStreamingPathTests.swift` (3 Cases): Timeline-Entry, AppExport-Fallback, Mixed-ZIP.
+
+**Verbleibend offen aus dem Audit:** P2-8 (Live-Duplicate-Refactor, bewusst nicht angefasst), P2-16 (API-Naming), P2-18 (HeatmapGridBuilder MapKit-Entkopplung), P2-17 (CI.xctestplan SKIP), Mock-Client-Refactor in `LiveLocationFeatureModelStateTransitionTests`. Hardware-Re-Verifikation iPhone 15 Pro Max bleibt offen.
+
 ## P0 — Release / Review / Hardware-Verifikation
 
 - [x] **Review-Response senden (Guideline 3.2)**: gesendet von Sebastian. Apple hat Build 74 nach Review-Response akzeptiert. Status: **Ausstehende Entwicklerfreigabe (Pending Developer Release)**. Guideline 3.2: resolved. (2026-05-05)

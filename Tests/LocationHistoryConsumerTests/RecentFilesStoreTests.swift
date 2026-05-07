@@ -1,5 +1,5 @@
 import XCTest
-@testable import LocationHistoryConsumerAppSupport
+import LocationHistoryConsumerAppSupport
 
 final class RecentFilesStoreTests: XCTestCase {
     private var defaults: UserDefaults!

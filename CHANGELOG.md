@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## [2026-05-07] — Audit batch — Bündel B+C+D+A: dead-code removal, perf restposten, @testable cleanup, test hardening
+
+### Was sich geändert hat (22 Achsen, gruppiert nach Bündel)
+
+**Bündel B — Dead-Code-Removal (4 Achsen, ~158 Zeilen weniger):**
+1. `Sources/LocationHistoryConsumerAppSupport/AppDayDetailView.swift`: `quickStat(_:label:icon:color:)`-Helper (~21 Zeilen, kein Caller) entfernt.
+2. `Sources/LocationHistoryConsumerAppSupport/AppDayDetailView.swift`: `private struct DayTimelineView` (~123 Zeilen, kein Caller) entfernt.
+3. `Sources/LocationHistoryConsumerAppSupport/AppContentSplitView.swift`: `activeFiltersSection(_:)`-Helper (~14 Zeilen, kein Caller) entfernt.
+4. `Sources/LocationHistoryConsumerAppSupport/LHSharedMapChrome.swift`: gesamte Datei gelöscht. **`LHMapStyleToggleButton` public API entfernt** (war seit MapLayerMenu-Train `@available(*, deprecated)` und ohne interne Caller — durch `MapLayerMenu` ersetzt; keine externen Caller bekannt). Note: deprecated-Status nicht „belassen", sondern API komplett entfernt.
+
+Audit-Item P2-8 (`mapControlRow` Portrait-tot, Live `mapCard`/`liveHeroMap` Duplikate) wurde **bewusst nicht** entfernt — `mapControlRow` hat einen realen Caller in `landscapeMapColumn`. Audit-Beschreibung war ungenau.
+
+**Bündel C — Performance-Restposten (4 Achsen):**
+5. `Sources/LocationHistoryConsumerAppSupport/AppOverviewTracksMapView.swift`: `OverviewMapRenderData: Equatable` mit Hand-Geschriebener `==` (vergleicht totalRouteCount/isOptimized/isLoading/pathOverlays + center.lat/lon + span.deltas; `MKCoordinateRegion` synthetisiert nicht selbst) — Identity-Check vor Re-Render möglich.
+6. `Sources/LocationHistoryConsumerAppSupport/AppOverviewTracksMapView.swift`: `approximateDistance(for:)` nutzt jetzt eine inline Haversine-Berechnung (Erdradius 6 371 000 m) statt `CLLocation`-Allokation pro Koordinatenpaar im Distance-Fallback-Pfad.
+7. `Sources/LocationHistoryConsumerAppSupport/HeatmapGridBuilder.swift`: Doppel-Sort durch Single-Sort + `suffix`-Trim ersetzt — einmal aufsteigend sortieren, letzte N Zellen behalten; Render-Reihenfolge cold→hot bleibt.
+8. `Sources/LocationHistoryConsumer/Queries/AppExportQueries.swift`: `findDay(on:in:applying:)` mit Fast-Path für `isPassthrough`-Filter — scannt direkt `export.data.days` statt eine volle `projectedDays`-Projektion zu bauen. DayDetail-Open ist jetzt deutlich günstiger.
+
+**Bündel D — Architektur (4 Achsen):**
+9. `wrapper/CI.xctestplan`: **unverändert (SKIP)**. Test-Plan referenziert `LH2GPXWrapper.xcodeproj`-containerPath und kann das SwiftPM-Test-Target `LocationHistoryConsumerPackageTests` ohne pbxproj-Integration nicht aufnehmen. `.github/workflows/swift-test.yml` deckt die SwiftPM-Suite weiterhin separat ab.
+10. `@testable import` → reines `import` für **15 Test-Files**, deren APIs vollständig public sind: `DayFavoritesStoreTests`, `RecentFilesStoreTests`, `LiveLocationFeatureModelTests`, `HistoryDateRangeFilterTests`, `ExportSelectionRouteTests`, `RecordingIntervalPreferenceTests`, `AppLanguageSupportTests`, `ImportBookmarkStoreTests`, `ChartShareHelperTests`, `LHMapHeaderTests`, `LiveStatusResolverTests`, `LoadingProgressEngineTests`, `RecordedTrackStoreTests`, `LiveTrackRecorderTests`, `InsightsDrilldownTests`. **7 weitere Test-Files** behalten `@testable` (internal-Symbole nötig): `AppContentLoaderTests`, `AppPreferencesTests`, `LiveActivityTests`, `LiveTrackingPresentationTests`, `RecordedTrackEditorDraftTests`, `RecordedTrackEditorPresentationTests`, `SavedTracksPresentationTests`, `WidgetDataStoreTests`.
+11. API-Naming-Vereinheitlichung (`parse`/`convert`/`decode`/`load`): **out-of-scope** (P2-16) — public-API-Renames mit Folgerisiken.
+12. `HeatmapGridBuilder` MapKit-Entkopplung: **out-of-scope** (P2-18) — public-API-Rename mit Folgerisiken.
+
+**Bündel A — Test-Härtung (9 neue Test-Files, 27 neue Cases):**
+13. `Tests/LocationHistoryConsumerTests/AppExportDecoderErrorTests.swift` (5 Cases): leere Data, korrupter JSON, missing data/meta/schema_version.
+14. `Tests/LocationHistoryConsumerTests/GPXImportParserErrorTests.swift` (3 Cases): malformed XML, leere Trackpoints, nicht parsebare Timestamps.
+15. `Tests/LocationHistoryConsumerTests/TCXImportParserErrorTests.swift` (2 Cases): malformed XML, leere Trackpoints. `exportRoundTripFailed` defensive Branch dokumentiert geskippt.
+16. `Tests/LocationHistoryConsumerTests/GPXRoundTripTests.swift` (2 Cases): Track-Coordinates 1e-6, Waypoints.
+17. `Tests/LocationHistoryConsumerTests/AppExportQueriesFilterCombinationTests.swift` (4 Cases): date+accuracy, activityType+date, accuracy+activityType, dreifach kombiniert.
+18. `Tests/LocationHistoryConsumerTests/AppHeatmapModelEdgeCaseTests.swift` (3 Cases): empty/single-day/no-paths.
+19. `Tests/LocationHistoryConsumerTests/LiveLocationFeatureModelStateTransitionTests.swift` (1 Placeholder-Case): Mock-Client `private` im bestehenden Test-File; Refactor pending — explicit-doc-comment.
+20. `Tests/LocationHistoryConsumerTests/ExportMutationsAndFilterTests.swift` (4 Cases): Mutations respektiert, empty leaves unchanged, hasRoutes-Chip, favorites-Parameter.
+21. `Tests/LocationHistoryConsumerTests/ZIPGoogleTimelineStreamingPathTests.swift` (3 Cases): Timeline-Entry, AppExport-Fallback, Mixed-ZIP.
+
+**(22.) CI/Workflow:** SwiftPM-Suite läuft weiterhin via `.github/workflows/swift-test.yml`; Wrapper-`CI.xctestplan` unverändert (siehe 9.).
+
+### Verifikation
+- `swift test`: **1044 Tests, 2 Skips, 0 Failures** (vorher 1017; 27 neue Cases).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+
+### Ehrlich offen
+- API-Naming-Vereinheitlichung (P2-16) bewusst not done — public-API-Renames mit Folgerisiken.
+- `HeatmapGridBuilder` MapKit-Entkopplung (P2-18) bewusst not done — public-API-Rename mit Folgerisiken.
+- `wrapper/CI.xctestplan` SwiftPM-Coverage erfordert pbxproj-Integration — out-of-scope.
+- `LiveLocationFeatureModelStateTransitionTests` ist 1 Placeholder; Mock-Client-Refactor steht aus.
+- Audit-Item P2-8 (Live `mapCard`/`liveHeroMap` Duplikat-Refactor) bewusst nicht angefasst — Audit-Beschreibung war ungenau, `mapControlRow` hat realen Caller.
+- Hardware-Re-Verifikation iPhone 15 Pro Max steht weiterhin aus.
+- `LHMapStyleToggleButton` public API entfernt: keine externen Caller bekannt, war seit MapLayerMenu-Train deprecated.
+
 ## [2026-05-07] — Audit batch — Block 1-2: WidgetSharedKeys consolidation, onOpenURL in package target, ZIP-entry streaming, import-phase progress
 
 ### Was sich geändert hat (7 Achsen, gruppiert nach Block)

@@ -446,12 +446,38 @@ struct OverviewMapPathOverlay: Equatable {
     let activityType: String?
 }
 
-struct OverviewMapRenderData {
+struct OverviewMapRenderData: Equatable {
     let pathOverlays: [OverviewMapPathOverlay]
     let region: MKCoordinateRegion?
     let totalRouteCount: Int
     let isOptimized: Bool
     let isLoading: Bool
+
+    /// `MKCoordinateRegion` does not synthesize `Equatable` itself (its
+    /// stored center / span are MapKit-only structs without protocol
+    /// conformance), so we hand-write the comparison. Required so
+    /// `@Observable` / SwiftUI `onChange` paths can short-circuit on
+    /// identity-only viewport updates instead of invalidating the
+    /// downstream Map every camera tick.
+    static func == (lhs: OverviewMapRenderData, rhs: OverviewMapRenderData) -> Bool {
+        guard lhs.totalRouteCount == rhs.totalRouteCount,
+              lhs.isOptimized == rhs.isOptimized,
+              lhs.isLoading == rhs.isLoading,
+              lhs.pathOverlays == rhs.pathOverlays else {
+            return false
+        }
+        switch (lhs.region, rhs.region) {
+        case (nil, nil):
+            return true
+        case let (a?, b?):
+            return a.center.latitude == b.center.latitude
+                && a.center.longitude == b.center.longitude
+                && a.span.latitudeDelta == b.span.latitudeDelta
+                && a.span.longitudeDelta == b.span.longitudeDelta
+        default:
+            return false
+        }
+    }
 
     var hasContent: Bool { !pathOverlays.isEmpty }
     var visibleRouteCount: Int { pathOverlays.count }
@@ -989,13 +1015,29 @@ enum OverviewMapPreparation {
         return MKCoordinateRegion(center: center, span: span)
     }
 
+    /// Sum of great-circle hops between consecutive coordinates. Uses an
+    /// inline haversine instead of `CLLocation.distance(from:)` so we do
+    /// not allocate two `CLLocation` objects per coordinate pair on the
+    /// distance-fallback path (paths without a precomputed `distanceM`).
     private nonisolated static func approximateDistance(for coordinates: [CLLocationCoordinate2D]) -> Double {
         guard coordinates.count >= 2 else { return 0 }
-        return zip(coordinates, coordinates.dropFirst()).reduce(0) { partial, pair in
-            let a = CLLocation(latitude: pair.0.latitude, longitude: pair.0.longitude)
-            let b = CLLocation(latitude: pair.1.latitude, longitude: pair.1.longitude)
-            return partial + a.distance(from: b)
+        let earthRadiusMeters = 6_371_000.0
+        var total = 0.0
+        var iterator = coordinates.makeIterator()
+        guard var previous = iterator.next() else { return 0 }
+        while let current = iterator.next() {
+            let lat1 = previous.latitude * .pi / 180.0
+            let lat2 = current.latitude * .pi / 180.0
+            let dLat = (current.latitude - previous.latitude) * .pi / 180.0
+            let dLon = (current.longitude - previous.longitude) * .pi / 180.0
+            let sinDLat = sin(dLat / 2)
+            let sinDLon = sin(dLon / 2)
+            let a = sinDLat * sinDLat + cos(lat1) * cos(lat2) * sinDLon * sinDLon
+            let c = 2 * atan2(sqrt(a), sqrt(1 - a))
+            total += earthRadiusMeters * c
+            previous = current
         }
+        return total
     }
 }
 

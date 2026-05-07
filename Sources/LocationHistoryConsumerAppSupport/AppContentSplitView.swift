@@ -1076,22 +1076,6 @@ public struct AppContentSplitView: View {
     }
 
     @ViewBuilder
-    private func activeFiltersSection(_ filters: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(t("Filtered Export"), systemImage: "line.3.horizontal.decrease.circle.fill")
-                .font(.subheadline.weight(.medium))
-                .foregroundColor(.orange)
-            Text(filters.joined(separator: " · "))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color.orange.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-    }
-
-    @ViewBuilder
     private func compactDayRow(_ summary: DaySummary) -> some View {
         let presentation = DaySummaryRowPresentationBuilder.presentation(
             for: summary,

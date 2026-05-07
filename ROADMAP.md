@@ -4,6 +4,20 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Audit-Verifikation Bündel B+C+D+A (2026-05-07, Doku-Train, HEAD pending — Commit folgt)
+
+22 Audit-Achsen aus den Bündeln B (Dead-Code), C (Performance-Restposten), D (Architektur), A (Test-Härtung) als erledigt verbucht; Details in `CHANGELOG.md` und `NEXT_STEPS.md`.
+
+- `swift test`: **1044 Tests, 2 Skips, 0 Failures** (+27 gegenüber 1017; 9 neue Test-Files in `Tests/LocationHistoryConsumerTests/`).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+- Inhalt: Audit-Batch B+C+D+A.
+  - **Bündel B (Dead-Code, ~158 Zeilen weniger):** `quickStat`/`DayTimelineView` aus `AppDayDetailView`, `activeFiltersSection` aus `AppContentSplitView`, gesamte Datei `LHSharedMapChrome.swift` gelöscht — `LHMapStyleToggleButton` public API entfernt (war deprecated, keine externen Caller bekannt). P2-8 bewusst nicht angefasst (`mapControlRow` hat realen Caller in `landscapeMapColumn`).
+  - **Bündel C (Perf-Restposten):** `OverviewMapRenderData: Equatable` Hand-`==`, inline Haversine in `approximateDistance(for:)`, `HeatmapGridBuilder` Single-Sort+`suffix`-Trim, `AppExportQueries.findDay` Fast-Path für `isPassthrough`-Filter.
+  - **Bündel D (Architektur):** `@testable import` → reines `import` für 15 von 22 Test-Files; 7 behalten `@testable` (internal nötig). `wrapper/CI.xctestplan` SKIP — pbxproj-Integration für SwiftPM-Test-Target out-of-scope. API-Naming (P2-16) und `HeatmapGridBuilder` MapKit-Entkopplung (P2-18) bewusst not done.
+  - **Bündel A (Test-Härtung):** 9 neue Test-Files mit 27 Cases — `AppExportDecoderErrorTests`, `GPXImportParserErrorTests`, `TCXImportParserErrorTests`, `GPXRoundTripTests`, `AppExportQueriesFilterCombinationTests`, `AppHeatmapModelEdgeCaseTests`, `LiveLocationFeatureModelStateTransitionTests` (1 Placeholder, Mock-Client-Refactor pending), `ExportMutationsAndFilterTests`, `ZIPGoogleTimelineStreamingPathTests`.
+- Hardware-Re-Verifikation iPhone 15 Pro Max: weiterhin offen.
+- Verbleibend offen aus dem Audit: P2-8 (Live-Duplicate-Refactor bewusst nicht angefasst), P2-16 (API-Naming), P2-18 (HeatmapGridBuilder MapKit-Entkopplung), P2-17 (CI.xctestplan SKIP), Mock-Client-Refactor.
+
 ### Audit-Verifikation Block 1-2-Train (2026-05-07, Doku-Train, HEAD pending — Commit folgt)
 
 7 Audit-Achsen aus Block 1 (Wiring/Config) und Block 2 (Streaming-Folge) als erledigt verbucht; Details in `CHANGELOG.md` und `NEXT_STEPS.md`.
