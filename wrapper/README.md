@@ -19,7 +19,9 @@ Xcode-Wrapper-Projekt fuer die iOS-App von LocationHistory2GPX.
 | Pfad | `/` (Repo-Root, `Package.swift`) | `wrapper/` |
 | Inhalt | Swift Package: Decoder, Queries, AppSupport, DemoSupport | Xcode-Projekt: App-Target, Bundle-Config, Assets |
 | Build | `swift build` / `swift test` im Root | `xcodebuild` mit `-project wrapper/LH2GPXWrapper.xcodeproj` |
-| Tests | Unit-Tests via SwiftPM | Xcode-Unit- und UI-Tests |
+| Tests | Unit-Tests via SwiftPM (~1044, GitHub Actions `.github/workflows/swift-test.yml`) | Xcode-Unit- und UI-Tests (Xcode Cloud via `wrapper/CI.xctestplan`, nur Wrapper-Targets) |
+
+> **Hinweis Test-Plan-Split:** `wrapper/CI.xctestplan` enthaelt bewusst nur das Wrapper-Test-Target `LH2GPXWrapperTests`. Die ~1044 SwiftPM-Tests (`LocationHistoryConsumerPackageTests`) sind nicht als Xcode-Test-Target im Wrapper-`project.pbxproj` registriert und laufen separat via GitHub Actions (`.github/workflows/swift-test.yml`). Eine Integration in den xctestplan wuerde voraussetzen, das SwiftPM-Test-Produkt als nativen Test-Target-Eintrag in der pbxproj zu fuehren — aktuell out-of-scope, da risikobehaftet fuer die Project-Datei.
 | Abhaengigkeit | eigenstaendig | haengt vom Core ab (lokale SPM-Referenz `..`) |
 
 ## SPM-Abhaengigkeit

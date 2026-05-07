@@ -289,48 +289,17 @@ struct ContentView: View {
     }
 
     private func restoreBookmarkedFile() {
-        guard !session.hasLoadedContent, !session.isLoading else { return }
-        guard let url = AppImportStateBridge.restoreLastImportIfEnabled(
-            autoRestoreEnabled: preferences.autoRestoreLastImport
+        guard let url = LH2GPXAppFlow.autoRestoreURLIfEligible(
+            autoRestoreEnabled: preferences.autoRestoreLastImport,
+            hasLoadedContent: session.hasLoadedContent,
+            isLoading: session.isLoading
         ) else { return }
         session.beginLoading()
         Task {
-            let accessedSecurityScope = url.startAccessingSecurityScopedResource()
-            do {
-                let content = try await AppContentLoader.loadImportedContent(
-                    from: url,
-                    autoRestoreMode: true
-                )
-                if accessedSecurityScope { url.stopAccessingSecurityScopedResource() }
-                session.show(content: content)
-            } catch let loaderError as AppContentLoaderError {
-                if accessedSecurityScope { url.stopAccessingSecurityScopedResource() }
-                if case .autoRestoreSkippedLargeFile = loaderError {
-                    // Keep the bookmark — the user may still want to re-open
-                    // this file manually. Surface an explanatory message
-                    // instead of treating it as a hard failure.
-                    session.showFailure(
-                        title: loaderError.userFacingTitle,
-                        message: loaderError.localizedDescription,
-                        preserveCurrentContent: false
-                    )
-                } else {
-                    ImportBookmarkStore.clear()
-                    session.showFailure(
-                        title: loaderError.userFacingTitle,
-                        message: loaderError.localizedDescription,
-                        preserveCurrentContent: false
-                    )
-                }
-            } catch {
-                if accessedSecurityScope { url.stopAccessingSecurityScopedResource() }
-                ImportBookmarkStore.clear()
-                session.showFailure(
-                    title: "Unable to restore previous import",
-                    message: error.localizedDescription,
-                    preserveCurrentContent: false
-                )
-            }
+            // Auto-restore now propagates onPhase like the manual import
+            // path so the loading screen reflects progress even when the
+            // import was kicked off automatically at launch.
+            await runImport(at: url, source: .autoRestore)
         }
     }
 
@@ -339,7 +308,7 @@ struct ContentView: View {
         case let .success(urls):
             guard let url = urls.first, !session.isLoading else { return }
             session.beginLoading()
-            loadImportedFile(at: url)
+            Task { await runImport(at: url, source: .manual) }
         case let .failure(error):
             let nsError = error as NSError
             if nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError {
@@ -353,40 +322,42 @@ struct ContentView: View {
         }
     }
 
-    private func loadImportedFile(at url: URL) {
-        Task {
-            let accessedSecurityScope = url.startAccessingSecurityScopedResource()
-            defer {
-                if accessedSecurityScope {
-                    url.stopAccessingSecurityScopedResource()
-                }
+    /// Thin wrapper around the shared helper. See LH2GPXAppFlow for the
+    /// security-scope / loader / failure-mapping logic shared with the
+    /// package-target AppShellRootView. onPhase is wired through for
+    /// every source so auto-restore drives the loading screen too.
+    private func runImport(at url: URL, source: LH2GPXAppFlow.ImportLoadSource) async {
+        let outcome = await LH2GPXAppFlow.loadImportedFile(
+            at: url,
+            source: source,
+            onPhase: { phase in
+                Task { @MainActor in loadingProgress.setPhase(phase) }
             }
-            do {
-                let content = try await AppContentLoader.loadImportedContent(
-                    from: url,
-                    onPhase: { phase in
-                        Task { @MainActor in loadingProgress.setPhase(phase) }
-                    }
-                )
-                ImportBookmarkStore.save(url: url)
-                _ = RecentFilesStore.add(url: url)
+        )
+        await MainActor.run {
+            switch outcome {
+            case let .success(content):
                 session.show(content: content)
-            } catch {
+            case let .failure(title, message, clearBookmark):
+                if clearBookmark {
+                    ImportBookmarkStore.clear()
+                }
+                let preserve = source == .autoRestore
+                    ? false
+                    : session.hasLoadedContent
                 session.showFailure(
-                    title: (error as? AppContentLoaderError)?.userFacingTitle ?? "Unable to open file",
-                    message: error.localizedDescription,
-                    preserveCurrentContent: session.hasLoadedContent
+                    title: title,
+                    message: message,
+                    preserveCurrentContent: preserve
                 )
             }
         }
     }
 
     private func handleDeepLink(_ url: URL) {
-        guard url.scheme == "lh2gpx" else { return }
-        // lh2gpx://live → navigate to Live tab if content is loaded
-        if url.host == "live" {
-            liveLocation.navigateToLiveTabRequested = true
-        }
+        // Delegate to the shared helper so this wrapper target and the
+        // package-target AppShellRootView stay in lock-step.
+        LH2GPXAppFlow.handleDeepLink(url, liveLocation: liveLocation)
     }
 
     private var launchArguments: Set<String> {

@@ -1,5 +1,43 @@
 # Deep Audit — Doku-Truth-Sync gegen Repo-Stand
 
+## Status (Stand 2026-05-07)
+
+Kurzer Abgleich gegen `CHANGELOG.md` (Top-Eintrag 2026-05-07) und nachfolgende Audit-Bündel A/B/C/D. Der ursprüngliche Audit-Body (ab "Datum/Uhrzeit" weiter unten) bleibt unverändert als historisches Dokument.
+
+**P0 (release-relevant):**
+- [ ] Build 96 / Xcode-Cloud-Trigger auf Submit-HEAD — weiterhin offen (kein neuer CHANGELOG-Eintrag).
+- [ ] Hardware-Re-Verifikation iPhone 15 Pro Max — explizit als "weiterhin aus" im 2026-05-07-CHANGELOG markiert.
+- [ ] Days-Screenshot `iphone15pm_03` neu erfassen — kein Hinweis auf Erledigung.
+
+**P1 (UX-Klärung):**
+- [x] Import-Phasen-Progress (`ImportPhase` reading/parsing/building) — CHANGELOG 2026-05-07 Block 2, Achse 7-9.
+- [x] WidgetSharedKeys-Konsolidierung + `saveDynamicIslandCompactDisplay`-Lücke (P1-3) — CHANGELOG 2026-05-07 Block 1, Achse 1-2.
+- [x] `onOpenURL` im Package-App-Target (P1-4) — CHANGELOG 2026-05-07 Block 1, Achse 3.
+- [x] ZIP-Google-Timeline-Streaming (P1-5) — CHANGELOG 2026-05-07 Block 2, Achse 5-7.
+- [ ] Insights Triple-Range-Picker Konsolidierung — kein CHANGELOG-Eintrag.
+- [ ] Overview Doppel-Header — kein CHANGELOG-Eintrag.
+- [ ] Map-Pill-Overlap (Z-Stack) — kein CHANGELOG-Eintrag.
+- [ ] Form-vs-LHCard-Konsistenz Settings — kein CHANGELOG-Eintrag.
+
+**P2 (Doku-/Architektur-Konsolidierung, teilweise):**
+- [x] Dead-Code-Removal (4 Achsen) — CHANGELOG 2026-05-07 Bündel B.
+- [x] Performance-Restposten (4 Achsen, Heatmap-Sort, OverviewMap-Equatable, Haversine, AppExportQueries-Fast-Path) — Bündel C.
+- [x] `@testable`-Cleanup (15 Test-Files auf reines `import`) — Bündel D, Achse 10.
+- [x] Audit-Test-Härtung (9 neue Test-Files, +27 Cases, jetzt 1044 Tests) — Bündel A.
+- [ ] P2-8 (`mapControlRow` / Live-Map-Duplikate) — bewusst NICHT entfernt (Audit-Beschreibung war ungenau).
+- [ ] P2-16 (API-Naming-Vereinheitlichung) — bewusst out-of-scope.
+- [ ] P2-18 (`HeatmapGridBuilder` MapKit-Entkopplung) — bewusst out-of-scope.
+- [ ] `wrapper/CI.xctestplan` SwiftPM-Coverage — out-of-scope (pbxproj-Integration nötig).
+- [ ] ASC_SUBMIT_RUNBOOK Screenshot-Anzahl 8 vs. 6 — kein CHANGELOG-Eintrag.
+- [ ] wrapper/docs/TESTFLIGHT_RUNBOOK Build-Beispiele auf 1.0.1/96 anheben — kein CHANGELOG-Eintrag.
+- [ ] ROADMAP.md 2026-05-06-Block strukturell — kein CHANGELOG-Eintrag.
+- [ ] wrapper/ROADMAP.md + wrapper/NEXT_STEPS.md auf 949+ Tests / macOS-Lokal — kein CHANGELOG-Eintrag.
+- [ ] docs/PRIVACY_MANIFEST_SCOPE.md Stand-Header anheben — kein CHANGELOG-Eintrag.
+
+**Verifikation 2026-05-07:** `swift test` 1044 Tests (2 Skips, 0 Failures), Wrapper `xcodebuild` iPhone 17 Pro Max Sim BUILD SUCCEEDED.
+
+---
+
 **Datum/Uhrzeit**: 2026-05-06 (Lokal-Acceptance-Run)
 **Repo-Pfad**: `/Users/sebastian/iOS-App` (macOS-Lokal; Mono-Repo aus Core-Package + `wrapper/`-Subdir)
 **Hinweis zum Auftrag**: Die im Auftragstext genannten Linux-Pfade `/home/sebastian/repos/LocationHistory2GPX-iOS` und `/home/sebastian/repos/LH2GPXWrapper` existieren auf diesem System nicht. Der aktive Repo-Stand ist `dev-roeber/iOS-App` auf macOS (siehe README L82-88: `LocationHistory2GPX-iOS` und `LH2GPXWrapper` sind explizit als historische Repos markiert).

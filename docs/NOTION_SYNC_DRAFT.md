@@ -1,4 +1,9 @@
 # LH2GPX iOS-App — Notion Sync Draft
+
+> **Status:** Manuell gepflegter Snapshot. Wird nicht automatisch
+> synchronisiert. Stand siehe Datei-Datum.
+> **Kandidat für Ersatz:** Schlanker Status-Export (siehe NEXT_STEPS).
+
 *Historischer Snapshot vom 2026-04-12 — nicht mehr kanonisch.*
 *Aktueller Repo-Truth steht in `README.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `CHANGELOG.md` und den Apple-Runbooks.*
 

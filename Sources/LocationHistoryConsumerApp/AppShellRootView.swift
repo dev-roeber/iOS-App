@@ -103,10 +103,9 @@ struct AppShellRootView: View {
     }
 
     private func handleDeepLink(_ url: URL) {
-        guard url.scheme == "lh2gpx" else { return }
-        if url.host == "live" {
-            liveLocation.navigateToLiveTabRequested = true
-        }
+        // Delegate to the shared helper so the wrapper target and this
+        // package target stay in lock-step. See LH2GPXAppFlow.
+        LH2GPXAppFlow.handleDeepLink(url, liveLocation: liveLocation)
     }
 
     @ViewBuilder
@@ -204,10 +203,11 @@ struct AppShellRootView: View {
 
         hasAttemptedAutoRestore = true
 
-        guard !session.hasLoadedContent,
-              let url = AppImportStateBridge.restoreLastImportIfEnabled(
-                  autoRestoreEnabled: preferences.autoRestoreLastImport
-              ) else {
+        guard let url = LH2GPXAppFlow.autoRestoreURLIfEligible(
+            autoRestoreEnabled: preferences.autoRestoreLastImport,
+            hasLoadedContent: session.hasLoadedContent,
+            isLoading: session.isLoading
+        ) else {
             return
         }
 
@@ -216,12 +216,6 @@ struct AppShellRootView: View {
     }
 
     #if canImport(UniformTypeIdentifiers)
-    private enum ImportLoadSource {
-        case manual
-        case recent
-        case autoRestore
-    }
-
     private func handleImportResult(_ result: Result<[URL], Error>) {
         switch result {
         case let .success(urls):
@@ -243,51 +237,19 @@ struct AppShellRootView: View {
     }
 
     @MainActor
-    private func loadImportedFile(at url: URL, source: ImportLoadSource) async {
-        let accessedSecurityScope = url.startAccessingSecurityScopedResource()
-        defer {
-            if accessedSecurityScope {
-                url.stopAccessingSecurityScopedResource()
-            }
-        }
-
-        do {
-            let content = try await AppContentLoader.loadImportedContent(
-                from: url,
-                autoRestoreMode: source == .autoRestore
-            )
-            AppImportStateBridge.rememberImportedFile(url)
+    private func loadImportedFile(at url: URL, source: LH2GPXAppFlow.ImportLoadSource) async {
+        // Thin wrapper around the shared helper. See LH2GPXAppFlow for
+        // the security-scope / loader / failure-mapping logic shared
+        // with the wrapper-target ContentView.
+        let outcome = await LH2GPXAppFlow.loadImportedFile(at: url, source: source)
+        switch outcome {
+        case let .success(content):
             refreshRecentFiles()
             session.show(content: content)
-        } catch {
-            let title: String
-            let message: String
-
-            // Auto-restore skipped a large Google Timeline file — surface the
-            // dedicated user-facing copy regardless of source so the message
-            // is unambiguous.
-            if let loaderError = error as? AppContentLoaderError,
-               case .autoRestoreSkippedLargeFile = loaderError {
-                session.showFailure(
-                    title: loaderError.userFacingTitle,
-                    message: loaderError.localizedDescription,
-                    preserveCurrentContent: session.hasLoadedContent
-                )
-                return
+        case let .failure(title, message, clearBookmark):
+            if clearBookmark {
+                ImportBookmarkStore.clear()
             }
-
-            switch source {
-            case .manual:
-                title = (error as? AppContentLoaderError)?.userFacingTitle ?? "Unable to open file"
-                message = error.localizedDescription
-            case .recent:
-                title = "Unable to reopen recent file"
-                message = "Import the file again if it was moved, deleted or changed outside the app."
-            case .autoRestore:
-                title = "Unable to restore last import"
-                message = "The last imported file could not be reopened automatically. Open a file manually to continue."
-            }
-
             session.showFailure(
                 title: title,
                 message: message,
