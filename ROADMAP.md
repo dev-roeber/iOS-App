@@ -4,6 +4,22 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Verifikation Post-Fix Hardware-Re-Run iPhone 15 Pro Max (2026-05-07, HEAD pending — Commit folgt)
+
+Reine Re-Verifikation nach Day-Detail-Distance-Fix (Commit `853d8d3`). Keine Code-Änderungen.
+
+- testAppStoreScreenshots (iPhone 15 Pro Max, iOS 26.4): PASSED (41.8s)
+- testDeviceSmokeNavigationAndActions (iPhone 15 Pro Max, iOS 26.4): PASSED (71.2s)
+- testLandscapeLayoutSmoke (iPhone 15 Pro Max, iOS 26.4): PASSED (829.9s)
+- `swift test`: **1077 Tests, 2 Skips, 0 Failures** (unverändert gegenüber `853d8d3`).
+- `git diff --check`: clean.
+- Xcode 26.3 (17C529); App 1.0.1 (100); Bundle `de.roeber.LH2GPXWrapper`; UDID `00008130-00163D0A0461401C`.
+- HEAD: pending — Commit folgt.
+
+Hardware-Re-Verifikation jetzt vollständig nach Day-Detail-Distance-Fix: beim Commit `853d8d3` war nur Smoke-Navigation post-Fix verifiziert; testAppStoreScreenshots + testLandscapeLayoutSmoke sind jetzt erneut gefahren und grün.
+
+Weiterhin offen: 46-MB-Crashfall geräteseitig (manueller Import nötig), Live Activity / Dynamic Island / Lock-Screen-Visuals (UI-interaktiv), iPad-Layout, ASC / TestFlight / Apple Review.
+
 ### Verifikation Day-Detail-Distance-Fix (2026-05-07, HEAD pending — Commit folgt)
 
 P0/P1-Bug: Day-Detail-Ansicht zeigte „Distance 0" für Routen mit sichtbarer Geometrie, während Insights/Übersicht korrekte Distanzen zeigten. Root Cause: `AppExportQueries.summary` nutzte `effectiveDistance(for: path)`-Fallback (raw `distanceM > 0` ODER Polyline aus Punkten), aber `DayDetailViewState.PathItem` führte nur raw `distanceM` und `DayDetailPresentation` summierte `path.distanceM ?? 0`. Google-Timeline-`timelinePath`-Imports liefern oft `distanceM == nil` aber valide `points` — daher 0 km im Detail.

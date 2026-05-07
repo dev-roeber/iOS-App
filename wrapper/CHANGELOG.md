@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 2026-05-07 (Post-fix hardware re-verification on iPhone 15 Pro Max)
+
+Pure verification pass after the day-detail distance fix (commit `853d8d3`). No code changes.
+
+### Hardware-Verifikation iPhone 15 Pro Max (iOS 26.4)
+- testAppStoreScreenshots: PASSED (41.8s)
+- testDeviceSmokeNavigationAndActions: PASSED (71.2s)
+- testLandscapeLayoutSmoke: PASSED (829.9s)
+- swift test: 1077/2/0 (unverändert).
+- git diff --check: clean.
+
+Im Commit `853d8d3` war nur Smoke-Navigation post-Fix gefahren; die volle 3-UITest-Acceptance-Suite ist jetzt grün.
+
+### Weiterhin offen
+- 46-MB-Crashfall geräteseitig (manueller iPhone-Import nötig)
+- Live Activity / Dynamic Island / Lock-Screen visuell (UI-interaktiv)
+- iPad-Layout, ASC / TestFlight / Apple Review
+
 ## 2026-05-07 (fix: day-detail distance consistency — P0/P1 bug)
 
 ### Bug

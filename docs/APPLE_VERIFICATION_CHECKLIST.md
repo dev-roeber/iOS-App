@@ -43,6 +43,25 @@ Nach der vollen 3-UITest-Acceptance vom 2026-05-07 (HEAD `pending` für 44pt-Hit
 - **testLandscapeLayoutSmoke** post-Fix: NICHT erneut gefahren
 - `swift test`: 1077/2/0 (+12 gegenüber 1065)
 
+### Verifikation 2026-05-07 — Post-Fix Hardware iPhone 15 Pro Max
+
+Reine Re-Verifikation nach Day-Detail-Distance-Fix (Commit `853d8d3`). Keine Code-Änderungen. Volle 3-UITest-Acceptance-Suite jetzt post-Fix erneut grün — beim Commit `853d8d3` war nur Smoke-Navigation post-Fix verifiziert.
+
+Ausgefuehrt auf: macOS, Xcode 26.3 (Build 17C529), iPhone 15 Pro Max (UDID `00008130-00163D0A0461401C`, iOS 26.4)
+
+- App: 1.0.1 (100), Bundle `de.roeber.LH2GPXWrapper`, Team XAGR3K7XDJ
+- HEAD: pending — Commit folgt
+
+#### ✅ real verifiziert (2026-05-07, post-Fix) — iPhone 15 Pro Max
+
+- **testAppStoreScreenshots** (iPhone 15 Pro Max, iOS 26.4): PASSED (41.8s) ✅
+- **testDeviceSmokeNavigationAndActions** (iPhone 15 Pro Max, iOS 26.4): PASSED (71.2s) ✅
+- **testLandscapeLayoutSmoke** (iPhone 15 Pro Max, iOS 26.4): PASSED (829.9s) ✅
+- **swift test**: 1077 Tests, 2 Skips, 0 Failures (unverändert gegenüber `853d8d3`)
+- **git diff --check**: clean
+
+Weiterhin offen: 46-MB-Crashfall geräteseitig (manueller Import nötig), Live Activity / Dynamic Island / Lock-Screen-Visuals (UI-interaktiv), iPad-Layout, ASC / TestFlight / Apple Review.
+
 ### Hardware-Verifikation — iPhone 15 Pro Max — 2026-05-07
 
 Ausgefuehrt auf: macOS, Xcode 26.3 (Build 17C529), iPhone 15 Pro Max (UDID 00008130-00163D0A0461401C, iOS 26.4)
