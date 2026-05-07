@@ -4,6 +4,15 @@
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
+### Verifikation UX/Layout-Train + Mock-Helper (2026-05-07, HEAD pending — Commit folgt)
+
+UX/Layout-Train + Mock-Helper: 6 Achsen — Mock-Client extrahiert (`Tests/LocationHistoryConsumerTests/Helpers/MockLiveLocationClient.swift`), Insights Triple-Range-Picker konsolidiert (`AppInsightsContentView`), Overview Doppel-Header gelöst (Card → "Statistics"/"Statistik"), Map-Pill-Overlap gefixt (`AppOverviewTracksMapView`), Form-vs-LHCard-Konsistenz Settings schmaler Scope (`AppPrivacyOptionsView` + `AppTechnicalOptionsView` → `Form`/`Section`; LiveRecording/Upload/Widget-LiveActivity bleiben LHCard), Hero-Map-Layout-Tests (`LHMapHeaderLayoutTests.swift`, 12 property-based Cases — keine SnapshotTesting-Dependency). Details in `CHANGELOG.md` und `NEXT_STEPS.md`.
+
+- `swift test`: **1057 Tests, 2 Skips, 0 Failures** (+12 gegenüber 1045 — neue Layout-Tests).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+- HEAD: pending — Commit folgt.
+- Hardware-Re-Verifikation iPhone 15 Pro Max: weiterhin offen.
+
 ### Audit-Verifikation Phase 1-5 Audit-Train (2026-05-07, HEAD `20877ae`)
 
 Phase 1-5 Audit-Train (Items 2-15) über zwei Commits — `21b4026` (Phase 1: items 3, 4, 5, 6, 8) + `20877ae` (Phase 2-5: items 7, 11+2, 9, 10, 12, 13+14+15). Inhalt: `projectedDays`-Cache, Mutations-Index, Race-Token, Live-Map-Dedup, `@testable`-Cleanup-Folge, Mock-Client + State-Transition-Tests, `LH2GPXAppFlow` Drift-Extraction + Auto-Restore-Phasen, API-Naming als additives Importing-Protokoll (kein Rename), `wrapper/CI.xctestplan` SwiftPM-Coverage als SKIP dokumentiert (pbxproj-Integration zu fragil), `Tests/README.md` Update, Doku-Truth-Cleanup. Details in `CHANGELOG.md` und `NEXT_STEPS.md`.

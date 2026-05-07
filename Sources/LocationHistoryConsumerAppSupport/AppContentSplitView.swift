@@ -892,7 +892,7 @@ public struct AppContentSplitView: View {
         let activeDays = StartOverviewPresentation.activeDayCount(in: overviewFilteredDaySummaries)
         return LHCard {
             VStack(alignment: .leading, spacing: 12) {
-                LHSectionHeader(t("Overview"))
+                LHSectionHeader(t("Statistics"))
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     overviewMetricCard(
                         icon: "road.lanes",

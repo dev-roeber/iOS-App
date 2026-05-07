@@ -654,6 +654,7 @@ enum AppGermanTranslations {
         "Days with tracked activity": "Tage mit aufgezeichneter Aktivität",
         "Map": "Karte",
         "Active Days": "Aktive Tage",
+        "Statistics": "Statistik",
         "Places": "Orte",
         "Most Activities": "Meiste Aktivitäten",
         "Show All Insights": "Alle Insights anzeigen",

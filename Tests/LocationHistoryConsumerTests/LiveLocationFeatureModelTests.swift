@@ -964,24 +964,6 @@ private final class TestLiveLocationClient: LiveLocationClient {
     }
 }
 
-private final class InMemoryRecordedTrackStore: RecordedTrackStoring {
-    private let initialTracks: [RecordedTrack]
-    private(set) var savedTracks: [RecordedTrack]
-
-    init(initialTracks: [RecordedTrack] = []) {
-        self.initialTracks = initialTracks
-        self.savedTracks = initialTracks
-    }
-
-    func loadTracks() throws -> [RecordedTrack] {
-        initialTracks
-    }
-
-    func saveTracks(_ tracks: [RecordedTrack]) throws {
-        savedTracks = tracks
-    }
-}
-
 private enum TestLiveLocationUploadError: Error {
     case offline
 }

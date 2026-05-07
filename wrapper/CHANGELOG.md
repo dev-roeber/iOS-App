@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 2026-05-07 (UX/Layout batch + mock helpers: insights-picker, overview-header, map-pill, settings-form, hero-map-layout-tests)
+
+### refactor/ux/test: 6 Achsen
+
+1. **Mock-Client extrahiert** — `Tests/LocationHistoryConsumerTests/Helpers/MockLiveLocationClient.swift` (NEU); `LiveLocationFeatureModelStateTransitionTests` und `LiveLocationFeatureModelTests` nutzen den Helper.
+2. **Insights Triple-Range-Picker konsolidiert** — `AppInsightsContentView.swift`: nur Hero-Strip im `heroEnabled`-Pfad; Card + Pills ausgeblendet (Legacy/iPad behält Card).
+3. **Overview Doppel-Header gelöst** — Card "Overview" → "Statistics" (de: "Statistik"); Page-Header bleibt; Strings in `AppLanguageSupport.swift`.
+4. **Map-Pill-Overlap gefixt** — `AppOverviewTracksMapView.swift`: Badge + Optimization-Banner in `VStack(alignment: .trailing)` an `.bottomTrailing`; linke untere Ecke frei.
+5. **Form-vs-LHCard-Konsistenz Settings (schmaler Scope)** — `AppPrivacyOptionsView` + `AppTechnicalOptionsView` auf `Form`/`Section`. LiveRecording/Upload/Widget-LiveActivity bleiben bewusst LHCard (Custom-Preview + Status-Chips).
+6. **Hero-Map-Layout-Tests** — `Tests/LocationHistoryConsumerTests/LHMapHeaderLayoutTests.swift` (NEU): 12 property-based Cases (compactHeight=460, expandedHeight=560, mapControlTopOffset≥124, sticky-Init, expand()-Transition, Sticky-cannot-hide, mapFrameHeight für compact/expanded/hidden/fullscreen). Kein SnapshotTesting-Framework im Repo.
+
+### Verifikation
+- `swift test`: **1057 Tests, 2 Skips, 0 Failures** (vorher 1045; +12 Cases).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: **BUILD SUCCEEDED**.
+
+**Ehrlich offen:** Form-vs-LHCard nur teilweise (5/8 Sub-Views). Hardware-Re-Verifikation iPhone 15 Pro Max steht weiter aus. Layout-Tests sind property-based, keine Pixel-Snapshots.
+
 ## 2026-05-07 (Audit batch — Phase 1-5: caching/index/race-token/live-map dedup, drift-extraction, importing-protocol, mock-state-tests, doc-truth-cleanup)
 
 ### refactor/perf/test/docs: 14 Audit-Achsen über zwei Commits

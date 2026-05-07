@@ -8,14 +8,13 @@ import LocationHistoryConsumerAppSupport
 /// transitions are asserted through the observable surface
 /// (`isAwaitingAuthorization`, `isRecording`, `permissionTitle`,
 /// `startUpdatingLocationCallCount`) rather than direct enum comparison.
-/// The mock client/store from `LiveLocationFeatureModelTests` are `private`
-/// and not reusable; promoting them is outside this audit ticket, so this
-/// file uses a small inline mock pair instead (per task fallback).
+/// Shares `MockLiveLocationClient` / `InMemoryRecordedTrackStore` with other
+/// LiveLocation tests via `Helpers/MockLiveLocationClient.swift`.
 final class LiveLocationFeatureModelStateTransitionTests: XCTestCase {
     func testRecordingTransitionsThroughAuthorizationStates() {
         MainActor.assumeIsolated {
-            let client = StateTransitionMockLiveLocationClient(authorization: .notDetermined)
-            let store = StateTransitionInMemoryRecordedTrackStore()
+            let client = MockLiveLocationClient(authorization: .notDetermined)
+            let store = InMemoryRecordedTrackStore()
             let model = LiveLocationFeatureModel(client: client, store: store)
 
             // Step 1: requestingWhenInUse — setting background preference
@@ -58,8 +57,8 @@ final class LiveLocationFeatureModelStateTransitionTests: XCTestCase {
 
     func testFailedAuthorizationFromAwaitingAlwaysUpgrade() {
         MainActor.assumeIsolated {
-            let client = StateTransitionMockLiveLocationClient(authorization: .notDetermined)
-            let store = StateTransitionInMemoryRecordedTrackStore()
+            let client = MockLiveLocationClient(authorization: .notDetermined)
+            let store = InMemoryRecordedTrackStore()
             let model = LiveLocationFeatureModel(client: client, store: store)
 
             model.setBackgroundTrackingPreference(true)
@@ -82,64 +81,5 @@ final class LiveLocationFeatureModelStateTransitionTests: XCTestCase {
             // in-progress upgrade prompt).
             XCTAssertNotEqual(model.permissionTitle, "Background Upgrade Pending")
         }
-    }
-}
-
-private final class StateTransitionMockLiveLocationClient: LiveLocationClient {
-    var authorization: LiveLocationAuthorization
-    var onAuthorizationChange: ((LiveLocationAuthorization) -> Void)?
-    var onLocationSamples: (([LiveLocationSample]) -> Void)?
-
-    private(set) var requestWhenInUseAuthorizationCallCount = 0
-    private(set) var requestAlwaysAuthorizationCallCount = 0
-    private(set) var startUpdatingLocationCallCount = 0
-    private(set) var stopUpdatingLocationCallCount = 0
-    private(set) var lastBackgroundTrackingEnabled = false
-
-    init(authorization: LiveLocationAuthorization) {
-        self.authorization = authorization
-    }
-
-    func requestWhenInUseAuthorization() {
-        requestWhenInUseAuthorizationCallCount += 1
-    }
-
-    func requestAlwaysAuthorization() {
-        requestAlwaysAuthorizationCallCount += 1
-    }
-
-    func setBackgroundTrackingEnabled(_ enabled: Bool) {
-        lastBackgroundTrackingEnabled = enabled
-    }
-
-    func startUpdatingLocation() {
-        startUpdatingLocationCallCount += 1
-    }
-
-    func stopUpdatingLocation() {
-        stopUpdatingLocationCallCount += 1
-    }
-
-    func emitAuthorization(_ authorization: LiveLocationAuthorization) {
-        self.authorization = authorization
-        onAuthorizationChange?(authorization)
-    }
-}
-
-private final class StateTransitionInMemoryRecordedTrackStore: RecordedTrackStoring {
-    private let initialTracks: [RecordedTrack]
-    private(set) var savedTracks: [RecordedTrack]
-
-    init(initialTracks: [RecordedTrack] = []) {
-        self.initialTracks = initialTracks
-        self.savedTracks = initialTracks
-    }
-
-    func loadTracks() throws -> [RecordedTrack] {
-        initialTracks
-    }
-
-    func saveTracks(_ tracks: [RecordedTrack]) throws {
-        savedTracks = tracks
     }
 }

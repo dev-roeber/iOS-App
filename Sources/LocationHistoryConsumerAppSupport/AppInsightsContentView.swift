@@ -391,8 +391,10 @@ struct AppInsightsContentView: View {
         let oneColumnGrid: [GridItem] = [GridItem(.flexible())]
         VStack(alignment: .leading, spacing: 22) {
             headerSection
-            AppHistoryDateRangeControl(filter: $rangeFilter)
-                .accessibilityIdentifier("insights.range")
+            if !heroEnabled {
+                AppHistoryDateRangeControl(filter: $rangeFilter)
+                    .accessibilityIdentifier("insights.range")
+            }
             if !hasAnyMeaningfulInsightSection {
                 insightsEmptyCard(
                     title: t("Limited Insight Data"),

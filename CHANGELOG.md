@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## [2026-05-07] — UX/Layout batch + mock helpers: insights-picker, overview-header, map-pill, settings-form, hero-map-layout-tests
+
+### Was sich geändert hat (6 Achsen)
+
+1. **Mock-Client extrahiert** — neuer File `Tests/LocationHistoryConsumerTests/Helpers/MockLiveLocationClient.swift` (`MockLiveLocationClient`, `InMemoryRecordedTrackStore`, `emitLocationSamples`-Convenience). `LiveLocationFeatureModelStateTransitionTests` und `LiveLocationFeatureModelTests` nutzen jetzt den geteilten Helper.
+2. **Insights Triple-Range-Picker konsolidiert** — `AppInsightsContentView.swift` zeigt im `heroEnabled`-Pfad nur noch den Hero-Strip. `AppHistoryDateRangeControl`-Card + innere Pills sind dort ausgeblendet. Im Legacy/iPad-Pfad bleibt die Card als Fallback.
+3. **Overview Doppel-Header gelöst** — Card-Header in `overviewKPISection` umbenannt von `"Overview"` zu `"Statistics"` (de: `"Statistik"`). Page-Header + `navigationTitle` bleiben „Overview". Lokalisierung in `AppLanguageSupport.swift` ergänzt.
+4. **Map-Pill-Overlap gefixt** — `AppOverviewTracksMapView.swift`: Route-Count-Badge und Optimization-Banner in einen einzigen `VStack(alignment: .trailing)` an `.bottomTrailing`-Overlay konsolidiert. Linke untere Ecke ist frei → keine Kollision mit Range-Chips.
+5. **Form-vs-LHCard-Konsistenz Settings (schmaler Scope)** — `AppPrivacyOptionsView` und `AppTechnicalOptionsView` von `LHCard` auf native `Form`/`Section` migriert. Live-Recording / Upload / Widget-Live-Activity behalten `LHCard` (Custom-Preview-Karten + Status-Chips).
+6. **Hero-Map-Layout-Tests** — neuer File `Tests/LocationHistoryConsumerTests/LHMapHeaderLayoutTests.swift` mit 12 Layout-Property-Cases (compactHeight=460, expandedHeight=560, mapControlTopOffset≥124, sticky-Init, expand()-Transition, Sticky-cannot-hide, mapFrameHeight für compact/expanded/hidden/fullscreen). Keine SnapshotTesting-Dependency.
+
+### Verifikation
+- `swift test`: **1057 Tests, 2 Skips, 0 Failures** (vorher 1045).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: **BUILD SUCCEEDED**.
+- HEAD: pending — Commit folgt.
+
+### Ehrlich offen
+- Form-vs-LHCard nur teilweise (5/8 Sub-Views auf Form, 3 bewusst auf LHCard wegen Custom-Preview-Karten).
+- Hardware-Re-Verifikation iPhone 15 Pro Max steht weiter aus.
+- Kein Snapshot-Testing-Framework im Repo — Layout-Tests sind property-based.
+
 ## [2026-05-07] — Audit batch — Phase 1-5: caching/index/race-token/live-map dedup, drift-extraction, importing-protocol, mock-state-tests, doc-truth-cleanup
 
 ### Was sich geändert hat (14 Achsen, gruppiert nach Phase 1 + Phase 2-5)

@@ -225,8 +225,18 @@ struct AppOverviewTracksMapView: View {
                 .padding(.leading, 8)
                 .padding(.bottom, 8)
         }
-        .overlay(alignment: .bottomTrailing) { routeCountBadge }
-        .overlay(alignment: .bottomLeading) { optimizedBadge }
+        .overlay(alignment: .bottomTrailing) {
+            // P1-38: Consolidate route-count pill and optimized/snapshot
+            // badge into a single trailing stack so they cannot collide
+            // with each other on narrow widths and leave the bottomLeading
+            // corner free of overlap with the parent range-chip strip.
+            VStack(alignment: .trailing, spacing: 4) {
+                optimizedBadge
+                routeCountBadge
+            }
+            .padding(8)
+            .zIndex(1)
+        }
     }
 
     // MARK: - Controls
@@ -252,7 +262,6 @@ struct AppOverviewTracksMapView: View {
             .padding(.vertical, 4)
             .background(.black.opacity(0.45))
             .clipShape(Capsule())
-            .padding(8)
     }
 
     @ViewBuilder
@@ -268,7 +277,6 @@ struct AppOverviewTracksMapView: View {
                 .padding(.vertical, 4)
                 .background(.black.opacity(0.35))
                 .clipShape(Capsule())
-                .padding(8)
         }
     }
 

@@ -580,27 +580,18 @@ struct AppPrivacyOptionsView: View {
     @ObservedObject var preferences: AppPreferences
 
     var body: some View {
-        ScrollView {
-            LHPageScaffold {
-                LHCard {
-                    LHSectionHeader(t("Privacy"))
-
-                    privacyRow(label: t("Location Data"), value: t("Stored locally on this device"))
-                    Divider().foregroundStyle(LH2GPXTheme.separator)
-                    privacyRow(label: t("Server Upload"), value: serverUploadPrivacyValue)
-                    Divider().foregroundStyle(LH2GPXTheme.separator)
-                    privacyRow(
-                        label: t("Live Recording"),
-                        value: preferences.allowsBackgroundLiveTracking
-                            ? t("Foreground + optional background")
-                            : t("Foreground only")
-                    )
-
-                    Text(t("This app keeps imports and live tracks local by default. Server upload is optional, user-controlled and only sends accepted live-recording points to the configured endpoint."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+        Form {
+            Section {
+                privacyRow(label: t("Location Data"), value: t("Stored locally on this device"))
+                privacyRow(label: t("Server Upload"), value: serverUploadPrivacyValue)
+                privacyRow(
+                    label: t("Live Recording"),
+                    value: preferences.allowsBackgroundLiveTracking
+                        ? t("Foreground + optional background")
+                        : t("Foreground only")
+                )
+            } header: { Text(t("Privacy")) }
+              footer: { Text(t("This app keeps imports and live tracks local by default. Server upload is optional, user-controlled and only sends accepted live-recording points to the configured endpoint.")) }
         }
         .navigationTitle(t("Privacy"))
     }
@@ -628,23 +619,16 @@ struct AppTechnicalOptionsView: View {
     @ObservedObject var preferences: AppPreferences
 
     var body: some View {
-        ScrollView {
-            LHPageScaffold {
-                LHCard {
-                    LHSectionHeader(t("Technical"))
-
-                    Button(t("Reset Options")) {
-                        preferences.reset()
-                    }
-                    .foregroundStyle(LH2GPXTheme.dangerRed)
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Text(t("Resets all app preferences to their default values. Live tracks and imported data are not affected."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        Form {
+            Section {
+                Button(t("Reset Options")) {
+                    preferences.reset()
                 }
-            }
+                .foregroundStyle(LH2GPXTheme.dangerRed)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } header: { Text(t("Technical")) }
+              footer: { Text(t("Resets all app preferences to their default values. Live tracks and imported data are not affected.")) }
         }
         .navigationTitle(t("Technical"))
     }
