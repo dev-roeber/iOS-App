@@ -309,8 +309,42 @@ public final class AppPreferences: ObservableObject {
         didSet { userDefaults.set(sendsLiveLocationToServer, forKey: Keys.liveTrackingServerUploadEnabled) }
     }
 
+    private var isRevertingUploadURL: Bool = false
     @Published public var liveLocationServerUploadURLString: String {
-        didSet { userDefaults.set(liveLocationServerUploadURLString, forKey: Keys.liveTrackingServerUploadURL) }
+        didSet {
+            if isRevertingUploadURL { return }
+            if Self.isValidUploadEndpoint(liveLocationServerUploadURLString) {
+                userDefaults.set(liveLocationServerUploadURLString, forKey: Keys.liveTrackingServerUploadURL)
+            } else {
+                isRevertingUploadURL = true
+                liveLocationServerUploadURLString = oldValue
+                isRevertingUploadURL = false
+            }
+        }
+    }
+
+    /// Validates a candidate upload endpoint string. Mirrors the rules in
+    /// `LiveLocationServerUploadConfiguration.endpointURL`:
+    /// - empty string is allowed (clears configuration)
+    /// - `https://` always OK
+    /// - `http://` only for localhost / 127.0.0.1 / [::1]
+    /// Never logs the input to avoid accidental token leakage.
+    static func isValidUploadEndpoint(_ raw: String) -> Bool {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return true }
+        guard let url = URL(string: trimmed),
+              let scheme = url.scheme?.lowercased(),
+              let host = url.host?.lowercased(),
+              !host.isEmpty
+        else {
+            return false
+        }
+        if scheme == "https" { return true }
+        if scheme == "http" {
+            // URL.host strips the IPv6 brackets, so "::1" is the literal we compare.
+            return host == "localhost" || host == "127.0.0.1" || host == "::1"
+        }
+        return false
     }
 
     @Published public var liveLocationServerUploadBearerToken: String {

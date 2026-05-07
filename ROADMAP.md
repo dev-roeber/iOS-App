@@ -1,16 +1,25 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-06, HEAD post-`70254ff`)
+## Aktiver Stand (2026-05-07, HEAD `5c69afe`)
 - Zentrales Repo: `iOS-App` (dev-roeber/iOS-App)
 - Vorstufen: LocationHistory2GPX-Monorepo (historisch), LocationHistory2GPX-iOS (historisch), LH2GPXWrapper (historisch)
 
-### Verifikation UX/Layout-Train + Mock-Helper (2026-05-07, HEAD pending — Commit folgt)
+### Verifikation P1-Hardening-Train (2026-05-07, HEAD pending — Commit folgt)
+
+P1-Hardening-Train: B1 distanceText! safe-unwrap in `DaySummaryRowPresentation` + B2 `[weak self]` in `AppOverviewMapModel.rebuildOverlays` + B3 Upload-URL-Validation in `AppPreferences.liveLocationServerUploadURLString` (akzeptiert `https://`, `localhost`, `127.0.0.1`, `[::1]`; rejected http remote / garbage; Reset auf `oldValue` per Re-Entrancy-Flag) + 8 neue Tests in `AppPreferencesUploadURLValidationTests.swift`. Token-Property + Keychain unverändert.
+
+- `swift test`: **1065 Tests, 2 Skips, 0 Failures** (+8 gegenüber 1057).
+- Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+- HEAD: pending — Commit folgt.
+- Hardware-Re-Verifikation iPhone 15 Pro Max: weiterhin offen.
+
+### Verifikation UX/Layout-Train + Mock-Helper (2026-05-07, HEAD `5c69afe`)
 
 UX/Layout-Train + Mock-Helper: 6 Achsen — Mock-Client extrahiert (`Tests/LocationHistoryConsumerTests/Helpers/MockLiveLocationClient.swift`), Insights Triple-Range-Picker konsolidiert (`AppInsightsContentView`), Overview Doppel-Header gelöst (Card → "Statistics"/"Statistik"), Map-Pill-Overlap gefixt (`AppOverviewTracksMapView`), Form-vs-LHCard-Konsistenz Settings schmaler Scope (`AppPrivacyOptionsView` + `AppTechnicalOptionsView` → `Form`/`Section`; LiveRecording/Upload/Widget-LiveActivity bleiben LHCard), Hero-Map-Layout-Tests (`LHMapHeaderLayoutTests.swift`, 12 property-based Cases — keine SnapshotTesting-Dependency). Details in `CHANGELOG.md` und `NEXT_STEPS.md`.
 
 - `swift test`: **1057 Tests, 2 Skips, 0 Failures** (+12 gegenüber 1045 — neue Layout-Tests).
 - Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
-- HEAD: pending — Commit folgt.
+- HEAD: `5c69afe`.
 - Hardware-Re-Verifikation iPhone 15 Pro Max: weiterhin offen.
 
 ### Audit-Verifikation Phase 1-5 Audit-Train (2026-05-07, HEAD `20877ae`)
@@ -21,7 +30,7 @@ Phase 1-5 Audit-Train (Items 2-15) über zwei Commits — `21b4026` (Phase 1: it
 - Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
 - Hardware-Re-Verifikation iPhone 15 Pro Max: weiterhin offen.
 
-### Audit-Verifikation Bündel B+C+D+A (2026-05-07, Doku-Train, HEAD pending — Commit folgt)
+### Audit-Verifikation Bündel B+C+D+A (2026-05-07, Doku-Train, HEAD `e3dae15`)
 
 22 Audit-Achsen aus den Bündeln B (Dead-Code), C (Performance-Restposten), D (Architektur), A (Test-Härtung) als erledigt verbucht; Details in `CHANGELOG.md` und `NEXT_STEPS.md`.
 
@@ -35,7 +44,7 @@ Phase 1-5 Audit-Train (Items 2-15) über zwei Commits — `21b4026` (Phase 1: it
 - Hardware-Re-Verifikation iPhone 15 Pro Max: weiterhin offen.
 - Verbleibend offen aus dem Audit: P2-8 (Live-Duplicate-Refactor bewusst nicht angefasst), P2-16 (API-Naming), P2-18 (HeatmapGridBuilder MapKit-Entkopplung), P2-17 (CI.xctestplan SKIP), Mock-Client-Refactor.
 
-### Audit-Verifikation Block 1-2-Train (2026-05-07, Doku-Train, HEAD pending — Commit folgt)
+### Audit-Verifikation Block 1-2-Train (2026-05-07, Doku-Train, HEAD `e3dae15`)
 
 7 Audit-Achsen aus Block 1 (Wiring/Config) und Block 2 (Streaming-Folge) als erledigt verbucht; Details in `CHANGELOG.md` und `NEXT_STEPS.md`.
 

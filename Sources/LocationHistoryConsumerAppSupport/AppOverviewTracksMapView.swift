@@ -93,7 +93,7 @@ final class AppOverviewMapModel {
         let viewport = viewportRegion
         let gen = loadGeneration
         let expectedToken = currentLoadToken
-        overlayTask = Task.detached(priority: .userInitiated) { [self] in
+        overlayTask = Task.detached(priority: .userInitiated) { [weak self] in
             let data = OverviewMapPreparation.buildOverlaysFromCandidates(
                 candidates: candidates,
                 totalPointCount: pointCount,
@@ -101,7 +101,8 @@ final class AppOverviewMapModel {
                 viewportRegion: viewport
             )
             guard !Task.isCancelled else { return }
-            await MainActor.run { [self] in
+            await MainActor.run { [weak self] in
+                guard let self else { return }
                 guard gen == self.loadGeneration,
                       expectedToken == self.currentLoadToken else { return }
                 self.renderData = data

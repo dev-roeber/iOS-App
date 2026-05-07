@@ -87,13 +87,14 @@ enum DaySummaryRowPresentationBuilder {
 
         let distanceText: String?
         if summary.totalPathDistanceM > 0 {
-            distanceText = formatDistance(summary.totalPathDistanceM, unit: unit)
+            let formatted = formatDistance(summary.totalPathDistanceM, unit: unit)
+            distanceText = formatted
             metrics.append(
                 .init(
                     id: "distance",
                     icon: "ruler",
-                    text: distanceText!,
-                    accessibilityLabel: "\(distanceText!) route distance",
+                    text: formatted,
+                    accessibilityLabel: "\(formatted) route distance",
                     tint: "purple"
                 )
             )

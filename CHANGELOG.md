@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## [2026-05-07] — P1 release-readiness fix: doc-truth sync + stability hardening
+
+### Doku-Wahrheits-Sync
+- ROADMAP.md Aktiver-Stand-Header auf HEAD `5c69afe`, Datum 2026-05-07 gesetzt.
+- Alle `pending — Commit folgt`-Verifikations-Blöcke mit echten HEAD-Hashes aufgefüllt.
+- README.md:78 lange Test-Nachweis-Zeile auf chronologische 3-Stufen-History gekürzt.
+- README UI-Begriffe an echte UI-Labels angeglichen: `Simplified` (kein Beta-Suffix), `Rectangle / Bounding Box`, exakte Banner-Labels.
+
+### Stabilitäts-Härtung
+- DaySummaryRowPresentation: `distanceText!` Force-Unwrap durch sichere `let`-Bindung ersetzt.
+- AppOverviewMapModel: `rebuildOverlays`-Task-Closures von `[self]` auf `[weak self]` umgestellt; Race-Token-Logik unverändert.
+- AppPreferences: `liveLocationServerUploadURLString` validiert jetzt vor UserDefaults-Write — `https://`, `localhost`, `127.0.0.1`, `[::1]` akzeptiert; sonst Reject mit Reset auf alten Wert. Token-Property + Keychain unverändert.
+- 8 neue Tests in `AppPreferencesUploadURLValidationTests.swift`.
+
+### Verifikation
+- `swift test`: **1065 Tests, 2 Skips, 0 Failures** (vorher 1057).
+- Wrapper xcodebuild iPhone 17 Pro Max Sim 26.3.1: BUILD SUCCEEDED.
+
+### Weiterhin offen
+- Hardware-Re-Verifikation iPhone 15 Pro Max für aktuellen HEAD steht aus (letzte echte Acceptance: 2026-05-05).
+- ASC/TestFlight-Status nicht geprüft.
+- 46-MB-Crashfall geräteseitig nicht validiert.
+
 ## [2026-05-07] — UX/Layout batch + mock helpers: insights-picker, overview-header, map-pill, settings-form, hero-map-layout-tests
 
 ### Was sich geändert hat (6 Achsen)

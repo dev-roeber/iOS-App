@@ -123,6 +123,17 @@ Nicht in diesem Train erledigt (weiterhin offen): P1-18..P1-24 (Test-Lücken), H
 
 **Verbleibend offen:** Item 10 als bekannte SKIP, Hardware-Re-Verifikation iPhone 15 Pro Max, alle Hardware-Items, plus die noch nicht angefassten UX-P1 (P1-31..P1-40 falls nummeriert).
 
+### P1-Hardening-Train 2026-05-07 — 3 Achsen erledigt + 8 neue Tests
+
+P1-Hardening-Train (`swift test` **1065/2/0**; +8 Cases gegenüber 1057; Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED; HEAD pending — Commit folgt):
+
+- [x] **B1 distanceText! Force-Unwrap entfernt** (2026-05-07): `DaySummaryRowPresentation.swift:88-103` — `formatDistance` (non-optional) in lokale Konstante gebunden; Verhalten unverändert.
+- [x] **B2 weak self in AppOverviewMapModel** (2026-05-07): `AppOverviewTracksMapView.swift` — `rebuildOverlays` Task-Closures von `[self]` auf `[weak self]` mit `guard let self else { return }` vor MainActor-Writes; Race-Token-Logik unverändert.
+- [x] **B3 Upload-URL-Validation** (2026-05-07): `AppPreferences.swift` — neuer privater Helper `Self.isValidUploadEndpoint(_:)`; `liveLocationServerUploadURLString.didSet` validiert vor UserDefaults-Write; `https://`, `localhost`, `127.0.0.1`, `[::1]` akzeptiert; sonst Reject mit Reset auf `oldValue` per Re-Entrancy-Flag `isRevertingUploadURL`. Token-Property + Keychain unverändert; kein Logging des Inputs.
+- [x] **C 8 neue URL-Validation-Tests** (2026-05-07): `Tests/LocationHistoryConsumerTests/AppPreferencesUploadURLValidationTests.swift`.
+
+**Verbleibend offen:** Hardware-Re-Verifikation iPhone 15 Pro Max für aktuellen HEAD; ASC/TestFlight-Status nicht geprüft; 46-MB-Crashfall geräteseitig nicht validiert.
+
 ### UX/Layout-Train + Mock-Helper 2026-05-07 — 6 Achsen erledigt
 
 6 Achsen in diesem Train als erledigt verbucht (`swift test` **1057/2/0**; +12 Cases gegenüber 1045 — neue Hero-Map-Layout-Tests; Wrapper `xcodebuild` iPhone 17 Pro Max Sim 26.3.1 BUILD SUCCEEDED; HEAD pending — Commit folgt):
