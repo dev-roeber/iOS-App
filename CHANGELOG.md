@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-05-08 — Phase-10A P1-A/B (Weg 2) — Sichtbare Progress/Cancel-UI für Store-Import
+- LocalTimelineImportProgressPresentation: Foundation-only Presentation-Schicht (statusText, phaseLabel, countsText, skippedText, currentDayText, bytesText, percentText, oneLineSummary, isCancellable). Keine Standortdaten, keine Pfade, keine Tokens.
+- LocalTimelineImportUIState: @MainActor ObservableObject; per startNewImport() einen frischen LocalTimelineImportController + Cancellation pro Import. Snapshot-Hop auf MainActor, Linux-getestet.
+- LocalTimelineImportProgressView (SwiftUI): Phase-Label, Counter-Block, optional Bytes/Prozent, Cancel-Button nur wenn isCancellable. Dark-Mode-freundlich, Accessibility-Labels für Status + Cancel.
+- LocalTimelineTestModeBanner (SwiftUI): einzeiliger Pre-production-Hinweis, sichtbar genau dann, wenn LocalTimelineTechnicalTestSettings.shared.localTimelineStoreTestModeEnabled true ist.
+- AppShellRootView + wrapper/ContentView wiren beides ein: Banner oben, Progress/Cancel im isLoading-Branch.
+- Cancel-Flow: Controller.cancel() → Importer wirft cancellation → Writer rollbackt → bestEffortTruncateWAL → AppFlow liefert .failure(title="Import cancelled") → keine Teilimports, Reimport möglich.
+- Linux-Tests: LocalTimelineImportProgressPresentationTests, LocalTimelineImportUIStateTests, AppFlowImportCancelRoutingTests.
+- Store-Pfad bleibt pre-production / feature-flagged / default AUS. Legacy-Pfad unverändert. 46-MB-Gate bleibt FAILED / pending hardware retest.
+
 ## [2026-05-08] — feat: add local timeline wal checkpoint recovery (P1-C + P1-D)
 
 Phase-10A-Folge des Deep Audits. Setzt **P1-C (WAL-Checkpoint-/Cleanup-Strategie)** und **P1-D (Recovery-Test für Mid-Import-Crash)** aus `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` § 13 um, ausschließlich im Store-Pfad.

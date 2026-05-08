@@ -8,7 +8,7 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 
 Im Audit als **P1** belegt; nach diesem Commit (P1-A + P1-B + P1-C + P1-D erledigt) verbleibend:
 
-1. **UI-Hook für Cancel + Progress** (Folge von P1-A/P1-B). Service-Layer (`LocalTimelineImportController`) ist verdrahtet und Linux-getestet; was fehlt, ist die SwiftUI-Anbindung in `AppShellRootView` / `wrapper/LH2GPXWrapper/ContentView` / `LocalTimelineSessionLandingView`: Cancel-Button im Loading-State, Progress-Counter (entries / visits / activities / paths / skipped / optional bytes), Cancel-Outcome-Hinweis. Reine UI-Aufgabe — Foundation-Layer ist stabil.
+1. **UI-Hook für Cancel + Progress** (Folge von P1-A/P1-B). ✓ erledigt 2026-05-08 (Weg 2): LocalTimelineImportProgressView + Cancel-Button im Loading-Branch beider App-Shells, Test-Mode-Banner, Linux-Tests grün. Service-Layer (`LocalTimelineImportController`) ist verdrahtet und Linux-getestet; SwiftUI-Anbindung in `AppShellRootView` / `wrapper/LH2GPXWrapper/ContentView` ist jetzt ebenfalls live (Progress-Counter entries / visits / activities / paths / skipped / optional bytes, Cancel-Outcome-Hinweis). `LocalTimelineSessionLandingView`-Fallweise-UI-Polish bleibt offen, Foundation- und View-Layer sind stabil.
 2. **UX-Polish AppOptionsView Memory-Logging-Section** (P1-E). Drei Felder in zwei Layern (Build Configuration / Tester Override / Active Status) reorganisieren — nach FIX-1 nicht mehr blocking, aber Klarheit verbessert.
 
 P0 ist bewusst leer: keine produktiven Crashes/Datenverluste im Repo belegbar; das **46-MB-Hardware-Gate bleibt FAILED / pending hardware retest** (verbatim) als externe Verifikation.

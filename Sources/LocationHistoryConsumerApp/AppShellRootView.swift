@@ -17,12 +17,18 @@ struct AppShellRootView: View {
     @State private var hasAttemptedAutoRestore = false
     @StateObject private var liveLocation = LiveLocationFeatureModel()
     @StateObject private var preferences = AppPreferences()
+    @StateObject private var importUI = LocalTimelineImportUIState()
+    @StateObject private var technicalSettings = LocalTimelineTechnicalTestSettings.shared
 
     private func t(_ english: String) -> String {
         preferences.localized(english)
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            if technicalSettings.localTimelineStoreTestModeEnabled {
+                LocalTimelineTestModeBanner()
+            }
         Group {
             if session.content != nil {
                 AppContentSplitView(
@@ -55,7 +61,15 @@ struct AppShellRootView: View {
                 NavigationStack {
                     Group {
                         if session.isLoading {
-                            ProgressView(t("Opening location history..."))
+                            VStack(spacing: 16) {
+                                ProgressView(t("Opening location history..."))
+                                if importUI.hasObservedSnapshot {
+                                    LocalTimelineImportProgressView(
+                                        state: importUI,
+                                        onCancel: { importUI.cancel() }
+                                    )
+                                }
+                            }
                         } else {
                             AppShellEmptyStateView(
                                 message: session.message,
@@ -83,6 +97,7 @@ struct AppShellRootView: View {
                     }
                 }
             }
+        }
         }
         .environmentObject(preferences)
         .environment(\.locale, preferences.appLocale)
@@ -194,6 +209,7 @@ struct AppShellRootView: View {
     private func clearCurrentContent() {
         ImportBookmarkStore.clear()
         session.clearContent()
+        importUI.reset()
     }
 
     private func refreshRecentFiles() {
@@ -275,7 +291,16 @@ struct AppShellRootView: View {
         // damit beide App-Entry-Points (wrapper + Package) im Lock-Step
         // auf Feature-Flag reagieren. Bei deaktivem Flag identisch zum
         // bisherigen Verhalten.
-        let outcome = await LH2GPXAppFlow.loadImportedFileEnvelope(at: url, source: source)
+        // Phase-10A P1-A/B (Weg 2) — frischer Controller pro Import; bei
+        // deaktivem Flag bleibt der Sink unbenutzt (Legacy-Pfad emittiert
+        // keine Snapshots) und der UI-Hook bleibt unsichtbar.
+        let controller = importUI.startNewImport()
+        let outcome = await LH2GPXAppFlow.loadImportedFileEnvelope(
+            at: url,
+            source: source,
+            importProgress: controller.progressSink,
+            importCancellation: controller.cancellation
+        )
         let preserve = source == .autoRestore ? false : session.hasLoadedContent
         let routing = LH2GPXAppFlow.apply(
             envelopeOutcome: outcome,

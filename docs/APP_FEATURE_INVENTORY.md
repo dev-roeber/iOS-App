@@ -60,15 +60,16 @@ Present:
 - recent-file reopen removes stale or unavailable entries instead of surfacing raw bookmark failures
 - auto-restore of the last import exists as an opt-in startup path controlled by `AppPreferences.autoRestoreLastImport`
 - missing or stale last-import bookmarks are skipped gracefully during auto-restore
-- (Phase-10A, Store-Pfad only, **default OFF**, **no UI-Hook yet**) cooperative import cancellation: `LocalTimelineImportCancellation` token; `LocalTimelineImportController.cancel()` rolls back the open SQLite transaction so no partial import is persisted
-- (Phase-10A, Store-Pfad only, **default OFF**, **no UI-Hook yet**) throttled import progress: `LocalTimelineImportProgress` snapshots with phase + counters + optional byte hints; default throttle 500 entries; emitted on every phase change and terminal phase
+- (Phase-10A, Store-Pfad only, **default OFF**, **UI-Hook umgesetzt 2026-05-08 (Weg 2)**) cooperative import cancellation: `LocalTimelineImportCancellation` token; `LocalTimelineImportController.cancel()` rolls back the open SQLite transaction so no partial import is persisted; SwiftUI Cancel-Button im Loading-Branch von AppShellRootView + wrapper/LH2GPXWrapper/ContentView
+- (Phase-10A, Store-Pfad only, **default OFF**, **UI-Hook umgesetzt 2026-05-08 (Weg 2)**) throttled import progress: `LocalTimelineImportProgress` snapshots with phase + counters + optional byte hints; default throttle 500 entries; emitted on every phase change and terminal phase; `LocalTimelineImportProgressView` zeigt Counter + optional Bytes/% live
+- (Phase-10A, Store-Pfad only, **default OFF**, **UI-Hook umgesetzt 2026-05-08 (Weg 2)**) SwiftUI cancel-button + progress-counters in `wrapper/LH2GPXWrapper/ContentView.swift` / `AppShellRootView` (Loading-Branch); Test-Mode-Banner (`LocalTimelineTestModeBanner`) sichtbar bei aktivem `LocalTimelineTechnicalTestSettings.shared.localTimelineStoreTestModeEnabled`
 
 Not present:
 - FIT format import (no maintainable Swift library without external dependency; deliberate follow-up)
 - GeoJSON import (as import source; export remains present; deliberate follow-up)
 - drag-and-drop import UI
 - multi-file import UI
-- SwiftUI cancel-button + progress-counters in `LocalTimelineSessionLandingView` / `wrapper/LH2GPXWrapper/ContentView.swift` / `AppShellRootView` (service-/presentation-layer for cancel + progress is wired and Linux-tested; UI-hook deliberate follow-up)
+- SwiftUI cancel-button + progress-counters in `LocalTimelineSessionLandingView` (Landing-View-Variante) — UX-Polish offen (Loading-Branch-Variante in `wrapper/LH2GPXWrapper/ContentView.swift` / `AppShellRootView` ist seit 2026-05-08 (Weg 2) implementiert, siehe Sektion 2)
 
 ## 3. Overview / Dashboard
 

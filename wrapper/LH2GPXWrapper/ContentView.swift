@@ -22,6 +22,8 @@ struct ContentView: View {
     @StateObject private var liveLocation = LiveLocationFeatureModel()
     @StateObject private var preferences = AppPreferences()
     @StateObject private var loadingProgress = LoadingProgressEngine()
+    @StateObject private var importUI = LocalTimelineImportUIState()
+    @StateObject private var technicalSettings = LocalTimelineTechnicalTestSettings.shared
 
     private func t(_ english: String) -> String {
         preferences.localized(english)
@@ -41,6 +43,10 @@ struct ContentView: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            if technicalSettings.localTimelineStoreTestModeEnabled {
+                LocalTimelineTestModeBanner()
+            }
         Group {
             if session.content != nil {
                 AppContentSplitView(
@@ -79,9 +85,17 @@ struct ContentView: View {
                         .ignoresSafeArea()
                         Group {
                             if session.isLoading {
-                                ProgressView(loadingPhaseLabel)
-                                    .tint(.white)
-                                    .foregroundStyle(.white)
+                                VStack(spacing: 16) {
+                                    ProgressView(loadingPhaseLabel)
+                                        .tint(.white)
+                                        .foregroundStyle(.white)
+                                    if importUI.hasObservedSnapshot {
+                                        LocalTimelineImportProgressView(
+                                            state: importUI,
+                                            onCancel: { importUI.cancel() }
+                                        )
+                                    }
+                                }
                             } else {
                                 emptyStateView
                             }
@@ -107,6 +121,7 @@ struct ContentView: View {
                     }
                 }
             }
+        }
         }
         .environmentObject(preferences)
         .environment(\.locale, preferences.appLocale)
@@ -302,6 +317,7 @@ struct ContentView: View {
     private func clearCurrentContent() {
         ImportBookmarkStore.clear()
         session.clearContent()
+        importUI.reset()
     }
 
     @MainActor
@@ -364,12 +380,17 @@ struct ContentView: View {
         // Bei deaktivem Flag liefert er byte-identisch `.legacy(content)`,
         // bei aktivem Flag gegen Google-Timeline-JSON/-ZIP eine
         // `.localTimeline(session)` ohne AppExport-Materialisierung.
+        // Phase-10A P1-A/B (Weg 2) — frischer ImportController für jeden
+        // Import; bei deaktivem Flag bleibt der Sink unbenutzt.
+        let controller = await MainActor.run { importUI.startNewImport() }
         let outcome = await LH2GPXAppFlow.loadImportedFileEnvelope(
             at: url,
             source: source,
             onPhase: { phase in
                 Task { @MainActor in loadingProgress.setPhase(phase) }
-            }
+            },
+            importProgress: controller.progressSink,
+            importCancellation: controller.cancellation
         )
         await MainActor.run {
             let preserve = source == .autoRestore

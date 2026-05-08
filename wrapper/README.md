@@ -12,6 +12,8 @@ Xcode-Wrapper-Projekt fuer die iOS-App von LocationHistory2GPX.
 
 > **Hinweis 2026-05-08 (Phase 9A)**: Der Wrapper ist auf den feature-flagged Envelope-Pfad (`loadImportedFileEnvelope` + `LH2GPXAppFlow.apply(envelopeOutcome:to:preserveOnFailure:)`) verdrahtet und zeigt bei aktiver `localTimelineSession` die `LocalTimelineSessionLandingView` aus dem Core-Paket; Settings → Technical enthält eine Section "Local Timeline Store" mit Feature-Flag-Status und Delete-Button.
 
+> **Hinweis 2026-05-08 (Phase 10A P1-A/B Weg 2):** Bei aktivem "Local Timeline Store Test Mode" (Settings → Technical) zeigt der Wrapper während eines Google-Timeline-Imports eine sichtbare Progress-Card mit Status, Counter und Cancel-Button. Cancel rollback'd die offene SQLite-Transaktion und truncate't WAL — es bleibt kein Teilimport zurück, ein Reimport ist sofort möglich. Store-Pfad bleibt feature-flagged / default OFF; 46-MB-Hardware-Gate bleibt FAILED / pending hardware retest.
+
 ## Rolle dieses Verzeichnisses
 
 - Xcode-Projekt (.xcodeproj) fuer die fertige iOS-App

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-05-08 — Wrapper: Sichtbare Progress/Cancel-UI verdrahtet
+- ContentView: LocalTimelineImportProgressView + LocalTimelineTestModeBanner aus dem Core-Paket eingebunden.
+- Pro Import frischer LocalTimelineImportController via LocalTimelineImportUIState.startNewImport().
+- Cancel-Button im Loading-Branch sichtbar bei aktivem Store-Pfad-Import; Banner sichtbar bei aktivem TestModeToggle.
+- Legacy-Pfad unverändert. Store-Pfad bleibt pre-production / feature-flagged / default OFF. 46-MB-Hardware-Gate bleibt FAILED / pending hardware retest.
+
 ## 2026-05-08 (feat: add local timeline wal checkpoint recovery — Wrapper indirekt via Core-Paket)
 
 Wrapper-Code in `wrapper/LH2GPXWrapper/`/`wrapper/LH2GPXWidget/` **nicht angefasst**. Im Core-Paket P1-C (WAL-Checkpoint-/Cleanup-Strategie) und P1-D (Recovery-Test für Mid-Import-Crash) aus dem Deep Audit umgesetzt: neue API `LocalTimelineStore.checkpointWAL(mode:)`/`truncateWAL()`/`bestEffortTruncateWAL()` über `sqlite3_wal_checkpoint_v2` mit Default-Mode `.truncate`. Wiring (alle best-effort, damit Importerfolg/Cancel/Delete nicht von einem fehlschlagenden Checkpoint zerstört werden): `LocalTimelineImportWriter.finalize`/`.cancel` und `LocalTimelineStoreLifecycle.deleteAllLocalTimelineData(store:)` rufen `bestEffortTruncateWAL`. Reads checkpointen nicht — keine Performance-Falle. **Keine Schemaänderung**: `imports`-Row inside `BEGIN IMMEDIATE`, mid-import-Abbruch hinterlässt keine sichtbare Partial-Import-Row. Recovery-Test ist **Linux-Simulation, kein echter iOS-Jetsam-Test**. Bundle/Signing/Plist/Asset/Capabilities/Entitlements unverändert; keine neuen Dependencies. **46-MB-Crashfall bleibt FAILED / pending hardware retest** (verbatim). Keine ASC/Review/Hardware-/TestFlight-Freigabe behauptet. LocalTimelineStore bleibt **default AUS, pre-production / feature-flagged**. Linux-Vollsuite nach diesem Train: 1345 Tests, 2 Skips, 0 Failures (vorher 1332).

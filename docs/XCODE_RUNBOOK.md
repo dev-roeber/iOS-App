@@ -54,6 +54,13 @@ API-Ankerpunkte für die anstehende UI-Anbindung:
 
 **Privacy-/Scope-Vertrag** unverändert: Progress speichert keine Standortdaten; Snapshots sind reine Counter + Phase + optionale Byte-Hints. Keine UserDefaults-Persistenz, keine Pfade, keine Tokens. **46-MB-Gate bleibt FAILED / pending hardware retest.** LocalTimelineStore bleibt **pre-production / feature-flagged / default AUS**.
 
+**UI-Hook 2026-05-08 (Weg 2):**
+- AppShellRootView + wrapper/LH2GPXWrapper/ContentView blenden während des Imports im Loading-Branch eine LocalTimelineImportProgressView ein.
+- Cancel-Button nur sichtbar bei progress.isCancellable.
+- Test-Mode-Banner sichtbar genau bei aktivem LocalTimelineTechnicalTestSettings.shared.localTimelineStoreTestModeEnabled.
+- Aktivierung Test-Mode: Settings → Technical → "Local Timeline Store Test Mode" einschalten (UserDefaults-Bool, default OFF).
+- Reimport nach Cancel: bestätigt durch Linux-Test AppFlowImportCancelRoutingTests.testReimportAfterCancelSucceeds.
+
 ## Deep Audit 2026-05-08 + AppBuildInfo Live Memory-Logging Mirror
 
 Repo-Truth-Audit nach Build 158 abgelegt unter `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md`. P1-UX-Fix (FIX-1): `AppBuildInfo.isMemoryLoggingEnabled` ist jetzt computed (`var`) und liest live `ImportMemoryProbe.isLoggingEnabled`. Vorher fror der Wert beim Process-Start ein → "Memory Logging Disabled" in Build Info widersprach "Memory Logging Resolved Enabled" daneben. Regressions-Pin: `testAppBuildInfoMemoryLoggingReflectsLiveSettingsToggle`.
