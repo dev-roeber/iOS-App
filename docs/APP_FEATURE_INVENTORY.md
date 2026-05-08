@@ -363,7 +363,7 @@ Explicitly not present as active product features:
 - dedicated sync/server features
 
 Planned (research-only, not implemented):
-- **LocalTimelineStore** — on-disk Persistenz für sehr große Imports (z. B. 46 MB Google-Timeline-ZIP) als strukturelle Alternative zum heutigen In-Memory-`AppExport`-Pfad. Geprüfte Designrichtung: SQLite-C-API + `Int32`-microdegrees-BLOB, `applicationSupportDirectory/LocationHistory2GPX/Imports/`, `completeUnlessOpen`, backup-excluded; Streaming-Decode-Iterator. **Kein Code in `main`, kein Spike, keine UI-Umschaltung.** Conditional-P0/P1-Gate an 46-MB-Hardware-Retest gebunden. Details: `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`.
+- **LocalTimelineStore (Phase-1+2+3-Spike eingecheckt 2026-05-08, conditional P0/P1)** — on-disk Persistenz für sehr große Imports (z. B. 46 MB Google-Timeline-ZIP) als strukturelle Alternative zum heutigen In-Memory-`AppExport`-Pfad. Phase 1 (CoordBlob + SQLite-Schema), Phase 2 (visits/activities, disk-first ImportWriter, GoogleTimelineStoreImporter, deleteAll DB-only) und Phase 3 (Foundation-only Read-Models + LocalTimelineStoreReader mit bounded Reads) sind als isolierte Spike-Surface eingecheckt. **Kein UI-Hook**, **kein App-Session-Switch**, **kein Map-Hook**. Status: **Spike / pre-production, nicht produktiv**. Phase 4 (FileProtection, applicationSupportDirectory + isExcludedFromBackupKey, deleteAll() um Caches/tmp/Bookmark/Preferences, Adapter zu flatCoordinates-Konsumenten, derived_cache/RTree, App-Flow-Umschaltung, Settings-Eintrag, Privacy-Doku) bleibt offen vor UI-Hook. Conditional-P0/P1-Gate an 46-MB-Hardware-Retest gebunden. Details: `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`.
 
 ## 12b. Feature-Batch 2026-04-01 – Range / Insights / Export / Import-Comfort / Days-Polish
 

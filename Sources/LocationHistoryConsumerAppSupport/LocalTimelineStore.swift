@@ -247,6 +247,237 @@ public final class LocalTimelineStore {
     public func countVisits() throws -> Int { try countRows(in: "visits") }
     public func countActivities() throws -> Int { try countRows(in: "activities") }
 
+    // MARK: - Phase-3 bounded read helpers
+
+    /// All imports ordered by `created_at` descending, then `id` for stability.
+    /// Reads only `imports` columns — never touches `paths`/`visits`/`activities`.
+    public func imports() throws -> [ImportRow] {
+        let sql = """
+        SELECT id, source_filename, created_at FROM imports
+        ORDER BY created_at DESC, id DESC;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        var out: [ImportRow] = []
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_DONE { break }
+            guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+            out.append(ImportRow(
+                id: stringColumn(stmt, 0) ?? "",
+                sourceFilename: stringColumn(stmt, 1) ?? "",
+                createdAt: stringColumn(stmt, 2) ?? ""
+            ))
+        }
+        return out
+    }
+
+    public func importRow(id: String) throws -> ImportRow? {
+        let sql = "SELECT id, source_filename, created_at FROM imports WHERE id = ? LIMIT 1;"
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: id, name: "id")
+        let rc = sqlite3_step(stmt)
+        if rc == SQLITE_DONE { return nil }
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        return ImportRow(
+            id: stringColumn(stmt, 0) ?? "",
+            sourceFilename: stringColumn(stmt, 1) ?? "",
+            createdAt: stringColumn(stmt, 2) ?? ""
+        )
+    }
+
+    public func latestImport() throws -> ImportRow? {
+        let sql = """
+        SELECT id, source_filename, created_at FROM imports
+        ORDER BY created_at DESC, id DESC LIMIT 1;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        let rc = sqlite3_step(stmt)
+        if rc == SQLITE_DONE { return nil }
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        return ImportRow(
+            id: stringColumn(stmt, 0) ?? "",
+            sourceFilename: stringColumn(stmt, 1) ?? "",
+            createdAt: stringColumn(stmt, 2) ?? ""
+        )
+    }
+
+    public func dayRow(id: String) throws -> DayRow? {
+        let sql = """
+        SELECT id, import_id, date, route_count, visit_count, distance_m
+        FROM days WHERE id = ? LIMIT 1;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: id, name: "id")
+        let rc = sqlite3_step(stmt)
+        if rc == SQLITE_DONE { return nil }
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        return DayRow(
+            id: stringColumn(stmt, 0) ?? "",
+            importId: stringColumn(stmt, 1) ?? "",
+            date: stringColumn(stmt, 2) ?? "",
+            routeCount: Int(sqlite3_column_int(stmt, 3)),
+            visitCount: Int(sqlite3_column_int(stmt, 4)),
+            distanceM: sqlite3_column_double(stmt, 5)
+        )
+    }
+
+    public func dayRow(forImportId importId: String, date: String) throws -> DayRow? {
+        let sql = """
+        SELECT id, import_id, date, route_count, visit_count, distance_m
+        FROM days WHERE import_id = ? AND date = ? LIMIT 1;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: importId, name: "import_id")
+        try bindText(stmt, index: 2, value: date, name: "date")
+        let rc = sqlite3_step(stmt)
+        if rc == SQLITE_DONE { return nil }
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        return DayRow(
+            id: stringColumn(stmt, 0) ?? "",
+            importId: stringColumn(stmt, 1) ?? "",
+            date: stringColumn(stmt, 2) ?? "",
+            routeCount: Int(sqlite3_column_int(stmt, 3)),
+            visitCount: Int(sqlite3_column_int(stmt, 4)),
+            distanceM: sqlite3_column_double(stmt, 5)
+        )
+    }
+
+    public func dayCount(forImportId importId: String) throws -> Int {
+        let sql = "SELECT COUNT(*) FROM days WHERE import_id = ?;"
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: importId, name: "import_id")
+        let rc = sqlite3_step(stmt)
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        return Int(sqlite3_column_int64(stmt, 0))
+    }
+
+    /// Path metadata for a single day, **without** the `coord_blob`. Used by
+    /// the read-surface so DayDetail can list paths and decide which one to
+    /// decode lazily.
+    public func pathMetadata(forDayId dayId: String) throws -> [LocalTimelinePathRecord] {
+        let sql = """
+        SELECT id, day_id, start_time, end_time, mode, distance_m, point_count,
+               min_lat, min_lon, max_lat, max_lon, coord_encoding
+        FROM paths WHERE day_id = ? ORDER BY start_time;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: dayId, name: "day_id")
+        var out: [LocalTimelinePathRecord] = []
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_DONE { break }
+            guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+            out.append(LocalTimelinePathRecord(
+                id: stringColumn(stmt, 0) ?? "",
+                dayId: stringColumn(stmt, 1) ?? "",
+                startTime: stringColumn(stmt, 2),
+                endTime: stringColumn(stmt, 3),
+                mode: stringColumn(stmt, 4),
+                distanceM: sqlite3_column_double(stmt, 5),
+                pointCount: Int(sqlite3_column_int(stmt, 6)),
+                minLat: optionalDoubleColumn(stmt, 7),
+                minLon: optionalDoubleColumn(stmt, 8),
+                maxLat: optionalDoubleColumn(stmt, 9),
+                maxLon: optionalDoubleColumn(stmt, 10),
+                coordEncoding: stringColumn(stmt, 11) ?? ""
+            ))
+        }
+        return out
+    }
+
+    public func pathMetadata(id: String) throws -> LocalTimelinePathRecord? {
+        let sql = """
+        SELECT id, day_id, start_time, end_time, mode, distance_m, point_count,
+               min_lat, min_lon, max_lat, max_lon, coord_encoding
+        FROM paths WHERE id = ? LIMIT 1;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: id, name: "id")
+        let rc = sqlite3_step(stmt)
+        if rc == SQLITE_DONE { return nil }
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        return LocalTimelinePathRecord(
+            id: stringColumn(stmt, 0) ?? "",
+            dayId: stringColumn(stmt, 1) ?? "",
+            startTime: stringColumn(stmt, 2),
+            endTime: stringColumn(stmt, 3),
+            mode: stringColumn(stmt, 4),
+            distanceM: sqlite3_column_double(stmt, 5),
+            pointCount: Int(sqlite3_column_int(stmt, 6)),
+            minLat: optionalDoubleColumn(stmt, 7),
+            minLon: optionalDoubleColumn(stmt, 8),
+            maxLat: optionalDoubleColumn(stmt, 9),
+            maxLon: optionalDoubleColumn(stmt, 10),
+            coordEncoding: stringColumn(stmt, 11) ?? ""
+        )
+    }
+
+    /// Read the raw `coord_blob` for a single path. Returns `nil` if the
+    /// path id is unknown. The caller is responsible for handing the blob
+    /// to `CoordBlobIterator` for lazy decoding.
+    public func coordBlob(forPathId pathId: String) throws -> Data? {
+        let sql = "SELECT coord_blob FROM paths WHERE id = ? LIMIT 1;"
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: pathId, name: "id")
+        let rc = sqlite3_step(stmt)
+        if rc == SQLITE_DONE { return nil }
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        return blobColumn(stmt, 0) ?? Data()
+    }
+
+    public func dayDateRange(forImportId importId: String) throws -> (String, String)? {
+        let sql = """
+        SELECT MIN(date), MAX(date) FROM days WHERE import_id = ?;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: importId, name: "import_id")
+        let rc = sqlite3_step(stmt)
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        guard let lo = stringColumn(stmt, 0), let hi = stringColumn(stmt, 1) else {
+            return nil
+        }
+        return (lo, hi)
+    }
+
+    public func totalDistance(forImportId importId: String) throws -> Double {
+        let sql = "SELECT COALESCE(SUM(distance_m), 0) FROM days WHERE import_id = ?;"
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: importId, name: "import_id")
+        let rc = sqlite3_step(stmt)
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        return sqlite3_column_double(stmt, 0)
+    }
+
+    public func totalRouteCount(forImportId importId: String) throws -> Int {
+        try sumIntColumn("route_count", importId: importId)
+    }
+
+    public func totalVisitCount(forImportId importId: String) throws -> Int {
+        try sumIntColumn("visit_count", importId: importId)
+    }
+
+    private func sumIntColumn(_ col: String, importId: String) throws -> Int {
+        // `col` is a fixed-string call site; not bindable.
+        let sql = "SELECT COALESCE(SUM(\(col)), 0) FROM days WHERE import_id = ?;"
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: importId, name: "import_id")
+        let rc = sqlite3_step(stmt)
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        return Int(sqlite3_column_int64(stmt, 0))
+    }
+
     public func days(forImportId importId: String) throws -> [DayRow] {
         let sql = """
         SELECT id, import_id, date, route_count, visit_count, distance_m

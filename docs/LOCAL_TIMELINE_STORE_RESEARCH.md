@@ -20,6 +20,24 @@ Status: **Research + Phase-1-Spike eingecheckt** (CoordBlob + isolierter SQLite-
 
 ---
 
+## Phase-3-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStoreReadModels.swift` und `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStoreReader.swift`. Schema unverändert (`userVersion = 2`).
+- Foundation-only Read-Models: `LocalTimelineImportRecord`, `LocalTimelineDayRecord`, `LocalTimelineVisitRecord`, `LocalTimelineActivityRecord`, `LocalTimelinePathRecord` (NUR Metadaten, KEIN `coord_blob` im Record), `LocalTimelineDayDetailSnapshot` (day + visits + activities + paths-METADATEN).
+- Read-Adapter `LocalTimelineStoreReader` mit Bounded-Read-APIs:
+  - `imports()`, `importRecord(id:)`, `latestImport()`
+  - `days(forImportId:)`, `dayRecord(id:)`, `dayRecord(forImportId:date:)`, `dayCount(forImportId:)`
+  - `dayDetail(dayId:) -> LocalTimelineDayDetailSnapshot?` — bündelt day + visits + activities + path-METADATA (KEINE Coord-Decodierung)
+  - `paths(forDayId:)`, `pathRecord(id:)`
+  - `coordinateSequence(forPathId:)` — wirft `.unknownPath` / `.malformedCoordBlob`, decodiert lazy via `CoordBlobIterator`
+  - `dayDateRange(forImportId:) -> ClosedRange<String>?`, `totalDistance/totalRouteCount/totalVisitCount(forImportId:)`
+- **Bounded-Read-Garantien** (im Reader-Doc-Kommentar verankert): 1) `imports()` ohne paths/visits/activities, 2) `days(forImportId:)` ohne `coord_blob`, 3) `dayDetail(dayId:)` ohne eager coord-Decode, 4) Path-Koordinaten nur explizit/lazy via `coordinateSequence`, 5) kein `AppExport` im Read-Pfad, 6) kein API materialisiert ein vollständiges `[Double]` für einen ganzen Import.
+- **Tests Linux-grün**: `LocalTimelineStoreReaderTests` (13), `LocalTimelineStoreReadPersistenceTests` (6), `LocalTimelineStoreBoundedReadTests` (5). 50k-Visit-Smoke verifiziert strukturell summary-only Day-List-Reads (kein coord-Decode). Erwarteter `swift test`-Stand: 1071 → ~1095 (+24).
+- **Bewusst nicht in Phase 3**: FileProtection-Flag an `sqlite3_open_v2`, `applicationSupportDirectory/LocationHistory2GPX/Imports/`-Pfad mit `isExcludedFromBackupKey = true`, `deleteAll()`-Erweiterung um Caches/tmp/Bookmark/Preferences, Adapter zum bestehenden `flatCoordinates`-Konsumenten-Set, `derived_cache`/RTree `path_bounds`, App-Flow-Umschaltung gegen Conditional Gate, Settings-Eintrag „Importierte Daten löschen", Privacy-Doku. Alle als **Phase 4 vor UI-Hook** markiert.
+- **Conditional Gate unverändert**: P0 falls 46-MB-Retest FAILED, P1/P2 falls PASSED. **46-MB-Crashfall bleibt FAILED / pending hardware retest.**
+
+---
+
 ## Phase-1-Spike Snapshot (2026-05-08)
 
 - **Eingecheckt**: `Sources/CSQLite/{module.modulemap, shim.h}` (Linux-Shim, pkgConfig `sqlite3`), `Sources/LocationHistoryConsumer/CoordBlob.swift`, `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStore{,Schema,Error}.swift`. Test-Surface: `CoordBlobEncoderTests` (13), `CoordBlobDistanceTests` (2), `LocalTimelineStoreTests` (8). Linux `swift test` 1057/2/0 (vorher 1034 → +23).
