@@ -153,11 +153,186 @@ public final class LocalTimelineStore {
         guard rc == SQLITE_DONE else { throw stepError(rc: rc) }
     }
 
+    /// Phase-2 lifecycle hook. Removes every row from
+    /// `imports`/`days`/`paths`/`visits`/`activities` in a single
+    /// transaction. Idempotent — succeeds on an empty store.
+    ///
+    /// Scope (Phase-2): **DB rows only**. App-level caches (`Caches/...`,
+    /// `tmp/LH2GPX-Import-*/`) are not touched here because no production
+    /// flow currently writes to them. The full "user pressed Delete in
+    /// Settings" surface — DB + Caches + tmp + bookmark/preferences —
+    /// must be wired up in the UI hook iteration *before* the store
+    /// becomes user-visible.
+    public func deleteAll() throws {
+        try withTransaction {
+            // Order matters only for clarity — `ON DELETE CASCADE` would
+            // make the dependent deletes redundant if we only nuked
+            // `imports`. We delete from leaves first so the operation is
+            // safe even if a future migration drops the FK chain.
+            try exec("DELETE FROM activities;")
+            try exec("DELETE FROM visits;")
+            try exec("DELETE FROM paths;")
+            try exec("DELETE FROM days;")
+            try exec("DELETE FROM imports;")
+        }
+    }
+
+    public func updateDaySummary(id: String, routeCount: Int, visitCount: Int, distanceM: Double) throws {
+        let sql = """
+        UPDATE days SET route_count = ?, visit_count = ?, distance_m = ? WHERE id = ?;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindInt(stmt, index: 1, value: Int32(routeCount), name: "route_count")
+        try bindInt(stmt, index: 2, value: Int32(visitCount), name: "visit_count")
+        try bindDouble(stmt, index: 3, value: distanceM, name: "distance_m")
+        try bindText(stmt, index: 4, value: id, name: "id")
+        let rc = sqlite3_step(stmt)
+        guard rc == SQLITE_DONE else { throw stepError(rc: rc) }
+    }
+
+    public func insertVisit(_ row: VisitRow) throws {
+        let sql = """
+        INSERT INTO visits(id, day_id, start_time, end_time, latitude, longitude,
+                           name, semantic_type, place_id, probability)
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: row.id, name: "id")
+        try bindText(stmt, index: 2, value: row.dayId, name: "day_id")
+        try bindOptionalText(stmt, index: 3, value: row.startTime, name: "start_time")
+        try bindOptionalText(stmt, index: 4, value: row.endTime, name: "end_time")
+        try bindOptionalDouble(stmt, index: 5, value: row.latitude, name: "latitude")
+        try bindOptionalDouble(stmt, index: 6, value: row.longitude, name: "longitude")
+        try bindOptionalText(stmt, index: 7, value: row.name, name: "name")
+        try bindOptionalText(stmt, index: 8, value: row.semanticType, name: "semantic_type")
+        try bindOptionalText(stmt, index: 9, value: row.placeId, name: "place_id")
+        try bindOptionalDouble(stmt, index: 10, value: row.probability, name: "probability")
+        let rc = sqlite3_step(stmt)
+        if rc == SQLITE_CONSTRAINT { throw LocalTimelineStoreError.foreignKeyViolation }
+        guard rc == SQLITE_DONE else { throw stepError(rc: rc) }
+    }
+
+    public func insertActivity(_ row: ActivityRow) throws {
+        let sql = """
+        INSERT INTO activities(id, day_id, start_time, end_time, mode, distance_m,
+                               start_lat, start_lon, end_lat, end_lon, probability, raw_type)
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: row.id, name: "id")
+        try bindText(stmt, index: 2, value: row.dayId, name: "day_id")
+        try bindOptionalText(stmt, index: 3, value: row.startTime, name: "start_time")
+        try bindOptionalText(stmt, index: 4, value: row.endTime, name: "end_time")
+        try bindOptionalText(stmt, index: 5, value: row.mode, name: "mode")
+        try bindOptionalDouble(stmt, index: 6, value: row.distanceM, name: "distance_m")
+        try bindOptionalDouble(stmt, index: 7, value: row.startLat, name: "start_lat")
+        try bindOptionalDouble(stmt, index: 8, value: row.startLon, name: "start_lon")
+        try bindOptionalDouble(stmt, index: 9, value: row.endLat, name: "end_lat")
+        try bindOptionalDouble(stmt, index: 10, value: row.endLon, name: "end_lon")
+        try bindOptionalDouble(stmt, index: 11, value: row.probability, name: "probability")
+        try bindOptionalText(stmt, index: 12, value: row.rawType, name: "raw_type")
+        let rc = sqlite3_step(stmt)
+        if rc == SQLITE_CONSTRAINT { throw LocalTimelineStoreError.foreignKeyViolation }
+        guard rc == SQLITE_DONE else { throw stepError(rc: rc) }
+    }
+
     // MARK: - Read API
 
     public func countImports() throws -> Int { try countRows(in: "imports") }
     public func countDays() throws -> Int { try countRows(in: "days") }
     public func countPaths() throws -> Int { try countRows(in: "paths") }
+    public func countVisits() throws -> Int { try countRows(in: "visits") }
+    public func countActivities() throws -> Int { try countRows(in: "activities") }
+
+    public func days(forImportId importId: String) throws -> [DayRow] {
+        let sql = """
+        SELECT id, import_id, date, route_count, visit_count, distance_m
+        FROM days WHERE import_id = ? ORDER BY date;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: importId, name: "import_id")
+        var out: [DayRow] = []
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_DONE { break }
+            guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+            out.append(DayRow(
+                id: stringColumn(stmt, 0) ?? "",
+                importId: stringColumn(stmt, 1) ?? "",
+                date: stringColumn(stmt, 2) ?? "",
+                routeCount: Int(sqlite3_column_int(stmt, 3)),
+                visitCount: Int(sqlite3_column_int(stmt, 4)),
+                distanceM: sqlite3_column_double(stmt, 5)
+            ))
+        }
+        return out
+    }
+
+    public func visits(forDayId dayId: String) throws -> [VisitRow] {
+        let sql = """
+        SELECT id, day_id, start_time, end_time, latitude, longitude,
+               name, semantic_type, place_id, probability
+        FROM visits WHERE day_id = ? ORDER BY start_time;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: dayId, name: "day_id")
+        var out: [VisitRow] = []
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_DONE { break }
+            guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+            out.append(VisitRow(
+                id: stringColumn(stmt, 0) ?? "",
+                dayId: stringColumn(stmt, 1) ?? "",
+                startTime: stringColumn(stmt, 2),
+                endTime: stringColumn(stmt, 3),
+                latitude: optionalDoubleColumn(stmt, 4),
+                longitude: optionalDoubleColumn(stmt, 5),
+                name: stringColumn(stmt, 6),
+                semanticType: stringColumn(stmt, 7),
+                placeId: stringColumn(stmt, 8),
+                probability: optionalDoubleColumn(stmt, 9)
+            ))
+        }
+        return out
+    }
+
+    public func activities(forDayId dayId: String) throws -> [ActivityRow] {
+        let sql = """
+        SELECT id, day_id, start_time, end_time, mode, distance_m,
+               start_lat, start_lon, end_lat, end_lon, probability, raw_type
+        FROM activities WHERE day_id = ? ORDER BY start_time;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: dayId, name: "day_id")
+        var out: [ActivityRow] = []
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_DONE { break }
+            guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+            out.append(ActivityRow(
+                id: stringColumn(stmt, 0) ?? "",
+                dayId: stringColumn(stmt, 1) ?? "",
+                startTime: stringColumn(stmt, 2),
+                endTime: stringColumn(stmt, 3),
+                mode: stringColumn(stmt, 4),
+                distanceM: optionalDoubleColumn(stmt, 5),
+                startLat: optionalDoubleColumn(stmt, 6),
+                startLon: optionalDoubleColumn(stmt, 7),
+                endLat: optionalDoubleColumn(stmt, 8),
+                endLon: optionalDoubleColumn(stmt, 9),
+                probability: optionalDoubleColumn(stmt, 10),
+                rawType: stringColumn(stmt, 11)
+            ))
+        }
+        return out
+    }
 
     public func paths(forDayId dayId: String) throws -> [PathRow] {
         let sql = """
@@ -209,7 +384,11 @@ public final class LocalTimelineStore {
         return Int(sqlite3_column_int64(stmt, 0))
     }
 
-    private func exec(_ sql: String) throws {
+    private func exec(_ sql: String) throws { try execRaw(sql) }
+
+    /// Internal so `LocalTimelineImportWriter` can drive its own transaction
+    /// (BEGIN/COMMIT/ROLLBACK) without re-implementing the C-API plumbing.
+    func execRaw(_ sql: String) throws {
         guard let db else { throw LocalTimelineStoreError.notOpen }
         var err: UnsafeMutablePointer<CChar>?
         let rc = sqlite3_exec(db, sql, nil, nil, &err)

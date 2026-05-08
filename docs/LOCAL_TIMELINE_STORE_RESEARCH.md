@@ -2,6 +2,24 @@
 
 Status: **Research + Phase-1-Spike eingecheckt** (CoordBlob + isolierter SQLite-Store, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung). Folge-Commit nach `45e5fcf`.
 
+## Phase-2-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: Schema-Bump `userVersion` **1 → 2** mit neuen Tabellen `visits` und `activities` + Indizes (`idx_days_import_date`, `idx_paths_day_start`, `idx_visits_day_id`, `idx_activities_day_id`). Migration ist additiv (`CREATE TABLE/INDEX IF NOT EXISTS`); v1-DBs werden beim Re-Open transparent angehoben (Test `LocalTimelineStoreLifecycleTests.testMigrationFromSimulatedV1KeepsExistingRowsAndAddsNewTables`).
+- **NEU `LocalTimelineImportWriter`**: gehaltene `BEGIN IMMEDIATE … COMMIT/ROLLBACK`-Transaktion, bounded per-day-Aggregat (`(dayId, routeCount, visitCount, distanceM)` pro Datum), Day-Summaries werden im `finalize()` per `UPDATE` geschrieben. Ungültige Entries werden gezählt und übersprungen; `LocalTimelineImportSummary` exponiert `totalEntries`/`skippedEntries`/`dayCount`. Activities mit gültigem `start`+`end` erzeugen automatisch einen 2-Punkt-Pfad in `paths.coord_blob`.
+- **NEU `GoogleTimelineStoreImporter`**: `importFromFile`/`importFromData` orchestrieren `GoogleTimelineStreamReader` → Writer. **Materialisiert kein `AppExport`** — durch `testImporterReturnTypeIsSummaryNotAppExport` typgesichert. Visit/Activity/timelinePath-Dispatch analog zur bestehenden `GoogleTimelineConverter.ExportBuilder`-Semantik.
+- **`LocalTimelineStore.deleteAll()`**: löscht in einer einzigen Transaktion alle Zeilen aus `activities`/`visits`/`paths`/`days`/`imports`. Idempotent (nicht-throwing auf leerer DB). **Scope explizit DB-only** — Caches/tmp werden in Phase 3 vor UI-Hook ergänzt; das ist im Doc-Kommentar der API und in NEXT_STEPS festgehalten.
+- **Linux-Tests grün**: `LocalTimelineStoreLifecycleTests` (6), `LocalTimelineImportWriterTests` (4), `GoogleTimelineStoreImporterTests` (4) inkl. 50k-Visit-Smoke über 50 Tage. `swift test` 1071/2/0 (+14 vs. 1057).
+- **Bewusst nicht in Phase 2**:
+  - FileProtection-Flag an `sqlite3_open_v2` (iOS-Header).
+  - `applicationSupportDirectory/LocationHistory2GPX/Imports/` als produktiver Pfad mit `isExcludedFromBackupKey = true`.
+  - Caches/tmp-Lifecycle in `deleteAll()`.
+  - Adapter zu `flatCoordinates`-Konsumenten (DayList/DayDetail/Map/Heatmap/Distance/Export).
+  - `derived_cache`, RTree `path_bounds`.
+  - App-Flow-Umschaltung gegen Conditional Gate.
+- **Conditional Gate unverändert**: P0 falls 46-MB-Retest FAILED, P1/P2 falls PASSED. **46-MB-Crashfall bleibt FAILED / pending hardware retest.**
+
+---
+
 ## Phase-1-Spike Snapshot (2026-05-08)
 
 - **Eingecheckt**: `Sources/CSQLite/{module.modulemap, shim.h}` (Linux-Shim, pkgConfig `sqlite3`), `Sources/LocationHistoryConsumer/CoordBlob.swift`, `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStore{,Schema,Error}.swift`. Test-Surface: `CoordBlobEncoderTests` (13), `CoordBlobDistanceTests` (2), `LocalTimelineStoreTests` (8). Linux `swift test` 1057/2/0 (vorher 1034 → +23).
