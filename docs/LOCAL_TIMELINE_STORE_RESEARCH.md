@@ -38,6 +38,36 @@ Status: **Research + Phase-1-Spike eingecheckt** (CoordBlob + isolierter SQLite-
 
 ---
 
+## Phase-6-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: 4 neue Source-Dateien unter `Sources/LocationHistoryConsumerAppSupport/`, 4 neue Test-Dateien unter `Tests/LocationHistoryConsumerTests/`, 17 neue Cases. Schema unverändert (`userVersion = 2`). **Kein UI-Hook, kein App-Session-Switch, kein AppContentLoader-Hook, kein DayList/DayDetail/Map/Heatmap/Overview-Hook, kein Settings-UI. Bestehende `AppSession`/`AppSessionContent`-Typen wurden NICHT erweitert. Darwin FileProtection in diesem PR nicht angefasst. Bestehender AppExport-Exportpfad bleibt unverändert.**
+- **Feature-Flag** — `LocalTimelineFeatureFlags.swift`:
+  - Resolved `LH2GPX_LOCAL_TIMELINE_STORE` aus `ProcessInfo.arguments` und `ProcessInfo.environment`.
+  - Akzeptiert `--LH2GPX_LOCAL_TIMELINE_STORE`, bare `LH2GPX_LOCAL_TIMELINE_STORE` als Argument, sowie env-Werte `1`/`true`/`yes`/`on` (case-insensitive).
+  - Default: disabled. **Keine UserDefaults-Persistenz.**
+- **Session-Modell** — `LocalTimelineSession.swift`:
+  - Foundation-only: `importID`, `sourceFilename`, `storeURL`, `createdAt`, `importedAt`, `summary` (`dayCount`, `pathCount`, `visitCount`, `activityCount`, `totalDistanceM`, `dateRange`).
+  - `make(reader:importID:storeURL:)` konstruiert das Session-Objekt aus einem `LocalTimelineStoreReader` **ohne Geometrie-Materialisierung**.
+  - Caller besitzt die Lifetime des Stores.
+- **AppSession-Adapter** — `LocalTimelineAppSessionAdapter.swift`:
+  - Projiziert Reader-Daten in bounded ViewState-Modelle: `DaySummaryView`, `DayDetailView`, `VisitView`, `ActivityView`, `PathMetadataView`.
+  - Methoden: `daySummaries()`, `dayDetail(dayId:)`, `coordinates(forPathId:)` (explizit on-demand, lazy via `CoordBlobIterator`).
+- **Deletion-Service** — `LocalTimelineDeletionService.swift`:
+  - Dünner Wrapper um `LocalTimelineStoreLifecycle.deleteAllLocalTimelineData`.
+  - Idempotent. **Keine UserDefaults-Aufräumung.**
+- **Tests Linux-grün**: `LocalTimelineFeatureFlagsTests` (8), `LocalTimelineSessionTests` (3), `LocalTimelineAppSessionAdapterTests` (4), `LocalTimelineDeletionServiceTests` (2) — zusammen 17 Cases.
+- **Bewusst nicht in Phase 6** (= Phase 7 vor UI-Hook):
+  - `AppSession`/`AppSessionContent`-Erweiterung um `case localTimeline(...)` — in diesem PR zu riskant, deferred.
+  - AppContentLoader-Hook, der auf den Feature-Flag verzweigt.
+  - Settings-UI „Importierte Daten löschen" (nur die Service-API ist vorbereitet).
+  - DayList/DayDetail/Map/Heatmap/Overview-UI-Hooks.
+  - `derived_cache` / RTree / `path_bounds`.
+  - Darwin FileProtection: in diesem PR **nicht angefasst** (existierende Factory hat bereits FileProtection-Hinweise; keine Änderung gemacht).
+  - Hardware-Retest, ASC/TestFlight-Pass — nicht beansprucht.
+- **Status**: weiterhin **Spike / pre-production, nicht UI-aktiv**. Store-Pfad **gated by feature flag**, kein default-aktiver Pfad. Conditional Gate unverändert: P0 falls 46-MB-Retest FAILED, P1/P2 falls PASSED. **46-MB-Crashfall bleibt FAILED / pending hardware retest.**
+
+---
+
 ## Phase-5-Spike Snapshot (2026-05-08)
 
 - **Eingecheckt**: 3 neue Source-Dateien unter `Sources/LocationHistoryConsumerAppSupport/`, 3 neue Test-Dateien unter `Tests/LocationHistoryConsumerTests/`, 26 neue Cases (alle Linux-grün). Schema unverändert (`userVersion = 2`). **Kein UI-Hook, kein App-Session-Switch, kein AppContentLoader-Default auf den Store, kein DayList/DayDetail/Map-Hook. Bestehender AppExport-Exportpfad bleibt unverändert; bestehende `AppExport`-Builder (`GPXBuilder`/`KMLBuilder`/`GeoJSONBuilder`/`CSVBuilder`) sind unangetastet.**

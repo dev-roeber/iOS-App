@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## [2026-05-08] — feat: add feature flagged local timeline session source
+
+Phase-6-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Feature-flagged AppSession-Quelle** für den LocalTimelineStore — Foundation-only Adapter-Surface, **isoliert eingecheckt**, **kein default-aktiver Pfad**, **gated by feature flag**, **kein AppExport im Store-Pfad materialisiert**, **kein vollständiger `[Double]`-Import-Buffer materialisiert**, **kein UI-Hook**, **kein App-Session-Switch**, **kein AppContentLoader-Hook**, **kein DayList/DayDetail/Map/Heatmap/Overview-Hook**, **kein Settings-UI**. Bestehender AppExport-Exportpfad unverändert. **Darwin FileProtection nicht angefasst** (existierende Factory-Doku unverändert; keine Aktivierung in diesem PR). **46-MB-Gate bleibt FAILED / pending hardware retest.** **LocalTimelineStore-Status: weiterhin Spike / pre-production, nicht UI-aktiv.**
+
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineFeatureFlags.swift` — resolved `LH2GPX_LOCAL_TIMELINE_STORE` aus `ProcessInfo.arguments`/`environment`. Erkennt `--LH2GPX_LOCAL_TIMELINE_STORE`, bare `LH2GPX_LOCAL_TIMELINE_STORE` als Argument, sowie env-Werte `1`/`true`/`yes`/`on` (case-insensitive). Default disabled. **Keine UserDefaults-Persistenz.**
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineSession.swift` — Foundation-only Session-Modell: `importID`, `sourceFilename`, `storeURL`, `createdAt`, `importedAt`, `summary` (`dayCount`/`pathCount`/`visitCount`/`activityCount`/`totalDistanceM`/`dateRange`). `make(reader:importID:storeURL:)` konstruiert das Session-Objekt aus einem `LocalTimelineStoreReader` **ohne Geometrie-Materialisierung**. Caller besitzt die Lifetime des Stores.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineAppSessionAdapter.swift` — projiziert Reader-Daten in bounded ViewState-Modelle: `DaySummaryView`, `DayDetailView`, `VisitView`, `ActivityView`, `PathMetadataView`. Methoden: `daySummaries()`, `dayDetail(dayId:)`, `coordinates(forPathId:)` (explizit on-demand, lazy via `CoordBlobIterator`).
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDeletionService.swift` — dünner Wrapper um `LocalTimelineStoreLifecycle.deleteAllLocalTimelineData`. Idempotent. **Keine UserDefaults-Aufräumung.**
+- **NEU Tests** in `Tests/LocationHistoryConsumerTests/`:
+  - `LocalTimelineFeatureFlagsTests.swift` (8 Cases)
+  - `LocalTimelineSessionTests.swift` (3 Cases)
+  - `LocalTimelineAppSessionAdapterTests.swift` (4 Cases)
+  - `LocalTimelineDeletionServiceTests.swift` (2 Cases)
+- **Geändert** — keine. `LocalTimelineStore`/`LocalTimelineStoreReader`/`LocalTimelineImportWriter`/`LocalTimelineStoreFactory`/`LocalTimelineStoreLifecycle` sowie die bestehenden `AppExport`-Builder bleiben unverändert. Schema unverändert (`userVersion = 2`).
+- **Explizit NICHT in Phase 6** (= Phase 7 vor UI-Hook):
+  - `AppSession`/`AppSessionContent`-Erweiterung um `case localTimeline(...)` — in diesem PR zu riskant, deferred.
+  - AppContentLoader-Hook, der auf den Feature-Flag verzweigt — deferred.
+  - Settings-UI „Importierte Daten löschen" — deferred (nur die Service-API ist vorbereitet).
+  - DayList/DayDetail/Map/Heatmap/Overview-UI-Hooks — deferred.
+  - `derived_cache` / RTree / `path_bounds` — deferred.
+  - Darwin FileProtection: in diesem PR **nicht angefasst** (existierende Factory hat bereits FileProtection-Hinweise; keine Änderung).
+  - Hardware-Retest, ASC/TestFlight-Pass — **NICHT** beansprucht.
+
 ## [2026-05-08] — feat: add store backed streaming export
 
 Phase-5-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Store-backed Streaming Export** (GPX/KML/GeoJSON/CSV) liest direkt aus `LocalTimelineStoreReader` und schreibt inkrementell in eine Datei unter `ExportStaging/<uuid>/export.<ext>`. **Isoliert eingecheckt**, **kein UI-Hook**, **kein App-Session-Switch**, **kein AppContentLoader-Default auf den Store**, **kein DayList/DayDetail/Map-Hook**, **bestehender AppExport-Exportpfad bleibt unverändert** (GPXBuilder/KMLBuilder/GeoJSONBuilder/CSVBuilder werden in dieser Iteration **nicht** umgebaut). **46-MB-Crashfall bleibt FAILED / pending hardware retest.**
