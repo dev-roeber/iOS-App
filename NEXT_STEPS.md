@@ -4,6 +4,15 @@ Stand: 2026-05-08 (HEAD `37a22b7` nach `34bc369` — chore: Linux-Stabilisierung
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
+### Verbleibend offen — Xcode Cloud Archive-Fail Build 155/156 Retest (2026-05-08)
+
+Xcode Cloud Builds **155** (Commit `06f81ae`) und **156** (Commit `5cb7783`) sind im Workflow „Release – Archive & TestFlight" mit Exit Code 65 fehlgeschlagen. Root Cause war eine Namens-Kollision für `GridKey` zwischen `Sources/LocationHistoryConsumerAppSupport/HeatmapGridBuilder.swift` (top-level `struct GridKey { let lat: Int32; let lon: Int32 }`, `#if canImport(MapKit) && canImport(SwiftUI)`-gated — auf Linux ausgeschlossen, auf Apple-Plattformen aktiv) und `Sources/LocationHistoryConsumerAppSupport/LocalTimelineHeatmapGridAggregator.swift` (top-level `private struct GridKey { let lat: Int; let lon: Int }`). Auf Linux schloss der MapKit-Guard die HeatmapGridBuilder-Variante aus → SwiftPM-Build grün; auf Apple-Plattformen waren beide sichtbar → „Invalid redeclaration of 'GridKey'" + „ambiguous for type lookup" + Folgefehler „Cannot convert value of type 'Int' to expected argument type 'Int32'" auf Zeile 79 des Aggregators (Compiler löste den Namen auf die `Int32`-Variante auf). Fix: `LocalTimelineHeatmapGridAggregator.swift` benennt `GridKey` → `LocalTimelineHeatmapGridKey` (privat, file-scope). Heatmap-Logik unverändert, keine API-/UI-Änderung. `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` referenziert die SPM-Package-Datei nicht direkt; keine doppelten Compile-File-Referenzen gefunden. Linux-SwiftPM bleibt grün, `swift test` voll grün nach Fix.
+
+- [ ] **Xcode Cloud Retest „Release – Archive & TestFlight" auslösen** auf dem post-Fix-HEAD nach Commit. Status: **PENDING** — keine Aussage über echte Apple-Builds, bis Xcode Cloud erneut grün läuft.
+- **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+- Store-Pfad bleibt **default AUS**, pre-production.
+- **KEINE Map-Phase-10B-Aussage**, **KEINE UI-Änderung**, **KEINE ASC/TestFlight/Apple-Review-Freigabe behauptet** durch diesen Fix.
+
 ### Verbleibend offen — Manual Release Risk Acceptance Protocol (HEAD `b91a933`)
 
 Nicht automatisierbar; muss durch Tester abgehakt werden. Details + leere Checkboxen + Felder (Datum, Tester, Befund, Akzeptiert/Abgelehnt) im Block „Manual Release Risk Acceptance Protocol — HEAD `b91a933`" in `docs/APPLE_VERIFICATION_CHECKLIST.md`.

@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## [2026-05-08] — fix: resolve xcode heatmap grid key compile failure
+
+P0-Doku-Sync für einen Xcode-Cloud-Archive-Fail im Workflow „Release – Archive & TestFlight". Builds **155** (Commit `06f81ae`) und **156** (Commit `5cb7783`) sind mit Exit Code 65 fehlgeschlagen. Linux-SwiftPM-Build und `swift test` waren beide grün, weil der MapKit-Guard auf Linux die kollidierende Variante ausschloss; auf Apple-Plattformen waren beide Top-Level-`GridKey`-Definitionen sichtbar. Reine Kollisions-/Compile-Fix-Iteration im AppSupport-Modul ohne API-/UI-/Doku-Schönfärbung. **Linux-SwiftPM weiterhin grün. Xcode Cloud Retest pending — keine Aussage über echte Apple-Builds.**
+
+- **Root Cause**: Namens-Kollision für `GridKey` zwischen zwei Dateien im Modul `LocationHistoryConsumerAppSupport`:
+  - `Sources/LocationHistoryConsumerAppSupport/HeatmapGridBuilder.swift` definierte einen top-level `struct GridKey { let lat: Int32; let lon: Int32 }` hinter `#if canImport(MapKit) && canImport(SwiftUI)` — auf Linux ausgeschlossen, auf Apple-Plattformen aktiv.
+  - `Sources/LocationHistoryConsumerAppSupport/LocalTimelineHeatmapGridAggregator.swift` definierte einen top-level `private struct GridKey { let lat: Int; let lon: Int }`.
+  - Auf Linux schloss der MapKit-Guard die HeatmapGridBuilder-Variante aus → SwiftPM-Build grün.
+  - Auf Apple-Plattformen (Xcode Cloud) waren beide sichtbar → „Invalid redeclaration of 'GridKey'" + „ambiguous for type lookup" + Folgefehler „Cannot convert value of type 'Int' to expected argument type 'Int32'" auf Zeile 79 des Aggregators (weil der Compiler den Namen auf die `Int32`-Variante auflöste).
+- **Fix**: `Sources/LocationHistoryConsumerAppSupport/LocalTimelineHeatmapGridAggregator.swift` benennt seinen file-scope `GridKey` → `LocalTimelineHeatmapGridKey` (privat, file-scope). Heatmap-Logik unverändert. Keine API-Änderung. Keine UI-Änderung. `HeatmapGridBuilder.swift` unverändert.
+- **Xcode-Projekt**: `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` referenziert die SPM-Package-Datei nicht direkt; **keine doppelten Compile-File-Referenzen** gefunden — die Kollision war rein semantisch zwischen zwei top-level Swift-Definitionen im selben Modul.
+- **Tests**: voll grün auf Linux nach Fix (`swift test`). Xcode Cloud muss erneut ausgelöst werden — **Status: PENDING**, keine Aussage über echte Apple-Builds.
+- **Lehrsatz**: ein top-level Name (auch `private struct …` auf Datei-Ebene) ist auf Apple-Plattformen ambig, sobald eine andere Datei im selben Modul einen Top-Level-`GridKey` außerhalb eines auf Linux scharfen Plattform-Guards definiert. Linux ist daher kein hinreichender Stellvertreter für Apple-Compile-Sichtbarkeit, wenn iOS-only Symbole hinter `canImport(MapKit)` parken.
+- **Harte Grenzen (verbatim)**:
+  - **46-MB-Gate bleibt FAILED / pending hardware retest.**
+  - Store-Pfad bleibt **default AUS**, pre-production.
+  - **KEINE Map-Phase-10B-Aussage.**
+  - **KEINE UI-Änderung.**
+  - **KEINE Hardware-/ASC-/TestFlight-Freigabe behauptet.**
+  - **Xcode Cloud Retest pending** — keine Aussage über echte Apple-Builds.
+
 ## [2026-05-08] — feat: add store backed day map ui surface
 
 Phase-10A-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Feature-flagged Store-DayMap-UI-Surface** in der bestehenden DayDetail-Ansicht — Tester mit gesetztem `LH2GPX_LOCAL_TIMELINE_STORE` sehen ab Phase 10A pro Tag eine optionale Map-Sektion (Foundation-only `LocalTimelineDayMapViewState` Presentation Model + SwiftUI Placeholder, **kein MapKit-Import**); echte `MKMapView`-/`MKMultiPolyline`-Verdrahtung bleibt explizit Phase-10B Mac/Xcode-Pflicht. Surface bleibt **Spike / pre-production hinter Feature-Flag**, Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE`-Flag unverändert). Legacy-Map unverändert. **Vollständige sichtbare Kartenmodernisierung wird NICHT behauptet.** **46-MB-Gate bleibt FAILED / pending hardware retest.**

@@ -12,7 +12,7 @@ import Foundation
 /// - `maxSamplesConsumed` begrenzt, wie viele Eingangs-Samples eingelesen
 ///   werden, bevor der Iterator vorzeitig abgebrochen wird (Schutz vor
 ///   pathologischen Quellen).
-private struct GridKey: Hashable { let lat: Int; let lon: Int }
+private struct LocalTimelineHeatmapGridKey: Hashable { let lat: Int; let lon: Int }
 
 public enum LocalTimelineHeatmapGridAggregator {
 
@@ -63,7 +63,7 @@ public enum LocalTimelineHeatmapGridAggregator {
             return Result(cells: [], totalSamples: 0, truncatedCells: false)
         }
 
-        var bucket: [GridKey: Int] = [:]
+        var bucket: [LocalTimelineHeatmapGridKey: Int] = [:]
         var consumed = 0
 
         for sample in samples {
@@ -76,7 +76,7 @@ public enum LocalTimelineHeatmapGridAggregator {
             }
             let latBucket = Int((sample.latitude / cellSizeDegrees).rounded(.down))
             let lonBucket = Int((sample.longitude / cellSizeDegrees).rounded(.down))
-            bucket[GridKey(lat: latBucket, lon: lonBucket), default: 0] += max(1, sample.weight)
+            bucket[LocalTimelineHeatmapGridKey(lat: latBucket, lon: lonBucket), default: 0] += max(1, sample.weight)
         }
 
         // Deterministische Sortierung (lat asc, lon asc) für stabile

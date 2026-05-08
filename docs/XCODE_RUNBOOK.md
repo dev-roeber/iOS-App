@@ -18,6 +18,16 @@ Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmenti
 
 Manuelle Release-Risiko-Abnahme: siehe `docs/APPLE_VERIFICATION_CHECKLIST.md` Block „Manual Release Risk Acceptance Protocol". Deckt 46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout sowie ASC / TestFlight / Apple Review — alles vor App-Store-Submission durch Tester abzuhaken.
 
+## Xcode Cloud Archive-Fail Build 155/156 — Compile-Fix `fix: resolve xcode heatmap grid key compile failure` (2026-05-08)
+
+Builds **155** (Commit `06f81ae`) und **156** (Commit `5cb7783`) im Workflow „Release – Archive & TestFlight" sind mit Exit Code 65 fehlgeschlagen. Root Cause: zwei top-level `GridKey`-Definitionen im Modul `LocationHistoryConsumerAppSupport` — `HeatmapGridBuilder.swift` (`struct GridKey { let lat: Int32; let lon: Int32 }` hinter `#if canImport(MapKit) && canImport(SwiftUI)`-Guard, Linux ausgeschlossen, Apple aktiv) und `LocalTimelineHeatmapGridAggregator.swift` (`private struct GridKey { let lat: Int; let lon: Int }` file-scope). Auf Apple-Plattformen waren beide sichtbar → „Invalid redeclaration of 'GridKey'" + „ambiguous for type lookup" + Folgefehler „Cannot convert value of type 'Int' to expected argument type 'Int32'" auf Zeile 79 des Aggregators. Linux blieb grün, weil der MapKit-Guard auf Linux scharf ist. Fix: Aggregator-`GridKey` → `LocalTimelineHeatmapGridKey` (privat, file-scope). Heatmap-Logik, API, UI unverändert. `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` referenziert die SPM-Package-Datei nicht direkt; keine doppelten Compile-File-Referenzen gefunden.
+
+**Hinweis**: nach diesem Fix-Commit muss der Xcode-Cloud-Workflow „Release – Archive & TestFlight" **erneut ausgelöst** werden. Status: **PENDING** — bis dahin keine Aussage über echte Apple-Builds.
+
+**Lehrsatz**: ein top-level Name (auch `private struct …` auf Datei-Ebene) ist auf Apple-Plattformen ambig, sobald eine andere Datei im selben Modul einen Top-Level-`GridKey` außerhalb eines auf Linux scharfen Plattform-Guards definiert. Linux-SwiftPM grün ist daher kein hinreichender Stellvertreter für Apple-Compile-Sichtbarkeit, wenn iOS-only Symbole hinter `canImport(MapKit)`/`canImport(SwiftUI)` parken. **Konsequenz für künftige PRs**: vor jedem Add eines Top-Level-Typs in `Sources/LocationHistoryConsumerAppSupport/` (oder in einem anderen Modul mit MapKit/SwiftUI-Plattform-Guards) im selben Modul nach Kollisionen suchen — Linux-Build allein beweist nichts.
+
+**46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim). **KEINE Map-Phase-10B-Aussage.** Store-Pfad bleibt default AUS. **KEINE ASC/TestFlight-Freigabe behauptet** durch diesen Fix.
+
 ## LocalTimelineStore (Phase 1..10A abgeschlossen, Wrapper/Settings/DayList/DayDetail/DayMap-UI feature-flagged aktiv)
 
 ### Phase 10A — Feature-Flag-Test-Handoff Store-DayMap-UI-Surface (2026-05-08)
