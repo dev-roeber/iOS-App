@@ -38,6 +38,45 @@ Status: **Research + Phase-1-Spike eingecheckt** (CoordBlob + isolierter SQLite-
 
 ---
 
+## Phase-4-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: 5 neue Source-Dateien unter `Sources/LocationHistoryConsumerAppSupport/`, 5 neue Test-Dateien unter `Tests/LocationHistoryConsumerTests/`, 26 neue Cases (alle Linux-grün). Schema unverändert (`userVersion = 2`, additiv). **Kein UI-Hook, kein App-Session-Switch, kein AppContentLoader-Default auf Store, kein DayList/DayDetail/Map-Hook, kein Export-Umbau, kein `AppExport` über den Store-Pfad.**
+- **Storage-Layout (4 Roots)** — `LocalTimelineStorageLocations.swift`:
+  - DB-Verzeichnis: `applicationSupportDirectory/LocationHistory2GPX/Imports/`, DB-Datei `store.sqlite` plus `-wal`/`-shm`-Geschwister.
+  - RenderCache: `cachesDirectory/LocationHistory2GPX/RenderCache/` (regenerierbar, system-purgeable).
+  - ImportStaging: `temporaryDirectory/LocationHistory2GPX/ImportStaging/` (kurzlebig).
+  - ExportStaging: `temporaryDirectory/LocationHistory2GPX/ExportStaging/` (kurzlebig, finaler User-Save geht unverändert über `documentsDirectory`/`fileExporter`).
+  - Test-Hook `temporary(under:)`; `ensureDirectoriesExist` ist idempotent.
+- **Backup-Exclusion-Strategie** — `LocalTimelineFileAttributes.swift`:
+  - Apple: setzt `URLResourceKey.isExcludedFromBackupKey = true` auf DB-Verzeichnis und DB-Datei (defensiv: DB ist regenerierbarer Cache aus der Original-Quelldatei via Bookmark; Re-Import bleibt günstig).
+  - Linux: no-op; `isExcludedFromBackup` liefert `false`.
+- **FileProtection-Ziel** — `LocalTimelineFileProtection.swift`:
+  - Ziel iOS: `completeUnlessOpen` (sensitive Geometrie; Live-Activity-kompatibel).
+  - **Phase 4 hat den Hook nur dokumentiert, nicht aktiviert** (siehe Kommentar im File). `defaultProtectionDescription` liefert auf Linux `"noop-linux"`.
+  - **Offene Darwin-Pflicht**: tatsächliches Setzen von `URLResourceKey.fileProtectionKey` (oder `SQLITE_OPEN_FILEPROTECTION_COMPLETEUNLESSOPEN` an `sqlite3_open_v2`) auf Apple-Plattformen muss vor produktivem Rollout in einem Darwin-Hardware-Pass aktiviert und verifiziert werden.
+- **Factory-Open-Lifecycle** — `LocalTimelineStoreFactory.swift`:
+  - `openStore()` orchestriert: Verzeichnisse erzeugen → Backup-Exclusion auf DB-Dir → FileProtection-Hook → `LocalTimelineStore(url:)` → Backup-Exclusion + FileProtection auf der DB-Datei.
+  - Statische Helfer `temporary(under:)` (Tests) und `production()` (Produktivpfad ohne UI-Hook).
+  - Kein AppContentLoader-Hook, keine automatische Migration.
+- **Lifecycle deleteAll-Scope** — `LocalTimelineStoreLifecycle.swift`:
+  - `deleteAllLocalTimelineData(store:)` → `store.deleteAll()` + Store schließen + DB-Datei + `-wal` + `-shm` + RenderCache-Dir + ImportStaging-Dir + ExportStaging-Dir + abschließendes `ensureDirectoriesExist`.
+  - Idempotent, stabil bei fehlenden Verzeichnissen.
+  - **Keine UserDefaults-Aufräumung** — explizit dokumentiert: keine Standortdaten in UserDefaults; Bookmark-/Preferences-Cleanup verbleibt im UI-Hook (Phase 5).
+- **Explizit dokumentiert**:
+  - **Keine Standortdaten in UserDefaults** — bleibt eingehalten. Token im Keychain, Preferences/Bookmark-Metadaten in UserDefaults; tatsächliche Geometrie ausschließlich im Store.
+  - **Keine UI-Aktivierung** — der Store ist weiterhin Spike/pre-production. Kein produktiver App-Flow umgestellt.
+- **Tests Linux-grün**: `LocalTimelineStorageLocationsTests`, `LocalTimelineFileAttributesTests`, `LocalTimelineFileProtectionTests`, `LocalTimelineStoreFactoryTests`, `LocalTimelineStoreLifecycleDeleteAllTests` — zusammen 26 Cases.
+- **Bewusst nicht in Phase 4** (= Phase 5 vor UI-Hook):
+  - Tatsächliche FileProtection-Aktivierung auf Darwin (Hook ist da, Aktivierung pending).
+  - Adapter `LocalTimelineStore`/`LocalTimelineStoreReader` → bestehende `flatCoordinates`-Konsumenten (DayList/DayDetail/Map/Heatmap/Distance/Export).
+  - `derived_cache`/RTree `path_bounds`.
+  - App-Flow-Umschaltung gegen Conditional Gate (AppContentLoader-Default, Session-Switch).
+  - Settings-Eintrag „Importierte Daten löschen" mit Bookmark/Preferences-Cleanup.
+  - Privacy-Doku-Update auf den tatsächlichen Rollout-Stand.
+- **Conditional Gate unverändert**: P0 falls 46-MB-Retest FAILED, P1/P2 falls PASSED. **46-MB-Crashfall bleibt FAILED / pending hardware retest.**
+
+---
+
 ## Phase-1-Spike Snapshot (2026-05-08)
 
 - **Eingecheckt**: `Sources/CSQLite/{module.modulemap, shim.h}` (Linux-Shim, pkgConfig `sqlite3`), `Sources/LocationHistoryConsumer/CoordBlob.swift`, `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStore{,Schema,Error}.swift`. Test-Surface: `CoordBlobEncoderTests` (13), `CoordBlobDistanceTests` (2), `LocalTimelineStoreTests` (8). Linux `swift test` 1057/2/0 (vorher 1034 → +23).
