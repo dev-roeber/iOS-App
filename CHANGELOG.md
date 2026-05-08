@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## [2026-05-08] — feat: add store backed day presentation surface
+
+Phase-7B-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Foundation-only Presentation/ViewState-Schicht + AppSessionState-Extension + Service-Layer Envelope-Hook im AppFlow** — **kein UI-Hook (kein Wrapper/SwiftUI-Wiring), kein Map/Heatmap/Overview/Export-UI-Hook, kein AppExport im Store-Pfad materialisiert, keine vollständige `[Double]`-Import-Materialisierung**. Store-Pfad bleibt **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE`-Flag). Legacy-`loadImportedFile(...)` ist byte-identisch unverändert. **FileProtection-Status unverändert** (Phase-4-Capsule, Aktivierung weiterhin Darwin/iOS-Pflicht). **46-MB-Gate bleibt FAILED / pending hardware retest unverändert.** **LocalTimelineStore weiterhin pre-production, nicht UI-aktiv.**
+
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayListViewState.swift` — Foundation-only ViewState für die Day-List-Surface über den Store-Pfad.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayDetailViewStateAdapter.swift` — Foundation-only Adapter, der Reader-Daten in eine bounded DayDetail-ViewState projiziert.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/AppSessionPresentationSource.swift` — Presentation-Quelle inkl. AppSessionState-Extensions `activeContent` und `isLocalTimelineActive`.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDeletionPresentation.swift` — Presentation-Schicht über `LocalTimelineDeletionService`. Dokumentiert: **kein Bookmark-/Preferences-Cleanup nötig im Store-Pfad** (keine UserDefaults für Standortdaten).
+- **Geändert** `Sources/LocationHistoryConsumerAppSupport/LH2GPXAppFlow.swift` — neue Methode `loadImportedFileEnvelope(...) -> EnvelopeImportOutcome` als feature-flagged Service-layer-Hook. Legacy `loadImportedFile(...)` bleibt **byte-identisch unverändert**.
+- **NEU Tests** in `Tests/LocationHistoryConsumerTests/`:
+  - `LocalTimelineDayListViewStateTests`
+  - `LocalTimelineDayDetailViewStateAdapterTests`
+  - `AppSessionLocalTimelinePresentationTests`
+  - `LocalTimelineDeletionPresentationTests`
+  - `AppFlowLocalTimelineEnvelopeTests`
+- **Phase-7B-Surface**: Foundation-only Presentation/ViewState-Schicht + `AppSessionState`-Extension (`activeContent`, `isLocalTimelineActive`) + Service-layer Envelope-Hook im AppFlow. **Kein Wrapper/SwiftUI-Wiring, kein UI-Hook für DayList/DayDetail/Map/Heatmap/Overview/Export/Settings.**
+- **Explizit NICHT in Phase 7B** (= Phase 8 vor produktivem UI-Rollout):
+  - Wrapper/SwiftUI-Wiring der Presentation-/ViewState-Schicht — deferred.
+  - Map/Heatmap/Overview Provider, `derived_cache`+RTree+`path_bounds` — deferred.
+  - Export-UI-Hook (Settings/Export-Tab) — deferred.
+  - **Darwin FileProtection-Aktivierung** — weiterhin offene Pflicht (Phase-4-Capsule unverändert).
+  - 46-MB-Hardware-Retest, ASC/TestFlight/Xcode-Cloud — **NICHT** beansprucht; **46-MB-Gate bleibt FAILED unverändert**.
+
 ## [2026-05-08] — feat: add feature flagged local timeline loader path
 
 Phase-7A-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Feature-flagged AppContentLoader-Hook + AppSession-Quelle als Envelope-Kapsel** über den Store-Pfad. **Isoliert eingecheckt**, **kein default-aktiver Pfad** (Default-Rollout bleibt Legacy-AppExport), **gated by feature flag**, **kein UI-Hook für DayList/DayDetail/Map/Heatmap/Overview/Export/Settings**, **kein AppExport im Store-Pfad materialisiert**, **kein vollständiger `[Double]`-Import-Buffer materialisiert**. Bestehender Legacy-AppExport-Pfad bleibt byte-identisch. Live-Upload bleibt strikt getrennt. Keine Standortdaten in UserDefaults. **Darwin FileProtection nicht aktiviert** (Hook bleibt nur dokumentiert). **Keine Map-Modernisierung**. **Keine Hardware-/ASC-/TestFlight-Aussagen**. **46-MB-Gate bleibt FAILED / pending hardware retest.** **LocalTimelineStore-Status: weiterhin Spike / pre-production, nicht UI-aktiv.**

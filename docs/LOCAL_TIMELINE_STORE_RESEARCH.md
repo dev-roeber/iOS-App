@@ -1,6 +1,24 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
-Status: **Research + Phase 1..7A-Spike eingecheckt** (CoordBlob + isolierter SQLite-Store + Storage-Lifecycle + store-backed Streaming-Export + feature-flagged AppSession-Quelle + feature-flagged AppContentLoader-Hook über Envelope-Kapsel, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung). Folge-Commit nach `45e5fcf`.
+Status: **Research + Phase 1..7B abgeschlossen** (CoordBlob + isolierter SQLite-Store + Storage-Lifecycle + store-backed Streaming-Export + feature-flagged AppSession-Quelle + feature-flagged AppContentLoader-Hook über Envelope-Kapsel + Foundation-only Presentation/ViewState-Schicht + AppSessionState-Extension + Service-layer Envelope-Hook im AppFlow, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung). Folge-Commit nach `45e5fcf`.
+
+## Phase-7B-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: Foundation-only Presentation/Adapter-Schicht + `AppSessionState`-Extension + Service-layer Envelope-Hook im AppFlow. Schema unverändert (`userVersion = 2`). **Kein direktes UI-Wiring, kein Map/Heatmap/Overview/Export-UI-Hook, kein Wrapper/SwiftUI-Wiring.**
+- **NEU `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayListViewState.swift`**: Foundation-only ViewState für Day-List-Surface über den Store-Pfad.
+- **NEU `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayDetailViewStateAdapter.swift`**: Foundation-only Adapter, der Reader-Daten in eine bounded DayDetail-ViewState projiziert.
+- **NEU `Sources/LocationHistoryConsumerAppSupport/AppSessionPresentationSource.swift`**: Presentation-Quelle inkl. `AppSessionState`-Extensions `activeContent` und `isLocalTimelineActive`.
+- **NEU `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDeletionPresentation.swift`**: Presentation-Schicht über `LocalTimelineDeletionService`. Dokumentiert: **kein Bookmark-/Preferences-Cleanup nötig im Store-Pfad** (keine UserDefaults für Standortdaten).
+- **Geändert `Sources/LocationHistoryConsumerAppSupport/LH2GPXAppFlow.swift`**: neue Methode `loadImportedFileEnvelope(...) -> EnvelopeImportOutcome` als feature-flagged Service-layer-Hook; **Legacy `loadImportedFile(...)` byte-identisch unverändert**.
+- **Tests**: `LocalTimelineDayListViewStateTests`, `LocalTimelineDayDetailViewStateAdapterTests`, `AppSessionLocalTimelinePresentationTests`, `LocalTimelineDeletionPresentationTests`, `AppFlowLocalTimelineEnvelopeTests`.
+- **Harte Grenzen Phase 7B**: Store-Pfad bleibt **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE`-Flag). **Kein UI-Hook (kein Wrapper/SwiftUI-Wiring). Kein Map/Heatmap/Overview/Export-UI-Hook.** **Kein AppExport im Store-Pfad materialisiert. Keine vollständige `[Double]`-Import-Materialisierung.** **FileProtection-Status unverändert** (Phase-4-Capsule, Aktivierung weiterhin Darwin/iOS-Pflicht). **46-MB-Gate bleibt FAILED / pending hardware retest unverändert.** **LocalTimelineStore weiterhin pre-production.** Live-Upload bleibt strikt getrennt. **Keine Standortdaten in UserDefaults.**
+- **Bewusst nicht in Phase 7B** (= Phase 8 vor produktivem UI-Rollout):
+  - Wrapper/SwiftUI-Wiring der Presentation-/ViewState-Schicht — deferred.
+  - Map/Heatmap/Overview Provider, `derived_cache`+RTree+`path_bounds` — deferred.
+  - Export-UI-Hook (Settings/Export-Tab) — deferred.
+  - **Darwin FileProtection-Aktivierung** — offene Pflicht vor Rollout.
+  - 46-MB-Hardware-Retest, TestFlight/Xcode-Cloud — Mac/iPhone-Handoff, FAILED unverändert.
+  - Privacy-Doku-Update — vor Rollout zwingend.
 
 ## Phase-7A-Spike Snapshot (2026-05-08)
 

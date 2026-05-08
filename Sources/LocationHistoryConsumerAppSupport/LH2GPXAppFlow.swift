@@ -135,6 +135,90 @@ public enum LH2GPXAppFlow {
         }
     }
 
+    // MARK: - Phase-7B — feature-flagged Envelope-Einstieg
+
+    /// Outcome des feature-flagged Store-Pfads. Existiert parallel zu
+    /// `ImportOutcome`, damit der Legacy-Pfad byte-identisch unverändert
+    /// bleibt. Ein direkter UI-Hook (Wrapper-/SwiftUI-Wiring) ist Phase 8;
+    /// diese Methode ist die Service-Schicht, gegen die getestet wird.
+    public enum EnvelopeImportOutcome {
+        case legacy(AppSessionContent)
+        case localTimeline(LocalTimelineSession)
+        case failure(title: String, message: String, clearBookmark: Bool)
+    }
+
+    /// Lädt eine Datei über `AppContentLoader.loadImportedContentEnvelope(...)`.
+    /// **Bei deaktivem Feature-Flag** ist das Verhalten byte-identisch zu
+    /// `loadImportedFile(at:source:onPhase:)` — Outcome ist immer `.legacy`.
+    /// **Bei aktivem Feature-Flag** wird Google-Timeline-JSON/-ZIP über den
+    /// Store-Pfad geladen und liefert `.localTimeline(session)`. Der
+    /// Wrapper/SwiftUI-Hook (View-Aktualisierung) ist nicht Teil dieser
+    /// Phase — er bleibt offene Phase-8-Aufgabe und ist in
+    /// `docs/XCODE_RUNBOOK.md` dokumentiert.
+    public static func loadImportedFileEnvelope(
+        at url: URL,
+        source: ImportLoadSource,
+        onPhase: (@Sendable (ImportPhase) -> Void)? = nil,
+        flags: LocalTimelineFeatureFlags = .resolveFromProcess(),
+        storeFactoryProvider: (@Sendable () throws -> LocalTimelineStoreFactory)? = nil
+    ) async -> EnvelopeImportOutcome {
+        #if canImport(UIKit) || canImport(AppKit)
+        let accessedSecurityScope = url.startAccessingSecurityScopedResource()
+        defer {
+            if accessedSecurityScope {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        #endif
+
+        do {
+            let envelope = try await AppContentLoader.loadImportedContentEnvelope(
+                from: url,
+                autoRestoreMode: source == .autoRestore,
+                onPhase: onPhase,
+                flags: flags,
+                storeFactoryProvider: storeFactoryProvider
+            )
+            AppImportStateBridge.rememberImportedFile(url)
+            switch envelope {
+            case let .inMemory(content):
+                return .legacy(content)
+            case let .localTimeline(session):
+                return .localTimeline(session)
+            }
+        } catch {
+            if let loaderError = error as? AppContentLoaderError,
+               case .autoRestoreSkippedLargeFile = loaderError {
+                return .failure(
+                    title: loaderError.userFacingTitle,
+                    message: loaderError.localizedDescription,
+                    clearBookmark: false
+                )
+            }
+
+            switch source {
+            case .manual:
+                let title = (error as? AppContentLoaderError)?.userFacingTitle
+                    ?? "Unable to open file"
+                return .failure(title: title,
+                                message: error.localizedDescription,
+                                clearBookmark: false)
+            case .recent:
+                return .failure(
+                    title: "Unable to reopen recent file",
+                    message: "Import the file again if it was moved, deleted or changed outside the app.",
+                    clearBookmark: false
+                )
+            case .autoRestore:
+                let title = (error as? AppContentLoaderError)?.userFacingTitle
+                    ?? "Unable to restore previous import"
+                return .failure(title: title,
+                                message: error.localizedDescription,
+                                clearBookmark: true)
+            }
+        }
+    }
+
     /// Returns the URL to auto-restore at launch if (a) auto-restore
     /// is enabled, (b) no content is currently loaded, and (c) a
     /// previous bookmark exists. Returns `nil` otherwise so callers can
