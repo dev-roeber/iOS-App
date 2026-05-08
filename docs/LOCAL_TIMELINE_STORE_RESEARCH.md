@@ -1,5 +1,21 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
+## P1-A + P1-B — Cancellable Import Progress (2026-05-08-Folgecommit)
+
+Phase-10A-Folge des Deep Audits. Der Store-Importpfad ist jetzt **kooperativ abbrechbar** und meldet **throttled-Progress**, ohne den Legacy-Pfad zu berühren und ohne den Default-Aktivierungsstand zu ändern.
+
+- **Datenmodell:** `LocalTimelineImportProgress` (Foundation-only, Sendable, value-type) hält Phase, Counter (`entriesProcessed/visitsWritten/activitiesWritten/pathsWritten/skippedEntries`), optionale Byte-Hints, `currentDay`, `startedAt/updatedAt`, `isCancellable`. **Keine Standortdaten** im Snapshot. Phasen: `idle`/`preparing`/`sniffing`/`importing`/`finalizing`/`completed`/`cancelled`/`failed`.
+- **Throttle:** `LocalTimelineImportProgressThrottle` (Default 500 Entries) emittiert immer auf Phase-Change und in terminalen Phasen; pro-Byte- und pro-Entry-Spam ist ausgeschlossen.
+- **Cancel-Token:** `LocalTimelineImportCancellation` — NSLock-guarded, idempotent, kein globaler State; API `cancel()`, `isCancelled`, `checkCancellation() throws`. Fehler `LocalTimelineImportCancellationError.cancelled`.
+- **Importer-Wiring:** `GoogleTimelineStoreImporter.importFromFile/Data` akzeptiert ein optionales `Hooks(progress:throttle:cancellation:clock:)`-Tupel. Cancellation wird **vor Stream-Start, vor jedem Entry, vor Finalize** geprüft. Bei Cancel rollt der Writer (`LocalTimelineImportWriter.cancel()` → SQLite `ROLLBACK`) zurück. **Es bleibt kein gültiger Teilimport im Store** (Test: `testCancelMidStreamRollsBackTransaction`).
+- **Loader/AppFlow:** `AppContentLoader.loadImportedContentEnvelope` und `LH2GPXAppFlow.loadImportedFileEnvelope` reichen `importProgress` und `importCancellation` durch. Cancel-Outcome im AppFlow: `EnvelopeImportOutcome.failure(title: "Import cancelled", clearBookmark: false)`. Loader-Fehler: `AppContentLoaderError.importCancelled(_:)`.
+- **Service-Layer:** `LocalTimelineImportController` bündelt Token + Sink + `latestProgress` + Observer-API für UI/Tests. Foundation-only, keine SwiftUI-Bindung.
+- **Bewusst nicht angefasst:** Der Legacy-Pfad (`loadImportedContent(from:)` für LH2GPX-JSON / GPX / TCX / nicht-eindeutige ZIPs) bleibt unverändert — Progress dort wäre unverhältnismäßig breit für eine kleine Änderung. Default-Argumente halten alle bestehenden Aufrufer source-kompatibel; der Store-Pfad bleibt **pre-production / feature-flagged / default AUS**.
+- **Skipped-Semantik:** Importer-Skips (Entry ohne erkannten Payload, malformed `timelinePath`) und Writer-Skips (Entry mit unparseable Timestamp) sind disjunkt — der finale `skippedEntries`-Counter im Snapshot ist die Summe beider.
+- **UI-Anbindung offen:** SwiftUI-Hook in Wrapper/AppShell/Landing ist **nicht** Teil dieses Commits. Service-API für die Folge-UI: `LocalTimelineImportController().{cancellation, progressSink, cancel(), latestProgress, addObserver}`. Siehe `NEXT_STEPS.md` und `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` § 13.
+
+**46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim). **Kein ASC/Review/TestFlight/Hardware-Pass behauptet.** **Keine neue Map-Phase**, **kein neuer Activator**.
+
 ## Build-158-Vorbereitung — Aktivierungsquellen erweitert (2026-05-08)
 
 Build 157 ist Xcode Cloud grün und TestFlight-installierbar (Status „Überprüft", interne Tests erfolgreich). Da TestFlight-Tester keine Launch-Argumente / Environment-Variablen setzen können, ist die Aktivierungsstrecke des LocalTimelineStore-Pfads ab dieser Iteration **dreigleisig** (im OR-Sinn — Setting aktiviert zusätzlich, deaktiviert nichts):

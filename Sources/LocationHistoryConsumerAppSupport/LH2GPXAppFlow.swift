@@ -274,7 +274,9 @@ public enum LH2GPXAppFlow {
         source: ImportLoadSource,
         onPhase: (@Sendable (ImportPhase) -> Void)? = nil,
         flags: LocalTimelineFeatureFlags = .resolveFromProcess(),
-        storeFactoryProvider: (@Sendable () throws -> LocalTimelineStoreFactory)? = nil
+        storeFactoryProvider: (@Sendable () throws -> LocalTimelineStoreFactory)? = nil,
+        importProgress: LocalTimelineImportProgressSink? = nil,
+        importCancellation: LocalTimelineImportCancellation? = nil
     ) async -> EnvelopeImportOutcome {
         #if canImport(UIKit) || canImport(AppKit)
         let accessedSecurityScope = url.startAccessingSecurityScopedResource()
@@ -291,7 +293,9 @@ public enum LH2GPXAppFlow {
                 autoRestoreMode: source == .autoRestore,
                 onPhase: onPhase,
                 flags: flags,
-                storeFactoryProvider: storeFactoryProvider
+                storeFactoryProvider: storeFactoryProvider,
+                importProgress: importProgress,
+                importCancellation: importCancellation
             )
             AppImportStateBridge.rememberImportedFile(url)
             switch envelope {

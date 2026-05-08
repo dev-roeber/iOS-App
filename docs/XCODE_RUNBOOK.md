@@ -14,6 +14,27 @@ Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 
 Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmentierte `Insights`, gespeicherte lokale Live-Tracks und optionalen nutzergesteuerten Upload akzeptierter Live-Recording-Punkte. Weiterhin nicht Teil dieses Runbooks sind Producer-Logik, Cloud-/Account-Sync fuer importierte History und unbewiesene Apple-Review-Claims.
 
+## P1-A + P1-B: Cancellable Local Timeline Import Progress (2026-05-08)
+
+Phase-10A-Folgecommit nach Deep Audit. Setzt **P1-A (Import-Cancel-Pfad)** und **P1-B (Import-Progress-Surface)** aus `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` § 13 um, **ausschließlich im Store-Pfad**.
+
+Was lokal getestet werden sollte, bevor Build 159 ein Xcode-Cloud-Setup bekommt:
+
+1. Lokal `swift build` und `swift test` (Linux ist die kanonische Test-Surface). Erwartet: 1332 / 2 skipped / 0 failed.
+2. `swift test --filter "LocalTimelineImportProgress|LocalTimelineImportCancellation|LocalTimelineImportController|GoogleTimelineStoreImporterProgressCancel|AppFlowImportProgressCancel"` deckt die neuen P1-A/B-Cases ab.
+3. In Xcode (macOS) den Wrapper laufen lassen, Store-Toggle aktivieren, eine Google-Timeline-JSON importieren. **Aktuell ohne UI-Hook**: Progress + Cancel sind als Service-Layer (`LocalTimelineImportController`) verfügbar, aber `wrapper/LH2GPXWrapper/ContentView.swift` und `LocalTimelineSessionLandingView` zeigen noch keinen Cancel-Button und keine Counter. Folge-Issue: SwiftUI-Anbindung — siehe `NEXT_STEPS.md`.
+
+API-Ankerpunkte für die anstehende UI-Anbindung:
+
+- `let controller = LocalTimelineImportController()`
+- `await LH2GPXAppFlow.loadImportedFileEnvelope(at: url, source: .manual, importProgress: controller.progressSink, importCancellation: controller.cancellation)`
+- `controller.cancel()` aus dem UI-Cancel-Button.
+- `controller.latestProgress` für die aktuelle Anzeige; `controller.addObserver { snap in … }` für reaktive Updates.
+
+**Vertrag bei Cancel:** Writer rollt die offene SQLite-Transaktion zurück, AppFlow gibt `EnvelopeImportOutcome.failure(title: "Import cancelled", clearBookmark: false)` zurück, **kein gültiger Teilimport** verbleibt im Store. Loader-Fehler ist `AppContentLoaderError.importCancelled(_:)`. Idempotent: ein bereits gecancelltes Token wirft beim erneuten Verwenden weiter `LocalTimelineImportCancellationError.cancelled` und schreibt nichts in den Store.
+
+**Privacy-/Scope-Vertrag** unverändert: Progress speichert keine Standortdaten; Snapshots sind reine Counter + Phase + optionale Byte-Hints. Keine UserDefaults-Persistenz, keine Pfade, keine Tokens. **46-MB-Gate bleibt FAILED / pending hardware retest.** LocalTimelineStore bleibt **pre-production / feature-flagged / default AUS**.
+
 ## Deep Audit 2026-05-08 + AppBuildInfo Live Memory-Logging Mirror
 
 Repo-Truth-Audit nach Build 158 abgelegt unter `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md`. P1-UX-Fix (FIX-1): `AppBuildInfo.isMemoryLoggingEnabled` ist jetzt computed (`var`) und liest live `ImportMemoryProbe.isLoggingEnabled`. Vorher fror der Wert beim Process-Start ein → "Memory Logging Disabled" in Build Info widersprach "Memory Logging Resolved Enabled" daneben. Regressions-Pin: `testAppBuildInfoMemoryLoggingReflectsLiveSettingsToggle`.

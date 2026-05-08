@@ -4,17 +4,20 @@ Stand: 2026-05-08 (HEAD `37a22b7` nach `34bc369` — chore: Linux-Stabilisierung
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
-### Offen — P1 nach Deep Audit 2026-05-08 (`docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md`)
+### Offen — P1-Rest nach Deep Audit 2026-05-08 (`docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md`)
 
-Im Audit als **P1** belegt und als nächste Schritte vorgeschlagen (kein Code dazu in diesem Commit, ausser FIX-1):
+Im Audit als **P1** belegt; nach diesem Commit (P1-A + P1-B Service-/Presentation-Schicht erledigt) verbleibend:
 
-1. **Import-Cancel-API + Cancel-Button** (P1-A). Task.isCancelled-Check pro Element in `GoogleTimelineStoreImporter`/`LocalTimelineImportWriter`, UI-Cancel-Button im Loading-State.
-2. **Import-Progress (Entry-Count + Bytes)** (P1-B). Erweiterung `ImportPhase.parsing(processedElements:totalEstimate:)`.
-3. **`PRAGMA wal_checkpoint(TRUNCATE)` nach `finalize` und `deleteAll`** (P1-C). Verhindert monotones DB-Wachstum.
-4. **Recovery-Test (App-Kill mid-Import)** (P1-D). open → bulk insert → close ohne commit → reopen → assert empty.
-5. **UX-Polish AppOptionsView Memory-Logging-Section** (P1-E). Drei Felder in zwei Layern (Build Configuration / Tester Override / Active Status) reorganisieren — nach FIX-1 nicht mehr blocking, aber Klarheit verbessert.
+1. **UI-Hook für Cancel + Progress** (Folge von P1-A/P1-B). Service-Layer (`LocalTimelineImportController`) ist verdrahtet und Linux-getestet; was fehlt, ist die SwiftUI-Anbindung in `AppShellRootView` / `wrapper/LH2GPXWrapper/ContentView` / `LocalTimelineSessionLandingView`: Cancel-Button im Loading-State, Progress-Counter (entries / visits / activities / paths / skipped / optional bytes), Cancel-Outcome-Hinweis. Reine UI-Aufgabe — Foundation-Layer ist stabil.
+2. **`PRAGMA wal_checkpoint(TRUNCATE)` nach `finalize` und `deleteAll`** (P1-C). Verhindert monotones DB-Wachstum.
+3. **Recovery-Test (App-Kill mid-Import)** (P1-D). open → bulk insert → close ohne commit → reopen → assert empty.
+4. **UX-Polish AppOptionsView Memory-Logging-Section** (P1-E). Drei Felder in zwei Layern (Build Configuration / Tester Override / Active Status) reorganisieren — nach FIX-1 nicht mehr blocking, aber Klarheit verbessert.
 
 P0 ist bewusst leer: keine produktiven Crashes/Datenverluste im Repo belegbar; das **46-MB-Hardware-Gate bleibt FAILED / pending hardware retest** (verbatim) als externe Verifikation.
+
+### Erledigt — P1-A + P1-B Cancel/Progress (Service-Schicht) (2026-05-08)
+
+`LocalTimelineImportProgress` (Sendable Snapshot mit Phase + Counter, Foundation-only, keine Standortdaten), `LocalTimelineImportProgressThrottle` (Default 500 Entries, Phase-Change-Override), `LocalTimelineImportCancellation` (NSLock-guarded, idempotent, kein globaler State, `LocalTimelineImportCancellationError.cancelled`), `LocalTimelineImportController` (bündelt Token + Sink + Observer-API, Linux-testbar). `GoogleTimelineStoreImporter.importFromFile/Data` akzeptiert `Hooks` (progress/throttle/cancellation); Cancel rollt Writer-Transaktion zurück → **kein gültiger Teilimport**. Loader/AppFlow propagieren `importProgress`/`importCancellation`; Cancel-Outcome ist `.failure(title: "Import cancelled", clearBookmark: false)`. Legacy-Pfad unverändert; Default-Aufrufpfad ist source-kompatibel; Store-Pfad bleibt **pre-production / feature-flagged / default AUS**. SwiftUI-Anbindung als Folgeschritt offen (siehe oben). Tests: 26 neue Cases (Linux-grün), Vollsuite 1332 / 2 skipped / 0 failed.
 
 ### Erledigt — Deep Audit + AppBuildInfo Live-Memory-Logging-Mirror (2026-05-08)
 

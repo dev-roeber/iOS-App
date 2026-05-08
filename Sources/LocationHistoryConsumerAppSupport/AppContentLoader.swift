@@ -22,6 +22,11 @@ public enum AppContentLoaderError: LocalizedError {
     /// `LH2GPX_LOCAL_TIMELINE_STORE`-Flag auf; im Default-Pfad ist dieser
     /// Fehler unmöglich, weil der Loader nie auf den Store ausweicht.
     case localTimelineStoreFailed(String)
+    /// Phase-10A P1-A — Store-Pfad-Import wurde durch den Caller cooperativ
+    /// abgebrochen (`LocalTimelineImportCancellation.cancel()`). Die offene
+    /// SQLite-Transaktion wurde rolled-back, es bleibt **kein gültiger
+    /// Teilimport** zurück. Tritt ausschließlich im aktiven Store-Pfad auf.
+    case importCancelled(String)
 
     public var userFacingTitle: String {
         switch self {
@@ -43,6 +48,8 @@ public enum AppContentLoaderError: LocalizedError {
             return "Import not auto-restored"
         case .localTimelineStoreFailed:
             return "Disk-first import failed"
+        case .importCancelled:
+            return "Import cancelled"
         }
     }
 
@@ -66,6 +73,8 @@ public enum AppContentLoaderError: LocalizedError {
             return "'\(name)' was not restored automatically. Raw Google Timeline exports and large files are skipped on launch because re-parsing them every time can cause an out-of-memory shutdown. Open it manually when you are ready to wait for the import."
         case let .localTimelineStoreFailed(name):
             return "'\(name)' could not be imported into the on-device timeline store. The disk-first import is a feature-flagged spike and currently has no UI fallback."
+        case let .importCancelled(name):
+            return "Import of '\(name)' was cancelled. No partial data was kept; you can re-import when ready."
         }
     }
 }
@@ -151,7 +160,9 @@ public enum AppContentLoader {
         autoRestoreMode: Bool = false,
         onPhase: (@Sendable (ImportPhase) -> Void)? = nil,
         flags: LocalTimelineFeatureFlags = .resolveFromProcess(),
-        storeFactoryProvider: (@Sendable () throws -> LocalTimelineStoreFactory)? = nil
+        storeFactoryProvider: (@Sendable () throws -> LocalTimelineStoreFactory)? = nil,
+        importProgress: LocalTimelineImportProgressSink? = nil,
+        importCancellation: LocalTimelineImportCancellation? = nil
     ) async throws -> AppSessionContentSource {
         guard flags.isLocalTimelineStoreEnabled else {
             let legacy = try await loadImportedContent(
@@ -176,7 +187,9 @@ public enum AppContentLoader {
                     payload: .data(timelineData, sourceFilename: filename),
                     flags: flags,
                     storeFactoryProvider: storeFactoryProvider,
-                    onPhase: onPhase
+                    onPhase: onPhase,
+                    importProgress: importProgress,
+                    importCancellation: importCancellation
                 )
             }
             // Kein eindeutiges Google-Timeline-ZIP → Legacy-Pfad (LH2GPX/GPX/TCX).
@@ -194,7 +207,9 @@ public enum AppContentLoader {
                 payload: .file(url, sourceFilename: filename),
                 flags: flags,
                 storeFactoryProvider: storeFactoryProvider,
-                onPhase: onPhase
+                onPhase: onPhase,
+                importProgress: importProgress,
+                importCancellation: importCancellation
             )
         }
 
@@ -214,7 +229,9 @@ public enum AppContentLoader {
         payload: StoreImportPayload,
         flags: LocalTimelineFeatureFlags,
         storeFactoryProvider: (@Sendable () throws -> LocalTimelineStoreFactory)?,
-        onPhase: (@Sendable (ImportPhase) -> Void)?
+        onPhase: (@Sendable (ImportPhase) -> Void)?,
+        importProgress: LocalTimelineImportProgressSink? = nil,
+        importCancellation: LocalTimelineImportCancellation? = nil
     ) async throws -> AppSessionContentSource {
         return try await Task.detached(priority: .userInitiated) {
             let sourceFilename: String = {
@@ -240,18 +257,25 @@ public enum AppContentLoader {
             }
             defer { store.close() }
 
+            let hooks = GoogleTimelineStoreImporter.Hooks(
+                progress: importProgress,
+                cancellation: importCancellation
+            )
+
             let summary: LocalTimelineImportSummary
             do {
                 switch payload {
                 case let .file(url, name):
                     summary = try GoogleTimelineStoreImporter.importFromFile(
-                        url: url, sourceFilename: name, store: store
+                        url: url, sourceFilename: name, store: store, hooks: hooks
                     )
                 case let .data(data, name):
                     summary = try GoogleTimelineStoreImporter.importFromData(
-                        data, sourceFilename: name, store: store
+                        data, sourceFilename: name, store: store, hooks: hooks
                     )
                 }
+            } catch is LocalTimelineImportCancellationError {
+                throw AppContentLoaderError.importCancelled(sourceFilename)
             } catch {
                 throw AppContentLoaderError.localTimelineStoreFailed(sourceFilename)
             }

@@ -1,5 +1,56 @@
 # CHANGELOG
 
+## [2026-05-08] — feat: cancellable local timeline import progress (P1-A + P1-B)
+
+Phase-10A-Folge des Deep Audits. Setzt **P1-A (Import-Cancel-Pfad)** und **P1-B (Import-Progress-Surface)** aus `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` § 13 um, ausschließlich im Store-Pfad.
+
+Neu (alles Foundation-only, Linux-testbar):
+
+- `LocalTimelineImportProgress` — Sendable Snapshot-Struktur mit Phase (`idle`/`preparing`/`sniffing`/`importing`/`finalizing`/`completed`/`cancelled`/`failed`), Counter (`entriesProcessed`/`visitsWritten`/`activitiesWritten`/`pathsWritten`/`skippedEntries`), optionalen Byte-Hints (`bytesRead`/`totalBytes`), `currentDay`, `startedAt`/`updatedAt`, `isCancellable`. Keine Standortdaten gespeichert.
+- `LocalTimelineImportProgressThrottle` — Standardstride 500 Entries; emittiert immer auf Phasenwechsel und in den terminalen Phasen.
+- `LocalTimelineImportCancellation` — kooperatives Cancel-Token (NSLock-guarded, idempotent, kein globaler State). API: `cancel()`, `isCancelled`, `checkCancellation() throws`. Fehler: `LocalTimelineImportCancellationError.cancelled`.
+- `LocalTimelineImportController` — Service-/Presentation-Layer; bündelt Token + Sink + `latestProgress` + Observer-API. Foundation-only, Linux-testbar; keine SwiftUI/ObservableObject-Bindung.
+
+Importer/Loader/AppFlow:
+
+- `GoogleTimelineStoreImporter.importFromFile/importFromData` akzeptieren neuen `hooks: Hooks`-Parameter mit optionalem Progress-Sink, Throttle und Cancellation. Cancellation wird **vor Import-Start, vor jedem Entry, vor Finalize** geprüft. Bei Cancel rollt der Writer (`writer.cancel()` → `ROLLBACK`) zurück und `LocalTimelineImportCancellationError.cancelled` wird gerichtet weitergereicht. **Es bleibt kein gültiger Teilimport im Store.**
+- `AppContentLoader.loadImportedContentEnvelope` und `LH2GPXAppFlow.loadImportedFileEnvelope` reichen `importProgress` und `importCancellation` durch. Cancel wird im AppFlow als `EnvelopeImportOutcome.failure(title: "Import cancelled", clearBookmark: false)` sichtbar; im Loader als neuer `AppContentLoaderError.importCancelled(_:)`.
+- Existing API-Pfade (ohne Hooks) verhalten sich identisch — Default-Argumente, keine Source-Breakage.
+
+Bewusst **nicht** umgesetzt:
+
+- Keine SwiftUI-Verdrahtung in `AppShellRootView` / `wrapper/ContentView` / `LocalTimelineSessionLandingView` — UI-Hook bleibt Folgeaufgabe und ist im Audit + Runbook dokumentiert. Die Service-/Presentation-Schicht ist testabhängig vollständig.
+- Keine Änderung am Legacy-Pfad (LH2GPX-JSON / GPX / TCX): `loadImportedContent(from:)` ist unverändert; Progress dort wäre zu breit für eine kleine Änderung.
+- Keine neuen Dependencies, kein `[Double]`-Materialisieren im Store-Pfad, kein `AppExport`.
+
+Tests (alle Linux-grün, keine wall-clock-Asserts):
+
+- `LocalTimelineImportProgressTests` (7 Tests) — Default, Phasen-Transitions, Throttle-Verhalten.
+- `LocalTimelineImportCancellationTests` (5 Tests) — Default, cancel, throw, idempotent, Thread-safety.
+- `LocalTimelineImportControllerTests` (4 Tests) — Sink, Observer, Cancel-Forward.
+- `GoogleTimelineStoreImporterProgressCancelTests` (7 Tests) — Phasenkette, Counter, Skipped, Pre-Cancel-Empty-Store, Mid-Stream-Rollback, Cancelled-Snapshot, Idempotent-Retry.
+- `AppFlowImportProgressCancelTests` (3 Tests) — Store-Pfad-Progress, Cancel-Outcome ohne Teilimport, Legacy-Pfad ungestört.
+
+Volle Linux-Suite: **1332 / 2 skipped / 0 failed** (vor diesem Commit: 1306/2/0; +26 neue).
+
+Status:
+
+- 46-MB-Gate **bleibt FAILED / pending hardware retest**.
+- LocalTimelineStore **bleibt pre-production / feature-flagged / default AUS**.
+- Kein TestFlight-/Review-Claim, keine Hardware-Behauptung.
+
+Geänderte/neue Dateien:
+
+- NEU: `Sources/LocationHistoryConsumerAppSupport/LocalTimelineImportProgress.swift`
+- NEU: `Sources/LocationHistoryConsumerAppSupport/LocalTimelineImportCancellation.swift`
+- NEU: `Sources/LocationHistoryConsumerAppSupport/LocalTimelineImportController.swift`
+- GEÄNDERT: `Sources/LocationHistoryConsumerAppSupport/GoogleTimelineStoreImporter.swift` (+Hooks, +ProgressEmitter)
+- GEÄNDERT: `Sources/LocationHistoryConsumerAppSupport/AppContentLoader.swift` (+importProgress/importCancellation, +`importCancelled` Error-Case)
+- GEÄNDERT: `Sources/LocationHistoryConsumerAppSupport/LH2GPXAppFlow.swift` (+importProgress/importCancellation Pass-through)
+- NEU: 5 Testdateien (s.o.).
+
+---
+
 ## [2026-05-08] — docs+fix: deep audit & build-info live memory-logging mirror
 
 Deep Audit nach Build 158 — Repo-Truth-Abgleich von LocalTimelineStore-Pfad, Build-158-Toggles, ImportMemoryProbe, Map/Heatmap/Overview/Export-Verdrahtung, Stabilität, Tests und Doku. Audit-Dokument: `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md`.

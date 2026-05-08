@@ -60,12 +60,15 @@ Present:
 - recent-file reopen removes stale or unavailable entries instead of surfacing raw bookmark failures
 - auto-restore of the last import exists as an opt-in startup path controlled by `AppPreferences.autoRestoreLastImport`
 - missing or stale last-import bookmarks are skipped gracefully during auto-restore
+- (Phase-10A, Store-Pfad only, **default OFF**, **no UI-Hook yet**) cooperative import cancellation: `LocalTimelineImportCancellation` token; `LocalTimelineImportController.cancel()` rolls back the open SQLite transaction so no partial import is persisted
+- (Phase-10A, Store-Pfad only, **default OFF**, **no UI-Hook yet**) throttled import progress: `LocalTimelineImportProgress` snapshots with phase + counters + optional byte hints; default throttle 500 entries; emitted on every phase change and terminal phase
 
 Not present:
 - FIT format import (no maintainable Swift library without external dependency; deliberate follow-up)
 - GeoJSON import (as import source; export remains present; deliberate follow-up)
 - drag-and-drop import UI
 - multi-file import UI
+- SwiftUI cancel-button + progress-counters in `LocalTimelineSessionLandingView` / `wrapper/LH2GPXWrapper/ContentView.swift` / `AppShellRootView` (service-/presentation-layer for cancel + progress is wired and Linux-tested; UI-hook deliberate follow-up)
 
 ## 3. Overview / Dashboard
 

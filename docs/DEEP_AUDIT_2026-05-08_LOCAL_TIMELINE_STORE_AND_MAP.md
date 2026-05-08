@@ -259,13 +259,19 @@ Folgendes wird in diesem Audit **nicht** behauptet:
 - **Privacy:** Keine.
 - **Status:** **DONE** (in diesem Commit).
 
-**P1-A — Import-Cancel-API**
-- Ziel: Task-Cancel-Pfad bis `LocalTimelineImportWriter.cancel()`. UI: Cancel-Button im Loading-State.
-- Aufwand M; Tests S; Doku S.
+**P1-A — Import-Cancel-API** — **Service-Schicht DONE (2026-05-08-Folgecommit), UI-Hook offen**
+- Umgesetzt: `LocalTimelineImportCancellation` (NSLock-guarded, idempotent, kein globaler State, `cancel()`/`isCancelled`/`checkCancellation() throws`, Fehler `LocalTimelineImportCancellationError.cancelled`). `GoogleTimelineStoreImporter.importFromFile/Data` akzeptiert `Hooks(cancellation:)`; Cancellation wird vor Import-Start, vor jedem Entry, vor Finalize geprüft. Bei Cancel ruft der Importer `LocalTimelineImportWriter.cancel()` → SQLite `ROLLBACK` und propagiert `LocalTimelineImportCancellationError.cancelled`. **Es bleibt kein gültiger Teilimport im Store.** AppContentLoader/AppFlow reichen `importCancellation` durch; Cancel-Outcome im AppFlow ist `.failure(title: "Import cancelled", clearBookmark: false)`, im Loader neuer `AppContentLoaderError.importCancelled(_:)`.
+- Tests: `LocalTimelineImportCancellationTests` (5), `GoogleTimelineStoreImporterProgressCancelTests` (Pre-Cancel-Empty-Store, Mid-Stream-Rollback, Cancelled-Snapshot, Idempotent-Retry), `AppFlowImportProgressCancelTests` (Cancel-Outcome ohne Teilimport).
+- **Offen (UI-Hook):** Cancel-Button in `LocalTimelineSessionLandingView` / `wrapper/LH2GPXWrapper/ContentView.swift` / `AppShellRootView` während des Loading-States. Service-Layer (`LocalTimelineImportController.cancel()`) ist verdrahtet und Linux-getestet.
 
-**P1-B — Import-Progress (entry-count + bytes)**
-- Ziel: `ImportPhase.parsing(processedElements:totalEstimate:)` + UI-Binding.
-- Aufwand M; Tests S.
+**P1-B — Import-Progress (entry-count + bytes)** — **Service-Schicht DONE (2026-05-08-Folgecommit), UI-Hook offen**
+- Umgesetzt: `LocalTimelineImportProgress` (Sendable Snapshot mit Phase `idle|preparing|sniffing|importing|finalizing|completed|cancelled|failed`, Counter `entriesProcessed/visitsWritten/activitiesWritten/pathsWritten/skippedEntries`, optional `bytesRead/totalBytes`, `currentDay`, `startedAt/updatedAt`, `isCancellable`). `LocalTimelineImportProgressThrottle` (Default 500 Entries; emittiert immer auf Phasen-Wechsel und in terminalen Phasen). `GoogleTimelineStoreImporter.importFromFile/Data` ruft den Sink throttled auf. Importer-Skips (Entry ohne Payload / malformed Path) und Writer-Skips (unparseable Timestamp) werden unioniert (disjunkte Mengen → addition). AppContentLoader/AppFlow reichen `importProgress` durch. `LocalTimelineImportController` bündelt Token + Sink + `latestProgress` + Observer-API.
+- Tests: `LocalTimelineImportProgressTests` (7), `LocalTimelineImportControllerTests` (4), `GoogleTimelineStoreImporterProgressCancelTests` (Phasenkette, Counter, Skipped), `AppFlowImportProgressCancelTests` (Store-Pfad-Progress, Legacy-Pfad ungestört).
+- **Offen (UI-Hook):** SwiftUI-Anbindung. Service-/Presentation-Schicht ist vollständig.
+
+**P1-A/B Restaufgabe — UI-Anbindung Cancel + Progress**
+- SwiftUI-Hook in Wrapper/AppShell/Landing für Counter-Anzeige und Cancel-Button. Service-API: `LocalTimelineImportController.progressSink`, `controller.cancellation`, `controller.cancel()`, `controller.latestProgress`, `controller.addObserver { … }`.
+- Aufwand S–M; Tests S (UI-Snapshot oder Wiring-Test).
 
 **P1-C — `PRAGMA wal_checkpoint(TRUNCATE)` nach `finalize` und `deleteAll`**
 - Aufwand S; Test: assert WAL-File schrumpft nach Aufruf.
