@@ -1,5 +1,41 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
+## Phase-10A-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: feature-flagged Store-**DayMap-UI-Surface** in der bestehenden `LocalTimelineDayDetailView`. Surface bleibt **Spike / pre-production hinter Feature-Flag**; Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE` unverändert). **Vollständige sichtbare Kartenmodernisierung wird nicht behauptet.** Legacy-Map unverändert.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayMapViewState.swift` — Foundation-only Presentation Model. Typen: `LocalTimelineDayMapViewState`, `LocalTimelineDayMapSource`, `Budget` (default **12 Routen / 256 Punkte pro Route / 4096 Punkte gesamt**, harte Grenzen pro Route + pro Tag). **Bounded reads**: Candidate-Load liest ausschließlich path metadata; Geometrie ausschließlich für selektierte pathIDs lazy decodiert.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayMapView.swift` — SwiftUI Placeholder (`#if canImport(SwiftUI)`-guarded). **KEIN MapKit-Import.** Echte `MKMapView`-/`MKMultiPolyline`-Verdrahtung bleibt explizit **Phase-10B Mac/Xcode-Pflicht**.
+- **Geändert** `LocalTimelineDayDetailView` — neue optionale Map-Sektion. Sektion wird nur sichtbar wenn `mapSource != nil` und Pfad-Metadaten existieren. "Load map"-Button startet bounded Candidate-Load **ohne `coord_blob`-Decodierung**; "Decode all routes" toggelt bounded Geometrie-Decode innerhalb `Budget`.
+- **Geändert** `LocalTimelineSessionLandingView` — reicht neuen optionalen `dayMapSource` durch.
+- **NEU** `LH2GPXAppFlow.makeProductionDayMapSource(for:)` — production Source-Factory; öffnet eigenen Reader auf `session.storeURL`, bindet `StoreBackedMapDataProvider`, nutzt Visit-Koordinaten als Bounds-Fallback.
+- **Geändert** `Sources/LocationHistoryConsumerApp/AppShellRootView.swift` und `wrapper/LH2GPXWrapper/ContentView.swift` — reichen neue Source ans Landing-View durch.
+- **NEU Tests** `Tests/LocationHistoryConsumerTests/LocalTimelineDayMapViewStateTests.swift` (7), `LocalTimelineDayMapBoundsTests.swift` (4) — alle Linux-grün.
+- **Bounded-Read-Garantien Phase 10A**:
+  - Candidates lesen ausschließlich path metadata (kein `coord_blob`-Decodierung).
+  - Geometrie ausschließlich für selektierte pathIDs lazy decodiert.
+  - Harte Budgets pro Route (256 Punkte) **und** pro Tag (4096 Punkte total, 12 Routen).
+  - Bounds primär aus path metadata (union der bbox-Spalten); Fallback auf Visit-Koordinaten via Closure; leerer Tag → `bounds == nil`.
+  - Malformed `coord_blob` → kontrollierter `LocalTimelineMapProviderError.malformedCoordBlob` ohne Crash.
+  - Anti-Meridian-Behandlung bleibt **Phase 10B/11** (direktes min/max-Reduce).
+- **Harte Grenzen Phase 10A (verbatim)**:
+  - Feature-flagged Store-DayMap-UI-Surface — kein Default-Rollout.
+  - **KEIN MapKit-Import** in der Phase-10A-View; echte `MKMapView`-Verdrahtung bleibt **Phase-10B Mac/Xcode-Pflicht**.
+  - **KEINE vollständige sichtbare Kartenmodernisierung.**
+  - **KEIN eager `coord_blob`-Decoding** beim Candidate-Load.
+  - Legacy-Map unverändert.
+  - **KEIN AppExport-Rebuild aus Store.**
+  - **KEIN vollständiger `[Double]`-Import-Buffer.**
+  - **KEIN Live-Upload-Mix.**
+  - **KEINE neuen externen Dependencies.**
+  - **KEINE Hardware-/AppStore-/TestFlight-/ASC-Aussage.**
+  - **KEINE Darwin-FileProtection-Aktivierung** (bleibt offene Phase-10B/11-Pflicht).
+  - **KEIN RTree** (bleibt deferred, TEXT path-IDs).
+  - Heatmap-UI / Overview-UI / Export-UI / Darwin FileProtection / Hardware-Retest / TestFlight bleiben **Phase-10B/11-Pflicht**.
+  - **46-MB-Gate bleibt FAILED / pending hardware retest.**
+- **Offene Phase-10B/11-Pflichten** (vor produktivem Default-Rollout): echte MapKit-/`MKMapView`-/`MKMultiPolyline`-Verdrahtung der Phase-10A-Placeholder-View (Mac/Xcode-Pflicht; Anti-Meridian); Heatmap-/Overview-UI-Hook gegen `StoreBackedHeatmapDataProvider`; Export-UI-Hook gegen `StoreBackedExportWriter`; Darwin FileProtection-Aktivierung; 46-MB-Hardware-Retest; RTree `path_bounds` (Schema-breaking, deferred); Privacy-Doku-Update; Store-Default-Rollout; TestFlight/Xcode-Cloud Build ≥100.
+
+---
+
 ## Phase-9B-Spike Snapshot (2026-05-08)
 
 - **Eingecheckt**: feature-flagged Store-**DayList + DayDetail-UI** über die bestehende `LocalTimelineSessionLandingView`. Surface bleibt **Spike / pre-production hinter Feature-Flag**; Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE` unverändert).
@@ -24,7 +60,7 @@
   - **KEIN RTree** (bleibt deferred, TEXT path-IDs).
   - **46-MB-Gate bleibt FAILED / pending hardware retest.**
 - **Phase-9 done** (DayList/DayDetail-UI ist erledigt; Map/Heatmap/Overview bleibt offen).
-- **Offene Phase-10-Pflichten** (vor produktivem Default-Rollout): Map/Heatmap/Overview UI-Hook gegen Provider; Darwin FileProtection-Aktivierung; 46-MB-Hardware-Retest; RTree `path_bounds` (Schema-breaking, deferred); Privacy-Doku-Update; Store-Default-Rollout; Export-UI-Hook; TestFlight/Xcode-Cloud Build ≥100.
+- **Offene Phase-10-Pflichten** (vor produktivem Default-Rollout, Stand vor Phase 10A): Map/Heatmap/Overview UI-Hook gegen Provider; Darwin FileProtection-Aktivierung; 46-MB-Hardware-Retest; RTree `path_bounds` (Schema-breaking, deferred); Privacy-Doku-Update; Store-Default-Rollout; Export-UI-Hook; TestFlight/Xcode-Cloud Build ≥100. **Update**: Store-DayMap-UI-Surface (Foundation-only Presentation Model + SwiftUI Placeholder, kein MapKit-Import) ist in Phase 10A erledigt; echte MapKit-Verdrahtung bleibt Phase-10B Mac/Xcode-Pflicht.
 
 ---
 

@@ -18,7 +18,15 @@ Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmenti
 
 Manuelle Release-Risiko-Abnahme: siehe `docs/APPLE_VERIFICATION_CHECKLIST.md` Block „Manual Release Risk Acceptance Protocol". Deckt 46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout sowie ASC / TestFlight / Apple Review — alles vor App-Store-Submission durch Tester abzuhaken.
 
-## LocalTimelineStore (Phase 1..9B abgeschlossen, Wrapper/Settings/DayList/DayDetail-UI feature-flagged aktiv)
+## LocalTimelineStore (Phase 1..10A abgeschlossen, Wrapper/Settings/DayList/DayDetail/DayMap-UI feature-flagged aktiv)
+
+### Phase 10A — Feature-Flag-Test-Handoff Store-DayMap-UI-Surface (2026-05-08)
+
+Stand 2026-05-08: **Phase 10A** ergänzt eine feature-flagged Store-**DayMap-UI-Surface** in der bestehenden `LocalTimelineDayDetailView`. Bei aktivem Feature-Flag (`LH2GPX_LOCAL_TIMELINE_STORE`) sieht der Tester pro Tag eine optionale Map-Sektion: "Load map" startet einen bounded Candidate-Load (path metadata, **kein `coord_blob`-Decoding**); "Decode all routes" toggelt einen bounded Geometrie-Decode innerhalb harter `Budget`-Grenzen (default 12 Routen / 256 Punkte pro Route / 4096 Punkte gesamt). Die View ist ein SwiftUI Placeholder (`LocalTimelineDayMapView`, `#if canImport(SwiftUI)`-guarded) **ohne MapKit-Import** — echte `MKMapView`-/`MKMultiPolyline`-Verdrahtung bleibt **explizit Phase-10B Mac/Xcode-Pflicht** (Linux-Server kann MapKit nicht bauen; Anti-Meridian-Behandlung gehört in Phase 10B/11).
+
+**Mac/Xcode-Handoff für Phase 10B**: das Anbinden der echten MapKit-/`MKMapView`-/`MKMultiPolyline`-Verdrahtung an die Phase-10A-Placeholder-View (`LocalTimelineDayMapView`) muss am Mac/Xcode erfolgen. Eingangspunkt ist `LocalTimelineDayMapViewState`/`LocalTimelineDayMapSource` — die `routeCandidates`/`routeGeometry`-API ist bereits Foundation-only über `StoreBackedMapDataProvider` bedient; nur der SwiftUI/MapKit-Renderer ist zu ergänzen. Anti-Meridian-Behandlung (direktes min/max-Reduce statt naivem union der bbox-Spalten) gehört in denselben Schritt.
+
+**Vollständige sichtbare Kartenmodernisierung wird NICHT behauptet.** Legacy-Map unverändert. Heatmap-/Overview-/Export-UI-Hook bleibt weiter **nicht hookt** und Phase-10B/11-Pflicht. Default-Rollout bleibt Legacy-AppExport (Flag-Off → byte-identischer Legacy-Pfad). **Keine Darwin FileProtection-Aktivierung**, **keine neuen iOS-Build-Schritte (außer dem Phase-10B-MapKit-Wiring)**, **keine ASC/TestFlight-Aussage**, **46-MB-Gate bleibt FAILED / pending hardware retest unverändert**.
 
 ### Phase 9B — Feature-Flag-Test-Handoff (2026-05-08)
 

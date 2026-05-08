@@ -197,6 +197,40 @@ public enum LH2GPXAppFlow {
         )
     }
 
+    /// Phase-10A — Convenience: liefert eine `LocalTimelineDayMapSource`,
+    /// die einen separaten Read-Reader auf `session.storeURL` öffnet und an
+    /// einen `StoreBackedMapDataProvider` bindet. Reader/Store werden vom
+    /// zurückgegebenen Source-Closure am Leben gehalten. `nil` bedeutet,
+    /// dass die DB nicht geöffnet werden konnte — die Map-Sektion wird
+    /// dann weggelassen, statt mit einem Fehlerbanner zu erscheinen.
+    public static func makeProductionDayMapSource(
+        for session: LocalTimelineSession,
+        budget: LocalTimelineDayMapViewState.Budget = .default,
+        detailLevel: LocalTimelineMapDetailLevel = .medium
+    ) -> LocalTimelineDayMapSource? {
+        guard let store = try? LocalTimelineStore(url: session.storeURL) else {
+            return nil
+        }
+        let reader = LocalTimelineStoreReader(store: store)
+        let provider = StoreBackedMapDataProvider(reader: reader)
+        let adapter = LocalTimelineAppSessionAdapter(reader: reader, session: session)
+        return LocalTimelineDayMapSource { dayID, selected in
+            _ = store // capture for lifetime
+            return try LocalTimelineDayMapSource.make(
+                provider: provider,
+                visitsForBoundsFallback: { id in
+                    guard let detail = try adapter.dayDetail(dayId: id) else { return [] }
+                    return detail.visits.compactMap { v in
+                        guard let lat = v.latitude, let lon = v.longitude else { return nil }
+                        return LocalTimelineMapPoint(latitude: lat, longitude: lon)
+                    }
+                },
+                budget: budget,
+                detailLevel: detailLevel
+            ).load(dayID, selected)
+        }
+    }
+
     /// Phase-9A — verdrahtet den envelope-Outcome direkt in einen
     /// `AppSessionState`. Wird aus beiden App-Shells (wrapper/Package) und
     /// aus Linux-Tests aufgerufen, damit Routing-Logik nicht in SwiftUI-

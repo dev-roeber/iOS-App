@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## [2026-05-08] — feat: add store backed day map ui surface
+
+Phase-10A-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Feature-flagged Store-DayMap-UI-Surface** in der bestehenden DayDetail-Ansicht — Tester mit gesetztem `LH2GPX_LOCAL_TIMELINE_STORE` sehen ab Phase 10A pro Tag eine optionale Map-Sektion (Foundation-only `LocalTimelineDayMapViewState` Presentation Model + SwiftUI Placeholder, **kein MapKit-Import**); echte `MKMapView`-/`MKMultiPolyline`-Verdrahtung bleibt explizit Phase-10B Mac/Xcode-Pflicht. Surface bleibt **Spike / pre-production hinter Feature-Flag**, Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE`-Flag unverändert). Legacy-Map unverändert. **Vollständige sichtbare Kartenmodernisierung wird NICHT behauptet.** **46-MB-Gate bleibt FAILED / pending hardware retest.**
+
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayMapViewState.swift` — Foundation-only Presentation Model. Typen: `LocalTimelineDayMapViewState` (states `idle`/`loadingCandidates`/`candidatesLoaded`/`loadingGeometry`/`ready`/`failed`), `LocalTimelineDayMapSource` (Reader-Bindings + Visit-Coordinate-Closure für Bounds-Fallback), `Budget` (defaults: **12 Routen / 256 Punkte pro Route / 4096 Punkte gesamt**, harte Grenzen pro Route + pro Tag). **Bounded reads**: Candidate-Load liest ausschließlich path metadata (keine `coord_blob`-Decodierung); Geometrie wird ausschließlich für selektierte pathIDs lazy decodiert.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayMapView.swift` — SwiftUI Placeholder (`#if canImport(SwiftUI)`-guarded). **Kein MapKit-Import.** Echte MapKit-/MKMapView-Verdrahtung bleibt explizit **Phase-10B Mac/Xcode-Pflicht** (Linux-Server kann MapKit nicht bauen).
+- **Geändert** `LocalTimelineDayDetailView` — neue optionale Map-Sektion. Sektion wird nur sichtbar wenn `mapSource != nil` und Pfad-Metadaten existieren. Buttons: "Load map" startet bounded Candidate-Load **ohne Koordinatendecodierung**; "Decode all routes" toggelt bounded Geometrie-Decode (innerhalb `Budget`).
+- **Geändert** `LocalTimelineSessionLandingView` — reicht neuen optionalen `dayMapSource` durch.
+- **Geändert** `LH2GPXAppFlow.makeProductionDayMapSource(for:)` — neue Factory; öffnet eigenen Reader auf `session.storeURL`, bindet `StoreBackedMapDataProvider`, nutzt Visit-Koordinaten als Bounds-Fallback.
+- **Geändert** `Sources/LocationHistoryConsumerApp/AppShellRootView.swift` und `wrapper/LH2GPXWrapper/ContentView.swift` — reichen neue Source ans Landing-View durch.
+- **NEU Tests** `Tests/LocationHistoryConsumerTests/LocalTimelineDayMapViewStateTests.swift` (7) und `LocalTimelineDayMapBoundsTests.swift` (4) — alle Linux-grün.
+- **Bounded-Read-Garantien Phase 10A**:
+  - Candidates lesen ausschließlich path metadata (keine `coord_blob`-Decodierung).
+  - Geometrie wird ausschließlich für selektierte pathIDs lazy decodiert.
+  - Harte Budgets greifen pro Route (256 Punkte) **und** pro Tag (4096 Punkte total, 12 Routen).
+  - Bounds primär aus path metadata (union der bbox-Spalten), Fallback auf Visit-Koordinaten via Closure; leerer Tag → `bounds == nil`.
+  - Malformed `coord_blob` → kontrollierter `LocalTimelineMapProviderError.malformedCoordBlob` ohne Crash.
+  - Anti-Meridian-Behandlung bleibt **Phase 10B/11** (direktes min/max-Reduce).
+- **Harte Grenzen Phase 10A (verbatim)**:
+  - **Feature-flagged Store-DayMap-UI-Surface** — kein Default-Rollout.
+  - **KEIN MapKit-Import** in der Phase-10A-View; echte `MKMapView`-Verdrahtung bleibt **Phase-10B Mac/Xcode-Pflicht**.
+  - **KEINE vollständige sichtbare Kartenmodernisierung.**
+  - **KEIN eager `coord_blob`-Decoding** beim Candidate-Load.
+  - **Legacy-Map unverändert.**
+  - **KEIN AppExport-Rebuild aus Store.**
+  - **KEIN vollständiger `[Double]`-Import-Buffer.**
+  - **KEIN Live-Upload-Mix.**
+  - **KEINE neuen externen Dependencies.**
+  - **KEINE Hardware-/AppStore-/TestFlight-/ASC-Aussage.**
+  - **KEINE Darwin-FileProtection-Aktivierung** (bleibt offene Phase-10B/11-Pflicht).
+  - **KEIN RTree** (bleibt deferred, TEXT path-IDs).
+  - Heatmap-UI / Overview-UI / Export-UI / Darwin FileProtection / Hardware-Retest / TestFlight bleiben **Phase-10B/11-Pflicht**.
+  - **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim erhalten).
+
 ## [2026-05-08] — feat: wire local timeline day detail ui
 
 Phase-9B-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Feature-flagged Store-DayList + DayDetail-UI** über die bestehende Landing-View — Tester mit gesetztem `LH2GPX_LOCAL_TIMELINE_STORE` sehen nach einem Google-Timeline-Import jetzt eine Tagesliste (newest-first, Datum / Routen / Visits / Distanz) und können pro Tag eine sheet-basierte Detail-Ansicht öffnen (Datum, Visits, Activities, Path-Metadaten + "Path points available (not decoded)"-Hinweis). Surface bleibt **Spike / pre-production hinter Feature-Flag**, Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE`-Flag unverändert). **Map/Heatmap/Overview UI-Hook bleibt blockiert.** **46-MB-Gate bleibt FAILED / pending hardware retest.**

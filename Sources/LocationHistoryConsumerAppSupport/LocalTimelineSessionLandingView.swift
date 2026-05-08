@@ -23,6 +23,7 @@ public struct LocalTimelineSessionLandingView: View {
     private let dayBrowser: LocalTimelineDayBrowserSource?
     private let selectedDayId: String?
     private let onSelectDay: ((String?) -> Void)?
+    private let dayMapSource: LocalTimelineDayMapSource?
     @State private var deleteState: DeleteState = .idle
     @State private var deleteMessage: String?
     @State private var listState: LocalTimelineDayListViewState?
@@ -43,13 +44,15 @@ public struct LocalTimelineSessionLandingView: View {
                 deletionPresentation: LocalTimelineDeletionPresentation? = nil,
                 dayBrowser: LocalTimelineDayBrowserSource? = nil,
                 selectedDayId: String? = nil,
-                onSelectDay: ((String?) -> Void)? = nil) {
+                onSelectDay: ((String?) -> Void)? = nil,
+                dayMapSource: LocalTimelineDayMapSource? = nil) {
         self.session = session
         self.onClear = onClear
         self.deletionPresentation = deletionPresentation
         self.dayBrowser = dayBrowser
         self.selectedDayId = selectedDayId
         self.onSelectDay = onSelectDay
+        self.dayMapSource = dayMapSource
     }
 
     public var body: some View {
@@ -73,7 +76,8 @@ public struct LocalTimelineSessionLandingView: View {
         .onAppear { loadListIfNeeded() }
         .sheet(item: detailBinding) { presented in
             NavigationStack {
-                LocalTimelineDayDetailView(state: presented.viewState)
+                LocalTimelineDayDetailView(state: presented.viewState,
+                                           mapSource: dayMapSource)
                     .navigationTitle(presented.viewState.date)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {

@@ -15,9 +15,15 @@ public struct LocalTimelineDayDetailView: View {
     public typealias ViewState = LocalTimelineDayDetailViewStateAdapter.ViewState
 
     private let state: ViewState
+    private let mapSource: LocalTimelineDayMapSource?
+    @State private var mapState: LocalTimelineDayMapViewState?
+    @State private var mapError: String?
+    @State private var selectedPathIDs: Set<String> = []
 
-    public init(state: ViewState) {
+    public init(state: ViewState,
+                mapSource: LocalTimelineDayMapSource? = nil) {
         self.state = state
+        self.mapSource = mapSource
     }
 
     public var body: some View {
@@ -28,6 +34,7 @@ public struct LocalTimelineDayDetailView: View {
                 if !state.visits.isEmpty { visitsSection }
                 if !state.activities.isEmpty { activitiesSection }
                 if !state.paths.isEmpty { pathsSection }
+                if mapSource != nil && !state.paths.isEmpty { mapSection }
                 if !state.hasContent { emptyNote }
                 geometryNote
             }
@@ -36,6 +43,55 @@ public struct LocalTimelineDayDetailView: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityIdentifier("localTimeline.dayDetail")
+    }
+
+    @ViewBuilder
+    private var mapSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Map").font(.headline)
+                Spacer()
+                if mapState == nil {
+                    Button("Load map") { loadMap(decodeSelected: false) }
+                        .accessibilityIdentifier("localTimeline.dayDetail.map.load")
+                } else {
+                    Button(selectedPathIDs.isEmpty ? "Decode all routes" : "Hide geometry") {
+                        if selectedPathIDs.isEmpty {
+                            selectedPathIDs = Set(state.paths.map(\.id))
+                        } else {
+                            selectedPathIDs.removeAll()
+                        }
+                        loadMap(decodeSelected: true)
+                    }
+                    .accessibilityIdentifier("localTimeline.dayDetail.map.toggle")
+                }
+            }
+            if let mapError {
+                Text("Could not load map: \(mapError)")
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("localTimeline.dayDetail.map.error")
+            } else if let mapState {
+                LocalTimelineDayMapView(state: mapState)
+            } else {
+                Text("Map data is not yet loaded. Coordinates remain on disk until you tap Load.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("localTimeline.dayDetail.map.placeholder")
+            }
+        }
+    }
+
+    private func loadMap(decodeSelected: Bool) {
+        guard let source = mapSource else { return }
+        do {
+            mapState = try source.load(state.dayId,
+                                       decodeSelected ? selectedPathIDs : [])
+            mapError = nil
+        } catch {
+            mapState = nil
+            mapError = String(describing: error)
+        }
     }
 
     @ViewBuilder
@@ -141,9 +197,15 @@ public struct LocalTimelineDayDetailView: View {
 
     @ViewBuilder
     private var geometryNote: some View {
-        Text("Coordinates are not decoded in this view. Map / polyline UI for the local store is not wired in this build.")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+        if mapSource == nil {
+            Text("Coordinates are not decoded in this view. Map / polyline UI for the local store is not wired in this build.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        } else {
+            Text("Map metadata is loaded on demand. Decoding route geometry is bounded by per-route and per-day point budgets.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func sectionTitle(_ title: String, count: Int) -> some View {

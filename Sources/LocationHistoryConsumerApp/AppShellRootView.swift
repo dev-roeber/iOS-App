@@ -43,7 +43,8 @@ struct AppShellRootView: View {
                         deletionPresentation: LH2GPXAppFlow.makeProductionDeletionPresentation(),
                         dayBrowser: LH2GPXAppFlow.makeProductionDayBrowserSource(for: storeSession),
                         selectedDayId: session.selectedLocalTimelineDayId,
-                        onSelectDay: { session.selectLocalTimelineDay($0) }
+                        onSelectDay: { session.selectLocalTimelineDay($0) },
+                        dayMapSource: LH2GPXAppFlow.makeProductionDayMapSource(for: storeSession)
                     )
                     .navigationTitle("LH2GPX")
                     .toolbar {
