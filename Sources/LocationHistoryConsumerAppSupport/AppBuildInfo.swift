@@ -13,7 +13,14 @@ public struct AppBuildInfo {
     public let marketingVersion: String
     public let buildNumber: String
     public let gitCommitSHA: String?
-    public let isMemoryLoggingEnabled: Bool
+
+    /// Build-158 — live computed (kein gecachter `let`). Vorher fror der
+    /// Wert beim Start ein, sodass der Build-Info-Eintrag "Disabled" zeigte,
+    /// während die Tester-Toggle-Sektion bereits "Memory Logging Resolved
+    /// Enabled" anzeigte. Da `ImportMemoryProbe.isLoggingEnabled` bereits den
+    /// Process-Cache und das Settings-Bool ODER-verknüpft, ist hier nichts zu
+    /// duplizieren.
+    public var isMemoryLoggingEnabled: Bool { ImportMemoryProbe.isLoggingEnabled }
 
     public init(bundle: Bundle = .main) {
         let info = bundle.infoDictionary
@@ -27,7 +34,6 @@ public struct AppBuildInfo {
         } else {
             self.gitCommitSHA = nil
         }
-        self.isMemoryLoggingEnabled = ImportMemoryProbe.isLoggingEnabled
     }
 
     /// Compact one-line description suitable for log lines or compact UI.

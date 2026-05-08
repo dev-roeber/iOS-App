@@ -14,7 +14,13 @@ Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 
 Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmentierte `Insights`, gespeicherte lokale Live-Tracks und optionalen nutzergesteuerten Upload akzeptierter Live-Recording-Punkte. Weiterhin nicht Teil dieses Runbooks sind Producer-Logik, Cloud-/Account-Sync fuer importierte History und unbewiesene Apple-Review-Claims.
 
-## Build-158-Vorbereitung — interne Test-Toggles für TestFlight (2026-05-08)
+## Deep Audit 2026-05-08 + AppBuildInfo Live Memory-Logging Mirror
+
+Repo-Truth-Audit nach Build 158 abgelegt unter `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md`. P1-UX-Fix (FIX-1): `AppBuildInfo.isMemoryLoggingEnabled` ist jetzt computed (`var`) und liest live `ImportMemoryProbe.isLoggingEnabled`. Vorher fror der Wert beim Process-Start ein → "Memory Logging Disabled" in Build Info widersprach "Memory Logging Resolved Enabled" daneben. Regressions-Pin: `testAppBuildInfoMemoryLoggingReflectsLiveSettingsToggle`.
+
+Linux-Vollsuite nach FIX-1: **1306 Tests, 2 Skips, 0 Failures**. **46-MB-Gate bleibt FAILED / pending hardware retest.** TestFlight-Build-158-Acceptance nicht im Repo dokumentiert.
+
+## Build-158-Vorbereitung — interne Test-Toggles für TestFlight (2026-05-08, implementiert in commit `f7020f6`)
 
 Build 157 ist Xcode Cloud grün und TestFlight-installierbar (Status „Überprüft", interne Tests erfolgreich). Keine Aussage über Apple-Review-Freigabe oder über das 46-MB-Hardwareverhalten — **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
 

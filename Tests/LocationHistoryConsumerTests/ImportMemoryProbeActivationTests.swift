@@ -156,4 +156,35 @@ final class ImportMemoryProbeActivationTests: XCTestCase {
             ImportMemoryProbe.isLoggingEnabled
         )
     }
+
+    /// Regression-Pin (Build-158 Deep-Audit-Fix): vor dem Fix war
+    /// `AppBuildInfo.isMemoryLoggingEnabled` ein gespeicherter `let`, der den
+    /// Wert beim Process-Start einfror. Wenn ein TestFlight-Tester den
+    /// `importMemoryLoggingEnabled`-Toggle umlegte, zeigte die Build-Info
+    /// weiterhin "Disabled", während die Toggle-Sektion daneben "Enabled"
+    /// auflöste. Dieser Test stellt sicher, dass die Property live mitläuft.
+    func testAppBuildInfoMemoryLoggingReflectsLiveSettingsToggle() {
+        let suite = "LH2GPXBuildInfoLive-\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            return XCTFail("Could not create UserDefaults suite")
+        }
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        // Lokale Settings-Instanz reicht nicht, weil AppBuildInfo das
+        // Singleton liest. Wir setzen direkt den Singleton-Schalter.
+        let shared = LocalTimelineTechnicalTestSettings.shared
+        let previous = shared.importMemoryLoggingEnabled
+        defer { shared.importMemoryLoggingEnabled = previous }
+
+        // Beobachte, dass eine Änderung am Singleton-Setting sich sofort in
+        // AppBuildInfo widerspiegelt — vorher fror der Wert ein.
+        shared.importMemoryLoggingEnabled = true
+        XCTAssertTrue(AppBuildInfo.shared.isMemoryLoggingEnabled,
+                      "Build-Info muss Live-Status spiegeln, sobald Toggle an ist")
+
+        // Hinweis: Wenn der Process-Cache (Args/ENV beim Start) bereits true
+        // war, kann der nächste Schritt nicht zurück nach false fallen, weil
+        // die OR-Semantik korrekt erhalten bleibt. Die obere Assertion
+        // dokumentiert den Vorwärtspfad, der den ursprünglichen Bug abdeckt.
+    }
 }

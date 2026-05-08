@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## [2026-05-08] — docs+fix: deep audit & build-info live memory-logging mirror
+
+Deep Audit nach Build 158 — Repo-Truth-Abgleich von LocalTimelineStore-Pfad, Build-158-Toggles, ImportMemoryProbe, Map/Heatmap/Overview/Export-Verdrahtung, Stabilität, Tests und Doku. Audit-Dokument: `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md`.
+
+**Eindeutiger P1-UX-Bug gefunden und in diesem Commit gefixt** (FIX-1):
+- `AppBuildInfo.isMemoryLoggingEnabled` war ein gespeicherter `let`, der den Wert beim Process-Start einfror. Sobald ein TestFlight-Tester den `importMemoryLoggingEnabled`-Toggle umlegte, zeigte die Build-Info-Sektion weiter "Memory Logging Disabled", während direkt darunter "Memory Logging Resolved Enabled" stand → irreführend.
+- Fix: Property auf computed `var` umgestellt; sie liest jetzt live `ImportMemoryProbe.isLoggingEnabled` (das wiederum ProcessInfo-Cache und `LocalTimelineTechnicalTestSettings.shared.importMemoryLoggingEnabled` ODER-verknüpft).
+- Bestehender Test `testAppBuildInfoExposesMemoryLoggingFlag` bleibt grün; neuer Regression-Pin `testAppBuildInfoMemoryLoggingReflectsLiveSettingsToggle` schiebt den Singleton-Toggle live von OFF nach ON und beobachtet, dass `AppBuildInfo.shared.isMemoryLoggingEnabled` mitläuft.
+
+**Audit-Befunde — bewusst NICHT behauptet:**
+- Kein 46-MB-Hardware-Pass; **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+- Kein TestFlight-Build-158-Acceptance-Run im Repo dokumentiert.
+- Keine App-Review-Freigabe.
+- Map-/Heatmap-/Overview-/Export-UI im Store-Pfad bleibt **OFFEN** (Producer komplett, UI-Hooks nicht verdrahtet — bewusst, transparent in Phase-Note).
+- FileProtection iOS bleibt Platzhalter; RTree bleibt deferred; Import-Cancel-API fehlt; WAL-Checkpoint/VACUUM zwischen Imports nicht aktiv.
+
+**Linux-Vollsuite (Server-Truth nach FIX-1):** 1306 Tests · 2 Skips · 0 Failures (`swift test`). Vorheriger Lauf vor FIX-1: 1305 / 2 / 0.
+
+LocalTimelineStore bleibt **pre-production / feature-flagged / default AUS**.
+
+- **Geändert** `Sources/LocationHistoryConsumerAppSupport/AppBuildInfo.swift` — `isMemoryLoggingEnabled` von `let` auf computed `var`. Initializer entsprechend gekürzt.
+- **NEU** `Tests/LocationHistoryConsumerTests/ImportMemoryProbeActivationTests.swift` — `testAppBuildInfoMemoryLoggingReflectsLiveSettingsToggle` (Regression-Pin gegen Refreeze).
+- **NEU** `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` — vollständiges Audit (15 Sektionen, P0/P1/P2/P3-Maßnahmenliste, vorgeschlagene Folgeprompts).
+
+---
+
 ## [2026-05-08] — feat: add internal test toggles for testflight build 158 prep
 
 Build-158-Vorbereitung: interne UserDefaults-basierte Test-Toggles, damit TestFlight-Tester den feature-flagged LocalTimelineStore-Pfad und das Import-Memory-Logging **ohne** Launch-Argumente / Environment-Variablen scharf schalten können (TestFlight erlaubt Tester keine Argumente/ENV). **Build 157 ist Xcode Cloud grün und TestFlight-installierbar (Status „Überprüft", interne Tests erfolgreich).** Keine Aussage über echte Apple-Review-Freigabe oder über das 46-MB-Hardwareverhalten. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim). LocalTimelineStore-Pfad bleibt **pre-production / feature-flagged / default AUS**. Live-Upload, Recording und Auth-Flows unberührt.

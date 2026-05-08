@@ -4,6 +4,26 @@ Stand: 2026-05-08 (HEAD `37a22b7` nach `34bc369` — chore: Linux-Stabilisierung
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
+### Offen — P1 nach Deep Audit 2026-05-08 (`docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md`)
+
+Im Audit als **P1** belegt und als nächste Schritte vorgeschlagen (kein Code dazu in diesem Commit, ausser FIX-1):
+
+1. **Import-Cancel-API + Cancel-Button** (P1-A). Task.isCancelled-Check pro Element in `GoogleTimelineStoreImporter`/`LocalTimelineImportWriter`, UI-Cancel-Button im Loading-State.
+2. **Import-Progress (Entry-Count + Bytes)** (P1-B). Erweiterung `ImportPhase.parsing(processedElements:totalEstimate:)`.
+3. **`PRAGMA wal_checkpoint(TRUNCATE)` nach `finalize` und `deleteAll`** (P1-C). Verhindert monotones DB-Wachstum.
+4. **Recovery-Test (App-Kill mid-Import)** (P1-D). open → bulk insert → close ohne commit → reopen → assert empty.
+5. **UX-Polish AppOptionsView Memory-Logging-Section** (P1-E). Drei Felder in zwei Layern (Build Configuration / Tester Override / Active Status) reorganisieren — nach FIX-1 nicht mehr blocking, aber Klarheit verbessert.
+
+P0 ist bewusst leer: keine produktiven Crashes/Datenverluste im Repo belegbar; das **46-MB-Hardware-Gate bleibt FAILED / pending hardware retest** (verbatim) als externe Verifikation.
+
+### Erledigt — Deep Audit + AppBuildInfo Live-Memory-Logging-Mirror (2026-05-08)
+
+Deep Audit nach Build 158: Repo-Truth-Abgleich von LocalTimelineStore-Pfad, Toggles, ImportMemoryProbe, Map/Heatmap/Overview/Export-Verdrahtung, Stabilität, Tests und Doku. Audit-Dokument `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` (15 Sektionen, P0/P1/P2/P3-Maßnahmenliste).
+
+P1-UX-Fix in diesem Commit (FIX-1): `AppBuildInfo.isMemoryLoggingEnabled` von gespeichertem `let` auf computed `var` umgestellt. Vorher fror der Wert beim Process-Start ein, sodass die Build-Info-Sektion "Disabled" zeigte, während die Toggle-Sektion direkt darunter "Memory Logging Resolved Enabled" auflöste. Neuer Regressions-Pin `testAppBuildInfoMemoryLoggingReflectsLiveSettingsToggle`.
+
+Linux-Vollsuite: 1306 Tests, 2 Skips, 0 Failures (nach FIX-1).
+
 ### Erledigt — Build-158-Vorbereitung: interne Test-Toggles (2026-05-08)
 
 Build 157 ist **Xcode Cloud grün** und **TestFlight-installierbar** (Status „Überprüft", interne Tests erfolgreich). Keine Aussage über Apple-Review-Freigabe, Release oder Hardware. Da TestFlight-Tester keine Launch-Argumente / Environment-Variablen setzen können, ist als Build-158-Vorbereitung ein interner UserDefaults-basierter Toggle-Mechanismus eingecheckt, der den feature-flagged LocalTimelineStore-Pfad **und** das Import-Memory-Logging über die Technical-Sektion in der App scharf schaltet.
