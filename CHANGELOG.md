@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [2026-05-08] — test: spike local timeline store coordinate blobs
+
+Phase-1-Spike der LocalTimelineStore-Architektur aus `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`. **Isolierte Zusatzdateien**, **kein produktiver App-Flow umgestellt**, keine Karten-/UI-Migration. **46-MB-Crashfall bleibt FAILED / pending hardware retest.**
+
+- **NEU** `Sources/CSQLite/{module.modulemap, shim.h}` + `.systemLibrary(name: "CSQLite", pkgConfig: "sqlite3")` in `Package.swift`. Linux-Shim auf `libsqlite3` (geprüft: `libsqlite3.so.0` + `pkg-config sqlite3` Version 3.53.0). Auf Apple-Plattformen unbenutzt — `LocalTimelineStore.swift` wählt via `#if canImport(SQLite3)` den SDK-Pfad.
+- **NEU** `Sources/LocationHistoryConsumer/CoordBlob.swift` (Core, plattformneutral): `CoordBlobEncoder`, `CoordBlobIterator` (Sequence/IteratorProtocol, lazy Decode ohne `[Double]`-Materialisierung), `EncodedCoordinate`, `CoordBlobError`. Encoding `int32-microdeg-v1`: 8 Bytes/Punkt (Int32-microdegrees latE6+lonE6 little-endian). Validiert finite + Range (lat ±90°, lon ±180°), gerade `flatCoordinates`-Länge, durch-8-teilbare Blob-Länge.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStore{,Schema,Error}.swift`: SQLite-C-API-Spike. Tabellen `imports`, `days`, `paths` mit `ON DELETE CASCADE` (FK enforced via `PRAGMA foreign_keys = ON`), Indizes `idx_days_import_id`, `idx_days_date`, `idx_paths_day_id`, `PRAGMA user_version = 1`, `PRAGMA journal_mode = WAL`, `withTransaction { … }` mit Rollback, `paths(forDayId:)` als Read-API. Kein UI-Hook, kein `AppExport`-Adapter — der Store ist heute nur Linux-Test-Surface.
+- **NEU Tests** (alle Linux-grün):
+  - `Tests/.../CoordBlobEncoderTests.swift` (13 Cases): single/multi/flat-Roundtrip, byteCount=pointCount·8, NaN/Inf/out-of-range/uneven/malformed-Rejection, Negativkoordinaten, leere Blobs, Encoding-Identifier.
+  - `Tests/.../CoordBlobDistanceTests.swift` (2 Cases): Distanz aus `CoordBlobIterator` ≈ flatCoordinates-Haversine (Toleranz ≥50 m oder 1e-5·base), 10 000-Punkt-Iteratorzählung.
+  - `Tests/.../LocalTimelineStoreTests.swift` (8 Cases): Schema-Bootstrap + `user_version`, idempotentes Re-Open, Insert imp/day/path, ordered-by-startTime Query, Coord-Blob-Roundtrip durch DB, `ON DELETE CASCADE`, FK-Violation für orphan-day, Batch-Transaktion (500 Paths × 50 Punkte).
+- **Linux-Verifikation**: `git diff --check` clean, `swift --version` 5.9 RELEASE, `swift build` clean (6.7s), `swift test` **1057/2/0** (vorher 1034 → +23 neue Cases) in 88.0s. SQLite3 verfügbar via linuxbrew + system `libsqlite3.so.0`.
+- **Status LocalTimelineStore**: weiterhin **Spike**, nicht produktiv. Conditional Gate aus `45e5fcf` bleibt: **P0 falls 46-MB-Retest FAILED**, **P1/P2 falls PASSED**. Map-Modernisierung bleibt blockiert.
+
 ## [2026-05-08] — docs: research local timeline store compliance path
 
 Reine Research-/Plan-Doku, **kein Code-Stand-Sprung**. Neue Datei `docs/LOCAL_TIMELINE_STORE_RESEARCH.md` skizziert eine geprüfte Designrichtung für eine on-disk Timeline-Persistenz als strukturelle Alternative zum heutigen In-Memory-`AppExport`-Pfad bei sehr großen Google-Timeline-Importen (z. B. 46 MB ZIP):

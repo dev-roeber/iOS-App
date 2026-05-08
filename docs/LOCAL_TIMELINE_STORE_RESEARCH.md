@@ -1,5 +1,23 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
+Status: **Research + Phase-1-Spike eingecheckt** (CoordBlob + isolierter SQLite-Store, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung). Folge-Commit nach `45e5fcf`.
+
+## Phase-1-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: `Sources/CSQLite/{module.modulemap, shim.h}` (Linux-Shim, pkgConfig `sqlite3`), `Sources/LocationHistoryConsumer/CoordBlob.swift`, `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStore{,Schema,Error}.swift`. Test-Surface: `CoordBlobEncoderTests` (13), `CoordBlobDistanceTests` (2), `LocalTimelineStoreTests` (8). Linux `swift test` 1057/2/0 (vorher 1034 → +23).
+- **Encoding bestätigt**: `int32-microdeg-v1`, 8 Bytes/Punkt, lazy Sequence-Decode ohne `[Double]`-Materialisierung. Distanz-Iteration matched Haversine-Baseline auf <1e-5 Relativabweichung.
+- **Spike-Schema**: `imports`/`days`/`paths` mit `ON DELETE CASCADE`, Indizes auf `import_id`/`date`/`day_id`, `PRAGMA user_version = 1`, `PRAGMA journal_mode = WAL`. **Nicht** im Spike: `visits`, `activities`, `derived_cache`, RTree `path_bounds` — Phase-2.
+- **Bewusst weggelassen**:
+  - FileProtection-Flag an `sqlite3_open_v2` (`SQLITE_OPEN_FILEPROTECTION_COMPLETEUNLESSOPEN` ist iOS-only Header) — wird beim iOS-Rollout nachgezogen.
+  - `LocalTimelineStore.deleteAll()` (DB + Caches + tmp) — Phase-2-Pflicht vor jedem produktiven App-Hook.
+  - `URLResourceKey.isExcludedFromBackupKey` — nicht im Spike, weil Spike keinen `applicationSupportDirectory`-Pfad öffnet, sondern nur `tmpDirectory` für Tests.
+  - Adapter zu `flatCoordinates`-Konsumenten — bewusst nicht in dieser Iteration, kein Contract-Break in `main`.
+- **Conditional Gate unverändert**: P0 falls 46-MB-Retest FAILED, P1/P2 falls PASSED. **46-MB-Crashfall bleibt FAILED / pending hardware retest.**
+
+---
+
+## Original Research (unverändert)
+
 Status: **Research / Plan**, kein Code in `main` umgesetzt.
 Stand: 2026-05-08, HEAD-Anker `ebd8146`, Linux Swift 5.9, 1034/2/0 Tests grün.
 Scope: Strukturelle Alternative zum aktuellen In-Memory-`AppExport`-Pfad für sehr große Google-Timeline-Importe (z. B. 46 MB ZIP). **Keine Kartenmodernisierung. Keine ASC-/TestFlight-Aussage. 46-MB-Crashfall bleibt FAILED bis Hardware-Retest.**

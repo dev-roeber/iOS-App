@@ -37,6 +37,18 @@ let package = Package(
         .package(url: "https://github.com/dev-roeber/ZIPFoundation.git", exact: "0.9.20-devroeber.1"),
     ],
     targets: [
+        .systemLibrary(
+            // Linux shim that exposes the system `libsqlite3` headers as the
+            // module name `CSQLite`. On Apple platforms `import SQLite3`
+            // resolves through the SDK directly; this target is only used on
+            // platforms where `canImport(SQLite3)` is false (Linux CI).
+            name: "CSQLite",
+            pkgConfig: "sqlite3",
+            providers: [
+                .apt(["libsqlite3-dev"]),
+                .brew(["sqlite"]),
+            ]
+        ),
         .target(
             name: "LocationHistoryConsumer"
         ),
@@ -44,6 +56,7 @@ let package = Package(
             name: "LocationHistoryConsumerAppSupport",
             dependencies: [
                 "LocationHistoryConsumer",
+                "CSQLite",
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
             ]
         ),
