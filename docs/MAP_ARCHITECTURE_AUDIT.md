@@ -104,6 +104,8 @@ Sind `path.points` und `path.flatCoordinates` beide gefüllt (Pipeline-Vorbeding
 
 Diese Zielarchitektur wird **nicht** in einem Big-Bang-Commit umgesetzt. Jeder Renderer-Wechsel braucht eine eigenständige Performance-Vergleichsmessung (RAM-Peak, FPS, First-Render-Time auf 4 GB-Geräten).
 
+> **Update 2026-05-08 (LocalTimelineStore-Research, HEAD-Anker `ebd8146`)**: Map-Modernisierung (UIKit `MKMapView`/`MKMultiPolyline`/`MKTileOverlay`) bleibt **blockiert**, bis entweder (a) der 46-MB-Hardware-Retest auf iPhone 15 Pro Max grün PASSED oder (b) eine klare LocalTimelineStore-P0-Entscheidung vorliegt — je nachdem, was zuerst kommt. Begründung: ein Renderer-Wechsel auf einem strukturell instabilen Datenmodell (In-Memory-`AppExport` mit Jetsam-Risiko) wäre ein bewegliches Ziel. Cross-Reference: `docs/LOCAL_TIMELINE_STORE_RESEARCH.md` (Aufgabe D — P0-Entscheidungsgate). Kein Code in `main`, kein Spike.
+
 ## 5. Roadmap-Schritte (priorisiert)
 
 1. **flatCoordinates kanonisch für Google Timeline Imports** (P0 — diese Aufgabe). `GoogleTimelineConverter.makePath` baut aktuell `points: [PathPoint]` mit ISO-Zeitstrings; Ziel ist `flatCoordinates: [Double]` ohne pro-Punkt ISO. Kein Tempolayer-Support für Google-Timeline-Pfade ist akzeptiert.

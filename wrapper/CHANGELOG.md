@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-05-08 (docs: research local timeline store compliance path — Core-Package concern)
+
+Reine Research-/Plan-Doku im Core-Package — **Wrapper unverändert**. Die neue `docs/LOCAL_TIMELINE_STORE_RESEARCH.md` skizziert eine geprüfte Designrichtung (SQLite-C-API + `Int32`-microdegrees-BLOB, Application-Support-Speicherort, `completeUnlessOpen`, backup-excluded) als strukturelle Alternative zum heutigen In-Memory-`AppExport`-Pfad bei sehr großen Importen. Adressat ist das Core-Paket / der AppSupport-Importpfad; das Wrapper-Target (`LH2GPXWrapper`/`LH2GPXWidget`) ist von dieser Research-Doku **nicht** betroffen — keine Bundle-/Signing-/Plist-/Asset-Änderung. Conditional-P0/P1-Gate (P0 falls 46-MB-Hardware-Retest FAILED, P1/P2 falls PASSED) ist in der Research-Doku dokumentiert. **Kein Code in `main`, kein Spike**, keine ASC-/TestFlight-Aussage. **46-MB-Crashfall bleibt FAILED**.
+
 ## 2026-05-08 (chore: Linux-Stabilisierung im AppSupport-Target nach P0-Memory-Fix `34bc369`)
 
 Reine Linux-Build-Stabilisierung des Core-Pakets — **Wrapper selbst nicht geändert** (kein Code-Stand-Sprung in `LH2GPXWrapper`/`LH2GPXWidget`, keine Bundle-/Signing-Änderung). Hintergrund: nach dem P0-Memory-Train HEAD `34bc369` waren `swift build` (Vollbuild) und `swift test` auf Linux pre-existing kaputt (iOS-only Heatmap/MapTrack-Color-Preference-Enums in `AppPreferences` referenziert, aber unter `#if canImport(SwiftUI) && canImport(MapKit)`-Guard definiert). Diese Stabilisierung schließt den Linux-Build, ohne iOS-Verhalten zu ändern.

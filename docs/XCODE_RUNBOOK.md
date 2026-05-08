@@ -18,6 +18,10 @@ Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmenti
 
 Manuelle Release-Risiko-Abnahme: siehe `docs/APPLE_VERIFICATION_CHECKLIST.md` Block „Manual Release Risk Acceptance Protocol". Deckt 46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout sowie ASC / TestFlight / Apple Review — alles vor App-Store-Submission durch Tester abzuhaken.
 
+## LocalTimelineStore (geplant, Linux-testbar)
+
+Die in `docs/LOCAL_TIMELINE_STORE_RESEARCH.md` skizzierte on-disk Timeline-Persistenz wäre auf Linux über die SQLite-C-API (`import SQLite3`, `linkerSettings(.linkedLibrary("sqlite3"))`) testbar — `libsqlite3-dev` muss im CI-Container vorhanden sein. Der geplante Spike fügt vermutlich ein neues Test-Setup hinzu (`CoordinateBlobEncodingTests`, `LocalTimelineStoreSchemaPlanTests`, Iterator-No-Allocation-Invariant). **Aktueller HEAD enthält keinen solchen Spike**; dieses Runbook bleibt für den derzeitigen Stand unverändert. Conditional-P0/P1-Gate (P0 falls 46-MB-Hardware-Retest FAILED, P1/P2 falls PASSED) ist in der Research-Doku dokumentiert.
+
 ## Voraussetzungen
 
 - macOS mit Xcode und SwiftPM-Unterstuetzung fuer Swift Tools 5.9

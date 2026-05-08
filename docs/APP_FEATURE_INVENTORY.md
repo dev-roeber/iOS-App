@@ -362,6 +362,9 @@ Explicitly not present as active product features:
 - merge of recorded live tracks into imported history
 - dedicated sync/server features
 
+Planned (research-only, not implemented):
+- **LocalTimelineStore** — on-disk Persistenz für sehr große Imports (z. B. 46 MB Google-Timeline-ZIP) als strukturelle Alternative zum heutigen In-Memory-`AppExport`-Pfad. Geprüfte Designrichtung: SQLite-C-API + `Int32`-microdegrees-BLOB, `applicationSupportDirectory/LocationHistory2GPX/Imports/`, `completeUnlessOpen`, backup-excluded; Streaming-Decode-Iterator. **Kein Code in `main`, kein Spike, keine UI-Umschaltung.** Conditional-P0/P1-Gate an 46-MB-Hardware-Retest gebunden. Details: `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`.
+
 ## 12b. Feature-Batch 2026-04-01 – Range / Insights / Export / Import-Comfort / Days-Polish
 
 ### A1. Globaler Zeitraumfilter

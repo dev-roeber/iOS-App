@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [2026-05-08] — docs: research local timeline store compliance path
+
+Reine Research-/Plan-Doku, **kein Code-Stand-Sprung**. Neue Datei `docs/LOCAL_TIMELINE_STORE_RESEARCH.md` skizziert eine geprüfte Designrichtung für eine on-disk Timeline-Persistenz als strukturelle Alternative zum heutigen In-Memory-`AppExport`-Pfad bei sehr großen Google-Timeline-Importen (z. B. 46 MB ZIP):
+
+- **Empfehlung**: SQLite C-API (kein GRDB/SQLite.swift) + `Int32`-microdegrees-BLOB für `paths.coord_blob` (8 B/Punkt, ~11 cm Auflösung); Streaming-Decode-Iterator statt voll-materialisiertem `[Double]`.
+- **Speicherort**: `applicationSupportDirectory/LocationHistory2GPX/Imports/` mit `isExcludedFromBackupKey = true` (DB als regenerierbarer Cache aus der Original-Quelldatei); Render-/LOD-Caches in `cachesDirectory`; Import-/Export-Staging in `tmpDirectory`.
+- **File-Protection**: `completeUnlessOpen` für DB-Datei und Temp-Exports; Live-Activity-kompatibel.
+- **Conditional P0/P1-Gate** an das offene 46-MB-Hardware-Retest-Ergebnis (HEAD `ebd8146`) gebunden: **P0 falls FAILED**, **P1/P2 falls PASSED**. Map-Modernisierung (UIKit `MKMapView`/`MKMultiPolyline`/`MKTileOverlay`) bleibt **vor 46-MB-Pass oder klarer LocalTimelineStore-P0-Entscheidung blockiert**.
+
+**Keine** Code-Änderung in `main`, **kein** Spike, **keine** UI-Umschaltung, **keine** ASC-/TestFlight-Aussage. **46-MB-Crashfall bleibt FAILED** bis Hardware-Retest. Siehe `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`.
+
 ## [2026-05-08] — chore: Linux-Stabilisierung nach P0-Memory-Fix `34bc369`
 
 ### Kontext
