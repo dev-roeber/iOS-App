@@ -38,7 +38,7 @@ Linux-SwiftPM-Vollbuild und `swift test` waren nach dem P0-Memory-Train HEAD `34
 - **Map-Modernisierung (MKMultiPolyline/MKTileOverlay)** — bleibt Roadmap (siehe `docs/MAP_ARCHITECTURE_AUDIT.md` §5).
 
 ### Code-Stand-Anker
-HEAD `<linux-stabilization-commit>` (folgt direkt nach diesem Doku-Update; baut auf `34bc369`).
+HEAD `37a22b7` (folgt direkt nach diesem Doku-Update; baut auf `34bc369`).
 
 ## [2026-05-08] — fix: reduce large timeline import memory footprint
 

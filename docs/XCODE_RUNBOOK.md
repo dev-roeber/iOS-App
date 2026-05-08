@@ -199,7 +199,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 
 ## Reale Verifikation in dieser Phase
 
-Frischer Linux-Host-Truth (2026-05-08, HEAD `<linux-stabilization-commit>` nach `34bc369` — Linux-Stabilisierung):
+Frischer Linux-Host-Truth (2026-05-08, HEAD `37a22b7` nach `34bc369` — Linux-Stabilisierung):
 
 - `swift build` (Vollbuild): clean ✅
 - `swift build --build-tests`: clean ✅
