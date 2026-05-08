@@ -1,5 +1,16 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-09 (Deep Audit Performance/Stabilität/Map-Layer)
+
+**46-MB-Gate-Status:** FAILED / pending hardware retest. (verbatim erhalten — keine Statusänderung in diesem Audit)
+**Store-Pfad-Status:** pre-production / feature-flagged / default OFF.
+**Build 164:** Xcode Cloud grün; Hardware-Pass nicht dokumentiert.
+
+Audit-Bericht: `docs/DEEP_AUDIT_2026-05-09_PERFORMANCE_STABILITY_MAP_LAYERS.md`. Vor dem nächsten Hardware-Run müssen die Toggles im Technical Screen aktiviert sein:
+- Local Timeline Store Test Mode = ON
+- Import Memory Logging = ON
+- Memory Logging Resolved = enabled
+
 ## Manual Release Risk Acceptance Protocol — HEAD `b91a933`
 
 ### Übersicht

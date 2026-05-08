@@ -53,7 +53,7 @@ Sources/
   LocationHistoryConsumerDemoSupport/  — Demo-Harness, Golden-Fixture
   LocationHistoryConsumerApp/          — Produkt-App-Einstieg
   LocationHistoryConsumerDemo/         — Demo-Einstieg
-  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Linux-Nachweis: 1034 Tests, 2 Skips, 0 Failures, 2026-05-08; erwarteter Mac-Stand ~1133)
+  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Linux-Nachweis: 1400 Tests, 2 Skips, 0 Failures, 2026-05-09 HEAD `d629467`; Mac-Stand inkl. Apple-only-Cases höher)
 Fixtures/contract/                     — Contract-Fixtures, Golden-JSONs
 wrapper/LH2GPXWrapper.xcodeproj        — Xcode Wrapper (Signing, Bundle, App-Icon)
 docs/                                  — Feature-Inventar, Runbook, Checklisten
@@ -76,12 +76,12 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 
 Aktueller Nachweis:
 - Linux (Stand 2026-05-08, Phase 10A `feat: add store backed day map ui surface`): `swift test` Stand wird im nächsten Run-Sync nachgetragen. Phase 10A ergänzt eine feature-flagged Store-**DayMap-UI-Surface** in der bestehenden `LocalTimelineDayDetailView`: Foundation-only `LocalTimelineDayMapViewState` Presentation Model (harte `Budget`-Grenzen, default 12 Routen / 256 Punkte pro Route / 4096 Punkte total) plus SwiftUI `LocalTimelineDayMapView` Placeholder (`#if canImport(SwiftUI)`-guarded; **kein MapKit-Import** — echte `MKMapView`-Verdrahtung bleibt explizit Phase-10B Mac/Xcode-Pflicht). DayDetail zeigt eine optionale Map-Sektion mit "Load map" (bounded Candidate-Load **ohne `coord_blob`-Decodierung**) und "Decode all routes" (bounded Geometrie-Decode innerhalb Budget). 11 neue Linux-grüne Tests (`LocalTimelineDayMapViewStateTests` 7, `LocalTimelineDayMapBoundsTests` 4). **Store-Pfad bleibt default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE`). **Vollständige sichtbare Kartenmodernisierung wird nicht behauptet.** Davor Phase 9B mit Store-DayList/DayDetail-UI; Phase 9A mit Wrapper/AppFlow-Wiring + Settings-Delete-Button + Landing-View.
-- Linux: `swift test` → **1034** Tests, **2** Skips, **0** Failures (vorheriger Stand 2026-05-08, HEAD `37a22b7` nach `34bc369` — Linux-Stabilisierung: HeatmapPreferenceEnums-Extraktion, OptionsPresentation-Hoisting, URL-/autoreleasepool-/Foundation-Guards; neue `LinuxStabilizationRegressionTests` mit 7 Cases). `swift build` (Vollbuild) und `swift build --build-tests` ebenfalls clean.
-- Erwarteter Mac-Stand (post-Linux-Stabilisierung, mit allen iOS-only Tests hinter `canImport(SwiftUI)`/`MapKit`/`CoreLocation`/`UIKit`): **~1133** (1033 Linux + ~100 iOS-only). Finale Mac-Run-Zahl wird nach Mac-Sync nachgetragen.
+- Linux: `swift test` → **1400** Tests, **2** Skips, **0** Failures (Stand 2026-05-09, HEAD `d629467` — Phase-10C Legacy-Hardening: Heatmap-Cap, ExportPreview-Doppel-Iter-Fix, derived_cache-Purge-API, Build-Warnings beseitigt). `swift build` clean.
+- Erwarteter Mac-Stand (Apple-only Tests hinter `canImport(SwiftUI)`/`MapKit`/`CoreLocation`/`UIKit` zusätzlich): höher; finale Mac-Run-Zahl wird nach Mac-Sync nachgetragen.
 - Vorher 1065 Tests (HEAD `3811bc3`, P1-Hardening-Train: distanceText\!-safe-unwrap, weak self in AppOverviewMapModel, Upload-URL-Validation + 8 neue URL-Validation-Tests).
 - Vorher 1057 Tests (HEAD `5c69afe`, UX/Layout + Mock-Helper).
 - Vorher 1045 Tests (HEAD `e3dae15`, Phase 1-5 Audit-Train).
-- Hardware-Re-Verifikation iPhone 15 Pro Max bleibt für jeden Stand seit 2026-05-05 offen; **46-MB-Crashfall bleibt FAILED** (Mac/iPhone-Handoff).
+- Hardware-Re-Verifikation iPhone 15 Pro Max bleibt für jeden Stand seit 2026-05-05 offen; **46-MB-Crashfall bleibt FAILED / pending hardware retest** (Legacy-Pfad). Der LocalTimelineStore-Pfad ist pre-production / feature-flagged / **default OFF** (`LH2GPX_LOCAL_TIMELINE_STORE`); 46-MB-Test bezieht sich nicht auf den Store-Pfad.
 
 ## Historische Vorstufen
 

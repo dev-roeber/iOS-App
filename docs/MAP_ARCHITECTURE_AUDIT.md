@@ -2,6 +2,16 @@
 
 > Status: Audit only — keine Renderer-Migration in diesem Commit. Erstellt im Rahmen der P0-Untersuchung des 46-MB-Google-Timeline-Imports (3. Hardware-Fail 2026-05-07T15:10:44+02:00 nach 95 156 ms, Jetsam auf iPhone 15 Pro Max).
 
+## Aktualisierung 2026-05-09 (Deep Audit Performance/Stabilität/Map-Layer)
+
+Folge-Audit ist `docs/DEEP_AUDIT_2026-05-09_PERFORMANCE_STABILITY_MAP_LAYERS.md`. Wichtigste Befunde mit Map-Bezug:
+
+- **200-Routen-Limit im Store-Pfad ist abgelöst** durch detail-level-adaptives Budget (`maxVisibleRoutes` 24/48/96/192 + `maxRouteCandidates` 256/512/1024/2048 + `maxTotalPoints` 8k/16k/32k/64k + dayMap-Profil 12/64/800). Truncation-Signale werden ehrlich gesetzt. Tests pinnen Defaults monoton, nicht „200".
+- **Punktelayer-Provider** (Foundation-only) ist auf Store-DayMap als Status-Text sichtbar (default OFF). **Echte MapKit-Marker-Rendering existiert auf keiner Karte.** Phase-10B Xcode-Handoff bleibt offen.
+- **Overview scanCandidates** weiter P1, Refactor-Pfad braucht zuerst Score-Invariant-Tests (`testScoreOrderingDeterministic_largeFixture`, `testScoreOrderingStableAcrossFilters`) — siehe Audit Sektion 19.
+- **AppHeatmapModel** Multipass-LOD-Rebuild bleibt P1 (single-pass tile-sweep empfohlen, Apple-CI).
+- **ExportPreview** `computeRegion`-Doppel-Pass auf `pathOverlays.flatMap(\.coordinates)` bleibt P1; Sampling fehlt weiterhin (würde Pin-Tests „5 pts" brechen).
+
 ## Phase-10C Legacy Hardening (2026-05-08)
 
 > Status: **Heatmap densityPointCap + ExportPreview Doppel-Iter + derived_cache Purge-API + Build-Warnings DONE; Overview scanCandidates Refactor offen (P1, Risiko HOCH)**. Store-Pfad bleibt feature-flagged / default OFF. Legacy-Pfad-Verhalten unverändert. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).

@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-05-09 — Deep Audit Performance/Stabilität/Map-Layer (audit-only + Doku-Sync)
+Audit-Dokument `docs/DEEP_AUDIT_2026-05-09_PERFORMANCE_STABILITY_MAP_LAYERS.md` ergänzt: End-to-End-Matrix Store/Legacy, Hotspot-Tabelle (3 P0, 4 P1, 4 P2, 2 P3), Map-Budget-Audit (200-Routen-Limit im Store-Pfad durch adaptive `maxVisibleRoutes`/`maxRouteCandidates` ersetzt), Punktelayer-Audit (Provider service-fertig, MapKit-Marker auf keiner Karte aktiv), Doku-Widersprüche (README Test-Zahlen aktualisiert auf 1400/2/0), Maßnahmenliste mit 15 IDs, Folgeprompt-Skizzen. Keine Code-Refactors. Kleine Doku-Korrekturen im README (Test-Stand, 46-MB-Klarstellung Legacy vs Store). Store-Pfad bleibt pre-production / feature-flagged / default OFF. 46-MB-Gate bleibt FAILED / pending hardware retest. Linux-Vollsuite **1400 / 2 skipped / 0 failed** (unverändert vs `d629467`).
+
 ## 2026-05-08 — Phase-10C — Legacy hardening
 Phase-10C — Legacy hardening: Heatmap densityPoint Cap (500k) + truncation signal; ExportPreview Doppel-Iteration entfernt; derived_cache `pruneDerivedCache(maxEntries:)` + `deleteDerivedCache(olderThan:)`; Build-Warnings (visionOS, unused withUnsafeMutableBytes) bereinigt. Overview scanCandidates absichtlich nicht umgebaut (Risiko HOCH; bereits bounded via pointBudget=2M + candidateStorageCap=512 off-Main). Store-Pfad bleibt default OFF. 46-MB-Gate FAILED / pending hardware retest.
 

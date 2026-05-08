@@ -4,6 +4,24 @@ Stand: 2026-05-08 (HEAD `37a22b7` nach `34bc369` — chore: Linux-Stabilisierung
 
 Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene oder rein historische Batches bleiben im `CHANGELOG.md` und in den archivierten Phasen der `ROADMAP.md`.
 
+### Offen — Deep Audit 2026-05-09 Performance/Stabilität/Map-Layer (`docs/DEEP_AUDIT_2026-05-09_PERFORMANCE_STABILITY_MAP_LAYERS.md`)
+
+Audit-only. Maßnahmenliste mit 15 IDs (3 P0, 4 P1, 4 P2, 2 P3, 2 Doku); Folgeprompt-Skizzen in Sektion 19 des Audit-Dokuments.
+
+Zentrale offene Punkte (Code unverändert in diesem Audit):
+
+1. **L-01 (P0)** AppContentLoader.swift:715 `Data(contentsOf:)` Routing > 16 MB auf `GoogleTimelineStreamReader` zwingen.
+2. **L-02 (P0)** AppExportQueries.projectedDays — `limit` vor `.sorted` durchschleifen (Top-N-Heap).
+3. **L-03 (P0)** AppOverviewTracksMapView.scanCandidates — Score-Invariant-Tests zuerst, dann lazy/streaming Refactor.
+4. **L-04 (P1)** AppSessionState.swift:82–84 — drei unbounded Filter-Caches mit generischem `BoundedLRU<K,V>` cappen (Limit 16).
+5. **L-05 (P1)** AppHeatmapModel — single-pass tile-sweep statt Multipass-LOD-Rebuild.
+6. **L-06 (P1)** ExportPreviewData — `computeRegion` über min/max-Akkumulator + adaptives Sampling mit Pin-Tests.
+7. **L-07 (P1)** Sources/LocationHistoryConsumer/Queries/DayMapData.swift — Doppel-`map` über `path.points` durch single-loop ersetzen.
+8. **U-01 (P1)** Punktelayer MapKit-Hook für `LocalTimelineDayMapView` (Phase 10B Xcode-Handoff).
+9. **U-02 (P2)** Heatmap-UI für Store-Pfad (service-only).
+
+46-MB-Hardware-Gate bleibt **FAILED / pending hardware retest**. Store-Pfad bleibt **default OFF**.
+
 ### Offen — P1-Rest nach Deep Audit 2026-05-08 (`docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md`)
 
 Im Audit als **P1** belegt; nach diesem Commit (P1-A + P1-B + P1-C + P1-D erledigt) verbleibend:
