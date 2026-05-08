@@ -38,6 +38,42 @@ Status: **Research + Phase-1-Spike eingecheckt** (CoordBlob + isolierter SQLite-
 
 ---
 
+## Phase-5-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: 3 neue Source-Dateien unter `Sources/LocationHistoryConsumerAppSupport/`, 3 neue Test-Dateien unter `Tests/LocationHistoryConsumerTests/`, 26 neue Cases (alle Linux-grün). Schema unverändert (`userVersion = 2`). **Kein UI-Hook, kein App-Session-Switch, kein AppContentLoader-Default auf den Store, kein DayList/DayDetail/Map-Hook. Bestehender AppExport-Exportpfad bleibt unverändert; bestehende `AppExport`-Builder (`GPXBuilder`/`KMLBuilder`/`GeoJSONBuilder`/`CSVBuilder`) sind unangetastet.**
+- **Foundation-only Export-Typen** — `LocalTimelineExportTypes.swift`:
+  - `LocalTimelineExportFormat`: `gpx` / `kml` / `geoJSON` / `csv`.
+  - `LocalTimelineExportSelection`: `importID`, optional `dateRange`, optional `dayIds`, `includeVisits` / `includeActivities` / `includePaths`.
+  - `LocalTimelineExportResult`: `outputURL`, `format`, `bytesWritten`, `dayCount`, `pathCount`, `visitCount`, `activityCount`, `pointCount`.
+  - `LocalTimelineExportError`: `unknownImport`, `emptySelection`, `malformedCoordBlob`, `ioFailure`, `readerFailure`.
+  - **Empty-Selection-Entscheidung explizit**: leere/nichts-auswählende Selection wirft `LocalTimelineExportError.emptySelection` statt eine leere Datei zu erzeugen.
+- **Streaming-Datei-Writer** — `LocalTimelineStreamingTextWriter.swift`:
+  - Schreibt inkrementell UTF-8 nach `LocalTimelineStorageLocations.exportStagingRoot/<uuid>/export.<ext>`.
+  - Parent-Verzeichnis wird idempotent angelegt; `bytesWritten` zählt UTF-8-Bytes; `finalize()` ist idempotent.
+- **Store-backed Export-Pfad** — `StoreBackedExportWriter.swift`:
+  - `init(reader:locations:)`, `export(selection:format:) throws -> LocalTimelineExportResult`.
+  - Liest Days bounded, Visits/Activities/Paths via `LocalTimelineStoreReader.dayDetail(dayId:)`.
+  - **Koordinaten ausschließlich pro Pfad lazy via `coordinateSequence(forPathId:)` / `CoordBlobIterator`.**
+  - **Nicht-Materialisierungs-Garantien**: **materialisiert KEINEN `AppExport`**; **materialisiert KEINEN `[Double]`-Buffer für einen ganzen Import**; **schreibt direkt in die Datei** via `LocalTimelineStreamingTextWriter` (kein In-Memory-String-Buildup eines vollständigen Exports).
+  - Ausgabepfad: `LocalTimelineStorageLocations.exportStagingRoot/<uuid>/export.<ext>`.
+- **Format-Hinweise**:
+  - GPX: `<wpt>` (für Visits) plus `<trk>/<trkseg>/<trkpt>` (für Pfade).
+  - KML: `Placemark` mit `Point` (Visits) bzw. `LineString` (Pfade).
+  - GeoJSON: `FeatureCollection` mit Point- und LineString-Features; Properties `kind` / `name` / `mode` / `date`.
+  - CSV: Header `type,date,time,lat,lon,name,mode,distance_m`. Activities werden in CSV als eigene Rows ausgegeben.
+  - Activities in GPX/KML/GeoJSON: nur gezählt, **nicht** als Geometrie geschrieben (kein nativer Activity-Typ in diesen Formaten).
+- **Tests Linux-grün**: `LocalTimelineExportSelectionTests` (6), `LocalTimelineStreamingTextWriterTests` (5), `StoreBackedExportWriterTests` (15) — zusammen 26 Cases. `swift test` **1148/2/0** in 123.7s (vorher 1122 → +26).
+- **Bewusst nicht in Phase 5** (= Phase 6 vor UI-Hook):
+  - Tatsächliche FileProtection-Aktivierung auf Darwin (Hook ist da, Aktivierung pending).
+  - Adapter `LocalTimelineStore`/`LocalTimelineStoreReader` → bestehende `flatCoordinates`-Konsumenten (DayList/DayDetail/Map/Heatmap/Distance/Export).
+  - `derived_cache`/RTree `path_bounds`.
+  - App-Flow-Umschaltung gegen Conditional Gate (AppContentLoader-Default, Session-Switch).
+  - Settings-Eintrag „Importierte Daten löschen" mit Bookmark/Preferences-Cleanup.
+  - Privacy-Doku-Update auf den tatsächlichen Rollout-Stand.
+- **Status**: weiterhin **Spike / pre-production, nicht UI-aktiv**. Conditional Gate unverändert: P0 falls 46-MB-Retest FAILED, P1/P2 falls PASSED. **46-MB-Crashfall bleibt FAILED / pending hardware retest.**
+
+---
+
 ## Phase-4-Spike Snapshot (2026-05-08)
 
 - **Eingecheckt**: 5 neue Source-Dateien unter `Sources/LocationHistoryConsumerAppSupport/`, 5 neue Test-Dateien unter `Tests/LocationHistoryConsumerTests/`, 26 neue Cases (alle Linux-grün). Schema unverändert (`userVersion = 2`, additiv). **Kein UI-Hook, kein App-Session-Switch, kein AppContentLoader-Default auf Store, kein DayList/DayDetail/Map-Hook, kein Export-Umbau, kein `AppExport` über den Store-Pfad.**
