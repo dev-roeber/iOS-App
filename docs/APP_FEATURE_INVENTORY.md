@@ -1,6 +1,8 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-07 (Day-Detail-Distance-Bug-Fix — Day-Detail nutzt jetzt `effectiveDistanceM` (Polyline-Fallback bei `distanceM == nil`); konsistent mit Summary/Insights. `PathDistanceCalculator` als zentralisierte Distance-Semantik, Single-Source-of-Truth für raw>0-vs-Polyline-Fallback in `Sources/LocationHistoryConsumer/Queries/PathDistanceCalculator.swift`.)
+Last analysis: 2026-05-09 (L-01 — In-Memory-Import-Gate: `AppContentLoader.decodeFile(at:)` lehnt Full-Reads via `Data(contentsOf:)` über 64 MiB jetzt kontrolliert ab. Neuer Error-Case `AppContentLoaderError.importTooLargeForInMemoryLoad`. Google-Timeline-JSON streamt unverändert.)
+
+Davor: 2026-05-07 (Day-Detail-Distance-Bug-Fix — Day-Detail nutzt jetzt `effectiveDistanceM` (Polyline-Fallback bei `distanceM == nil`); konsistent mit Summary/Insights. `PathDistanceCalculator` als zentralisierte Distance-Semantik, Single-Source-of-Truth für raw>0-vs-Polyline-Fallback in `Sources/LocationHistoryConsumer/Queries/PathDistanceCalculator.swift`.)
 
 Davor: 2026-05-06 (UX-Audit-Batch — LiveStatusResolver + Export-Empty-State + Polish; Hero-Map-Workspace bereits ausgerollt)
 

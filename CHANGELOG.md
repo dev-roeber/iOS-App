@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-05-09 — L-01 — In-Memory-Import-Gate für Legacy-Loader
+
+Setzt Deep-Audit-Folgepunkt **L-01** um: `AppContentLoader.decodeFile(at:)` lehnt Full-Reads via `Data(contentsOf:)` jetzt kontrolliert ab, sobald die Datei größer als `AppContentLoader.maximumInMemoryImportBytes` (64 MiB) ist. Google-Timeline-JSON wird vorher unverändert in den Streaming-Konverter geleitet und trifft das Gate nicht. Neuer Error-Case `AppContentLoaderError.importTooLargeForInMemoryLoad(filename:bytes:limit:)` mit user-facing Title "File too large to load safely" und einer Beschreibung, die Dateiname, Größe und Limit nennt — keine Pfade, keine Standortdaten. Betroffene Pfade: LH2GPX-JSON, GPX, TCX, unbekannte JSON-Inhalte über 64 MiB. ZIP-Pfad und Streaming-Pfad bleiben unverändert. Store-Pfad bleibt pre-production / feature-flagged / default OFF; 46-MB-Gate bleibt FAILED / pending hardware retest. L-02/L-03 bleiben offen. Linux-Tests in `AppContentLoaderTests` (5 neue Cases, sparse-file basiert).
+
 ## 2026-05-09 — Deep Audit Performance/Stabilität/Map-Layer (audit-only + Doku-Sync)
 Audit-Dokument `docs/DEEP_AUDIT_2026-05-09_PERFORMANCE_STABILITY_MAP_LAYERS.md` ergänzt: End-to-End-Matrix Store/Legacy, Hotspot-Tabelle (3 P0, 4 P1, 4 P2, 2 P3), Map-Budget-Audit (200-Routen-Limit im Store-Pfad durch adaptive `maxVisibleRoutes`/`maxRouteCandidates` ersetzt), Punktelayer-Audit (Provider service-fertig, MapKit-Marker auf keiner Karte aktiv), Doku-Widersprüche (README Test-Zahlen aktualisiert auf 1400/2/0), Maßnahmenliste mit 15 IDs, Folgeprompt-Skizzen. Keine Code-Refactors. Kleine Doku-Korrekturen im README (Test-Stand, 46-MB-Klarstellung Legacy vs Store). Store-Pfad bleibt pre-production / feature-flagged / default OFF. 46-MB-Gate bleibt FAILED / pending hardware retest. Linux-Vollsuite **1400 / 2 skipped / 0 failed** (unverändert vs `d629467`).
 

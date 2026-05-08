@@ -27,6 +27,17 @@ public enum AppContentLoaderError: LocalizedError {
     /// SQLite-Transaktion wurde rolled-back, es bleibt **kein gültiger
     /// Teilimport** zurück. Tritt ausschließlich im aktiven Store-Pfad auf.
     case importCancelled(String)
+    /// Deep Audit 2026-05-09 L-01 — Eine Datei sollte über den
+    /// `Data(contentsOf:)`-Pfad in `decodeFile(at:)` voll in den RAM geladen
+    /// werden, war aber größer als
+    /// `AppContentLoader.maximumInMemoryImportBytes`. Tritt erst auf, wenn
+    /// streaming-/format-spezifische Routings nicht greifen (z. B. eine
+    /// LH2GPX-JSON-, GPX-, TCX- oder unbekannte JSON-Datei oberhalb des
+    /// In-Memory-Limits). Der Loader bricht **vor** dem blinden Full-Read ab,
+    /// damit auf 4-GB-RAM-Geräten kein Jetsam ausgelöst wird. Google-Timeline
+    /// JSON wird vorher bereits in den Streaming-Konverter geleitet und
+    /// trifft diesen Fehler nicht.
+    case importTooLargeForInMemoryLoad(filename: String, bytes: Int64, limit: Int64)
 
     public var userFacingTitle: String {
         switch self {
@@ -50,6 +61,8 @@ public enum AppContentLoaderError: LocalizedError {
             return "Disk-first import failed"
         case .importCancelled:
             return "Import cancelled"
+        case .importTooLargeForInMemoryLoad:
+            return "File too large to load safely"
         }
     }
 
@@ -75,6 +88,13 @@ public enum AppContentLoaderError: LocalizedError {
             return "'\(name)' could not be imported into the on-device timeline store. The disk-first import is a feature-flagged spike and currently has no UI fallback."
         case let .importCancelled(name):
             return "Import of '\(name)' was cancelled. No partial data was kept; you can re-import when ready."
+        case let .importTooLargeForInMemoryLoad(name, bytes, limit):
+            let bytesMB = Double(bytes) / (1024.0 * 1024.0)
+            let limitMB = Double(limit) / (1024.0 * 1024.0)
+            return String(
+                format: "'%@' is %.0f MB, which is above the %.0f MB safe in-memory import limit. Large Google Timeline exports can be imported via the disk-first timeline store; other large files are not supported.",
+                name, bytesMB, limitMB
+            )
         }
     }
 }
@@ -347,6 +367,17 @@ public enum AppContentLoader {
     /// Maximum size (256 MB) for a JSON file or single ZIP entry.
     /// Guards against ZIP-bomb style inputs and OOM while staying well above any realistic export size.
     private static let maxSupportedFileSizeBytes: Int64 = 256 * 1024 * 1024
+
+    /// Deep Audit 2026-05-09 L-01 — In-Memory-Cap für Pfade, die unvermeidbar
+    /// `Data(contentsOf:)` ausführen müssen (LH2GPX-JSON-Decoder, GPX/TCX-
+    /// Parser, unbekannte JSON). Google-Timeline-JSON läuft vorher durch den
+    /// Streaming-Konverter und trifft dieses Gate nicht. Konservativ auf
+    /// 64 MiB gesetzt: realistische LH2GPX-Exporte liegen weit darunter, der
+    /// Auto-Restore-Schwellwert (`autoRestoreMaxFileSizeBytes` = 50 MB) bleibt
+    /// im erlaubten Bereich, und ein Full-Foundation-Parse von 64 MiB JSON
+    /// peakt auf 4-GB-RAM-Geräten unterhalb der Jetsam-Schwelle. Größere
+    /// Dateien werfen kontrolliert `importTooLargeForInMemoryLoad`.
+    public static let maximumInMemoryImportBytes: Int64 = 64 * 1024 * 1024
 
     /// Conservative ceiling for unattended auto-restore on launch. A 46 MB
     /// Google Timeline JSON parses through three full `JSONSerialization`
@@ -708,6 +739,24 @@ public enum AppContentLoader {
                     throw AppContentLoaderError.unsupportedFormat(sourceName)
                 }
             }
+        }
+
+        // Deep Audit 2026-05-09 L-01 — Letztes Gate vor blinder
+        // `Data(contentsOf:)`-Vollladung. Google-Timeline ist oben bereits in
+        // den Streaming-Pfad geroutet; hier landen LH2GPX-JSON, GPX, TCX und
+        // unbekannte JSON-Inhalte, die ihre Parser unvermeidbar mit einem
+        // vollständigen `Data` aufrufen. Wir lehnen Full-Reads über
+        // `maximumInMemoryImportBytes` kontrolliert ab, statt das Foundation-
+        // /JSONSerialization-Peak (~5–8x file size) auf iOS-Geräten in Jetsam
+        // laufen zu lassen.
+        if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+           let size = attributes[.size] as? Int64,
+           size > maximumInMemoryImportBytes {
+            throw AppContentLoaderError.importTooLargeForInMemoryLoad(
+                filename: sourceName,
+                bytes: size,
+                limit: maximumInMemoryImportBytes
+            )
         }
 
         let data: Data

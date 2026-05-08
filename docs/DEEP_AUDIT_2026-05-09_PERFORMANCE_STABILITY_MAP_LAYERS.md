@@ -1,5 +1,7 @@
 # Deep Audit 2026-05-09 — Performance, Stabilität, Map-Layer
 
+> **Update 2026-05-09 (post-Audit):** L-01 ist umgesetzt. `AppContentLoader.decodeFile(at:)` lehnt Full-Reads über 64 MiB jetzt kontrolliert ab via neuem Error-Case `AppContentLoaderError.importTooLargeForInMemoryLoad(filename:bytes:limit:)` und der Konstante `AppContentLoader.maximumInMemoryImportBytes` (64 MiB). Google-Timeline-JSON läuft weiter durch den Streaming-Konverter und trifft das Gate nicht. 5 neue Linux-Tests in `AppContentLoaderTests` (sparse-file basiert, ohne echten 65-MiB-Schreibvorgang). L-02 und L-03 bleiben offen. 46-MB-Hardware-Gate bleibt **FAILED / pending**.
+
 **HEAD:** `d629467` (`fix: harden legacy map heatmap preview performance`)
 **Branch / Remote:** `main` ↔ `origin/main` synchron
 **Scope:** Audit-only, plus kleine eindeutige P0/P1-Fixes erlaubt. Keine neue große Implementierung. Kein Store default ON. Kein RTree-Migration. Keine Hardware-/46-MB-/Review-/TestFlight-Freigabe.
@@ -310,7 +312,7 @@ Keine **falschen** „erledigt"-Markierungen oder unbewiesene Hardware-Claims ge
 
 | ID | P | Titel | Bereich | Datei/Zeile | Beleg | Risiko | Empfehlung | Aufwand | Tests | Doku | App-Store | sofort |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| L-01 | P0 | AppContentLoader Streaming-Force | Legacy-Loader | `AppContentLoader.swift:715` | `Data(contentsOf:)` | OOM bei 46 MB | Streaming-Reader für JSON > Schwelle | M | LargeImportMemorySafetyTests erweitern | yes | low | ja |
+| L-01 | P0 | AppContentLoader In-Memory-Gate | Legacy-Loader | `AppContentLoader.swift:715` | `Data(contentsOf:)` | OOM bei 46 MB | **erledigt 2026-05-09**: 64 MiB Cap + kontrollierter Error vor Full-Read; Google-Timeline streamt weiter | M | 5 neue Cases in `AppContentLoaderTests` | yes | low | **DONE** |
 | L-02 | P0 | projectedDays Limit-vor-Sort | Legacy-Queries | `Sources/LocationHistoryConsumer/Queries/AppExportQueries.swift` | sort+compactMap vor limit | Memory-Spike | Pre-prune über filter+limit | M | neue Test-Suite | yes | low | ja |
 | L-03 | P0 | Overview scanCandidates Score-Lazy | Legacy-Map | `AppOverviewTracksMapView.swift:~720–740` | full-coords pre-decimate | RAM/Latenz | Score-Invariant-Tests + minimaler Refactor | L | 2 neue Tests | yes | low | nein |
 | L-04 | P1 | Filter-Cache LRU | Legacy-Session | `AppSessionState.swift:82–84` | unbounded Dicts | Memory-Leak | generischer LRU-Wrapper | M | EvictionTest | yes | low | ja |
@@ -328,7 +330,7 @@ Keine **falschen** „erledigt"-Markierungen oder unbewiesene Hardware-Claims ge
 
 ## 19. Konkrete nächste Prompts
 
-1. **L-01**: „Refactor AppContentLoader.swift:715 to route file imports above 16 MB through `GoogleTimelineStreamReader` (streaming chunks 256 KB). Behalten: Fallback-Pfad für JSON < 16 MB. Tests: `LargeImportMemorySafetyTests` erweitern um Hybrid-Routing-Assertion. Kein UI-Wechsel."
+1. **L-01** (umgesetzt 2026-05-09): `AppContentLoader.decodeFile(at:)` lehnt Full-Reads via `Data(contentsOf:)` jetzt ab, wenn die Datei größer als `AppContentLoader.maximumInMemoryImportBytes` (64 MiB) ist. Google-Timeline-JSON wird vor dem Gate in den Streaming-Konverter geleitet und ist davon nicht betroffen. Neuer Error-Case `AppContentLoaderError.importTooLargeForInMemoryLoad(filename:bytes:limit:)`. 5 neue Cases in `AppContentLoaderTests` (sparse-file basiert): Reject > 64 MiB, Error-Description mit Filename + 64-MB-Limit ohne Pfad, Google-Timeline > 64 MiB streamt (kein Gate-Hit), kleine Datei nutzt unverändert Legacy-Pfad, userFacingTitle "File too large to load safely". Folgeprompt-Original: „Refactor AppContentLoader.swift:715 to route file imports above 16 MB through `GoogleTimelineStreamReader`."
 2. **L-02**: „In `AppExportQueries.projectedDays`: `limit` vor `.sorted` durchschleifen. Wenn semantisch problematisch (Stable-Sort über alle), Top-N-Heap einsetzen. Tests: neue Suite `AppExportQueriesProjectionTests` mit 2 Cases (1k/65k Tage)."
 3. **L-03**: „Overview `scanCandidates` Score-/Bounds-Berechnung lazy-fähig machen, ohne 26 bestehende Tests zu brechen. Vorher 2 Score-Invariant-Tests anlegen (`testScoreOrderingDeterministic_largeFixture`, `testScoreOrderingStableAcrossFilters`). Erst dann Refactor."
 4. **L-04**: „Generischer `BoundedLRU<Key, Value>` Wrapper. Auf alle drei Filter-Caches in AppSessionContent anwenden, Limit 16. Test: 100 distinct Filter-Kombis → Cache-Größe ≤ 16."

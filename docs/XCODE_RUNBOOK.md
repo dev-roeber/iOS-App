@@ -14,6 +14,10 @@ Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 
 Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmentierte `Insights`, gespeicherte lokale Live-Tracks und optionalen nutzergesteuerten Upload akzeptierter Live-Recording-Punkte. Weiterhin nicht Teil dieses Runbooks sind Producer-Logik, Cloud-/Account-Sync fuer importierte History und unbewiesene Apple-Review-Claims.
 
+## L-01 In-Memory-Import-Gate — Linux umgesetzt, Hardware-Aussage offen (2026-05-09)
+
+`AppContentLoader.decodeFile(at:)` lehnt Full-Reads über 64 MiB jetzt kontrolliert ab (`AppContentLoader.maximumInMemoryImportBytes`). Google-Timeline-JSON streamt unverändert. Tester sollten beim Hardware-Retest darauf achten, dass eine LH2GPX-JSON / GPX / TCX > 64 MiB nun mit dem User-Facing-Title "File too large to load safely" abgewiesen wird statt OOM zu triggern. **46-MB-Google-Timeline-Gate bleibt FAILED / pending hardware retest** (Streaming-Pfad, vom L-01-Gate nicht berührt).
+
 ## Phase-10C Heatmap-Cap-Verifikation — Mac/Xcode-Pflicht (2026-05-08)
 
 Phase-10C Heatmap-Cap-Verhalten (`AppHeatmapModel.densityPointCap = 500_000` + `HeatmapStats.truncatedDensityPoints`) ist unter MapKit/SwiftUI auf echtem Gerät zu verifizieren. Truncation-UX-Hinweis (UI muss kommunizieren, dass die Heatmap bei Cap-Treffer gekürzt ist) ist **Mac/Xcode-Pflicht** — auf Linux nicht überprüfbar. Legacy-Pfad-Verhalten ist nur bei Extremfällen (>500k density points) sichtbar. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).

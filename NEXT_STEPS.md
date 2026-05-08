@@ -10,7 +10,7 @@ Audit-only. Maßnahmenliste mit 15 IDs (3 P0, 4 P1, 4 P2, 2 P3, 2 Doku); Folgepr
 
 Zentrale offene Punkte (Code unverändert in diesem Audit):
 
-1. **L-01 (P0)** AppContentLoader.swift:715 `Data(contentsOf:)` Routing > 16 MB auf `GoogleTimelineStreamReader` zwingen.
+1. ✓ **L-01 (P0)** erledigt 2026-05-09: `AppContentLoader.decodeFile(at:)` lehnt Full-Reads über 64 MiB jetzt kontrolliert ab (`maximumInMemoryImportBytes`, neuer Error-Case `importTooLargeForInMemoryLoad`). Google-Timeline läuft weiter durch den Streaming-Pfad. Betroffen: LH2GPX-JSON / GPX / TCX / unbekannte JSON > 64 MiB. 5 neue Linux-Tests in `AppContentLoaderTests`.
 2. **L-02 (P0)** AppExportQueries.projectedDays — `limit` vor `.sorted` durchschleifen (Top-N-Heap).
 3. **L-03 (P0)** AppOverviewTracksMapView.scanCandidates — Score-Invariant-Tests zuerst, dann lazy/streaming Refactor.
 4. **L-04 (P1)** AppSessionState.swift:82–84 — drei unbounded Filter-Caches mit generischem `BoundedLRU<K,V>` cappen (Limit 16).

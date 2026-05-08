@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-05-09 — L-01 In-Memory-Import-Gate
+- Wrapper-Bundle/Signing/Plist unverändert. Core-Paket: `AppContentLoader.decodeFile(at:)` lehnt Full-Reads über 64 MiB jetzt kontrolliert ab (`maximumInMemoryImportBytes`, neuer Error-Case `importTooLargeForInMemoryLoad`). Google-Timeline-JSON streamt weiter durch den bestehenden Streaming-Pfad. Wrapper-Importer-UI zeigt den neuen Error mit `userFacingTitle` "File too large to load safely".
+- 46-MB-Hardware-Gate bleibt FAILED / pending hardware retest.
+
 ## 2026-05-08 — Phase-10C Legacy hardening
 - Phase-10C Legacy hardening (Wrapper-Pfad nicht direkt betroffen; Store-Pfad weiterhin default OFF).
 - Heatmap densityPointCap=500_000 + Truncation-Flag, ExportPreview Doppel-Iter entfernt, derived_cache Purge-API, Build-Warnings (visionOS, unused withUnsafeMutableBytes) bereinigt — alles im Core-Paket. Wrapper-Bundle/Signing/Plist unverändert.

@@ -491,6 +491,122 @@ final class AppContentLoaderTests: XCTestCase {
         """.utf8)
     }
 
+    // MARK: - Deep Audit 2026-05-09 L-01: in-memory import gate
+
+    /// Erzeugt eine sparse Datei mit einem kleinen Header gefolgt von einem
+    /// Sparse-Bereich. Die effektive Dateigröße ist `size`, der Disk-Verbrauch
+    /// nahe Null — geeignet, um das Größen-Gate zu testen, ohne die Linux-CI
+    /// mit echten 65 MiB-Schreiboperationen zu belasten.
+    private func writeSparseFile(header: Data, totalSize: Int, filename: String) throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        try? FileManager.default.removeItem(at: url)
+        FileManager.default.createFile(atPath: url.path, contents: nil)
+        let handle = try FileHandle(forWritingTo: url)
+        defer { try? handle.close() }
+        try handle.write(contentsOf: header)
+        // Seek und 1 Byte schreiben → POSIX-Sparse-File mit logischer Größe
+        // `totalSize`, ohne den Inhalt tatsächlich zu allokieren.
+        try handle.seek(toOffset: UInt64(totalSize - 1))
+        try handle.write(contentsOf: Data([0x20]))
+        return url
+    }
+
+    func testLargeNonGoogleTimelineFileIsRejectedBeforeFullDataLoad() async throws {
+        // 65 MiB > 64 MiB In-Memory-Cap. Header beginnt mit `{`, wird also
+        // NICHT in den Google-Timeline-Streaming-Pfad geleitet und müsste
+        // ohne L-01-Gate via `Data(contentsOf:)` voll geladen werden.
+        let header = Data(#"{"schema_version":"#.utf8)
+        let totalSize = 65 * 1024 * 1024
+        let url = try writeSparseFile(header: header, totalSize: totalSize, filename: "huge-export.json")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: url)
+            XCTFail("Expected importTooLargeForInMemoryLoad error")
+        } catch let error as AppContentLoaderError {
+            guard case let .importTooLargeForInMemoryLoad(name, bytes, limit) = error else {
+                XCTFail("Expected importTooLargeForInMemoryLoad but got: \(error)")
+                return
+            }
+            XCTAssertEqual(name, "huge-export.json")
+            XCTAssertGreaterThan(bytes, limit)
+            XCTAssertEqual(limit, AppContentLoader.maximumInMemoryImportBytes)
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
+        }
+    }
+
+    func testImportTooLargeErrorDescriptionMentionsFilenameAndLimit() async throws {
+        let header = Data(#"{"x":1"#.utf8)
+        let totalSize = 65 * 1024 * 1024
+        let url = try writeSparseFile(header: header, totalSize: totalSize, filename: "oversize.json")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: url)
+            XCTFail("Expected importTooLargeForInMemoryLoad error")
+        } catch let error as AppContentLoaderError {
+            let description = try XCTUnwrap(error.errorDescription)
+            XCTAssertTrue(description.contains("oversize.json"), "Description must contain filename. Got: \(description)")
+            XCTAssertTrue(description.contains("64"), "Description must mention 64 MB limit. Got: \(description)")
+            XCTAssertFalse(description.contains(url.path), "Description must not leak full path. Got: \(description)")
+            XCTAssertEqual(error.userFacingTitle, "File too large to load safely")
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
+        }
+    }
+
+    func testLargeGoogleTimelineFileSkipsInMemoryGate() async throws {
+        // Header `[` (Google Timeline shape) → Streaming-Konverter, NICHT
+        // das L-01-In-Memory-Gate. Datei-Inhalt ist Sparse-Null und damit
+        // kein gültiger Stream → wir erwarten unsupportedFormat, aber
+        // explizit NICHT importTooLargeForInMemoryLoad.
+        let header = Data("[".utf8)
+        let totalSize = 65 * 1024 * 1024
+        let url = try writeSparseFile(header: header, totalSize: totalSize, filename: "huge-timeline.json")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: url)
+            XCTFail("Expected an error from streaming parse")
+        } catch let error as AppContentLoaderError {
+            if case .importTooLargeForInMemoryLoad = error {
+                XCTFail("Google Timeline must not hit the in-memory gate; it should stream. Got: \(error)")
+            }
+            // Jeder andere AppContentLoaderError ist akzeptabel — Sparse-Null
+            // ist kein gültiges Google-Timeline-Array.
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
+        }
+    }
+
+    func testSmallFileBelowInMemoryGateStillImports() async throws {
+        // Kleines, valides LH2GPX-shaped JSON → unter Cap, Legacy-Pfad
+        // unverändert. Dient als Regression-Guard, dass das neue Gate
+        // kleine Dateien NICHT beeinflusst.
+        let url = try writeTemp(json: #"{"foo": "bar"}"#, filename: "small.json")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        do {
+            _ = try await AppContentLoader.loadImportedContent(from: url)
+            XCTFail("Expected decodeFailed for unknown small JSON object")
+        } catch let error as AppContentLoaderError {
+            if case .importTooLargeForInMemoryLoad = error {
+                XCTFail("Small file must not trip the in-memory gate. Got: \(error)")
+            }
+            // decodeFailed ist erwartet — der bisherige Pfad bleibt unverändert.
+        } catch {
+            XCTFail("Expected AppContentLoaderError but got: \(error)")
+        }
+    }
+
+    func testImportTooLargeUserFacingTitle() {
+        let error = AppContentLoaderError.importTooLargeForInMemoryLoad(
+            filename: "x.json", bytes: 70_000_000, limit: 64 * 1024 * 1024
+        )
+        XCTAssertEqual(error.userFacingTitle, "File too large to load safely")
+    }
+
     private func writeTemp(json: String, filename: String) throws -> URL {
         let data = try XCTUnwrap(json.data(using: .utf8))
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)

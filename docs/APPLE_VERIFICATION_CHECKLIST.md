@@ -1,5 +1,9 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-09 (L-01 — In-Memory-Import-Gate)
+
+**Code-Stand:** Legacy-Loader hat ab dem L-01-Commit ein In-Memory-Cap (`AppContentLoader.maximumInMemoryImportBytes` = 64 MiB) vor `Data(contentsOf:)`. LH2GPX-JSON, GPX, TCX und unbekannte JSON > 64 MiB werfen `AppContentLoaderError.importTooLargeForInMemoryLoad(filename:bytes:limit:)` statt blind Full-Read. Google-Timeline-JSON läuft weiter durch den Streaming-Pfad. **Hardware-Aussage unverändert.**
+
 ## Aktualisierung 2026-05-09 (Deep Audit Performance/Stabilität/Map-Layer)
 
 **46-MB-Gate-Status:** FAILED / pending hardware retest. (verbatim erhalten — keine Statusänderung in diesem Audit)
