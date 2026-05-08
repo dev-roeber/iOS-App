@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [2026-05-08] — feat: wire local timeline day presentation
+
+Phase-9A-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Wrapper- und Package-AppShell-Wiring der feature-flagged LocalTimelineSession + Settings-Delete-UI im Technical-Tab + neue Linux-testbare Routing-Helper-Funktion `LH2GPXAppFlow.apply(envelopeOutcome:to:preserveOnFailure:)`** — Surface bleibt **Spike / pre-production**, Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE`-Flag unverändert). **Map/Heatmap/Overview UI-Hook bleibt blockiert**; Store-DayList/DayDetail UI bleibt Phase 9B. **46-MB-Gate bleibt FAILED / pending hardware retest.**
+
+- **NEU** `LH2GPXAppFlow.apply(envelopeOutcome:to:preserveOnFailure:) -> AppliedEnvelopeRouting` — geteilte, Linux-testbare Routing-Helper-Funktion für Wrapper + Package-AppShell. Routet `.legacy(content)` → `session.show(content:)`, `.localTimeline(LocalTimelineSession)` → `session.show(localTimeline:)`, `.failure` kontrolliert mit optionaler Bookmark-Preservation.
+- **NEU** `LH2GPXAppFlow.makeProductionDeletionPresentation()` — Convenience-Konstruktor für Settings/Technical-Hosts.
+- **Geändert** `wrapper/LH2GPXWrapper/ContentView.swift` — ruft jetzt `loadImportedFileEnvelope(...)` (statt `loadImportedFile(...)`) und routet `.legacy/.localTimeline/.failure` über `apply(envelopeOutcome:to:)`.
+- **Geändert** `Sources/LocationHistoryConsumerApp/AppShellRootView.swift` — analoge Umstellung auf den Envelope-Pfad.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineSessionLandingView.swift` (`#if canImport(SwiftUI)`-guarded) — Landing-View bei aktiver `localTimelineSession` mit Session-Metadaten + Lösch-Button. **Kein `coord_blob`-Read, kein Map/Heatmap/Overview-Hook.** Eingebunden in beiden App-Shells via body-Branch `else if let storeSession = session.localTimelineSession`.
+- **Geändert** `AppTechnicalOptionsView` (in `AppOptionsView.swift`) — neue Section "Local Timeline Store" mit Feature-Flag-Status (Enabled/Disabled aus `LocalTimelineFeatureFlags.resolveFromProcess()`), Status-Zeile "Pre-production / Feature-flagged" und Lösch-Button "Delete imported local data" mit kontrollierten States `idle/running/succeeded/failed`.
+- **NEU Tests** `Tests/LocationHistoryConsumerTests/WrapperLocalTimelineEnvelopeRoutingTests.swift` (6 Cases, Linux-grün) — legacy/localTimeline/failure(clearBookmark T/F)/Replace-Invariante in beide Richtungen.
+- **Harte Grenzen Phase 9A (verbatim)**:
+  - **KEIN Map-/Heatmap-/Overview-UI-Hook gegen Store.**
+  - **KEIN AppExport-Rebuild aus Store.**
+  - **KEIN vollständiger `[Double]`-Import-Buffer.**
+  - **KEIN Default-Rollout** — Store-Pfad bleibt feature-flagged via `LH2GPX_LOCAL_TIMELINE_STORE`, default AUS.
+  - **KEIN Live-Upload-Mix.**
+  - **KEINE neuen externen Dependencies.**
+  - **KEINE Hardware-/AppStore-/TestFlight-Aussage.**
+  - **KEINE Darwin-FileProtection-Aktivierung** (bleibt offene Phase-9-Pflicht).
+  - **KEIN RTree** (bleibt deferred, TEXT path-IDs).
+  - **46-MB-Gate bleibt FAILED / pending hardware retest.**
+  - Settings-DayList/DayDetail UI ist nur als Landing-View für Store-Session sichtbar; vollständige Store-DayList/DayDetail-UI bleibt **Phase 9B**.
+- **Trennung Service/Presentation-testbar vs UI-aktiv**: Routing-Helper + Settings-Delete-Button + Landing-View sind **UI-aktiv hinter Feature-Flag**; vollständige Store-DayList/DayDetail/Map/Heatmap/Overview-Surfaces bleiben **nicht UI-aktiv**.
+
 ## [2026-05-08] — feat: add store backed heatmap lod cache
 
 Phase-8B-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Heatmap-Doppelbug-Fix zentral via Foundation-only Helper + `derived_cache`-Tabelle (additiv, FK CASCADE auf `imports.id`) + Foundation-only Heatmap-Modelle + deterministischer Grid-Aggregator + Foundation-only Store-backed Heatmap Data Provider mit bounded Sampling, Grid-LOD-Aggregation und cache-backed Roundtrip** — **kein SwiftUI-Map/MKMapView-Hook, kein UI-Heatmap-Renderer-Hook, kein AppExport-Rebuild aus Store, kein vollständiger `[Double]`-Import-Buffer, kein Live-Upload-Mix**. Store-Pfad bleibt **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE`-Flag unverändert). Schema bleibt `userVersion = 2` (rein additiv, keine semantische Schema-Änderung). **46-MB-Gate bleibt FAILED / pending hardware retest.** **Surface bleibt Spike / pre-production, not UI-active.**

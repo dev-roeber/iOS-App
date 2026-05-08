@@ -1,6 +1,32 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
-Status: **Research + Phase 1..8B abgeschlossen** (CoordBlob + isolierter SQLite-Store + Storage-Lifecycle + store-backed Streaming-Export + feature-flagged AppSession-Quelle + feature-flagged AppContentLoader-Hook über Envelope-Kapsel + Foundation-only Presentation/ViewState-Schicht + AppSessionState-Extension + Service-layer Envelope-Hook im AppFlow + Foundation-only Store-backed Map Data Provider mit bounded Map-Domain-Modellen, stride-/budget-basiertem Route-Decimator und zwei additiven bbox-Metadata-Indizes + **Heatmap-Doppelbug-Fix zentral via `AppHeatmapPathSampler` + `derived_cache`-Tabelle (additiv, FK CASCADE) + Foundation-only Heatmap-Modelle + deterministischer Grid-Aggregator + Foundation-only Store-backed Heatmap Data Provider mit bounded Sampling, Grid-LOD-Aggregation und cache-backed Roundtrip**, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung, **kein SwiftUI-Map/MKMapView-Hook**). Folge-Commit nach `45e5fcf`.
+## Phase-9A-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: Wrapper/AppFlow-Wiring + Settings-Delete-Button + Landing-View für aktive Store-Session. Surface bleibt **Spike / pre-production hinter Feature-Flag**; Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE` unverändert).
+- **NEU** `LH2GPXAppFlow.apply(envelopeOutcome:to:preserveOnFailure:) -> AppliedEnvelopeRouting` — geteilte Linux-testbare Routing-Helper-Funktion für Wrapper und Package-AppShell. Routet `.legacy(content)` → `session.show(content:)`, `.localTimeline(LocalTimelineSession)` → `session.show(localTimeline:)`, `.failure` mit optionaler Bookmark-Preservation.
+- **NEU** `LH2GPXAppFlow.makeProductionDeletionPresentation()` — Convenience für Settings/Technical-Hosts.
+- **Geändert** `wrapper/LH2GPXWrapper/ContentView.swift` + `Sources/LocationHistoryConsumerApp/AppShellRootView.swift` — beide nutzen jetzt `loadImportedFileEnvelope(...)` und routen über `apply(...)`.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineSessionLandingView.swift` (`#if canImport(SwiftUI)`-guarded) — Landing-View bei aktiver `localTimelineSession` mit Session-Metadaten + Lösch-Button; **kein `coord_blob`-Read, kein Map/Heatmap/Overview-Hook**; eingebunden in beiden App-Shells via body-Branch `else if let storeSession = session.localTimelineSession`.
+- **Geändert** `AppTechnicalOptionsView` (in `AppOptionsView.swift`) — neue Section "Local Timeline Store" mit Feature-Flag-Status (`LocalTimelineFeatureFlags.resolveFromProcess()` Enabled/Disabled), Status-Zeile "Pre-production / Feature-flagged" und Lösch-Button "Delete imported local data" mit kontrollierten States idle/running/succeeded/failed.
+- **NEU Tests** `Tests/LocationHistoryConsumerTests/WrapperLocalTimelineEnvelopeRoutingTests.swift` (6 Cases, Linux-grün): legacy/localTimeline/failure(clearBookmark T/F)/Replace-Invariante in beide Richtungen.
+- **Harte Grenzen Phase 9A (verbatim)**:
+  - **KEIN Map-/Heatmap-/Overview-UI-Hook gegen Store.**
+  - **KEIN AppExport-Rebuild aus Store.**
+  - **KEIN vollständiger `[Double]`-Import-Buffer.**
+  - **KEIN Default-Rollout** — Store-Pfad bleibt feature-flagged, default AUS.
+  - **KEIN Live-Upload-Mix.**
+  - **KEINE neuen externen Dependencies.**
+  - **KEINE Hardware-/AppStore-/TestFlight-Aussage.**
+  - **KEINE Darwin-FileProtection-Aktivierung** (bleibt offene Phase-9-Pflicht).
+  - **KEIN RTree** (bleibt deferred, TEXT path-IDs).
+  - **46-MB-Gate bleibt FAILED / pending hardware retest.**
+  - Settings-DayList/DayDetail UI nur als Landing-View für Store-Session sichtbar; vollständige Store-DayList/DayDetail-UI bleibt **Phase 9B**.
+- **Trennung Service/Presentation-testbar vs UI-aktiv**: Routing-Helper + Settings-Delete-Button + Landing-View sind **UI-aktiv hinter Feature-Flag**; vollständige Store-DayList/DayDetail/Map/Heatmap/Overview-Surfaces bleiben **nicht UI-aktiv**.
+- **Offene Phase-9-Pflichten** (nach 9A): Phase 9B Store-DayList/DayDetail UI; Map/Heatmap/Overview UI-Hook gegen Provider; RTree `path_bounds` (Schema-breaking); Darwin FileProtection-Aktivierung; Export-UI-Hook; 46-MB-Hardware-Retest; TestFlight/Xcode-Cloud Build ≥100; App-Flow-Umschaltung gegen Conditional-Gate; Privacy-Doku-Update.
+
+---
+
+Status: **Research + Phase 1..9A abgeschlossen** (CoordBlob + isolierter SQLite-Store + Storage-Lifecycle + store-backed Streaming-Export + feature-flagged AppSession-Quelle + feature-flagged AppContentLoader-Hook über Envelope-Kapsel + Foundation-only Presentation/ViewState-Schicht + AppSessionState-Extension + Service-layer Envelope-Hook im AppFlow + Foundation-only Store-backed Map Data Provider mit bounded Map-Domain-Modellen, stride-/budget-basiertem Route-Decimator und zwei additiven bbox-Metadata-Indizes + **Heatmap-Doppelbug-Fix zentral via `AppHeatmapPathSampler` + `derived_cache`-Tabelle (additiv, FK CASCADE) + Foundation-only Heatmap-Modelle + deterministischer Grid-Aggregator + Foundation-only Store-backed Heatmap Data Provider mit bounded Sampling, Grid-LOD-Aggregation und cache-backed Roundtrip**, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung, **kein SwiftUI-Map/MKMapView-Hook**). Folge-Commit nach `45e5fcf`.
 
 ## Phase-8B-Spike Snapshot (2026-05-08)
 

@@ -617,6 +617,16 @@ struct AppPrivacyOptionsView: View {
 
 struct AppTechnicalOptionsView: View {
     @ObservedObject var preferences: AppPreferences
+    @State private var localTimelineDeleteState: LocalTimelineDeleteState = .idle
+    @State private var localTimelineDeleteMessage: String?
+
+    private enum LocalTimelineDeleteState: Equatable {
+        case idle, running, succeeded, failed
+    }
+
+    private var featureFlags: LocalTimelineFeatureFlags {
+        LocalTimelineFeatureFlags.resolveFromProcess()
+    }
 
     var body: some View {
         Form {
@@ -644,8 +654,65 @@ struct AppTechnicalOptionsView: View {
                 }
             } header: { Text(t("Build Info")) }
               footer: { Text(t("Shown so testers can verify which build is running on the device when reproducing memory or import issues. Memory Logging is enabled by setting LH2GPX_IMPORT_MEMORY_LOG=1 as a launch argument or environment variable.")) }
+
+            // Phase-9A — Local Timeline Store technical surface. Read-only
+            // status (feature-flag, pre-production) plus controlled delete
+            // for testers. Shows nothing about Map/Heatmap UI — those hooks
+            // remain Phase-9B work.
+            Section {
+                LabeledContent(t("Local Timeline Store")) {
+                    Text(featureFlags.isLocalTimelineStoreEnabled ? t("Enabled") : t("Disabled"))
+                        .foregroundStyle(featureFlags.isLocalTimelineStoreEnabled
+                                         ? LH2GPXTheme.successGreen
+                                         : .secondary)
+                }
+                .accessibilityIdentifier("technical.localTimelineStore.flag")
+                LabeledContent(t("Status")) {
+                    Text(t("Pre-production / Feature-flagged"))
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityIdentifier("technical.localTimelineStore.status")
+
+                Button(role: .destructive) {
+                    deleteLocalTimelineData()
+                } label: {
+                    Text(t("Delete imported local data"))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .disabled(localTimelineDeleteState == .running)
+                .accessibilityIdentifier("technical.localTimelineStore.delete")
+
+                if let localTimelineDeleteMessage {
+                    Text(localTimelineDeleteMessage)
+                        .font(.footnote)
+                        .foregroundStyle(localTimelineDeleteState == .failed ? LH2GPXTheme.dangerRed : .secondary)
+                        .accessibilityIdentifier("technical.localTimelineStore.delete.status")
+                }
+            } header: { Text(t("Local Timeline Store")) }
+              footer: { Text(t("The local store is feature-flagged via LH2GPX_LOCAL_TIMELINE_STORE and disabled by default. Delete is idempotent and never touches live-upload credentials or app preferences.")) }
         }
         .navigationTitle(t("Technical"))
+    }
+
+    private func deleteLocalTimelineData() {
+        localTimelineDeleteState = .running
+        localTimelineDeleteMessage = t("Deleting…")
+        guard let presenter = LH2GPXAppFlow.makeProductionDeletionPresentation() else {
+            localTimelineDeleteState = .failed
+            localTimelineDeleteMessage = t("Local store is not available on this platform.")
+            return
+        }
+        let result = presenter.performDelete()
+        switch result {
+        case let .deleted(report):
+            localTimelineDeleteState = .succeeded
+            localTimelineDeleteMessage = String(format: t("Deleted. Files: %d, Dirs: %d"),
+                                                report.removedDBFiles.count,
+                                                report.removedDirectories.count)
+        case let .failed(reason):
+            localTimelineDeleteState = .failed
+            localTimelineDeleteMessage = "\(t("Failed:")) \(reason)"
+        }
     }
 
     private func t(_ english: String) -> String { preferences.localized(english) }

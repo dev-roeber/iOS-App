@@ -75,7 +75,8 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
 Aktueller Nachweis:
-- Linux: `swift test` → **1034** Tests, **2** Skips, **0** Failures (Stand 2026-05-08, HEAD `37a22b7` nach `34bc369` — Linux-Stabilisierung: HeatmapPreferenceEnums-Extraktion, OptionsPresentation-Hoisting, URL-/autoreleasepool-/Foundation-Guards; neue `LinuxStabilizationRegressionTests` mit 7 Cases). `swift build` (Vollbuild) und `swift build --build-tests` ebenfalls clean.
+- Linux (Stand 2026-05-08, Phase 9A `feat: wire local timeline day presentation`): `swift test` Stand wird im nächsten Run-Sync nachgetragen. Phase 9A ergänzt 6 neue Linux-grüne Cases in `WrapperLocalTimelineEnvelopeRoutingTests.swift` (legacy/localTimeline/failure(clearBookmark T/F)/Replace-Invariante) auf den vorherigen Stand 1034/2/0.
+- Linux: `swift test` → **1034** Tests, **2** Skips, **0** Failures (vorheriger Stand 2026-05-08, HEAD `37a22b7` nach `34bc369` — Linux-Stabilisierung: HeatmapPreferenceEnums-Extraktion, OptionsPresentation-Hoisting, URL-/autoreleasepool-/Foundation-Guards; neue `LinuxStabilizationRegressionTests` mit 7 Cases). `swift build` (Vollbuild) und `swift build --build-tests` ebenfalls clean.
 - Erwarteter Mac-Stand (post-Linux-Stabilisierung, mit allen iOS-only Tests hinter `canImport(SwiftUI)`/`MapKit`/`CoreLocation`/`UIKit`): **~1133** (1033 Linux + ~100 iOS-only). Finale Mac-Run-Zahl wird nach Mac-Sync nachgetragen.
 - Vorher 1065 Tests (HEAD `3811bc3`, P1-Hardening-Train: distanceText\!-safe-unwrap, weak self in AppOverviewMapModel, Upload-URL-Validation + 8 neue URL-Validation-Tests).
 - Vorher 1057 Tests (HEAD `5c69afe`, UX/Layout + Mock-Helper).

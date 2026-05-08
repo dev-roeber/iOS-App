@@ -4,6 +4,8 @@ Xcode-Wrapper-Projekt fuer die iOS-App von LocationHistory2GPX.
 
 **Aktiver Repo-Kontext:** Dieses `wrapper/`-Verzeichnis lebt heute im aktiven Repo `iOS-App`. Aeltere Hinweise auf `LocationHistory2GPX-Monorepo` sind nur noch historischer Kontext.
 
+> **Hinweis 2026-05-08 (Phase 9A)**: Der Wrapper ist jetzt auf den feature-flagged Envelope-Pfad (`loadImportedFileEnvelope` + `LH2GPXAppFlow.apply(envelopeOutcome:to:preserveOnFailure:)`) verdrahtet und zeigt bei aktiver `localTimelineSession` die `LocalTimelineSessionLandingView` aus dem Core-Paket; Settings → Technical enthält eine Section "Local Timeline Store" mit Feature-Flag-Status und Delete-Button. Der **Store-Pfad bleibt feature-flagged via `LH2GPX_LOCAL_TIMELINE_STORE`, default AUS** — Default-Rollout bleibt Legacy-AppExport. Keine Wrapper-Bundle-/Signing-/Plist-Änderung; keine neuen externen Dependencies; 46-MB-Crashfall bleibt FAILED / pending hardware retest.
+
 ## Rolle dieses Verzeichnisses
 
 - Xcode-Projekt (.xcodeproj) fuer die fertige iOS-App

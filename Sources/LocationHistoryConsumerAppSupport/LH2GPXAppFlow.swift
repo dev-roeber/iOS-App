@@ -139,12 +139,65 @@ public enum LH2GPXAppFlow {
 
     /// Outcome des feature-flagged Store-Pfads. Existiert parallel zu
     /// `ImportOutcome`, damit der Legacy-Pfad byte-identisch unverändert
-    /// bleibt. Ein direkter UI-Hook (Wrapper-/SwiftUI-Wiring) ist Phase 8;
-    /// diese Methode ist die Service-Schicht, gegen die getestet wird.
+    /// bleibt. Phase 9A verdrahtet diesen Outcome im Wrapper- und
+    /// AppShell-Body über `apply(envelopeOutcome:to:...)`.
     public enum EnvelopeImportOutcome {
         case legacy(AppSessionContent)
         case localTimeline(LocalTimelineSession)
         case failure(title: String, message: String, clearBookmark: Bool)
+    }
+
+    /// Beschreibt die durch `apply(envelopeOutcome:to:...)` ausgeführte
+    /// Routing-Entscheidung. Erlaubt den SwiftUI-Views, Begleitaktionen
+    /// (Bookmark-Cleanup, Recent-Refresh) deterministisch zu hängen.
+    public enum AppliedEnvelopeRouting: Equatable {
+        case legacy
+        case localTimeline
+        case failure(clearBookmark: Bool)
+    }
+
+    /// Phase-9A — Convenience für SwiftUI-Hosts: liefert eine production-
+    /// gebundene `LocalTimelineDeletionPresentation` oder `nil`, falls die
+    /// Storage-Roots auf der laufenden Plattform nicht angelegt werden
+    /// können. Ein nil-Return ist für den Settings-Hook das Signal, den
+    /// Lösch-Button als „nicht verfügbar" zu kennzeichnen.
+    public static func makeProductionDeletionPresentation() -> LocalTimelineDeletionPresentation? {
+        guard let locations = try? LocalTimelineStorageLocations.production() else {
+            return nil
+        }
+        let lifecycle = LocalTimelineStoreLifecycle(locations: locations)
+        let service = LocalTimelineDeletionService(lifecycle: lifecycle)
+        return LocalTimelineDeletionPresentation(service: service, isAvailable: true)
+    }
+
+    /// Phase-9A — verdrahtet den envelope-Outcome direkt in einen
+    /// `AppSessionState`. Wird aus beiden App-Shells (wrapper/Package) und
+    /// aus Linux-Tests aufgerufen, damit Routing-Logik nicht in SwiftUI-
+    /// Views dupliziert wird.
+    ///
+    /// Invariante: nach Rückkehr ist entweder `session.content`
+    /// **oder** `session.localTimelineSession` gesetzt — niemals beide.
+    @discardableResult
+    public static func apply(
+        envelopeOutcome outcome: EnvelopeImportOutcome,
+        to session: inout AppSessionState,
+        preserveOnFailure: Bool
+    ) -> AppliedEnvelopeRouting {
+        switch outcome {
+        case let .legacy(content):
+            session.show(content: content)
+            return .legacy
+        case let .localTimeline(localSession):
+            session.show(localTimeline: localSession)
+            return .localTimeline
+        case let .failure(title, message, clearBookmark):
+            session.showFailure(
+                title: title,
+                message: message,
+                preserveCurrentContent: preserveOnFailure
+            )
+            return .failure(clearBookmark: clearBookmark)
+        }
     }
 
     /// Lädt eine Datei über `AppContentLoader.loadImportedContentEnvelope(...)`.

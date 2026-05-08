@@ -32,6 +32,20 @@ struct AppShellRootView: View {
                     onLoadDemo: loadBundledDemo,
                     onClear: clearCurrentContent
                 )
+            } else if let storeSession = session.localTimelineSession {
+                // Phase-9A — Store-Session aktiv (feature-flagged); Map/Heatmap/
+                // Overview UI gegen den Store bleibt Phase-9B-Pflicht.
+                NavigationStack {
+                    LocalTimelineSessionLandingView(
+                        session: storeSession,
+                        onClear: clearCurrentContent,
+                        deletionPresentation: LH2GPXAppFlow.makeProductionDeletionPresentation()
+                    )
+                    .navigationTitle("LH2GPX")
+                    .toolbar {
+                        ToolbarItem(placement: .primaryAction) { actionsMenu }
+                    }
+                }
             } else {
                 NavigationStack {
                     Group {
@@ -252,23 +266,22 @@ struct AppShellRootView: View {
 
     @MainActor
     private func loadImportedFile(at url: URL, source: LH2GPXAppFlow.ImportLoadSource) async {
-        // Thin wrapper around the shared helper. See LH2GPXAppFlow for
-        // the security-scope / loader / failure-mapping logic shared
-        // with the wrapper-target ContentView.
-        let outcome = await LH2GPXAppFlow.loadImportedFile(at: url, source: source)
-        switch outcome {
-        case let .success(content):
+        // Phase-9A — Package-AppShell nutzt ebenfalls den envelope-Loader,
+        // damit beide App-Entry-Points (wrapper + Package) im Lock-Step
+        // auf Feature-Flag reagieren. Bei deaktivem Flag identisch zum
+        // bisherigen Verhalten.
+        let outcome = await LH2GPXAppFlow.loadImportedFileEnvelope(at: url, source: source)
+        let preserve = source == .autoRestore ? false : session.hasLoadedContent
+        let routing = LH2GPXAppFlow.apply(
+            envelopeOutcome: outcome,
+            to: &session,
+            preserveOnFailure: preserve
+        )
+        switch routing {
+        case .legacy, .localTimeline:
             refreshRecentFiles()
-            session.show(content: content)
-        case let .failure(title, message, clearBookmark):
-            if clearBookmark {
-                ImportBookmarkStore.clear()
-            }
-            session.showFailure(
-                title: title,
-                message: message,
-                preserveCurrentContent: session.hasLoadedContent
-            )
+        case let .failure(clearBookmark):
+            if clearBookmark { ImportBookmarkStore.clear() }
         }
     }
 
