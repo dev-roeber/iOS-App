@@ -260,6 +260,7 @@ Present:
 - default map-style preference
 - widget/live-activity settings section including Dynamic-Island compact display preference
 - toggle for showing technical import details
+- internal test toggles section in technical options ("Internal Test Toggles", Build-158-Vorbereitung 2026-05-08): two UserDefaults-backed Bool toggles persisted via `LocalTimelineTechnicalTestSettings` — `LH2GPX.localTimelineStoreTestModeEnabled` (activates the feature-flagged LocalTimelineStore path in addition to `LH2GPX_LOCAL_TIMELINE_STORE`) and `LH2GPX.importMemoryLoggingEnabled` (activates `ImportMemoryProbe` in addition to `LH2GPX_IMPORT_MEMORY_LOG`); status row "Memory Logging Resolved" reflects the effective `ProcessInfo OR Settings` state on-device; footer hint "Internal/TestFlight only · Pre-production · Default off · No location data is stored in these settings". Toggles store **only Bool**; no location data, paths or tokens. Args/ENV remain the primary activator; the setting activates additionally and never deactivates. LocalTimelineStore path remains pre-production / feature-flagged / default off. 46-MB gate remains FAILED / pending hardware retest.
 - live-recording accuracy filter preference
 - live-recording detail preference for movement/time capture density
 - live-recording minimum-time-gap preference (seconds/minutes/hours) with `0 = No minimum` and no upper clamp

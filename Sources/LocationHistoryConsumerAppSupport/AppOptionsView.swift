@@ -617,6 +617,8 @@ struct AppPrivacyOptionsView: View {
 
 struct AppTechnicalOptionsView: View {
     @ObservedObject var preferences: AppPreferences
+    @ObservedObject var technicalTestSettings: LocalTimelineTechnicalTestSettings
+        = .shared
     @State private var localTimelineDeleteState: LocalTimelineDeleteState = .idle
     @State private var localTimelineDeleteMessage: String?
 
@@ -625,7 +627,7 @@ struct AppTechnicalOptionsView: View {
     }
 
     private var featureFlags: LocalTimelineFeatureFlags {
-        LocalTimelineFeatureFlags.resolveFromProcess()
+        LocalTimelineFeatureFlags.resolveFromProcess(settings: technicalTestSettings)
     }
 
     var body: some View {
@@ -690,6 +692,40 @@ struct AppTechnicalOptionsView: View {
                 }
             } header: { Text(t("Local Timeline Store")) }
               footer: { Text(t("The local store is feature-flagged via LH2GPX_LOCAL_TIMELINE_STORE and disabled by default. Delete is idempotent and never touches live-upload credentials or app preferences.")) }
+
+            // Build-158 — Internal/TestFlight technical toggles. Args/ENV
+            // are not available through TestFlight, so testers need an
+            // in-app switch to opt into the feature-flagged Local Timeline
+            // Store path and to enable Memory Logging for diagnostics.
+            // Only Booleans are stored; no location data, no paths, no tokens.
+            Section {
+                Toggle(isOn: $technicalTestSettings.localTimelineStoreTestModeEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(t("Local Timeline Store Test Mode"))
+                        Text(t("Default off · Pre-production"))
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                .accessibilityIdentifier("technical.testToggle.localTimelineStore")
+
+                Toggle(isOn: $technicalTestSettings.importMemoryLoggingEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(t("Import Memory Logging"))
+                        Text(t("Default off · Internal diagnostics"))
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                .accessibilityIdentifier("technical.testToggle.importMemoryLogging")
+
+                LabeledContent(t("Memory Logging Resolved")) {
+                    Text(ImportMemoryProbe.isLoggingEnabled ? t("Enabled") : t("Disabled"))
+                        .foregroundStyle(ImportMemoryProbe.isLoggingEnabled
+                                         ? LH2GPXTheme.successGreen
+                                         : .secondary)
+                }
+                .accessibilityIdentifier("technical.testToggle.memoryLogging.resolved")
+            } header: { Text(t("Internal Test Toggles")) }
+              footer: { Text(t("Internal/TestFlight only · Pre-production · Default off · No location data is stored in these settings. Toggles activate the feature-flagged Local Timeline Store and Memory Logging in addition to launch arguments and environment variables.")) }
         }
         .navigationTitle(t("Technical"))
     }

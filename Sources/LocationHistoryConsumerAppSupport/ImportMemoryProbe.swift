@@ -22,7 +22,17 @@ public enum ImportMemoryProbe {
     /// Public, read-only enablement flag. Surfaced through `AppBuildInfo` and
     /// the Settings → Technical → Build Info screen so a tester can verify
     /// at-a-glance whether the running build is actually emitting probes.
-    public static var isLoggingEnabled: Bool { isEnabled }
+    ///
+    /// Build-158 — der Probe respektiert ab jetzt zusätzlich den
+    /// `LocalTimelineTechnicalTestSettings.shared.importMemoryLoggingEnabled`
+    /// Toggle (UserDefaults-Bool, default OFF). Args/ENV bleiben primärer,
+    /// schnellster Pfad (Cache); das Setting wird pro Aufruf nachgelesen,
+    /// damit ein TestFlight-Tester ohne Relaunch zwischen Aus und An
+    /// wechseln kann.
+    public static var isLoggingEnabled: Bool {
+        if processCachedFlag { return true }
+        return LocalTimelineTechnicalTestSettings.shared.importMemoryLoggingEnabled
+    }
 
     /// Cached enablement flag — read once at first probe so we don't pay the
     /// argument-parsing cost per call. Both ProcessInfo paths are honoured:
@@ -30,7 +40,7 @@ public enum ImportMemoryProbe {
     ///   - launch arguments: `LH2GPX_IMPORT_MEMORY_LOG`,
     ///     `-LH2GPX_IMPORT_MEMORY_LOG`, `--LH2GPX_IMPORT_MEMORY_LOG`,
     ///     `LH2GPX_IMPORT_MEMORY_LOG=1`
-    private static let isEnabled: Bool = isEnabledForEnvironment(
+    private static let processCachedFlag: Bool = isEnabledForEnvironment(
         ProcessInfo.processInfo.environment,
         arguments: ProcessInfo.processInfo.arguments
     )
@@ -53,10 +63,21 @@ public enum ImportMemoryProbe {
         return false
     }
 
+    /// Build-158 — Pure activation rule mit zusätzlichem Settings-Pfad.
+    /// Args/ENV haben Vorrang; das Setting aktiviert nur zusätzlich.
+    public static func isEnabledForEnvironment(
+        _ environment: [String: String],
+        arguments: [String],
+        settings: LocalTimelineTechnicalTestSettings
+    ) -> Bool {
+        if isEnabledForEnvironment(environment, arguments: arguments) { return true }
+        return settings.importMemoryLoggingEnabled
+    }
+
     /// Logs `[LH2GPX_MEMORY] <phase> footprint=<MB> resident=<MB>` if the
     /// launch argument is set. `phase` should be a short, grep-friendly label.
     public static func log(_ phase: @autoclosure () -> String) {
-        guard isEnabled else { return }
+        guard isLoggingEnabled else { return }
         let label = phase()
         let snapshot = currentFootprintMB()
         let footprint = snapshot.footprintMB.map { String(format: "%.1f", $0) } ?? "n/a"
@@ -77,7 +98,7 @@ public enum ImportMemoryProbe {
         counter: Int,
         every: Int
     ) {
-        guard isEnabled else { return }
+        guard isLoggingEnabled else { return }
         guard every > 0, counter > 0, counter % every == 0 else { return }
         log("\(phase)=\(counter)")
     }
@@ -94,7 +115,7 @@ public enum ImportMemoryProbe {
         gitCommitSHA: String?
     ) {
         let sha = gitCommitSHA ?? "unknown"
-        let memFlag = isEnabled ? "enabled" : "disabled"
+        let memFlag = isLoggingEnabled ? "enabled" : "disabled"
         // Always emitted (no `guard isEnabled`) so the build identity lands
         // in every log even when memory probing is disabled.
         print("[LH2GPX_BUILD] app.start version=\(marketingVersion) build=\(buildNumber) sha=\(sha) memoryLogging=\(memFlag)")

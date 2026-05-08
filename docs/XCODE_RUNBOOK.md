@@ -14,6 +14,24 @@ Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 
 Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmentierte `Insights`, gespeicherte lokale Live-Tracks und optionalen nutzergesteuerten Upload akzeptierter Live-Recording-Punkte. Weiterhin nicht Teil dieses Runbooks sind Producer-Logik, Cloud-/Account-Sync fuer importierte History und unbewiesene Apple-Review-Claims.
 
+## Build-158-Vorbereitung — interne Test-Toggles für TestFlight (2026-05-08)
+
+Build 157 ist Xcode Cloud grün und TestFlight-installierbar (Status „Überprüft", interne Tests erfolgreich). Keine Aussage über Apple-Review-Freigabe oder über das 46-MB-Hardwareverhalten — **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+
+Da TestFlight-Tester **keine Launch-Argumente / Environment-Variablen** setzen können, sind als Build-158-Vorbereitung zwei interne UserDefaults-Toggles in `AppTechnicalOptionsView` ("Internal Test Toggles") ergänzt:
+
+- `LH2GPX.localTimelineStoreTestModeEnabled` — aktiviert den feature-flagged LocalTimelineStore-Pfad zusätzlich zu `LH2GPX_LOCAL_TIMELINE_STORE`.
+- `LH2GPX.importMemoryLoggingEnabled` — aktiviert `ImportMemoryProbe` zusätzlich zu `LH2GPX_IMPORT_MEMORY_LOG`.
+
+Persistenz über `LocalTimelineTechnicalTestSettings` (`final class` ObservableObject, `.shared` + `init(userDefaults:)`, default `false`, **nur Bool** — keine Standortdaten/Pfade/Tokens). Status-Row "Memory Logging Resolved" zeigt am Gerät den effektiven `ProcessInfo OR Settings`-State. Footer-Hinweis: "Internal/TestFlight only · Pre-production · Default off · No location data is stored in these settings".
+
+**Aktivierungs-Reihenfolge**:
+
+- **Lokale Xcode-Runs** (Mac/Xcode-Handoff): **Args/ENV bleiben primärer Aktivator** — `LH2GPX_IMPORT_MEMORY_LOG=1` / `LH2GPX_LOCAL_TIMELINE_STORE=1` über Run Scheme → Arguments. Beim Debug-Run weiter wie bisher; kein UI-Eingriff nötig.
+- **TestFlight-Builds**: Args/ENV stehen Testern nicht zur Verfügung — **Toggles in Settings → Technical → "Internal Test Toggles"** verwenden. Der Resolver (`LocalTimelineFeatureFlags.resolve(arguments:environment:settings:)` / `ImportMemoryProbe.isEnabledForEnvironment(_:arguments:settings:)`) liest **beide Quellen**; Setting aktiviert **zusätzlich**, deaktiviert nichts. `ImportMemoryProbe.isLoggingEnabled` ist computed → Toggle wirkt ohne Relaunch.
+
+LocalTimelineStore-Pfad bleibt **pre-production / feature-flagged / default AUS**. Live-Upload, Recording, Auth-Flows unberührt. **Keine ASC/Review/Hardware-Freigabe behauptet**, **keine Map-Phase-10B-Aussage**, **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+
 ## Manuelle Release-Risiko-Abnahme
 
 Manuelle Release-Risiko-Abnahme: siehe `docs/APPLE_VERIFICATION_CHECKLIST.md` Block „Manual Release Risk Acceptance Protocol". Deckt 46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout sowie ASC / TestFlight / Apple Review — alles vor App-Store-Submission durch Tester abzuhaken.

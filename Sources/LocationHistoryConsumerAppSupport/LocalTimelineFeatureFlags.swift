@@ -30,10 +30,37 @@ public struct LocalTimelineFeatureFlags: Equatable {
         return LocalTimelineFeatureFlags(isLocalTimelineStoreEnabled: enabled)
     }
 
-    /// Convenience: nutzt `ProcessInfo.processInfo`.
+    /// Build-158 — Resolver mit zusätzlicher Aktivierungsquelle aus den
+    /// `LocalTimelineTechnicalTestSettings` (UserDefaults-Bool, default OFF).
+    /// Args/ENV bleiben primär; das Setting **aktiviert zusätzlich** und
+    /// **deaktiviert nichts**. Damit lässt sich der feature-flagged Pfad
+    /// auch über TestFlight einschalten, wo Args/ENV nicht setzbar sind.
+    public static func resolve(arguments: [String],
+                               environment: [String: String],
+                               settings: LocalTimelineTechnicalTestSettings)
+        -> LocalTimelineFeatureFlags
+    {
+        let enabled = isStoreEnabled(arguments: arguments, environment: environment)
+            || settings.localTimelineStoreTestModeEnabled
+        return LocalTimelineFeatureFlags(isLocalTimelineStoreEnabled: enabled)
+    }
+
+    /// Convenience: nutzt `ProcessInfo.processInfo` (ohne Settings).
     public static func resolveFromProcess() -> LocalTimelineFeatureFlags {
         let info = ProcessInfo.processInfo
         return resolve(arguments: info.arguments, environment: info.environment)
+    }
+
+    /// Convenience: nutzt `ProcessInfo.processInfo` + Settings-Singleton.
+    /// Default-Argument macht das Production-Wiring kompakt; Tests können
+    /// eine eigene Settings-Instanz reichen.
+    public static func resolveFromProcess(
+        settings: LocalTimelineTechnicalTestSettings
+    ) -> LocalTimelineFeatureFlags {
+        let info = ProcessInfo.processInfo
+        return resolve(arguments: info.arguments,
+                       environment: info.environment,
+                       settings: settings)
     }
 
     private static func isStoreEnabled(arguments: [String],

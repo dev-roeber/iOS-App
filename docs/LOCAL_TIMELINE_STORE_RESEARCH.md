@@ -1,5 +1,15 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
+## Build-158-Vorbereitung — Aktivierungsquellen erweitert (2026-05-08)
+
+Build 157 ist Xcode Cloud grün und TestFlight-installierbar (Status „Überprüft", interne Tests erfolgreich). Da TestFlight-Tester keine Launch-Argumente / Environment-Variablen setzen können, ist die Aktivierungsstrecke des LocalTimelineStore-Pfads ab dieser Iteration **dreigleisig** (im OR-Sinn — Setting aktiviert zusätzlich, deaktiviert nichts):
+
+1. **Launch-Argument** (lokale Xcode-Runs primär): `LH2GPX_LOCAL_TIMELINE_STORE`, `--LH2GPX_LOCAL_TIMELINE_STORE`, `LH2GPX_LOCAL_TIMELINE_STORE=1`/`true`/`yes`/`on` (case-insensitive).
+2. **Environment-Variable** (lokale Xcode-Runs primär): identische Schreibweisen über `ProcessInfo.environment`.
+3. **NEU UserDefaults-Toggle** (TestFlight-Strecke): Key `LH2GPX.localTimelineStoreTestModeEnabled` (Bool, default `false`), persistiert über `LocalTimelineTechnicalTestSettings` (`final class` ObservableObject, `.shared` + `init(userDefaults:)`). Sichtbar in `AppTechnicalOptionsView` → "Internal Test Toggles". **Nur Bool** im Key — keine Standortdaten/Pfade/Tokens.
+
+Resolver-Overloads: `LocalTimelineFeatureFlags.resolve(arguments:environment:settings:)` und `LocalTimelineFeatureFlags.resolveFromProcess(settings:)`. **Args/ENV bleiben primärer Aktivator**; das Setting aktiviert zusätzlich. Default OFF unverändert; Source-kompatibel via Default-Argument (kein Bruch für bestehende Aufrufer). Analog für `ImportMemoryProbe`: neuer Pure-Overload `isEnabledForEnvironment(_:arguments:settings:)`; runtime-`isLoggingEnabled` ist computed → Toggle wirkt ohne Relaunch. Tests: `LocalTimelineTechnicalTestSettingsTests.swift` (12 Linux-grüne Cases) inkl. `testOnlyBoolsAreStoredUnderToggleKeys` (Bool-only-Pflicht). **Toggle ist interner Testmodus / Pre-production**, Store-Pfad bleibt **default AUS**, Default-Rollout bleibt Legacy-AppExport. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim). **Keine ASC/Review/Hardware-Freigabe behauptet**, **keine Map-Phase-10B-Aussage.**
+
 ## Phase-10A-Spike Snapshot (2026-05-08)
 
 - **Eingecheckt**: feature-flagged Store-**DayMap-UI-Surface** in der bestehenden `LocalTimelineDayDetailView`. Surface bleibt **Spike / pre-production hinter Feature-Flag**; Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE` unverändert). **Vollständige sichtbare Kartenmodernisierung wird nicht behauptet.** Legacy-Map unverändert.

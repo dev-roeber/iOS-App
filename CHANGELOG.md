@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## [2026-05-08] — feat: add internal test toggles for testflight build 158 prep
+
+Build-158-Vorbereitung: interne UserDefaults-basierte Test-Toggles, damit TestFlight-Tester den feature-flagged LocalTimelineStore-Pfad und das Import-Memory-Logging **ohne** Launch-Argumente / Environment-Variablen scharf schalten können (TestFlight erlaubt Tester keine Argumente/ENV). **Build 157 ist Xcode Cloud grün und TestFlight-installierbar (Status „Überprüft", interne Tests erfolgreich).** Keine Aussage über echte Apple-Review-Freigabe oder über das 46-MB-Hardwareverhalten. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim). LocalTimelineStore-Pfad bleibt **pre-production / feature-flagged / default AUS**. Live-Upload, Recording und Auth-Flows unberührt.
+
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineTechnicalTestSettings.swift` — `final class` ObservableObject mit zwei `@Published Bool`-Toggles, persistiert über UserDefaults. Keys (Namespace `LH2GPX.…`):
+  - `LH2GPX.localTimelineStoreTestModeEnabled`
+  - `LH2GPX.importMemoryLoggingEnabled`
+  - Default `false`. **Nur Booleans.** Keine Standortdaten, keine Pfade, keine Tokens, keine Userdaten in den neuen Keys. `.shared`-Singleton + `init(userDefaults:)` für Tests.
+- **Geändert** `LocalTimelineFeatureFlags` — neue Resolver-Overloads `resolve(arguments:environment:settings:)` und `resolveFromProcess(settings:)`. Args/ENV bleiben **primärer Aktivator**; Setting aktiviert **zusätzlich**, **deaktiviert nichts**. Default OFF unverändert. Source-kompatibel (Default-Argument).
+- **Geändert** `ImportMemoryProbe` — neuer Pure-Overload `isEnabledForEnvironment(_:arguments:settings:)`. Runtime-`isLoggingEnabled` ist jetzt **computed** (Cache für ProcessInfo + Settings-Lookup pro Aufruf), damit der Toggle ohne Relaunch wirkt.
+- **Geändert** `AppOptionsView` (`AppTechnicalOptionsView`) — neue Sektion "Internal Test Toggles" mit zwei `Toggle`-Bindings (`$technicalTestSettings.…`), Status-Row "Memory Logging Resolved" (zeigt aktuellen ProcessInfo-OR-Settings-State) und Footer-Hinweis "Internal/TestFlight only · Pre-production · Default off · No location data is stored in these settings".
+- **Nicht angefasst**: `AppShellRootView`, Wrapper-`ContentView`. Settings werden über `.shared` aufgerufen; der Resolver-Overload mit Default-Argument bleibt source-kompatibel.
+- **NEU Tests** `Tests/LocationHistoryConsumerTests/LocalTimelineTechnicalTestSettingsTests.swift` — 12 Cases. Linux-Suite voll grün nach Fix. Privacy-/Scope-Vertrag: `testOnlyBoolsAreStoredUnderToggleKeys` pinpoint, dass die Toggle-Keys ausschließlich `Bool` speichern.
+- **Harte Grenzen (verbatim)**:
+  - **Build 157 ist Xcode Cloud grün und TestFlight-installierbar** — keine 46-MB-Grün-Aussage, keine Apple-Review/Release-/Hardware-Freigabe behauptet.
+  - **46-MB-Gate bleibt FAILED / pending hardware retest.**
+  - LocalTimelineStore-Pfad bleibt **pre-production / feature-flagged / default AUS**.
+  - Toggle ist **interner Testmodus** (Pre-production); aktiviert zusätzlich, deaktiviert nichts.
+  - **KEINE ASC/Review/Hardware-Freigabe.**
+  - **KEINE Map-Phase-10B-Aussage.**
+  - **KEINE UI-Änderung außerhalb der Technical-Sektion.**
+  - Live-Upload, Recording und Auth-Flows unberührt.
+
 ## [2026-05-08] — fix: resolve xcode heatmap grid key compile failure
 
 P0-Doku-Sync für einen Xcode-Cloud-Archive-Fail im Workflow „Release – Archive & TestFlight". Builds **155** (Commit `06f81ae`) und **156** (Commit `5cb7783`) sind mit Exit Code 65 fehlgeschlagen. Linux-SwiftPM-Build und `swift test` waren beide grün, weil der MapKit-Guard auf Linux die kollidierende Variante ausschloss; auf Apple-Plattformen waren beide Top-Level-`GridKey`-Definitionen sichtbar. Reine Kollisions-/Compile-Fix-Iteration im AppSupport-Modul ohne API-/UI-/Doku-Schönfärbung. **Linux-SwiftPM weiterhin grün. Xcode Cloud Retest pending — keine Aussage über echte Apple-Builds.**
