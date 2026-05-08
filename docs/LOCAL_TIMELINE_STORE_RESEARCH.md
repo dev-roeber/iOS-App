@@ -1,6 +1,23 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
-Status: **Research + Phase-1-Spike eingecheckt** (CoordBlob + isolierter SQLite-Store, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung). Folge-Commit nach `45e5fcf`.
+Status: **Research + Phase 1..7A-Spike eingecheckt** (CoordBlob + isolierter SQLite-Store + Storage-Lifecycle + store-backed Streaming-Export + feature-flagged AppSession-Quelle + feature-flagged AppContentLoader-Hook über Envelope-Kapsel, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung). Folge-Commit nach `45e5fcf`.
+
+## Phase-7A-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: feature-flagged AppSession/AppContentLoader-Hook über **Envelope-Kapsel** (statt Source-Enum-Mutation auf `AppSessionContent`). Schema unverändert (`userVersion = 2`).
+- **NEU `Sources/LocationHistoryConsumerAppSupport/AppSessionContentSource.swift`**: Envelope-Enum mit Cases `inMemory(AppSessionContent)` und `localTimeline(LocalTimelineSession)`. **Kapsel-Approach** — `AppSessionContent` selbst wird **nicht** erweitert. Source-Enum-Verschmelzung in `AppSessionContent` ist explizit Phase-7B-Pflicht.
+- **Geändert `AppSessionState.swift`**: neue Property `localTimelineSession: LocalTimelineSession?` plus neuer Mutator `show(localTimeline:)`. Banner/Title werden ausschließlich aus Session-Metadaten gelesen — **kein AppExport, keine Coord-Decode**. `show(content:)` und `clearContent()` setzen die neue Property mit zurück.
+- **Geändert `AppContentLoader.swift`**: neuer Einstieg `loadImportedContentEnvelope(from:autoRestoreMode:onPhase:flags:storeFactoryProvider:) -> AppSessionContentSource`. **Bei deaktiviertem Feature-Flag exakt der Legacy-Pfad** → `.inMemory(...)` (byte-identisch). Bei aktivem Flag + Google-Timeline-JSON oder ZIP-mit-genau-einem-Timeline-Entry → `GoogleTimelineStoreImporter.importFromFile/Data` + `LocalTimelineSession.make(...)` → `.localTimeline(...)`. Andere Formate (LH2GPX-Objekt-JSON, GPX, TCX) fallen kontrolliert auf den Legacy-Pfad zurück. Neuer Error-Case `AppContentLoaderError.localTimelineStoreFailed(String)`. Importe sind additiv (frische `importId` pro Call); **Bulk-Wipe bleibt `LocalTimelineDeletionService`**.
+- **Tests Linux-grün**: `AppSessionLocalTimelineSourceTests` (5), `AppContentLoaderLocalTimelineStoreTests` (5), `LocalTimelineFeatureFlagIntegrationTests` (4) — zusammen 14 Cases.
+- **Harte Grenzen Phase 7A**: Store-Pfad ist **NICHT default** (Default-Rollout bleibt Legacy-AppExport); gated by feature flag. **Kein UI-Hook** für DayList/DayDetail/Map/Heatmap/Overview/Export/Settings. **Keine Map-Modernisierung. Keine Hardware-/ASC-/TestFlight-Aussagen.** **Kein 46-MB-Pass behauptet — 46-MB-Gate bleibt FAILED / pending hardware retest.** **LocalTimelineStore bleibt pre-production / Spike, nicht UI-aktiv.** Kein vollständiges `AppExport` im Store-Pfad. Keine vollständige `[Double]`-Import-Materialisierung im Store-Pfad. **Live-Upload bleibt strikt getrennt. Keine Standortdaten in UserDefaults.**
+- **Bewusst nicht in Phase 7A** (= Phase 7B vor UI-Hook):
+  - `AppSessionContent`-Source-Enum-Verschmelzung (statt Envelope) — bewusst deferred.
+  - DayList/DayDetail/Map/Heatmap/Overview-UI-Hooks — deferred.
+  - Settings-UI „Importierte Daten löschen" — deferred.
+  - `derived_cache`/RTree `path_bounds` — deferred.
+  - **Darwin FileProtection-Aktivierung** — offene Pflicht vor Rollout.
+  - 46-MB-Hardware-Retest — Mac/iPhone-Handoff, FAILED unverändert.
+  - Privacy-Doku-Update — vor Rollout zwingend.
 
 ## Phase-2-Spike Snapshot (2026-05-08)
 

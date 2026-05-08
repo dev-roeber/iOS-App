@@ -154,16 +154,16 @@ Noch offen — erfordert Developer Account oder Apple-Store-Review:
 
 ---
 
-## 4b. LocalTimelineStore (Phase 4)
+## 4b. LocalTimelineStore (Phase 1..7A)
 
-Stand 2026-05-08: **Phase-1+2+3+4-Spike eingecheckt, Spike/pre-production, nicht UI-aktiv.** Dieser Abschnitt dokumentiert den Privacy-Engineering-Stand der Storage-Surface; **keine Apple-Freigabe-Aussage**.
+Stand 2026-05-08: **Phase 1..7A-Spike eingecheckt, Spike/pre-production, nicht UI-aktiv.** Dieser Abschnitt dokumentiert den Privacy-Engineering-Stand der Storage-Surface; **keine Apple-Freigabe-Aussage**, **kein Rollout**. Phase 7A ergänzt den feature-flagged AppContentLoader-Hook über die Envelope-Kapsel `AppSessionContentSource` — Store-Pfad ist NIE default-aktiv, Default-Rollout bleibt Legacy-AppExport.
 
 - **Lokal-only.** Der LocalTimelineStore liegt ausschließlich auf dem Gerät. DB-Verzeichnis: `applicationSupportDirectory/LocationHistory2GPX/Imports/` (Datei `store.sqlite` + `-wal`/`-shm`); RenderCache unter `cachesDirectory/LocationHistory2GPX/RenderCache/`; ImportStaging und ExportStaging unter `temporaryDirectory/LocationHistory2GPX/`. Keine Drittweitergabe, kein Serverabgleich.
 - **Keine Standortdaten in `UserDefaults`.** Bestätigt durch die Phase-4-Architektur: Geometrie/Timeline-Inhalte ausschließlich im Store. UserDefaults speichert weiterhin nur Preferences und Bookmark-Metadaten (nicht-Inhaltsdaten); Token-only via Keychain.
 - **Serverupload bleibt strikt getrennt und opt-in.** Der bestehende, optional aktivierbare Live-Upload (`NSPrivacyCollectedDataTypePreciseLocation`) ist **nicht** mit dem Importpfad verbunden. Importdaten werden **nicht** in den Upload-Pfad geleitet — der Store-Pfad hat keinen Hook auf `LiveLocationServerUploadConfiguration`.
 - **DB ist regenerierbarer Cache und vom Backup ausgeschlossen.** `LocalTimelineFileAttributes` setzt `URLResourceKey.isExcludedFromBackupKey = true` auf DB-Verzeichnis und DB-Datei. Quelldatei bleibt Source of Truth (Bookmark-basierter Re-Import).
 - **FileProtection-Ziel**: `completeUnlessOpen` (Live-Activity-kompatibel). **Phase 4 hat den Hook nur dokumentiert, nicht aktiviert.** Vor produktivem Rollout muss `URLResourceKey.fileProtectionKey` (oder `SQLITE_OPEN_FILEPROTECTION_COMPLETEUNLESSOPEN` an `sqlite3_open_v2`) auf Apple-Plattformen tatsächlich gesetzt und in einem Darwin-Hardware-Pass verifiziert werden.
-- **Löschmöglichkeit für Nutzer (Engineering-Pflicht vor produktivem Rollout)**: Phase 4 stellt `LocalTimelineStoreLifecycle.deleteAllLocalTimelineData(store:)` zur Verfügung — löscht in einer Operation DB + WAL + SHM + RenderCache + ImportStaging + ExportStaging und ist idempotent. Der **UI-Hook** (Settings-Eintrag „Importierte Daten löschen", inkl. Bookmark/Preferences-Cleanup) ist Teil von Phase 5 und bleibt offen vor UI-Aktivierung.
+- **Löschmöglichkeit für Nutzer (Engineering-Pflicht vor produktivem Rollout)**: Phase 4 stellt `LocalTimelineStoreLifecycle.deleteAllLocalTimelineData(store:)` zur Verfügung — löscht in einer Operation DB + WAL + SHM + RenderCache + ImportStaging + ExportStaging und ist idempotent; Phase 6 wrappt das in `LocalTimelineDeletionService`. Der **UI-Hook** (Settings-Eintrag „Importierte Daten löschen", inkl. Bookmark/Preferences-Cleanup) ist Phase 7B und bleibt offen vor UI-Aktivierung.
 - **Keine Änderung an `NSPrivacyCollectedDataTypes`**, solange der Store lokal-only bleibt. Apple-PrivacyInfo-Modell behandelt reines on-device-Storage nicht als „Data Collection". Sobald sich Speicherort, Backup-Strategie oder Datenfluss ändern (z. B. Sync, Drittweitergabe), ist eine Aktualisierung dieses Abschnitts und von `docs/privacy.html` Pflicht **vor** TestFlight-Resubmit.
 - **Status**: Spike/pre-production, nicht UI-aktiv. Kein produktiver App-Flow nutzt den Store. Kein DayList/DayDetail/Map-Hook, kein Export-Umbau, kein `AppExport` über den Store-Pfad.
 

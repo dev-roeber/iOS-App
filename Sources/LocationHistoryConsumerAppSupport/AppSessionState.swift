@@ -266,6 +266,13 @@ public struct AppUserMessage: Equatable {
 public struct AppSessionState {
     public private(set) var isLoading: Bool
     public private(set) var content: AppSessionContent?
+    /// Phase-7A — feature-flagged Store-backed Session.
+    /// Wird ausschließlich über `show(localTimeline:)` gesetzt, parallel zu
+    /// `content`. **Kein** UI-Hook für DayList/Map/Heatmap; nur Banner/Title
+    /// werden hieraus abgeleitet. `content` bleibt nil, solange dieser Pfad
+    /// aktiv ist — die Legacy-Properties (`overview`, `daySummaries`, …)
+    /// liefern weiterhin die bisherige Empty-Semantik ohne Crash.
+    public private(set) var localTimelineSession: LocalTimelineSession?
     public private(set) var selectedDate: String?
     public private(set) var message: AppUserMessage?
     /// App-wide export selection. Cleared automatically on new import or content clear.
@@ -449,9 +456,33 @@ public struct AppSessionState {
         activeDrilldownFilter = nil
     }
 
+    /// Phase-7A — aktive Session aus dem feature-flagged
+    /// `LocalTimelineStore`-Pfad annehmen. Setzt **keine**
+    /// `AppSessionContent`/`AppExport`-Materialisierung an, triggert keine
+    /// Lazy-Property-Auswertung und führt keine Koordinaten-Decodierung aus.
+    /// `content` wird bewusst geleert: der bisherige In-Memory-Pfad und der
+    /// Store-Pfad sind im selben State niemals beide aktiv.
+    public mutating func show(localTimeline session: LocalTimelineSession) {
+        ImportMemoryProbe.log("session.beforeShowLocalTimeline")
+        self.content = nil
+        self.localTimelineSession = session
+        selectedDate = nil
+        exportSelection.clearAll()
+        activeDrilldownFilter = nil
+        historyDateRangeFilter = HistoryDateRangeFilter(preset: .last7Days)
+        isLoading = false
+        message = AppUserMessage(
+            kind: .info,
+            title: "Google Timeline loaded",
+            message: "Imported file: \(session.sourceFilename)"
+        )
+        ImportMemoryProbe.log("session.afterShowLocalTimeline")
+    }
+
     public mutating func show(content: AppSessionContent) {
         ImportMemoryProbe.log("session.beforeShowContent")
         self.content = content
+        self.localTimelineSession = nil
         selectedDate = content.selectedDate
         exportSelection.clearAll()
         activeDrilldownFilter = nil
@@ -529,6 +560,7 @@ public struct AppSessionState {
     public mutating func clearContent() {
         isLoading = false
         content = nil
+        localTimelineSession = nil
         selectedDate = nil
         exportSelection.clearAll()
         activeDrilldownFilter = nil

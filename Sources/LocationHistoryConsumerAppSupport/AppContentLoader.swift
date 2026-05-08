@@ -17,6 +17,11 @@ public enum AppContentLoaderError: LocalizedError {
     /// an out-of-memory shutdown on iPhone. The user must manually re-import
     /// when ready to wait for the parse.
     case autoRestoreSkippedLargeFile(String)
+    /// Phase-7A — Store-Pfad konnte den Import nicht in den
+    /// `LocalTimelineStore` schreiben. Tritt nur unter aktivem
+    /// `LH2GPX_LOCAL_TIMELINE_STORE`-Flag auf; im Default-Pfad ist dieser
+    /// Fehler unmöglich, weil der Loader nie auf den Store ausweicht.
+    case localTimelineStoreFailed(String)
 
     public var userFacingTitle: String {
         switch self {
@@ -36,6 +41,8 @@ public enum AppContentLoaderError: LocalizedError {
             return "Multiple exports found in ZIP"
         case .autoRestoreSkippedLargeFile:
             return "Import not auto-restored"
+        case .localTimelineStoreFailed:
+            return "Disk-first import failed"
         }
     }
 
@@ -57,6 +64,8 @@ public enum AppContentLoaderError: LocalizedError {
             return "'\(name)' contains multiple compatible location history exports. Place only one LH2GPX export or one Google Timeline JSON per ZIP."
         case let .autoRestoreSkippedLargeFile(name):
             return "'\(name)' was not restored automatically. Raw Google Timeline exports and large files are skipped on launch because re-parsing them every time can cause an out-of-memory shutdown. Open it manually when you are ready to wait for the import."
+        case let .localTimelineStoreFailed(name):
+            return "'\(name)' could not be imported into the on-device timeline store. The disk-first import is a feature-flagged spike and currently has no UI fallback."
         }
     }
 }
@@ -118,6 +127,197 @@ public enum AppContentLoader {
             ImportMemoryProbe.log("loader.end")
             return content
         }.value
+    }
+
+    /// Phase-7A — feature-flagged Loader-Einstieg, der bei aktivem
+    /// `LH2GPX_LOCAL_TIMELINE_STORE` Google-Timeline-Inputs disk-first in den
+    /// `LocalTimelineStore` schreibt und einen
+    /// `AppSessionContentSource.localTimeline(...)` zurückgibt. Bei
+    /// deaktiviertem Flag wird unverändert der Legacy-`AppExport`-Pfad
+    /// ausgeführt und in `.inMemory(...)` verpackt — der Legacy-Pfad bleibt
+    /// damit byte-identisch zur bisherigen API.
+    ///
+    /// Nicht-Google-Timeline-Inputs (LH2GPX-JSON, GPX, TCX, LH2GPX-ZIP) fallen
+    /// auch bei aktivem Flag kontrolliert auf den Legacy-Pfad zurück: der
+    /// Store akzeptiert nur Google-Timeline-Daten. Dieser Fallback ist
+    /// dokumentiert und nicht still — der Caller erkennt am
+    /// `.inMemory(...)`-Case, dass kein Store-Schreibzugriff stattfand.
+    ///
+    /// Imports sind additiv: jeder Aufruf erzeugt eine neue, eindeutige
+    /// `importId`. Vorherige Importe bleiben im Store; ein Bulk-Wipe ist
+    /// Aufgabe von `LocalTimelineDeletionService` (Phase-7B Settings-UI).
+    public static func loadImportedContentEnvelope(
+        from url: URL,
+        autoRestoreMode: Bool = false,
+        onPhase: (@Sendable (ImportPhase) -> Void)? = nil,
+        flags: LocalTimelineFeatureFlags = .resolveFromProcess(),
+        storeFactoryProvider: (@Sendable () throws -> LocalTimelineStoreFactory)? = nil
+    ) async throws -> AppSessionContentSource {
+        guard flags.isLocalTimelineStoreEnabled else {
+            let legacy = try await loadImportedContent(
+                from: url, autoRestoreMode: autoRestoreMode, onPhase: onPhase
+            )
+            return .inMemory(legacy)
+        }
+
+        // Auto-Restore-Guard greift unverändert.
+        try assertAutoRestoreEligible(url: url, autoRestoreMode: autoRestoreMode)
+        onPhase?(.reading)
+
+        let ext = url.pathExtension.lowercased()
+        let filename = url.lastPathComponent
+
+        // 1) ZIP: nur dann Store-Pfad, wenn genau ein Google-Timeline-Entry
+        //    ohne LH2GPX-Geschwister vorhanden ist. Sonst Legacy.
+        if ext == "zip" {
+            if let timelineData = try extractSingleGoogleTimelineEntry(zipURL: url) {
+                onPhase?(.parsing)
+                return try await runStoreImport(
+                    payload: .data(timelineData, sourceFilename: filename),
+                    flags: flags,
+                    storeFactoryProvider: storeFactoryProvider,
+                    onPhase: onPhase
+                )
+            }
+            // Kein eindeutiges Google-Timeline-ZIP → Legacy-Pfad (LH2GPX/GPX/TCX).
+            let legacy = try await loadImportedContent(
+                from: url, autoRestoreMode: autoRestoreMode, onPhase: onPhase
+            )
+            return .inMemory(legacy)
+        }
+
+        // 2) Direkte JSON-Datei: nur Google-Timeline geht in den Store.
+        if ext == "json", let head = peekFileHead(url: url, byteLimit: 1024),
+           GoogleTimelineConverter.isGoogleTimeline(head) {
+            onPhase?(.parsing)
+            return try await runStoreImport(
+                payload: .file(url, sourceFilename: filename),
+                flags: flags,
+                storeFactoryProvider: storeFactoryProvider,
+                onPhase: onPhase
+            )
+        }
+
+        // 3) Andere Formate (LH2GPX-JSON, GPX, TCX): kontrollierter Fallback.
+        let legacy = try await loadImportedContent(
+            from: url, autoRestoreMode: autoRestoreMode, onPhase: onPhase
+        )
+        return .inMemory(legacy)
+    }
+
+    private enum StoreImportPayload {
+        case file(URL, sourceFilename: String)
+        case data(Data, sourceFilename: String)
+    }
+
+    private static func runStoreImport(
+        payload: StoreImportPayload,
+        flags: LocalTimelineFeatureFlags,
+        storeFactoryProvider: (@Sendable () throws -> LocalTimelineStoreFactory)?,
+        onPhase: (@Sendable (ImportPhase) -> Void)?
+    ) async throws -> AppSessionContentSource {
+        return try await Task.detached(priority: .userInitiated) {
+            let sourceFilename: String = {
+                switch payload {
+                case let .file(_, name): return name
+                case let .data(_, name): return name
+                }
+            }()
+
+            let factory: LocalTimelineStoreFactory
+            do {
+                factory = try storeFactoryProvider.map { try $0() }
+                    ?? LocalTimelineStoreFactory.production()
+            } catch {
+                throw AppContentLoaderError.localTimelineStoreFailed(sourceFilename)
+            }
+
+            let store: LocalTimelineStore
+            do {
+                store = try factory.openStore()
+            } catch {
+                throw AppContentLoaderError.localTimelineStoreFailed(sourceFilename)
+            }
+            defer { store.close() }
+
+            let summary: LocalTimelineImportSummary
+            do {
+                switch payload {
+                case let .file(url, name):
+                    summary = try GoogleTimelineStoreImporter.importFromFile(
+                        url: url, sourceFilename: name, store: store
+                    )
+                case let .data(data, name):
+                    summary = try GoogleTimelineStoreImporter.importFromData(
+                        data, sourceFilename: name, store: store
+                    )
+                }
+            } catch {
+                throw AppContentLoaderError.localTimelineStoreFailed(sourceFilename)
+            }
+
+            onPhase?(.building)
+
+            let reader = LocalTimelineStoreReader(store: store)
+            do {
+                let session = try LocalTimelineSession.make(
+                    reader: reader,
+                    importID: summary.importId,
+                    storeURL: factory.locations.databaseFileURL
+                )
+                _ = flags // already gated, kept in scope for future audit hooks
+                return AppSessionContentSource.localTimeline(session)
+            } catch {
+                throw AppContentLoaderError.localTimelineStoreFailed(sourceFilename)
+            }
+        }.value
+    }
+
+    /// Sniff-only Helfer: liefert die ausgepackten Bytes des einen
+    /// Google-Timeline-Entries, falls das ZIP genau einen passenden Entry und
+    /// keinen LH2GPX-Geschwister hat. Anderenfalls `nil` (→ Legacy-Pfad).
+    private static func extractSingleGoogleTimelineEntry(zipURL: URL) throws -> Data? {
+        let archive: Archive
+        do {
+            archive = try Archive(url: zipURL, accessMode: .read)
+        } catch {
+            return nil
+        }
+
+        let candidates = archive.filter { isJsonCandidate($0) }
+        var timelineEntries: [Entry] = []
+        var sawObjectShapedEntry = false
+        for entry in candidates {
+            guard let head = sniffEntryHead(archive: archive, entry: entry) else { continue }
+            if GoogleTimelineConverter.isGoogleTimeline(head) {
+                timelineEntries.append(entry)
+            } else if GoogleTimelineConverter.isJSONObject(head) {
+                sawObjectShapedEntry = true
+            }
+        }
+        guard !sawObjectShapedEntry else { return nil }
+        let chosen: Entry
+        switch timelineEntries.count {
+        case 1:
+            chosen = timelineEntries[0]
+        case let n where n > 1:
+            guard let preferred = timelineEntries.first(where: {
+                ($0.path as NSString).lastPathComponent == "location-history.json"
+            }) else { return nil }
+            chosen = preferred
+        default:
+            return nil
+        }
+
+        var data = Data()
+        do {
+            _ = try archive.extract(chosen, bufferSize: 256 * 1024) { chunk in
+                data.append(chunk)
+            }
+        } catch {
+            return nil
+        }
+        return data.isEmpty ? nil : data
     }
 
     /// Maximum size (256 MB) for a JSON file or single ZIP entry.
