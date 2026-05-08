@@ -104,6 +104,45 @@ public final class LocalTimelineStoreReader {
         try store.pathMetadata(forDayId: dayId)
     }
 
+    /// Phase-8A bounded bbox metadata query for a whole import. Ordered
+    /// newest-first by `start_time`. **Never** reads `coord_blob`.
+    public func pathMetadata(forImportId importId: String,
+                             viewport: LocalTimelineMapViewport,
+                             limit: Int) throws -> [LocalTimelinePathRecord] {
+        try store.pathMetadata(
+            forImportId: importId,
+            viewportMinLat: viewport.minLat, viewportMinLon: viewport.minLon,
+            viewportMaxLat: viewport.maxLat, viewportMaxLon: viewport.maxLon,
+            limit: limit
+        )
+    }
+
+    /// Phase-8A bounded bbox metadata query for a single day.
+    public func pathMetadata(forDayId dayId: String,
+                             viewport: LocalTimelineMapViewport,
+                             limit: Int) throws -> [LocalTimelinePathRecord] {
+        try store.pathMetadata(
+            forDayId: dayId,
+            viewportMinLat: viewport.minLat, viewportMinLon: viewport.minLon,
+            viewportMaxLat: viewport.maxLat, viewportMaxLon: viewport.maxLon,
+            limit: limit
+        )
+    }
+
+    /// Phase-8A: aggregierte Bounding-Box über alle Pfade eines Imports.
+    /// Liest nur `min/max_lat/lon`-Spalten — kein `coord_blob`.
+    public func pathBoundingBox(forImportId importId: String) throws
+        -> (minLat: Double, minLon: Double, maxLat: Double, maxLon: Double)?
+    {
+        try store.pathBoundingBox(forImportId: importId)
+    }
+
+    public func pathBoundingBox(forDayId dayId: String) throws
+        -> (minLat: Double, minLon: Double, maxLat: Double, maxLon: Double)?
+    {
+        try store.pathBoundingBox(forDayId: dayId)
+    }
+
     public func pathRecord(id: String) throws -> LocalTimelinePathRecord? {
         try store.pathMetadata(id: id)
     }

@@ -111,6 +111,18 @@ public enum LocalTimelineStoreSchema {
     CREATE INDEX IF NOT EXISTS idx_paths_day_start ON paths(day_id, start_time);
     """
 
+    /// Phase-8A bounded map queries: linear bbox scan over `paths`.
+    /// Both indices are additive; no row is rewritten and `userVersion`
+    /// stays at `2`. RTree (`path_bounds` virtual table) is deferred to
+    /// Phase 8B per `docs/MAP_ARCHITECTURE_AUDIT.md`.
+    public static let createIndexPathsBoundsMinMaxSQL = """
+    CREATE INDEX IF NOT EXISTS idx_paths_bounds_minmax ON paths(min_lat, min_lon, max_lat, max_lon);
+    """
+
+    public static let createIndexPathsDayBoundsSQL = """
+    CREATE INDEX IF NOT EXISTS idx_paths_day_bounds ON paths(day_id, min_lat, min_lon, max_lat, max_lon);
+    """
+
     public static let createIndexVisitsDaySQL = """
     CREATE INDEX IF NOT EXISTS idx_visits_day_id ON visits(day_id);
     """
@@ -130,6 +142,8 @@ public enum LocalTimelineStoreSchema {
         createIndexDaysImportDateSQL,
         createIndexPathsDaySQL,
         createIndexPathsDayStartSQL,
+        createIndexPathsBoundsMinMaxSQL,
+        createIndexPathsDayBoundsSQL,
         createIndexVisitsDaySQL,
         createIndexActivitiesDaySQL,
     ]

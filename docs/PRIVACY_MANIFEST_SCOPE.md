@@ -2,6 +2,8 @@
 
 Stand: 2026-04-30 | historischer Privacy-Scope-Snapshot, repo-wahr nachgezogen
 
+> **Hinweis 2026-05-08 (Phase 8A — Store-backed Map Data Provider)**: Phase 8A führt **keine neuen Datentypen, keine neuen Persistenz-Pfade und keine neuen Netzwerkaktivitäten** ein — sie ergänzt nur einen Foundation-only Provider über den bereits in Phase 1..7B dokumentierten LocalTimelineStore (DB unter `applicationSupportDirectory/LocationHistory2GPX/Imports/`, backup-excluded) sowie zwei additive bbox-Indizes auf der bestehenden `paths`-Tabelle. **Keine Privacy-Doku-Konsequenz**; der Store-Pfad bleibt default AUS und ist weiterhin Spike / pre-production. Privacy-Doku-Update bleibt Phase-8B/9-Pflicht vor produktivem Rollout.
+
 ---
 
 ## 1. Datenpunkte: lokal / optional-Upload / automatisch / nutzergesteuert

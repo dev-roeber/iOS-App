@@ -2,6 +2,45 @@
 
 > Status: Audit only — keine Renderer-Migration in diesem Commit. Erstellt im Rahmen der P0-Untersuchung des 46-MB-Google-Timeline-Imports (3. Hardware-Fail 2026-05-07T15:10:44+02:00 nach 95 156 ms, Jetsam auf iPhone 15 Pro Max).
 
+## Phase 8A — Store-backed Map Data Provider (Foundation only, 2026-05-08)
+
+> **Klarstellung**: Phase 8A führt **ausschließlich eine Foundation-only Provider-Schnittstelle** über den LocalTimelineStore ein. **KEIN UI-Hook, KEIN Renderer-Hook, KEIN SwiftUI-Map/MKMapView-Hook in dieser Phase.** Die heutigen Kartenflächen (Overview, Day Detail, Heatmap, Live Tracking, Export Preview) konsumieren **weiterhin den Legacy-`AppExport`-Pfad** — nichts an §1 oder §2 dieses Audits hat sich verschoben.
+
+- **Eingecheckt** (siehe `docs/LOCAL_TIMELINE_STORE_RESEARCH.md` Phase-8A-Snapshot):
+  - `Sources/LocationHistoryConsumerAppSupport/LocalTimelineMapModels.swift` — Foundation-only Map-Domain-Modelle (`LocalTimelineMapViewport` mit Anti-Meridian-Reject, `LocalTimelineMapDetailLevel`, `LocalTimelineMapPointBudget`, `LocalTimelineMapQuery`, `LocalTimelineMapRouteCandidate` metadata-only, `LocalTimelineMapPoint`, `LocalTimelineMapRouteGeometry` bounded, `LocalTimelineMapOverviewResponse` mit `truncatedRoutes`/`truncatedPoints`, `LocalTimelineMapBounds`, `LocalTimelineMapProviderError`). **Keine SwiftUI/MapKit/CoreLocation-Abhängigkeit.**
+  - `Sources/LocationHistoryConsumerAppSupport/StoreBackedMapDataProvider.swift` — Provider mit `routeCandidates`/`dayRouteCandidates` (metadata-only, kein `coord_blob`-Read), `routeGeometry` (lazy single-path decode via `CoordBlobIterator`), `overviewRoutes` (doppelt bounded mit `maxRoutes` und `budget.maxTotalPoints`), `mapBounds(forImportID:)`/`mapBounds(forDayID:)` (Aggregat über `paths.min/max_lat/lon`-Spalten ohne Geometrie-Decode).
+  - `Sources/LocationHistoryConsumerAppSupport/LocalTimelineRouteDecimator.swift` — deterministischer stride-/budget-basierter Decimator, Iterator-basiert, erster + letzter Punkt erhalten, `maxPoints` hart, leere/1-Punkt-Pfade stabil. Douglas-Peucker bleibt Phase 8B/9.
+  - Schema-Änderung in `LocalTimelineStoreSchema.swift`: zwei neue **additive** Indizes `idx_paths_bounds_minmax` und `idx_paths_day_bounds`. **`userVersion` bleibt 2** (rein additiv). RTree (`path_bounds` virtuelle Tabelle) wurde in 8A explizit **nicht** angelegt — bleibt **Phase-8B-Pflicht**.
+  - Store/Reader: neue public APIs `pathMetadata(forImportId:viewport:limit:)`, `pathMetadata(forDayId:viewport:limit:)`, `pathBoundingBox(forImportId:)`, `pathBoundingBox(forDayId:)`. Bbox-Filter ist linear scan über `min/max_lat/lon`-Spalten; NULL-Bounds konservativ als überlappend gewertet; newest-first `ORDER BY start_time`.
+  - 4 neue Test-Dateien, 33 Cases (`StoreBackedMapDataProviderTests` 15, `LocalTimelineRouteDecimatorTests` 8, `LocalTimelineMapBoundsTests` 7, `LocalTimelineMapSchemaIndexTests` 2).
+
+- **Provider als kanonische Schnittstelle für künftige UI-Hooks**: Sobald in Phase 8B/9 ein Map/Heatmap/Overview-UI-Hook gegen den Store gewünscht ist, **muss er über `StoreBackedMapDataProvider` gehen** — nicht direkt gegen `LocalTimelineStore`/`LocalTimelineStoreReader`. Das ist die Stelle, an der die Bounded-Read-Garantien (kein blob in Candidate-Reads, single-path lazy decode, doppelt bounded Overview, Aggregate-only mapBounds) zentral verankert sind.
+
+- **Was Phase 8A NICHT tut**:
+  - **KEIN UI-Hook, KEIN Renderer-Hook.** Weder Overview, Day Detail, Heatmap, Live Tracking noch Export Preview lesen aus dem Provider. Die heutigen SwiftUI `Map`-Flächen sind unverändert.
+  - **KEIN MKMapView-Migrationsschritt.** §4/§5 dieses Audits (UIKit `MKMapView`/`MKMultiPolyline`/`MKTileOverlay`) bleiben **Roadmap, blockiert hinter dem 46-MB-Gate**. Phase 8A bewegt diesen Block nicht.
+  - **KEIN Heatmap-Doppelbug-Fix.** Der in §2 / §5-Roadmap-Schritt 2 dokumentierte Doppelbug in `AppHeatmapModel.swift:55-77` ist **nicht behoben** — Fix bleibt **Phase-8B-Pflicht**.
+  - **KEIN AppExport-Rebuild aus dem Store.**
+  - **KEIN vollständiger `[Double]`-Import-Buffer.**
+  - **KEIN Live-Upload-Mix.** Live-Upload bleibt strikt getrennt vom Store-Pfad.
+  - Feature-Flag `LH2GPX_LOCAL_TIMELINE_STORE` unverändert; Store-Pfad bleibt **default AUS** / pre-production.
+  - **46-MB-Gate bleibt FAILED / pending hardware retest.** MKMapView-Migration bleibt blockiert hinter diesem Gate.
+
+- **Phase-8B/9-Pflichten** (in 8A explizit deferred):
+  - RTree (`path_bounds` virtual table) statt linearem bbox scan.
+  - `derived_cache`, Heatmap-LOD-Persistenz.
+  - Wrapper/SwiftUI-Wiring der Presentation-/ViewState-Schicht.
+  - Settings-Delete-UI-Button.
+  - Map/Heatmap/Overview UI-Hook gegen Provider.
+  - **Heatmap-Doppelbug-Fix (`AppHeatmapModel.swift:55-77`).**
+  - Darwin FileProtection-Aktivierung.
+  - Export-UI-Hook gegen `StoreBackedExportWriter`.
+  - 46-MB-Hardware-Retest, TestFlight/Xcode-Cloud.
+  - Privacy-Doku-Update.
+
+---
+
+
 > **Update 2026-05-08 (Linux-Stabilisierung HEAD `37a22b7` nach `34bc369`)**: Die vier reinen Heatmap-/MapTrack-Color-Preference-Enums `AppHeatmapPalettePreference`, `AppHeatmapScalePreference`, `AppHeatmapRadiusPreset`, `AppMapTrackColorMode` leben jetzt als Linux-buildbare `String`-`RawValue`-Enums in `Sources/LocationHistoryConsumerAppSupport/HeatmapPreferenceEnums.swift` (vorher in `HeatmapPalette.swift` / `HeatmapLOD.swift` / `AppHeatmapView.swift` / `MapTrackStyling.swift` hinter `#if canImport(SwiftUI) && canImport(MapKit)`-Guards). Der `scale`-Multiplikator von `AppHeatmapRadiusPreset` und alle SwiftUI-/MapKit-abhängigen Extensions (z. B. Color-Resolver) bleiben hinter Plattform-Guards. **Keine** Verhaltensänderung am Heatmap-Renderer, an den LOD-Schwellen oder an der Mercator-/cos(lat)-Aggregation. Map-Architektur-Roadmap (P1+, §4/§5) bleibt unverändert: keine Renderer-Migration, keine `MKMultiPolyline`/`MKTileOverlay`-Umsetzung in diesem Commit.
 
 Dieses Dokument ist eine reine Bestandsaufnahme der aktuellen Karten-/Rendering-Pipeline. Es enthält keine Code-Änderungen, keinen Renderer-Wechsel und keine Migrations-Termine. Die Roadmap-Schritte unten sind als spätere, jeweils eigenständige Commits zu verstehen.

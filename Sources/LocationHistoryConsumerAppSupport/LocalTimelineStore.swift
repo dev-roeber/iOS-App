@@ -73,6 +73,23 @@ public final class LocalTimelineStore {
         return sqlite3_column_int(stmt, 0)
     }
 
+    /// Phase-8A — list non-internal index names attached to a given table.
+    /// Used by schema-introspection tests to verify additive-index migrations.
+    public func indexNames(forTable table: String) throws -> [String] {
+        let sql = "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name=? AND name NOT LIKE 'sqlite_%';"
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: table, name: "tbl_name")
+        var out: [String] = []
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_DONE { break }
+            guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+            if let name = stringColumn(stmt, 0) { out.append(name) }
+        }
+        return out
+    }
+
     // MARK: - Write API
 
     public func insertImport(_ row: ImportRow) throws {
@@ -432,6 +449,141 @@ public final class LocalTimelineStore {
         if rc == SQLITE_DONE { return nil }
         guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
         return blobColumn(stmt, 0) ?? Data()
+    }
+
+    /// Phase-8A bounded bbox query: path metadata for an entire import,
+    /// filtered to overlap an axis-aligned WGS84 bounding box on
+    /// `min/max_lat/lon`. Returns rows ordered newest-first by
+    /// `start_time DESC` (NULLs last) with a hard `limit`. **Never** reads
+    /// `coord_blob`. Paths with `NULL` bounds are included (they cannot
+    /// be filtered safely).
+    public func pathMetadata(
+        forImportId importId: String,
+        viewportMinLat: Double, viewportMinLon: Double,
+        viewportMaxLat: Double, viewportMaxLon: Double,
+        limit: Int
+    ) throws -> [LocalTimelinePathRecord] {
+        let sql = """
+        SELECT p.id, p.day_id, p.start_time, p.end_time, p.mode, p.distance_m,
+               p.point_count, p.min_lat, p.min_lon, p.max_lat, p.max_lon,
+               p.coord_encoding
+        FROM paths AS p
+        JOIN days  AS d ON d.id = p.day_id
+        WHERE d.import_id = ?
+          AND (p.min_lat IS NULL OR p.max_lat IS NULL
+               OR p.min_lon IS NULL OR p.max_lon IS NULL
+               OR (p.max_lat >= ? AND p.min_lat <= ?
+                   AND p.max_lon >= ? AND p.min_lon <= ?))
+        ORDER BY p.start_time IS NULL, p.start_time DESC
+        LIMIT ?;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: importId, name: "import_id")
+        try bindDouble(stmt, index: 2, value: viewportMinLat, name: "vp_min_lat")
+        try bindDouble(stmt, index: 3, value: viewportMaxLat, name: "vp_max_lat")
+        try bindDouble(stmt, index: 4, value: viewportMinLon, name: "vp_min_lon")
+        try bindDouble(stmt, index: 5, value: viewportMaxLon, name: "vp_max_lon")
+        try bindInt(stmt, index: 6, value: Int32(limit), name: "limit")
+        return try collectPathMetadata(stmt: stmt)
+    }
+
+    /// Same bbox semantics as the import-level variant, scoped to a single
+    /// day. Reads only path metadata.
+    public func pathMetadata(
+        forDayId dayId: String,
+        viewportMinLat: Double, viewportMinLon: Double,
+        viewportMaxLat: Double, viewportMaxLon: Double,
+        limit: Int
+    ) throws -> [LocalTimelinePathRecord] {
+        let sql = """
+        SELECT id, day_id, start_time, end_time, mode, distance_m,
+               point_count, min_lat, min_lon, max_lat, max_lon, coord_encoding
+        FROM paths
+        WHERE day_id = ?
+          AND (min_lat IS NULL OR max_lat IS NULL
+               OR min_lon IS NULL OR max_lon IS NULL
+               OR (max_lat >= ? AND min_lat <= ?
+                   AND max_lon >= ? AND min_lon <= ?))
+        ORDER BY start_time IS NULL, start_time
+        LIMIT ?;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: dayId, name: "day_id")
+        try bindDouble(stmt, index: 2, value: viewportMinLat, name: "vp_min_lat")
+        try bindDouble(stmt, index: 3, value: viewportMaxLat, name: "vp_max_lat")
+        try bindDouble(stmt, index: 4, value: viewportMinLon, name: "vp_min_lon")
+        try bindDouble(stmt, index: 5, value: viewportMaxLon, name: "vp_max_lon")
+        try bindInt(stmt, index: 6, value: Int32(limit), name: "limit")
+        return try collectPathMetadata(stmt: stmt)
+    }
+
+    /// Phase-8A bounding box aggregate over `paths.min/max_lat/lon` for a
+    /// whole import. Returns `nil` when no path with a non-`NULL` bbox
+    /// exists. Reads aggregates only — no `coord_blob` is touched.
+    public func pathBoundingBox(forImportId importId: String) throws
+        -> (minLat: Double, minLon: Double, maxLat: Double, maxLon: Double)?
+    {
+        let sql = """
+        SELECT MIN(p.min_lat), MIN(p.min_lon), MAX(p.max_lat), MAX(p.max_lon)
+        FROM paths AS p
+        JOIN days  AS d ON d.id = p.day_id
+        WHERE d.import_id = ?;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: importId, name: "import_id")
+        let rc = sqlite3_step(stmt)
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        guard let minLat = optionalDoubleColumn(stmt, 0),
+              let minLon = optionalDoubleColumn(stmt, 1),
+              let maxLat = optionalDoubleColumn(stmt, 2),
+              let maxLon = optionalDoubleColumn(stmt, 3) else { return nil }
+        return (minLat, minLon, maxLat, maxLon)
+    }
+
+    public func pathBoundingBox(forDayId dayId: String) throws
+        -> (minLat: Double, minLon: Double, maxLat: Double, maxLon: Double)?
+    {
+        let sql = """
+        SELECT MIN(min_lat), MIN(min_lon), MAX(max_lat), MAX(max_lon)
+        FROM paths WHERE day_id = ?;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: dayId, name: "day_id")
+        let rc = sqlite3_step(stmt)
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        guard let minLat = optionalDoubleColumn(stmt, 0),
+              let minLon = optionalDoubleColumn(stmt, 1),
+              let maxLat = optionalDoubleColumn(stmt, 2),
+              let maxLon = optionalDoubleColumn(stmt, 3) else { return nil }
+        return (minLat, minLon, maxLat, maxLon)
+    }
+
+    private func collectPathMetadata(stmt: OpaquePointer?) throws -> [LocalTimelinePathRecord] {
+        var out: [LocalTimelinePathRecord] = []
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_DONE { break }
+            guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+            out.append(LocalTimelinePathRecord(
+                id: stringColumn(stmt, 0) ?? "",
+                dayId: stringColumn(stmt, 1) ?? "",
+                startTime: stringColumn(stmt, 2),
+                endTime: stringColumn(stmt, 3),
+                mode: stringColumn(stmt, 4),
+                distanceM: sqlite3_column_double(stmt, 5),
+                pointCount: Int(sqlite3_column_int(stmt, 6)),
+                minLat: optionalDoubleColumn(stmt, 7),
+                minLon: optionalDoubleColumn(stmt, 8),
+                maxLat: optionalDoubleColumn(stmt, 9),
+                maxLon: optionalDoubleColumn(stmt, 10),
+                coordEncoding: stringColumn(stmt, 11) ?? ""
+            ))
+        }
+        return out
     }
 
     public func dayDateRange(forImportId importId: String) throws -> (String, String)? {

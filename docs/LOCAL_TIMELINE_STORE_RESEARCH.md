@@ -1,6 +1,64 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
-Status: **Research + Phase 1..7B abgeschlossen** (CoordBlob + isolierter SQLite-Store + Storage-Lifecycle + store-backed Streaming-Export + feature-flagged AppSession-Quelle + feature-flagged AppContentLoader-Hook über Envelope-Kapsel + Foundation-only Presentation/ViewState-Schicht + AppSessionState-Extension + Service-layer Envelope-Hook im AppFlow, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung). Folge-Commit nach `45e5fcf`.
+Status: **Research + Phase 1..8A abgeschlossen** (CoordBlob + isolierter SQLite-Store + Storage-Lifecycle + store-backed Streaming-Export + feature-flagged AppSession-Quelle + feature-flagged AppContentLoader-Hook über Envelope-Kapsel + Foundation-only Presentation/ViewState-Schicht + AppSessionState-Extension + Service-layer Envelope-Hook im AppFlow + **Foundation-only Store-backed Map Data Provider mit bounded Map-Domain-Modellen, stride-/budget-basiertem Route-Decimator und zwei additiven bbox-Metadata-Indizes**, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung, **kein SwiftUI-Map/MKMapView-Hook**). Folge-Commit nach `45e5fcf`.
+
+## Phase-8A-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: Foundation-only Store-backed Map Data Provider + bounded Map-Domain-Modelle + Route-Decimator + zwei additive bbox-Indizes auf `paths`. **Schema bleibt `userVersion = 2`** — die zwei neuen Indizes `idx_paths_bounds_minmax` und `idx_paths_day_bounds` sind **rein additiv** (`CREATE INDEX IF NOT EXISTS`). RTree-`path_bounds` virtuelle Tabelle bleibt explizit **Phase-8B-Pflicht** und wurde in dieser Phase **nicht** angelegt.
+- **NEU `Sources/LocationHistoryConsumerAppSupport/LocalTimelineMapModels.swift`**: Foundation-only Map-Domain-Modelle.
+  - `LocalTimelineMapViewport` — minLat/maxLat/minLon/maxLon, Anti-Meridian wird **kontrolliert abgelehnt** (kein wraparound silently), Validierung gegen flipped lat / out-of-range / minLon > maxLon.
+  - `LocalTimelineMapDetailLevel` — `overview`/`low`/`medium`/`high`.
+  - `LocalTimelineMapPointBudget` — default-Tabelle pro Level, monoton steigend; nutzbar als Hard-Cap im Decimator und im `overviewRoutes` Provider-Pfad.
+  - `LocalTimelineMapQuery` — viewport + detailLevel + maxRoutes + budget.
+  - `LocalTimelineMapRouteCandidate` — **metadata-only**, kein `coord_blob` im Record.
+  - `LocalTimelineMapPoint` / `LocalTimelineMapRouteGeometry` — bounded points.
+  - `LocalTimelineMapOverviewResponse` — Liste der Geometrien + `truncatedRoutes: Bool` + `truncatedPoints: Bool` (signalisieren, dass `maxRoutes` bzw. `budget.maxTotalPoints` getroffen wurde).
+  - `LocalTimelineMapBounds`, `LocalTimelineMapProviderError`.
+  - **Keine SwiftUI-/MapKit-/CoreLocation-Abhängigkeit** — Linux-buildbar.
+- **NEU `Sources/LocationHistoryConsumerAppSupport/StoreBackedMapDataProvider.swift`**: Provider-Klasse, kanonische Schnittstelle für künftige UI-Hooks.
+  - `routeCandidates(importID:viewport:limit:)` / `dayRouteCandidates(dayID:viewport:limit:)` — beide **metadata-only**, **kein `coord_blob`-Read**. Filtert nach Viewport-Overlap über `paths.min/max_lat/lon`-Spalten; NULL-Bounds werden konservativ als überlappend gewertet; newest-first `ORDER BY start_time`.
+  - `routeGeometry(pathID:detailLevel:maxPoints:)` — **lazy single-path decode** via `CoordBlobIterator` durch `LocalTimelineRouteDecimator`; `maxPoints` hart; wirft `unknownPath` / `malformedCoordBlob` über `LocalTimelineMapProviderError`.
+  - `overviewRoutes(query:)` — **doppelt bounded** durch `maxRoutes` UND `budget.maxTotalPoints`; setzt `truncatedRoutes`/`truncatedPoints` in der Response.
+  - `mapBounds(forImportID:)` / `mapBounds(forDayID:)` — Aggregat über `paths.min/max_lat/lon`-Spalten; **kein Geometrie-Decode**.
+- **NEU `Sources/LocationHistoryConsumerAppSupport/LocalTimelineRouteDecimator.swift`**: deterministischer stride-/budget-basierter Decimator, Iterator-basiert (`Sequence<EncodedCoordinate>`), erster + letzter Punkt erhalten, `maxPoints` hart, leere/1-Punkt-Pfade stabil. **Douglas-Peucker bleibt Phase 8B/9.**
+- **Geändert `LocalTimelineStoreSchema.swift`**: zwei neue additive Indizes `idx_paths_bounds_minmax` und `idx_paths_day_bounds`. `userVersion` unverändert auf `2`. RTree (`path_bounds` virtual table) bleibt Phase-8B/9-Pflicht.
+- **Geändert `LocalTimelineStore.swift`**: neue public APIs `pathMetadata(forImportId:viewportMinLat:viewportMaxLat:viewportMinLon:viewportMaxLon:limit:)`, `pathMetadata(forDayId:...:limit:)`, `pathBoundingBox(forImportId:)`, `pathBoundingBox(forDayId:)` plus Test-Helper `indexNames(forTable:)`. Bbox-Filter ist linearer bbox scan über `min/max_lat/lon`-Spalten, NULL-Bounds konservativ als überlappend gewertet, newest-first `ORDER BY start_time`.
+- **Geändert `LocalTimelineStoreReader.swift`**: thin wrappers `pathMetadata(forImportId:viewport:limit:)`, `pathMetadata(forDayId:viewport:limit:)`, `pathBoundingBox(forImportId:)`, `pathBoundingBox(forDayId:)`.
+- **Tests Linux-grün**, 4 Dateien, 33 Cases:
+  - `StoreBackedMapDataProviderTests` (15) — inkl. 50k-synthetic-store-bounded-Test, malformed `coord_blob` → kontrollierter Fehler, unknown import returns empty, unknown path throws, viewport-Filter, day-scope, overview `maxRoutes`/`maxTotalPoints`.
+  - `LocalTimelineRouteDecimatorTests` (8) — empty/1-point stable, small unchanged, `maxPoints` hard-cap, first+last preserved, `maxPoints=1`/`=2`, single-pass iterator.
+  - `LocalTimelineMapBoundsTests` (7) — viewport valid/invalid (flipped lat / antimeridian / out of range), intersect classic/disjoint/null-bounds, point-budget defaults monoton.
+  - `LocalTimelineMapSchemaIndexTests` (2) — fresh store hat beide Indizes; reopened-store nach `DROP` gewinnt sie additiv zurück; `userVersion` bleibt `2`.
+- **Bounded-Read-Garantien (Phase-8A-Erweiterung der Phase-3-Garantien)**:
+  1. `routeCandidates(importID:viewport:limit:)` / `dayRouteCandidates(dayID:viewport:limit:)` lesen **kein `coord_blob`**, nur path-Metadaten + bbox-Filter.
+  2. `routeGeometry(pathID:detailLevel:maxPoints:)` decodiert **single-path lazy** via `CoordBlobIterator`, hart bounded durch `maxPoints` aus `LocalTimelineMapPointBudget`.
+  3. `overviewRoutes(query:)` ist **doppelt bounded** durch `maxRoutes` UND `budget.maxTotalPoints`, schreibt `truncatedRoutes`/`truncatedPoints` in die Response.
+  4. `mapBounds(forImportID:)` / `mapBounds(forDayID:)` aggregieren ausschließlich über `paths.min/max_lat/lon`-Spalten — **kein Geometrie-Decode**.
+  5. **Kein API materialisiert `AppExport`** über den Provider.
+  6. **Kein API materialisiert `[Double]`** für einen ganzen Import.
+- **Harte Grenzen Phase 8A**:
+  - **KEIN SwiftUI-Map/MKMapView-Hook in Phase 8A.**
+  - **KEIN UI-Hook**, **kein Renderer-Wechsel**.
+  - **KEIN AppExport-Rebuild aus Store.**
+  - **KEIN vollständiger `[Double]`-Import-Buffer.**
+  - **KEIN Live-Upload-Mix.**
+  - Store-Pfad bleibt **default AUS** / pre-production.
+  - Feature-Flag `LH2GPX_LOCAL_TIMELINE_STORE` unverändert.
+  - Schema unverändert (`userVersion = 2`); Indizes rein additiv.
+  - FileProtection-Status unverändert (Phase-4-Capsule).
+  - **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim aus `docs/APPLE_VERIFICATION_CHECKLIST.md`).
+  - Keine Hardware-/ASC-/TestFlight-Aussage.
+- **Bewusst nicht in Phase 8A** (= Phase 8B/9 vor produktivem UI-Rollout):
+  - **RTree (`path_bounds` virtual table)** für O(log n) Viewport-Intersect — **Phase-8B-Pflicht**, explizit deferred.
+  - `derived_cache`, Heatmap-LOD-Persistenz — Phase 8B/9.
+  - Wrapper/SwiftUI-Wiring (DayList/DayDetail/Map/Heatmap/Overview/Export/Settings) — Phase 8B/9.
+  - Settings-Delete-UI-Button — Phase 8B/9.
+  - Map/Heatmap/Overview UI-Hook gegen Provider — Phase 8B/9 (Provider ist ab jetzt die kanonische Schnittstelle, aber kein UI-Hook in 8A).
+  - **Heatmap-Doppelbug-Fix** (`AppHeatmapModel.swift:55-77`) — **Phase-8B-Pflicht** (im `docs/MAP_ARCHITECTURE_AUDIT.md` bereits vermerkt; nicht behauptet, dass behoben).
+  - Export-UI-Hook gegen `StoreBackedExportWriter` — Phase 8B/9.
+  - **Darwin FileProtection-Aktivierung** — offene Pflicht vor Rollout.
+  - 46-MB-Hardware-Retest, TestFlight/Xcode-Cloud — Mac/iPhone-Handoff, FAILED unverändert.
+  - Privacy-Doku-Update — vor Rollout zwingend.
 
 ## Phase-7B-Spike Snapshot (2026-05-08)
 
