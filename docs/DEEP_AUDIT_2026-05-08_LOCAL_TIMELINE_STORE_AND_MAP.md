@@ -361,4 +361,24 @@ Crash-Hotspots im **Legacy-Pfad** (`AppHeatmapModel.startPrecomputation`, `AppOv
 
 ---
 
+## Update 2026-05-08 — Phase-10C Legacy hardening
+
+**Tatsächlich gefixt** (Hotspots aus § 13):
+
+- `AppHeatmapModel.startPrecomputation` (Sources/LocationHistoryConsumerAppSupport/AppHeatmapModel.swift): Hard-Cap `densityPointCap = 500_000` + `HeatmapStats.truncatedDensityPoints` Signal; Sammel-Loop bricht kontrolliert ab.
+- `ExportPreviewData` (Sources/LocationHistoryConsumerAppSupport/ExportPreviewData.swift): Doppel-Iteration `path.points.map` (2× für coordinates + timestamps) durch einen Loop mit `reservedCapacity` ersetzt. Semantik unverändert.
+- `LocalTimelineStore`: neue Purge-API `deleteDerivedCache(olderThan:cacheKind:)` und `pruneDerivedCache(maxEntries:cacheKind:)`. `deleteAll` löscht weiter `derived_cache`. Tests: `LocalTimelineDerivedCachePurgeTests.swift` (8 Cases, Linux-grün).
+- Build-Warnings bereinigt: `LHCollapsibleMapHeader.swift:199/293` `os(iOS) || os(visionOS)` → `os(iOS)`; `StoreBackedHeatmapDataProvider.swift:287/296` unused `withUnsafeMutableBytes` Result `_ =`-discardiert.
+
+**Bewusst NICHT angefasst (mit Begründung — als P1 in NEXT_STEPS dokumentiert)**:
+
+- `AppOverviewTracksMapView.scanCandidates` (~L720–725): Score/Bounds werden auf full coords berechnet, ein lazy/streaming Refactoring würde Test-Assertions zur Score-Reihenfolge brechen. Bereits bounded via `pointBudget = 2_000_000` (L648), `candidateStorageCap = 512`/Route (L657), `overlayLimit = 150–300` (Profile L580–617), `nonisolated static` + `Task.detached` off-Main. Risiko **HOCH**.
+- `ExportPreviewData` Sampling: würde Tests mit exakten Punkt-Counts ("5 pts") brechen und Preview/Export-Mismatch erzeugen (Vertrauen-Bruch). Stattdessen nur Doppel-Iteration entfernt.
+
+**Nicht regressiert**: Store-Pfad bleibt pre-production / feature-flagged / default OFF. Legacy-Pfad-Verhalten unverändert (Heatmap-Cap nur bei Extremfällen sichtbar; Export-Preview semantisch identisch). AppExport im Store-Pfad nicht materialisiert. Vollständige `[Double]`-Import-Materialisierung weiterhin nein.
+
+**46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+
+---
+
 **Audit-Ende.** Repo-Truth zuerst. Im Zweifel: nicht behaupten.

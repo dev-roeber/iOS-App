@@ -196,7 +196,7 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: state.visibility)
-#if os(iOS) || os(visionOS)
+#if os(iOS)
         .fullScreenCover(isPresented: Binding(
             get: { state.isFullscreen },
             set: { if !$0 { state.exitFullscreen() } }
@@ -290,7 +290,7 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
 
     // MARK: Fullscreen cover
 
-#if os(iOS) || os(visionOS)
+#if os(iOS)
     private var fullscreenCover: some View {
         GeometryReader { geometry in
             ZStack(alignment: .topTrailing) {

@@ -494,3 +494,9 @@ Present:
 
 ### C6. PointLayer (Store-Pfad, Phase-10B Foundation-only)
 - **PointLayer (Store-Pfad, foundation-only, default OFF, in keinem View aktiv)**: Modelle + Provider eingecheckt (`LocalTimelineMapPointLayerModels.swift`, `LocalTimelineMapPointLayerProvider.swift`), zentrale adaptive Budgets via `LocalTimelineMapPerformanceBudget.swift`. UI-Verdrahtung WIP. Legacy-Pfad unverändert. 46-MB-Gate bleibt FAILED / pending hardware retest.
+
+### C7. Heatmap density cap (Legacy-Pfad, Phase-10C)
+- **Heatmap density cap (500k)**: `AppHeatmapModel.startPrecomputation` hat einen Hard-Cap `densityPointCap = 500_000` auf `densityPoints`; `HeatmapStats.truncatedDensityPoints: Bool` signalisiert Kürzung an die UI. Sammel-Loop bricht kontrolliert ab. Datei: `Sources/LocationHistoryConsumerAppSupport/AppHeatmapModel.swift`. Cap nur bei Extremfällen sichtbar; Legacy-Verhalten unverändert.
+
+### C8. derived_cache prune-API (Store-Pfad, Phase-10C)
+- **derived_cache prune-API**: `LocalTimelineStore.deleteDerivedCache(olderThan:cacheKind:)` (TTL) und `pruneDerivedCache(maxEntries:cacheKind:)` (Größe) als offizielles Cache-Lifecycle-Werkzeug. `deleteAll` löscht weiter `derived_cache`. Tests: `LocalTimelineDerivedCachePurgeTests.swift` (8 Cases). Store-Pfad bleibt default OFF.

@@ -44,10 +44,19 @@ enum ExportPreviewDataBuilder {
         let pathOverlays = mode.includesTracks
             ? exportDays.flatMap { day in
                 day.paths.compactMap { path -> DayMapPathOverlay? in
-                    let coordinates = path.points.map { DayMapCoordinate(lat: $0.lat, lon: $0.lon) }
-                    let timestamps = path.points.map { $0.time }
-                    guard coordinates.count >= 2 else {
-                        return nil
+                    // Phase-10C: vorher zwei separate `path.points.map`-Iterationen
+                    // (coordinates + timestamps). Eine einzige Iteration befüllt
+                    // beide Arrays parallel — semantisch identisch, halbierte
+                    // Allokation/Iteration auf MainThread bei langen Pfaden.
+                    let count = path.points.count
+                    guard count >= 2 else { return nil }
+                    var coordinates: [DayMapCoordinate] = []
+                    coordinates.reserveCapacity(count)
+                    var timestamps: [String?] = []
+                    timestamps.reserveCapacity(count)
+                    for point in path.points {
+                        coordinates.append(DayMapCoordinate(lat: point.lat, lon: point.lon))
+                        timestamps.append(point.time)
                     }
                     return DayMapPathOverlay(
                         coordinates: coordinates,

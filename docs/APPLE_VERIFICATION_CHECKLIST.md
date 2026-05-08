@@ -19,6 +19,8 @@ Bei Ablehnung eines Punktes: konkreten Bug + Reproduktionsschritte unter „Befu
 
 **Status 2026-05-08 (dritter Hardware-Fail): FAILED → weiter erweiterter Code-Stand vorbereitet, Hardware-Retest steht aus**
 
+**Update 2026-05-08 (Phase-10C Foundation+Legacy Hardening):** Phase-10C Foundation+Legacy Hardening, **kein Apple-Action erforderlich**. Heatmap densityPointCap=500_000 + Truncation-Flag, ExportPreview Doppel-Iter entfernt, derived_cache Purge-API (`pruneDerivedCache(maxEntries:)` + `deleteDerivedCache(olderThan:)`), Build-Warnings (visionOS, unused `withUnsafeMutableBytes`) bereinigt; Overview `scanCandidates` bewusst nicht angefasst (P1, Risiko HOCH; bereits bounded). Store-Pfad bleibt default OFF. **46-MB-Gate-Status: FAILED / pending hardware retest** (verbatim erhalten). Kein Hardware-Pass, kein TestFlight-/Review-Claim aus diesem Commit.
+
 **Update 2026-05-08 (Phase-10B Weg 3 — Foundation-only PointLayer/Budget):** Phase-10B Foundation-only Änderungen (zentraler `LocalTimelineMapPerformanceBudget` + `LocalTimelineMapPointLayerProvider` + Modelle), **kein Apple-Action erforderlich**. Store-Pfad bleibt feature-flagged / default OFF; in keinem View aktiv; Legacy-Pfad unverändert. **46-MB-Gate-Status: FAILED / pending hardware retest** (verbatim erhalten). Kein Hardware-Pass, kein TestFlight-/Review-Claim aus diesem Commit.
 
 **Update 2026-05-08 (Phase-10A P1-A/B Weg 2):** Progress/Cancel-UI sichtbar verdrahtet in AppShell + Wrapper. Service-Layer + Presentation-Layer + SwiftUI-View Linux-getestet. **46-MB-Hardware-Gate bleibt FAILED / pending hardware retest** — auf iPhone 15 Pro Max nicht erneut validiert. Kein Hardware-Pass, kein TestFlight-/Review-Claim aus diesem Commit.

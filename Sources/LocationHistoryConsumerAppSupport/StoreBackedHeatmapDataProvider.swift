@@ -284,7 +284,7 @@ public final class StoreBackedHeatmapDataProvider {
     private static func readU32(_ d: Data, _ off: inout Int) -> UInt32 {
         var v: UInt32 = 0
         let s = d.startIndex + off
-        withUnsafeMutableBytes(of: &v) { dst in
+        _ = withUnsafeMutableBytes(of: &v) { dst in
             d.copyBytes(to: dst, from: s..<s+4)
         }
         off += 4
@@ -293,7 +293,7 @@ public final class StoreBackedHeatmapDataProvider {
     private static func readF64(_ d: Data, _ off: inout Int) -> Double {
         var bits: UInt64 = 0
         let s = d.startIndex + off
-        withUnsafeMutableBytes(of: &bits) { dst in
+        _ = withUnsafeMutableBytes(of: &bits) { dst in
             d.copyBytes(to: dst, from: s..<s+8)
         }
         off += 8

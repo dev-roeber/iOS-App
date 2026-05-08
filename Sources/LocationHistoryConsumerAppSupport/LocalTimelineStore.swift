@@ -285,6 +285,77 @@ public final class LocalTimelineStore {
     /// Anzahl Cache-Einträge gesamt (über alle Imports/Kinds).
     public func countDerivedCache() throws -> Int { try countRows(in: "derived_cache") }
 
+    /// Phase-10C — löscht alle Cache-Einträge, deren `created_at` lexikographisch
+    /// kleiner als `cutoff` ist. `created_at` wird als ISO-8601-String gespeichert,
+    /// sodass lexikographische und zeitliche Ordnung übereinstimmen.
+    /// `cacheKind == nil` purge-t alle Kinds.
+    public func deleteDerivedCache(olderThan cutoff: String, cacheKind: String? = nil) throws {
+        let kindPredicate = cacheKind.map { _ in "AND cache_kind = ?" } ?? ""
+        let sql = "DELETE FROM derived_cache WHERE created_at < ? \(kindPredicate);"
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: cutoff, name: "created_at")
+        if let cacheKind {
+            try bindText(stmt, index: 2, value: cacheKind, name: "cache_kind")
+        }
+        let rc = sqlite3_step(stmt)
+        guard rc == SQLITE_DONE else { throw stepError(rc: rc) }
+    }
+
+    /// Phase-10C — Entry-Count-basierter Prune. Hält die Cache-Tabelle (optional
+    /// pro `cacheKind`) auf höchstens `maxEntries` Einträge. Älteste werden zuerst
+    /// gelöscht (`ORDER BY created_at ASC, version ASC`). Nutzt den Index
+    /// `idx_derived_cache_kind_created`. Liefert die Anzahl gelöschter Einträge.
+    @discardableResult
+    public func pruneDerivedCache(maxEntries: Int, cacheKind: String? = nil) throws -> Int {
+        precondition(maxEntries >= 0, "maxEntries must be >= 0")
+        let countSQL: String
+        let deleteSQL: String
+        if let cacheKind {
+            countSQL = "SELECT COUNT(*) FROM derived_cache WHERE cache_kind = ?;"
+            deleteSQL = """
+            DELETE FROM derived_cache WHERE id IN (
+              SELECT id FROM derived_cache WHERE cache_kind = ?
+              ORDER BY created_at ASC, version ASC LIMIT ?
+            );
+            """
+            let cs = try prepare(countSQL)
+            defer { sqlite3_finalize(cs) }
+            try bindText(cs, index: 1, value: cacheKind, name: "cache_kind")
+            guard sqlite3_step(cs) == SQLITE_ROW else { return 0 }
+            let total = Int(sqlite3_column_int64(cs, 0))
+            let toDelete = max(0, total - maxEntries)
+            if toDelete == 0 { return 0 }
+            let ds = try prepare(deleteSQL)
+            defer { sqlite3_finalize(ds) }
+            try bindText(ds, index: 1, value: cacheKind, name: "cache_kind")
+            try bindInt(ds, index: 2, value: Int32(toDelete), name: "limit")
+            let rc = sqlite3_step(ds)
+            guard rc == SQLITE_DONE else { throw stepError(rc: rc) }
+            return toDelete
+        } else {
+            countSQL = "SELECT COUNT(*) FROM derived_cache;"
+            deleteSQL = """
+            DELETE FROM derived_cache WHERE id IN (
+              SELECT id FROM derived_cache
+              ORDER BY created_at ASC, version ASC LIMIT ?
+            );
+            """
+            let cs = try prepare(countSQL)
+            defer { sqlite3_finalize(cs) }
+            guard sqlite3_step(cs) == SQLITE_ROW else { return 0 }
+            let total = Int(sqlite3_column_int64(cs, 0))
+            let toDelete = max(0, total - maxEntries)
+            if toDelete == 0 { return 0 }
+            let ds = try prepare(deleteSQL)
+            defer { sqlite3_finalize(ds) }
+            try bindInt(ds, index: 1, value: Int32(toDelete), name: "limit")
+            let rc = sqlite3_step(ds)
+            guard rc == SQLITE_DONE else { throw stepError(rc: rc) }
+            return toDelete
+        }
+    }
+
     public func updateDaySummary(id: String, routeCount: Int, visitCount: Int, distanceM: Double) throws {
         let sql = """
         UPDATE days SET route_count = ?, visit_count = ?, distance_m = ? WHERE id = ?;

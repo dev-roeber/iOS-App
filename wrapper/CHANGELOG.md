@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-05-08 — Phase-10C Legacy hardening
+- Phase-10C Legacy hardening (Wrapper-Pfad nicht direkt betroffen; Store-Pfad weiterhin default OFF).
+- Heatmap densityPointCap=500_000 + Truncation-Flag, ExportPreview Doppel-Iter entfernt, derived_cache Purge-API, Build-Warnings (visionOS, unused withUnsafeMutableBytes) bereinigt — alles im Core-Paket. Wrapper-Bundle/Signing/Plist unverändert.
+- 46-MB-Hardware-Gate bleibt FAILED / pending hardware retest.
+
 ## 2026-05-08 — Phase-10B (Weg 3) Foundation-only Provider hinzugefügt
 - Phase-10B Foundation-only Provider hinzugefügt (Wrapper-Pfad nicht betroffen, default OFF).
 - Zentraler `LocalTimelineMapPerformanceBudget` + `LocalTimelineMapPointLayerProvider` + Modelle im Core-Paket. Wrapper-Code nicht angefasst; Wrapper-Bundle/Signing/Plist unverändert.

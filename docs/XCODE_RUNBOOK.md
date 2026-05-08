@@ -14,6 +14,10 @@ Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 
 Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmentierte `Insights`, gespeicherte lokale Live-Tracks und optionalen nutzergesteuerten Upload akzeptierter Live-Recording-Punkte. Weiterhin nicht Teil dieses Runbooks sind Producer-Logik, Cloud-/Account-Sync fuer importierte History und unbewiesene Apple-Review-Claims.
 
+## Phase-10C Heatmap-Cap-Verifikation — Mac/Xcode-Pflicht (2026-05-08)
+
+Phase-10C Heatmap-Cap-Verhalten (`AppHeatmapModel.densityPointCap = 500_000` + `HeatmapStats.truncatedDensityPoints`) ist unter MapKit/SwiftUI auf echtem Gerät zu verifizieren. Truncation-UX-Hinweis (UI muss kommunizieren, dass die Heatmap bei Cap-Treffer gekürzt ist) ist **Mac/Xcode-Pflicht** — auf Linux nicht überprüfbar. Legacy-Pfad-Verhalten ist nur bei Extremfällen (>500k density points) sichtbar. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+
 ## Phase-10B (Weg 3) PointLayer-UI-Hook — Mac/Xcode-Pflicht (2026-05-08)
 
 Phase-10B PointLayer-UI-Hook in `LocalTimelineDayMapView` ist **Mac/Xcode-Pflicht** (MKMapView-Annotations + SwiftUI-Map.points werden nur dort getestet). Foundation-only Modelle (`LocalTimelineMapPointLayerModels.swift`) und Provider (`LocalTimelineMapPointLayerProvider.swift`) sind eingecheckt und Linux-getestet; UI-Verdrahtung in `LocalTimelineDayMapViewState` + `LocalTimelineDayMapView` ist WIP. Store-Pfad bleibt feature-flagged / default OFF. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).

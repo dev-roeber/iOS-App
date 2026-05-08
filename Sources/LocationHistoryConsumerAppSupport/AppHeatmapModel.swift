@@ -5,16 +5,42 @@ import LocationHistoryConsumer
 
 /// Aggregated statistics about the heatmap dataset — surfaced in the
 /// sheet header so users can see "what they're looking at" at a glance.
+///
+/// Phase-10C: zusätzlich Truncation-Signale, falls der Sammel-Loop in
+/// `AppHeatmapModel.startPrecomputation` durch das harte Density-Budget
+/// (`AppHeatmapModel.densityPointCap`) limitiert wurde.
 struct HeatmapStats: Equatable {
     let totalPoints: Int
     let dayCount: Int
     let firstDate: String?
     let lastDate: String?
+    let truncatedDensityPoints: Bool
+
+    init(totalPoints: Int,
+         dayCount: Int,
+         firstDate: String?,
+         lastDate: String?,
+         truncatedDensityPoints: Bool = false) {
+        self.totalPoints = totalPoints
+        self.dayCount = dayCount
+        self.firstDate = firstDate
+        self.lastDate = lastDate
+        self.truncatedDensityPoints = truncatedDensityPoints
+    }
 }
 
 @available(iOS 17.0, macOS 14.0, *)
 @Observable @MainActor
 final class AppHeatmapModel {
+    /// Phase-10C — hartes Cap für die Anzahl der `WeightedPoint`-Einträge,
+    /// die `startPrecomputation` aus dem Export sammelt. Größere Datensätze
+    /// erzeugen ein `HeatmapStats.truncatedDensityPoints`-Signal, statt
+    /// das Array unbounded wachsen zu lassen. 500 000 Punkte korrespondieren
+    /// grob mit dem oberen Ende eines typischen Privatprofils auf einem
+    /// iPhone 15 Pro Max bei medium LOD und liegen deutlich unter Jetsam-
+    /// Schwellen für `WeightedPoint` (≈ 24 B / Eintrag → ≈ 12 MB).
+    static let densityPointCap: Int = 500_000
+
     var visibleCells: [HeatCell] = []
     var isCalculating = false
     var initialCenter: CLLocationCoordinate2D?
@@ -42,13 +68,22 @@ final class AppHeatmapModel {
         isCalculating = true
         let snapshot = export
 
+        let cap = Self.densityPointCap
+
         Task.detached(priority: .userInitiated) {
             var points: [WeightedPoint] = []
             var dayDates: [String] = []
-            for day in snapshot.data.days {
+            var truncated = false
+            // Phase-10C: hartes Cap auf den Sammel-Loop. Sobald `points.count`
+            // den Schwellwert erreicht, wird die Iteration abgebrochen und
+            // `HeatmapStats.truncatedDensityPoints` signalisiert. Das schützt
+            // gegen Jetsam bei extremen Datensätzen, ohne die Reihenfolge der
+            // ersten Tage/Visits/Paths/Activities zu verändern.
+            collect: for day in snapshot.data.days {
                 dayDates.append(day.date)
                 for visit in day.visits {
                     if let lat = visit.lat, let lon = visit.lon {
+                        if points.count >= cap { truncated = true; break collect }
                         points.append(WeightedPoint(lat: lat, lon: lon, weight: 3))
                     }
                 }
@@ -58,15 +93,18 @@ final class AppHeatmapModel {
                     // flatCoordinates (wenn valide), sonst points-fallback.
                     // Hybrid-Daten zählen genau einmal.
                     for sample in AppHeatmapPathSampler.samples(forPath: path) {
+                        if points.count >= cap { truncated = true; break collect }
                         points.append(WeightedPoint(lat: sample.lat, lon: sample.lon, weight: 1))
                     }
                 }
                 for activity in day.activities {
                     let split = AppHeatmapPathSampler.samples(forActivity: activity)
                     for marker in split.markers {
+                        if points.count >= cap { truncated = true; break collect }
                         points.append(WeightedPoint(lat: marker.lat, lon: marker.lon, weight: 1))
                     }
                     for geo in split.geometry {
+                        if points.count >= cap { truncated = true; break collect }
                         points.append(WeightedPoint(lat: geo.lat, lon: geo.lon, weight: 1))
                     }
                 }
@@ -94,7 +132,8 @@ final class AppHeatmapModel {
                 totalPoints: completedPoints.count,
                 dayCount: sortedDates.count,
                 firstDate: sortedDates.first,
-                lastDate: sortedDates.last
+                lastDate: sortedDates.last,
+                truncatedDensityPoints: truncated
             )
 
             await MainActor.run {

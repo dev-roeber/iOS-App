@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-05-08 — Phase-10C — Legacy hardening
+Phase-10C — Legacy hardening: Heatmap densityPoint Cap (500k) + truncation signal; ExportPreview Doppel-Iteration entfernt; derived_cache `pruneDerivedCache(maxEntries:)` + `deleteDerivedCache(olderThan:)`; Build-Warnings (visionOS, unused withUnsafeMutableBytes) bereinigt. Overview scanCandidates absichtlich nicht umgebaut (Risiko HOCH; bereits bounded via pointBudget=2M + candidateStorageCap=512 off-Main). Store-Pfad bleibt default OFF. 46-MB-Gate FAILED / pending hardware retest.
+
 ## 2026-05-08 — Phase-10B (Weg 3) — Foundation-only PointLayer-Provider und zentraler PerformanceBudget
 Phase-10B (Weg 3) — Foundation-only PointLayer-Provider und zentraler PerformanceBudget. Adaptive detail-level-/zoom-abhängige Budgets ersetzen die starre 200-Routen-Vorstellung im Store-Pfad. Legacy-Pfad unverändert. Store bleibt pre-production / feature-flagged / default OFF. 46-MB-Gate bleibt FAILED / pending hardware retest.
 

@@ -2,6 +2,28 @@
 
 > Status: Audit only — keine Renderer-Migration in diesem Commit. Erstellt im Rahmen der P0-Untersuchung des 46-MB-Google-Timeline-Imports (3. Hardware-Fail 2026-05-07T15:10:44+02:00 nach 95 156 ms, Jetsam auf iPhone 15 Pro Max).
 
+## Phase-10C Legacy Hardening (2026-05-08)
+
+> Status: **Heatmap densityPointCap + ExportPreview Doppel-Iter + derived_cache Purge-API + Build-Warnings DONE; Overview scanCandidates Refactor offen (P1, Risiko HOCH)**. Store-Pfad bleibt feature-flagged / default OFF. Legacy-Pfad-Verhalten unverändert. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+
+- **Heatmap densityPointCap = 500_000 + Truncation-Flag**: `AppHeatmapModel.startPrecomputation` bricht den Sammel-Loop kontrolliert ab, sobald `densityPoints` den Cap erreicht; `HeatmapStats.truncatedDensityPoints: Bool` signalisiert die Kürzung an die UI. Datei: `Sources/LocationHistoryConsumerAppSupport/AppHeatmapModel.swift`. Cap nur bei Extremfällen sichtbar; bestehende Heatmap-UX unverändert.
+- **ExportPreview Doppel-Iter entfernt**: `ExportPreviewData` materialisierte `path.points` zweimal (`map { coords }` + `map { timestamps }`). Jetzt: ein Loop mit `reservedCapacity`. Semantik unverändert. Datei: `Sources/LocationHistoryConsumerAppSupport/ExportPreviewData.swift`.
+- **derived_cache Purge-API**: `LocalTimelineStore.deleteDerivedCache(olderThan:cacheKind:)` und `pruneDerivedCache(maxEntries:cacheKind:)` als offizielles Cache-Lifecycle-Werkzeug. `deleteAll` löscht weiter `derived_cache` (FK-CASCADE-konform). Tests: `LocalTimelineDerivedCachePurgeTests.swift` (8 Cases, Linux-grün).
+- **Warnings cleared**: `LHCollapsibleMapHeader.swift:199/293` `os(iOS) || os(visionOS)` → `os(iOS)` (visionOS auf Swift 5.9 Linux unbekannt; visionOS-Support nicht im Scope). `StoreBackedHeatmapDataProvider.swift:287/296` unused `withUnsafeMutableBytes` Result via `_ =` discardiert.
+
+### Overview scanCandidates — bekannter Hotspot, P1
+
+`AppOverviewTracksMapView.scanCandidates` ist in Phase-10C **bewusst nicht angefasst worden**. Score und Bounds werden aktuell auf full coords berechnet (~Z. 720–725); ein lazy/streaming Refactoring würde Test-Assertions zur Score-Reihenfolge brechen → Risiko **HOCH**.
+
+Caps-Stand (Legacy, bereits aktiv):
+
+- `pointBudget = 2_000_000` global (L648).
+- `candidateStorageCap = 512` pro Route (L657).
+- `overlayLimit = 150–300` pro Profil (L580–617).
+- `nonisolated static` + `Task.detached` → off-Main.
+
+**Refactor-Skizze (zukünftig)**: Score/Bounds zuerst streamend ermitteln (kein Materialisieren der full coords), dann Decimate streamend. Test-Erwartungen zur Score-Reihenfolge müssen mitwandern.
+
 ## Phase-10B PointLayer & Adaptive Budget (2026-05-08)
 
 > Status: **Foundation-only**. Modelle + Provider eingecheckt; in **keinem** View aktiv. UI-Verdrahtung in `LocalTimelineDayMapViewState` + `LocalTimelineDayMapView` ist WIP. Store-Pfad bleibt feature-flagged / default OFF. Legacy-Pfad **unverändert**. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).

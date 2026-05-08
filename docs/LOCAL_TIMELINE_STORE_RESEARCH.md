@@ -782,3 +782,13 @@ Bindend an das offene 46-MB-Hardware-Retest-Ergebnis (HEAD `ebd8146`):
 - **Adaptive Budgets** (`Sources/LocationHistoryConsumerAppSupport/LocalTimelineMapPerformanceBudget.swift`): zentraler Budget-Typ, detail-level-/zoom-abhängig. Defaults overview 24/256/1500/8/256, low 48/512/3000/16/512, medium 96/1024/6000/32/1024, high 192/2048/12000/64/2048; `dayMap`-Profil 12/64/800/12/256. Ersetzt im Store-Pfad die starre 200-Routen-Vorstellung durch `maxVisibleRoutes` (UI-bounded) + `maxRouteCandidates` (Provider-Over-fetch).
 - **Lazy CoordBlobIterator**: pro Pfad, kein vollständiger `[Double]`-Buffer; deterministische Ausgabe.
 - **Status**: Modelle + Provider only — **in keinem View aktiv**. UI-Verdrahtung in `LocalTimelineDayMapViewState`/`LocalTimelineDayMapView` ist WIP. Legacy-Pfad unverändert. Store-Pfad bleibt default OFF. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+
+## Phase-10C-Snapshot (2026-05-08, Legacy hardening — derived_cache Purge-API)
+
+- **derived_cache Purge-API** ist ab Phase-10C **das offizielle Cache-Lifecycle-Werkzeug** für Store-backed Heatmap-LOD- und zukünftige Derived-Caches:
+  - `LocalTimelineStore.deleteDerivedCache(olderThan: Date, cacheKind: String?)` — TTL-basiertes Purge.
+  - `LocalTimelineStore.pruneDerivedCache(maxEntries: Int, cacheKind: String?)` — Größen-basiertes Purge (LRU-artig auf `created`).
+  - `deleteAll` löscht weiter `derived_cache` (FK-CASCADE-konform).
+- Tests: `LocalTimelineDerivedCachePurgeTests.swift` (8 Cases, Linux-grün).
+- Begleitend: `AppHeatmapModel.densityPointCap = 500_000` + `HeatmapStats.truncatedDensityPoints` (Legacy-Pfad), `ExportPreviewData` Doppel-Iter entfernt, Build-Warnings (visionOS, unused `withUnsafeMutableBytes`) bereinigt. Overview `scanCandidates` Refactor bleibt P1 (Risiko HOCH; bereits bounded).
+- Store-Pfad bleibt **default OFF**, pre-production / feature-flagged. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
