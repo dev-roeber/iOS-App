@@ -1,6 +1,52 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
-Status: **Research + Phase 1..8A abgeschlossen** (CoordBlob + isolierter SQLite-Store + Storage-Lifecycle + store-backed Streaming-Export + feature-flagged AppSession-Quelle + feature-flagged AppContentLoader-Hook über Envelope-Kapsel + Foundation-only Presentation/ViewState-Schicht + AppSessionState-Extension + Service-layer Envelope-Hook im AppFlow + **Foundation-only Store-backed Map Data Provider mit bounded Map-Domain-Modellen, stride-/budget-basiertem Route-Decimator und zwei additiven bbox-Metadata-Indizes**, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung, **kein SwiftUI-Map/MKMapView-Hook**). Folge-Commit nach `45e5fcf`.
+Status: **Research + Phase 1..8B abgeschlossen** (CoordBlob + isolierter SQLite-Store + Storage-Lifecycle + store-backed Streaming-Export + feature-flagged AppSession-Quelle + feature-flagged AppContentLoader-Hook über Envelope-Kapsel + Foundation-only Presentation/ViewState-Schicht + AppSessionState-Extension + Service-layer Envelope-Hook im AppFlow + Foundation-only Store-backed Map Data Provider mit bounded Map-Domain-Modellen, stride-/budget-basiertem Route-Decimator und zwei additiven bbox-Metadata-Indizes + **Heatmap-Doppelbug-Fix zentral via `AppHeatmapPathSampler` + `derived_cache`-Tabelle (additiv, FK CASCADE) + Foundation-only Heatmap-Modelle + deterministischer Grid-Aggregator + Foundation-only Store-backed Heatmap Data Provider mit bounded Sampling, Grid-LOD-Aggregation und cache-backed Roundtrip**, **nicht produktiv genutzt**, keine UI-/App-Flow-Umschaltung, **kein SwiftUI-Map/MKMapView-Hook**). Folge-Commit nach `45e5fcf`.
+
+## Phase-8B-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: Heatmap-Doppelbug-Fix zentral via Foundation-only Helper + `derived_cache`-Tabelle (additiv, FK CASCADE auf `imports.id`) + Foundation-only Heatmap-Modelle + deterministischer Grid-Aggregator + Foundation-only Store-backed Heatmap Data Provider mit bounded Sampling, Grid-LOD-Aggregation und cache-backed Roundtrip. **Schema bleibt `userVersion = 2`** — die neue Tabelle `derived_cache` und ihre zwei Indizes (`idx_derived_cache_import_kind_key`, `idx_derived_cache_kind_created`) sind **rein additiv** (`CREATE TABLE/INDEX IF NOT EXISTS`); keine semantische Schema-Änderung. RTree-`path_bounds` virtuelle Tabelle bleibt **kontrolliert deferred** (Begründung unten).
+- **NEU `Sources/LocationHistoryConsumer/AppHeatmapPathSampler.swift`**: Foundation-only Helper. Kanonische Priorität: `flatCoordinates` (wenn vorhanden und gerade Element-Anzahl), sonst `points` Fallback. Ungerade `flatCoordinates` gelten als malformed → kontrollierter Fallback auf `points` (dokumentierte Entscheidung).
+- **Geändert `Sources/LocationHistoryConsumer/AppHeatmapModel.swift`**: Zeilen 55-77 nutzen jetzt `AppHeatmapPathSampler` statt der bisherigen Doppel-Iteration über `path.points` UND `path.flatCoordinates`. **Heatmap-Doppelbug ist ab Phase 8B zentralisiert gefixt** (im `docs/MAP_ARCHITECTURE_AUDIT.md` §2 dokumentiert).
+- **NEU `Sources/LocationHistoryConsumerAppSupport/LocalTimelineHeatmapModels.swift`**: Foundation-only Modelle: `LocalTimelineHeatmapSample`, `LocalTimelineHeatmapSampleResponse`, `LocalTimelineHeatmapGridCell`, `LocalTimelineHeatmapLODResponse`, `LocalTimelineHeatmapCacheKey`, `LocalTimelineHeatmapCacheEncoding`. **Keine SwiftUI-/MapKit-/CoreLocation-Abhängigkeit.**
+- **NEU `Sources/LocationHistoryConsumerAppSupport/LocalTimelineHeatmapGridAggregator.swift`**: deterministischer Grid-Aggregator. Cell-Size je Detail-Level (`overview` 0.5°, `low` 0.1°, `medium` 0.02°, `high` 0.005°). Hartes `maxCells` und `maxSamplesConsumed` Limit. Stabile Sortierung (lat asc, lon asc).
+- **NEU `Sources/LocationHistoryConsumerAppSupport/StoreBackedHeatmapDataProvider.swift`**: Foundation-only Provider, kanonische Schnittstelle für künftige Heatmap-UI-Hooks.
+  - `heatmapSamples(importID:viewport:maxRoutes:maxPointsPerRoute:maxSamples:)` — **bounded sampling**, doppelt bounded (`maxRoutes` × `maxPointsPerRoute`) und total-bounded durch `maxSamples`. Pro Pfad **lazy** dekodiert via `CoordBlobIterator`; malformed `coord_blob` wird kontrolliert übersprungen.
+  - `heatmapLOD(importID:viewport:options:)` — Grid-Aggregation, **optional cache-backed via `derived_cache`**. Cache-Key über `LocalTimelineHeatmapCacheKey.make(...)` mit 1e-3°-Quantisierung. Cache-Payload-Codec deterministisch (Magic `'L8B1'`, little-endian).
+  - `clearHeatmapCache(importID:)` — Cache-Invalidierung.
+- **Geändert `LocalTimelineStoreSchema.swift`**: neue **additive** Tabelle `derived_cache` (`id`, `import_id`, `kind`, `key`, `payload`, `created_at`) mit FK auf `imports.id` und `ON DELETE CASCADE`. Zwei neue Indizes `idx_derived_cache_import_kind_key` und `idx_derived_cache_kind_created`. `userVersion` unverändert auf `2` (rein additiv).
+- **Geändert `LocalTimelineStore.swift`**: neue CRUD-APIs `putDerivedCache(...)`, `derivedCache(...)`, `deleteDerivedCache(...)`, `countDerivedCache(...)`. `deleteAll()` löscht jetzt zusätzlich auch `derived_cache`-Zeilen.
+- **Tests Linux-grün**, 4 Dateien:
+  - `AppHeatmapModelGeometryTests.swift` (7 Cases) — Sampler-Priorität flat-vor-points, ungerade flatCoordinates → fallback points, Doppelbug-Regression.
+  - `LocalTimelineHeatmapGridAggregatorTests.swift` (7 Cases) — deterministische Sort, Cell-Size pro Detail-Level monoton, `maxCells`/`maxSamplesConsumed` hard, leere/1-Sample stabil.
+  - `StoreBackedHeatmapDataProviderTests.swift` (11 Cases) — 50k synthetic store bounded sampling, cache hit/miss roundtrip, `clearHeatmapCache` Invalidierung, malformed `coord_blob` skip, viewport-Filter, options-quantisierung.
+  - `LocalTimelineRTreeCapabilityTests.swift` — dokumentiert RTree-Fallback (`paths.id` TEXT vs RTree INTEGER `docid`).
+- **Bounded-Read-Garantien (Phase-8B-Erweiterung der Phase-8A-Garantien 1-6)**:
+  7. `heatmapSamples` ist viewport-gebunden, **doppelt bounded** durch `maxRoutes` × `maxPointsPerRoute` und total-bounded durch `maxSamples`.
+  8. Pro Pfad wird **lazy** dekodiert via `CoordBlobIterator`; nie vollständige Import-Geometrie im RAM.
+  9. `heatmapLOD` aggregiert nur die bounded Samples; Cache-Payload trägt **Zellen, keine Roh-Punkte**.
+  10. `derived_cache` ist als abgeleitete Cache-Tabelle vom Import-Lifecycle abhängig (FK CASCADE) und über `clearHeatmapCache(importID:)` invalidierbar.
+- **RTree-Fallback-Begründung (kontrolliert deferred)**: Pfad-IDs in `paths` sind TEXT (`paths.id TEXT PRIMARY KEY`); SQLite RTree erwartet INTEGER `docid`. Ein Surrogate-Integer-Mapping wäre Schema-breaking (alle bestehenden Foreign Keys müssten umgestellt werden). Bbox-Index-Scan aus Phase 8A (`idx_paths_bounds_minmax`, `idx_paths_day_bounds`) bleibt aktiv und liefert linearen scan mit Index-Cover. `LocalTimelineRTreeCapabilityTests.swift` dokumentiert den Fallback.
+- **Harte Grenzen Phase 8B**:
+  - **KEIN SwiftUI-Map/MKMapView-Hook.**
+  - **KEIN UI-Heatmap-Renderer-Hook** (existierender SwiftUI-Heatmap-Renderer unverändert; konsumiert weiter `AppExport`).
+  - **KEIN AppExport-Rebuild aus Store.**
+  - **KEIN vollständiger `[Double]`-Import-Buffer.**
+  - **KEIN Live-Upload-Mix.**
+  - Store-Pfad bleibt **default AUS** / pre-production.
+  - Feature-Flag `LH2GPX_LOCAL_TIMELINE_STORE` unverändert.
+  - Schema additiv, **`userVersion` unverändert 2/2**.
+  - FileProtection-Status unverändert (Phase-4-Capsule).
+  - **46-MB-Gate bleibt FAILED / pending hardware retest** (Wortlaut verbatim aus `docs/APPLE_VERIFICATION_CHECKLIST.md`).
+  - Keine Hardware-/ASC-/TestFlight-Aussage.
+- **Bewusst nicht in Phase 8B** (= Phase 9 vor produktivem UI-Rollout):
+  - **RTree (`path_bounds` virtual table)** — würde Surrogate-Integer-Mapping erfordern (Schema-breaking).
+  - Wrapper/SwiftUI-Wiring (DayList/DayDetail/Map/Heatmap/Overview/Export/Settings) — Phase 9.
+  - Settings-Delete-UI-Button — Phase 9.
+  - Map/Heatmap/Overview UI-Hook gegen Provider — Phase 9.
+  - **Darwin FileProtection-Aktivierung** — offene Pflicht vor Rollout.
+  - Export-UI-Hook gegen `StoreBackedExportWriter` — Phase 9.
+  - 46-MB-Hardware-Retest, TestFlight/Xcode-Cloud — Mac/iPhone-Handoff, FAILED unverändert.
+  - Privacy-Doku-Update — vor Rollout zwingend.
 
 ## Phase-8A-Spike Snapshot (2026-05-08)
 

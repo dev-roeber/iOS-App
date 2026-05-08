@@ -186,6 +186,7 @@ public final class LocalTimelineStore {
             // make the dependent deletes redundant if we only nuked
             // `imports`. We delete from leaves first so the operation is
             // safe even if a future migration drops the FK chain.
+            try exec("DELETE FROM derived_cache;")
             try exec("DELETE FROM activities;")
             try exec("DELETE FROM visits;")
             try exec("DELETE FROM paths;")
@@ -193,6 +194,96 @@ public final class LocalTimelineStore {
             try exec("DELETE FROM imports;")
         }
     }
+
+    // MARK: - Phase-8B derived_cache CRUD
+
+    /// Schreibt einen Cache-Eintrag (Insert oder Replace per Primärschlüssel `id`).
+    /// `cache_kind`+`cache_key` sind anwendungsspezifisch (z. B. Heatmap-LOD).
+    public func putDerivedCache(_ row: DerivedCacheRow) throws {
+        let sql = """
+        INSERT OR REPLACE INTO derived_cache(id, import_id, cache_kind, cache_key,
+                                             created_at, version,
+                                             payload_encoding, payload_blob)
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        try bindText(stmt, index: 1, value: row.id, name: "id")
+        try bindOptionalText(stmt, index: 2, value: row.importId, name: "import_id")
+        try bindText(stmt, index: 3, value: row.cacheKind, name: "cache_kind")
+        try bindText(stmt, index: 4, value: row.cacheKey, name: "cache_key")
+        try bindText(stmt, index: 5, value: row.createdAt, name: "created_at")
+        try bindInt(stmt, index: 6, value: Int32(row.version), name: "version")
+        try bindText(stmt, index: 7, value: row.payloadEncoding, name: "payload_encoding")
+        try bindBlob(stmt, index: 8, value: row.payloadBlob, name: "payload_blob")
+        let rc = sqlite3_step(stmt)
+        if rc == SQLITE_CONSTRAINT { throw LocalTimelineStoreError.foreignKeyViolation }
+        guard rc == SQLITE_DONE else { throw stepError(rc: rc) }
+    }
+
+    /// Liest einen Cache-Eintrag per `(import_id, cache_kind, cache_key)`. Gibt
+    /// den jüngsten (höchste `version`, Tiebreak: created_at DESC) zurück, falls
+    /// mehrere Versionen vorhanden sind.
+    public func derivedCache(importId: String?,
+                             cacheKind: String,
+                             cacheKey: String) throws -> DerivedCacheRow? {
+        let importPredicate = (importId == nil) ? "import_id IS NULL" : "import_id = ?"
+        let sql = """
+        SELECT id, import_id, cache_kind, cache_key, created_at, version,
+               payload_encoding, payload_blob
+        FROM derived_cache
+        WHERE \(importPredicate) AND cache_kind = ? AND cache_key = ?
+        ORDER BY version DESC, created_at DESC
+        LIMIT 1;
+        """
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        var idx: Int32 = 1
+        if let importId {
+            try bindText(stmt, index: idx, value: importId, name: "import_id")
+            idx += 1
+        }
+        try bindText(stmt, index: idx, value: cacheKind, name: "cache_kind")
+        idx += 1
+        try bindText(stmt, index: idx, value: cacheKey, name: "cache_key")
+        let rc = sqlite3_step(stmt)
+        if rc == SQLITE_DONE { return nil }
+        guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+        return DerivedCacheRow(
+            id: stringColumn(stmt, 0) ?? "",
+            importId: stringColumn(stmt, 1),
+            cacheKind: stringColumn(stmt, 2) ?? "",
+            cacheKey: stringColumn(stmt, 3) ?? "",
+            createdAt: stringColumn(stmt, 4) ?? "",
+            version: Int(sqlite3_column_int64(stmt, 5)),
+            payloadEncoding: stringColumn(stmt, 6) ?? "",
+            payloadBlob: blobColumn(stmt, 7) ?? Data()
+        )
+    }
+
+    /// Löscht alle Cache-Einträge eines Imports und (optional) Cache-Kind.
+    /// `importId == nil` löscht **nur globale** Einträge. `cacheKind == nil`
+    /// löscht alle Kinds des angegebenen Scopes.
+    public func deleteDerivedCache(importId: String?, cacheKind: String?) throws {
+        let importPredicate = (importId == nil) ? "import_id IS NULL" : "import_id = ?"
+        let kindPredicate = cacheKind.map { _ in "AND cache_kind = ?" } ?? ""
+        let sql = "DELETE FROM derived_cache WHERE \(importPredicate) \(kindPredicate);"
+        let stmt = try prepare(sql)
+        defer { sqlite3_finalize(stmt) }
+        var idx: Int32 = 1
+        if let importId {
+            try bindText(stmt, index: idx, value: importId, name: "import_id")
+            idx += 1
+        }
+        if let cacheKind {
+            try bindText(stmt, index: idx, value: cacheKind, name: "cache_kind")
+        }
+        let rc = sqlite3_step(stmt)
+        guard rc == SQLITE_DONE else { throw stepError(rc: rc) }
+    }
+
+    /// Anzahl Cache-Einträge gesamt (über alle Imports/Kinds).
+    public func countDerivedCache() throws -> Int { try countRows(in: "derived_cache") }
 
     public func updateDaySummary(id: String, routeCount: Int, visitCount: Int, distanceM: Double) throws {
         let sql = """

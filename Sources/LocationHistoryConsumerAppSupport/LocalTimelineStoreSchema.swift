@@ -10,8 +10,13 @@ import Foundation
 /// additive — no v1 row is rewritten — and `PRAGMA user_version` is set
 /// to `userVersion` after every successful bootstrap pass.
 ///
-/// `derived_cache`, `path_bounds` (RTree) remain deferred — see
-/// `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`.
+/// Phase 8B (additive) ergänzt `derived_cache` — eine generische
+/// abgeleitete Cache-Tabelle für Heatmap-/LOD-Payloads. `userVersion`
+/// bleibt bei `2`, weil rein additive Tabellen/Indizes keinen
+/// semantischen Schema-Schritt darstellen. Das `path_bounds`-RTree
+/// bleibt **bewusst deferred**: Pfad-IDs sind `TEXT`, ein sauberes
+/// Surrogate-Integer-Mapping wäre Schema-breaking und ist nicht Teil
+/// von Phase 8B. Bbox-Index-Scan aus Phase 8A bleibt aktiv.
 ///
 /// The schema is not yet a contract.
 public enum LocalTimelineStoreSchema {
@@ -131,6 +136,36 @@ public enum LocalTimelineStoreSchema {
     CREATE INDEX IF NOT EXISTS idx_activities_day_id ON activities(day_id);
     """
 
+    /// Phase-8B — additive Cache-Tabelle für abgeleitete (z. B. Heatmap-/LOD-)
+    /// Payloads. Generisch BLOB; Konsumenten kapseln Encoding via
+    /// `payload_encoding`. `import_id` ist nullable, damit globale Caches
+    /// (`cache_kind="global-*"`) ebenfalls möglich sind. `ON DELETE CASCADE`
+    /// stellt sicher, dass Cache-Einträge eines Imports beim Import-Delete
+    /// mitverschwinden.
+    public static let createDerivedCacheSQL = """
+    CREATE TABLE IF NOT EXISTS derived_cache (
+        id               TEXT    PRIMARY KEY,
+        import_id        TEXT,
+        cache_kind       TEXT    NOT NULL,
+        cache_key        TEXT    NOT NULL,
+        created_at       TEXT    NOT NULL,
+        version          INTEGER NOT NULL,
+        payload_encoding TEXT    NOT NULL,
+        payload_blob     BLOB    NOT NULL,
+        FOREIGN KEY(import_id) REFERENCES imports(id) ON DELETE CASCADE
+    );
+    """
+
+    public static let createIndexDerivedCacheImportKindKeySQL = """
+    CREATE INDEX IF NOT EXISTS idx_derived_cache_import_kind_key
+        ON derived_cache(import_id, cache_kind, cache_key);
+    """
+
+    public static let createIndexDerivedCacheKindCreatedSQL = """
+    CREATE INDEX IF NOT EXISTS idx_derived_cache_kind_created
+        ON derived_cache(cache_kind, created_at);
+    """
+
     public static let allBootstrapStatements: [String] = [
         createImportsSQL,
         createDaysSQL,
@@ -146,7 +181,35 @@ public enum LocalTimelineStoreSchema {
         createIndexPathsDayBoundsSQL,
         createIndexVisitsDaySQL,
         createIndexActivitiesDaySQL,
+        createDerivedCacheSQL,
+        createIndexDerivedCacheImportKindKeySQL,
+        createIndexDerivedCacheKindCreatedSQL,
     ]
+}
+
+// MARK: - Derived cache row
+
+public struct DerivedCacheRow: Equatable {
+    public let id: String
+    public let importId: String?
+    public let cacheKind: String
+    public let cacheKey: String
+    public let createdAt: String
+    public let version: Int
+    public let payloadEncoding: String
+    public let payloadBlob: Data
+    public init(id: String, importId: String?, cacheKind: String, cacheKey: String,
+                createdAt: String, version: Int,
+                payloadEncoding: String, payloadBlob: Data) {
+        self.id = id
+        self.importId = importId
+        self.cacheKind = cacheKind
+        self.cacheKey = cacheKey
+        self.createdAt = createdAt
+        self.version = version
+        self.payloadEncoding = payloadEncoding
+        self.payloadBlob = payloadBlob
+    }
 }
 
 // MARK: - Row structs

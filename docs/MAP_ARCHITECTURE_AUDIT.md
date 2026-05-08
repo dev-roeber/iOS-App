@@ -2,6 +2,44 @@
 
 > Status: Audit only — keine Renderer-Migration in diesem Commit. Erstellt im Rahmen der P0-Untersuchung des 46-MB-Google-Timeline-Imports (3. Hardware-Fail 2026-05-07T15:10:44+02:00 nach 95 156 ms, Jetsam auf iPhone 15 Pro Max).
 
+## Phase 8B — Store-backed Heatmap LOD Cache + Heatmap-Doppelbug-Fix (Foundation only, 2026-05-08)
+
+> **Klarstellung**: Phase 8B führt **(a) den zentralisierten Heatmap-Doppelbug-Fix via Foundation-only `AppHeatmapPathSampler`** und **(b) eine Foundation-only Heatmap-Provider-Schnittstelle + `derived_cache`-Tabelle** über den LocalTimelineStore ein. **KEIN UI-Hook, KEIN UI-Heatmap-Renderer-Hook, KEIN SwiftUI-Map/MKMapView-Hook in dieser Phase.** Der existierende SwiftUI-Heatmap-Renderer (`AppHeatmapView` + `AppHeatmapModel`) bleibt im Renderer/MapKit-Pfad unverändert; lediglich die Punkt-Sampling-Logik in `AppHeatmapModel.swift:55-77` greift jetzt zentral auf `AppHeatmapPathSampler` zurück.
+
+- **Eingecheckt** (siehe `docs/LOCAL_TIMELINE_STORE_RESEARCH.md` Phase-8B-Snapshot):
+  - `Sources/LocationHistoryConsumer/AppHeatmapPathSampler.swift` — Foundation-only Helper. Kanonische Priorität: `flatCoordinates` wenn vorhanden + gerade Element-Anzahl, sonst `points` Fallback. Ungerade `flatCoordinates` gelten als malformed → kontrollierter Fallback auf `points`.
+  - `Sources/LocationHistoryConsumer/AppHeatmapModel.swift` — Zeilen 55-77 nutzen jetzt den Sampler statt der Doppel-Iteration. **Heatmap-Doppelbug ab Phase 8B zentralisiert gefixt.**
+  - `Sources/LocationHistoryConsumerAppSupport/LocalTimelineHeatmapModels.swift` — Foundation-only Modelle (`LocalTimelineHeatmapSample`, `LocalTimelineHeatmapSampleResponse`, `LocalTimelineHeatmapGridCell`, `LocalTimelineHeatmapLODResponse`, `LocalTimelineHeatmapCacheKey`, `LocalTimelineHeatmapCacheEncoding`).
+  - `Sources/LocationHistoryConsumerAppSupport/LocalTimelineHeatmapGridAggregator.swift` — deterministischer Grid-Aggregator. Cell-Size pro Detail-Level overview=0.5°/low=0.1°/medium=0.02°/high=0.005°. Hartes `maxCells`/`maxSamplesConsumed`. Stabile Sortierung lat asc, lon asc.
+  - `Sources/LocationHistoryConsumerAppSupport/StoreBackedHeatmapDataProvider.swift` — Foundation-only Provider mit `heatmapSamples(...)` (bounded sampling, doppelt bounded `maxRoutes` × `maxPointsPerRoute`, total-bounded `maxSamples`), `heatmapLOD(...)` (Grid-Aggregation, optional cache-backed via `derived_cache`), `clearHeatmapCache(importID:)`. Cache-Payload-Codec deterministisch (Magic `'L8B1'`, little-endian); Cache-Key über `LocalTimelineHeatmapCacheKey.make(...)` mit 1e-3°-Quantisierung; malformed `coord_blob` kontrolliert übersprungen.
+  - Schema-Änderung in `LocalTimelineStoreSchema.swift`: neue **additive** Tabelle `derived_cache` mit FK auf `imports.id` und `ON DELETE CASCADE`; zwei neue Indizes `idx_derived_cache_import_kind_key` und `idx_derived_cache_kind_created`. **`userVersion` bleibt 2** (rein additiv, keine semantische Schema-Änderung).
+  - `LocalTimelineStore.swift`: CRUD `putDerivedCache`, `derivedCache`, `deleteDerivedCache`, `countDerivedCache`. `deleteAll()` löscht jetzt auch `derived_cache`.
+  - 4 neue Test-Dateien Linux-grün (`AppHeatmapModelGeometryTests` 7, `LocalTimelineHeatmapGridAggregatorTests` 7, `StoreBackedHeatmapDataProviderTests` 11 inkl. 50k synthetic store + cache hit/clear roundtrip, `LocalTimelineRTreeCapabilityTests` dokumentiert RTree-Fallback).
+
+- **RTree (`path_bounds`) bleibt kontrolliert deferred**: `paths.id` ist TEXT (`paths.id TEXT PRIMARY KEY`); SQLite RTree erwartet INTEGER `docid`. Surrogate-Integer-Mapping wäre Schema-breaking (alle bestehenden FKs müssten umgestellt werden). Bbox-Index-Scan aus Phase 8A bleibt aktiv. `LocalTimelineRTreeCapabilityTests` dokumentiert den Fallback.
+
+- **Was Phase 8B NICHT tut**:
+  - **KEIN UI-Hook, KEIN UI-Heatmap-Renderer-Hook.** Der existierende SwiftUI-Heatmap-Renderer (`AppHeatmapView`) bleibt unverändert und konsumiert weiter `AppExport`.
+  - **KEIN MKMapView-Migrationsschritt.** §4/§5 dieses Audits bleiben **Roadmap, blockiert hinter dem 46-MB-Gate**.
+  - **KEIN AppExport-Rebuild aus dem Store.**
+  - **KEIN vollständiger `[Double]`-Import-Buffer.**
+  - **KEIN Live-Upload-Mix.**
+  - Feature-Flag `LH2GPX_LOCAL_TIMELINE_STORE` unverändert; Store-Pfad bleibt **default AUS** / pre-production.
+  - **46-MB-Gate bleibt FAILED / pending hardware retest.**
+
+- **Phase-9-Pflichten** (in 8B explizit deferred):
+  - RTree (`path_bounds` virtual table) — würde Surrogate-Integer-Mapping erfordern, Schema-breaking.
+  - Wrapper/SwiftUI-Wiring der Presentation-/ViewState-Schicht.
+  - Settings-Delete-UI-Button.
+  - Map/Heatmap/Overview UI-Hook gegen Provider.
+  - Darwin FileProtection-Aktivierung.
+  - Export-UI-Hook gegen `StoreBackedExportWriter`.
+  - 46-MB-Hardware-Retest, TestFlight/Xcode-Cloud Build ≥100.
+  - App-Flow-Umschaltung gegen Conditional-Gate.
+  - Privacy-Doku-Update vor Rollout.
+
+---
+
 ## Phase 8A — Store-backed Map Data Provider (Foundation only, 2026-05-08)
 
 > **Klarstellung**: Phase 8A führt **ausschließlich eine Foundation-only Provider-Schnittstelle** über den LocalTimelineStore ein. **KEIN UI-Hook, KEIN Renderer-Hook, KEIN SwiftUI-Map/MKMapView-Hook in dieser Phase.** Die heutigen Kartenflächen (Overview, Day Detail, Heatmap, Live Tracking, Export Preview) konsumieren **weiterhin den Legacy-`AppExport`-Pfad** — nichts an §1 oder §2 dieses Audits hat sich verschoben.
@@ -84,6 +122,9 @@ Das Modell `Path` (`Sources/LocationHistoryConsumer/AppExportModels.swift`) häl
 | `ExportPreviewDataBuilder.previewData` | `Sources/LocationHistoryConsumerAppSupport/ExportPreviewData.swift:46-58` | points-only | `path.points.map { DayMapCoordinate(...) }`; flatCoordinates ignoriert |
 
 ### Heatmap-Doppelbug (lines 55-77 `AppHeatmapModel.swift`)
+
+> **Update 2026-05-08 (Phase 8B)**: Der hier dokumentierte Doppelbug ist **ab Phase 8B zentralisiert gefixt** via Foundation-only Helper `Sources/LocationHistoryConsumer/AppHeatmapPathSampler.swift`. Kanonische Priorität: `flatCoordinates` (wenn vorhanden und gerade Element-Anzahl), sonst `points` Fallback; ungerade `flatCoordinates` gelten als malformed → kontrollierter Fallback auf `points`. `AppHeatmapModel.swift:55-77` ruft jetzt den Sampler auf statt beide Geometrien zu iterieren. 7 neue Linux-grüne Tests in `Tests/LocationHistoryConsumerTests/AppHeatmapModelGeometryTests.swift` decken Sampler-Priorität, Fallback und Doppelbug-Regression ab. Der unten zitierte Codeblock zeigt den **bisherigen** (vor Phase 8B) Zustand.
+
 
 ```swift
 for path in day.paths {

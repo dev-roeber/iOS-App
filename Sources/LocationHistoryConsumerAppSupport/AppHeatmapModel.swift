@@ -53,32 +53,21 @@ final class AppHeatmapModel {
                     }
                 }
                 for path in day.paths {
-                    // Heatmap density must read EITHER points OR flatCoordinates,
-                    // never both. Before this fix, a path that had both shapes
-                    // populated contributed every vertex twice and inflated
-                    // intensity. After the 2026-05-08 Google Timeline refactor,
-                    // imports arrive flat-only with `points: []`.
-                    if !path.points.isEmpty {
-                        for point in path.points {
-                            points.append(WeightedPoint(lat: point.lat, lon: point.lon, weight: 1))
-                        }
-                    } else if let flats = path.flatCoordinates {
-                        for index in stride(from: 0, to: flats.count - 1, by: 2) {
-                            points.append(WeightedPoint(lat: flats[index], lon: flats[index + 1], weight: 1))
-                        }
+                    // Phase-8B: Doppelbug-Fix zentralisiert in
+                    // `AppHeatmapPathSampler`. Kanonische Priorität:
+                    // flatCoordinates (wenn valide), sonst points-fallback.
+                    // Hybrid-Daten zählen genau einmal.
+                    for sample in AppHeatmapPathSampler.samples(forPath: path) {
+                        points.append(WeightedPoint(lat: sample.lat, lon: sample.lon, weight: 1))
                     }
                 }
                 for activity in day.activities {
-                    if let lat = activity.startLat, let lon = activity.startLon {
-                        points.append(WeightedPoint(lat: lat, lon: lon, weight: 1))
+                    let split = AppHeatmapPathSampler.samples(forActivity: activity)
+                    for marker in split.markers {
+                        points.append(WeightedPoint(lat: marker.lat, lon: marker.lon, weight: 1))
                     }
-                    if let lat = activity.endLat, let lon = activity.endLon {
-                        points.append(WeightedPoint(lat: lat, lon: lon, weight: 1))
-                    }
-                    if let flats = activity.flatCoordinates {
-                        for index in stride(from: 0, to: flats.count - 1, by: 2) {
-                            points.append(WeightedPoint(lat: flats[index], lon: flats[index + 1], weight: 1))
-                        }
+                    for geo in split.geometry {
+                        points.append(WeightedPoint(lat: geo.lat, lon: geo.lon, weight: 1))
                     }
                 }
             }
