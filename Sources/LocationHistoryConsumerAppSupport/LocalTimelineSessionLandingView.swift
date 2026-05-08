@@ -20,8 +20,16 @@ public struct LocalTimelineSessionLandingView: View {
     private let session: LocalTimelineSession
     private let onClear: () -> Void
     private let deletionPresentation: LocalTimelineDeletionPresentation?
+    private let dayBrowser: LocalTimelineDayBrowserSource?
+    private let selectedDayId: String?
+    private let onSelectDay: ((String?) -> Void)?
     @State private var deleteState: DeleteState = .idle
     @State private var deleteMessage: String?
+    @State private var listState: LocalTimelineDayListViewState?
+    @State private var listError: String?
+    @State private var detailState: LocalTimelineDayDetailViewStateAdapter.ViewState?
+    @State private var detailError: String?
+    @State private var detailDayId: String?
 
     private enum DeleteState: Equatable {
         case idle
@@ -32,10 +40,16 @@ public struct LocalTimelineSessionLandingView: View {
 
     public init(session: LocalTimelineSession,
                 onClear: @escaping () -> Void,
-                deletionPresentation: LocalTimelineDeletionPresentation? = nil) {
+                deletionPresentation: LocalTimelineDeletionPresentation? = nil,
+                dayBrowser: LocalTimelineDayBrowserSource? = nil,
+                selectedDayId: String? = nil,
+                onSelectDay: ((String?) -> Void)? = nil) {
         self.session = session
         self.onClear = onClear
         self.deletionPresentation = deletionPresentation
+        self.dayBrowser = dayBrowser
+        self.selectedDayId = selectedDayId
+        self.onSelectDay = onSelectDay
     }
 
     public var body: some View {
@@ -43,6 +57,9 @@ public struct LocalTimelineSessionLandingView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 summary
+                if dayBrowser != nil {
+                    dayListSection
+                }
                 if deletionPresentation != nil {
                     deleteSection
                 }
@@ -53,6 +70,94 @@ public struct LocalTimelineSessionLandingView: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityIdentifier("localTimeline.session.landing")
+        .onAppear { loadListIfNeeded() }
+        .sheet(item: detailBinding) { presented in
+            NavigationStack {
+                LocalTimelineDayDetailView(state: presented.viewState)
+                    .navigationTitle(presented.viewState.date)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { dismissDetail() }
+                        }
+                    }
+            }
+        }
+    }
+
+    private struct PresentedDetail: Identifiable {
+        let id: String
+        let viewState: LocalTimelineDayDetailViewStateAdapter.ViewState
+    }
+
+    private var detailBinding: Binding<PresentedDetail?> {
+        Binding(
+            get: {
+                guard let dayId = detailDayId, let detail = detailState else { return nil }
+                return PresentedDetail(id: dayId, viewState: detail)
+            },
+            set: { newValue in
+                if newValue == nil { dismissDetail() }
+            }
+        )
+    }
+
+    private func dismissDetail() {
+        detailDayId = nil
+        detailState = nil
+        detailError = nil
+        onSelectDay?(nil)
+    }
+
+    private func loadListIfNeeded() {
+        guard let browser = dayBrowser, listState == nil, listError == nil else { return }
+        do {
+            listState = try browser.loadList()
+        } catch {
+            listError = String(describing: error)
+        }
+    }
+
+    private func selectDay(_ row: LocalTimelineDayListViewState.Row) {
+        guard let browser = dayBrowser else { return }
+        onSelectDay?(row.dayId)
+        do {
+            detailState = try browser.loadDetail(row.dayId)
+            detailDayId = row.dayId
+            detailError = nil
+        } catch {
+            detailError = String(describing: error)
+            detailState = nil
+            detailDayId = row.dayId
+        }
+    }
+
+    @ViewBuilder
+    private var dayListSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Days")
+                .font(.headline)
+            if let listError {
+                Text("Could not load days: \(listError)")
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("localTimeline.session.dayList.error")
+            } else if let listState {
+                LocalTimelineDayListView(
+                    state: listState,
+                    selectedDayId: selectedDayId,
+                    onSelect: selectDay
+                )
+            } else {
+                ProgressView()
+                    .accessibilityIdentifier("localTimeline.session.dayList.loading")
+            }
+            if let detailError {
+                Text("Could not load day detail: \(detailError)")
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("localTimeline.session.dayDetail.error")
+            }
+        }
     }
 
     @ViewBuilder

@@ -2,6 +2,10 @@
 
 > Status: Audit only — keine Renderer-Migration in diesem Commit. Erstellt im Rahmen der P0-Untersuchung des 46-MB-Google-Timeline-Imports (3. Hardware-Fail 2026-05-07T15:10:44+02:00 nach 95 156 ms, Jetsam auf iPhone 15 Pro Max).
 
+## Phase 9B — Store-DayList/DayDetail UI feature-flagged aktiv, Map-Gate unverändert (2026-05-08)
+
+> **Hinweis Phase 9B**: Phase 9B ergänzt eine feature-flagged Store-**DayList + DayDetail-UI** (`LocalTimelineDayListView` / `LocalTimelineDayDetailView`, beide `#if canImport(SwiftUI)`-guarded) über die bestehende `LocalTimelineSessionLandingView`. **Phase 9B ändert NICHTS am Map-Gate-Status.** Der Map-/Heatmap-/Overview UI-Hook gegen `StoreBackedMapDataProvider`/`StoreBackedHeatmapDataProvider` bleibt **blockiert** hinter dem 46-MB-Gate (FAILED / pending hardware retest); §4/§5 dieses Audits bleiben Roadmap. DayDetail dekodiert **kein `coord_blob`** und rendert **keine Karte** — der Hinweis "Path points available (not decoded)" weist explizit darauf hin. Store-Pfad bleibt default AUS (`LH2GPX_LOCAL_TIMELINE_STORE` unverändert).
+
 ## Phase 9A — Wrapper/AppFlow verdrahtet, Map UI-Hook bleibt blockiert (2026-05-08)
 
 > **Hinweis Phase 9A**: Wrapper (`wrapper/LH2GPXWrapper/ContentView.swift`) und Package-AppShell (`Sources/LocationHistoryConsumerApp/AppShellRootView.swift`) sind jetzt auf den Envelope-Pfad (`loadImportedFileEnvelope` + `LH2GPXAppFlow.apply(envelopeOutcome:to:preserveOnFailure:)`) verdrahtet; eine Landing-View (`LocalTimelineSessionLandingView`) zeigt bei aktiver `localTimelineSession` Session-Metadaten + Lösch-Button. **Der Map-/Heatmap-/Overview UI-Hook gegen `StoreBackedMapDataProvider`/`StoreBackedHeatmapDataProvider` bleibt blockiert hinter dem 46-MB-Gate** (FAILED / pending hardware retest); §4/§5 dieses Audits bleiben Roadmap. Store-Pfad bleibt default AUS (`LH2GPX_LOCAL_TIMELINE_STORE` unverändert).

@@ -273,6 +273,11 @@ public struct AppSessionState {
     /// aktiv ist — die Legacy-Properties (`overview`, `daySummaries`, …)
     /// liefern weiterhin die bisherige Empty-Semantik ohne Crash.
     public private(set) var localTimelineSession: LocalTimelineSession?
+    /// Phase-9B — getrennt vom Legacy-`selectedDate`. Hält die aktuell
+    /// ausgewählte Store-Day-ID, solange `localTimelineSession != nil`.
+    /// Wird beim Setzen einer neuen Session, beim Laden Legacy-Contents
+    /// und in `clearContent` zurückgesetzt.
+    public private(set) var selectedLocalTimelineDayId: String?
     public private(set) var selectedDate: String?
     public private(set) var message: AppUserMessage?
     /// App-wide export selection. Cleared automatically on new import or content clear.
@@ -467,6 +472,7 @@ public struct AppSessionState {
         self.content = nil
         self.localTimelineSession = session
         selectedDate = nil
+        selectedLocalTimelineDayId = nil
         exportSelection.clearAll()
         activeDrilldownFilter = nil
         historyDateRangeFilter = HistoryDateRangeFilter(preset: .last7Days)
@@ -483,6 +489,7 @@ public struct AppSessionState {
         ImportMemoryProbe.log("session.beforeShowContent")
         self.content = content
         self.localTimelineSession = nil
+        selectedLocalTimelineDayId = nil
         selectedDate = content.selectedDate
         exportSelection.clearAll()
         activeDrilldownFilter = nil
@@ -557,10 +564,22 @@ public struct AppSessionState {
         selectedDate = nil
     }
 
+    /// Phase-9B — Store-Day-Auswahl. Akzeptiert nur, wenn eine
+    /// `localTimelineSession` aktiv ist; ohne Store-Session bleibt das Feld
+    /// nil. `nil` als Eingabe deselektiert explizit.
+    public mutating func selectLocalTimelineDay(_ dayId: String?) {
+        guard localTimelineSession != nil else {
+            selectedLocalTimelineDayId = nil
+            return
+        }
+        selectedLocalTimelineDayId = dayId
+    }
+
     public mutating func clearContent() {
         isLoading = false
         content = nil
         localTimelineSession = nil
+        selectedLocalTimelineDayId = nil
         selectedDate = nil
         exportSelection.clearAll()
         activeDrilldownFilter = nil

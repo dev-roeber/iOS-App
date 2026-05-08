@@ -33,13 +33,17 @@ struct AppShellRootView: View {
                     onClear: clearCurrentContent
                 )
             } else if let storeSession = session.localTimelineSession {
-                // Phase-9A — Store-Session aktiv (feature-flagged); Map/Heatmap/
-                // Overview UI gegen den Store bleibt Phase-9B-Pflicht.
+                // Phase-9B — Store-Session aktiv (feature-flagged); zeigt
+                // DayList/DayDetail über den Store. Map/Heatmap/Overview UI
+                // gegen den Store bleibt offen (Phase 10).
                 NavigationStack {
                     LocalTimelineSessionLandingView(
                         session: storeSession,
                         onClear: clearCurrentContent,
-                        deletionPresentation: LH2GPXAppFlow.makeProductionDeletionPresentation()
+                        deletionPresentation: LH2GPXAppFlow.makeProductionDeletionPresentation(),
+                        dayBrowser: LH2GPXAppFlow.makeProductionDayBrowserSource(for: storeSession),
+                        selectedDayId: session.selectedLocalTimelineDayId,
+                        onSelectDay: { session.selectLocalTimelineDay($0) }
                     )
                     .navigationTitle("LH2GPX")
                     .toolbar {

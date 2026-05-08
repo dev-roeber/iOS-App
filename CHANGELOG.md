@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [2026-05-08] — feat: wire local timeline day detail ui
+
+Phase-9B-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Feature-flagged Store-DayList + DayDetail-UI** über die bestehende Landing-View — Tester mit gesetztem `LH2GPX_LOCAL_TIMELINE_STORE` sehen nach einem Google-Timeline-Import jetzt eine Tagesliste (newest-first, Datum / Routen / Visits / Distanz) und können pro Tag eine sheet-basierte Detail-Ansicht öffnen (Datum, Visits, Activities, Path-Metadaten + "Path points available (not decoded)"-Hinweis). Surface bleibt **Spike / pre-production hinter Feature-Flag**, Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE`-Flag unverändert). **Map/Heatmap/Overview UI-Hook bleibt blockiert.** **46-MB-Gate bleibt FAILED / pending hardware retest.**
+
+- **Geändert** `AppSessionState` — neues Feld `selectedLocalTimelineDayId: String?` + Mutator `selectLocalTimelineDay(_:)`. Wird in `show(localTimeline:)`, `show(content:)` und `clearContent()` mitgenullt.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayBrowserSource.swift` — Foundation-only Source-Struct + `bind(session:reader:)` Convenience für die View-Hooks. **Bounded — kein `coord_blob`, keine Polylines.**
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayListView.swift` (`#if canImport(SwiftUI)`-guarded) — zeigt Tage newest-first mit Datum / Routen / Visits / Distanz. **Kein Map-Hook.**
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayDetailView.swift` (`#if canImport(SwiftUI)`-guarded) — zeigt Datum + Visits + Activities + Path-Metadaten + Hinweis "Path points available (not decoded)". **Kein eager `coord_blob`-Decoding, keine Map.**
+- **NEU** `LH2GPXAppFlow.makeProductionDayBrowserSource(for:)` — production Source-Factory; öffnet `LocalTimelineStore` an `session.storeURL`.
+- **Geändert** `LocalTimelineSessionLandingView` — erweitert um optionales `dayBrowser`, `selectedDayId`, `onSelectDay`. Bei aktiv: rendert Liste + sheet-basierte Detail-Navigation (NavigationStack im sheet). **Backward-kompatibel** (defaults nil).
+- **Geändert** `wrapper/LH2GPXWrapper/ContentView.swift` und `Sources/LocationHistoryConsumerApp/AppShellRootView.swift` — reichen `LH2GPXAppFlow.makeProductionDayBrowserSource(for: storeSession)` + Selection-Binding an die Landing-View durch.
+- **NEU Tests** `Tests/LocationHistoryConsumerTests/LocalTimelineDayBrowserSourceTests.swift`, `LocalTimelineSelectionStateTests.swift`.
+- **Harte Grenzen Phase 9B (verbatim)**:
+  - **KEIN Map-/Heatmap-/Overview-UI-Hook gegen Store.**
+  - **KEIN AppExport-Rebuild aus Store.**
+  - **KEIN vollständiger `[Double]`-Import-Buffer.**
+  - **KEIN eager `coord_blob`-Decoding** in DayList/DayDetail.
+  - **KEIN Default-Rollout** — Store-Pfad bleibt feature-flagged, default AUS.
+  - **KEIN Live-Upload-Mix.**
+  - **KEINE neuen externen Dependencies.**
+  - **KEINE Hardware-/AppStore-/TestFlight-Aussage.**
+  - **KEINE Darwin-FileProtection-Aktivierung** (bleibt offene Phase-10-Pflicht).
+  - **KEIN RTree** (bleibt deferred, TEXT path-IDs).
+  - **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim erhalten).
+
 ## [2026-05-08] — feat: wire local timeline day presentation
 
 Phase-9A-Iteration der LocalTimelineStore-Architektur (vgl. `docs/LOCAL_TIMELINE_STORE_RESEARCH.md`). **Wrapper- und Package-AppShell-Wiring der feature-flagged LocalTimelineSession + Settings-Delete-UI im Technical-Tab + neue Linux-testbare Routing-Helper-Funktion `LH2GPXAppFlow.apply(envelopeOutcome:to:preserveOnFailure:)`** — Surface bleibt **Spike / pre-production**, Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE`-Flag unverändert). **Map/Heatmap/Overview UI-Hook bleibt blockiert**; Store-DayList/DayDetail UI bleibt Phase 9B. **46-MB-Gate bleibt FAILED / pending hardware retest.**

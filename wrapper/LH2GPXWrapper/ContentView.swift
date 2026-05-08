@@ -51,14 +51,17 @@ struct ContentView: View {
                     onClear: clearCurrentContent
                 )
             } else if let storeSession = session.localTimelineSession {
-                // Phase-9A — Store-Session ist aktiv (feature-flagged). Zeigt
-                // Metadaten + Delete-Button. Map/Heatmap/Overview UI bleibt
-                // offene Phase-9B-Aufgabe.
+                // Phase-9B — Store-Session aktiv (feature-flagged). Zeigt
+                // Metadaten + DayList/DayDetail + Delete-Button.
+                // Map/Heatmap/Overview UI gegen den Store bleibt offen.
                 NavigationStack {
                     LocalTimelineSessionLandingView(
                         session: storeSession,
                         onClear: clearCurrentContent,
-                        deletionPresentation: LH2GPXAppFlow.makeProductionDeletionPresentation()
+                        deletionPresentation: LH2GPXAppFlow.makeProductionDeletionPresentation(),
+                        dayBrowser: LH2GPXAppFlow.makeProductionDayBrowserSource(for: storeSession),
+                        selectedDayId: session.selectedLocalTimelineDayId,
+                        onSelectDay: { session.selectLocalTimelineDay($0) }
                     )
                     .navigationTitle("LH2GPX")
                     .toolbar {

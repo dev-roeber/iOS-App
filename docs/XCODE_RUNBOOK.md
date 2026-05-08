@@ -18,16 +18,21 @@ Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmenti
 
 Manuelle Release-Risiko-Abnahme: siehe `docs/APPLE_VERIFICATION_CHECKLIST.md` Block „Manual Release Risk Acceptance Protocol". Deckt 46-MB-Crashfall, Live Activity / Dynamic Island / Lock Screen, iPad-Layout sowie ASC / TestFlight / Apple Review — alles vor App-Store-Submission durch Tester abzuhaken.
 
-## LocalTimelineStore (Phase 1..9A abgeschlossen, Wrapper/Settings-UI feature-flagged aktiv)
+## LocalTimelineStore (Phase 1..9B abgeschlossen, Wrapper/Settings/DayList/DayDetail-UI feature-flagged aktiv)
 
-### Phase 9A — Feature-Flag-Test-Handoff (2026-05-08)
+### Phase 9B — Feature-Flag-Test-Handoff (2026-05-08)
 
-Stand 2026-05-08: **Phase 9A** verdrahtet Wrapper + Package-AppShell auf den Envelope-Pfad und ergänzt eine Settings-Delete-UI sowie eine Landing-View für aktive Store-Sessions. **Tester können den Feature-Flag `LH2GPX_LOCAL_TIMELINE_STORE` setzen** (über `ProcessInfo.environment` oder Launch-Argument: `LH2GPX_LOCAL_TIMELINE_STORE=1`/`true`/`yes`/`on`, oder `--LH2GPX_LOCAL_TIMELINE_STORE` als bare arg, case-insensitive) und sehen dann nach einem Google-Timeline-JSON- oder ZIP-mit-genau-einem-Timeline-Entry-Import:
+Stand 2026-05-08: **Phase 9B** ergänzt eine feature-flagged Store-**DayList + sheet-basierte DayDetail-UI** über die bestehende Landing-View. Nach Setzen des Feature-Flags `LH2GPX_LOCAL_TIMELINE_STORE` (über `ProcessInfo.environment` oder Launch-Argument: `LH2GPX_LOCAL_TIMELINE_STORE=1`/`true`/`yes`/`on`, oder `--LH2GPX_LOCAL_TIMELINE_STORE` als bare arg, case-insensitive) und einem Google-Timeline-JSON- oder ZIP-mit-genau-einem-Timeline-Entry-Import sieht der Tester jetzt:
 
-1. die `LocalTimelineSessionLandingView` mit Session-Metadaten (Day-/Path-/Visit-/Activity-Counts, Total Distance, Date Range, Source Filename, Created/Imported At) und einen sichtbaren Delete-Button.
-2. in Settings → Technical → "Local Timeline Store" den Feature-Flag-Status (Enabled/Disabled), die Status-Zeile "Pre-production / Feature-flagged" und einen Lösch-Button "Delete imported local data" mit kontrollierten States idle/running/succeeded/failed.
+1. die `LocalTimelineSessionLandingView` mit Session-Metadaten (Day-/Path-/Visit-/Activity-Counts, Total Distance, Date Range, Source Filename, Created/Imported At), den sichtbaren Delete-Button **und** eine **Tagesliste** (`LocalTimelineDayListView`, newest-first, Datum / Routen / Visits / Distanz).
+2. **Tippen auf einen Tag öffnet die sheet-basierte DayDetail-Ansicht** (`LocalTimelineDayDetailView`) mit Datum, Visits, Activities, Path-Metadaten und dem Hinweis "Path points available (not decoded)" — **kein eager `coord_blob`-Decoding, keine Karte**.
+3. in Settings → Technical → "Local Timeline Store" weiterhin den Feature-Flag-Status (Enabled/Disabled), die Status-Zeile "Pre-production / Feature-flagged" und den Lösch-Button "Delete imported local data" mit kontrollierten States idle/running/succeeded/failed.
 
-**Map/Heatmap-UI ist weiterhin nicht hookt** — selbst mit gesetztem Flag wird kein Map/Heatmap/Overview UI-Hook gegen `StoreBackedMapDataProvider`/`StoreBackedHeatmapDataProvider` aktiv; das bleibt Phase-9-Pflicht (vollständige Store-DayList/DayDetail-UI ist Phase 9B). Default-Rollout bleibt Legacy-AppExport (Flag-Off → byte-identischer Legacy-Pfad). **Keine Darwin FileProtection-Aktivierung**, **keine neuen iOS-Build-Schritte**, **keine ASC/TestFlight-Aussage**, **46-MB-Gate bleibt FAILED / pending hardware retest unverändert**.
+**Map/Heatmap-UI bleibt weiterhin nicht hookt** — selbst mit gesetztem Flag und geöffnetem DayDetail wird kein Map/Heatmap/Overview UI-Hook gegen `StoreBackedMapDataProvider`/`StoreBackedHeatmapDataProvider` aktiv; das bleibt Phase-10-Pflicht. Default-Rollout bleibt Legacy-AppExport (Flag-Off → byte-identischer Legacy-Pfad). **Keine Darwin FileProtection-Aktivierung**, **keine neuen iOS-Build-Schritte**, **keine ASC/TestFlight-Aussage**, **46-MB-Gate bleibt FAILED / pending hardware retest unverändert**.
+
+### Phase 9A — Wrapper/AppFlow-Wiring + Settings-Delete-Button + Landing-View
+
+Phase 9A bleibt unverändert wirksam: Wrapper + Package-AppShell sind auf den Envelope-Pfad (`loadImportedFileEnvelope` + `LH2GPXAppFlow.apply(envelopeOutcome:to:preserveOnFailure:)`) verdrahtet; Landing-View und Settings-Delete-Button sind UI-aktiv hinter dem Feature-Flag.
 
 ### Phase 1..8B — Foundation-only, Linux-testbar, nicht UI-aktiv
 

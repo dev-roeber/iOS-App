@@ -1,5 +1,33 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
+## Phase-9B-Spike Snapshot (2026-05-08)
+
+- **Eingecheckt**: feature-flagged Store-**DayList + DayDetail-UI** über die bestehende `LocalTimelineSessionLandingView`. Surface bleibt **Spike / pre-production hinter Feature-Flag**; Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE` unverändert).
+- **Geändert** `AppSessionState` — neues Feld `selectedLocalTimelineDayId: String?` + Mutator `selectLocalTimelineDay(_:)`. Wird in `show(localTimeline:)`, `show(content:)` und `clearContent()` mitgenullt.
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayBrowserSource.swift` — Foundation-only Source-Struct + `bind(session:reader:)` Convenience für die View-Hooks. **Bounded — kein `coord_blob`, keine Polylines.**
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayListView.swift` (`#if canImport(SwiftUI)`-guarded) — Tage newest-first mit Datum / Routen / Visits / Distanz. **Kein Map-Hook.**
+- **NEU** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineDayDetailView.swift` (`#if canImport(SwiftUI)`-guarded) — Datum + Visits + Activities + Path-Metadaten + Hinweis "Path points available (not decoded)". **Kein eager `coord_blob`-Decoding, keine Map.**
+- **NEU** `LH2GPXAppFlow.makeProductionDayBrowserSource(for:)` — production Source-Factory; öffnet `LocalTimelineStore` an `session.storeURL`.
+- **Geändert** `LocalTimelineSessionLandingView` — erweitert um optionales `dayBrowser`/`selectedDayId`/`onSelectDay`. Bei aktiv: rendert Liste + sheet-basierte Detail-Navigation (NavigationStack im sheet). **Backward-kompatibel** (defaults nil).
+- **Geändert** Wrapper (`wrapper/LH2GPXWrapper/ContentView.swift`) und Package-AppShell (`Sources/LocationHistoryConsumerApp/AppShellRootView.swift`) reichen `LH2GPXAppFlow.makeProductionDayBrowserSource(for: storeSession)` + Selection-Binding durch.
+- **NEU Tests** `Tests/LocationHistoryConsumerTests/LocalTimelineDayBrowserSourceTests.swift`, `LocalTimelineSelectionStateTests.swift`.
+- **Harte Grenzen Phase 9B (verbatim)**:
+  - **KEIN Map-/Heatmap-/Overview-UI-Hook gegen Store.**
+  - **KEIN AppExport-Rebuild aus Store.**
+  - **KEIN vollständiger `[Double]`-Import-Buffer.**
+  - **KEIN eager `coord_blob`-Decoding** in DayList/DayDetail.
+  - **KEIN Default-Rollout** — Store-Pfad bleibt feature-flagged, default AUS.
+  - **KEIN Live-Upload-Mix.**
+  - **KEINE neuen externen Dependencies.**
+  - **KEINE Hardware-/AppStore-/TestFlight-Aussage.**
+  - **KEINE Darwin-FileProtection-Aktivierung** (bleibt offene Phase-10-Pflicht).
+  - **KEIN RTree** (bleibt deferred, TEXT path-IDs).
+  - **46-MB-Gate bleibt FAILED / pending hardware retest.**
+- **Phase-9 done** (DayList/DayDetail-UI ist erledigt; Map/Heatmap/Overview bleibt offen).
+- **Offene Phase-10-Pflichten** (vor produktivem Default-Rollout): Map/Heatmap/Overview UI-Hook gegen Provider; Darwin FileProtection-Aktivierung; 46-MB-Hardware-Retest; RTree `path_bounds` (Schema-breaking, deferred); Privacy-Doku-Update; Store-Default-Rollout; Export-UI-Hook; TestFlight/Xcode-Cloud Build ≥100.
+
+---
+
 ## Phase-9A-Spike Snapshot (2026-05-08)
 
 - **Eingecheckt**: Wrapper/AppFlow-Wiring + Settings-Delete-Button + Landing-View für aktive Store-Session. Surface bleibt **Spike / pre-production hinter Feature-Flag**; Store-Pfad **default AUS** (`LH2GPX_LOCAL_TIMELINE_STORE` unverändert).

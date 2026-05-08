@@ -170,6 +170,33 @@ public enum LH2GPXAppFlow {
         return LocalTimelineDeletionPresentation(service: service, isAvailable: true)
     }
 
+    /// Phase-9B — Convenience: liefert eine `LocalTimelineDayBrowserSource`,
+    /// die die DB an `session.storeURL` öffnet und an den Reader bindet.
+    /// Reader und Store werden vom zurückgegebenen Source-Closure am Leben
+    /// gehalten (closures capture). Ein nil-Return signalisiert dem Caller,
+    /// die DayList-UI zu unterdrücken (z. B. fehlende DB-Datei).
+    public static func makeProductionDayBrowserSource(
+        for session: LocalTimelineSession
+    ) -> LocalTimelineDayBrowserSource? {
+        guard let store = try? LocalTimelineStore(url: session.storeURL) else {
+            return nil
+        }
+        let reader = LocalTimelineStoreReader(store: store)
+        let listAdapter = LocalTimelineAppSessionAdapter(reader: reader, session: session)
+        let detailAdapter = LocalTimelineDayDetailViewStateAdapter(adapter: listAdapter)
+        return LocalTimelineDayBrowserSource(
+            session: session,
+            loadList: {
+                _ = store // capture
+                return try LocalTimelineDayListViewState.make(adapter: listAdapter)
+            },
+            loadDetail: { dayId in
+                _ = store
+                return try detailAdapter.viewState(forDayId: dayId)
+            }
+        )
+    }
+
     /// Phase-9A — verdrahtet den envelope-Outcome direkt in einen
     /// `AppSessionState`. Wird aus beiden App-Shells (wrapper/Package) und
     /// aus Linux-Tests aufgerufen, damit Routing-Logik nicht in SwiftUI-
