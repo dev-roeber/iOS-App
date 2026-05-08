@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [2026-05-08] — feat: add local timeline wal checkpoint recovery (P1-C + P1-D)
+
+Phase-10A-Folge des Deep Audits. Setzt **P1-C (WAL-Checkpoint-/Cleanup-Strategie)** und **P1-D (Recovery-Test für Mid-Import-Crash)** aus `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` § 13 um, ausschließlich im Store-Pfad.
+
+Neu (Linux-testbar, keine neue Dependency):
+
+- `LocalTimelineStore.checkpointWAL(mode:)`/`truncateWAL()`/`bestEffortTruncateWAL()` über `sqlite3_wal_checkpoint_v2` mit `WALCheckpointMode { passive, full, restart, truncate }` und `WALCheckpointInfo { framesInLog, framesCheckpointed }`. Default-Mode `.truncate` schreibt WAL-Frames zurück und kürzt `-wal` auf 0 Byte, sofern keine Reader die Datei halten.
+- Neuer Error-Case `LocalTimelineStoreError.checkpointFailed(code:message:)`. Hard-Fail bei expliziter API (`checkpointWAL`/`truncateWAL`); Best-Effort (`bestEffortTruncateWAL`) im nachgelagerten Cleanup, weil ein dort fehlschlagender Checkpoint den eigentlichen Vorgang nicht zerstören soll.
+
+Wiring (alle best-effort, Importerfolg/Cancel/Delete bleiben unangetastet, wenn Checkpoint scheitert):
+
+- `LocalTimelineImportWriter.finalize()` ruft `bestEffortTruncateWAL` nach erfolgreichem `COMMIT`.
+- `LocalTimelineImportWriter.cancel()` ruft `bestEffortTruncateWAL` nach `ROLLBACK`.
+- `LocalTimelineStoreLifecycle.deleteAllLocalTimelineData(store:)` ruft `bestEffortTruncateWAL` vor `store.close()` (vor dem File-Unlink von `store.sqlite`/`-wal`/`-shm`).
+- Reads (Reader-Pfade, einzelne Inserts) lösen **kein** Checkpoint aus — keine Performance-Falle, keine VACUUM-Orgie.
+
+Recovery-Verhalten (Phase-2-Schema unverändert; **keine** Schemaänderung nötig):
+
+- Die `imports`-Row wird inside `BEGIN IMMEDIATE` eingefügt — bei mid-import-Abbruch ohne `COMMIT` ist sie nie persistiert. Ein Status-Feld wäre redundant, weil bereits Transaktionsgrenzen jede Sichtbarkeit halbfertiger Imports verhindern. Dokumentiert in `docs/LOCAL_TIMELINE_STORE_RESEARCH.md` (Recovery-Sektion).
+- Recovery-Test simuliert abrupten Abbruch durch `store.close()` ohne `writer.finalize()`/`cancel()`; SQLite verwirft die offene Transaktion automatisch. **Linux-Simulation, kein echter iOS-Jetsam-Test** — Power-Loss-/Kernel-Kill-Verhalten auf Hardware bleibt eine separate Verifikation.
+
+Tests: 13 neue Cases (`LocalTimelineStoreWALCheckpointTests` 7, `LocalTimelineStoreRecoveryTests` 6) — alle Linux-grün. Vollsuite: **1345 / 2 skipped / 0 failed** (vorher 1332).
+
+**46-MB-Crashfall bleibt FAILED / pending hardware retest** (verbatim). Keine ASC/Review/Hardware-/TestFlight-Freigabe behauptet. LocalTimelineStore bleibt **pre-production / feature-flagged / default AUS**. Legacy-Pfad nicht regressiert. Keine vollständige Map-/Heatmap-/Overview-UI behauptet. UI-Cancel/Progress-Button (P1-A/P1-B-Folgeaufgabe) weiter offen.
+
 ## [2026-05-08] — feat: cancellable local timeline import progress (P1-A + P1-B)
 
 Phase-10A-Folge des Deep Audits. Setzt **P1-A (Import-Cancel-Pfad)** und **P1-B (Import-Progress-Surface)** aus `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` § 13 um, ausschließlich im Store-Pfad.

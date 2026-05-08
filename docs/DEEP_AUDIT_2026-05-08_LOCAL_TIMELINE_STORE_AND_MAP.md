@@ -273,12 +273,15 @@ Folgendes wird in diesem Audit **nicht** behauptet:
 - SwiftUI-Hook in Wrapper/AppShell/Landing für Counter-Anzeige und Cancel-Button. Service-API: `LocalTimelineImportController.progressSink`, `controller.cancellation`, `controller.cancel()`, `controller.latestProgress`, `controller.addObserver { … }`.
 - Aufwand S–M; Tests S (UI-Snapshot oder Wiring-Test).
 
-**P1-C — `PRAGMA wal_checkpoint(TRUNCATE)` nach `finalize` und `deleteAll`**
-- Aufwand S; Test: assert WAL-File schrumpft nach Aufruf.
+**P1-C — `PRAGMA wal_checkpoint(TRUNCATE)` nach `finalize` und `deleteAll`** — DONE 2026-05-08
+- Umsetzung: `LocalTimelineStore.checkpointWAL(mode:)`/`truncateWAL()`/`bestEffortTruncateWAL()` über `sqlite3_wal_checkpoint_v2`. Default-Mode `.truncate` schreibt WAL-Frames zurück und kürzt `-wal` auf 0 Byte, sofern keine Reader die Datei halten. Hard-Fail (`LocalTimelineStoreError.checkpointFailed`) bei expliziter API; Best-Effort-Variante (`bestEffortTruncateWAL` → `WALCheckpointInfo?`) im nachgelagerten Cleanup, weil ein dort fehlschlagender Checkpoint den eigentlichen Vorgang nicht zerstören soll.
+- Wiring: `LocalTimelineImportWriter.finalize()` und `.cancel()` und `LocalTimelineStoreLifecycle.deleteAllLocalTimelineData(store:)` rufen `bestEffortTruncateWAL`. Reads checkpointen nicht — keine Performance-Falle.
+- Tests: `LocalTimelineStoreWALCheckpointTests` (7 Cases): Empty/InsertedRows/AfterDeleteAll/Idempotent/PassiveMode/ThrowsAfterClose/BestEffortReturnsNilAfterClose.
 
-**P1-D — Recovery-Test (mid-Import-Crash)**
-- open → bulk-insert → close ohne commit → reopen → assert rows == 0.
-- Aufwand S.
+**P1-D — Recovery-Test (mid-Import-Crash)** — DONE 2026-05-08
+- Umsetzung: `LocalTimelineStoreRecoveryTests` (6 Cases) simulieren abrupten Abbruch durch `store.close()` ohne `writer.finalize()`/`writer.cancel()`; SQLite verwirft die offene `BEGIN IMMEDIATE`-Transaktion automatisch.
+- **Linux-Simulation, kein echter iOS-Jetsam-Test** (verbatim) — Power-Loss-/Kernel-Kill-Verhalten auf Hardware bleibt eine separate Verifikation.
+- Resultate: nach Reopen (a) keine `imports`-Row, (b) `days(forImportId:)` für Random-ID liefert `[]`, (c) neuer Import möglich, (d) `deleteAll()` möglich, (e) FK-Konsistenz unverändert. **Keine Schemaänderung** notwendig: `imports`-Row liegt inside `BEGIN IMMEDIATE`, mid-import-Abbruch hinterlässt keine sichtbare Partial-Import-Row. Ein Status-Feld (`importing`/`completed`/`cancelled`/`failed`) wäre redundant, weil bereits Transaktionsgrenzen jede Sichtbarkeit halbfertiger Imports verhindern.
 
 **P1-E — UX-Polish AppOptionsView Memory-Logging-Section**
 - Drei Felder in zwei Layern reorganisieren ("Build Configuration" / "Tester Override" / "Active Status"). Nach FIX-1 nicht mehr blocking, aber Klarheit verbessert.

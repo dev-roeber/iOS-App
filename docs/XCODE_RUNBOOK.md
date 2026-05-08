@@ -14,6 +14,25 @@ Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 
 Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmentierte `Insights`, gespeicherte lokale Live-Tracks und optionalen nutzergesteuerten Upload akzeptierter Live-Recording-Punkte. Weiterhin nicht Teil dieses Runbooks sind Producer-Logik, Cloud-/Account-Sync fuer importierte History und unbewiesene Apple-Review-Claims.
 
+## P1-C + P1-D: WAL-Checkpoint + Recovery-Test (2026-05-08)
+
+Phase-10A-Folgecommit nach Deep Audit. Setzt **P1-C (WAL-Checkpoint-/Cleanup-Strategie)** und **P1-D (Recovery-Test für Mid-Import-Crash)** aus `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` § 13 um, ausschließlich im Store-Pfad. Keine UI-Änderung; keine Schemaänderung; keine neue Dependency.
+
+Was lokal getestet werden sollte:
+
+1. `swift build` und `swift test` — erwartet **1345 / 2 skipped / 0 failed**.
+2. `swift test --filter LocalTimelineStoreWAL` und `swift test --filter LocalTimelineStoreRecovery` decken die neuen Cases ab; existierende `GoogleTimelineStoreImporter`/`LocalTimelineImport*`/`LocalTimelineStoreLifecycle`/`StoreBackedMap`/`StoreBackedHeatmap`/`StoreBackedExport`/`AppFlow`/`AppContentLoader`-Filter bleiben grün.
+
+API-Anker:
+
+- `let info = try store.truncateWAL()` — hard-fail.
+- `let info: LocalTimelineStore.WALCheckpointInfo? = store.bestEffortTruncateWAL()` — wirft nicht.
+- `LocalTimelineStoreError.checkpointFailed(code:message:)` als neue Fehlerquelle der expliziten API.
+
+Recovery-Vertrag (Linux-Simulation, **kein** echter iOS-Jetsam-Test):
+
+- `store.close()` ohne `writer.finalize()`/`writer.cancel()` ⇒ SQLite verwirft die offene `BEGIN IMMEDIATE`-Transaktion. Reopen ⇒ keine `imports`-Row, FK-Konsistenz erhalten, neuer Import + `deleteAll()` möglich. Power-Loss-/Kernel-Kill-Verhalten auf Hardware bleibt eine separate Verifikation.
+
 ## P1-A + P1-B: Cancellable Local Timeline Import Progress (2026-05-08)
 
 Phase-10A-Folgecommit nach Deep Audit. Setzt **P1-A (Import-Cancel-Pfad)** und **P1-B (Import-Progress-Surface)** aus `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` § 13 um, **ausschließlich im Store-Pfad**.

@@ -6,14 +6,16 @@ Diese Datei enthaelt bewusst nur offene, priorisierte Arbeit. Abgeschlossene ode
 
 ### Offen — P1-Rest nach Deep Audit 2026-05-08 (`docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md`)
 
-Im Audit als **P1** belegt; nach diesem Commit (P1-A + P1-B Service-/Presentation-Schicht erledigt) verbleibend:
+Im Audit als **P1** belegt; nach diesem Commit (P1-A + P1-B + P1-C + P1-D erledigt) verbleibend:
 
 1. **UI-Hook für Cancel + Progress** (Folge von P1-A/P1-B). Service-Layer (`LocalTimelineImportController`) ist verdrahtet und Linux-getestet; was fehlt, ist die SwiftUI-Anbindung in `AppShellRootView` / `wrapper/LH2GPXWrapper/ContentView` / `LocalTimelineSessionLandingView`: Cancel-Button im Loading-State, Progress-Counter (entries / visits / activities / paths / skipped / optional bytes), Cancel-Outcome-Hinweis. Reine UI-Aufgabe — Foundation-Layer ist stabil.
-2. **`PRAGMA wal_checkpoint(TRUNCATE)` nach `finalize` und `deleteAll`** (P1-C). Verhindert monotones DB-Wachstum.
-3. **Recovery-Test (App-Kill mid-Import)** (P1-D). open → bulk insert → close ohne commit → reopen → assert empty.
-4. **UX-Polish AppOptionsView Memory-Logging-Section** (P1-E). Drei Felder in zwei Layern (Build Configuration / Tester Override / Active Status) reorganisieren — nach FIX-1 nicht mehr blocking, aber Klarheit verbessert.
+2. **UX-Polish AppOptionsView Memory-Logging-Section** (P1-E). Drei Felder in zwei Layern (Build Configuration / Tester Override / Active Status) reorganisieren — nach FIX-1 nicht mehr blocking, aber Klarheit verbessert.
 
 P0 ist bewusst leer: keine produktiven Crashes/Datenverluste im Repo belegbar; das **46-MB-Hardware-Gate bleibt FAILED / pending hardware retest** (verbatim) als externe Verifikation.
+
+### Erledigt — P1-C + P1-D WAL-Checkpoint + Recovery-Test (2026-05-08)
+
+`LocalTimelineStore.checkpointWAL(mode:)`/`truncateWAL()`/`bestEffortTruncateWAL()` über `sqlite3_wal_checkpoint_v2`; Default `.truncate` schreibt Frames zurück und kürzt `-wal` auf 0 Byte. Hard-Fail bei expliziter API; Best-Effort im nachgelagerten Cleanup nach `finalize`/`cancel`/`deleteAllLocalTimelineData` (Importerfolg/Cancel/Delete bleiben unangetastet, wenn Checkpoint scheitert). Reads checkpointen **nicht**. **Keine Schemaänderung**: `imports`-Row liegt inside `BEGIN IMMEDIATE`, mid-import-Abbruch hinterlässt keine sichtbare Partial-Import-Row. Recovery-Test (`LocalTimelineStoreRecoveryTests`) simuliert abrupten Abbruch via `store.close()` ohne `finalize`/`cancel` — Linux-Simulation, **kein** echter iOS-Jetsam-Test. 13 neue Cases (Linux-grün), Vollsuite 1345 / 2 skipped / 0 failed.
 
 ### Erledigt — P1-A + P1-B Cancel/Progress (Service-Schicht) (2026-05-08)
 

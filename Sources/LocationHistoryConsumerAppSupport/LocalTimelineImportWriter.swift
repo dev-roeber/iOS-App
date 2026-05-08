@@ -259,6 +259,10 @@ public final class LocalTimelineImportWriter {
         try store.exec_COMMIT()
         transactionStarted = false
         finalized = true
+        // P1-C — best-effort WAL-Truncate nach erfolgreichem Import.
+        // Fehler hier dürfen den bereits committeten Import NICHT
+        // versenken; daher absichtlich `bestEffortTruncateWAL`.
+        _ = store.bestEffortTruncateWAL()
         let summary = LocalTimelineImportSummary(
             importId: importId,
             dayCount: days.count,
@@ -275,6 +279,9 @@ public final class LocalTimelineImportWriter {
         try? store.exec_ROLLBACK()
         transactionStarted = false
         finalized = true
+        // P1-C — nach Rollback WAL best-effort kürzen, damit ein
+        // halbgefülltes `-wal`-File nicht zurückbleibt.
+        _ = store.bestEffortTruncateWAL()
         days.removeAll(keepingCapacity: false)
     }
 

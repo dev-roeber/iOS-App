@@ -13,6 +13,7 @@ public enum LocalTimelineStoreError: Error, Equatable, CustomStringConvertible {
     case bindFailed(parameter: String, code: Int32)
     case foreignKeyViolation
     case notOpen
+    case checkpointFailed(code: Int32, message: String)
 
     public var description: String {
         switch self {
@@ -30,6 +31,8 @@ public enum LocalTimelineStoreError: Error, Equatable, CustomStringConvertible {
             return "foreignKeyViolation"
         case .notOpen:
             return "notOpen"
+        case let .checkpointFailed(code, message):
+            return "checkpointFailed(code: \(code), message: \(message))"
         }
     }
 }

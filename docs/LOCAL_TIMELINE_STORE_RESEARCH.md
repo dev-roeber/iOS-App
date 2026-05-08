@@ -1,5 +1,20 @@
 # LocalTimelineStore — Architektur- und Machbarkeitsprüfung
 
+## P1-C + P1-D — WAL-Checkpoint + Recovery (2026-05-08-Folgecommit)
+
+Phase-10A-Folge des Deep Audits. Der Store hat jetzt eine **explizite WAL-Checkpoint-API**, ein **best-effort Cleanup-Wiring** entlang Import/Cancel/Delete und einen **Linux-Recovery-Test** für mid-import-Abbrüche. Schema und Standard-Aktivierung sind unverändert.
+
+- **API-Oberfläche:** `LocalTimelineStore.checkpointWAL(mode:)`/`truncateWAL()`/`bestEffortTruncateWAL()`. `WALCheckpointMode { passive, full, restart, truncate }` mappt 1:1 auf SQLite's `SQLITE_CHECKPOINT_*`. Rückgabe `WALCheckpointInfo { framesInLog, framesCheckpointed }` — beide `-1`, wenn das WAL nicht aktiv ist (leerer Store / nie geschrieben).
+- **Strategie:**
+  - **Hard-Fail** (`LocalTimelineStoreError.checkpointFailed(code:message:)`) bei expliziter API. Auf `notOpen` wirft `truncateWAL` ebenfalls; `bestEffortTruncateWAL` liefert dort `nil`.
+  - **Best-Effort** im nachgelagerten Cleanup: `LocalTimelineImportWriter.finalize()` ruft nach `COMMIT` `bestEffortTruncateWAL`; `LocalTimelineImportWriter.cancel()` ruft nach `ROLLBACK` `bestEffortTruncateWAL`; `LocalTimelineStoreLifecycle.deleteAllLocalTimelineData(store:)` ruft vor `store.close()` `bestEffortTruncateWAL`. Reads (Reader-Pfade, einzelne Inserts) lösen **keinen** Checkpoint aus — keine Performance-Falle, keine VACUUM-Orgie.
+  - Default-Mode `.truncate` ist die bevorzugte Variante nach großen Imports/Delete/Cancel: schreibt WAL-Frames in die Hauptdatei zurück und kürzt `-wal` auf 0 Byte (sofern keine Reader die Datei halten).
+- **Recovery-Status:**
+  - **Keine Schemaänderung.** Die `imports`-Row wird inside `BEGIN IMMEDIATE` eingefügt — bei mid-import-Abbruch ohne `COMMIT` ist sie nie persistiert. Ein Status-Feld (`importing/completed/cancelled/failed`) wäre redundant, weil Transaktionsgrenzen jede Sichtbarkeit halbfertiger Imports bereits verhindern.
+  - **Linux-Simulation** (verbatim): `LocalTimelineStoreRecoveryTests` schließen die Connection ohne `writer.finalize()`/`writer.cancel()`; SQLite verwirft die offene Transaktion automatisch. **Kein echter iOS-Jetsam-Test** — Power-Loss-/Kernel-Kill-Verhalten auf Hardware bleibt eine separate Verifikation.
+  - Reopen-Verhalten: keine `imports`-Row, FK-Konsistenz erhalten, neuer Import möglich, `deleteAll()` möglich.
+- **Tests:** `LocalTimelineStoreWALCheckpointTests` (7) + `LocalTimelineStoreRecoveryTests` (6). Linux-Vollsuite **1345 / 2 skipped / 0 failed** (vorher 1332/2/0).
+
 ## P1-A + P1-B — Cancellable Import Progress (2026-05-08-Folgecommit)
 
 Phase-10A-Folge des Deep Audits. Der Store-Importpfad ist jetzt **kooperativ abbrechbar** und meldet **throttled-Progress**, ohne den Legacy-Pfad zu berühren und ohne den Default-Aktivierungsstand zu ändern.

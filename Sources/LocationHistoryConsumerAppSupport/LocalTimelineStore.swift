@@ -846,6 +846,59 @@ public final class LocalTimelineStore {
         )
     }
 
+    // MARK: - WAL Checkpoint (P1-C)
+
+    /// Checkpoint modes mirror SQLite's `SQLITE_CHECKPOINT_*` constants.
+    /// `truncate` is the bevorzugter Cleanup nach Imports/Delete/Cancel: es
+    /// schreibt alle WAL-Frames in die Hauptdatei zurück und kürzt das
+    /// `-wal`-File auf 0 Byte, sofern keine Reader die Datei halten.
+    public enum WALCheckpointMode: Int32 {
+        case passive  = 0  // SQLITE_CHECKPOINT_PASSIVE
+        case full     = 1  // SQLITE_CHECKPOINT_FULL
+        case restart  = 2  // SQLITE_CHECKPOINT_RESTART
+        case truncate = 3  // SQLITE_CHECKPOINT_TRUNCATE
+    }
+
+    public struct WALCheckpointInfo: Equatable {
+        /// Anzahl Frames im WAL vor dem Checkpoint (`pnLog`).
+        public let framesInLog: Int32
+        /// Anzahl Frames, die in die Hauptdatei zurückgeschrieben wurden
+        /// (`pnCkpt`). Beide sind `-1`, wenn das WAL nicht aktiv ist.
+        public let framesCheckpointed: Int32
+    }
+
+    /// Run `PRAGMA wal_checkpoint`/`sqlite3_wal_checkpoint_v2` in the given
+    /// mode. Idempotent; safe to call on an empty DB. Throws on hard SQLite
+    /// errors (`stepFailed`-style). Logical "checkpoint busy" responses
+    /// (`SQLITE_BUSY`) are surfaced as `checkpointFailed` so callers can
+    /// decide whether to retry or treat as best-effort.
+    @discardableResult
+    public func checkpointWAL(mode: WALCheckpointMode = .truncate) throws -> WALCheckpointInfo {
+        guard let db else { throw LocalTimelineStoreError.notOpen }
+        var nLog: Int32 = -1
+        var nCkpt: Int32 = -1
+        let rc = sqlite3_wal_checkpoint_v2(db, nil, mode.rawValue, &nLog, &nCkpt)
+        if rc != SQLITE_OK {
+            let msg = sqlite3_errmsg(db).map { String(cString: $0) } ?? "unknown"
+            throw LocalTimelineStoreError.checkpointFailed(code: rc, message: msg)
+        }
+        return WALCheckpointInfo(framesInLog: nLog, framesCheckpointed: nCkpt)
+    }
+
+    /// Convenience: `checkpointWAL(mode: .truncate)`.
+    @discardableResult
+    public func truncateWAL() throws -> WALCheckpointInfo {
+        try checkpointWAL(mode: .truncate)
+    }
+
+    /// Best-effort cleanup: same as `truncateWAL()` aber wirft nicht. Wird
+    /// nach Import/Cancel/Delete aufgerufen, weil ein dort fehlschlagender
+    /// Checkpoint den eigentlichen Vorgang nicht zerstören soll.
+    @discardableResult
+    public func bestEffortTruncateWAL() -> WALCheckpointInfo? {
+        try? truncateWAL()
+    }
+
     // MARK: - Low-level helpers
 
     private func countRows(in table: String) throws -> Int {

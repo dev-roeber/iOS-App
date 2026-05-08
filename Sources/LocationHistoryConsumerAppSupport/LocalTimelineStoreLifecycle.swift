@@ -62,6 +62,12 @@ public final class LocalTimelineStoreLifecycle {
             } catch {
                 report.rowWipeError = "\(error)"
             }
+            // P1-C — vor `close()` WAL best-effort kürzen, damit kein
+            // halbgefülltes `-wal`-File überlebt; das nachfolgende
+            // `removeItem` löscht WAL/SHM ohnehin, aber Truncate hilft
+            // bei Reopen ohne Datei-Unlink (z. B. wenn der Caller die
+            // Files explizit behält).
+            _ = store.bestEffortTruncateWAL()
             store.close()
         }
 
