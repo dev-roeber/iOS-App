@@ -203,28 +203,18 @@ public struct AppHeatmapView: View {
     }
 }
 
-// MARK: - Radius preset
+// MARK: - Radius preset (iOS-only render-time helper)
+//
+// `AppHeatmapRadiusPreset` itself lives in HeatmapPreferenceEnums.swift so
+// the AppSupport target compiles on Linux. The `scale` multiplier is only
+// meaningful inside the SwiftUI render pipeline and stays here.
 
-public enum AppHeatmapRadiusPreset: String, CaseIterable, Identifiable, Sendable {
-    case compact
-    case balanced
-    case wide
-
-    public var id: String { rawValue }
-
+extension AppHeatmapRadiusPreset {
     var scale: Double {
         switch self {
         case .compact:  return 0.88
         case .balanced: return 1.00
         case .wide:     return 1.16
-        }
-    }
-
-    public var labelKey: String {
-        switch self {
-        case .compact:  return "Compact"
-        case .balanced: return "Standard"
-        case .wide:     return "Wide"
         }
     }
 }

@@ -19,6 +19,8 @@ Bei Ablehnung eines Punktes: konkreten Bug + Reproduktionsschritte unter „Befu
 
 **Status 2026-05-08 (dritter Hardware-Fail): FAILED → weiter erweiterter Code-Stand vorbereitet, Hardware-Retest steht aus**
 
+**Update 2026-05-08 (Linux-Stabilisierung HEAD `<linux-stabilization-commit>` nach `34bc369`)**: Linux-SwiftPM-Bruch ist behoben (Heatmap-Preference-Enums extrahiert in `HeatmapPreferenceEnums.swift`; OptionsPresentation-Hoisting; URL/autoreleasepool/Foundation-Guards). Linux-`swift test` ist mit 1034/2/0 grün, erwarteter Mac-Stand ~1133. **Die Linux-Stabilisierung ändert iOS-Verhalten nicht und ist keine Aussage über die 46-MB-Hardware-Symptomatik.** Diese Sektion bleibt **FAILED** bis Hardware-Retest auf iPhone 15 Pro Max grün — Mac/iPhone-Handoff, auf Linux-Server nicht durchführbar.
+
 **Dritter reproduzierter Hardware-Fail** am 2026-05-07T15:10:44+02:00 auf iPhone 15 Pro Max (`iPhone16,2`, iOS 26.4 / 23E246), Xcode 26.3, macOS 15.7 — **trotz** des erweiterten Memory-Trains nach `cd77f97` und HEAD `ae5de1f`:
 - App: `LH2GPXWrapper` (Bundle `de.roeber.LH2GPXWrapper`).
 - Datei: `~/Downloads/location-history.zip` (~46 MB; ~64.926 Top-Level-Timeline-Entries).
@@ -27,7 +29,7 @@ Bei Ablehnung eines Punktes: konkreten Bug + Reproduktionsschritte unter „Befu
 
 Damit ist klar: die in HEAD `ae5de1f` adressierten Allokationspfade (Session-Init / Builder / Calculator) waren notwendig, aber nicht hinreichend. Der dritte Fail erzwingt einen weiter erweiterten Diagnostik-/Geometrie-Stand.
 
-Code-Stand vorbereitet in HEAD `<commit-tba>` nach `ae5de1f` (kein verifizierter Erfolg, ausschließlich vorbereiteter Fix-Stand bis Hardware-Retest):
+Code-Stand vorbereitet in HEAD `34bc369` (Memory-Train) und der nachgelagerten Linux-Stabilisierung `<linux-stabilization-commit>` nach `ae5de1f` (kein verifizierter Erfolg, ausschließlich vorbereiteter Fix-Stand bis Hardware-Retest):
 1. **Build-Identitäts-Logging auf App-Start**: `[LH2GPX_BUILD] app.start version=… build=… sha=… memoryLogging=enabled|disabled` wird **immer** ausgegeben (auch wenn die Probe deaktiviert ist) — damit ist zweifelsfrei loggebar, welcher Build wirklich gestartet wurde.
 2. **`ImportMemoryProbe` verdichtet**: zusätzliche Probe-Punkte `import.fileSelected`, `zip.open.start`/`zip.open.end`, `zip.entry.sniff.start`/`zip.entry.sniff.end`, `zip.stream.chunk` jetzt **alle 8 Chunks** (statt 64), `stream.elements` alle 1000 Top-Level-Elemente, `stream.element.outlier` für Elemente > 64 KB, `stream.before/afterElementParse` (throttled alle 1000), `converter.ingest` alle 1000 Entries, `converter.dayMap.count` alle 5000, `converter.before/afterFinalize`, `loader.before/afterSessionContent`, `session.before/afterShowContent`, `app.didReceiveMemoryWarning` (iOS-only via `NotificationCenter`-Observer auf `UIApplication.didReceiveMemoryWarningNotification`).
 3. **`ImportMemoryProbe` akzeptiert beide Aktivierungs-Quellen** — `ProcessInfo.environment` **und** `ProcessInfo.arguments`. Erkannt werden alle vier Schreibweisen: `LH2GPX_IMPORT_MEMORY_LOG=1`, `LH2GPX_IMPORT_MEMORY_LOG`, `-LH2GPX_IMPORT_MEMORY_LOG`, `--LH2GPX_IMPORT_MEMORY_LOG`. Neue testbare API `ImportMemoryProbe.isEnabledForEnvironment(_:arguments:)`.
@@ -41,7 +43,39 @@ Code-Stand vorbereitet in HEAD `<commit-tba>` nach `ae5de1f` (kein verifizierter
 3. **Debug-Run**: Import durchführen, in der Xcode-Console alle Zeilen mit `[LH2GPX_BUILD]` (App-Start, einmal) und `[LH2GPX_MEMORY]` (Probe) loggen — wenn der Build erneut Jetsam-killt, beweist das letzte gelogde `[LH2GPX_MEMORY]`-Label die Peak-Phase. Bei `app.didReceiveMemoryWarning` greift iOS bereits, bevor Jetsam zuschlägt.
 4. **Wenn Debug grün**: Release-Build **ohne Debugger / View-Debugging** auf demselben Gerät mit derselben 46-MB-`location-history.zip`. Erst dann gilt diese Sektion potenziell als PASSED — vorher nicht.
 
-Reproduzierter Zweit-Hardware-Befund am 2026-05-07T14:14:36+02:00 (vor HEAD `<commit-tba>`, post `cd77f97`): **trotz** Autoreleasepool-Fix in `cd77f97`:
+**Tester-Ergebnis-Template (zurückzumelden nach jedem Hardware-Retest)**:
+
+```
+Hardware-Retest 46-MB Google Timeline
+- Git SHA (aus Settings → Technical → Build Info):
+- Build Number (aus Settings → Technical → Build Info):
+- iOS-Version + Geräte-Modell:
+- Datei + ungefähre Größe:
+- Run-Modus: Debug | Release
+- Memory Logging Status (aus Build Info): Enabled | Disabled
+- Importdauer (Sekunden, von Datei wählen bis Tagesliste sichtbar oder Crash):
+- Ergebnis: PASSED (Tageliste/Insights/Export sichtbar, kein Crash)
+           | FAILED Jetsam (Op-Duration in ms, falls aus Xcode-Log)
+           | FAILED anderer Fehler (Stacktrace / UI-Symptom)
+- Letzter `[LH2GPX_MEMORY]`-Log vor Crash/Erfolg (falls Debug + Probe enabled):
+- Smoke-Check nach Import (alles "ja/nein"):
+    - Tage-Liste zeigt erwartete Anzahl Tage:
+    - Insights-Tab lädt ohne Crash:
+    - Export-Tab lädt, Auswahl möglich:
+    - Day-Detail mit Distanz > 0 m für mind. eine Route:
+```
+
+Diese Sektion bleibt **FAILED** bis ein Tester ein vollständig ausgefülltes Template mit `Ergebnis: PASSED` (sowohl Debug als auch Release) zurückmeldet.
+
+**Handoff-Pfad (kein Mac auf Linux-Server vorausgesetzt)**:
+1. **Xcode Cloud Build** triggern auf dem aktuellen Code-Stand (HEAD `<linux-stabilization-commit>`).
+2. **TestFlight / Internal Install** auf iPhone 15 Pro Max (iOS 26.4).
+3. **Manueller iPhone-Import** der originalen 46-MB-`location-history.zip` (siehe Tester-Sequenz oben).
+4. **Ergebnis-Rückmeldung** im o.g. Template-Format.
+
+Auf dem Linux-Server **wird kein `xcodebuild` / kein iOS-Simulator / keine Hardware-UITest-Suite** ausgeführt — Mac-/Hardware-Automation ist explizit vertagt.
+
+Reproduzierter Zweit-Hardware-Befund am 2026-05-07T14:14:36+02:00 (vor HEAD `34bc369` / `<linux-stabilization-commit>`, post `cd77f97`): **trotz** Autoreleasepool-Fix in `cd77f97`:
 - App: `LH2GPXWrapper` (Bundle `de.roeber.LH2GPXWrapper`).
 - Datei: `~/Downloads/location-history.zip` (~46 MB; ~64.926 Top-Level-Timeline-Entries).
 - Fehler: `IDEDebugSessionErrorDomain Code 11 — “The app ‘LH2GPXWrapper’ has been killed by the operating system because it is using too much memory.”`
@@ -63,7 +97,7 @@ Reproduzierter Erst-Hardware-Befund am 2026-05-07T13:38:37+02:00 (vor `cd77f97`)
 - Operation duration: 232.341 ms.
 - Erst-Root-Cause: `JSONSerialization.jsonObject(with: element)` lief außerhalb des `autoreleasepool`. Behoben in `cd77f97` (notwendig, aber nicht hinreichend — siehe zweiter Fail oben).
 
-Solange der Hardware-Retest mit der originalen 46-MB-`location-history.zip` auf iPhone 15 Pro Max (iOS 26.4) **als Release-Build ohne Debugger** nicht durch einen Tester nachweislich grün bestätigt ist, bleibt diese Sektion **FAILED**. Der vorbereitete Code-Stand in HEAD `<commit-tba>` adressiert die wahrscheinlichsten Allokationspfade — der dritte Fail (Op-Dauer 95.156 ms) zeigt aber: der Peak liegt früher als bisher angenommen, und es ist kein Beweis dafür, dass das Release-Build-Verhalten unter realer iOS-Speicherlast okay ist. Der finale iPhone-Hardware-Retest **kann auf dem Linux-Server nicht durchgeführt werden** und ist ein expliziter Mac/iPhone-Handoff.
+Solange der Hardware-Retest mit der originalen 46-MB-`location-history.zip` auf iPhone 15 Pro Max (iOS 26.4) **als Release-Build ohne Debugger** nicht durch einen Tester nachweislich grün bestätigt ist, bleibt diese Sektion **FAILED**. Der vorbereitete Code-Stand in HEAD `34bc369` (+ Linux-Stabilisierung `<linux-stabilization-commit>`) adressiert die wahrscheinlichsten Allokationspfade — der dritte Fail (Op-Dauer 95.156 ms) zeigt aber: der Peak liegt früher als bisher angenommen, und es ist kein Beweis dafür, dass das Release-Build-Verhalten unter realer iOS-Speicherlast okay ist. Der finale iPhone-Hardware-Retest **kann auf dem Linux-Server nicht durchgeführt werden** und ist ein expliziter Mac/iPhone-Handoff.
 
 Tipp für den Tester, falls die App beim nächsten Start sofort wieder denselben Bookmark/Import zieht: einmalig in Xcode Run Arguments `LH2GPX_UI_TESTING` und `LH2GPX_RESET_PERSISTENCE` setzen, App starten, schließen, Arguments wieder entfernen — alternativ App vom iPhone löschen und neu installieren.
 
@@ -88,7 +122,7 @@ Tipp für den Tester, falls die App beim nächsten Start sofort wieder denselben
 | --- | --- |
 | Datum | |
 | Tester (Initialen) | |
-| Build / Version | HEAD `<commit-tba>` nach `ae5de1f` (flatCoordinates-Kanonisierung + `ImportMemoryProbe` verdichtet + Build-Identitäts-Logging + Memory-Logging-Status in Build Info) |
+| Build / Version | HEAD `<linux-stabilization-commit>` nach `34bc369` (Linux-Stabilisierung: HeatmapPreferenceEnums-Extraktion, OptionsPresentation-Hoisting, URL/autoreleasepool/Foundation-Guards) — basiert auf `34bc369` (flatCoordinates-Kanonisierung + `ImportMemoryProbe` verdichtet + Build-Identitäts-Logging + Memory-Logging-Status in Build Info). Linux-`swift test` 1034/2/0 grün; iOS-Verhalten unverändert; Hardware-Retest steht aus. |
 | Gerät / iOS | iPhone 15 Pro Max (`iPhone16,2`) / iOS 26.4 / 23E246 (Soll-Vergleichsgerät zu drei reproduzierten Hardware-Fails 2026-05-07: 232.341 ms / 216.606 ms / 95.156 ms) |
 | Befund | |
 | Auffälligkeiten | |

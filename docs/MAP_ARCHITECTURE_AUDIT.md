@@ -2,6 +2,8 @@
 
 > Status: Audit only — keine Renderer-Migration in diesem Commit. Erstellt im Rahmen der P0-Untersuchung des 46-MB-Google-Timeline-Imports (3. Hardware-Fail 2026-05-07T15:10:44+02:00 nach 95 156 ms, Jetsam auf iPhone 15 Pro Max).
 
+> **Update 2026-05-08 (Linux-Stabilisierung HEAD `<linux-stabilization-commit>` nach `34bc369`)**: Die vier reinen Heatmap-/MapTrack-Color-Preference-Enums `AppHeatmapPalettePreference`, `AppHeatmapScalePreference`, `AppHeatmapRadiusPreset`, `AppMapTrackColorMode` leben jetzt als Linux-buildbare `String`-`RawValue`-Enums in `Sources/LocationHistoryConsumerAppSupport/HeatmapPreferenceEnums.swift` (vorher in `HeatmapPalette.swift` / `HeatmapLOD.swift` / `AppHeatmapView.swift` / `MapTrackStyling.swift` hinter `#if canImport(SwiftUI) && canImport(MapKit)`-Guards). Der `scale`-Multiplikator von `AppHeatmapRadiusPreset` und alle SwiftUI-/MapKit-abhängigen Extensions (z. B. Color-Resolver) bleiben hinter Plattform-Guards. **Keine** Verhaltensänderung am Heatmap-Renderer, an den LOD-Schwellen oder an der Mercator-/cos(lat)-Aggregation. Map-Architektur-Roadmap (P1+, §4/§5) bleibt unverändert: keine Renderer-Migration, keine `MKMultiPolyline`/`MKTileOverlay`-Umsetzung in diesem Commit.
+
 Dieses Dokument ist eine reine Bestandsaufnahme der aktuellen Karten-/Rendering-Pipeline. Es enthält keine Code-Änderungen, keinen Renderer-Wechsel und keine Migrations-Termine. Die Roadmap-Schritte unten sind als spätere, jeweils eigenständige Commits zu verstehen.
 
 ## 1. Kartenflächen-Inventar

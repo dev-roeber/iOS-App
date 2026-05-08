@@ -75,12 +75,17 @@ public enum LH2GPXAppFlow {
         source: ImportLoadSource,
         onPhase: (@Sendable (ImportPhase) -> Void)? = nil
     ) async -> ImportOutcome {
+        // Security-scoped resource APIs only exist on Darwin (UIKit/AppKit).
+        // On Linux (headless test runs) we treat any file URL as already
+        // accessible — there is no sandbox to opt into.
+        #if canImport(UIKit) || canImport(AppKit)
         let accessedSecurityScope = url.startAccessingSecurityScopedResource()
         defer {
             if accessedSecurityScope {
                 url.stopAccessingSecurityScopedResource()
             }
         }
+        #endif
 
         do {
             let content = try await AppContentLoader.loadImportedContent(

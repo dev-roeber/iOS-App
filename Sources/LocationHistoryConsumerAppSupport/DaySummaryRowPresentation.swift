@@ -1,3 +1,4 @@
+import Foundation
 import LocationHistoryConsumer
 #if canImport(SwiftUI)
 import SwiftUI

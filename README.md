@@ -53,7 +53,7 @@ Sources/
   LocationHistoryConsumerDemoSupport/  — Demo-Harness, Golden-Fixture
   LocationHistoryConsumerApp/          — Produkt-App-Einstieg
   LocationHistoryConsumerDemo/         — Demo-Einstieg
-  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Nachweis: 1065 Tests, 2 Skips, 0 Failures, 2026-05-07)
+  Tests/LocationHistoryConsumerTests/    — Unit-Tests (aktueller Linux-Nachweis: 1034 Tests, 2 Skips, 0 Failures, 2026-05-08; erwarteter Mac-Stand ~1133)
 Fixtures/contract/                     — Contract-Fixtures, Golden-JSONs
 wrapper/LH2GPXWrapper.xcodeproj        — Xcode Wrapper (Signing, Bundle, App-Icon)
 docs/                                  — Feature-Inventar, Runbook, Checklisten
@@ -75,10 +75,12 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 ```
 
 Aktueller Nachweis:
-- `swift test` → `1065` Tests, `2` Skips, `0` Failures (Stand 2026-05-07, HEAD `3811bc3` — P1-Hardening-Train: distanceText\!-safe-unwrap, weak self in AppOverviewMapModel, Upload-URL-Validation + 8 neue URL-Validation-Tests).
+- Linux: `swift test` → **1034** Tests, **2** Skips, **0** Failures (Stand 2026-05-08, HEAD `<linux-stabilization-commit>` nach `34bc369` — Linux-Stabilisierung: HeatmapPreferenceEnums-Extraktion, OptionsPresentation-Hoisting, URL-/autoreleasepool-/Foundation-Guards; neue `LinuxStabilizationRegressionTests` mit 7 Cases). `swift build` (Vollbuild) und `swift build --build-tests` ebenfalls clean.
+- Erwarteter Mac-Stand (post-Linux-Stabilisierung, mit allen iOS-only Tests hinter `canImport(SwiftUI)`/`MapKit`/`CoreLocation`/`UIKit`): **~1133** (1033 Linux + ~100 iOS-only). Finale Mac-Run-Zahl wird nach Mac-Sync nachgetragen.
+- Vorher 1065 Tests (HEAD `3811bc3`, P1-Hardening-Train: distanceText\!-safe-unwrap, weak self in AppOverviewMapModel, Upload-URL-Validation + 8 neue URL-Validation-Tests).
 - Vorher 1057 Tests (HEAD `5c69afe`, UX/Layout + Mock-Helper).
 - Vorher 1045 Tests (HEAD `e3dae15`, Phase 1-5 Audit-Train).
-- Hardware-Re-Verifikation iPhone 15 Pro Max bleibt für jeden Stand seit 2026-05-05 offen.
+- Hardware-Re-Verifikation iPhone 15 Pro Max bleibt für jeden Stand seit 2026-05-05 offen; **46-MB-Crashfall bleibt FAILED** (Mac/iPhone-Handoff).
 
 ## Historische Vorstufen
 

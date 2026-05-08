@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 2026-05-08 (chore: Linux-Stabilisierung im AppSupport-Target nach P0-Memory-Fix `34bc369`)
+
+Reine Linux-Build-Stabilisierung des Core-Pakets — **Wrapper selbst nicht geändert** (kein Code-Stand-Sprung in `LH2GPXWrapper`/`LH2GPXWidget`, keine Bundle-/Signing-Änderung). Hintergrund: nach dem P0-Memory-Train HEAD `34bc369` waren `swift build` (Vollbuild) und `swift test` auf Linux pre-existing kaputt (iOS-only Heatmap/MapTrack-Color-Preference-Enums in `AppPreferences` referenziert, aber unter `#if canImport(SwiftUI) && canImport(MapKit)`-Guard definiert). Diese Stabilisierung schließt den Linux-Build, ohne iOS-Verhalten zu ändern.
+
+Code-Änderungen im AppSupport-Target (`Sources/LocationHistoryConsumerAppSupport/`):
+- **NEU `HeatmapPreferenceEnums.swift`** — extrahiert die vier reinen Preference-Enums `AppHeatmapPalettePreference`, `AppHeatmapScalePreference`, `AppHeatmapRadiusPreset`, `AppMapTrackColorMode` als Linux-buildbare `String`-`RawValue`-Enums. Bisherige Quelldateien (`HeatmapPalette.swift`, `HeatmapLOD.swift`, `AppHeatmapView.swift`, `MapTrackStyling.swift`) verlieren die Enum-Definitionen, behalten aber alle SwiftUI-/MapKit-abhängigen Extensions hinter Plattform-Guards (`scale`-Multiplikator, Color-Resolver).
+- `OptionsPresentation.swift` — String-Helpers `uploadStatusText`/`serverUploadPrivacyText` aus dem `#if canImport(SwiftUI)`-Guard herausgehoben; `uploadStatusColor` (Color-returning) bleibt iOS-only Extension.
+- `LH2GPXAppFlow.swift` — `url.startAccessingSecurityScopedResource()`/`stopAccessingSecurityScopedResource()` in `#if canImport(UIKit) || canImport(AppKit)`-Guard (Darwin-only).
+- `GoogleTimelineStreamReader.swift` — `autoreleasepool { … }` in `#if canImport(Darwin)`-Guard mit Linux-Fallback (gleiche Parse-Logik ohne Pool, kein Verhaltensunterschied auf iOS).
+- `DaySummaryRowPresentation.swift` — explizites `import Foundation`.
+
+Tests: **NEU** `Tests/LocationHistoryConsumerTests/LinuxStabilizationRegressionTests.swift` (7 Linux-fähige Cases — never-both-shapes-Invariante, points↔flat Distanzparität ±1 m, AppSessionContent-Init/`show(content:)` < 250 ms / 5000 Days, Banner liest aus `meta`, 50k synthetische Timeline-Entries via `incrementalStreamConverter` → alle flat). `LargeImportMemorySafetyTests.swift` `import CoreLocation` und 2 Tests in `#if canImport(CoreLocation) && canImport(MapKit)`-Guard. `UIWiringTests.swift` 8 Tests von `@MainActor` auf `MainActor.assumeIsolated { … }`. `TCXImportParserErrorTests.swift` `testTCXMalformedXMLThrowsInvalidXML` akzeptiert `.invalidXML` ODER `.noTrackPoints` (Linux-corelibs-foundation `XMLParser` ist permissiver als Darwin).
+
+Test-Stand Linux: `swift build` (Vollbuild) clean, `swift build --build-tests` clean, `swift test` **1034/2/0** (vorher 1033 vor 50k-Stress-Test). Erwarteter Mac-Stand (post-Linux-Stabilisierung): **~1133** (1033 + ~100 iOS-only Tests hinter `canImport(SwiftUI)`/`MapKit`/`CoreLocation`/`UIKit`).
+
+**46-MB-Crashfall bleibt FAILED** bis Hardware-Retest auf iPhone 15 Pro Max — die Linux-Stabilisierung ändert iOS-Verhalten nicht und ist keine Aussage über die 46-MB-Hardware-Symptomatik. Mac/iPhone-Handoff, auf Linux-Server nicht durchführbar. Keine ASC/TestFlight-Freigabe behauptet. Map-Modernisierung (MKMultiPolyline/MKTileOverlay) bleibt Roadmap.
+
 ## 2026-05-08 (fix: reduce large timeline import memory footprint)
 
 **Dritter Hardware-Fail** auf iPhone 15 Pro Max (`iPhone16,2`, iOS 26.4 / 23E246, Xcode 26.3, macOS 15.7) am 2026-05-07T15:10:44+02:00 trotz erweitertem Memory-Train nach `cd77f97` und HEAD `ae5de1f`: erneut Jetsam-Kill (`IDEDebugSessionErrorDomain Code 11`, „The app ‘LH2GPXWrapper’ has been killed by the operating system because it is using too much memory.", Operation duration **95.156 ms** vs. 216.606 ms zweiter Fail / 232.341 ms erster Fail — schneller Fail = Peak liegt früher).

@@ -116,18 +116,6 @@ struct HeatKernelOffset {
     }
 }
 
-/// User-selectable scale mapping from raw bin counts to normalized intensity.
-public enum AppHeatmapScalePreference: String, CaseIterable, Identifiable, Sendable {
-    case logarithmic
-    case linear
-
-    public var id: String { rawValue }
-
-    public var labelKey: String {
-        switch self {
-        case .logarithmic: return "Logarithmic"
-        case .linear:      return "Linear"
-        }
-    }
-}
+// `AppHeatmapScalePreference` lives in HeatmapPreferenceEnums.swift so the
+// AppSupport target compiles on Linux.
 #endif

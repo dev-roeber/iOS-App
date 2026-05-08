@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## [2026-05-08] — chore: Linux-Stabilisierung nach P0-Memory-Fix `34bc369`
+
+### Kontext
+Linux-SwiftPM-Vollbuild und `swift test` waren nach dem P0-Memory-Train HEAD `34bc369` (flatCoordinates-Kanonisierung + Memory-Probe-Verdichtung) pre-existing kaputt: iOS-only Heatmap/MapTrack-Color-Preference-Enums wurden in `AppPreferences` referenziert, aber nur unter `#if canImport(SwiftUI) && canImport(MapKit)` definiert. Diese Stabilisierung schließt den Linux-Build, ohne die iOS-Verhaltenslogik zu ändern. **Keine** Hardware-Verifikation, **keine** ASC/TestFlight-Aussagen, **46-MB-Crashfall bleibt FAILED**.
+
+### Code (Sources)
+- **NEU `Sources/LocationHistoryConsumerAppSupport/HeatmapPreferenceEnums.swift`** — extrahiert die vier reinen Preference-Enums `AppHeatmapPalettePreference`, `AppHeatmapScalePreference`, `AppHeatmapRadiusPreset`, `AppMapTrackColorMode` aus den iOS-only `#if canImport(SwiftUI) && canImport(MapKit)`-Guards in `HeatmapPalette.swift`, `HeatmapLOD.swift`, `AppHeatmapView.swift`, `MapTrackStyling.swift`. Die Enums sind reine `String`-`RawValue`-Enums ohne SwiftUI-/MapKit-Abhängigkeit und damit Linux-buildbar; alle bisherigen Importe (`AppPreferences`, Heatmap-/MapTrack-Pipelines) gehen unverändert über die Enums.
+- `HeatmapPalette.swift`, `HeatmapLOD.swift`, `AppHeatmapView.swift`, `MapTrackStyling.swift` — Enum-Definitionen entfernt; der `scale`-Multiplikator von `AppHeatmapRadiusPreset` bleibt als iOS-only Extension (braucht `Double`-Konstanten in MapKit-Kontext, kein Verhaltensimpact).
+- `OptionsPresentation.swift` — String-returning Helpers `uploadStatusText` und `serverUploadPrivacyText` aus dem `#if canImport(SwiftUI)`-Guard herausgehoben; sie sind reine String-Funktionen ohne SwiftUI-Abhängigkeit. `uploadStatusColor` (Color-returning) bleibt iOS-only Extension.
+- `LH2GPXAppFlow.swift` — `url.startAccessingSecurityScopedResource()` / `stopAccessingSecurityScopedResource()` jetzt in `#if canImport(UIKit) || canImport(AppKit)`-Guard (Darwin-only API).
+- `GoogleTimelineStreamReader.swift` — `autoreleasepool { … }` in `#if canImport(Darwin)`-Guard mit Linux-Fallback (gleiche Parse-Logik ohne Pool, kein Verhaltensunterschied auf iOS).
+- `DaySummaryRowPresentation.swift` — explizites `import Foundation` ergänzt (`DateFormatter`/`Calendar` waren auf Linux nicht in scope).
+
+### Tests
+- **NEU `Tests/LocationHistoryConsumerTests/LinuxStabilizationRegressionTests.swift`** — 7 neue Linux-fähige Cases:
+  1. `testGoogleTimelineConverterNeverPopulatesBothShapes` — Invariante: Konverter setzt nie beide Geometrie-Shapes (`points` und `flatCoordinates`) gleichzeitig.
+  2. `testDistanceParityBetweenPointsAndFlatShape` — points-vs-flat Distanzparität ±1 m.
+  3. `testAppSessionContentInitDoesNotMaterializeProjections` — 5000 Days, init < 250 ms (kein eager `daySummaries`-Pass).
+  4. `testAppSessionContentLazyProjectionsStillUsable` — lazy vars trotzdem nutzbar.
+  5. `testAppSessionStateShowContentRunsBoundedRegardlessOfDayCount` — `show(content:)` < 250 ms auf 5000 Days.
+  6. `testShowContentPicksGoogleTimelineTitleFromMeta` — Banner liest aus `meta`, nicht via `overview`.
+  7. `testStreamedSyntheticLargeTimelineUsesFlatGeometry` — 50k synthetische Timeline-Entries via `incrementalStreamConverter`, alle Paths flat-shape, ~24 s Linux-Smoke (**KEIN** Hardware-Pass, **KEIN** iOS-Jetsam-Beleg).
+- `LargeImportMemorySafetyTests.swift` — `import CoreLocation` und 2 Tests in `#if canImport(CoreLocation) && canImport(MapKit)`-Guard (Linux-Build-Bruch fixen, Verhalten auf iOS unverändert).
+- `UIWiringTests.swift` — 8 Tests umgestellt von `@MainActor` auf `MainActor.assumeIsolated { … }` (Pattern aus `LandscapeLayoutTests`); kompiliert auf Linux ohne `@MainActor`-XCTest-Lift.
+- `TCXImportParserErrorTests.swift` — `testTCXMalformedXMLThrowsInvalidXML` akzeptiert jetzt `.invalidXML` ODER `.noTrackPoints` (Linux-corelibs-foundation `XMLParser` ist permissiver als Darwin und liefert für leere/abgebrochene Dokumente `.noTrackPoints`; auf Darwin bleibt `.invalidXML` der erwartete Fall).
+
+### Test-Stand Linux (post-Stabilisierung)
+- `swift build` (Vollbuild) clean.
+- `swift build --build-tests` clean.
+- `swift test` Vollsuite passed: **1034 Tests, 2 skipped, 0 Failures** (vorher 1033 vor dem 50k-Stress-Test). Alle 7 neuen `LinuxStabilizationRegressionTests`-Cases grün.
+- Erwarteter Mac-Stand (post-Linux-Stabilisierung, mit allen iOS-only Tests hinter `canImport(SwiftUI)`/`MapKit`/`CoreLocation`/`UIKit`): **~1133** (1033 + ~100 iOS-only). Finale Mac-Run-Zahl wird im nächsten Mac-Sync nachgetragen.
+
+### Was NICHT erledigt wurde
+- **46-MB-Crashfall iPhone-Hardware-Retest bleibt FAILED** — Mac/iPhone-Handoff, auf Linux-Server nicht durchführbar; keine Aussage darüber, ob der Memory-Fix die Hardware-Symptomatik behebt.
+- **ASC/TestFlight Build ≥100** — nicht angefasst.
+- **Map-Modernisierung (MKMultiPolyline/MKTileOverlay)** — bleibt Roadmap (siehe `docs/MAP_ARCHITECTURE_AUDIT.md` §5).
+
+### Code-Stand-Anker
+HEAD `<linux-stabilization-commit>` (folgt direkt nach diesem Doku-Update; baut auf `34bc369`).
+
 ## [2026-05-08] — fix: reduce large timeline import memory footprint
 
 ### Hardware-Befund (dritter Fail)

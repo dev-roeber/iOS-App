@@ -268,6 +268,11 @@ private struct TopLevelArrayParser {
                     if lastElementBytes > 64 * 1024 {
                         ImportMemoryProbe.log("stream.element.outlier index=\(elementCounter) bytes=\(lastElementBytes)")
                     }
+                    // `autoreleasepool` is Darwin-only. On Linux (used for
+                    // headless test runs) we fall through without a pool —
+                    // there is no Foundation NSAutoreleasePool there, so
+                    // wrapping is both unavailable and unnecessary.
+                    #if canImport(Darwin)
                     try autoreleasepool {
                         let parsed: Any
                         do {
@@ -277,6 +282,15 @@ private struct TopLevelArrayParser {
                         }
                         try onElement(parsed)
                     }
+                    #else
+                    let parsed: Any
+                    do {
+                        parsed = try JSONSerialization.jsonObject(with: element)
+                    } catch {
+                        throw GoogleTimelineStreamReader.StreamError.malformedJSON
+                    }
+                    try onElement(parsed)
+                    #endif
                     if parseProbe {
                         ImportMemoryProbe.log("stream.afterElementParse=\(elementCounter)")
                     }

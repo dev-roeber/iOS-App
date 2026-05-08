@@ -1,6 +1,8 @@
 import XCTest
 import ZIPFoundation
+#if canImport(CoreLocation)
 import CoreLocation
+#endif
 @testable import LocationHistoryConsumer
 @testable import LocationHistoryConsumerAppSupport
 
@@ -211,7 +213,12 @@ final class LargeImportMemorySafetyTests: XCTestCase {
     }
 
     // MARK: - 5. Bounded OverviewMap candidate storage
+    //
+    // OverviewMapPreparation lives behind `canImport(SwiftUI) && canImport(MapKit)`
+    // and depends on CoreLocation's CLLocationCoordinate2D. Both are Darwin-only,
+    // so these two cases only run on iOS/macOS test runs and are skipped on Linux.
 
+    #if canImport(CoreLocation) && canImport(MapKit)
     func testOverviewMapStrideDecimateRespectsCap() {
         let coords = (0..<5000).map { i in
             CLLocationCoordinate2D(latitude: 50.0 + Double(i) * 0.0001, longitude: 8.0)
@@ -233,6 +240,7 @@ final class LargeImportMemorySafetyTests: XCTestCase {
         let decimated = OverviewMapPreparation.strideDecimate(coords, maxPoints: 256)
         XCTAssertEqual(decimated.count, coords.count)
     }
+    #endif
 
     // MARK: - Helpers
 

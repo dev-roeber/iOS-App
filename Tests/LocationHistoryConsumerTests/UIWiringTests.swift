@@ -457,30 +457,33 @@ final class UIWiringTests: XCTestCase {
 
     // MARK: - Live Tracking: Deep Link
 
-    @MainActor
     func testDeepLinkLiveSetsNavigateFlag() {
-        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
-        XCTAssertFalse(model.navigateToLiveTabRequested)
-        model.navigateToLiveTabRequested = true
-        XCTAssertTrue(model.navigateToLiveTabRequested)
-        model.navigateToLiveTabRequested = false
-        XCTAssertFalse(model.navigateToLiveTabRequested)
+        MainActor.assumeIsolated {
+            let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+            XCTAssertFalse(model.navigateToLiveTabRequested)
+            model.navigateToLiveTabRequested = true
+            XCTAssertTrue(model.navigateToLiveTabRequested)
+            model.navigateToLiveTabRequested = false
+            XCTAssertFalse(model.navigateToLiveTabRequested)
+        }
     }
 
     // MARK: - Live Tracking: CTA State
 
-    @MainActor
     func testCTAIsDisabledWhileAwaitingAuthorization() {
-        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
-        // Without a client, isAwaitingAuthorization stays false and isRecording stays false.
-        XCTAssertFalse(model.isRecording)
-        XCTAssertFalse(model.isAwaitingAuthorization)
+        MainActor.assumeIsolated {
+            let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+            // Without a client, isAwaitingAuthorization stays false and isRecording stays false.
+            XCTAssertFalse(model.isRecording)
+            XCTAssertFalse(model.isAwaitingAuthorization)
+        }
     }
 
-    @MainActor
     func testRecordedTracksEmptyOnInit() {
-        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
-        XCTAssertTrue(model.recordedTracks.isEmpty)
+        MainActor.assumeIsolated {
+            let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+            XCTAssertTrue(model.recordedTracks.isEmpty)
+        }
     }
 
     // MARK: - Live Tracking: GPS Status Presentation
@@ -818,43 +821,48 @@ final class LiveTrackingRedesignBatch5ATests: XCTestCase {
 
     // MARK: Upload status: default state (no server configured)
 
-    @MainActor
     func testUploadStatusSummaryDisabledByDefault() {
-        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
-        XCTAssertEqual(model.uploadStatusSummary, "Disabled",
-                       "Server upload must be disabled by default — no token or URL pre-configured")
+        MainActor.assumeIsolated {
+            let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+            XCTAssertEqual(model.uploadStatusSummary, "Disabled",
+                           "Server upload must be disabled by default — no token or URL pre-configured")
+        }
     }
 
-    @MainActor
     func testBearerTokenNotConfiguredByDefault() {
-        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
-        XCTAssertFalse(model.hasBearerTokenConfigured,
-                       "Bearer token must not be pre-configured — no secrets in default state")
+        MainActor.assumeIsolated {
+            let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+            XCTAssertFalse(model.hasBearerTokenConfigured,
+                           "Bearer token must not be pre-configured — no secrets in default state")
+        }
     }
 
     // MARK: Permission title and message: non-empty for all states
 
-    @MainActor
     func testPermissionTitleNonEmptyForRestrictedState() {
-        // nil client → authorization == .restricted
-        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
-        XCTAssertFalse(model.permissionTitle.isEmpty)
-        XCTAssertFalse(model.permissionMessage.isEmpty)
+        MainActor.assumeIsolated {
+            // nil client → authorization == .restricted
+            let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+            XCTAssertFalse(model.permissionTitle.isEmpty)
+            XCTAssertFalse(model.permissionMessage.isEmpty)
+        }
     }
 
     // MARK: Hero status: initial model state
 
-    @MainActor
     func testHeroIsNotRecordingByDefault() {
-        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
-        XCTAssertFalse(model.isRecording)
+        MainActor.assumeIsolated {
+            let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+            XCTAssertFalse(model.isRecording)
+        }
     }
 
-    @MainActor
     func testHeroHasNoValidServerConfigByDefault() {
-        let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
-        XCTAssertFalse(model.hasValidServerUploadConfiguration,
-                       "No endpoint URL or enabled flag set by default")
+        MainActor.assumeIsolated {
+            let model = LiveLocationFeatureModel(client: nil, store: MockRecordedTrackStore())
+            XCTAssertFalse(model.hasValidServerUploadConfiguration,
+                           "No endpoint URL or enabled flag set by default")
+        }
     }
 }
 

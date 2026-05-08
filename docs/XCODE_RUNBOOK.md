@@ -199,6 +199,16 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 
 ## Reale Verifikation in dieser Phase
 
+Frischer Linux-Host-Truth (2026-05-08, HEAD `<linux-stabilization-commit>` nach `34bc369` — Linux-Stabilisierung):
+
+- `swift build` (Vollbuild): clean ✅
+- `swift build --build-tests`: clean ✅
+- `swift test`: **1034 Tests, 2 Skips, 0 Failures** ✅ (vorher 1033 vor 50k-Stress-Test in `LinuxStabilizationRegressionTests`).
+- Erwarteter Mac-Stand (post-Linux-Stabilisierung, mit allen iOS-only Tests hinter `canImport(SwiftUI)`/`MapKit`/`CoreLocation`/`UIKit`): **~1133** (1033 Linux + ~100 iOS-only). Finale Mac-Run-Zahl wird nach Mac-Sync nachgetragen.
+- Linux-SwiftPM-Bruch nach `34bc369` ist behoben durch HeatmapPreferenceEnums-Extraktion (`Sources/LocationHistoryConsumerAppSupport/HeatmapPreferenceEnums.swift`), OptionsPresentation-Hoisting, URL-/`autoreleasepool`-/`import Foundation`-Guards.
+- **46-MB-Crashfall bleibt FAILED** bis Hardware-Retest auf iPhone 15 Pro Max (Mac/iPhone-Handoff, auf Linux-Server nicht durchführbar). Linux-Stabilisierung ändert iOS-Verhalten nicht.
+- ASC/TestFlight Build ≥100 nicht angefasst.
+
 Frischer Host-Truth (2026-04-29) — macOS, Xcode 26.3, iPhone 15 Pro Max (ios 26.3):
 
 - `swift test`: 643 Tests, 0 Failures, 0 Skips ✅ (2× bestätigt)

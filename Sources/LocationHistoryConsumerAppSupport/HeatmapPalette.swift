@@ -1,24 +1,9 @@
 #if canImport(SwiftUI)
 import SwiftUI
 
-/// Perceptually-uniform palette identifiers. Replaces the previous rainbow
-/// (jet) palette which produced a bullseye target ring at country zoom and
-/// is widely considered misleading in modern data-vis (Borland & Taylor 2007).
-public enum AppHeatmapPalettePreference: String, CaseIterable, Identifiable, Sendable {
-    case magma
-    case inferno
-    case cividis
-
-    public var id: String { rawValue }
-
-    public var labelKey: String {
-        switch self {
-        case .magma:   return "Magma"
-        case .inferno: return "Inferno"
-        case .cividis: return "Cividis"
-        }
-    }
-}
+// `AppHeatmapPalettePreference` lives in HeatmapPreferenceEnums.swift so the
+// AppSupport target compiles on Linux. The gradient-stop tables and SwiftUI
+// rendering helpers below stay iOS-only.
 
 enum HeatmapPalette {
     /// Returns the gradient stops for a palette identifier. Stops are RGB

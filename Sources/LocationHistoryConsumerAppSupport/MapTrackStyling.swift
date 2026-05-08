@@ -313,20 +313,7 @@ public enum LiveBreadcrumbFade {
 }
 
 // MARK: - User preference
-
-/// Determines whether tracks render in their semantic activity-type colour
-/// or in a speed-coloured gradient ("Tempolayer").
-public enum AppMapTrackColorMode: String, CaseIterable, Identifiable, Sendable {
-    case activity
-    case speed
-
-    public var id: String { rawValue }
-
-    public var labelKey: String {
-        switch self {
-        case .activity: return "Activity"
-        case .speed:    return "Speed"
-        }
-    }
-}
+//
+// `AppMapTrackColorMode` lives in HeatmapPreferenceEnums.swift so the
+// AppSupport target compiles on Linux.
 #endif
