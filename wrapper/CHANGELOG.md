@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-05-08 — Phase-10B (Weg 3) Foundation-only Provider hinzugefügt
+- Phase-10B Foundation-only Provider hinzugefügt (Wrapper-Pfad nicht betroffen, default OFF).
+- Zentraler `LocalTimelineMapPerformanceBudget` + `LocalTimelineMapPointLayerProvider` + Modelle im Core-Paket. Wrapper-Code nicht angefasst; Wrapper-Bundle/Signing/Plist unverändert.
+- Store-Pfad bleibt pre-production / feature-flagged / default OFF; Legacy-Pfad unverändert. 46-MB-Hardware-Gate bleibt FAILED / pending hardware retest.
+
 ## 2026-05-08 — Wrapper: Sichtbare Progress/Cancel-UI verdrahtet
 - ContentView: LocalTimelineImportProgressView + LocalTimelineTestModeBanner aus dem Core-Paket eingebunden.
 - Pro Import frischer LocalTimelineImportController via LocalTimelineImportUIState.startNewImport().

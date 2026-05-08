@@ -351,4 +351,14 @@ Folgendes wird in diesem Audit **nicht** behauptet:
 
 ---
 
+## Update 2026-05-08 — Phase-10B (Weg 3) Foundation-only
+
+Map-Performance: zentraler Budget-Typ (`LocalTimelineMapPerformanceBudget`, adaptive detail-level-/zoom-abhängige Defaults overview 24/256/1500/8/256, low 48/512/3000/16/512, medium 96/1024/6000/32/1024, high 192/2048/12000/64/2048; `dayMap`-Profil 12/64/800/12/256) und PointLayer-Provider (`LocalTimelineMapPointLayerProvider` mit `dayPointCandidates`, `pointCandidates`, `dayClusteredPoints`, `clusteredPoints`; Modelle `PointKind`, `Entry`, `Cluster`, `Response`/`ClusterResponse`) eingeführt. Bounded-read; lazy `CoordBlobIterator + LocalTimelineRouteDecimator`; deterministische Sortierung. **In keinem View aktiv**, UI-Verdrahtung WIP. Store-Pfad bleibt feature-flagged / default OFF.
+
+Crash-Hotspots im **Legacy-Pfad** (`AppHeatmapModel.startPrecomputation`, `AppOverviewTracksMapView.scanCandidates`, `ExportPreviewData`) wurden **ausdrücklich nicht angefasst** (Spec: Legacy darf nicht regressieren) — als **P1-Folgepunkt** dokumentiert (siehe `NEXT_STEPS.md`).
+
+**46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+
+---
+
 **Audit-Ende.** Repo-Truth zuerst. Im Zweifel: nicht behaupten.

@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-05-08 — Phase-10B (Weg 3) — Foundation-only PointLayer-Provider und zentraler PerformanceBudget
+Phase-10B (Weg 3) — Foundation-only PointLayer-Provider und zentraler PerformanceBudget. Adaptive detail-level-/zoom-abhängige Budgets ersetzen die starre 200-Routen-Vorstellung im Store-Pfad. Legacy-Pfad unverändert. Store bleibt pre-production / feature-flagged / default OFF. 46-MB-Gate bleibt FAILED / pending hardware retest.
+
 ## 2026-05-08 — Phase-10A P1-A/B (Weg 2) — Sichtbare Progress/Cancel-UI für Store-Import
 - LocalTimelineImportProgressPresentation: Foundation-only Presentation-Schicht (statusText, phaseLabel, countsText, skippedText, currentDayText, bytesText, percentText, oneLineSummary, isCancellable). Keine Standortdaten, keine Pfade, keine Tokens.
 - LocalTimelineImportUIState: @MainActor ObservableObject; per startNewImport() einen frischen LocalTimelineImportController + Cancellation pro Import. Snapshot-Hop auf MainActor, Linux-getestet.

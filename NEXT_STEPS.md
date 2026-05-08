@@ -10,6 +10,9 @@ Im Audit als **P1** belegt; nach diesem Commit (P1-A + P1-B + P1-C + P1-D erledi
 
 1. **UI-Hook für Cancel + Progress** (Folge von P1-A/P1-B). ✓ erledigt 2026-05-08 (Weg 2): LocalTimelineImportProgressView + Cancel-Button im Loading-Branch beider App-Shells, Test-Mode-Banner, Linux-Tests grün. Service-Layer (`LocalTimelineImportController`) ist verdrahtet und Linux-getestet; SwiftUI-Anbindung in `AppShellRootView` / `wrapper/LH2GPXWrapper/ContentView` ist jetzt ebenfalls live (Progress-Counter entries / visits / activities / paths / skipped / optional bytes, Cancel-Outcome-Hinweis). `LocalTimelineSessionLandingView`-Fallweise-UI-Polish bleibt offen, Foundation- und View-Layer sind stabil.
 2. **UX-Polish AppOptionsView Memory-Logging-Section** (P1-E). Drei Felder in zwei Layern (Build Configuration / Tester Override / Active Status) reorganisieren — nach FIX-1 nicht mehr blocking, aber Klarheit verbessert.
+3. **PointLayer in Store-DayMap UI verdrahten (Phase 10B Hook)** — Foundation-only Provider + `LocalTimelineMapPerformanceBudget` sind eingecheckt; UI-Verdrahtung in `LocalTimelineDayMapViewState` + `LocalTimelineDayMapView` ist WIP. Store-Pfad bleibt default OFF.
+4. **PointLayer-Cluster-Marker SwiftUI-Annotations Mac/Xcode-Verifikation** — MKMapView-Annotations und SwiftUI-Map-Points sind nur dort testbar; Mac/Xcode-Pflicht.
+5. **Legacy-Map-Crash-Hotspots (P1-Folgepunkt aus DEEP_AUDIT § 13)**: `AppHeatmapModel.startPrecomputation`, `AppOverviewTracksMapView.scanCandidates`, `ExportPreviewData` wurden in Phase-10B ausdrücklich nicht angefasst (Spec: Legacy darf nicht regressieren).
 
 P0 ist bewusst leer: keine produktiven Crashes/Datenverluste im Repo belegbar; das **46-MB-Hardware-Gate bleibt FAILED / pending hardware retest** (verbatim) als externe Verifikation.
 

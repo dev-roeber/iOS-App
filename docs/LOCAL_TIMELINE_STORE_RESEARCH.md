@@ -774,3 +774,11 @@ Bindend an das offene 46-MB-Hardware-Retest-Ergebnis (HEAD `ebd8146`):
 - Empfehlung: **SQLite-C-API + Int32-microdegrees-BLOB**, Application-Support-Speicherort, `completeUnlessOpen`, backup-excluded.
 - Conditional-P0-Gate definiert; Map-Modernisierung weiter blockiert.
 - Kein Code in `main` umgeschaltet. Spike in dedizierter Folge-Iteration; Test-Plan dort: `CoordinateBlobEncodingTests`, `LocalTimelineStoreSchemaPlanTests`, Iterator-No-Allocation-Invariant.
+
+## Phase-10B-Snapshot (2026-05-08, Weg 3 — Foundation-only)
+
+- **PointLayer-Modelle** (`Sources/LocationHistoryConsumerAppSupport/LocalTimelineMapPointLayerModels.swift`): `PointKind { visit, activityStart, activityEnd, routeSample }`, `Entry`, `Cluster` mit `dominantKind`, `Response`/`ClusterResponse` mit Truncation-Flags (Foundation-only, keine MapKit/SwiftUI-Abhängigkeit).
+- **PointLayer-Provider** (`Sources/LocationHistoryConsumerAppSupport/LocalTimelineMapPointLayerProvider.swift`): `dayPointCandidates`, `pointCandidates`, `dayClusteredPoints`, `clusteredPoints`. Bounded-read: Visits/Activities aus Spalten direkt; routeSamples lazy via `CoordBlobIterator + LocalTimelineRouteDecimator`. Deterministische Sortierung.
+- **Adaptive Budgets** (`Sources/LocationHistoryConsumerAppSupport/LocalTimelineMapPerformanceBudget.swift`): zentraler Budget-Typ, detail-level-/zoom-abhängig. Defaults overview 24/256/1500/8/256, low 48/512/3000/16/512, medium 96/1024/6000/32/1024, high 192/2048/12000/64/2048; `dayMap`-Profil 12/64/800/12/256. Ersetzt im Store-Pfad die starre 200-Routen-Vorstellung durch `maxVisibleRoutes` (UI-bounded) + `maxRouteCandidates` (Provider-Over-fetch).
+- **Lazy CoordBlobIterator**: pro Pfad, kein vollständiger `[Double]`-Buffer; deterministische Ausgabe.
+- **Status**: Modelle + Provider only — **in keinem View aktiv**. UI-Verdrahtung in `LocalTimelineDayMapViewState`/`LocalTimelineDayMapView` ist WIP. Legacy-Pfad unverändert. Store-Pfad bleibt default OFF. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).

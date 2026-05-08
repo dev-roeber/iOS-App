@@ -14,6 +14,10 @@ Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 
 Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmentierte `Insights`, gespeicherte lokale Live-Tracks und optionalen nutzergesteuerten Upload akzeptierter Live-Recording-Punkte. Weiterhin nicht Teil dieses Runbooks sind Producer-Logik, Cloud-/Account-Sync fuer importierte History und unbewiesene Apple-Review-Claims.
 
+## Phase-10B (Weg 3) PointLayer-UI-Hook — Mac/Xcode-Pflicht (2026-05-08)
+
+Phase-10B PointLayer-UI-Hook in `LocalTimelineDayMapView` ist **Mac/Xcode-Pflicht** (MKMapView-Annotations + SwiftUI-Map.points werden nur dort getestet). Foundation-only Modelle (`LocalTimelineMapPointLayerModels.swift`) und Provider (`LocalTimelineMapPointLayerProvider.swift`) sind eingecheckt und Linux-getestet; UI-Verdrahtung in `LocalTimelineDayMapViewState` + `LocalTimelineDayMapView` ist WIP. Store-Pfad bleibt feature-flagged / default OFF. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+
 ## P1-C + P1-D: WAL-Checkpoint + Recovery-Test (2026-05-08)
 
 Phase-10A-Folgecommit nach Deep Audit. Setzt **P1-C (WAL-Checkpoint-/Cleanup-Strategie)** und **P1-D (Recovery-Test für Mid-Import-Crash)** aus `docs/DEEP_AUDIT_2026-05-08_LOCAL_TIMELINE_STORE_AND_MAP.md` § 13 um, ausschließlich im Store-Pfad. Keine UI-Änderung; keine Schemaänderung; keine neue Dependency.

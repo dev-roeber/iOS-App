@@ -69,7 +69,7 @@ public struct LocalTimelineMapViewport: Equatable {
 
 /// Grobe Detail-Stufe, an der `LocalTimelineMapPointBudget` und der
 /// Decimator orientiert werden. Bewusst plattform-/zoomstufenfrei.
-public enum LocalTimelineMapDetailLevel: String, Equatable, CaseIterable {
+public enum LocalTimelineMapDetailLevel: String, Equatable, CaseIterable, Sendable {
     case overview
     case low
     case medium

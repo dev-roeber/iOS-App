@@ -2,6 +2,31 @@
 
 > Status: Audit only — keine Renderer-Migration in diesem Commit. Erstellt im Rahmen der P0-Untersuchung des 46-MB-Google-Timeline-Imports (3. Hardware-Fail 2026-05-07T15:10:44+02:00 nach 95 156 ms, Jetsam auf iPhone 15 Pro Max).
 
+## Phase-10B PointLayer & Adaptive Budget (2026-05-08)
+
+> Status: **Foundation-only**. Modelle + Provider eingecheckt; in **keinem** View aktiv. UI-Verdrahtung in `LocalTimelineDayMapViewState` + `LocalTimelineDayMapView` ist WIP. Store-Pfad bleibt feature-flagged / default OFF. Legacy-Pfad **unverändert**. **46-MB-Gate bleibt FAILED / pending hardware retest** (verbatim).
+
+**PointKind + Provider-API:**
+
+- `PointKind`: `visit`, `activityStart`, `activityEnd`, `routeSample`.
+- `Entry`, `Cluster` (mit `dominantKind`), `Response` / `ClusterResponse` (mit Truncation-Flags).
+- Provider `LocalTimelineMapPointLayerProvider`: `dayPointCandidates`, `pointCandidates`, `dayClusteredPoints`, `clusteredPoints`. Bounded-read: Visits/Activities aus Spalten direkt; routeSamples lazy via `CoordBlobIterator + LocalTimelineRouteDecimator`. Deterministische Ausgabe.
+
+**Hard caps `LocalTimelineMapPerformanceBudget` (maxVisibleRoutes / maxPointsPerRoute / maxTotalPoints / maxClusters / maxRouteCandidates):**
+
+| Detail-Level | maxVisibleRoutes | maxPointsPerRoute | maxTotalPoints | maxClusters | maxRouteCandidates |
+| --- | --- | --- | --- | --- | --- |
+| overview | 24  | 256  | 1500  | 8  | 256  |
+| low      | 48  | 512  | 3000  | 16 | 512  |
+| medium   | 96  | 1024 | 6000  | 32 | 1024 |
+| high     | 192 | 2048 | 12000 | 64 | 2048 |
+
+Zusatz-Profil `dayMap` (für Day-DayMap-Surface): 12 / 64 / 800 / 12 / 256.
+
+**Aktiv auf welchen Karten**: aktuell **keine** — Modelle/Provider only; Phase-10A-DayMap-View ist Placeholder, Legacy-Karten unverändert.
+
+**200-Routen-Limit-Status**: im **Store-Pfad** ersetzt durch `maxVisibleRoutes(detailLevel)` (UI-bounded) + `maxRouteCandidates` (Provider-Over-fetch). Legacy-`AppOverviewTracksMapView` behält seine Tier-basierten `overlayLimits` (150–300, kein Funktionsverlust). **Legacy-Pfad ausdrücklich unverändert.**
+
 ## Phase 10A — Store-DayMap UI Surface feature-flagged (Foundation-only Presentation Model + SwiftUI Placeholder, kein MapKit-Import) (2026-05-08)
 
 > **Hinweis Phase 10A**: Phase 10A ergänzt eine **feature-flagged Store-DayMap-UI-Surface** in der bestehenden `LocalTimelineDayDetailView`. **NEU** `LocalTimelineDayMapViewState` (Foundation-only Presentation Model mit harten `Budget`-Grenzen — default 12 Routen / 256 Punkte pro Route / 4096 Punkte gesamt) und `LocalTimelineDayMapView` (SwiftUI `#if canImport(SwiftUI)`-guarded **Placeholder; KEIN MapKit-Import**). Echte `MKMapView`-/`MKMultiPolyline`-Verdrahtung bleibt **explizit Phase-10B Mac/Xcode-Pflicht** (Linux-Server kann MapKit nicht bauen). DayDetail-Map-Sektion ist nur sichtbar wenn `mapSource != nil` und Pfad-Metadaten existieren; "Load map" startet bounded Candidate-Load **ohne `coord_blob`-Decodierung**; "Decode all routes" toggelt bounded Geometrie-Decode innerhalb `Budget`. **Vollständige sichtbare Kartenmodernisierung wird NICHT behauptet.** Legacy-Map unverändert. **§4/§5 dieses Audits bleiben Roadmap** — der Heatmap-/Overview UI-Hook gegen `StoreBackedHeatmapDataProvider` bleibt blockiert hinter dem 46-MB-Gate (FAILED / pending hardware retest); echte MapKit-Verdrahtung der Phase-10A-Placeholder-View ist Phase 10B; Anti-Meridian-Behandlung bleibt Phase 10B/11. Store-Pfad bleibt default AUS (`LH2GPX_LOCAL_TIMELINE_STORE` unverändert).

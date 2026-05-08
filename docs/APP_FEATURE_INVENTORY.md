@@ -491,3 +491,6 @@ Present:
 ### C5. Active Days Summary Card (Phase B)
 Present:
 - fuenfte Summary-Karte `Active Days` in `AppInsightsContentView.buildSummaryCards`: zeigt `N / M`-Format (aktive vs. geladene Tage) mit Teal-Farbgebung
+
+### C6. PointLayer (Store-Pfad, Phase-10B Foundation-only)
+- **PointLayer (Store-Pfad, foundation-only, default OFF, in keinem View aktiv)**: Modelle + Provider eingecheckt (`LocalTimelineMapPointLayerModels.swift`, `LocalTimelineMapPointLayerProvider.swift`), zentrale adaptive Budgets via `LocalTimelineMapPerformanceBudget.swift`. UI-Verdrahtung WIP. Legacy-Pfad unverändert. 46-MB-Gate bleibt FAILED / pending hardware retest.

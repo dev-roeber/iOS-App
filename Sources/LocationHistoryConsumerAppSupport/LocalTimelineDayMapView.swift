@@ -28,6 +28,7 @@ public struct LocalTimelineDayMapView: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
+            statusBar
             if state.routes.isEmpty {
                 emptyRow
             } else {
@@ -36,12 +37,63 @@ public struct LocalTimelineDayMapView: View {
                     Divider()
                 }
             }
+            if state.pointLayerEnabled, let pl = state.pointLayer {
+                pointLayerSummary(pl)
+            }
             if let bounds = state.bounds {
                 boundsRow(bounds)
             }
             footer
         }
         .accessibilityIdentifier("localTimeline.dayMap")
+    }
+
+    @ViewBuilder
+    private var statusBar: some View {
+        HStack(spacing: 8) {
+            Text("routes \(state.routes.count)")
+            Text("·").foregroundStyle(.secondary)
+            Text("points \(state.totalDecodedPoints)")
+            if state.pointLayerEnabled, let pl = state.pointLayer {
+                Text("·").foregroundStyle(.secondary)
+                Text("layer \(pl.entries.count)")
+            }
+            Spacer(minLength: 0)
+            if state.truncatedRoutes || state.truncatedTotalPoints
+                || (state.pointLayer?.isTruncated ?? false) {
+                Text("optimized")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .accessibilityIdentifier("localTimeline.dayMap.statusBar.truncated")
+            }
+        }
+        .font(.footnote.monospacedDigit())
+        .foregroundStyle(.secondary)
+        .accessibilityIdentifier("localTimeline.dayMap.statusBar")
+    }
+
+    @ViewBuilder
+    private func pointLayerSummary(_ p: LocalTimelineMapPointLayerResponse) -> some View {
+        let visits = p.entries.filter { $0.kind == .visit }.count
+        let starts = p.entries.filter { $0.kind == .activityStart }.count
+        let ends = p.entries.filter { $0.kind == .activityEnd }.count
+        let samples = p.entries.filter { $0.kind == .routeSample }.count
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
+                Text("Point layer")
+                    .font(.footnote.weight(.semibold))
+                Spacer(minLength: 0)
+                if p.isTruncated {
+                    Text("Showing sampled points")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+            }
+            Text("visits \(visits) · start \(starts) · end \(ends) · samples \(samples)")
+                .font(.footnote.monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityIdentifier("localTimeline.dayMap.pointLayer")
     }
 
     @ViewBuilder
@@ -106,6 +158,9 @@ public struct LocalTimelineDayMapView: View {
             }
             if state.truncatedTotalPoints {
                 Text("Decoded points truncated by total budget (max \(state.budget.maxTotalPoints)).")
+            }
+            if !state.pointLayerEnabled {
+                Text("Point layer is OFF for this view (Phase-10B default).")
             }
             Text("MapKit overlay rendering is a Phase-10B Xcode handoff.")
         }

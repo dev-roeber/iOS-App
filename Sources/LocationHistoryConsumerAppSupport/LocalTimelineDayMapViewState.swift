@@ -68,6 +68,16 @@ public struct LocalTimelineDayMapViewState: Equatable {
     public let truncatedRoutes: Bool
     public let truncatedTotalPoints: Bool
     public let selectedPathIDs: Set<String>
+    /// Phase-10B — Punktelayer-Snapshot. `nil`, wenn kein Provider verdrahtet
+    /// oder `pointLayerEnabled == false` ist. Trägt nie eine vollständige
+    /// Import-Geometrie und ist hart durch das übergebene `pointLayerBudget`
+    /// gebunden.
+    public let pointLayer: LocalTimelineMapPointLayerResponse?
+    /// Tester-/Toggle-Sichtbarkeit des Punktelayers. Default in der UI ist
+    /// **OFF**, damit eine bestehende Tagesansicht ohne Punkte gerendert
+    /// wird; das Einschalten ist eine bewusste Entscheidung in der View
+    /// (siehe `LocalTimelineDayMapView`).
+    public let pointLayerEnabled: Bool
 
     public init(dayID: String,
                 detailLevel: LocalTimelineMapDetailLevel,
@@ -76,7 +86,9 @@ public struct LocalTimelineDayMapViewState: Equatable {
                 bounds: LocalTimelineMapBounds?,
                 truncatedRoutes: Bool,
                 truncatedTotalPoints: Bool,
-                selectedPathIDs: Set<String>) {
+                selectedPathIDs: Set<String>,
+                pointLayer: LocalTimelineMapPointLayerResponse? = nil,
+                pointLayerEnabled: Bool = false) {
         self.dayID = dayID
         self.detailLevel = detailLevel
         self.budget = budget
@@ -85,10 +97,19 @@ public struct LocalTimelineDayMapViewState: Equatable {
         self.truncatedRoutes = truncatedRoutes
         self.truncatedTotalPoints = truncatedTotalPoints
         self.selectedPathIDs = selectedPathIDs
+        self.pointLayer = pointLayer
+        self.pointLayerEnabled = pointLayerEnabled
     }
 
     public var isEmpty: Bool { routes.isEmpty && bounds == nil }
     public var totalDecodedPoints: Int { routes.reduce(0) { $0 + $1.decimatedPoints.count } }
+    /// Anzahl Punktelayer-Einträge, die der View tatsächlich anzeigen würde.
+    /// Liefert `0`, wenn `pointLayerEnabled == false` oder kein Snapshot
+    /// vorhanden ist.
+    public var visiblePointLayerCount: Int {
+        guard pointLayerEnabled, let p = pointLayer else { return 0 }
+        return p.entries.count
+    }
 }
 
 /// Foundation-only Source für die Store-DayMap-UI. Bindet einen
@@ -122,7 +143,10 @@ public struct LocalTimelineDayMapSource {
         visitsForBoundsFallback: @escaping VisitBoundsFallback = { _ in [] },
         budget: LocalTimelineDayMapViewState.Budget = .default,
         detailLevel: LocalTimelineMapDetailLevel = .medium,
-        viewport: LocalTimelineMapViewport = .world
+        viewport: LocalTimelineMapViewport = .world,
+        pointLayerProvider: LocalTimelineMapPointLayerProvider? = nil,
+        pointLayerBudget: LocalTimelineMapPerformanceBudget = .dayMap,
+        pointLayerEnabled: Bool = false
     ) -> LocalTimelineDayMapSource {
         LocalTimelineDayMapSource { dayID, selected in
             try buildState(
@@ -131,6 +155,9 @@ public struct LocalTimelineDayMapSource {
                 budget: budget,
                 detailLevel: detailLevel,
                 viewport: viewport,
+                pointLayerProvider: pointLayerProvider,
+                pointLayerBudget: pointLayerBudget,
+                pointLayerEnabled: pointLayerEnabled,
                 dayID: dayID,
                 selectedPathIDs: selected
             )
@@ -143,9 +170,19 @@ public struct LocalTimelineDayMapSource {
         budget: LocalTimelineDayMapViewState.Budget,
         detailLevel: LocalTimelineMapDetailLevel,
         viewport: LocalTimelineMapViewport,
+        pointLayerProvider: LocalTimelineMapPointLayerProvider?,
+        pointLayerBudget: LocalTimelineMapPerformanceBudget,
+        pointLayerEnabled: Bool,
         dayID: String,
         selectedPathIDs: Set<String>
     ) throws -> LocalTimelineDayMapViewState {
+
+        let resolvedPointLayer: LocalTimelineMapPointLayerResponse? = try {
+            guard pointLayerEnabled, let plp = pointLayerProvider else { return nil }
+            return try plp.dayPointCandidates(
+                dayID: dayID, viewport: viewport, budget: pointLayerBudget
+            )
+        }()
 
         if budget.maxRoutes == 0 {
             return LocalTimelineDayMapViewState(
@@ -157,7 +194,9 @@ public struct LocalTimelineDayMapSource {
                                            dayID: dayID),
                 truncatedRoutes: false,
                 truncatedTotalPoints: false,
-                selectedPathIDs: selectedPathIDs
+                selectedPathIDs: selectedPathIDs,
+                pointLayer: resolvedPointLayer,
+                pointLayerEnabled: pointLayerEnabled
             )
         }
 
@@ -230,7 +269,9 @@ public struct LocalTimelineDayMapSource {
             bounds: bounds,
             truncatedRoutes: truncatedRoutes,
             truncatedTotalPoints: truncatedTotalPoints,
-            selectedPathIDs: selectedPathIDs
+            selectedPathIDs: selectedPathIDs,
+            pointLayer: resolvedPointLayer,
+            pointLayerEnabled: pointLayerEnabled
         )
     }
 
