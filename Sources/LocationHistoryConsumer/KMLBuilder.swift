@@ -30,13 +30,32 @@ public enum KMLBuilder {
         if mode.includesTracks {
             for day in days {
                 for (pathIndex, path) in day.paths.enumerated() {
-                    let validPoints = path.points
-                    guard !validPoints.isEmpty else { continue }
+                    // Build the lon,lat string from whichever geometry shape
+                    // is populated. Google-Timeline-imported paths (post
+                    // 2026-05-08 refactor) carry geometry in `flatCoordinates`
+                    // and have an empty `points` array.
+                    let coordinates: String
+                    if !path.points.isEmpty {
+                        coordinates = path.points
+                            .map { "\(coordinateString($0.lon)),\(coordinateString($0.lat))" }
+                            .joined(separator: " ")
+                    } else if let flat = path.flatCoordinates,
+                              flat.count >= 2,
+                              flat.count.isMultiple(of: 2) {
+                        var pieces: [String] = []
+                        pieces.reserveCapacity(flat.count / 2)
+                        var i = 0
+                        while i + 1 < flat.count {
+                            pieces.append("\(coordinateString(flat[i + 1])),\(coordinateString(flat[i]))")
+                            i += 2
+                        }
+                        coordinates = pieces.joined(separator: " ")
+                    } else {
+                        continue
+                    }
+                    guard !coordinates.isEmpty else { continue }
 
                     let trackName = ExportUtils.trackTitle(date: day.date, activityType: path.activityType, index: pathIndex)
-                    let coordinates = validPoints
-                        .map { "\(coordinateString($0.lon)),\(coordinateString($0.lat))" }
-                        .joined(separator: " ")
 
                     lines.append("    <Placemark>")
                     lines.append("      <name>\(ExportUtils.xmlEscape(trackName))</name>")

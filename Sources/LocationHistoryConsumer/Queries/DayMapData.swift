@@ -97,8 +97,33 @@ public enum DayMapDataExtractor {
         }
 
         let pathOverlays = detail.paths.compactMap { path -> DayMapPathOverlay? in
-            let coords = path.points.map { DayMapCoordinate(lat: $0.lat, lon: $0.lon) }
-            let timestamps = path.points.map { $0.time }
+            // Geometry can come from either `points` (legacy / GPX / TCX
+            // imports) or `flatCoordinates` (Google Timeline post 2026-05-08
+            // refactor). Pick whichever shape is populated. Tempolayer
+            // (speed-coloured rendering) is only available for the points
+            // shape because per-point timestamps were dropped by the flat
+            // converter — `timestamps` defaults to `[]` when absent and the
+            // map view falls back to activity colouring.
+            let coords: [DayMapCoordinate]
+            let timestamps: [String?]
+            if !path.points.isEmpty {
+                coords = path.points.map { DayMapCoordinate(lat: $0.lat, lon: $0.lon) }
+                timestamps = path.points.map { $0.time }
+            } else if let flat = path.flatCoordinates,
+                      flat.count >= 2,
+                      flat.count.isMultiple(of: 2) {
+                var c: [DayMapCoordinate] = []
+                c.reserveCapacity(flat.count / 2)
+                var i = 0
+                while i + 1 < flat.count {
+                    c.append(DayMapCoordinate(lat: flat[i], lon: flat[i + 1]))
+                    i += 2
+                }
+                coords = c
+                timestamps = []
+            } else {
+                return nil
+            }
             guard coords.count >= 2 else { return nil }
             return DayMapPathOverlay(
                 coordinates: coords,

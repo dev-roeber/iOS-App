@@ -83,13 +83,27 @@ public enum AppExportQueries {
         }
 
         let paths = day.paths.map { path in
-            DayDetailViewState.PathItem(
+            // pointCount reports the real geometric vertex count regardless
+            // of whether geometry is held in `points` or in `flatCoordinates`.
+            // Google-Timeline-shaped paths after the 2026-05-08 P0 refactor
+            // arrive with `points: []` and `flatCoordinates: [lat0, lon0, …]`
+            // — Day-detail UI must still see the right vertex count.
+            let geometricPointCount: Int = {
+                if !path.points.isEmpty {
+                    return path.points.count
+                }
+                if let flat = path.flatCoordinates, flat.count >= 2 {
+                    return flat.count / 2
+                }
+                return 0
+            }()
+            return DayDetailViewState.PathItem(
                 startTime: path.startTime,
                 endTime: path.endTime,
                 activityType: path.activityType,
                 distanceM: path.distanceM,
                 effectiveDistanceM: PathDistanceCalculator.effectiveDistance(for: path),
-                pointCount: path.points.count,
+                pointCount: geometricPointCount,
                 sourceType: path.sourceType,
                 points: path.points.map {
                     DayDetailViewState.PathPointItem(
@@ -98,7 +112,8 @@ public enum AppExportQueries {
                         time: $0.time,
                         accuracyM: $0.accuracyM
                     )
-                }
+                },
+                flatCoordinates: path.flatCoordinates
             )
         }
 
@@ -427,12 +442,27 @@ public enum AppExportQueries {
             + day.activities.compactMap(\.endTime)
             + day.paths.compactMap(\.endTime)
 
+        // Vertex count is the canonical count regardless of geometry shape:
+        // points-shaped → path.points.count; flat-shaped → flat.count / 2.
+        // Without the flat-aware branch a Google-Timeline-shaped day would
+        // report `totalPathPointCount = 0` even when the polyline carries
+        // thousands of vertices.
+        let totalPathPointCount = day.paths.reduce(0) { partial, path in
+            if !path.points.isEmpty {
+                return partial + path.points.count
+            }
+            if let flat = path.flatCoordinates, flat.count >= 2 {
+                return partial + flat.count / 2
+            }
+            return partial
+        }
+
         return DaySummary(
             date: day.date,
             visitCount: day.visits.count,
             activityCount: day.activities.count,
             pathCount: day.paths.count,
-            totalPathPointCount: day.paths.reduce(0) { $0 + $1.points.count },
+            totalPathPointCount: totalPathPointCount,
             totalPathDistanceM: effectiveDistance(for: day),
             hasContent: !day.visits.isEmpty || !day.activities.isEmpty || !day.paths.isEmpty,
             exportablePathCount: ExportRouteSanitizer.exportablePathCount(in: day),

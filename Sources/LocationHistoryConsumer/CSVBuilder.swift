@@ -103,8 +103,35 @@ public enum CSVBuilder {
     }
 
     private static func routeRow(day: Day, path: Path, routeIndex: Int) -> String {
-        let firstPoint = path.points.first
-        let lastPoint = path.points.last
+        // Pull start/end coordinates and vertex count from whichever geometry
+        // shape is populated. Google-Timeline-imported paths after the
+        // 2026-05-08 refactor carry their geometry in `flatCoordinates`.
+        let startLat: Double?
+        let startLon: Double?
+        let endLat: Double?
+        let endLon: Double?
+        let pointCount: Int
+        if !path.points.isEmpty {
+            startLat = path.points.first?.lat
+            startLon = path.points.first?.lon
+            endLat = path.points.last?.lat
+            endLon = path.points.last?.lon
+            pointCount = path.points.count
+        } else if let flat = path.flatCoordinates,
+                  flat.count >= 2,
+                  flat.count.isMultiple(of: 2) {
+            startLat = flat[0]
+            startLon = flat[1]
+            endLat = flat[flat.count - 2]
+            endLon = flat[flat.count - 1]
+            pointCount = flat.count / 2
+        } else {
+            startLat = nil
+            startLon = nil
+            endLat = nil
+            endLon = nil
+            pointCount = 0
+        }
         let cols: [String?] = [
             day.date,
             day.date,
@@ -117,11 +144,11 @@ public enum CSVBuilder {
             String(routeIndex),
             path.distanceM.map { String(format: "%.2f", $0) },
             path.distanceM.map { String(format: "%.2f", $0) },
-            optionalDouble(firstPoint?.lat),
-            optionalDouble(firstPoint?.lon),
-            optionalDouble(lastPoint?.lat),
-            optionalDouble(lastPoint?.lon),
-            String(path.points.count),
+            optionalDouble(startLat),
+            optionalDouble(startLon),
+            optionalDouble(endLat),
+            optionalDouble(endLon),
+            String(pointCount),
         ]
         return cols.map { csvEscape($0 ?? "") }.joined(separator: ",")
     }

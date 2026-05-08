@@ -143,6 +143,13 @@ private struct TopLevelArrayParser {
     var inString = false
     var escape = false
     let maxElementBytes: Int
+    /// Monotonic counter across feeds — every closed top-level element bumps
+    /// it once so probes can throttle on element index without forcing the
+    /// caller to track its own counter.
+    var elementCounter: Int = 0
+    /// Diagnostic: bytes for the just-closed element. Used to flag outlier
+    /// elements (>64 KB) without walking the buffer.
+    private var lastElementBytes: Int = 0
 
     init(maxElementBytes: Int) {
         self.maxElementBytes = maxElementBytes
@@ -251,6 +258,16 @@ private struct TopLevelArrayParser {
                     // across all 65k elements and trip Jetsam on real hardware
                     // (reproduced 2026-05-07 on iPhone 15 Pro Max with a 46 MB
                     // location-history.zip).
+                    elementCounter += 1
+                    lastElementBytes = element.count
+                    let parseProbe = ImportMemoryProbe.isLoggingEnabled
+                        && (elementCounter % 1000 == 0)
+                    if parseProbe {
+                        ImportMemoryProbe.log("stream.beforeElementParse=\(elementCounter)")
+                    }
+                    if lastElementBytes > 64 * 1024 {
+                        ImportMemoryProbe.log("stream.element.outlier index=\(elementCounter) bytes=\(lastElementBytes)")
+                    }
                     try autoreleasepool {
                         let parsed: Any
                         do {
@@ -260,11 +277,15 @@ private struct TopLevelArrayParser {
                         }
                         try onElement(parsed)
                     }
+                    if parseProbe {
+                        ImportMemoryProbe.log("stream.afterElementParse=\(elementCounter)")
+                    }
+                    ImportMemoryProbe.logEvery("stream.elements", counter: elementCounter, every: 1000)
                     // After an outlier-sized element we may be holding onto a
                     // multi-MB Data capacity for the rest of the import. Cap
                     // the kept capacity at 64 KB so a single huge element
                     // doesn't permanently inflate the parser's footprint.
-                    if element.count > 64 * 1024 {
+                    if lastElementBytes > 64 * 1024 {
                         element = Data()
                         element.reserveCapacity(8 * 1024)
                     } else {

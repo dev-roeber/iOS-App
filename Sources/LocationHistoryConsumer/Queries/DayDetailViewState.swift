@@ -42,13 +42,19 @@ public struct DayDetailViewState: Equatable {
         /// `effectiveDistanceM` instead so summary and detail agree.
         public let distanceM: Double?
         /// Effective distance in metres. Equal to `distanceM` when that is
-        /// finite and `> 0`; otherwise reconstructed from `points` via
-        /// `PathDistanceCalculator`. Always non-negative; `0` only when no
-        /// usable geometry is available.
+        /// finite and `> 0`; otherwise reconstructed from `points` or
+        /// `flatCoordinates` via `PathDistanceCalculator`. Always
+        /// non-negative; `0` only when no usable geometry is available.
         public let effectiveDistanceM: Double
         public let pointCount: Int
         public let sourceType: String?
         public let points: [PathPointItem]
+        /// Optional compact lat/lon array — even-count `[lat0, lon0, lat1, lon1, …]`.
+        /// When the importer chooses the flat representation (Google Timeline
+        /// after the 2026-05-08 P0 refactor), `points` may be empty and
+        /// `flatCoordinates` carries the full geometry. Consumers that walk
+        /// path geometry (map overlays, exporters) must accept either.
+        public let flatCoordinates: [Double]?
 
         public init(
             startTime: String?,
@@ -58,7 +64,8 @@ public struct DayDetailViewState: Equatable {
             effectiveDistanceM: Double,
             pointCount: Int,
             sourceType: String?,
-            points: [PathPointItem]
+            points: [PathPointItem],
+            flatCoordinates: [Double]? = nil
         ) {
             self.startTime = startTime
             self.endTime = endTime
@@ -68,6 +75,7 @@ public struct DayDetailViewState: Equatable {
             self.pointCount = pointCount
             self.sourceType = sourceType
             self.points = points
+            self.flatCoordinates = flatCoordinates
         }
     }
 

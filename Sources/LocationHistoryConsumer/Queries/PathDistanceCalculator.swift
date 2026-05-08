@@ -141,11 +141,46 @@ public extension PathDistanceCalculator {
 
     /// Effective distance for the projected day-detail `PathItem`. Mirrors
     /// the source-of-truth so summary and detail agree on every day.
+    /// Reads `flatCoordinates` directly (no `[(lat, lon)]` allocation) so
+    /// large Google-Timeline-shaped paths don't pay an array copy here.
     static func effectiveDistance(for pathItem: DayDetailViewState.PathItem) -> Double {
-        effectiveDistance(
-            rawDistanceM: pathItem.distanceM,
-            points: pathItem.points.map { (lat: $0.lat, lon: $0.lon) },
-            flatCoordinates: nil
-        )
+        if let raw = pathItem.distanceM, raw.isFinite, raw > 0 {
+            return raw
+        }
+        if pathItem.points.count >= 2 {
+            // Inline iteration — avoid the `[(lat, lon)]` materialisation we
+            // used before so a 5k-point path stops allocating ~80 KB just to
+            // call `effectiveDistance`.
+            return polylineDistanceMetersFromPathPointItems(pathItem.points)
+        }
+        if let flat = pathItem.flatCoordinates, flat.count >= 4 {
+            return polylineDistanceMetersFromFlat(flat)
+        }
+        return 0
+    }
+
+    private static func polylineDistanceMetersFromPathPointItems(
+        _ points: [DayDetailViewState.PathPointItem]
+    ) -> Double {
+        let earthRadiusMeters = 6_371_000.0
+        var total = 0.0
+        var iterator = points.makeIterator()
+        guard let first = iterator.next() else { return 0 }
+        var prevLat = first.lat
+        var prevLon = first.lon
+        while let current = iterator.next() {
+            let lat1 = prevLat * .pi / 180.0
+            let lat2 = current.lat * .pi / 180.0
+            let dLat = (current.lat - prevLat) * .pi / 180.0
+            let dLon = (current.lon - prevLon) * .pi / 180.0
+            let sinDLat = sin(dLat / 2)
+            let sinDLon = sin(dLon / 2)
+            let a = sinDLat * sinDLat + cos(lat1) * cos(lat2) * sinDLon * sinDLon
+            let c = 2 * atan2(sqrt(a), sqrt(1 - a))
+            total += earthRadiusMeters * c
+            prevLat = current.lat
+            prevLon = current.lon
+        }
+        return total
     }
 }

@@ -53,10 +53,16 @@ final class AppHeatmapModel {
                     }
                 }
                 for path in day.paths {
-                    for point in path.points {
-                        points.append(WeightedPoint(lat: point.lat, lon: point.lon, weight: 1))
-                    }
-                    if let flats = path.flatCoordinates {
+                    // Heatmap density must read EITHER points OR flatCoordinates,
+                    // never both. Before this fix, a path that had both shapes
+                    // populated contributed every vertex twice and inflated
+                    // intensity. After the 2026-05-08 Google Timeline refactor,
+                    // imports arrive flat-only with `points: []`.
+                    if !path.points.isEmpty {
+                        for point in path.points {
+                            points.append(WeightedPoint(lat: point.lat, lon: point.lon, weight: 1))
+                        }
+                    } else if let flats = path.flatCoordinates {
                         for index in stride(from: 0, to: flats.count - 1, by: 2) {
                             points.append(WeightedPoint(lat: flats[index], lon: flats[index + 1], weight: 1))
                         }

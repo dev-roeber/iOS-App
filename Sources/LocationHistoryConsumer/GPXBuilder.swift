@@ -95,17 +95,45 @@ public enum GPXBuilder {
         if mode.includesTracks {
             for day in days {
                 for (pathIndex, path) in day.paths.enumerated() {
-                    let validPoints = path.points
-                    guard !validPoints.isEmpty else { continue }
+                    // Two geometry shapes:
+                    //   1. points-shaped → preserve per-point timestamps.
+                    //   2. flat-shaped (Google Timeline post 2026-05-08
+                    //      refactor) → emit lat/lon-only `<trkpt/>` entries,
+                    //      no `<time>` (per-point timestamps were dropped to
+                    //      kill the post-stream memory peak; if a future
+                    //      importer wants timestamps back, model them
+                    //      separately and add a sibling array).
+                    let trackPoints: [GPXTrackPoint]
+                    if !path.points.isEmpty {
+                        trackPoints = path.points.map {
+                            GPXTrackPoint(latitude: $0.lat, longitude: $0.lon, time: $0.time)
+                        }
+                    } else if let flat = path.flatCoordinates,
+                              flat.count >= 2,
+                              flat.count.isMultiple(of: 2) {
+                        var pts: [GPXTrackPoint] = []
+                        pts.reserveCapacity(flat.count / 2)
+                        var i = 0
+                        while i + 1 < flat.count {
+                            pts.append(GPXTrackPoint(
+                                latitude: flat[i],
+                                longitude: flat[i + 1],
+                                time: nil
+                            ))
+                            i += 2
+                        }
+                        trackPoints = pts
+                    } else {
+                        continue
+                    }
+                    guard !trackPoints.isEmpty else { continue }
 
                     let trackName = ExportUtils.trackTitle(date: day.date, activityType: path.activityType, index: pathIndex)
                     appendTrack(
                         GPXTrack(
                             name: trackName,
                             type: path.activityType,
-                            points: validPoints.map {
-                                GPXTrackPoint(latitude: $0.lat, longitude: $0.lon, time: $0.time)
-                            }
+                            points: trackPoints
                         ),
                         to: &lines
                     )

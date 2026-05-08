@@ -1,16 +1,19 @@
 import Foundation
 
 /// Surfaces the running build's identity (Marketing version, Build number,
-/// optional Git commit SHA) so testers can verify on the device which build
-/// is actually executing. Was added after the 2026-05-07 hardware Jetsam
-/// re-fail where it was unclear whether the autoreleasepool fix in
-/// `cd77f97` was actually present in the build under test.
+/// optional Git commit SHA, memory-probe enablement) so testers can verify
+/// on the device which build is actually executing AND whether the
+/// `[LH2GPX_MEMORY]` log channel is live. Was added after the 2026-05-07
+/// hardware Jetsam re-fails where it was unclear whether the autoreleasepool
+/// fix in `cd77f97` and the post-finalize trim in `ae5de1f` were actually
+/// present in the build under test.
 public struct AppBuildInfo {
     public static let shared = AppBuildInfo()
 
     public let marketingVersion: String
     public let buildNumber: String
     public let gitCommitSHA: String?
+    public let isMemoryLoggingEnabled: Bool
 
     public init(bundle: Bundle = .main) {
         let info = bundle.infoDictionary
@@ -24,6 +27,7 @@ public struct AppBuildInfo {
         } else {
             self.gitCommitSHA = nil
         }
+        self.isMemoryLoggingEnabled = ImportMemoryProbe.isLoggingEnabled
     }
 
     /// Compact one-line description suitable for log lines or compact UI.

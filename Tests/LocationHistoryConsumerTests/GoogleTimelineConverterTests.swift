@@ -86,6 +86,15 @@ final class GoogleTimelineConverterTests: XCTestCase {
         XCTAssertEqual(result.data.days.first?.visits.first?.startTime, "2024-03-20T02:30:00+02:00")
     }
 
+    /// 2026-05-08 P0 refactor: Google-Timeline-imported paths now use the
+    /// canonical `flatCoordinates: [Double]` geometry shape and DROP per-point
+    /// ISO timestamps. The original DST-specific assertion (per-point time
+    /// strings translate correctly across the spring-forward boundary) is
+    /// therefore obsolete — there are no per-point times to assert. We retain
+    /// the DST-input test fixture and verify (a) the day grouping still
+    /// honours UTC and (b) the geometry was preserved (flat with one lat/lon
+    /// pair per offset). If a future feature reintroduces per-point time we
+    /// must add a sibling test that verifies the DST translation again.
     func testTimelinePathOffsetsRemainCorrectAcrossDSTForwardTransition() throws {
         let result = try withDefaultTimeZone("Europe/Berlin") {
             try convertTimeline(
@@ -99,11 +108,17 @@ final class GoogleTimelineConverterTests: XCTestCase {
             )
         }
 
-        let points = try XCTUnwrap(result.data.days.first?.paths.first?.points)
+        let path = try XCTUnwrap(result.data.days.first?.paths.first)
         XCTAssertEqual(result.data.days.map(\.date), ["2024-03-31"])
-        XCTAssertEqual(points.map(\.time), ["2024-03-31T00:30:00Z", "2024-03-31T01:30:00Z"])
+        XCTAssertTrue(path.points.isEmpty,
+                      "Google-Timeline-imported paths use flat geometry; per-point PathPoint array must be empty")
+        let flat = try XCTUnwrap(path.flatCoordinates,
+                                  "Google-Timeline-imported paths must populate flatCoordinates")
+        XCTAssertEqual(flat.count, 4, "Two offsets → two lat/lon pairs → 4 doubles")
     }
 
+    /// See `testTimelinePathOffsetsRemainCorrectAcrossDSTForwardTransition`
+    /// for the rationale on why per-point timestamps are no longer asserted.
     func testTimelinePathOffsetsRemainCorrectAcrossDSTBackwardTransition() throws {
         let result = try withDefaultTimeZone("Europe/Berlin") {
             try convertTimeline(
@@ -117,9 +132,13 @@ final class GoogleTimelineConverterTests: XCTestCase {
             )
         }
 
-        let points = try XCTUnwrap(result.data.days.first?.paths.first?.points)
+        let path = try XCTUnwrap(result.data.days.first?.paths.first)
         XCTAssertEqual(result.data.days.map(\.date), ["2024-10-27"])
-        XCTAssertEqual(points.map(\.time), ["2024-10-27T00:30:00Z", "2024-10-27T01:30:00Z"])
+        XCTAssertTrue(path.points.isEmpty,
+                      "Google-Timeline-imported paths use flat geometry; per-point PathPoint array must be empty")
+        let flat = try XCTUnwrap(path.flatCoordinates,
+                                  "Google-Timeline-imported paths must populate flatCoordinates")
+        XCTAssertEqual(flat.count, 4, "Two offsets → two lat/lon pairs → 4 doubles")
     }
 
     func testGroupsLocalMidnightBoundaryEntriesIntoSingleUTCDayAndLeavesInsightsStable() throws {

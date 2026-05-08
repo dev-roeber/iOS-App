@@ -17,9 +17,31 @@ Bei Ablehnung eines Punktes: konkreten Bug + Reproduktionsschritte unter „Befu
 
 ### Sektion 1 — 46-MB-Crashfall (Großimport auf echtem iPhone)
 
-**Status 2026-05-07 (zweiter Hardware-Fail): FAILED → erweiterter Code-Fix verfügbar, Hardware-Retest steht weiter aus**
+**Status 2026-05-08 (dritter Hardware-Fail): FAILED → weiter erweiterter Code-Stand vorbereitet, Hardware-Retest steht aus**
 
-Zweiter reproduzierter Hardware-Fail am 2026-05-07T14:14:36+02:00 auf iPhone 15 Pro Max (`iPhone16,2`, iOS 26.4 / 23E246), Xcode 26.3, macOS 15.7 — **trotz** Autoreleasepool-Fix in `cd77f97`:
+**Dritter reproduzierter Hardware-Fail** am 2026-05-07T15:10:44+02:00 auf iPhone 15 Pro Max (`iPhone16,2`, iOS 26.4 / 23E246), Xcode 26.3, macOS 15.7 — **trotz** des erweiterten Memory-Trains nach `cd77f97` und HEAD `ae5de1f`:
+- App: `LH2GPXWrapper` (Bundle `de.roeber.LH2GPXWrapper`).
+- Datei: `~/Downloads/location-history.zip` (~46 MB; ~64.926 Top-Level-Timeline-Entries).
+- Fehler: `IDEDebugSessionErrorDomain Code 11 — “The app ‘LH2GPXWrapper’ has been killed by the operating system because it is using too much memory.”`
+- Operation duration: **95.156 ms** (vs. 216.606 ms zweiter Fail / 232.341 ms erster Fail). Die deutlich kürzere Op-Dauer signalisiert: der Peak liegt **früher** im Importpfad als bisher angenommen — wahrscheinlich tief im Streaming-/Konverter-Pfad oder beim Übergang Streaming → Session-Materialisierung.
+
+Damit ist klar: die in HEAD `ae5de1f` adressierten Allokationspfade (Session-Init / Builder / Calculator) waren notwendig, aber nicht hinreichend. Der dritte Fail erzwingt einen weiter erweiterten Diagnostik-/Geometrie-Stand.
+
+Code-Stand vorbereitet in HEAD `<commit-tba>` nach `ae5de1f` (kein verifizierter Erfolg, ausschließlich vorbereiteter Fix-Stand bis Hardware-Retest):
+1. **Build-Identitäts-Logging auf App-Start**: `[LH2GPX_BUILD] app.start version=… build=… sha=… memoryLogging=enabled|disabled` wird **immer** ausgegeben (auch wenn die Probe deaktiviert ist) — damit ist zweifelsfrei loggebar, welcher Build wirklich gestartet wurde.
+2. **`ImportMemoryProbe` verdichtet**: zusätzliche Probe-Punkte `import.fileSelected`, `zip.open.start`/`zip.open.end`, `zip.entry.sniff.start`/`zip.entry.sniff.end`, `zip.stream.chunk` jetzt **alle 8 Chunks** (statt 64), `stream.elements` alle 1000 Top-Level-Elemente, `stream.element.outlier` für Elemente > 64 KB, `stream.before/afterElementParse` (throttled alle 1000), `converter.ingest` alle 1000 Entries, `converter.dayMap.count` alle 5000, `converter.before/afterFinalize`, `loader.before/afterSessionContent`, `session.before/afterShowContent`, `app.didReceiveMemoryWarning` (iOS-only via `NotificationCenter`-Observer auf `UIApplication.didReceiveMemoryWarningNotification`).
+3. **`ImportMemoryProbe` akzeptiert beide Aktivierungs-Quellen** — `ProcessInfo.environment` **und** `ProcessInfo.arguments`. Erkannt werden alle vier Schreibweisen: `LH2GPX_IMPORT_MEMORY_LOG=1`, `LH2GPX_IMPORT_MEMORY_LOG`, `-LH2GPX_IMPORT_MEMORY_LOG`, `--LH2GPX_IMPORT_MEMORY_LOG`. Neue testbare API `ImportMemoryProbe.isEnabledForEnvironment(_:arguments:)`.
+4. **`AppBuildInfo.isMemoryLoggingEnabled: Bool`** ergänzt; Settings → Technical → „Build Info" zeigt jetzt eine zusätzliche Zeile **„Memory Logging: Enabled / Disabled"** (grün, wenn aktiv) — der Tester kann am Gerät verifizieren, ob die Probe für diesen Run scharf geschaltet ist, **bevor** er den Import startet.
+5. **Geometrie-Refactor (P0 Fokus 1) — flatCoordinates-Kanonisierung**: Google-Timeline-Imports schreiben jetzt `flatCoordinates: [Double]` statt `points: [PathPoint]`, **ohne** ISO-Zeitstrings pro Punkt. Geschätzte Einsparung: **~80–120 MB resident** bei der 46-MB-ZIP. Alle Consumer (`PathDistanceCalculator`, `AppExportQueries`, `DayMapDataExtractor`, `ExportRouteSanitizer`, `AppHeatmapModel`, GPX/KML/GeoJSON/CSV-Builder) sind flat-aware gemacht; `AppHeatmapModel`-Doppelbug (Punkte wurden bei beiden Geometrien doppelt gezählt) ist gefixt. Code-Seite des P0 ist damit done; Hardware-Retest weiterhin offen.
+6. **NEU `docs/MAP_ARCHITECTURE_AUDIT.md`**: Bestandsaufnahme aller Kartenflächen + Roadmap-Pfad zu UIKit `MKMapView`/`MKMultiPolyline` für Heavy Overview/Heatmap. **Nicht** umgesetzt in diesem Commit — reine Architektur-Doku/Roadmap.
+
+**Empfohlene Tester-Sequenz beim Retest (Mac/iPhone-Handoff — auf Linux-Server nicht durchführbar)**:
+1. **Build-Identitäts-Verifikation am Gerät**: App öffnen, **Settings → Technical → „Build Info"** prüfen — Marketing-Version, Build, optional Git-Commit-SHA und neu **„Memory Logging: Enabled / Disabled"** mit dem getesteten Git-HEAD vergleichen, **bevor** der Import gestartet wird. Wenn „Memory Logging: Disabled" steht, ist die Probe für diesen Run **nicht** aktiv und das nachfolgende Logging liefert nichts.
+2. **Memory-Logging-Aktivierung** vor dem Run setzen — entweder als **Environment-Variable** `LH2GPX_IMPORT_MEMORY_LOG=1` (Run Scheme → Arguments → Environment Variables) **oder** als **Launch-Argument**. Die Probe akzeptiert alle vier Schreibweisen: `LH2GPX_IMPORT_MEMORY_LOG`, `-LH2GPX_IMPORT_MEMORY_LOG`, `--LH2GPX_IMPORT_MEMORY_LOG`, `LH2GPX_IMPORT_MEMORY_LOG=1`. Im „Build Info" muss daraufhin **„Memory Logging: Enabled"** in Grün stehen.
+3. **Debug-Run**: Import durchführen, in der Xcode-Console alle Zeilen mit `[LH2GPX_BUILD]` (App-Start, einmal) und `[LH2GPX_MEMORY]` (Probe) loggen — wenn der Build erneut Jetsam-killt, beweist das letzte gelogde `[LH2GPX_MEMORY]`-Label die Peak-Phase. Bei `app.didReceiveMemoryWarning` greift iOS bereits, bevor Jetsam zuschlägt.
+4. **Wenn Debug grün**: Release-Build **ohne Debugger / View-Debugging** auf demselben Gerät mit derselben 46-MB-`location-history.zip`. Erst dann gilt diese Sektion potenziell als PASSED — vorher nicht.
+
+Reproduzierter Zweit-Hardware-Befund am 2026-05-07T14:14:36+02:00 (vor HEAD `<commit-tba>`, post `cd77f97`): **trotz** Autoreleasepool-Fix in `cd77f97`:
 - App: `LH2GPXWrapper` (Bundle `de.roeber.LH2GPXWrapper`).
 - Datei: `~/Downloads/location-history.zip` (~46 MB; ~64.926 Top-Level-Timeline-Entries).
 - Fehler: `IDEDebugSessionErrorDomain Code 11 — “The app ‘LH2GPXWrapper’ has been killed by the operating system because it is using too much memory.”`
@@ -32,19 +54,7 @@ Damit wurde klar: der Memory-Peak liegt **nach** dem JSON-Streaming. Top-Hypothe
 4. `IncrementalStreamConverter.finalize()` hielt seinen befüllten Builder darüber hinaus.
 5. `PathDistanceCalculator.effectiveDistance(for: Path)` baute pro Aufruf temporäre `[(lat, lon)]`-Arrays über alle Punkte.
 
-Erweiterter Code-Fix in HEAD pending (Commit folgt direkt nach diesem Doku-Update):
-1. `AppSessionContent.init` ermittelt `selectedDate` direkt aus `export.data.days` per einfacher Datumsmaximierung — keine `daySummaries`-Materialisierung mehr im Init.
-2. `AppSessionState.show(content:)` liest `inputFormat` aus `content.export.meta.source.inputFormat` / `meta.config.inputFormat`, statt `content.overview` zu erzwingen.
-3. `ExportBuilder.finalize()` ist `mutating` und benutzt `dayMap.removeValue(forKey:)` + abschließendes `removeAll(keepingCapacity: false)`. `IncrementalStreamConverter.finalize()` ersetzt seinen internen Builder nach Erhalt des `AppExport` durch eine frische Instanz.
-4. Neue `PathDistanceCalculator.effectiveDistance(for: Path)`-Implementierung iteriert direkt über `points` bzw. `flatCoordinates` (haversine inline, ohne Tuple-Array-Kopien).
-5. **Diagnostik**: neue `ImportMemoryProbe` (mach `task_vm_info`), gated auf Launch-Argument bzw. Environment `LH2GPX_IMPORT_MEMORY_LOG=1`. Probe-Punkte im ZIP-Streaming-Pfad (`beforeExtract`, alle 64 Chunks, `beforeFinalize`, `afterFinalize` mit Day-Count, `afterSessionInit`) und im Loader-Entry/Exit. Logs greppbar als `[LH2GPX_MEMORY]`.
-6. **Build-Identität**: neuer `AppBuildInfo` + Sektion „Build Info“ in den App-Optionen (`Settings → Technical`) zeigt Marketing-Version, Build, optional Git-Commit-SHA. SHA wird in `wrapper/Config/Info.plist` als Placeholder `GitCommitSHA = $(GIT_COMMIT_SHA)` ausgeschrieben — beim Hardware-Test über `xcodebuild GIT_COMMIT_SHA=$(git rev-parse --short HEAD)` injizierbar; ohne Injection bleibt das Feld leer und nur Version/Build sind sichtbar.
-7. Drei neue Regressionstests in `DemoSessionStateTests` (selectedDate-Pick, leerer Fallback, Title aus `meta.source.inputFormat`). `swift test` 1081/2/0.
-
-**Empfohlene Tester-Sequenz beim Retest**:
-1. Erst Build identifizieren — App öffnen, Settings → Technical → „Build Info“: Marketing-Version, Build und (falls Build-Setting `GIT_COMMIT_SHA` gesetzt war) Commit-SHA prüfen, mit dem getesteten Git-HEAD vergleichen.
-2. Erst Debug-Run mit Run-Argument `LH2GPX_IMPORT_MEMORY_LOG=1` (Run Scheme → Arguments). Import durchführen, in der Xcode-Console alle Zeilen mit `[LH2GPX_MEMORY]` loggen — wenn der Build erneut Jetsam-killt, beweist das letzte gelogde `[LH2GPX_MEMORY]`-Label die Peak-Phase.
-3. Wenn Debug grün: Release-Build **ohne Debugger / View-Debugging** auf demselben Gerät mit derselben 46-MB-`location-history.zip` ziehen. Erst dann gilt diese Sektion potenziell als PASSED.
+Code-Stand HEAD `ae5de1f` (notwendig, aber im dritten Fail nicht hinreichend gewesen): `AppSessionContent.init` ermittelt `selectedDate` direkt aus `export.data.days` ohne `daySummaries`-Materialisierung; `AppSessionState.show(content:)` liest `inputFormat` aus `content.export.meta.source.inputFormat` / `meta.config.inputFormat` ohne `content.overview`-Trigger; `ExportBuilder.finalize()` ist `mutating` und benutzt `dayMap.removeValue(forKey:)` + abschließendes `removeAll(keepingCapacity: false)`; `IncrementalStreamConverter.finalize()` ersetzt seinen internen Builder nach Erhalt des `AppExport` durch eine frische Instanz; neue `PathDistanceCalculator.effectiveDistance(for: Path)` iteriert direkt über `points` bzw. `flatCoordinates`; Erst-Version `ImportMemoryProbe` (mach `task_vm_info`); `AppBuildInfo` + Sektion „Build Info" in `Settings → Technical`; `Info.plist`-Schlüssel `GitCommitSHA = $(GIT_COMMIT_SHA)` Build-Setting-Injection. `swift test` 1081/2/0 zum Stand `ae5de1f`. Der dritte Hardware-Fail beweist, dass dieser Stand notwendig, aber nicht hinreichend war.
 
 Reproduzierter Erst-Hardware-Befund am 2026-05-07T13:38:37+02:00 (vor `cd77f97`):
 - App: `LH2GPXWrapper` (Bundle `de.roeber.LH2GPXWrapper`).
@@ -53,7 +63,7 @@ Reproduzierter Erst-Hardware-Befund am 2026-05-07T13:38:37+02:00 (vor `cd77f97`)
 - Operation duration: 232.341 ms.
 - Erst-Root-Cause: `JSONSerialization.jsonObject(with: element)` lief außerhalb des `autoreleasepool`. Behoben in `cd77f97` (notwendig, aber nicht hinreichend — siehe zweiter Fail oben).
 
-Solange der Hardware-Retest mit der originalen 46-MB-`location-history.zip` auf iPhone 15 Pro Max (iOS 26.4) **als Release-Build ohne Debugger** nicht durch einen Tester nachweislich grün bestätigt ist, bleibt diese Sektion **FAILED**. Der erweiterte Codefix adressiert die wahrscheinliche Hauptursache, ist aber kein Beweis dafür, dass das Release-Build-Verhalten unter realer iOS-Speicherlast okay ist.
+Solange der Hardware-Retest mit der originalen 46-MB-`location-history.zip` auf iPhone 15 Pro Max (iOS 26.4) **als Release-Build ohne Debugger** nicht durch einen Tester nachweislich grün bestätigt ist, bleibt diese Sektion **FAILED**. Der vorbereitete Code-Stand in HEAD `<commit-tba>` adressiert die wahrscheinlichsten Allokationspfade — der dritte Fail (Op-Dauer 95.156 ms) zeigt aber: der Peak liegt früher als bisher angenommen, und es ist kein Beweis dafür, dass das Release-Build-Verhalten unter realer iOS-Speicherlast okay ist. Der finale iPhone-Hardware-Retest **kann auf dem Linux-Server nicht durchgeführt werden** und ist ein expliziter Mac/iPhone-Handoff.
 
 Tipp für den Tester, falls die App beim nächsten Start sofort wieder denselben Bookmark/Import zieht: einmalig in Xcode Run Arguments `LH2GPX_UI_TESTING` und `LH2GPX_RESET_PERSISTENCE` setzen, App starten, schließen, Arguments wieder entfernen — alternativ App vom iPhone löschen und neu installieren.
 
@@ -78,8 +88,8 @@ Tipp für den Tester, falls die App beim nächsten Start sofort wieder denselben
 | --- | --- |
 | Datum | |
 | Tester (Initialen) | |
-| Build / Version | post-fix HEAD (autoreleasepool-Fix in `GoogleTimelineStreamReader`) |
-| Gerät / iOS | iPhone 15 Pro Max / iOS 26.4 (Soll-Vergleichsgerät zum 2026-05-07-Befund) |
+| Build / Version | HEAD `<commit-tba>` nach `ae5de1f` (flatCoordinates-Kanonisierung + `ImportMemoryProbe` verdichtet + Build-Identitäts-Logging + Memory-Logging-Status in Build Info) |
+| Gerät / iOS | iPhone 15 Pro Max (`iPhone16,2`) / iOS 26.4 / 23E246 (Soll-Vergleichsgerät zu drei reproduzierten Hardware-Fails 2026-05-07: 232.341 ms / 216.606 ms / 95.156 ms) |
 | Befund | |
 | Auffälligkeiten | |
 | Akzeptiert / Abgelehnt | |

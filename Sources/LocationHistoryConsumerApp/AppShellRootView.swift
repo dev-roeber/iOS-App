@@ -5,6 +5,9 @@ import LocationHistoryConsumerDemoSupport
 #if canImport(UniformTypeIdentifiers)
 import UniformTypeIdentifiers
 #endif
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct AppShellRootView: View {
     @State private var session = AppSessionState()
@@ -87,10 +90,21 @@ struct AppShellRootView: View {
         }
         .onAppear {
             refreshRecentFiles()
+            // [LH2GPX_BUILD] header line + `app.start` memory snapshot.
+            // Same call site as the wrapper-target ContentView so both
+            // app entry points stay in lock-step (LH2GPXAppFlow rule).
+            LH2GPXAppFlow.logAppStart()
         }
         .task {
             await attemptAutoRestoreIfNeeded()
         }
+        #if canImport(UIKit)
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIApplication.didReceiveMemoryWarningNotification
+        )) { _ in
+            ImportMemoryProbe.logMemoryWarning()
+        }
+        #endif
         .onOpenURL { url in
             // Mirrors the wrapper-target ContentView handler so the package
             // app target (used in tests, demo, and the Package.swift build)

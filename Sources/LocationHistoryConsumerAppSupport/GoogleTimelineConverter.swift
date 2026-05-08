@@ -124,6 +124,7 @@ enum GoogleTimelineConverter {
         private var dayMap: [String: DayBucket] = [:]
         private var orderedDayKeys: [String] = []
         private var sawValidEntry = false
+        private var ingestCounter: Int = 0
 
         mutating func ingest(_ entry: [String: Any]) {
             guard let startTimeStr = entry["startTime"] as? String,
@@ -147,9 +148,16 @@ enum GoogleTimelineConverter {
                     dayMap[dayKey]!.activities.append(a)
                 }
             } else if let pathData = entry["timelinePath"] as? [[String: Any]] {
-                if let p = makePath(pathData, startTime: startTimeStr, endTime: endTimeStr, startDate: startDate) {
+                if let p = makePath(pathData, startTime: startTimeStr, endTime: endTimeStr) {
                     dayMap[dayKey]!.paths.append(p)
                 }
+            }
+
+            ingestCounter += 1
+            ImportMemoryProbe.logEvery("converter.ingest", counter: ingestCounter, every: 1000)
+            if ImportMemoryProbe.isLoggingEnabled,
+               ingestCounter > 0, ingestCounter % 5000 == 0 {
+                ImportMemoryProbe.log("converter.dayMap.count=\(dayMap.count) entries=\(ingestCounter)")
             }
         }
 
@@ -310,28 +318,41 @@ enum GoogleTimelineConverter {
     private static func makePath(
         _ pathData: [[String: Any]],
         startTime: String,
-        endTime: String?,
-        startDate: Date
+        endTime: String?
     ) -> Path? {
-        let points: [PathPoint] = pathData.compactMap { pt in
+        // Build the canonical flat lat/lon array directly. Google Timeline
+        // exports for a 46 MB file produce millions of vertices; the previous
+        // `[PathPoint]` shape allocated three Swift String headers per point
+        // (the per-point ISO time was the worst offender — ~25 bytes of heap
+        // per point times millions of points = ~80–120 MB of post-stream
+        // resident memory that Jetsam-killed the app on iPhone 15 Pro Max
+        // (2026-05-07 hardware fails). The flat shape encodes the same
+        // geometry in `[Double]` (16 bytes per point) and drops per-point
+        // timestamps — Google Timeline's `durationMinutesOffsetFromStartTime`
+        // is rebuildable on demand from `startTime` if a future feature ever
+        // needs it, but no current consumer reads them.
+        var flat: [Double] = []
+        flat.reserveCapacity(pathData.count * 2)
+        for pt in pathData {
             guard let pointGeo = pt["point"] as? String,
-                  let coord = parseGeo(pointGeo) else { return nil }
-            var time: String?
-            if let offsetStr = pt["durationMinutesOffsetFromStartTime"] as? String,
-               let offset = Double(offsetStr) {
-                time = isoOutput.string(from: startDate.addingTimeInterval(offset * 60))
-            }
-            return PathPoint(lat: coord.lat, lon: coord.lon, time: time, accuracyM: nil)
+                  let coord = parseGeo(pointGeo) else { continue }
+            flat.append(coord.lat)
+            flat.append(coord.lon)
         }
-        guard !points.isEmpty else { return nil }
+        guard flat.count >= 2 else { return nil }
         return Path(
             startTime: startTime,
             endTime: endTime,
             activityType: nil,
             distanceM: nil,
             sourceType: "google_timeline",
-            points: points,
-            flatCoordinates: nil
+            // Empty `points` is the explicit signal: this path's geometry is
+            // canonical-flat. Consumers that walked `path.points` previously
+            // must accept either shape (see ExportRouteSanitizer,
+            // DayMapDataExtractor, GPX/KML/GeoJSON/CSV builders,
+            // AppHeatmapModel, AppOverviewTracksMapView).
+            points: [],
+            flatCoordinates: flat
         )
     }
 }

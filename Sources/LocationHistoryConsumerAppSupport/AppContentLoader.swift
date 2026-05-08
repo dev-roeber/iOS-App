@@ -94,6 +94,7 @@ public enum AppContentLoader {
         autoRestoreMode: Bool = false,
         onPhase: (@Sendable (ImportPhase) -> Void)? = nil
     ) async throws -> AppSessionContent {
+        ImportMemoryProbe.log("import.fileSelected \(url.lastPathComponent)")
         return try await Task.detached(priority: .userInitiated) {
             ImportMemoryProbe.log("loader.start \(url.lastPathComponent)")
             onPhase?(.reading)
@@ -110,8 +111,11 @@ public enum AppContentLoader {
             onPhase?(.parsing)
             let export = try decodeFile(at: url, sourceName: url.lastPathComponent, onPhase: onPhase)
             ImportMemoryProbe.log("loader.afterDecode")
+            ImportMemoryProbe.log("loader.beforeSessionContent")
             let content = AppSessionContent(export: export, source: .importedFile(filename: url.lastPathComponent))
+            ImportMemoryProbe.log("loader.afterSessionContent")
             ImportMemoryProbe.log("loader.afterSessionInit")
+            ImportMemoryProbe.log("loader.end")
             return content
         }.value
     }
@@ -220,7 +224,9 @@ public enum AppContentLoader {
         let zipName = url.lastPathComponent
         let archive: Archive
         do {
+            ImportMemoryProbe.log("zip.open.start")
             archive = try Archive(url: url, accessMode: .read)
+            ImportMemoryProbe.log("zip.open.end")
         } catch {
             throw AppContentLoaderError.fileReadFailed(zipName)
         }
@@ -353,6 +359,7 @@ public enum AppContentLoader {
         var timelineEntries: [Entry] = []
         var sawObjectShapedEntry = false
 
+        ImportMemoryProbe.log("zip.entry.sniff.start candidates=\(candidates.count)")
         for entry in candidates {
             guard let head = sniffEntryHead(archive: archive, entry: entry) else { continue }
             if GoogleTimelineConverter.isGoogleTimeline(head) {
@@ -361,6 +368,7 @@ public enum AppContentLoader {
                 sawObjectShapedEntry = true
             }
         }
+        ImportMemoryProbe.log("zip.entry.sniff.end timeline=\(timelineEntries.count) hasObject=\(sawObjectShapedEntry)")
 
         // Defer to the legacy extract-and-decode path if there is any object-
         // shaped candidate (likely an LH2GPX export) or anything other than
@@ -387,20 +395,27 @@ public enum AppContentLoader {
 
         let converter = GoogleTimelineConverter.incrementalStreamConverter()
         do {
+            ImportMemoryProbe.log("zip.stream.start")
             ImportMemoryProbe.log("zipStream.beforeExtract")
             var streamedChunks = 0
             _ = try archive.extract(chosen, bufferSize: 256 * 1024) { chunk in
                 try converter.feed(chunk)
                 streamedChunks += 1
-                if streamedChunks % 64 == 0 {
-                    ImportMemoryProbe.log("zipStream.chunk=\(streamedChunks)")
-                }
+                // Tightened from every 64 to every 8 chunks (~2 MB) per
+                // 2026-05-08 P0 brief: the previous 64-chunk cadence missed
+                // the post-stream peak window because finalize() landed
+                // before the next probe fired.
+                ImportMemoryProbe.logEvery("zip.stream.chunk", counter: streamedChunks, every: 8)
             }
+            ImportMemoryProbe.log("converter.beforeFinalize")
             ImportMemoryProbe.log("zipStream.beforeFinalize")
             onPhase?(.building)
             let export = try converter.finalize()
+            ImportMemoryProbe.log("converter.afterFinalize days=\(export.data.days.count)")
             ImportMemoryProbe.log("zipStream.afterFinalize days=\(export.data.days.count)")
+            ImportMemoryProbe.log("loader.beforeSessionContent")
             let content = AppSessionContent(export: export, source: .importedFile(filename: zipName))
+            ImportMemoryProbe.log("loader.afterSessionContent")
             ImportMemoryProbe.log("zipStream.afterSessionInit")
             return content
         } catch {

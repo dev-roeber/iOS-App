@@ -636,8 +636,14 @@ struct AppTechnicalOptionsView: View {
                 if let sha = AppBuildInfo.shared.gitCommitSHA {
                     LabeledContent(t("Commit")) { Text(sha).font(.system(.body, design: .monospaced)) }
                 }
+                LabeledContent(t("Memory Logging")) {
+                    Text(AppBuildInfo.shared.isMemoryLoggingEnabled ? t("Enabled") : t("Disabled"))
+                        .foregroundStyle(AppBuildInfo.shared.isMemoryLoggingEnabled
+                                         ? LH2GPXTheme.successGreen
+                                         : .secondary)
+                }
             } header: { Text(t("Build Info")) }
-              footer: { Text(t("Shown so testers can verify which build is running on the device when reproducing memory or import issues.")) }
+              footer: { Text(t("Shown so testers can verify which build is running on the device when reproducing memory or import issues. Memory Logging is enabled by setting LH2GPX_IMPORT_MEMORY_LOG=1 as a launch argument or environment variable.")) }
         }
         .navigationTitle(t("Technical"))
     }

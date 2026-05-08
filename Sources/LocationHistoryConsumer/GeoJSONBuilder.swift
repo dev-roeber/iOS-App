@@ -14,8 +14,29 @@ public enum GeoJSONBuilder {
 
         if mode.includesTracks {
             for day in days {
-                for (pathIndex, path) in day.paths.enumerated() where !path.points.isEmpty {
-                    let coordinates = path.points.map { [$0.lon, $0.lat] }
+                for (pathIndex, path) in day.paths.enumerated() {
+                    // Geometry can come from `points` (legacy) or
+                    // `flatCoordinates` (Google Timeline post 2026-05-08
+                    // refactor). GeoJSON LineString is `[lon, lat]` pairs.
+                    let coordinates: [[Double]]
+                    if !path.points.isEmpty {
+                        coordinates = path.points.map { [$0.lon, $0.lat] }
+                    } else if let flat = path.flatCoordinates,
+                              flat.count >= 2,
+                              flat.count.isMultiple(of: 2) {
+                        var coords: [[Double]] = []
+                        coords.reserveCapacity(flat.count / 2)
+                        var i = 0
+                        while i + 1 < flat.count {
+                            coords.append([flat[i + 1], flat[i]])
+                            i += 2
+                        }
+                        coordinates = coords
+                    } else {
+                        continue
+                    }
+                    guard !coordinates.isEmpty else { continue }
+
                     let geometry: [String: Any] = [
                         "type": "LineString",
                         "coordinates": coordinates

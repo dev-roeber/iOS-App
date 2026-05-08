@@ -9,6 +9,21 @@ import Foundation
 /// app shells stay in lock-step by construction.
 public enum LH2GPXAppFlow {
 
+    // MARK: - App lifecycle
+
+    /// One-shot launch-time probe: emits a `[LH2GPX_BUILD]` header line
+    /// (always) and an `app.start` memory snapshot (when probing enabled).
+    /// Called from the wrapper App / shell so the build identity lands in
+    /// the device log on the first run before any import work begins.
+    @MainActor
+    public static func logAppStart(buildInfo: AppBuildInfo = .shared) {
+        ImportMemoryProbe.logAppStart(
+            marketingVersion: buildInfo.marketingVersion,
+            buildNumber: buildInfo.buildNumber,
+            gitCommitSHA: buildInfo.gitCommitSHA
+        )
+    }
+
     // MARK: - Deep Links
 
     /// Routes the `lh2gpx://` URL scheme. Returns `true` if the URL was

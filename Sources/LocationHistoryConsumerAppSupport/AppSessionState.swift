@@ -450,6 +450,7 @@ public struct AppSessionState {
     }
 
     public mutating func show(content: AppSessionContent) {
+        ImportMemoryProbe.log("session.beforeShowContent")
         self.content = content
         selectedDate = content.selectedDate
         exportSelection.clearAll()
@@ -476,6 +477,7 @@ public struct AppSessionState {
             title: title,
             message: sourceDescription ?? content.source.displayName
         )
+        ImportMemoryProbe.log("session.afterShowContent")
     }
 
     public mutating func selectDay(_ date: String?) {

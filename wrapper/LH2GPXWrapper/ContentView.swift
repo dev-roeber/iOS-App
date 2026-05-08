@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WidgetKit
 import LocationHistoryConsumerAppSupport
 import LocationHistoryConsumerDemoSupport
@@ -116,6 +117,18 @@ struct ContentView: View {
         .task {
             await prepareLaunchStateIfNeeded()
             restoreBookmarkedFile()
+        }
+        .onAppear {
+            // Emit one [LH2GPX_BUILD] header line + an `app.start` memory
+            // snapshot the first time the shell renders. Idempotent: the
+            // probe itself short-circuits when already disabled and
+            // logAppStart is harmless to call repeatedly.
+            LH2GPXAppFlow.logAppStart()
+        }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIApplication.didReceiveMemoryWarningNotification
+        )) { _ in
+            ImportMemoryProbe.logMemoryWarning()
         }
     }
 

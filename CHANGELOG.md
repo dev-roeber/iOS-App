@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## [2026-05-08] — fix: reduce large timeline import memory footprint
+
+### Hardware-Befund (dritter Fail)
+- iPhone 15 Pro Max (`iPhone16,2`, iOS 26.4 / 23E246, Xcode 26.3, macOS 15.7), 46 MB `location-history.zip` (~64.926 Top-Level-Timeline-Entries) lieferte trotz erweitertem Memory-Train nach `cd77f97` und HEAD `ae5de1f` erneut Jetsam-Kill: `IDEDebugSessionErrorDomain Code 11`, „The app ‘LH2GPXWrapper’ has been killed by the operating system because it is using too much memory." (Timestamp 2026-05-07T15:10:44+02:00, Operation duration **95.156 ms** vs. 232.341 ms erster Fail / 216.606 ms zweiter Fail).
+- Die deutlich kürzere Operation-Dauer signalisiert: der Peak liegt **früher** im Importpfad als bisher angenommen — die Spitze ist erreicht, bevor `finalize()` überhaupt durchläuft, und sehr wahrscheinlich tief im Streaming-/Konverter-Pfad oder beim Übergang Streaming → Session-Materialisierung.
+- Damit ist der 46-MB-Punkt der Manual-Risk-Checkliste weiterhin **FAILED**. Code-Stand `<commit-tba>` (vorher `ae5de1f`) ist ein **vorbereiteter Fix-Stand**, kein verifizierter Erfolg.
+
+### Code-Stand vorbereitet (HEAD `<commit-tba>` nach `ae5de1f`)
+1. **Build-Identitäts-Logging auf App-Start**: `[LH2GPX_BUILD] app.start version=… build=… sha=… memoryLogging=enabled|disabled` wird **immer** ausgegeben (auch wenn Memory-Probe deaktiviert) — damit ist nach jedem Hardware-Run zweifelsfrei loggebar, welcher Build wirklich gestartet wurde.
+2. **`ImportMemoryProbe` verdichtet**: zusätzliche Probe-Punkte `import.fileSelected`, `zip.open.start`/`zip.open.end`, `zip.entry.sniff.start`/`zip.entry.sniff.end`, `zip.stream.chunk` jetzt alle 8 Chunks (statt 64), `stream.elements` alle 1000 Top-Level-Elemente, `stream.element.outlier` für Elemente > 64 KB, `stream.before/afterElementParse` (throttled alle 1000), `converter.ingest` alle 1000 Entries, `converter.dayMap.count` alle 5000, `converter.before/afterFinalize`, `loader.before/afterSessionContent`, `session.before/afterShowContent`, `app.didReceiveMemoryWarning` (iOS-only via `NotificationCenter`-Observer auf `UIApplication.didReceiveMemoryWarningNotification`).
+3. **`ImportMemoryProbe` akzeptiert beide Aktivierungs-Quellen** — `ProcessInfo.environment` **und** `ProcessInfo.arguments`. Erkannt werden `LH2GPX_IMPORT_MEMORY_LOG=1`, `LH2GPX_IMPORT_MEMORY_LOG`, `-LH2GPX_IMPORT_MEMORY_LOG`, `--LH2GPX_IMPORT_MEMORY_LOG`. Neue testbare API `ImportMemoryProbe.isEnabledForEnvironment(_:arguments:)`.
+4. **`AppBuildInfo.isMemoryLoggingEnabled: Bool`** ergänzt; Settings → Technical → „Build Info" zeigt jetzt eine zusätzliche Zeile **„Memory Logging: Enabled / Disabled"** (grün, wenn aktiv) — Tester kann am Gerät verifizieren, ob die Probe für diesen Run scharf geschaltet ist.
+5. **Geometrie-Refactor (P0 Fokus 1) — flatCoordinates-Kanonisierung**: Google-Timeline-Imports schreiben jetzt `flatCoordinates: [Double]` statt `points: [PathPoint]`, **ohne** ISO-Zeitstrings pro Punkt. Geschätzte Einsparung: **~80–120 MB resident** bei der 46-MB-ZIP. Alle Consumer (`PathDistanceCalculator`, `AppExportQueries`, `DayMapDataExtractor`, `ExportRouteSanitizer`, `AppHeatmapModel`, GPX/KML/GeoJSON/CSV-Builder) sind flat-aware gemacht; `AppHeatmapModel`-Doppelbug (Punkte wurden bei beiden Geometrien doppelt gezählt) ist gefixt.
+6. **NEU `docs/MAP_ARCHITECTURE_AUDIT.md`**: Bestandsaufnahme aller Kartenflächen + Roadmap-Pfad zu UIKit `MKMapView`/`MKMultiPolyline` für Heavy Overview/Heatmap. **Nicht** umgesetzt in diesem Commit — reine Architektur-Doku.
+
+### Tests
+- Neu: `Tests/LocationHistoryConsumerTests/ImportMemoryProbeActivationTests.swift` — 15 Tests, env- + arg-Aktivierungspfade, kombiniert/negativ, Idempotenz, disabled-state-Safety, `AppBuildInfo.isMemoryLoggingEnabled`-Spiegelung.
+- Neu: `Tests/LocationHistoryConsumerTests/FlatCoordinatesGeometryTests.swift` — 23 Tests in 7 Sektionen: `ExportRouteSanitizer` (6), `AppExportQueries.dayDetail/summary` (5), `PathDistanceCalculator.effectiveDistance(for: PathItem)` (2 inkl. points-precedence über flat), `DayMapDataExtractor` (3 inkl. odd-reject), GPX/KML/GeoJSON/CSV-Builder mit flat-only path (4), `GoogleTimelineConverter`-Integration (2), `AppHeatmapModel`-Doppelbug-Regression (1, in `#if canImport(MapKit)`-Block).
+- Angepasst: `Tests/LocationHistoryConsumerTests/GoogleTimelineConverterTests.swift` — die zwei DST-Tests (`testTimelinePathOffsetsRemainCorrectAcrossDST*Transition`) verifizieren jetzt Geometrie-Erhalt (flat lat/lon-Paar-Zähler, UTC-Tagesgruppierung) statt obsolet gewordener Per-Punkt-ISO-Zeitstrings.
+- Linux-Build: `swift build --target LocationHistoryConsumer` clean. SwiftPM-Vollbuild auf Linux ist pre-existing kaputt (iOS-only `AppHeatmapRadiusPreset`/`AppHeatmapPalettePreference`/`AppHeatmapScalePreference`/`AppMapTrackColorMode` werden in `AppPreferences` referenziert, sind aber nur unter `canImport(SwiftUI) && canImport(MapKit)` definiert) — `swift test` ist Linux→Mac/Xcode-Cloud-Handoff. Erwarteter Mac-Test-Stand: ~1081 + 15 + 23 = ~1119 Tests; finale Mac-Run-Zahl wird im nächsten Doku-Sync (post-Hardware-Retest) nachgetragen.
+- `git diff --check` clean.
+
+### Restrisiko / Hardware-Retest (handoff Linux → Mac/iPhone)
+- Der finale iPhone-Hardware-Retest **kann auf dem Linux-Server nicht durchgeführt werden** und ist ein expliziter Mac/iPhone-Handoff. 46-MB-Crashfall **bleibt FAILED bis Hardware-Retest grün**.
+- Empfohlene Tester-Sequenz beim nächsten Run: (1) App starten, Settings → Technical → „Build Info" prüfen — Marketing-Version + Build + (falls injiziert) Git-SHA + **Memory Logging: Enabled** → mit aktuellem Git-HEAD vergleichen. (2) `LH2GPX_IMPORT_MEMORY_LOG=1` per Run-Argument oder Environment setzen, Debug-Run, Import durchführen, Xcode-Console nach `[LH2GPX_BUILD]` (App-Start) und `[LH2GPX_MEMORY]` (Probe) greppen — wenn der Build erneut Jetsam-killt, beweist das letzte gelogde `[LH2GPX_MEMORY]`-Label die Peak-Phase. (3) Wenn Debug grün: Release-Build **ohne Debugger / View-Debugging** mit derselben 46-MB-ZIP.
+- Keine Karten-Modernisierung als done — `docs/MAP_ARCHITECTURE_AUDIT.md` ist Dokumentation/Roadmap, nicht Implementation.
+- Keine ASC/TestFlight-Freigabe behauptet.
+
 ## [2026-05-07] — fix: reduce memory peak after large timeline import
 
 ### Hardware-Befund (zweiter Fail)
