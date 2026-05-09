@@ -13,7 +13,7 @@ Zentrale offene Punkte (Code unverändert in diesem Audit):
 1. ✓ **L-01 (P0)** erledigt 2026-05-09: `AppContentLoader.decodeFile(at:)` lehnt Full-Reads über 64 MiB jetzt kontrolliert ab (`maximumInMemoryImportBytes`, neuer Error-Case `importTooLargeForInMemoryLoad`). Google-Timeline läuft weiter durch den Streaming-Pfad. Betroffen: LH2GPX-JSON / GPX / TCX / unbekannte JSON > 64 MiB. 5 neue Linux-Tests in `AppContentLoaderTests`.
 2. **L-02 (P0)** AppExportQueries.projectedDays — `limit` vor `.sorted` durchschleifen (Top-N-Heap).
 3. **L-03 (P0)** AppOverviewTracksMapView.scanCandidates — Score-Invariant-Tests zuerst, dann lazy/streaming Refactor.
-4. **L-04 (P1)** AppSessionState.swift:82–84 — drei unbounded Filter-Caches mit generischem `BoundedLRU<K,V>` cappen (Limit 16).
+4. ✓ **L-04 (P1)** erledigt 2026-05-09: Generischer `BoundedLRU<K,V>` in `Sources/LocationHistoryConsumerAppSupport/BoundedLRU.swift`. Migriert in `AppSessionState.swift`: `filteredOverviewCache`, `filteredDaySummariesCache`, `filteredInsightsCache` (je 8), `dayDetailCache` (32), `dayMapDataCache` (16) und `projectedDaysCache` (8). Semantik unverändert. 18 neue Linux-Tests (`BoundedLRUTests`, `AppSessionContentCacheBoundsTests`).
 5. **L-05 (P1)** AppHeatmapModel — single-pass tile-sweep statt Multipass-LOD-Rebuild.
 6. **L-06 (P1)** ExportPreviewData — `computeRegion` über min/max-Akkumulator + adaptives Sampling mit Pin-Tests.
 7. **L-07 (P1)** Sources/LocationHistoryConsumer/Queries/DayMapData.swift — Doppel-`map` über `path.points` durch single-loop ersetzen.

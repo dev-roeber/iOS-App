@@ -14,6 +14,10 @@ Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 
 Der aktuelle Scope umfasst bereits Karten, `Days`-Suche, Heatmap-Sheet, segmentierte `Insights`, gespeicherte lokale Live-Tracks und optionalen nutzergesteuerten Upload akzeptierter Live-Recording-Punkte. Weiterhin nicht Teil dieses Runbooks sind Producer-Logik, Cloud-/Account-Sync fuer importierte History und unbewiesene Apple-Review-Claims.
 
+## L-04 Bounded LRU für AppSessionContent-Caches — Linux umgesetzt (2026-05-09)
+
+`AppSessionContent` (in `AppSessionState.swift`) hat fünf bisher unbounded Filter-/Detail-Caches; ab dem L-04-Commit nutzen alle den neuen Foundation-only `BoundedLRU<K,V>` (`Sources/LocationHistoryConsumerAppSupport/BoundedLRU.swift`) mit Capacities 8/8/8/32/16; `projectedDaysCache` (8) ist auf dieselbe Abstraktion umgestellt. Semantik bleibt byte-identisch — Eviction triggert nur deterministische Recomputation. Tester sehen kein anderes UI-Verhalten. Auf Hardware sollte das nach langem Browsen mit vielen Filter-Wechseln eine kleinere Resident-Memory-Kurve zeigen (nicht messbar in dieser Runbook-Stufe).
+
 ## L-01 In-Memory-Import-Gate — Linux umgesetzt, Hardware-Aussage offen (2026-05-09)
 
 `AppContentLoader.decodeFile(at:)` lehnt Full-Reads über 64 MiB jetzt kontrolliert ab (`AppContentLoader.maximumInMemoryImportBytes`). Google-Timeline-JSON streamt unverändert. Tester sollten beim Hardware-Retest darauf achten, dass eine LH2GPX-JSON / GPX / TCX > 64 MiB nun mit dem User-Facing-Title "File too large to load safely" abgewiesen wird statt OOM zu triggern. **46-MB-Google-Timeline-Gate bleibt FAILED / pending hardware retest** (Streaming-Pfad, vom L-01-Gate nicht berührt).

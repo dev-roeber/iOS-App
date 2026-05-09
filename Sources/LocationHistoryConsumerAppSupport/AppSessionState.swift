@@ -55,11 +55,17 @@ public final class AppSessionContent {
         let filter: AppExportQueryFilter?
     }
 
-    /// Tiny LRU for cached `[Day]` projections keyed by the resolved filter.
-    /// Eight entries comfortably cover the realistic filter variation in this
-    /// app (a handful of date-range presets crossed with a small set of
-    /// activity-type toggles); beyond that we evict in insertion order.
+    /// Deep Audit 2026-05-09 L-04 — alle Filter-/Projection-Caches sind ab
+    /// jetzt durch `BoundedLRU` capped, statt unbounded `[Key: Value]` zu
+    /// wachsen. Limits sind konservativ: realistische Filter-Variation in
+    /// dieser App ist klein (eine Handvoll Date-Range-Presets gekreuzt mit
+    /// wenigen Activity-Type-Toggles); 8 Einträge decken das ab. Day-/Map-
+    /// Caches dürfen etwas größer sein, weil ein Tester durch viele Tage
+    /// scrollen kann, ohne das Filter zu wechseln.
     private static let projectedDaysCacheLimit = 8
+    private static let filteredProjectionCacheLimit = 8
+    private static let dayDetailCacheLimit = 32
+    private static let dayMapDataCacheLimit = 16
 
     public let export: AppExport
     public private(set) lazy var overview: ExportOverview = {
@@ -79,19 +85,29 @@ public final class AppSessionContent {
     }()
     public let selectedDate: String?
     public let source: AppContentSource
-    private var filteredOverviewCache: [ProjectionCacheKey: ExportOverview] = [:]
-    private var filteredDaySummariesCache: [ProjectionCacheKey: [DaySummary]] = [:]
-    private var filteredInsightsCache: [ProjectionCacheKey: ExportInsights] = [:]
-    private var dayDetailCache: [DayDetailCacheKey: DayDetailViewState] = [:]
-    private var dayMapDataCache: [DayDetailCacheKey: DayMapData] = [:]
+    private let filteredOverviewCache = BoundedLRU<ProjectionCacheKey, ExportOverview>(
+        capacity: AppSessionContent.filteredProjectionCacheLimit
+    )
+    private let filteredDaySummariesCache = BoundedLRU<ProjectionCacheKey, [DaySummary]>(
+        capacity: AppSessionContent.filteredProjectionCacheLimit
+    )
+    private let filteredInsightsCache = BoundedLRU<ProjectionCacheKey, ExportInsights>(
+        capacity: AppSessionContent.filteredProjectionCacheLimit
+    )
+    private let dayDetailCache = BoundedLRU<DayDetailCacheKey, DayDetailViewState>(
+        capacity: AppSessionContent.dayDetailCacheLimit
+    )
+    private let dayMapDataCache = BoundedLRU<DayDetailCacheKey, DayMapData>(
+        capacity: AppSessionContent.dayMapDataCacheLimit
+    )
 
     /// Cached `[Day]` projections shared across overview/daySummaries/insights/findDay
     /// for the same resolved filter. Keyed by the resolved (non-nil) filter so a
     /// `nil` caller and a caller that explicitly passes the export's default filter
-    /// hit the same entry.
-    private var projectedDaysCache: [AppExportQueryFilter: [Day]] = [:]
-    /// Insertion order of `projectedDaysCache` keys for LRU-style eviction.
-    private var projectedDaysCacheOrder: [AppExportQueryFilter] = []
+    /// hit the same entry. LRU-Eviction über `BoundedLRU`.
+    private let projectedDaysCache = BoundedLRU<AppExportQueryFilter, [Day]>(
+        capacity: AppSessionContent.projectedDaysCacheLimit
+    )
 
     public init(export: AppExport, source: AppContentSource) {
         self.export = export
@@ -124,24 +140,11 @@ public final class AppSessionContent {
     /// insights/findDay. Bounded LRU keeps memory in check.
     private func cachedProjectedDays(for filter: AppExportQueryFilter?) -> [Day] {
         let resolved = AppExportQueries.resolvedFilter(filter, export: export)
-        if let cached = projectedDaysCache[resolved] {
-            // Refresh LRU position.
-            if let index = projectedDaysCacheOrder.firstIndex(of: resolved) {
-                projectedDaysCacheOrder.remove(at: index)
-            }
-            projectedDaysCacheOrder.append(resolved)
+        if let cached = projectedDaysCache.value(forKey: resolved) {
             return cached
         }
-
         let projected = AppExportQueries.projectedDays(in: export, applying: resolved)
-        projectedDaysCache[resolved] = projected
-        projectedDaysCacheOrder.append(resolved)
-
-        if projectedDaysCacheOrder.count > AppSessionContent.projectedDaysCacheLimit {
-            let evicted = projectedDaysCacheOrder.removeFirst()
-            projectedDaysCache.removeValue(forKey: evicted)
-        }
-
+        projectedDaysCache.insert(projected, forKey: resolved)
         return projected
     }
 
@@ -151,7 +154,7 @@ public final class AppSessionContent {
         }
 
         let key = ProjectionCacheKey(filter: filter)
-        if let cached = filteredOverviewCache[key] {
+        if let cached = filteredOverviewCache.value(forKey: key) {
             return cached
         }
 
@@ -159,7 +162,7 @@ public final class AppSessionContent {
             from: export,
             precomputedDays: cachedProjectedDays(for: filter)
         )
-        filteredOverviewCache[key] = projected
+        filteredOverviewCache.insert(projected, forKey: key)
         return projected
     }
 
@@ -169,7 +172,7 @@ public final class AppSessionContent {
         }
 
         let key = ProjectionCacheKey(filter: filter)
-        if let cached = filteredDaySummariesCache[key] {
+        if let cached = filteredDaySummariesCache.value(forKey: key) {
             return cached
         }
 
@@ -179,7 +182,7 @@ public final class AppSessionContent {
                 precomputedDays: cachedProjectedDays(for: filter)
             )
         )
-        filteredDaySummariesCache[key] = projected
+        filteredDaySummariesCache.insert(projected, forKey: key)
         return projected
     }
 
@@ -189,7 +192,7 @@ public final class AppSessionContent {
         }
 
         let key = ProjectionCacheKey(filter: filter)
-        if let cached = filteredInsightsCache[key] {
+        if let cached = filteredInsightsCache.value(forKey: key) {
             return cached
         }
 
@@ -199,7 +202,7 @@ public final class AppSessionContent {
             precomputedDays: cachedProjectedDays(for: resolved),
             resolvedFilter: resolved
         )
-        filteredInsightsCache[key] = projected
+        filteredInsightsCache.insert(projected, forKey: key)
         return projected
     }
 
@@ -209,7 +212,7 @@ public final class AppSessionContent {
         }
 
         let key = DayDetailCacheKey(date: date, filter: filter)
-        if let cached = dayDetailCache[key] {
+        if let cached = dayDetailCache.value(forKey: key) {
             return cached
         }
 
@@ -217,7 +220,7 @@ public final class AppSessionContent {
             return nil
         }
 
-        dayDetailCache[key] = detail
+        dayDetailCache.insert(detail, forKey: key)
         return detail
     }
 
@@ -227,7 +230,7 @@ public final class AppSessionContent {
         }
 
         let key = DayDetailCacheKey(date: date, filter: filter)
-        if let cached = dayMapDataCache[key] {
+        if let cached = dayMapDataCache.value(forKey: key) {
             return cached
         }
 
@@ -236,7 +239,7 @@ public final class AppSessionContent {
         }
 
         let mapData = DayMapDataExtractor.mapData(from: detail)
-        dayMapDataCache[key] = mapData
+        dayMapDataCache.insert(mapData, forKey: key)
         return mapData
     }
 }

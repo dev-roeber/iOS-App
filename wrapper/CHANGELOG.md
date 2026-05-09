@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2026-05-09 — L-04 Bounded LRU für AppSessionContent-Caches
+- Wrapper-Bundle/Signing/Plist unverändert. Core-Paket: neuer `BoundedLRU<K,V>` (Foundation-only) cappt alle 5 Filter-/Detail-Caches in `AppSessionContent` (8/8/8/32/16) sowie `projectedDaysCache` (8). Semantik unverändert. Wrapper-Konsumenten sehen kein anderes UI-Verhalten.
+- 46-MB-Hardware-Gate bleibt FAILED / pending hardware retest.
+
 ## 2026-05-09 — L-01 In-Memory-Import-Gate
 - Wrapper-Bundle/Signing/Plist unverändert. Core-Paket: `AppContentLoader.decodeFile(at:)` lehnt Full-Reads über 64 MiB jetzt kontrolliert ab (`maximumInMemoryImportBytes`, neuer Error-Case `importTooLargeForInMemoryLoad`). Google-Timeline-JSON streamt weiter durch den bestehenden Streaming-Pfad. Wrapper-Importer-UI zeigt den neuen Error mit `userFacingTitle` "File too large to load safely".
 - 46-MB-Hardware-Gate bleibt FAILED / pending hardware retest.
