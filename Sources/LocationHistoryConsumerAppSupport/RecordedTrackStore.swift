@@ -58,5 +58,17 @@ public struct RecordedTrackFileStore: RecordedTrackStoring {
         )
         let data = try encoder.encode(payload)
         try data.write(to: storageURL, options: .atomic)
+
+        // Recorded live tracks contain user GPS coordinates. Mark the
+        // directory and the file as excluded from iCloud / iTunes backup so
+        // they don't silently leave the device through a generic backup —
+        // matches the LocalTimelineStore SQLite roots which already do this
+        // via LocalTimelineFileAttributes.markExcludedFromBackup. Failure is
+        // intentionally swallowed: the write itself already succeeded and
+        // backup-exclusion is a defence-in-depth flag, not a correctness
+        // precondition.
+        try? LocalTimelineFileAttributes.markExcludedFromBackupIfPresent(
+            urls: [directory, storageURL]
+        )
     }
 }

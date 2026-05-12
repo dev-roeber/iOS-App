@@ -1,5 +1,14 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-12, HEAD pending — `perf: add measured performance baseline and low-risk optimizations`)
+
+- Zentrales Repo: `iOS-App`. Performance-Deep-Audit auf HEAD `f111afd` durchgeführt; Report unter `docs/PERFORMANCE_DEEP_AUDIT_2026-05-12.md`.
+- **Umgesetzt (Low-Risk)**: SQLite-PRAGMAs (`busy_timeout`, `synchronous=NORMAL`, `temp_store=MEMORY`) in `LocalTimelineStore.init(url:)` (Feature-Flag-default-OFF-Pfad); Backup-Exclusion für `RecordedTrackFileStore`; neuer `PathDistanceCalculatorPerformanceTests.swift` (3 Tests, `XCTClockMetric`+`XCTMemoryMetric`).
+- **Verifikation**: `swift build` OK, `swift test` **1521/4/0** (+3 ggü. 1518), `xcodebuild generic iOS` BUILD SUCCEEDED, signed Device-Build iPhone 15 Pro Max BUILD SUCCEEDED. Hardware-UITest-Suite nicht erneut gefahren (keine UI-Änderung); letzte 8/8-Acceptance auf `f111afd` bleibt der Anker.
+- **Folge-Trains priorisiert** (siehe Audit-Sektion 12): Train 1 P1 Live-Activity-Throttle + CLLocation-Accuracy; Train 2 P1 Upload-Backoff; Train 3 P2 Memory-Warning-Cache-Drop; Train 4 P3 Doku-Drift-Mass-Refresh; Train 5 manuelle Hardware-Tests (46-MB, Live-Activity-Sichtprüfung, iPad, ASC).
+- **Manual-Risk-Sektionen unverändert offen**: 46-MB-Crashfall (FAILED, Datei lokal vorhanden, Tester-Handoff), Live-Activity-Lock-Screen-Sichtprüfung, iPad-Layout, ASC/TestFlight/Apple Review.
+- Davor HEAD `f111afd` (P0-3 Heatmap-Smoke-Test behoben); davor `9e4a41b` (Hardware-Acceptance-Train mit P0-3-Regression).
+
 ## Aktiver Stand (2026-05-12, HEAD pending — `fix: restore heatmap control hardware smoke test`)
 
 - Zentrales Repo: `iOS-App` (`dev-roeber/iOS-App`). Lokaler Pfad: `/Users/sebastian/Desktop/XCODE/iOS-App`. Xcode-Wrapper: `wrapper/LH2GPXWrapper.xcodeproj`.

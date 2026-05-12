@@ -39,6 +39,18 @@ public final class LocalTimelineStore {
         self.db = opened
         try exec("PRAGMA foreign_keys = ON;")
         try exec("PRAGMA journal_mode = WAL;")
+        // Performance pragmas — all WAL-safe and recommended by sqlite.org for
+        // single-writer app stores. `busy_timeout` makes concurrent open
+        // handles wait instead of immediately failing with SQLITE_BUSY;
+        // `synchronous = NORMAL` is the SQLite-documented safe pairing for
+        // WAL on application data (the page cache + WAL replay covers crash
+        // recovery for app-loss; only catastrophic power loss could lose the
+        // last transaction, which is acceptable here because the store is
+        // user-rebuildable from the import file); `temp_store = MEMORY`
+        // keeps SQLite scratch out of the file system.
+        try exec("PRAGMA busy_timeout = 3000;")
+        try exec("PRAGMA synchronous = NORMAL;")
+        try exec("PRAGMA temp_store = MEMORY;")
         try applySchema()
     }
 

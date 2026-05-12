@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## 2026-05-12 — perf: add measured performance baseline and low-risk optimizations
+
+### Code
+- `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStore.swift` (`init(url:)`): nach `PRAGMA journal_mode = WAL;` werden drei zusätzliche WAL-safe PRAGMAs gesetzt — `busy_timeout = 3000;` (Concurrent-Open-Resilienz statt sofortigem SQLITE_BUSY), `synchronous = NORMAL;` (sqlite.org-empfohlene WAL-Paarung für App-Stores; Crash-Recovery via WAL-Replay bleibt, nur Power-Loss-Outerschicht akzeptabel), `temp_store = MEMORY;` (Sortier-/Temp-Tabellen im RAM). `mmap_size` bewusst nicht gesetzt — Memory-Trade-off auf 4-GB-Geräten. Greift erst bei Feature-Flag default-ON (`LH2GPX_LOCAL_TIMELINE_STORE`, aktuell OFF), aber Test-Suite über die `LocalTimelineStore*Tests` deckt den Open-Pfad bereits ab.
+- `Sources/LocationHistoryConsumerAppSupport/RecordedTrackStore.swift` (`saveTracks`): nach `data.write(to:)` werden Verzeichnis und Datei via `LocalTimelineFileAttributes.markExcludedFromBackupIfPresent(urls:)` als excluded-from-iCloud-Backup markiert. Privacy-Defence-in-Depth: Live-Track-Standortdaten landen damit nicht in generischem iCloud/iTunes-Backup. Failure `try?`-geschluckt (Backup-Flag ist nicht korrektheitskritisch). Symmetrisch zum Pattern in `LocalTimelineStoreFactory`.
+
+### Tests
+- `Tests/LocationHistoryConsumerTests/PathDistanceCalculatorPerformanceTests.swift` (NEU): drei `measure { … }`-Tests für `PathDistanceCalculator.effectiveDistance(for: Path)` auf 50 000-Punkt-`Path`-Inputs — `testEffectiveDistanceClockOnLargePathPoints` (`XCTClockMetric`), `testEffectiveDistanceClockOnLargeFlatCoordinatesPath` (`XCTClockMetric`, `flatCoordinates`-Shape), `testEffectiveDistanceMemoryOnLargePathPoints` (`XCTMemoryMetric`). Apple-only via `#if !os(Linux)` + `@available(macOS 13.0, iOS 16.0, *)`. Deterministische Synth-Fixtures. „Baseline-only, no fail-bar" konform zur Test-File-Policy.
+
+### Audit-Report
+- `docs/PERFORMANCE_DEEP_AUDIT_2026-05-12.md` (NEU): kompromissloser Performance-/Stabilitäts-/UX-Responsiveness-Audit auf HEAD `f111afd`. 6 Subagenten parallel: Code+Performance (Import/Memory/SwiftUI/Map/LiveTracking/Launch), SQLite/Store/Persistence, Test/Benchmark-Landschaft, Static-Search-Sweep (23 Pattern-Klassen), Doku-Truth + App-Store-Compliance. 21 priorisierte Hotspots (H1..H21), Mess-Baseline (build 1.5–28.6 s, test 113–115 s), 5 copy/paste-ready Folge-Train-Prompts.
+
+### Verifikation
+- `swift build`: OK.
+- `DEVELOPER_DIR=Xcode swift test`: **1521 Tests, 4 Skips, 0 Failures** (113.5 s; +3 ggü. pre-patch 1518/4/0 — die 3 neuen Perf-Tests).
+- `xcodebuild -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO`: BUILD SUCCEEDED.
+- `xcodebuild -destination 'id=…401C' build -allowProvisioningUpdates`: BUILD SUCCEEDED (signed Debug iPhone 15 Pro Max).
+- `git diff --check`: clean.
+- Hardware-UITest-Suite: **nicht erneut gefahren** — keine UI-Code-Änderung in diesem Train; letzte 8/8-Acceptance auf `f111afd` aus vorigem Train bleibt der gültige Anker.
+
+### Restrisiko / weiterhin offen
+- 46-MB-Crashfall-Hardware-Retest bleibt **FAILED** — Datei `/Users/sebastian/Desktop/Google_Maps/12_05_2026_location-history.json` (~44.5 MiB) ist lokal verfügbar, der Import braucht aber manuelle UI-Interaktion auf dem Gerät; Tester-Handoff notwendig.
+- Live Activity / Dynamic Island / Lock Screen menschliche Sichtprüfung außerhalb der UITests, iPad-Layout (iPad offline), ASC / TestFlight / Apple Review (extern) — alle weiterhin offen.
+- 21 priorisierte Hotspots aus dem Audit (Sektion 9 des Reports) sind **bewusst nicht** in diesem Train umgesetzt — 5 copy/paste-ready Codex-Prompts für Folge-Trains stehen im Audit-Report Sektion 12.
+
 ## 2026-05-12 — fix: restore heatmap control hardware smoke test
 
 ### Code

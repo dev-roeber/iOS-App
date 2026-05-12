@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-05-12 — perf: add measured performance baseline and low-risk optimizations
+
+- Neuer Audit-Report `docs/PERFORMANCE_DEEP_AUDIT_2026-05-12.md` mit 21 priorisierten Hotspots (6 Subagenten parallel: Code+Performance, SQLite/Store, Test/Benchmark, Static-Search-Sweep, Doku-Truth, App-Store-Compliance).
+- Code-Low-Risk-Patches: SQLite-PRAGMAs (`busy_timeout`, `synchronous=NORMAL`, `temp_store=MEMORY`) in `LocalTimelineStore.init(url:)` — Feature-Flag-default-OFF-Pfad, keine User-Sichtbarkeit. iCloud/iTunes-Backup-Exclusion für `RecordedTrackFileStore` (defence-in-depth für Live-Track-Standortdaten).
+- Test-Addition: `PathDistanceCalculatorPerformanceTests.swift` mit 3 `measure {}`-Tests (XCTClockMetric + XCTMemoryMetric) auf 50 000-Punkt-Pfaden — Baseline für Folgetrain-Regression-Checks.
+- `swift test` 1521/4/0 (+3 ggü. 1518), `xcodebuild generic iOS` BUILD SUCCEEDED, signed Device-Build iPhone 15 Pro Max BUILD SUCCEEDED.
+- Hardware-UITest-Suite NICHT erneut gefahren — keine UI-Code-Änderung in diesem Train. Letzte 8/8 grün-Acceptance auf `f111afd` bleibt gültig.
+- Manuelle Hardware-Restpunkte (46-MB-Retest, Live-Activity Sichtprüfung, iPad, ASC) sind in diesem Train **nicht** angefasst.
+
 ## 2026-05-12 — fix: restore heatmap control hardware smoke test
 
 - `AppContentSplitView.swift` Heatmap-Button bekommt 44pt-Hit-Target + stabile `accessibilityIdentifier("overview.range.heatmap.button")`. UITest `testDeviceSmokeNavigationAndActions` nutzt Identifier-Lookup mit Label-Fallback und neuen `scrollUntilHittable`-Helper (window-level coordinate-drag).
