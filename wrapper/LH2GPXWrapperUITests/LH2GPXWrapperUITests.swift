@@ -199,8 +199,15 @@ final class LH2GPXWrapperUITests: XCTestCase {
             RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         }
 
-        let heatmapButton = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Heatmap'")).firstMatch
-        XCTAssertTrue(revealElement(heatmapButton, in: app))
+        // Stable identifier set in AppContentSplitView.overviewRangeCard.
+        // Falls back to a label-based predicate so older builds without the
+        // identifier still resolve the same control.
+        let heatmapButton: XCUIElement = {
+            let byIdentifier = app.buttons["overview.range.heatmap.button"]
+            if byIdentifier.waitForExistence(timeout: 2) { return byIdentifier }
+            return app.buttons.matching(NSPredicate(format: "label CONTAINS 'Heatmap'")).firstMatch
+        }()
+        XCTAssertTrue(scrollUntilHittable(heatmapButton, in: app))
         heatmapButton.tap()
         XCTAssertTrue(app.navigationBars["Heatmap"].waitForExistence(timeout: 10))
         app.buttons["Done"].tap()
@@ -521,6 +528,43 @@ final class LH2GPXWrapperUITests: XCTestCase {
             }
 
             RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        }
+
+        return element.exists && element.isHittable
+    }
+
+    /// Scrolls the foreground app until `element` is hittable, using a
+    /// coordinate-based drag from low to high on the application window.
+    /// Larger drag distance than `swipeUp()` so a single iteration can cover
+    /// roughly two thirds of the screen; this is reliable when the Overview
+    /// tab has a tall hero map / safe-area inset above a long scrollable
+    /// content stack. Falls back to scrolling back down if the element was
+    /// missed by overshoot.
+    @MainActor
+    private func scrollUntilHittable(
+        _ element: XCUIElement,
+        in app: XCUIApplication,
+        maxIterations: Int = 12
+    ) -> Bool {
+        if element.waitForExistence(timeout: 5), element.isHittable {
+            return true
+        }
+
+        let window = app.windows.firstMatch
+        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85))
+        let top    = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15))
+
+        for _ in 0..<maxIterations {
+            if element.exists && element.isHittable { return true }
+            bottom.press(forDuration: 0.05, thenDragTo: top)
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+        }
+
+        // Overshoot recovery: scroll back down in smaller increments.
+        for _ in 0..<maxIterations {
+            if element.exists && element.isHittable { return true }
+            top.press(forDuration: 0.05, thenDragTo: bottom)
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
         }
 
         return element.exists && element.isHittable

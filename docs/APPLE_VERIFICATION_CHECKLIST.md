@@ -1,5 +1,39 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-12 (Heatmap-Hit-Target-Fix + Hardware-Acceptance-Train 8/8 auf HEAD pending)
+
+**Gerät:** iPhone 15 Pro Max (UDID `00008130-00163D0A0461401C`, iOS 26.4). **Xcode:** 26.3 (17C529). **Build-Identität:** unverändert (MARKETING_VERSION `1.0.1`, CURRENT_PROJECT_VERSION `100`). Signed Debug-Build via `xcodebuild -allowProvisioningUpdates` BUILD SUCCEEDED.
+
+**Code-Fix:** `Sources/LocationHistoryConsumerAppSupport/AppContentSplitView.swift:857–863` — der Heatmap-Button im `overviewRangeCard` bekommt jetzt `.frame(minHeight: 44)`, `.contentShape(Rectangle())` und `.accessibilityIdentifier("overview.range.heatmap.button")`. Vorher 13.3 pt hoch (HIG-Verletzung) und nur per Label-Predicate auffindbar; in der Phase-10-Hero-Map-Workspace-Variante war er außerhalb des XCUITest-`revealElement`-6-Swipe-Budgets nicht mehr hittable.
+
+**UITest-Fix:** `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift` — `testDeviceSmokeNavigationAndActions` löst den Heatmap-Button jetzt zuerst per stabilem Identifier auf (Fallback auf Label-Predicate); statt `revealElement` (Swipe auf `firstMatch`-ScrollView, der je nach Hero-Layout der falsche sein kann) ruft der Test ein neues `scrollUntilHittable(_:in:maxIterations:)` auf, das per `coordinate(withNormalizedOffset:).press(forDuration:thenDragTo:)` window-level vom unteren ins obere Drittel zieht — größerer Drag pro Iteration, bis zu 12 Iterationen, mit Overshoot-Recovery.
+
+**Build-/Test-Baseline (Post-Fix):**
+- `swift build` OK.
+- `swift test` (Mac): **1518 / 4 skipped / 0 failures** (116.5 s; unverändert).
+- `xcodebuild -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO` BUILD SUCCEEDED.
+- `xcodebuild -destination 'id=…401C' build -allowProvisioningUpdates` BUILD SUCCEEDED.
+
+**Hardware-UITest-Suite iPhone 15 Pro Max — alle 8 grün:**
+| Test | Ergebnis | Dauer |
+|---|---|---|
+| `testAppStoreScreenshots` | ✅ PASSED | 43.4 s |
+| `testDeviceSmokeNavigationAndActions` | ✅ PASSED | 75.8 s |
+| `testLandscapeLayoutSmoke` | ✅ PASSED | 597.4 s (langsamer Run wegen paralleler xcodebuild-Generic-Konkurrenz auf DerivedData, Test selbst grün) |
+| `testLiveActivityHardwareCaptureDistance` | ✅ PASSED | 38.8 s |
+| `testLiveActivityHardwareCaptureDuration` | ✅ PASSED | 37.6 s |
+| `testLiveActivityHardwareCapturePoints` | ✅ PASSED | 38.0 s |
+| `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart` | ✅ PASSED | 63.3 s |
+| `testLiveActivityHardwareCaptureUploadStatusFailed` | ✅ PASSED | 37.7 s |
+
+P0-3 (Heatmap-Button-Regression aus dem vorherigen Train) ist damit **geschlossen**.
+
+**Manual-Risk-Sektionen-Stand nach diesem Train (unverändert offen):**
+- **Sektion 1 (46-MB-Crashfall):** **bleibt FAILED.** Im lokalen Filesystem ist jetzt `/Users/sebastian/Desktop/Google_Maps/12_05_2026_location-history.json` mit **46 657 867 Bytes (~44.5 MiB)** verfügbar — größenmäßig im Crashfall-Bereich. **Der eigentliche Import auf dem iPhone erfordert eine manuelle UI-Interaktion (File Picker → Akzeptieren des Imports), die nicht autonom über `xcodebuild test` triggerbar ist.** Der Hardware-Retest auf dem Release-Build ist deshalb für den Tester-Handoff vorbereitet, aber **in diesem Train nicht durchgeführt**.
+- **Sektion 2 (Live Activity / Dynamic Island / Lock Screen):** weiterhin technischer Pass über die UITest-Capture-Suite (alle 5 grün); **manuelle visuelle Lock-Screen-Sichtprüfung außerhalb der UITests bleibt offen**. Sektion-2-Checkboxen nicht abgehakt.
+- **Sektion 3 (iPad-Layout):** **bleibt offen** (iPad weiterhin offline).
+- **Sektion 4 (ASC / TestFlight / Apple Review):** **bleibt offen** (extern, lokal nicht belegbar).
+
 ## Aktualisierung 2026-05-12 (Hardware-Acceptance-Train auf HEAD `5f83838`)
 
 **Gerät:** iPhone 15 Pro Max (UDID `00008130-00163D0A0461401C`, iOS 26.4). **Xcode:** 26.3 (17C529). **Build-Identität:** MARKETING_VERSION `1.0.1`, CURRENT_PROJECT_VERSION `100`. Signed Debug-Build via `xcodebuild -allowProvisioningUpdates` mit Cert `8D7D…AEAE` und Provisioning Profile `iOS Team Provisioning Profile: de.roeber.LH2GPXWrapper`.

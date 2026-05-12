@@ -1,5 +1,13 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-12, HEAD pending — `fix: restore heatmap control hardware smoke test`)
+
+- Zentrales Repo: `iOS-App` (`dev-roeber/iOS-App`). Lokaler Pfad: `/Users/sebastian/Desktop/XCODE/iOS-App`. Xcode-Wrapper: `wrapper/LH2GPXWrapper.xcodeproj`.
+- **P0-3 geschlossen:** Heatmap-Button im Overview-Tab bekommt HIG-konformes 44pt-Hit-Target, stabilen accessibilityIdentifier; UITest nutzt Identifier + neuen `scrollUntilHittable`-Helper. Hardware-UITest-Suite **8/8 grün** auf iPhone 15 Pro Max (iOS 26.4). Code: `AppContentSplitView.swift:857–863`; Test: `LH2GPXWrapperUITests.swift` (heatmapButton lookup, scrollUntilHittable helper).
+- **Baseline grün:** `swift build`, `swift test` 1518/4/0 (116.5 s), `xcodebuild generic iOS` BUILD SUCCEEDED, signed Device-Build BUILD SUCCEEDED.
+- **Manual-Risk-Sektionen-Stand (unverändert offen):** Sektion 1 (46-MB-Crashfall) bleibt **FAILED** — Datei `/Users/sebastian/Desktop/Google_Maps/12_05_2026_location-history.json` (~44.5 MiB) verfügbar, Import braucht manuelle UI-Interaktion und ist nicht autonom triggerbar; Sektion 2 (Live Activity / Dynamic Island / Lock Screen) bleibt mit menschlicher Sichtprüfung offen; Sektion 3 (iPad) bleibt offen (iPad offline); Sektion 4 (ASC / TestFlight / Apple Review) bleibt offen (extern).
+- Davor HEAD `9e4a41b` (Hardware-Acceptance-Train mit Heatmap-Regression als P0-3); davor HEAD `5f83838` (`fix: conditionally link CSQLite shim for Linux`); davor HEAD `4d6ac87` (Post-Pull Deep-Audit-Truth-Sync); davor HEAD `30015c9` (P1 Keychain `kSecAttrAccessibleAfterFirstUnlock`); davor HEAD `799adc5` (Remote-Stand vor Pull).
+
 ## Aktiver Stand (2026-05-12, HEAD pending — `docs: record iPhone hardware acceptance status`)
 
 - Hardware-Acceptance-Train auf iPhone 15 Pro Max (iOS 26.4) auf HEAD `5f83838` durchgeführt. **Resultat:** 7/8 UITests grün — `testAppStoreScreenshots`, `testLandscapeLayoutSmoke`, `testLiveActivityHardwareCaptureDistance/Duration/Points/UploadStatusPendingAndRestart/UploadStatusFailed`. **1 Regression:** `testDeviceSmokeNavigationAndActions` FAILED auf `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift:203` (Heatmap-Button im Overview nicht hittable). War am 2026-05-07 (HEAD `b91a933`) grün — Regression in einem der Phase-10-Commits dazwischen. **In diesem Train nicht gefixt.**

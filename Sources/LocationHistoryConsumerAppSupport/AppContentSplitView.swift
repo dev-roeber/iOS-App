@@ -860,6 +860,9 @@ public struct AppContentSplitView: View {
                         .buttonStyle(.plain)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(LH2GPXTheme.primaryBlue)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                        .accessibilityIdentifier("overview.range.heatmap.button")
                     }
 
                     if !favoritedDayIDs.isEmpty {

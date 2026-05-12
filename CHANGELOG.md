@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## 2026-05-12 — fix: restore heatmap control hardware smoke test
+
+### Code
+- `Sources/LocationHistoryConsumerAppSupport/AppContentSplitView.swift` (Zeile 857–863): Heatmap-Button im `overviewRangeCard` bekommt `.frame(minHeight: 44)`, `.contentShape(Rectangle())` und `.accessibilityIdentifier("overview.range.heatmap.button")`. Vorher 49.7×13.3 pt — HIG-Mindestanforderung 44pt verletzt; jetzt korrekt. Button-Verhalten und Layout im Übrigen unverändert.
+- `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift`: `testDeviceSmokeNavigationAndActions` löst den Heatmap-Button jetzt zuerst per `app.buttons["overview.range.heatmap.button"]` (Fallback auf Label-Predicate für Builds ohne Identifier). Ersetzt `revealElement(...)` durch neuen Helper `scrollUntilHittable(_:in:maxIterations:)`, der window-level Coordinate-Drag (`coordinate(withNormalizedOffset:).press(forDuration:thenDragTo:)`) mit größerem Drag pro Iteration und bis zu 12 Iterationen plus Overshoot-Recovery nutzt. `revealElement`/`primaryScrollableContainer` bleiben für andere Test-Stellen unverändert.
+
+### Root Cause
+- Der Heatmap-Button war in dem im Phase-10-Train eingeführten Hero-Map-Workspace-Layout im Overview-Tab so weit unten in der ScrollView, dass das vorherige `revealElement`-6-Swipe-Budget per `app.scrollViews.firstMatch.swipeUp()` ihn nicht mehr in den hittable Bereich brachte. `firstMatch` kann je nach SwiftUI-Render-Order auch den horizontalen Hero-Filter-Scroll im safeAreaInset treffen, dessen swipeUp keinen vertikalen Scroll triggert. Plus: der Button hatte nur 13.3 pt Höhe — HIG-Verletzung und kein stabiler accessibilityIdentifier.
+
+### Verifikation
+- `swift build`: OK.
+- `DEVELOPER_DIR=Xcode swift test`: **1518 / 4 skipped / 0 failures** (116.5 s, unverändert).
+- `xcodebuild -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO`: BUILD SUCCEEDED.
+- `xcodebuild -destination 'id=…401C' build -allowProvisioningUpdates`: BUILD SUCCEEDED (signed Debug iPhone 15 Pro Max).
+- `git diff --check`: clean.
+
+### Hardware-UITest-Suite iPhone 15 Pro Max (iOS 26.4) — 8/8 grün
+- `testAppStoreScreenshots`: ✅ 43.4 s.
+- `testDeviceSmokeNavigationAndActions`: ✅ 75.8 s (war P0-3-Regression auf HEAD `5f83838`/`9e4a41b`, jetzt grün).
+- `testLandscapeLayoutSmoke`: ✅ 597.4 s (langer Run wegen DerivedData-Konkurrenz mit parallelem xcodebuild generic — Test selbst grün, isolierter Re-Run nicht nötig).
+- `testLiveActivityHardwareCaptureDistance`: ✅ 38.8 s.
+- `testLiveActivityHardwareCaptureDuration`: ✅ 37.6 s.
+- `testLiveActivityHardwareCapturePoints`: ✅ 38.0 s.
+- `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart`: ✅ 63.3 s.
+- `testLiveActivityHardwareCaptureUploadStatusFailed`: ✅ 37.7 s.
+
+### Restrisiko / weiterhin offen
+- 46-MB-Crashfall: Datei `/Users/sebastian/Desktop/Google_Maps/12_05_2026_location-history.json` (~44.5 MiB) verfügbar, aber Import auf dem iPhone braucht manuelle UI-Interaktion — Manual Risk Acceptance Sektion 1 bleibt **FAILED** bis Tester-Retest auf Release-Build.
+- Live Activity / Dynamic Island / Lock Screen: weiterhin technischer Pass über UITest-Capture-Suite, **manuelle visuelle Lock-Screen-Sichtprüfung außerhalb der UITests offen**.
+- iPad-Layout: bleibt offen (iPad weiter offline).
+- ASC / TestFlight / Apple Review: bleibt offen (extern, lokal nicht belegbar).
+
 ## 2026-05-12 — docs: record iPhone hardware acceptance status
 
 ### Hardware-Acceptance-Train (HEAD `5f83838`, iPhone 15 Pro Max iOS 26.4)

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-05-12 — fix: restore heatmap control hardware smoke test
+
+- `AppContentSplitView.swift` Heatmap-Button bekommt 44pt-Hit-Target + stabile `accessibilityIdentifier("overview.range.heatmap.button")`. UITest `testDeviceSmokeNavigationAndActions` nutzt Identifier-Lookup mit Label-Fallback und neuen `scrollUntilHittable`-Helper (window-level coordinate-drag).
+- Hardware-UITest-Suite iPhone 15 Pro Max (iOS 26.4): **8/8 grün**. P0-3 aus dem vorigen Train geschlossen.
+- Baseline grün: `swift build`, `swift test` 1518/4/0, `xcodebuild generic iOS` BUILD SUCCEEDED, signed Device-Build BUILD SUCCEEDED.
+- Manual Risk Acceptance: Sektion 1 (46 MB) bleibt FAILED (Datei `~44.5 MiB` lokal verfügbar, Import braucht manuelle UI-Interaktion); Sektion 2 (Live Activity) — UITest-Capture-Pass, menschliche Sichtprüfung offen; Sektionen 3 (iPad) und 4 (ASC) bleiben offen.
+
 ## 2026-05-12 — docs: record iPhone hardware acceptance status
 
 - Hardware-Acceptance-Train auf iPhone 15 Pro Max (iOS 26.4) auf HEAD `5f83838`: 7/8 UITests grün. `testAppStoreScreenshots`, `testLandscapeLayoutSmoke`, alle fünf `testLiveActivityHardwareCapture*` PASSED. **`testDeviceSmokeNavigationAndActions` FAILED** an `LH2GPXWrapperUITests.swift:203` (Heatmap-Button nicht hittable, Regression aus einem Phase-10-Commit) — in diesem Train nicht gefixt.
