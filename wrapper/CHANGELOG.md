@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-05-12 — fix: conditionally link CSQLite shim for Linux
+
+- `Package.swift` hängt den `CSQLite`-Linux-Shim jetzt nur noch unter `.when(platforms: [.linux])` an `LocationHistoryConsumerAppSupport`. Auf Apple-Plattformen greift weiter der bestehende `#if canImport(SQLite3)`-Gate in `LocalTimelineStore.swift`, sodass die SDK-`SQLite3` benutzt wird.
+- Wrapper-`xcodebuild -scheme LH2GPXWrapper -project wrapper/LH2GPXWrapper.xcodeproj -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO` **BUILD SUCCEEDED**; signed Device-Build iPhone 15 Pro Max ebenfalls **BUILD SUCCEEDED**.
+- `swift test` 1518/4/0 (Mac, unverändert).
+- Manuelle Hardware-Restpunkte (46-MB-Retest, Live Activity, iPad, ASC/TestFlight) sind in diesem Train **nicht** angefasst und bleiben offen.
+
 ## 2026-05-09 — L-04 Bounded LRU für AppSessionContent-Caches
 - Wrapper-Bundle/Signing/Plist unverändert. Core-Paket: neuer `BoundedLRU<K,V>` (Foundation-only) cappt alle 5 Filter-/Detail-Caches in `AppSessionContent` (8/8/8/32/16) sowie `projectedDaysCache` (8). Semantik unverändert. Wrapper-Konsumenten sehen kein anderes UI-Verhalten.
 - 46-MB-Hardware-Gate bleibt FAILED / pending hardware retest.

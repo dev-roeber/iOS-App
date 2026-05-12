@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 2026-05-12 — fix: conditionally link CSQLite shim for Linux
+
+### Code
+- `Package.swift`: `LocationHistoryConsumerAppSupport`-Target hängt den `CSQLite`-Linux-Shim jetzt über `.target(name: "CSQLite", condition: .when(platforms: [.linux]))` ein statt unconditional. Auf Apple-Plattformen greift weiter der vorhandene `#if canImport(SQLite3)`-Gate in `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStore.swift`, sodass dort die SDK-`SQLite3` benutzt wird. Der `Undefined symbols for architecture arm64: _sqlite3_*`-Linker-Bruch im `LH2GPXWidget.appex`-Linkschritt ist damit weg.
+
+### Verifikation
+- `swift build`: OK (79.2 s).
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test`: **1518 Tests, 4 Skips, 0 Failures** (111.0 s; unverändert vs. vorher).
+- `xcodebuild -scheme LH2GPXWrapper -project wrapper/LH2GPXWrapper.xcodeproj -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO`: **BUILD SUCCEEDED**.
+- `xcodebuild -scheme LH2GPXWrapper -project wrapper/LH2GPXWrapper.xcodeproj -destination 'id=00008130-00163D0A0461401C' build -allowProvisioningUpdates`: **BUILD SUCCEEDED** (signed Debug-Build iPhone 15 Pro Max).
+- `git diff --check`: clean.
+
+### Doku
+- `docs/DEEP_AUDIT_2026-05-12_POST_PULL.md` Sektion 9 P0-1 ist auf „BEHOBEN" gesetzt; ursprünglicher Linker-Befund bleibt als historischer Eintrag.
+- `README.md` ersetzt die Aussage „xcodebuild iOS-Build BRICHT" durch den belegten BUILD-SUCCEEDED-Stand auf HEAD pending.
+- `NEXT_STEPS.md` + `ROADMAP.md` Stand-Block für 2026-05-12 ergänzt; manuelle Hardware-Restpunkte bleiben offen.
+
+### Restrisiko / weiterhin offen
+- 46-MB-Crashfall-Hardware-Retest auf iPhone 15 Pro Max Release-Build bleibt FAILED bis Tester-Bestätigung.
+- Live Activity / Dynamic Island / Lock Screen, iPad-Layout, ASC / TestFlight / Apple Review weiterhin offen (Manual Risk Acceptance Protocol).
+- Hardware-UITest-Suite (`testAppStoreScreenshots`, `testLandscapeLayoutSmoke`, `testDeviceSmokeNavigationAndActions`) in diesem Train **nicht** gefahren — nur signierter Debug-Build verifiziert.
+- iOS-Data-Protection-Aktivierung für SQLite-Store (P1 aus Audit) weiterhin offen; relevant erst bei Default-ON des Feature-Flags `LH2GPX_LOCAL_TIMELINE_STORE`, aktuell OFF.
+
 ## 2026-05-09 — L-04 — Bounded LRU für AppSessionContent-Caches
 
 Setzt Deep-Audit-Folgepunkt **L-04** um. **NEU** `Sources/LocationHistoryConsumerAppSupport/BoundedLRU.swift` (Foundation-only generischer LRU-Cache, `K: Hashable` / `V` beliebig, Init mit `capacity > 0`, API `value(forKey:)` / `insert(_:forKey:)` / `removeValue(forKey:)` / `removeAll()` / `subscript` / `keysMostRecentFirst` / `count` / `capacity`; Lesen + Insert markieren Key als most-recent; Insert über Capacity evictet least-recently-used; Update bestehender Keys verändert `count` nicht; nicht thread-safe — Owner muss Concurrency-Schutz selbst stellen). **Geändert** `AppSessionContent` in `AppSessionState.swift`: alle fünf bisher unbounded `[Key: Value]`-Caches sind durch `BoundedLRU` capped — `filteredOverviewCache`, `filteredDaySummariesCache`, `filteredInsightsCache` (je 8), `dayDetailCache` (32), `dayMapDataCache` (16). Der bisher manuell verwaltete `projectedDaysCache` (Limit 8) nutzt jetzt dasselbe `BoundedLRU` — keine Verhaltensänderung, nur einheitliche Semantik. **Semantik unverändert**: Bei vielen distinct Keys werden ältere Einträge nach Eviction transparent neu berechnet; das Resultat bleibt byte-identisch zum vorherigen unbounded Pfad. **NEU Tests** `BoundedLRUTests.swift` (13 Cases: Insert/Read, Read makes recent, Capacity-Evict LRU, Update keeps count, Remove/RemoveAll, Capacity 1, Deterministic order via `keysMostRecentFirst`, 10k-Insert/Cap16-Stress, Subscript-set-nil) und `AppSessionContentCacheBoundsTests.swift` (5 Cases: viele distinct Filter-Keys halten Overview/DaySummaries/Insights stabil; DayDetail/MapData stabil über viele composite Keys; Eviction ändert Insights-Resultat nicht). Linux-Vollsuite **+18 neue Tests, 0 failed**. Store-Pfad bleibt pre-production / feature-flagged / default OFF. 46-MB-Gate bleibt FAILED / pending hardware retest. L-02/L-03 bleiben offen.

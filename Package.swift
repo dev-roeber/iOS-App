@@ -56,7 +56,13 @@ let package = Package(
             name: "LocationHistoryConsumerAppSupport",
             dependencies: [
                 "LocationHistoryConsumer",
-                "CSQLite",
+                // CSQLite is a pkgConfig shim for the system libsqlite3 used
+                // only when `canImport(SQLite3)` is false (i.e. Linux CI).
+                // On Apple platforms the SDK provides SQLite3 directly and
+                // an unconditional dependency would force the Linux shim
+                // into the iOS/iOS-Widget link, producing
+                // `Undefined symbols: _sqlite3_*` at link time.
+                .target(name: "CSQLite", condition: .when(platforms: [.linux])),
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
             ]
         ),

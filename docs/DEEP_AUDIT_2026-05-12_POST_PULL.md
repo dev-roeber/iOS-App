@@ -164,10 +164,11 @@ Aus Agent A. Konsistenter Anker: Code-Truth ist `pbxproj` (MARKETING_VERSION=1.0
 
 ### P0
 
-- **P0-1 Wrapper-iOS-Build gebrochen.** `xcodebuild build` für `LH2GPXWrapper`-Scheme bricht im LH2GPXWidget-Linkschritt mit `Undefined symbols for architecture arm64: _sqlite3_bind_blob, _sqlite3_bind_double, _sqlite3_bind_int, _sqlite3_bind_null, _sqlite3_bind_text, _sqlite3_bind_zeroblob, _sqlite3_close_v2, _sqlite3_column_*, _sqlite3_errmsg, _sqlite3_exec, _sqlite3_finalize, ...` (siehe `/tmp/xcb_generic.log`).  
-  **Root Cause-Hypothese:** `Package.swift` hängt `LocationHistoryConsumerAppSupport` an `CSQLite` (Linux-pkgConfig-Shim) ohne `condition: .when(platforms: [.linux])`. Xcode zieht den CSQLite-Target damit auch für iOS in den Link, wo `libsqlite3` nicht via pkgConfig-Pfad verfügbar ist. Die SDK-`SQLite3`-Linkage greift erst, wenn das nicht passiert.  
-  **Beleg:** Reproduzierbar auf `799adc5` (pure origin/main); identisches Symbol-Set.  
-  **Risiko:** Xcode Cloud bricht beim Submit. Lokaler Device-Build unmöglich.  
+- **P0-1 Wrapper-iOS-Build gebrochen — BEHOBEN am 2026-05-12 in Folge-Commit nach diesem Audit.** Fix: `Package.swift` macht den `CSQLite`-Linux-Shim jetzt conditional über `.target(name: "CSQLite", condition: .when(platforms: [.linux]))`, sodass Apple-Plattformen über den bereits vorhandenen `#if canImport(SQLite3)`-Gate in `LocalTimelineStore.swift` die SDK-`SQLite3` direkt nutzen und der Linker nicht mehr den Linux-pkgConfig-Shim für iOS zieht. **Verifikation:** `swift build` OK (79.2 s), `swift test` 1518/4/0 (111.0 s), `xcodebuild ... -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO` **BUILD SUCCEEDED**, `xcodebuild ... -destination 'id=00008130-00163D0A0461401C' build -allowProvisioningUpdates` **BUILD SUCCEEDED** (signed Device-Build iPhone 15 Pro Max). Ursprünglicher Befund (historisch):
+- **P0-1 (historisch)** `xcodebuild build` für `LH2GPXWrapper`-Scheme bricht im LH2GPXWidget-Linkschritt mit `Undefined symbols for architecture arm64: _sqlite3_bind_blob, _sqlite3_bind_double, _sqlite3_bind_int, _sqlite3_bind_null, _sqlite3_bind_text, _sqlite3_bind_zeroblob, _sqlite3_close_v2, _sqlite3_column_*, _sqlite3_errmsg, _sqlite3_exec, _sqlite3_finalize, ...` (siehe `/tmp/xcb_generic.log`).
+  **Root Cause-Hypothese:** `Package.swift` hängt `LocationHistoryConsumerAppSupport` an `CSQLite` (Linux-pkgConfig-Shim) ohne `condition: .when(platforms: [.linux])`. Xcode zieht den CSQLite-Target damit auch für iOS in den Link, wo `libsqlite3` nicht via pkgConfig-Pfad verfügbar ist. Die SDK-`SQLite3`-Linkage greift erst, wenn das nicht passiert.
+  **Beleg:** Reproduzierbar auf `799adc5` (pure origin/main); identisches Symbol-Set.
+  **Risiko:** Xcode Cloud bricht beim Submit. Lokaler Device-Build unmöglich.
   **Empfehlung:** In `Package.swift` AppSupport-Dependency umstellen:
   ```swift
   .target(
@@ -179,7 +180,7 @@ Aus Agent A. Konsistenter Anker: Code-Truth ist `pbxproj` (MARKETING_VERSION=1.0
       ]
   ),
   ```
-  Plus prüfen, ob `import CSQLite` im Code ebenfalls via `#if !canImport(SQLite3)` gegated ist (Agent F notiert dass `LocalTimelineStore.swift:2-6` einen `#if canImport(SQLite3)` Gate hat — d.h. der iOS-Pfad nutzt SDK-SQLite, der Linker zieht aber CSQLite trotzdem rein).  
+  Plus prüfen, ob `import CSQLite` im Code ebenfalls via `#if !canImport(SQLite3)` gegated ist (Agent F notiert dass `LocalTimelineStore.swift:2-6` einen `#if canImport(SQLite3)` Gate hat — d.h. der iOS-Pfad nutzt SDK-SQLite, der Linker zieht aber CSQLite trotzdem rein).
   **Testbedarf:** xcodebuild iOS-Sim + Device + Linux-Swift-Build alle drei grün.
 
 - **P0-2 Manual Release Risk Acceptance Protocol weiter offen.** 46-MB-Hardware-Retest, Live Activity / Dynamic Island / Lock Screen, iPad-Layout, ASC/TestFlight/Apple Review — alle Checkboxen in `docs/APPLE_VERIFICATION_CHECKLIST.md` Sektion 1–4 weiter leer. Nicht durch Code lösbar.
@@ -232,9 +233,9 @@ Aufgabe: P0 Wrapper-iOS-Build-Fix — CSQLite konditional auf Linux einschränke
    In Package.swift Target "LocationHistoryConsumerAppSupport" die Dependency "CSQLite" durch
        .target(name: "CSQLite", condition: .when(platforms: [.linux]))
    ersetzen.
-   
+
    Falls weitere Targets CSQLite als unconditional Dep haben (z.B. Tests), gleich anpassen.
-   
+
    Falls Source-Files `import CSQLite` ohne `#if !canImport(SQLite3)` Gate enthalten, jeweils auf
    die SDK-SQLite3-only Variante umstellen:
        #if canImport(SQLite3)
