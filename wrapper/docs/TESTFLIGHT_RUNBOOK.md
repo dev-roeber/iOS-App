@@ -1,17 +1,21 @@
 # TestFlight + App Store Runbook
 
-Stand: 2026-05-05 | Phase 20
+Stand: 2026-05-12 (Build-Identitäts-Sync nach Post-Pull-Deep-Audit; vorher 2026-05-05 / Phase 20 — siehe historischer Block unten).
+
+> **Build-Identitäts-Truth heute (Repo HEAD `30015c9`):** Marketing-Version `1.0.1`, `CURRENT_PROJECT_VERSION = 100` (alle 8 pbxproj-Configs), Bundle ID unverändert. Der `xcodebuild archive`-Lauf vom 2026-04-30 (v1.0 Build 45) ist historisch und für den aktuellen Submit nicht mehr relevant. Siehe `docs/DEEP_AUDIT_2026-05-12_POST_PULL.md` Finding F-11.
+>
+> **Bekannter Release-Blocker (P0):** `xcodebuild build` für das Wrapper-iOS-Target bricht auf HEAD `30015c9` (und pre-existing auf `799adc5`) mit `Undefined symbols for architecture arm64: _sqlite3_*` im `LH2GPXWidget.appex`-Linkschritt. Ursache: CSQLite-Linux-Shim wird in `Package.swift` unconditional an `LocationHistoryConsumerAppSupport` gehängt. Bis dieser Fix gelandet ist, ist **kein iOS-Archive erzeugbar**.
 
 ---
 
-## Lokal verifizierter Stand
+## Lokal verifizierter Stand (Historischer Block — Stand 2026-05-05 / 2026-04-30)
 
 | Punkt | Status | Nachweis |
 |-------|--------|---------|
-| `xcodebuild archive` | **verifiziert** | 2026-04-30, v1.0 Build 45, lokales Release-Archive erzeugbar |
+| `xcodebuild archive` | **historisch verifiziert** | 2026-04-30, v1.0 Build 45, lokales Release-Archive erzeugbar (vor MARKETING_VERSION-Bump auf 1.0.1) |
 | Bundle Identifier | `de.roeber.LH2GPXWrapper` | project.pbxproj |
-| Marketing Version | `1.0` | project.pbxproj |
-| Build Number | `45` | project.pbxproj |
+| Marketing Version (damals) | `1.0` (heute Repo-Truth: **`1.0.1`**) | project.pbxproj |
+| Build Number (damals) | `45` (heute Repo-Truth: **`100`**) | project.pbxproj |
 | Display Name | `LH2GPX` | project.pbxproj |
 | Deployment Target | iOS 16.0 (App, Tests); iOS 16.2 (Widget) | project.pbxproj |
 | Signing | Automatic, Team `XAGR3K7XDJ`; lokaler Host signiert Archive derzeit mit `Apple Development`, Export zu ASC braucht zusaetzlich eine Distribution-Identitaet | project.pbxproj + lokaler Archive-Lauf 2026-04-30 |

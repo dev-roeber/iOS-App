@@ -1,23 +1,27 @@
 # App Store Connect — Submit-Runbook
 
-Stand: 2026-05-05 | **Status: Ausstehende Entwicklerfreigabe (Pending Developer Release)**
+Stand: 2026-05-12 (Build-Identitäts-Sync nach Post-Pull-Deep-Audit; ASC-/Cloud-Build-Liste ist im Repo nicht reverifizierbar — siehe Hinweisblock).
+
+> **Hinweis zur Aktualität:** Die unten stehenden ASC-Status-Werte sind aus der 2026-05-05-Snapshot-Phase und gelten nur als historischer Eintrag. Repo-Truth heute: HEAD `30015c9`, MARKETING_VERSION `1.0.1`, `CURRENT_PROJECT_VERSION = 100`. Der frühere `docs/DEEP_AUDIT_2026-05-12.md` (auf HEAD `ae5de1f` erstellt) verweist auf einen ASC-Screenshot mit Build 167 — diese Zahl ist **nicht** lokal verifizierbar, sondern Tester-Angabe. Cloud-Builds 84 / 155–158 / 167 sind in unterschiedlichen Doku-Stellen genannt; die wahre ASC-Build-Liste muss im Apple-Portal manuell abgeglichen werden, bevor der nächste Submit erfolgt. Siehe `docs/DEEP_AUDIT_2026-05-12_POST_PULL.md` Findings F-04, F-08, F-14.
+>
+> **Bekannter Release-Blocker (P0):** Wrapper-iOS-`xcodebuild` bricht auf HEAD `30015c9` (CSQLite-Linker). Vor nächstem Submit muss dieser Fix gelandet sein. Siehe Audit-Sektion 9 P0-1.
 
 ---
 
-## Aktueller ASC-Status (Stand: 2026-05-05)
+## Aktueller ASC-Status (Snapshot 2026-05-05 — **nicht reverifiziert**)
 
 | Punkt | Wert |
 |-------|------|
 | Version | 1.0 |
-| **Status** | **`Ausstehende Entwicklerfreigabe (Pending Developer Release)`** |
-| Guideline 3.2 | **Resolved / Accepted** — kein offener Ablehnungsgrund |
+| **Status (damals)** | `Ausstehende Entwicklerfreigabe (Pending Developer Release)` |
+| Guideline 3.2 | **Resolved / Accepted** (damals) — kein offener Ablehnungsgrund |
 | Accepted-Datum | 2026-05-05 |
 | Ablehnung (historisch) | 2026-05-01, Build 74, Guideline 3.2 |
 | Submission ID | `1d2cc080-13cd-45cd-b3e0-c0259a75ce5c` |
-| Xcode Cloud aktuellster Build | **74** |
+| Xcode Cloud aktuellster Build (damals) | 74 (heute laut Tester-Screenshot `167` — im Repo nicht verifizierbar) |
 | Screenshots in ASC | Aus Build 71 (altes UI-Layout) — vor neuem Submit ersetzen |
-| Repo HEAD | `3057cfc` — fix: clarify optional self-hosted upload (consumer UI clarification) |
-| Lokale Build-Nummer (project.pbxproj) | 45 (von Xcode Cloud überschrieben via `ci_pre_xcodebuild.sh`) |
+| Repo HEAD (damals) | `3057cfc` (heute: **`30015c9`**) |
+| Lokale Build-Nummer (project.pbxproj) | damals 45, heute **`100`** |
 | **App live im Store** | **Nein** — bewusst nicht veröffentlicht |
 
 ---
