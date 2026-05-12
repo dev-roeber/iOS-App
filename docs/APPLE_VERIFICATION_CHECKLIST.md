@@ -1,5 +1,35 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-12 (Hardware-Acceptance-Train auf HEAD `5f83838`)
+
+**Gerät:** iPhone 15 Pro Max (UDID `00008130-00163D0A0461401C`, iOS 26.4). **Xcode:** 26.3 (17C529). **Build-Identität:** MARKETING_VERSION `1.0.1`, CURRENT_PROJECT_VERSION `100`. Signed Debug-Build via `xcodebuild -allowProvisioningUpdates` mit Cert `8D7D…AEAE` und Provisioning Profile `iOS Team Provisioning Profile: de.roeber.LH2GPXWrapper`.
+
+**Build-/Test-Baseline:**
+- `swift build` OK.
+- `swift test` (Mac): **1518 / 4 skipped / 0 failures** (118.7 s).
+- `xcodebuild -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO` **BUILD SUCCEEDED**.
+- `xcodebuild -destination 'id=…401C' build -allowProvisioningUpdates` **BUILD SUCCEEDED** (signed Debug).
+
+**Hardware-UITest-Suite iPhone 15 Pro Max:**
+| Test | Ergebnis | Dauer |
+|---|---|---|
+| `testAppStoreScreenshots` | ✅ PASSED | 44.1 s |
+| `testDeviceSmokeNavigationAndActions` | ❌ **FAILED** | 29.2 s |
+| `testLandscapeLayoutSmoke` | ✅ PASSED | 58.4 s |
+| `testLiveActivityHardwareCaptureDistance` | ✅ PASSED | 37.7 s |
+| `testLiveActivityHardwareCaptureDuration` | ✅ PASSED | 37.2 s |
+| `testLiveActivityHardwareCapturePoints` | ✅ PASSED | 37.4 s |
+| `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart` | ✅ PASSED | 64.4 s |
+| `testLiveActivityHardwareCaptureUploadStatusFailed` | ✅ PASSED | 38.2 s |
+
+**Regression (P1)**: `testDeviceSmokeNavigationAndActions` schlägt auf HEAD `5f83838` an Zeile `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift:203` mit `XCTAssertTrue(revealElement(heatmapButton, in: app))` fehl — der Heatmap-Button in der Overview ist während des UITests nicht erreichbar/sichtbar geworden. War am 2026-05-07 (HEAD `b91a933`) noch grün. In diesem Train **nicht** gefixt (Scope ist reine Hardware-Acceptance, kein Refactor). Manual-Risk-Sektion 1 (46 MB) und Sektion 4 (ASC) bleiben unberührt; Sektion 2 (Live Activity) bekommt die fünf neuen Capture-Tests als technischen Pass-Beleg.
+
+**Manual-Risk-Sektionen-Stand nach diesem Train:**
+- **Sektion 1 — 46-MB-Crashfall:** **bleibt FAILED**. Im System wurde keine 46-MB-`location-history.zip` gefunden (einzige `location-history.zip` unter `/Users/sebastian/Downloads/` ist nur 4.06 MB groß und triggert das Jetsam-Symptom nicht). Hardware-Retest des Release-Builds mit dem originalen 46-MB-Crash-Sample konnte deshalb nicht gefahren werden.
+- **Sektion 2 — Live Activity / Dynamic Island / Lock Screen:** alle fünf `testLiveActivityHardwareCapture*`-UITests sind auf der echten Hardware grün durchgelaufen. Die Tests laufen das Recording-Start/Stop, Dynamic-Island-Expand-Flow und Upload-Status-Restart-/Failed-Flow durch und schießen Screenshots des Lock-Screen-Banners; das ist technischer Pass für die Capture-Pfade. Eine **manuelle visuelle Inspektion** des Lock-Screen-Live-Activity-Banners außerhalb der UITests ist **nicht** durchgeführt. Sektion 2 Checkboxen bleiben deshalb leer — der UITest-Pass ist die ehrliche Stand-Aussage, aber kein menschlicher Sichtnachweis.
+- **Sektion 3 — iPad-Layout:** **OFFEN**. iPad (UDID `3c955848…d4da0a5`, iPadOS 17.7.10) ist offline laut `xcrun xctrace list devices`; iPad-Build und Hardware-Acceptance nicht gefahren.
+- **Sektion 4 — ASC / TestFlight / Apple Review:** **OFFEN**. Keine ASC-Verifikation in diesem Train.
+
 ## Aktualisierung 2026-05-09 (L-04 — Bounded LRU für AppSessionContent-Caches)
 
 **Code-Stand:** `AppSessionContent` (in `AppSessionState.swift`) hält fünf bisher unbounded Filter-/Projection-Caches; ab dem L-04-Commit sind alle durch `BoundedLRU<K,V>` (Foundation-only, neue Datei `Sources/LocationHistoryConsumerAppSupport/BoundedLRU.swift`) capped: `filteredOverviewCache`/`filteredDaySummariesCache`/`filteredInsightsCache` je 8, `dayDetailCache` 32, `dayMapDataCache` 16. `projectedDaysCache` (8) nutzt dieselbe Abstraktion. Semantik unverändert. **Hardware-Aussage unverändert.**

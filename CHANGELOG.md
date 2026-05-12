@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 2026-05-12 — docs: record iPhone hardware acceptance status
+
+### Hardware-Acceptance-Train (HEAD `5f83838`, iPhone 15 Pro Max iOS 26.4)
+- `testAppStoreScreenshots`: ✅ PASSED (44.1 s).
+- `testLandscapeLayoutSmoke`: ✅ PASSED (58.4 s).
+- `testLiveActivityHardwareCaptureDistance`: ✅ PASSED (37.7 s).
+- `testLiveActivityHardwareCaptureDuration`: ✅ PASSED (37.2 s).
+- `testLiveActivityHardwareCapturePoints`: ✅ PASSED (37.4 s).
+- `testLiveActivityHardwareCaptureUploadStatusPendingAndRestart`: ✅ PASSED (64.4 s).
+- `testLiveActivityHardwareCaptureUploadStatusFailed`: ✅ PASSED (38.2 s).
+- `testDeviceSmokeNavigationAndActions`: ❌ **FAILED** (29.2 s) — `XCTAssertTrue(revealElement(heatmapButton, in: app))` auf Zeile `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift:203`. Heatmap-Button im Overview-Tab nicht hittable. Bei HEAD `b91a933` (2026-05-07) war derselbe Test grün — Regression aus einem Phase-10-Commit. In diesem Train **nicht** gefixt (Scope ist Acceptance + Doku-Sync, kein Refactor).
+
+### Baseline
+- `swift build`: OK.
+- `DEVELOPER_DIR=Xcode swift test`: **1518 / 4 skipped / 0 failures** (118.7 s).
+- `xcodebuild -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO`: BUILD SUCCEEDED.
+- `xcodebuild -destination 'id=…401C' build -allowProvisioningUpdates`: BUILD SUCCEEDED (signed Debug).
+- `git diff --check`: clean.
+
+### Manual Risk Acceptance Protocol nach diesem Train
+- **Sektion 1 (46-MB-Crashfall):** bleibt **FAILED**. Keine 46-MB-`location-history.zip` im lokalen Filesystem (einzige Datei dieses Namens unter `/Users/sebastian/Downloads/` ist 4.06 MB groß). Release-Build-Hardware-Retest mit dem originalen 46-MB-Crash-Sample nicht möglich.
+- **Sektion 2 (Live Activity / Dynamic Island / Lock Screen):** Technischer Pass über die UITest-Capture-Suite (5/5 grün auf Hardware). Manuelle visuelle Lock-Screen-Sichtprüfung außerhalb der UITests **bleibt offen**; Checkboxen nicht abgehakt.
+- **Sektion 3 (iPad-Layout):** **bleibt offen**. iPad (UDID `3c955848…d4da0a5`, iPadOS 17.7.10) ist offline; iPad-Build und Acceptance nicht gefahren.
+- **Sektion 4 (ASC / TestFlight / Apple Review):** **bleibt offen**. Im Train nicht angefasst, extern nicht lokal belegbar.
+
+### Doku
+- `docs/APPLE_VERIFICATION_CHECKLIST.md`: neuer Top-Block für 2026-05-12 mit allen 8 UITest-Resultaten und expliziter Manual-Risk-Sektion-Bilanz.
+- `docs/DEEP_AUDIT_2026-05-12_POST_PULL.md`: P0-2 mit Train-Resultat erweitert; neues P0-3 für die `testDeviceSmokeNavigationAndActions`-Regression eingefügt.
+- `README.md`, `NEXT_STEPS.md`, `ROADMAP.md`: Stand-Block 2026-05-12 mit Acceptance-Ergebnis.
+
 ## 2026-05-12 — fix: conditionally link CSQLite shim for Linux
 
 ### Code

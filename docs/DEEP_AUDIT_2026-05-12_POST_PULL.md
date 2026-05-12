@@ -183,7 +183,12 @@ Aus Agent A. Konsistenter Anker: Code-Truth ist `pbxproj` (MARKETING_VERSION=1.0
   Plus prüfen, ob `import CSQLite` im Code ebenfalls via `#if !canImport(SQLite3)` gegated ist (Agent F notiert dass `LocalTimelineStore.swift:2-6` einen `#if canImport(SQLite3)` Gate hat — d.h. der iOS-Pfad nutzt SDK-SQLite, der Linker zieht aber CSQLite trotzdem rein).
   **Testbedarf:** xcodebuild iOS-Sim + Device + Linux-Swift-Build alle drei grün.
 
-- **P0-2 Manual Release Risk Acceptance Protocol weiter offen.** 46-MB-Hardware-Retest, Live Activity / Dynamic Island / Lock Screen, iPad-Layout, ASC/TestFlight/Apple Review — alle Checkboxen in `docs/APPLE_VERIFICATION_CHECKLIST.md` Sektion 1–4 weiter leer. Nicht durch Code lösbar.
+- **P0-2 Manual Release Risk Acceptance Protocol — Hardware-Acceptance-Train 2026-05-12 (HEAD `5f83838`) durchgeführt, Teilstand:**
+  - **Sektion 1 (46-MB-Crashfall): BLEIBT FAILED.** Im lokalen Dateisystem wurde keine 46-MB-`location-history.zip` gefunden (einzige Datei dieses Namens unter `/Users/sebastian/Downloads/` ist 4.06 MB groß). Hardware-Retest des Release-Builds mit dem originalen 46-MB-Crash-Sample wurde nicht gefahren.
+  - **Sektion 2 (Live Activity / Dynamic Island / Lock Screen): Technischer Pass über die UITest-Suite, manuelle visuelle Lock-Screen-Inspektion bleibt OFFEN.** Alle fünf `testLiveActivityHardwareCapture*`-UITests grün auf iPhone 15 Pro Max (Distance 37.7 s, Duration 37.2 s, Points 37.4 s, UploadStatusPendingAndRestart 64.4 s, UploadStatusFailed 38.2 s). Sektion-2-Checkboxen werden nicht abgehakt, weil sie eine menschliche Sichtprüfung außerhalb der UITests verlangen.
+  - **Sektion 3 (iPad-Layout): BLEIBT OFFEN.** iPad (UDID `3c955848…d4da0a5`, iPadOS 17.7.10) ist offline; nicht gefahren.
+  - **Sektion 4 (ASC / TestFlight / Apple Review): BLEIBT OFFEN.** Nicht im Repo verifizierbar; im Train nicht angefasst.
+- **P0-3 UITest-Regression auf `testDeviceSmokeNavigationAndActions` (NEU 2026-05-12).** Auf HEAD `5f83838` schlägt `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift:203` mit `XCTAssertTrue(revealElement(heatmapButton, in: app))` fehl — Heatmap-Button in der Overview wird auf echter Hardware nicht hittable. Vergleich: am 2026-05-07 (HEAD `b91a933`) war derselbe Test grün. Mögliche Ursachen aus dem Phase-10-Train (Heatmap-Cap, Map-Layer-Audit, BoundedLRU): nicht in diesem Train geklärt. **Risiko:** Hardware-Smoke-Pfad nicht mehr UITest-grün — bevor TestFlight-Submit muss entweder UITest aktualisiert oder ggf. die UI-Regression behoben werden.
 
 ### P1
 

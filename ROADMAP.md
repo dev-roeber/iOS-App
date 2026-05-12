@@ -1,5 +1,12 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-12, HEAD pending — `docs: record iPhone hardware acceptance status`)
+
+- Hardware-Acceptance-Train auf iPhone 15 Pro Max (iOS 26.4) auf HEAD `5f83838` durchgeführt. **Resultat:** 7/8 UITests grün — `testAppStoreScreenshots`, `testLandscapeLayoutSmoke`, `testLiveActivityHardwareCaptureDistance/Duration/Points/UploadStatusPendingAndRestart/UploadStatusFailed`. **1 Regression:** `testDeviceSmokeNavigationAndActions` FAILED auf `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift:203` (Heatmap-Button im Overview nicht hittable). War am 2026-05-07 (HEAD `b91a933`) grün — Regression in einem der Phase-10-Commits dazwischen. **In diesem Train nicht gefixt.**
+- **Baseline grün:** `swift build` OK, `swift test` 1518/4/0 (118.7 s), `xcodebuild generic iOS` BUILD SUCCEEDED, signed Device-Build BUILD SUCCEEDED.
+- **Manual-Risk-Sektionen-Stand (Details in `docs/APPLE_VERIFICATION_CHECKLIST.md`):** Sektion 1 (46 MB) **bleibt FAILED** — keine 46-MB-`location-history.zip` im lokalen Filesystem; Sektion 2 (Live Activity / Dynamic Island / Lock Screen) — UITest-Capture-Suite 5/5 grün, manuelle visuelle Lock-Screen-Sichtprüfung außerhalb der UITests **offen**, Sektion-2-Checkboxen nicht abgehakt; Sektion 3 (iPad-Layout) **bleibt offen** (iPad offline); Sektion 4 (ASC/TestFlight/Apple Review) **bleibt offen** (extern).
+- Davor HEAD `5f83838` (`fix: conditionally link CSQLite shim for Linux`); davor HEAD `4d6ac87` (Post-Pull Deep-Audit-Truth-Sync, 2026-05-12); davor HEAD `30015c9` (P1 Keychain `kSecAttrAccessibleAfterFirstUnlock`); davor HEAD `799adc5` (Remote-Stand vor Pull).
+
 ## Aktiver Stand (2026-05-12, HEAD pending — `fix: conditionally link CSQLite shim for Linux`)
 
 - Zentrales Repo: `iOS-App` (`dev-roeber/iOS-App`). Lokaler Pfad: `/Users/sebastian/Desktop/XCODE/iOS-App`. Xcode-Wrapper: `wrapper/LH2GPXWrapper.xcodeproj`.

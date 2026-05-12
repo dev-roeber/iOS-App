@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-05-12 — docs: record iPhone hardware acceptance status
+
+- Hardware-Acceptance-Train auf iPhone 15 Pro Max (iOS 26.4) auf HEAD `5f83838`: 7/8 UITests grün. `testAppStoreScreenshots`, `testLandscapeLayoutSmoke`, alle fünf `testLiveActivityHardwareCapture*` PASSED. **`testDeviceSmokeNavigationAndActions` FAILED** an `LH2GPXWrapperUITests.swift:203` (Heatmap-Button nicht hittable, Regression aus einem Phase-10-Commit) — in diesem Train nicht gefixt.
+- Baseline grün: `swift build`, `swift test` 1518/4/0, `xcodebuild generic iOS`, signed Device-Build.
+- Manual Risk Acceptance: Sektion 1 (46-MB) bleibt FAILED — keine 46-MB-Datei im lokalen Filesystem. Sektion 2 (Live Activity) — UITest-Pass-Beleg, manuelle visuelle Lock-Screen-Sichtprüfung offen, Checkboxen nicht abgehakt. Sektionen 3 (iPad) und 4 (ASC) bleiben offen.
+
 ## 2026-05-12 — fix: conditionally link CSQLite shim for Linux
 
 - `Package.swift` hängt den `CSQLite`-Linux-Shim jetzt nur noch unter `.when(platforms: [.linux])` an `LocationHistoryConsumerAppSupport`. Auf Apple-Plattformen greift weiter der bestehende `#if canImport(SQLite3)`-Gate in `LocalTimelineStore.swift`, sodass die SDK-`SQLite3` benutzt wird.

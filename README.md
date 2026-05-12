@@ -81,7 +81,10 @@ Aktueller Nachweis:
 - Vorher 1065 Tests (HEAD `3811bc3`, P1-Hardening-Train: distanceText\!-safe-unwrap, weak self in AppOverviewMapModel, Upload-URL-Validation + 8 neue URL-Validation-Tests).
 - Vorher 1057 Tests (HEAD `5c69afe`, UX/Layout + Mock-Helper).
 - Vorher 1045 Tests (HEAD `e3dae15`, Phase 1-5 Audit-Train).
-- Hardware-Re-Verifikation iPhone 15 Pro Max (Hardware-UITests) bleibt für jeden Stand seit 2026-05-05 offen; **46-MB-Crashfall bleibt FAILED / pending hardware retest** (Legacy-Pfad). Der LocalTimelineStore-Pfad ist pre-production / feature-flagged / **default OFF** (`LH2GPX_LOCAL_TIMELINE_STORE`); 46-MB-Test bezieht sich nicht auf den Store-Pfad. Wrapper-iOS-Build (signed Debug auf iPhone 15 Pro Max) ist nach dem CSQLite-Conditional-Fix wieder grün; Hardware-UITest-Suite (`testAppStoreScreenshots`, `testLandscapeLayoutSmoke`, `testDeviceSmokeNavigationAndActions`) in diesem Train **nicht** gefahren.
+- **Hardware-Acceptance iPhone 15 Pro Max (iOS 26.4) auf HEAD `5f83838`, 2026-05-12, Train 7/8 grün, 1 Regression:** `testAppStoreScreenshots` PASSED (44.1 s), `testLandscapeLayoutSmoke` PASSED (58.4 s), `testLiveActivityHardwareCaptureDistance/Duration/Points/UploadStatusPendingAndRestart/UploadStatusFailed` alle PASSED (37–64 s). **`testDeviceSmokeNavigationAndActions` FAILED** auf `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift:203` — Heatmap-Button im Overview-Tab nicht hittable (war am 2026-05-07 grün, Regression in einem der Phase-10-Commits). Nicht in diesem Train gefixt.
+- **46-MB-Crashfall bleibt FAILED / pending hardware retest** — die einzige `location-history.zip` im lokalen Filesystem ist 4.06 MB groß; die originale 46-MB-Crash-Sample-Datei steht für den Retest nicht zur Verfügung. Der LocalTimelineStore-Pfad ist pre-production / feature-flagged / **default OFF** (`LH2GPX_LOCAL_TIMELINE_STORE`); 46-MB-Test bezieht sich nicht auf den Store-Pfad.
+- **iPad-Layout** offen — iPad (UDID `3c955848…d4da0a5`, iPadOS 17.7.10) ist offline.
+- **ASC / TestFlight / Apple Review** offen — extern, lokal nicht belegbar.
 
 ## Historische Vorstufen
 
