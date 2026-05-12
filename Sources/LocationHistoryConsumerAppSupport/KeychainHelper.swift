@@ -15,6 +15,21 @@ public enum KeychainHelper {
         case unknown(OSStatus)
     }
 
+    /// Accessibility class used for all items stored by this helper.
+    ///
+    /// `kSecAttrAccessibleAfterFirstUnlock` allows the bearer token to be
+    /// read by the live-upload background task after the device has been
+    /// unlocked once since boot. The system default (`WhenUnlocked`) would
+    /// block reads while the device is locked, silently breaking live
+    /// uploads during an in-progress recording. The token never needs to be
+    /// readable before first unlock, so `AfterFirstUnlock` is the
+    /// least-permissive class that keeps the feature working. The same
+    /// class is applied to every key this helper manages — no key today
+    /// requires stricter accessibility.
+    #if canImport(Security)
+    private static let accessibility: CFString = kSecAttrAccessibleAfterFirstUnlock
+    #endif
+
     public static func save(key: String, value: String) throws {
         #if canImport(Security)
         guard let data = value.data(using: .utf8) else {
@@ -23,15 +38,24 @@ public enum KeychainHelper {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,
-            kSecValueData as String: data
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: accessibility
         ]
 
         let status = SecItemAdd(query as CFDictionary, nil)
         if status == errSecDuplicateItem {
-            let updateQuery: [String: Any] = [
-                kSecValueData as String: data
+            // Match by class + account only; update both the data and the
+            // accessibility class so previously-stored items written without
+            // an explicit class are migrated to AfterFirstUnlock as well.
+            let matchQuery: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrAccount as String: key
             ]
-            let updateStatus = SecItemUpdate(query as CFDictionary, updateQuery as CFDictionary)
+            let updateAttributes: [String: Any] = [
+                kSecValueData as String: data,
+                kSecAttrAccessible as String: accessibility
+            ]
+            let updateStatus = SecItemUpdate(matchQuery as CFDictionary, updateAttributes as CFDictionary)
             if updateStatus != errSecSuccess {
                 throw KeychainError.unknown(updateStatus)
             }

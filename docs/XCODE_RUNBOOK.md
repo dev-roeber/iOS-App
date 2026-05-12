@@ -2,9 +2,9 @@
 
 ## Zweck
 
-Dieses Runbook beschreibt den kleinsten reproduzierbaren Xcode-Laufweg fuer das Swift-Package im Monorepo `LocationHistory2GPX-Monorepo`.
+Dieses Runbook beschreibt den kleinsten reproduzierbaren Xcode-Laufweg fuer das Swift-Package im aktiven Monorepo `iOS-App` (`dev-roeber/iOS-App`).
 
-**Wichtig:** Dieses Runbook bezieht sich auf das Monorepo (`LocationHistory2GPX-Monorepo`), nicht auf das historische Split-Repo `LocationHistory2GPX-iOS`. Der Monorepo-Root enthält `Package.swift`; der Xcode-Wrapper liegt unter `wrapper/LH2GPXWrapper.xcodeproj`.
+**Wichtig:** Dieses Runbook bezieht sich auf das aktive Monorepo `iOS-App`. Lokaler Pfad: `/Users/sebastian/Desktop/XCODE/iOS-App`. Der Repo-Root enthält `Package.swift`; der Xcode-Wrapper liegt unter `wrapper/LH2GPXWrapper.xcodeproj`. Die historischen Vorstufen-Repos `LocationHistory2GPX-Monorepo`, `LocationHistory2GPX-iOS` und `LH2GPXWrapper` sind nicht mehr aktiv und für dieses Runbook irrelevant.
 Es fokussiert bewusst nur den bestehenden Consumer-Scope:
 
 - `LocationHistoryConsumer` bleibt der app_export-Consumer-Core
@@ -174,7 +174,7 @@ oder den aktiven Developer Directory lokal auf Xcode umstellen.
 Der vorgesehene Einstieg bleibt das Swift Package, nicht ein separates `.xcodeproj`.
 
 ```bash
-cd /Users/sebastian/iOS-App
+cd /Users/sebastian/Desktop/XCODE/iOS-App
 open Package.swift
 ```
 
@@ -387,6 +387,7 @@ Stand 2026-03-17 wurde auf einer echten macOS-/Xcode-Maschine Folgendes real gep
 - `xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build` lief erfolgreich durch
 - das gebaute Binary `.../Build/Products/Debug/LocationHistoryConsumerApp` liess sich bauen und fuer die echte UI-Session starten; der foreground-App-Launch ist seit Phase 13 ueber `scripts/run_app_shell_macos.sh` standardisiert
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test` lief fuer den damaligen Snapshot erfolgreich; dieser historische Lauf umfasste 28 Tests
+- **Hinweis zu Pfaden in den unten folgenden 2026-03-30-Verifikationslogs:** Die damaligen Befehle nutzten den inzwischen abgelösten Pfad `/Users/sebastian/Code/LH2GPXWrapper/LH2GPXWrapper.xcodeproj`. Der heutige kanonische Pfad ist `wrapper/LH2GPXWrapper.xcodeproj` im aktiven Monorepo `iOS-App` (`/Users/sebastian/Desktop/XCODE/iOS-App`). Die Einträge bleiben als historischer Verifikations-Log unverändert.
 - fuer den aktuellen Repo-Stand wurde am 2026-03-30 auf diesem Mac neu geprueft:
   - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumerApp -destination 'platform=macOS' build`: BUILD SUCCEEDED
   - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -scheme LocationHistoryConsumer-Package -destination 'platform=macOS' test`: 224 Tests, 0 Failures
