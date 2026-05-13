@@ -1,6 +1,27 @@
 # NEXT_STEPS
 
-Stand: 2026-05-13 (HEAD pending — `chore: prepare release candidate build`).
+Stand: 2026-05-13 (Branch `chore/stability-speed-uiux-polish-1`, HEAD pending — `perf: improve stability speed and ui polish`).
+
+**Stability/Speed/UI-Polish-Train 2026-05-13 (erweitert):**
+- Kleine, sichere Perf-Edits in `Sources/LocationHistoryConsumerAppSupport/`:
+  - `DayDetailPresentation.swift`: zwei redundante `ISO8601DateFormatter()`-Allokationen + Date→String→Date-Round-Trip entfernt (direkter `AppTimeDisplay.time(_ date:)`-Aufruf).
+  - `LocalTimelineImportWriter.swift`: `ISO8601DateFormatter()` durch file-gecachten `_isoWithoutMs` ersetzt.
+  - `GPXImportParser.swift`: zwei `ISO8601DateFormatter()`-Allokationen (Z. 104 + 162) durch Reuse des static `isoParserNoMs` ersetzt (identische formatOptions).
+  - `ChartShareHelper.swift`: lokale `DateFormatter()`-Allokation im `.custom`-Branch entfernt (reuse static).
+  - `LocalTimelineImportProgressPresentation.swift`: `NumberFormatter()` in `formatCount` zu `static let` (Allokation pro Progress-Tick gespart).
+- Verifikation: `swift build` SUCCEEDED (11,56 s); `swift test` **1524/2/0** in 154,5 s (Baseline 155,0 s); `xcodebuild build` Simulator iPhone 17 Pro Max **BUILD SUCCEEDED**.
+- **Nicht** in diesem Train umgesetzt (bewusst zurückgestellt — kein Release-Risiko vor ASC-Submit):
+  - `HistoryDateRangeFilterBar.localChipLabel` + `AppHistoryDateRangeControl.displayDate`: Locale-abhängige DateFormatter belassen (Cache-Aufwand > Gewinn bei niedriger Aufrufrate).
+  - `RecordedTrackEditorDraft` / `LiveTrackRecorder` `dayFormatter`: struct-Werttypen, `lazy var` würde `Equatable`-Synthese brechen.
+  - Map/Heatmap-Renderpfad-Profiling auf Device (kein neuer Hotspot ohne Audit-Auslöser nötig).
+  - Empty/Error-State-Polish in Import/Export (keine Nutzerbeschwerde, kein Audit-Gate offen).
+  - Dynamic-Type-Stresstest auf XL-Größen (separater UI-Train).
+- **Device-UITest-Re-Run**: nicht erforderlich — alle Edits sind allokations-sparende Reuse einer bereits validierten Formatter-Konfiguration; Output 1:1 identisch. Letzte grüne Device-Verifikation auf `0739d4c` bleibt valide.
+- **Merge-Empfehlung**: mergefähig nach Review. Branch gepusht, nicht ungefragt nach `main`.
+
+---
+
+Stand: 2026-05-13 (HEAD `99e23f9` — `chore: prepare release candidate build`).
 
 **Release-Candidate 2026-05-13 (Build 168):**
 - **Build-Identitäts-Bump**: `CURRENT_PROJECT_VERSION` **100 → 168** in allen 8 Build-Konfigurationen (`agvtool new-version -all 168`); `CFBundleVersion` in `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist` synchron `168`. `MARKETING_VERSION` unverändert `1.0.1`. Begründung: ASC/Tester referenzierte Cloud-Build `167`; strikt monoton → `168` als nächste Submission.

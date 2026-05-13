@@ -91,11 +91,8 @@ public enum ChartShareHelper {
             let year = Calendar.current.component(.year, from: Date())
             return "\(year)"
         case .custom:
-            let f = DateFormatter()
-            f.dateFormat = "yyyy-MM-dd"
-            f.locale = Locale(identifier: "en_US_POSIX")
             if let start = filter.customStart, let end = filter.customEnd {
-                return "\(f.string(from: start))_to_\(f.string(from: end))"
+                return "\(dateFormatter.string(from: start))_to_\(dateFormatter.string(from: end))"
             }
             return "custom"
         case .all:

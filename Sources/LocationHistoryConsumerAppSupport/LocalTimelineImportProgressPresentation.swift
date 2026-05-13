@@ -145,11 +145,15 @@ public struct LocalTimelineImportProgressPresentation: Equatable, Sendable {
         return "[\(phaseLabel)] \(counts)"
     }
 
-    private static func formatCount(_ value: Int) -> String {
+    private static let countFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.groupingSeparator = ","
-        return formatter.string(from: NSNumber(value: value)) ?? String(value)
+        return formatter
+    }()
+
+    private static func formatCount(_ value: Int) -> String {
+        countFormatter.string(from: NSNumber(value: value)) ?? String(value)
     }
 
     private static func formatBytes(_ value: Int64) -> String {

@@ -158,7 +158,7 @@ enum DayDetailPresentation {
                     kind: .start,
                     title: "Start",
                     subtitle: nil,
-                    timeText: AppTimeDisplay.time(ISO8601DateFormatter().string(from: earliest))
+                    timeText: AppTimeDisplay.time(earliest)
                 )
             )
         }
@@ -182,7 +182,7 @@ enum DayDetailPresentation {
                     kind: .end,
                     title: "End",
                     subtitle: nil,
-                    timeText: AppTimeDisplay.time(ISO8601DateFormatter().string(from: latest))
+                    timeText: AppTimeDisplay.time(latest)
                 )
             )
         }

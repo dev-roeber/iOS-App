@@ -101,7 +101,7 @@ public enum GPXImportParser {
             dayWaypointsMap[dayKey]!.append(wpt)
         }
 
-        let isoOutput = ISO8601DateFormatter()
+        let isoOutput = isoParserNoMs
         var resultDays: [[String: Any]] = []
 
         for key in orderedDays {
@@ -159,7 +159,7 @@ public enum GPXImportParser {
         fileName: String,
         sourceFormat: String
     ) throws -> AppExport {
-        let isoOutput = ISO8601DateFormatter()
+        let isoOutput = isoParserNoMs
         let daysArray = buildDaysDict(trackPoints: trackPoints, waypointVisits: waypointVisits)
 
         let exportDict: [String: Any] = [
