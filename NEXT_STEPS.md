@@ -1,5 +1,27 @@
 # NEXT_STEPS
 
+Stand: 2026-05-13 (HEAD pending — `chore: prepare release candidate build`).
+
+**Release-Candidate 2026-05-13 (Build 168):**
+- **Build-Identitäts-Bump**: `CURRENT_PROJECT_VERSION` **100 → 168** in allen 8 Build-Konfigurationen (`agvtool new-version -all 168`); `CFBundleVersion` in `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist` synchron `168`. `MARKETING_VERSION` unverändert `1.0.1`. Begründung: ASC/Tester referenzierte Cloud-Build `167`; strikt monoton → `168` als nächste Submission.
+- **Tests/Builds re-verifiziert auf Build 168:**
+  - `swift build` BUILD SUCCEEDED
+  - `swift test` **1524/2/0** in 250,0 s
+  - `xcodebuild build` Simulator iPhone 17 Pro Max iOS 26.3.1 **BUILD SUCCEEDED**
+  - `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4 **BUILD SUCCEEDED**
+  - `xcodebuild archive -configuration Release -destination 'generic/platform=iOS'` **ARCHIVE SUCCEEDED** → `/tmp/lh2gpx-release/LH2GPXWrapper-build168.xcarchive` (91 MB inkl. dSYMs)
+  - Device-UITests **nicht** erneut gefahren — einzige Änderung sind Build-Nummern-Strings (keine Code-/Runtime-Änderung); letzte grüne Verifikation auf `0739d4c` (8 + 4× LaunchTest + `testLargeImportSyntheticFile` 126,27 s, TEST SUCCEEDED).
+- **Archive-Eigenschaften** (`/tmp/lh2gpx-release/LH2GPXWrapper-build168.xcarchive/Info.plist`): `CFBundleVersion=168`, `CFBundleShortVersionString=1.0.1`, `CFBundleIdentifier=de.roeber.LH2GPXWrapper`, `Team=XAGR3K7XDJ`, arm64, SigningIdentity = Apple Development (lokales Smoke-Archive).
+- **Manuelle ASC-Submission-Schritte** (Xcode-Cloud-Workflow per Repo-Konvention):
+  1. Xcode → Organizer.
+  2. Archive `LH2GPXWrapper-build168.xcarchive` (oder den entsprechenden Xcode-Cloud-Release-Build mit gleicher Build-Nummer) wählen.
+  3. **Distribute App → App Store Connect → Upload** (Distribution-Signing automatisch oder über Cloud).
+  4. ASC-Portal: Build `1.0.1 (168)` der App-Version `1.0.1` zuordnen, Release-Notes setzen, Submit-For-Review.
+
+**ASC-Submit-Empfehlung (technisch): JA.** Code/Tests/Builds/Hardware grün; Build-Identität strikt monoton steigend; Repo/Doku/Archive synchron auf `1.0.1 (168)`. Verbleibende Risiken sind ASC-Portal-extern (Reviewer-Sicht, TestFlight-Build-Liste).
+
+---
+
 Stand: 2026-05-13 (HEAD pending — `fix: close map performance gate and verify large import`).
 
 **Audit-Gate-Closure 2026-05-13 (final):**

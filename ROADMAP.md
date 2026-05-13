@@ -1,5 +1,15 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-13, HEAD pending — `chore: prepare release candidate build`)
+
+- **Build-Identitäts-Bump**: `CURRENT_PROJECT_VERSION` 100 → **168** in allen 8 Configs + `CFBundleVersion` in beiden Info.plists. `MARKETING_VERSION` bleibt `1.0.1`. Begründung: ASC/Tester nennt Cloud-Build 167; nächste Submit muss monoton größer sein.
+- **Verifikation**: `swift test` 1524/2/0 (250 s); `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.3.1 + Device iPhone 15 Pro Max iOS 26.4 **BUILD SUCCEEDED**; `xcodebuild archive -configuration Release -destination 'generic/platform=iOS'` **ARCHIVE SUCCEEDED** → `/tmp/lh2gpx-release/LH2GPXWrapper-build168.xcarchive` (91 MB inkl. dSYMs, signed Apple Development).
+- **Device-UITests nicht erneut**: nur Build-Nummern-Metadaten geändert, kein Runtime-Verhalten. Letzte grüne Verifikation auf `0739d4c` (siehe vorigen Stand-Block).
+- **Manuelle Submission**: Lokales Archive ist Smoke-Build; Distribution-Submission läuft per Repo-Konvention über **Xcode Cloud → Organizer → Distribute App → ASC Upload** (siehe `docs/ASC_SUBMIT_RUNBOOK.md`).
+- **ASC-Submit-Empfehlung (technisch): JA.**
+
+---
+
 ## Aktiver Stand (2026-05-13, HEAD pending — `fix: close map performance gate and verify large import`)
 
 - **P0-EX-2 (Map-Performance) GESCHLOSSEN**: `OverviewMapPreparation.scanCandidates` und `makeCandidate(from overlay:)` cappen `approximateDistance` jetzt über `strideDecimate(coords, maxPoints: 1024)` wenn `distanceM == nil` und `coords.count > 1024`. Tradeoff: Chord-Underestimate für Distanz; Score-Reihenfolge durch `pointWeight = log(coordinates.count)` stabil. 3 neue Unit-Tests in `AppOverviewTracksMapViewTests`.

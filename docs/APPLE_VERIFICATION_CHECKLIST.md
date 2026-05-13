@@ -1,5 +1,11 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-13 (Release-Candidate Build 168)
+
+**Build-Identität auf Build-Nummer 168 gehoben** (`CURRENT_PROJECT_VERSION` 100 → 168 in 8 Configs + `CFBundleVersion` 168 in beiden Info.plists, `MARKETING_VERSION` `1.0.1` unverändert). `xcodebuild archive -configuration Release -destination 'generic/platform=iOS'` **ARCHIVE SUCCEEDED** mit `ApplicationProperties: CFBundleVersion=168, CFBundleShortVersionString=1.0.1, CFBundleIdentifier=de.roeber.LH2GPXWrapper, Team=XAGR3K7XDJ, Architectures=[arm64]`. `swift test` 1524/2/0 (250 s); `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.3.1 + Device iPhone 15 Pro Max iOS 26.4 BUILD SUCCEEDED. Device-UITests in diesem Train nicht erneut gefahren (nur Build-Nummern-Metadaten geändert); letzte grüne Verifikation auf HEAD `0739d4c` (8 + 4× LaunchTest + `testLargeImportSyntheticFile` 126,27 s, TEST SUCCEEDED).
+
+---
+
 ## Aktualisierung 2026-05-13 (Audit-Gate-Closure, 46-MiB-Hardware-Retest jetzt autonom)
 
 **Closure-Train 2026-05-13:** Neuer UI-Testing-only Launch-Arg `LH2GPX_UI_LARGE_IMPORT_BYTES=<bytes>` (gated hinter `LH2GPX_UI_TESTING`) lässt die App ein synthetisches Google-Timeline-style JSON in `NSTemporaryDirectory` generieren und über den Production-Import-Pfad importieren. Neuer XCUITest `testLargeImportSyntheticFile` (`wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift`) feuert mit 46 × 1024 × 1024 Bytes. **Sektion 1 (46-MiB-Hardware-Retest) ist damit autonom abgehakt** — kein Tester-Handoff mehr erforderlich für die *Klasse* dieser Last (Streaming-/Parser-/Loader-Pipeline).

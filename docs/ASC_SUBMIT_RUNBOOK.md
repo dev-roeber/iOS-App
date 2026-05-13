@@ -1,6 +1,9 @@
 # App Store Connect — Submit-Runbook
 
-Stand: 2026-05-13 (Audit-Gate-Closure-Train; ASC-/Cloud-Build-Liste ist im Repo nicht reverifizierbar — siehe Hinweisblock).
+Stand: 2026-05-13 (Release-Candidate-Train, Build 168; ASC-/Cloud-Build-Liste ist im Repo nicht reverifizierbar — siehe Hinweisblock).
+
+> **Release-Candidate-Bump 2026-05-13:** `CURRENT_PROJECT_VERSION` ist auf **168** in allen 8 pbxproj-Configs (vorher 100); `CFBundleVersion` in `wrapper/Config/Info.plist` und `wrapper/LH2GPXWidget/Info.plist` synchron `168`. `MARKETING_VERSION` bleibt **`1.0.1`**. `xcodebuild archive -scheme LH2GPXWrapper -configuration Release -destination 'generic/platform=iOS'` **ARCHIVE SUCCEEDED** lokal — siehe `/tmp/lh2gpx-release/LH2GPXWrapper-build168.xcarchive` (91 MB inkl. dSYMs, signed Apple Development für Smoke; Distribution-Signing über Xcode Cloud / Organizer beim Upload).
+>
 
 > **Hinweis zur Aktualität:** Die unten stehenden ASC-Status-Werte sind aus der 2026-05-05-Snapshot-Phase und gelten nur als historischer Eintrag. Repo-Truth heute (post-Closure-Train 2026-05-13): MARKETING_VERSION `1.0.1`, `CURRENT_PROJECT_VERSION = 100`, `swift test` **1524/2/0** (Mac, 157 s, +3 ggü. 1521), Device-UITests **9 + 4× LaunchTest passed** auf iPhone 15 Pro Max (iOS 26.4, 1300 s) inkl. neuem `testLargeImportSyntheticFile` (synthetischer 46-MiB-Import, 126,27 s, kein Crash/Hang/Jetsam). Der frühere `docs/DEEP_AUDIT_2026-05-12.md` (auf HEAD `ae5de1f` erstellt) verweist auf einen ASC-Screenshot mit Build 167 — diese Zahl ist **nicht** lokal verifizierbar, sondern Tester-Angabe. Cloud-Builds 84 / 155–158 / 167 sind in unterschiedlichen Doku-Stellen genannt; die wahre ASC-Build-Liste muss im Apple-Portal manuell abgeglichen werden, bevor der nächste Submit erfolgt. Siehe `docs/DEEP_AUDIT_2026-05-12_POST_PULL.md` Findings F-04, F-08, F-14.
 >

@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 2026-05-13 — chore: prepare release candidate build (Build 100 → 168)
+
+### Build-Identität
+- `CURRENT_PROJECT_VERSION`: **100 → 168** in allen 8 Build-Konfigurationen (`agvtool new-version -all 168`); `CFBundleVersion` in `wrapper/Config/Info.plist` und `wrapper/LH2GPXWidget/Info.plist` synchron auf `168`.
+- `MARKETING_VERSION`: unverändert **`1.0.1`**.
+- Begründung: Tester-/ASC-Sichtung dokumentiert in `docs/ASC_SUBMIT_RUNBOOK.md` referenziert Cloud-Build `167`; die nächste ASC-Submission verlangt strikt monoton steigende Build-Nummern, daher Bump auf `168`.
+
+### Verifikation Release-Candidate
+- `swift build`: BUILD SUCCEEDED.
+- `swift test`: **1524 Tests, 2 Skips, 0 Failures, 0 unexpected** in 250,0 s (Mac, +3 ggü. 1521 vor Closure-Train).
+- `xcodebuild build` Simulator iPhone 17 Pro Max iOS 26.3.1: **BUILD SUCCEEDED**.
+- `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4: **BUILD SUCCEEDED** (separat verifiziert in diesem Train; siehe NEXT_STEPS.md).
+- `xcodebuild archive -scheme LH2GPXWrapper -configuration Release -destination 'generic/platform=iOS' -archivePath /tmp/lh2gpx-release/LH2GPXWrapper-build168.xcarchive`: **ARCHIVE SUCCEEDED** (91 MB inkl. dSYMs).
+  - `ApplicationProperties` im Archive-Info.plist: `CFBundleVersion = 168`, `CFBundleShortVersionString = 1.0.1`, `CFBundleIdentifier = de.roeber.LH2GPXWrapper`, `Team = XAGR3K7XDJ`, `Architectures = [arm64]`.
+  - `SigningIdentity`: Apple Development (lokales Smoke-Archive; produktiver TestFlight-Upload läuft per Repo-Konvention über Xcode Cloud → siehe Manuelle-Schritte unten).
+- Device-UITests wurden in diesem Train **nicht erneut** gefahren — Begründung: einzige Änderung sind Build-Nummern-Strings (Info.plist + pbxproj), kein Runtime-Verhalten. Letzte vollständige grüne Device-UITest-Verifikation auf `0739d4c` vom 2026-05-13 inkl. `testLargeImportSyntheticFile` (9 + 4× LaunchTest, 1299,77 s, TEST SUCCEEDED).
+
+### Manuelle ASC-Submission-Schritte (lokal nicht automatisiert)
+1. Xcode öffnen → **Window → Organizer**.
+2. Den lokal erstellten Archive (`/tmp/lh2gpx-release/LH2GPXWrapper-build168.xcarchive`) oder den nächsten **Xcode-Cloud-Release-Build** auswählen.
+3. **Distribute App → App Store Connect → Upload**.
+4. Distribution-Signing erfolgt automatisch (oder via Cloud-Build).
+5. Im ASC-Portal: Build `1.0.1 (168)` der App-Version `1.0.1` zuordnen, Release-Notes setzen, Submit-For-Review.
+
+### Status / Risiken
+- Audit-Gate-Closure (`P0-EX-1`/`P0-EX-2`/`P0-EX-3`) aus dem 2026-05-13-Audit unverändert geschlossen / herabgestuft (siehe Train-Eintrag „fix: close map performance gate and verify large import").
+- **ASC-Submit-Empfehlung (technisch):** **JA**. Verbleibende Risiken sind ASC-Portal-extern.
+
+---
+
 ## 2026-05-13 — fix: close map performance gate and verify large import (Audit-Gate-Closure)
 
 ### Code
