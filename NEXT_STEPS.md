@@ -1,6 +1,21 @@
 # NEXT_STEPS
 
-Stand: 2026-05-13 (HEAD pending — `chore: prepare release candidate build`).
+Stand: 2026-05-13 (Branch `chore/stability-speed-uiux-polish-1`, HEAD pending — `perf: improve stability speed and ui polish`).
+
+**Stability/Speed/UI-Polish-Train 2026-05-13:**
+- Kleine, sichere Perf-Edits in `Sources/LocationHistoryConsumerAppSupport/`:
+  - `DayDetailPresentation.swift`: zwei redundante `ISO8601DateFormatter()`-Allokationen + Date→String→Date-Round-Trip entfernt (direkter `AppTimeDisplay.time(_ date:)`-Aufruf).
+  - `LocalTimelineImportWriter.swift`: `ISO8601DateFormatter()` durch file-gecachten `_isoWithoutMs` ersetzt.
+- Verifikation: `swift build` SUCCEEDED, `swift test --filter "DayDetailPresentation|LocalTimelineImportWriter|ScoreSampling|ScoreUnaffected|ScoreCapNot"` **13/0 Failures**; vollständige `swift test`-Lauf siehe Branch-Abschlussbericht.
+- **Nicht** in diesem Train umgesetzt (bewusst zurückgestellt — kein Release-Risiko vor ASC-Submit):
+  - Map/Heatmap-Renderpfad-Profiling auf Device (kein neuer Hotspot ohne Audit-Auslöser nötig).
+  - Empty/Error-State-Polish in Import/Export (keine Nutzerbeschwerde, kein Audit-Gate offen).
+  - Dynamic-Type-Stresstest auf XL-Größen (separater UI-Train).
+- **Merge-Empfehlung**: erst nach Review. Branch gepusht, nicht ungefragt nach `main`.
+
+---
+
+Stand: 2026-05-13 (HEAD `99e23f9` — `chore: prepare release candidate build`).
 
 **Release-Candidate 2026-05-13 (Build 168):**
 - **Build-Identitäts-Bump**: `CURRENT_PROJECT_VERSION` **100 → 168** in allen 8 Build-Konfigurationen (`agvtool new-version -all 168`); `CFBundleVersion` in `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist` synchron `168`. `MARKETING_VERSION` unverändert `1.0.1`. Begründung: ASC/Tester referenzierte Cloud-Build `167`; strikt monoton → `168` als nächste Submission.

@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2026-05-13 — perf: improve stability speed and ui polish (branch `chore/stability-speed-uiux-polish-1`)
+
+### Optimierungen (klein, sicher, reviewbar)
+- **`DayDetailPresentation.swift`**: Zwei redundante `ISO8601DateFormatter()`-Allokationen + Date→String→Date-Round-Trip in der Day-Timeline (`start`/`end`-Marker) entfernt. Stattdessen direkter Aufruf von `AppTimeDisplay.time(_ date:)` (Date-Overload existiert bereits in `AppDisplayHelpers.swift:177`). Wirkt pro Day-Detail-Render (zwei Zeitstempel × N Days, wenn TabSwitch alle Detail-Cards baut).
+- **`LocalTimelineImportWriter.swift`**: `ISO8601DateFormatter()` in `init(store:source:)` durch bereits gefile-cachten `_isoWithoutMs` (gleiche `formatOptions`) ersetzt — eine Allokation pro Import-Lebenszyklus weniger. Verhalten 1:1 identisch.
+
+### Verifikation
+- `swift build`: BUILD SUCCEEDED (9,93 s nach Edits).
+- `swift test --filter "DayDetailPresentation|LocalTimelineImportWriter|ScoreSampling|ScoreUnaffected|ScoreCapNot"`: **13 Tests, 0 Failures**.
+- Vollständige `swift test`-Verifikation siehe Branch-Abschlussbericht.
+
+### Nicht angefasst (bewusst)
+- Keine Privacy-/Network-/Live-Upload-Änderungen.
+- Keine UI-Layout- oder Theme-Änderungen.
+- Force-Unwraps in `GPXImportParser`/`GoogleTimelineConverter`/`AppExportQueries` geprüft — alle nach guard-Initialisierung (idiomatisch sicher), keine Änderung.
+- `ImportMemoryProbe.print(...)` belassen — Diagnose-Probe ist absichtlich `print` (siehe Inline-Kommentar Z.86-88: Linux-/SwiftPM-Test-Kompatibilität).
+
+---
+
 ## 2026-05-13 — chore: prepare release candidate build (Build 100 → 168)
 
 ### Build-Identität

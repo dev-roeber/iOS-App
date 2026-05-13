@@ -129,7 +129,7 @@ public final class LocalTimelineImportWriter {
         self.options = options
         try store.exec_BEGIN_IMMEDIATE()
         transactionStarted = true
-        let createdAt = ISO8601DateFormatter().string(from: options.clock())
+        let createdAt = _isoWithoutMs.string(from: options.clock())
         try store.insertImport(.init(id: importId, sourceFilename: source, createdAt: createdAt))
     }
 
