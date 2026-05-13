@@ -11,12 +11,10 @@ import MapKit
 /// single misbehaving GPS sample can no longer abort the renderer.
 public enum MapCoordinateGuard {
     public static func isValid(_ c: CLLocationCoordinate2D) -> Bool {
-        guard c.latitude.isFinite, c.longitude.isFinite else { return false }
-        guard c.latitude >= -90, c.latitude <= 90 else { return false }
-        guard c.longitude >= -180, c.longitude <= 180 else { return false }
-        // Apple's invalid sentinel: both axes set to -180.
-        if c.latitude == -180 && c.longitude == -180 { return false }
-        return true
+        // Delegates to the Foundation-only `CoordinateValidity` so the same
+        // rejection rules apply to data prepared on Linux (export preview /
+        // heatmap collect loop / overview scan) and to MapKit-side conversions.
+        CoordinateValidity.isValid(latitude: c.latitude, longitude: c.longitude)
     }
 
     public static func sanitize(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {

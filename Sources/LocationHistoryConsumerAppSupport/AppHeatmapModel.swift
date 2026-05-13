@@ -79,10 +79,14 @@ final class AppHeatmapModel {
             // `HeatmapStats.truncatedDensityPoints` signalisiert. Das schützt
             // gegen Jetsam bei extremen Datensätzen, ohne die Reihenfolge der
             // ersten Tage/Visits/Paths/Activities zu verändern.
+            // Phase Map-Train 2: NaN/Inf/sentinel coords werden bereits beim
+            // Sammeln verworfen. Schützt Region-Aggregation (NaN-Bounds) und
+            // jeden nachgelagerten Heatmap-Grid-Build. Cap-Logik unverändert.
             collect: for day in snapshot.data.days {
                 dayDates.append(day.date)
                 for visit in day.visits {
-                    if let lat = visit.lat, let lon = visit.lon {
+                    if let lat = visit.lat, let lon = visit.lon,
+                       CoordinateValidity.isValid(latitude: lat, longitude: lon) {
                         if points.count >= cap { truncated = true; break collect }
                         points.append(WeightedPoint(lat: lat, lon: lon, weight: 3))
                     }
@@ -93,6 +97,7 @@ final class AppHeatmapModel {
                     // flatCoordinates (wenn valide), sonst points-fallback.
                     // Hybrid-Daten zählen genau einmal.
                     for sample in AppHeatmapPathSampler.samples(forPath: path) {
+                        guard CoordinateValidity.isValid(latitude: sample.lat, longitude: sample.lon) else { continue }
                         if points.count >= cap { truncated = true; break collect }
                         points.append(WeightedPoint(lat: sample.lat, lon: sample.lon, weight: 1))
                     }
@@ -100,10 +105,12 @@ final class AppHeatmapModel {
                 for activity in day.activities {
                     let split = AppHeatmapPathSampler.samples(forActivity: activity)
                     for marker in split.markers {
+                        guard CoordinateValidity.isValid(latitude: marker.lat, longitude: marker.lon) else { continue }
                         if points.count >= cap { truncated = true; break collect }
                         points.append(WeightedPoint(lat: marker.lat, lon: marker.lon, weight: 1))
                     }
                     for geo in split.geometry {
+                        guard CoordinateValidity.isValid(latitude: geo.lat, longitude: geo.lon) else { continue }
                         if points.count >= cap { truncated = true; break collect }
                         points.append(WeightedPoint(lat: geo.lat, lon: geo.lon, weight: 1))
                     }

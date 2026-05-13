@@ -1,5 +1,12 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-13, HEAD pending — `perf: harden map surfaces and heatmap large-data paths`, Branch `chore/mapkit-az-modernization-2`)
+
+- **MapKit A–Z Train 2** (kein Release, kein Merge): Sanitize-Ausweitung auf **Overview / Heatmap / ExportPreview** über neuen Foundation-only `CoordinateValidity.isValid`. `MapCoordinateGuard.isValid` delegiert dorthin (identische Semantik). Timestamps/Bounds bleiben aligned, Score-/Cap-Logik unverändert. 11 neue Tests grün (5 Validator + 3 Pipeline + 3 XCTMeasure-Benchmarks). Throughput ~4–5 M coords/s Foundation-Filter. Sim+Device BUILD SUCCEEDED.
+- **Map-Train 3 Backlog**: Heatmap Single-Pass-Multi-LOD-Sweep mit Golden-Output-Tests, MKMapView+MKMultiPolyline Heavy-Overview Spike (Performance-Vergleich), MKTileOverlay-Heatmap, WWDC24 Place ID / `mapItemDetailSheet` (iOS-18+-Check), optional iOS-Device-Benchmark für `CoordinateValidity`.
+
+---
+
 ## Aktiver Stand (2026-05-13, HEAD pending — `perf: modernize map stack and large-data rendering`, Branch `chore/mapkit-az-modernization-1`)
 
 - **MapKit A–Z Train 1** (kein Release, kein Merge): `AppDayMapView` mit Sanitize-Filter (NaN/Inf/Sentinel), Speed-Segment-Cache (Body-Compute → Init-Compute), stabile `Identifiable`-IDs für PathOverlay/VisitAnnotation. 6 neue Tests grün. Sim+Device-Build SUCCEEDED.

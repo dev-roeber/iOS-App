@@ -690,22 +690,30 @@ enum OverviewMapPreparation {
                 var pathMinLon = Double.greatestFiniteMagnitude
                 var pathMaxLon = -Double.greatestFiniteMagnitude
 
+                // Phase Map-Train 2: NaN/Inf/sentinel coords werden im Scan
+                // verworfen, sowohl aus dem Coord-Array (vor MapPolyline) als
+                // auch aus der Bounds-Aggregation (verhindert NaN-Bounds, die
+                // alle weiteren `min/max`-Vergleiche degradieren würden).
+                // Score-Logik bleibt unverändert — `pointWeight = log(count)`
+                // sieht jetzt nur valide Punkte, was strikt besser ist.
                 if let flat = path.flatCoordinates, flat.count >= 4, flat.count.isMultiple(of: 2) {
                     var coords = [CLLocationCoordinate2D]()
                     coords.reserveCapacity(flat.count / 2)
                     var i = 0
                     while i < flat.count - 1 {
                         let lat = flat[i]; let lon = flat[i + 1]
-                        coords.append(CLLocationCoordinate2D(latitude: lat, longitude: lon))
-                        if lat < minLat { minLat = lat }
-                        if lat > maxLat { maxLat = lat }
-                        if lon < minLon { minLon = lon }
-                        if lon > maxLon { maxLon = lon }
-                        if lat < pathMinLat { pathMinLat = lat }
-                        if lat > pathMaxLat { pathMaxLat = lat }
-                        if lon < pathMinLon { pathMinLon = lon }
-                        if lon > pathMaxLon { pathMaxLon = lon }
-                        hasAnyCoord = true
+                        if CoordinateValidity.isValid(latitude: lat, longitude: lon) {
+                            coords.append(CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                            if lat < minLat { minLat = lat }
+                            if lat > maxLat { maxLat = lat }
+                            if lon < minLon { minLon = lon }
+                            if lon > maxLon { maxLon = lon }
+                            if lat < pathMinLat { pathMinLat = lat }
+                            if lat > pathMaxLat { pathMaxLat = lat }
+                            if lon < pathMinLon { pathMinLon = lon }
+                            if lon > pathMaxLon { pathMaxLon = lon }
+                            hasAnyCoord = true
+                        }
                         i += 2
                     }
                     coordinates = coords
@@ -713,6 +721,7 @@ enum OverviewMapPreparation {
                     var coords = [CLLocationCoordinate2D]()
                     coords.reserveCapacity(path.points.count)
                     for pt in path.points {
+                        guard CoordinateValidity.isValid(latitude: pt.lat, longitude: pt.lon) else { continue }
                         coords.append(CLLocationCoordinate2D(latitude: pt.lat, longitude: pt.lon))
                         if pt.lat < minLat { minLat = pt.lat }
                         if pt.lat > maxLat { maxLat = pt.lat }

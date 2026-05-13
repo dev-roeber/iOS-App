@@ -32,11 +32,16 @@ enum ExportPreviewDataBuilder {
         )
 
         let waypointAnnotations = mode.includesWaypoints
-            ? ExportWaypointExtractor.waypoints(from: exportDays).map {
-                DayMapVisitAnnotation(
-                    coordinate: DayMapCoordinate(lat: $0.latitude, lon: $0.longitude),
-                    semanticType: $0.detail ?? $0.category,
-                    startTime: $0.time,
+            ? ExportWaypointExtractor.waypoints(from: exportDays).compactMap { wp -> DayMapVisitAnnotation? in
+                // Phase Map-Train 2: drop NaN/Inf/sentinel coords at the
+                // Foundation layer so `computeRegion` does not produce a NaN
+                // center and the MapKit-side renderer cannot be handed an
+                // invalid `CLLocationCoordinate2D`.
+                guard CoordinateValidity.isValid(latitude: wp.latitude, longitude: wp.longitude) else { return nil }
+                return DayMapVisitAnnotation(
+                    coordinate: DayMapCoordinate(lat: wp.latitude, lon: wp.longitude),
+                    semanticType: wp.detail ?? wp.category,
+                    startTime: wp.time,
                     endTime: nil
                 )
             }
@@ -48,16 +53,22 @@ enum ExportPreviewDataBuilder {
                     // (coordinates + timestamps). Eine einzige Iteration befüllt
                     // beide Arrays parallel — semantisch identisch, halbierte
                     // Allokation/Iteration auf MainThread bei langen Pfaden.
-                    let count = path.points.count
-                    guard count >= 2 else { return nil }
+                    // Phase Map-Train 2: NaN/Inf/sentinel coords werden hier
+                    // gemeinsam mit ihrem parallelen Timestamp verworfen, damit
+                    // Alignment für spätere Speed-Layer / Region-Bounds erhalten
+                    // bleibt.
+                    let rawCount = path.points.count
+                    guard rawCount >= 2 else { return nil }
                     var coordinates: [DayMapCoordinate] = []
-                    coordinates.reserveCapacity(count)
+                    coordinates.reserveCapacity(rawCount)
                     var timestamps: [String?] = []
-                    timestamps.reserveCapacity(count)
+                    timestamps.reserveCapacity(rawCount)
                     for point in path.points {
+                        guard CoordinateValidity.isValid(latitude: point.lat, longitude: point.lon) else { continue }
                         coordinates.append(DayMapCoordinate(lat: point.lat, lon: point.lon))
                         timestamps.append(point.time)
                     }
+                    guard coordinates.count >= 2 else { return nil }
                     return DayMapPathOverlay(
                         coordinates: coordinates,
                         activityType: path.activityType,

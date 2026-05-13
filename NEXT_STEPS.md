@@ -1,6 +1,17 @@
 # NEXT_STEPS
 
-Stand: 2026-05-13 (Branch `chore/mapkit-az-modernization-1`, pending HEAD — `perf: modernize map stack and large-data rendering`).
+Stand: 2026-05-13 (Branch `chore/mapkit-az-modernization-2`, pending HEAD — `perf: harden map surfaces and heatmap large-data paths`).
+
+**MapKit A–Z Modernization Train 2 — 2026-05-13 (kein Release, kein Merge):**
+- Branch `chore/mapkit-az-modernization-2` von `chore/mapkit-az-modernization-1@d6a6191` (Train 1, ebenfalls nicht gemerged). **Kein Build-Bump**, **kein ASC**, **kein Merge nach main**.
+- **Sanitize-Ausweitung**: `CoordinateValidity.isValid(latitude:longitude:)` neu als Foundation-only Validator. `MapCoordinateGuard.isValid(_:)` delegiert dort hin. Filter aktiv in **Overview** (`AppOverviewTracksMapView.scanCandidates` flat- und points-Branch), **Heatmap** (`AppHeatmapModel.startPrecomputation` 4 WeightedPoint-Sites) und **ExportPreview** (`ExportPreviewDataBuilder.previewData` Waypoints + Path-Points mit Timestamp-Alignment).
+- **Tests** (3 neue Dateien, 11 neue Cases grün): `CoordinateValidityTests` (5), `ExportPreviewSanitizeTests` (3), `MapSanitizeBenchmarkTests` (3, XCTMeasure).
+- **Benchmark-Surface**: XCTMeasure auf 10k/50k synthetischen Coords, **~4–5 M coords/s** Throughput auf lokalem Mac. Device-Zahlen nicht erhoben.
+- **Heatmap Single-Pass** als **Train 3** formuliert (`docs/MAPKIT_AZ_AUDIT_2026-05-13.md` Train-2-Block Phase 5). Kleinere `lonScale`-Memo bewusst verworfen (kein Messwert für Nutzen).
+- **Verifikation**: `swift test` siehe Abschlussbericht. `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.0 + Device iPhone 15 Pro Max iOS 26.4 BUILD SUCCEEDED.
+- **Bewusst nicht in Train 2**: Heatmap Single-Pass-Multi-LOD-Sweep, MKMapView+MKMultiPolyline Spike, MKTileOverlay-Heatmap, WWDC24 Place ID, iOS-Device-Benchmark.
+
+---
 
 **MapKit A–Z Modernization Train 1 — 2026-05-13 (kein Release, kein Merge):**
 - Branch `chore/mapkit-az-modernization-1` (von `main@c1314dc`). **Kein Build-Bump**, **kein ASC**, **kein Merge nach main**.

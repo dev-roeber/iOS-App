@@ -1,5 +1,65 @@
 # CHANGELOG
 
+## 2026-05-13 — perf: harden map surfaces and heatmap large-data paths (branch `chore/mapkit-az-modernization-2`)
+
+> **MapKit A–Z Modernization Train 2.** Kein Release, kein Build-Bump, kein ASC, kein Merge nach `main`. Basis: `chore/mapkit-az-modernization-1@d6a6191` (Train 1, ebenfalls nicht gemerged). Fokus: Sanitize auf Overview/Heatmap/ExportPreview ausgeweitet, Foundation-only Validator, Benchmark-Surface, Heatmap-Single-Pass als Train 3 formuliert.
+
+### Code-Änderungen
+- **`Sources/LocationHistoryConsumerAppSupport/CoordinateValidation.swift`** **NEU** (Foundation-only): `public enum CoordinateValidity` mit `@inlinable static func isValid(latitude:longitude:)`. Rejects: NaN, ±Inf, lat outside ±90°, lon outside ±180°, Apple-Sentinel `(-180,-180)`. Linux-buildbar, gemeinsame Quelle der Rejection-Regeln.
+- **`Sources/LocationHistoryConsumerAppSupport/MapTrackStyling.swift`**: `MapCoordinateGuard.isValid(_:)` delegiert an `CoordinateValidity.isValid(latitude:longitude:)` — keine API-Änderung, identische Semantik.
+- **`Sources/LocationHistoryConsumerAppSupport/ExportPreviewData.swift`** (`ExportPreviewDataBuilder.previewData`): NaN/Inf/Sentinel-Filter im Waypoint-`compactMap` und im Path-Point single-pass Loop (Timestamps werden mit-gefiltert für Alignment). `pathOverlays` verworfen wenn nach Filter < 2 Punkte übrig. `computeRegion` sieht jetzt strikt finite Coords → `fittedRegion` finite garantiert.
+- **`Sources/LocationHistoryConsumerAppSupport/AppHeatmapModel.swift`** (`startPrecomputation` collect-Loop): `guard CoordinateValidity.isValid` vor allen 4 `WeightedPoint`-Erzeugungen (visit / path sample / activity marker / activity geometry). Density-Cap-Logik (500k) und `truncatedDensityPoints`-Flag unverändert.
+- **`Sources/LocationHistoryConsumerAppSupport/AppOverviewTracksMapView.swift`** (`scanCandidates`): Filter inside both flat- und points-Branch. Bounds-Aggregation (pathMin/MaxLat/Lon + globaler min/maxLat/Lon) wird nur mit validen Punkten gefüttert → keine NaN-Bounds. Score-Logik (`pointWeight = log(coordinates.count)`, distanceM-Pfad, `coordsForScoreBase`) **unverändert**.
+
+### Tests (3 neue Dateien)
+- **`Tests/LocationHistoryConsumerTests/CoordinateValidityTests.swift`** (5 Cases): valid accepted, NaN, ±Infinity, out-of-range, Apple-Sentinel rejected (Antemeridian `lon=-180` allein bleibt valide).
+- **`Tests/LocationHistoryConsumerTests/ExportPreviewSanitizeTests.swift`** (3 Cases): out-of-range + sentinel coords gedroppt mit Timestamp-Alignment, Path verworfen wenn < 2 valide übrig, Identitäts-Garantie für reine Valid-Daten.
+- **`Tests/LocationHistoryConsumerTests/MapSanitizeBenchmarkTests.swift`** (3 Cases, XCTMeasure): 10k mixed coords, 50k valid coords, branch-only sanity. Konkrete Messwerte unten.
+
+JSON kann NaN/Inf nicht serialisieren — Pipeline-Tests nutzen out-of-range (lat=91) + Sentinel `(-180,-180)`. NaN/Inf-Branch ist via `CoordinateValidityTests` separat abgedeckt.
+
+### Benchmark-Surface (XCTMeasure, lokal macOS x86_64)
+| Benchmark | Datensatz | Average (10 Iter.) | RSD |
+|---|---|---|---|
+| `testIsValidThroughput10kMixed` | 10 000 (50% invalid) | **~2,3 ms** | 7,3 % |
+| `testIsValidThroughput50kValid` | 50 000 valid | **~9 ms** (warm) | – |
+| Throughput (abgeleitet) | – | **~4–5 M coords/s** | – |
+
+Branchfrei, allokationsfrei. iOS-Device-Zahlen **nicht erhoben** — formuliert als optionale Train-3-Aufgabe.
+
+### Verifikation
+- `swift build`: BUILD SUCCEEDED.
+- `swift test`: siehe Abschlussbericht.
+- `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.0: **BUILD SUCCEEDED**.
+- `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4 (`-allowProvisioningUpdates`): **BUILD SUCCEEDED**.
+- Runtime-Smoke: kein App-Install/Launch in diesem Train (rein defensive Filter, kein UI-/Logik-Drift). Hardware-FPS/Memory **nicht gemessen** — keine Behauptung.
+
+### Heatmap-Pipeline — bewusst Train 3
+Analyse durchgeführt: bin/smooth/normalize laufen 4× pro Precomputation (LOD overview/low/medium/high). Single-Pass-Multi-LOD-Sweep würde Kernel-Struktur und Normalisierungs-Kontrakt verschränken → Risiko Farb-/Dichte-Drift ohne goldene Vergleichsdaten. Train-2-Regel „keine stille Datenverfälschung" → ablehnen. Eine kleinere `lonScale`-Memoisierung wurde geprüft und **bewusst verworfen** (kein Messwert für Nutzen bei real GPS-Lat-Verteilung).
+
+**Train-3-Aufgabe formuliert** (siehe `docs/MAPKIT_AZ_AUDIT_2026-05-13.md` Train-2-Block, Phase 5).
+
+### Bewusst nicht umgesetzt (Train 3)
+- Heatmap Single-Pass-Multi-LOD-Sweep
+- MKMapView + MKMultiPolyline Heavy-Overview Spike (separater Performance-Vergleich Pflicht)
+- MKTileOverlay-Heatmap
+- WWDC24 Place ID / `mapItemDetailSheet` (iOS-18+-Check)
+- `lonScale`-Memo (verworfen)
+- iOS-Device-Benchmark für `CoordinateValidity` (optional)
+
+### Doku
+- **`docs/MAPKIT_AZ_AUDIT_2026-05-13.md`** um Train-2-Block ergänzt (Sanitize-Surface-Matrix, Benchmark-Tabelle, Heatmap-Entscheidung, Train-3-Aufgabe).
+- `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md` synchronisiert.
+- `docs/MAP_ARCHITECTURE_AUDIT.md` bleibt **kanonische** Bestandsaufnahme — Train-2-Änderungen sind Sanitize-Härtung, keine Architektur-Änderung.
+
+### Release-Safety
+- Keine externe Dependency, keine neuen Entitlements, keine Privacy-/Network-Folge.
+- Keine sichtbare UX-Änderung bei gültigen Daten — Identitäts-Test `testValidCoordsUnchanged` belegt strukturelle Identität für reine Valid-Daten.
+- Filter ist destruktiv (Drop, kein Re-Map): bei NaN/Inf/Sentinel-Input werden Punkte verworfen, keine künstlichen Ersatzwerte erzeugt.
+- Heatmap density-Cap (500k) zählt jetzt strikt valide Punkte (vorher: NaN-Punkte konnten den Cap mit-belegen).
+
+---
+
 ## 2026-05-13 — perf: modernize map stack and large-data rendering (branch `chore/mapkit-az-modernization-1`)
 
 > **MapKit A–Z Modernization Train 1.** Kein Release, kein Build-Bump, kein ASC, kein Merge nach `main`. Branch von `main@c1314dc`. Fokus: punktuelle Härtung der Day-Detail-Map-Surface, vorbereitend für Map-Train 2 (Heavy Overview / Heatmap-Renderer-Wechsel).
