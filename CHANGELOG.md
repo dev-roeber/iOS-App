@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## 2026-05-13 — ui: improve dynamic type landscape and empty states (branch `chore/uiux-modernization-train-2`)
+
+> **Nicht-releasegebundener Modernisierungsbranch (Train 2).** Kein ASC-Submit, kein Buildnummer-Bump, kein Release-Update. `CURRENT_PROJECT_VERSION`, `CFBundleVersion`, `MARKETING_VERSION` unverändert. Branch sitzt auf Train 1 (`a076374`, kumulativer UI-Review) und wird **nicht** ungefragt nach `main` gemerged.
+
+### Basis-Entscheidung
+Train 2 baut auf Train 1 (`chore/uiux-modernization-train-1` HEAD `a076374`) auf statt von `main` (`99e23f9`) — Begründung: gleiche UI-Files (Day-Detail, Heatmap) und kumulative Review-Geschichte ermöglichen einheitlichen UI-Polish-Diff zu `main`.
+
+### UI/UX-Polish (klein, sicher, reviewbar)
+- **`AppContentSplitView.swift` (Export-Selection-Banner, Z. 576-580)**: `Text(...)` mit `.lineLimit(1)` ersetzt durch `.lineLimit(2) + .minimumScaleFactor(0.85)` — kein Clipping bei Dynamic Type XL/XXL/Accessibility-Sizes.
+- **`AppExportView.swift` (modePill Icon-Frame, Z. 774)**: `.frame(width: 20)` → `.frame(minWidth: 20)` — Icon-Container wächst korrekt mit Dynamic Type, Text wird nicht abgeschnitten.
+- **`AppExportView.swift` (KMZ-Fehler-Microcopy, Z. 1433)**: `"The archive could not be created."` → `"Please try again or choose a different file format."` — actionable Microcopy ohne Tech-Jargon.
+- **`AppExportView.swift` (GeoJSON-Fehler-Microcopy, Z. 1448)**: `"The data could not be serialized."` → `"Please try again or choose a different file format."` — actionable, konsistent mit KMZ-Fehler.
+- **`AppExportView.swift` (Export-Failed-Alert, Z. 1280-1282)**: Fallback-Message bei `exportError == nil` ergänzt (`"An unexpected error occurred. Please check your selection and try again."`) statt leerem Alert-Body.
+- **`AppInsightsContentView.swift` (periodComparison-Zahlen, Z. 1111+1115)**: `.frame(width: 80, alignment: .trailing)` und `.frame(width: 50, alignment: .trailing)` → `.frame(minWidth: 80/50, alignment: .trailing)` — Metric-Werte (z. B. „2.5 km") wachsen bei Accessibility-Sizes ohne Ellipsis-Clipping.
+
+### Verifikation
+- `swift build`: BUILD SUCCEEDED (27,31 s nach Edits).
+- `swift test`: siehe Train-Abschlussbericht.
+- `xcodebuild build` Simulator iPhone 17 Pro Max: siehe Train-Abschlussbericht.
+- Keine Tests prüfen die geänderten Strings (`grep -rn "could not be serialized|archive could not be created"` in Tests → 0 Treffer).
+
+### Bewusst nicht angefasst (in diesem Train)
+- Capitalization-Inkonsistenzen in Activity-/Visit-Type-Labels: Quelle ist `.capitalized` auf semantischen Enum-Strings — eine Vereinheitlichung würde Lokalisierungs-Sichtbarkeit ändern; separater Train.
+- `AppDayDetailView.swift:644` iconButton: `accessibilityLabel` bereits gesetzt — keine Änderung.
+- Keine Privacy-/Network-/Live-Upload-Änderungen.
+- Keine neuen Kartenlayer, iCloud, neuen Serverfunktionen, Dateiformate.
+- Kein komplettes Theme-System / Navigation-Refactor.
+- Keine externen Design-Libraries.
+
+### Nächster UI/UX-Train (Train 3, Empfehlung)
+- Activity-/Visit-Type-Capitalization vereinheitlichen (Lokalisierungs-Audit).
+- Landscape-Smoke explizit auf iPhone 15 Pro Max manuell durchspielen (Map-/Heatmap-Overlay-Verhalten).
+- Insights-Cards `.minimumScaleFactor` für Δ-Spalte auf Accessibility XXXL.
+
+---
+
 ## 2026-05-13 — ui: modernize app polish and interaction details (branch `chore/uiux-modernization-train-1`)
 
 > **Nicht-releasegebundener Modernisierungsbranch.** Kein ASC-Submit, kein Buildnummer-Bump, kein Release-Update. `CURRENT_PROJECT_VERSION` und `CFBundleVersion` unverändert. Branch sitzt auf `main` (`99e23f9`) und wird **nicht** ungefragt nach `main` gemerged.

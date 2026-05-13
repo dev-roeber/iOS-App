@@ -771,7 +771,7 @@ public struct AppExportView: View {
             HStack(spacing: 10) {
                 Image(systemName: modeIcon(mode))
                     .foregroundStyle(isSelected ? .white : LH2GPXTheme.primaryBlue)
-                    .frame(width: 20)
+                    .frame(minWidth: 20)
                 Text(t(mode.rawValue))
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(isSelected ? .white : .primary)
@@ -1279,7 +1279,7 @@ public struct AppExportView: View {
             )) {
                 Button(t("OK"), role: .cancel) { exportError = nil }
             } message: {
-                Text(exportError ?? "")
+                Text(exportError ?? t("An unexpected error occurred. Please check your selection and try again."))
             }
             .onChange(of: liveLocation.recordedTracks) { tracks in
                 pruneInvalidRecordedTrackSelection(validTracks: tracks)
@@ -1430,7 +1430,7 @@ public struct AppExportView: View {
                 #endif
                 isExporting = true
             } catch {
-                exportError = t("KMZ export failed. The archive could not be created.")
+                exportError = t("KMZ export failed. Please try again or choose a different file format.")
             }
             return
         }
@@ -1445,7 +1445,7 @@ public struct AppExportView: View {
             do {
                 content = try GeoJSONBuilder.build(from: exportDays, mode: effectiveExportMode)
             } catch {
-                exportError = t("GeoJSON export failed. The data could not be serialized.")
+                exportError = t("GeoJSON export failed. Please try again or choose a different file format.")
                 return
             }
         case .csv:

@@ -1,6 +1,27 @@
 # NEXT_STEPS
 
-Stand: 2026-05-13 (Branch `chore/uiux-modernization-train-1`, pending HEAD — `ui: modernize app polish and interaction details`).
+Stand: 2026-05-13 (Branch `chore/uiux-modernization-train-2`, pending HEAD — `ui: improve dynamic type landscape and empty states`).
+
+**UI/UX-Modernization-Train 2 2026-05-13 (nicht-releasegebunden):**
+- Branch baut auf Train 1 (`a076374`) auf — gleiche UI-Files, kumulativer UI-Review-Diff zu `main`.
+- **Kein Release-Update, kein Buildnummer-Bump, kein ASC-Submit.** `CURRENT_PROJECT_VERSION`, `CFBundleVersion`, `MARKETING_VERSION` unverändert.
+- 6 sichere UI-Polish-Edits (siehe CHANGELOG):
+  - AppContentSplitView: Export-Banner Dynamic-Type-Clipping behoben (`.lineLimit(2) + .minimumScaleFactor(0.85)`).
+  - AppExportView: `.frame(width:)` → `.frame(minWidth:)` für modePill-Icon.
+  - AppExportView: KMZ- + GeoJSON-Fehler-Microcopy entjargonisiert (actionable).
+  - AppExportView: Fallback-Alert-Body bei nil-Error-State.
+  - AppInsightsContentView: periodComparison `.frame(width:)` → `.frame(minWidth:)` für Δ-Zahlen.
+- Verifikation: `swift build` SUCCEEDED, Sim-Build iPhone 17 Pro Max SUCCEEDED, vollständige `swift test` siehe Train-Abschlussbericht.
+- Device-UITest: **nicht erforderlich** für diesen Train — Änderungen sind SwiftUI-Modifier + Text-String-Updates ohne Logik-/Flow-Auswirkung. Letzte grüne Device-UITest-Verifikation auf `0739d4c` bleibt valide. Empfohlene manuelle iPhone-Sichtprüfung vor Merge: Export-Tab + Insights-Tab mit Accessibility XL/XXL Dynamic Type.
+- **Nicht-Release-Branch**: Branch wird gepusht, **nicht** ungefragt nach `main` gemerged.
+- Train 3 Empfehlung:
+  - Activity-/Visit-Type-Capitalization vereinheitlichen.
+  - Landscape-Smoke iPhone 15 Pro Max manuell (Map-/Heatmap).
+  - Insights Δ-Spalte `.minimumScaleFactor` Accessibility XXXL.
+
+---
+
+Stand: 2026-05-13 (Branch `chore/uiux-modernization-train-1`, HEAD `a076374` — `ui: modernize app polish and interaction details`).
 
 **UI/UX-Modernization-Train 2026-05-13 (nicht-releasegebunden):**
 - Branch von `main` (`99e23f9`) — **kein Release-Update, kein Buildnummer-Bump, kein ASC-Submit**. `CURRENT_PROJECT_VERSION` und `CFBundleVersion` unverändert.

@@ -576,7 +576,8 @@ public struct AppContentSplitView: View {
                 Text(t("Open the Export tab to review or save the current selection."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
             }
             Spacer()
             Button(t("Export")) {

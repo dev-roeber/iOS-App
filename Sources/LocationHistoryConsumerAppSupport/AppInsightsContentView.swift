@@ -1108,11 +1108,11 @@ struct AppInsightsContentView: View {
             Text(current)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.primary)
-                .frame(width: 80, alignment: .trailing)
+                .frame(minWidth: 80, alignment: .trailing)
             Text(t("Δ"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-                .frame(width: 50, alignment: .trailing)
+                .frame(minWidth: 50, alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
