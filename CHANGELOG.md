@@ -5,17 +5,22 @@
 ### Optimierungen (klein, sicher, reviewbar)
 - **`DayDetailPresentation.swift`**: Zwei redundante `ISO8601DateFormatter()`-Allokationen + Date→String→Date-Round-Trip in der Day-Timeline (`start`/`end`-Marker) entfernt. Stattdessen direkter Aufruf von `AppTimeDisplay.time(_ date:)` (Date-Overload existiert bereits in `AppDisplayHelpers.swift:177`). Wirkt pro Day-Detail-Render (zwei Zeitstempel × N Days, wenn TabSwitch alle Detail-Cards baut).
 - **`LocalTimelineImportWriter.swift`**: `ISO8601DateFormatter()` in `init(store:source:)` durch bereits gefile-cachten `_isoWithoutMs` (gleiche `formatOptions`) ersetzt — eine Allokation pro Import-Lebenszyklus weniger. Verhalten 1:1 identisch.
+- **`GPXImportParser.swift` (Z. 104, 162)**: Zwei `ISO8601DateFormatter()`-Allokationen in `buildDaysDict` und `makeExport` ersetzt durch Reuse des bestehenden file-private `static let isoParserNoMs` (gleiche `.withInternetDateTime`-formatOptions wie ISO8601-Default). Output 1:1 identisch.
+- **`ChartShareHelper.swift` (Z. 94–96)**: Lokale `DateFormatter()`-Allokation im `.custom`-Branch von `rangeString` entfernt — reusing existing static `dateFormatter` (gleiches `yyyy-MM-dd` / `en_US_POSIX`). Spart Allokation pro Insights-Chart-Share.
+- **`LocalTimelineImportProgressPresentation.swift` (Z. 148–153)**: `NumberFormatter()` in `formatCount(_:)` (pro Progress-Update aufgerufen) ersetzt durch `static let countFormatter`. Spart Allokation pro Import-Progress-Tick (alle ~1000 Einträge).
 
 ### Verifikation
-- `swift build`: BUILD SUCCEEDED (9,93 s nach Edits).
-- `swift test --filter "DayDetailPresentation|LocalTimelineImportWriter|ScoreSampling|ScoreUnaffected|ScoreCapNot"`: **13 Tests, 0 Failures**.
-- Vollständige `swift test`-Verifikation siehe Branch-Abschlussbericht.
+- `swift build`: BUILD SUCCEEDED (11,56 s nach Edits).
+- `swift test`: **1524 Tests, 2 Skips, 0 Failures** in 154,5 s (Baseline 155,0 s — identische Korrektheit, marginale Beschleunigung).
+- Sim-Build iPhone 17 Pro Max: BUILD SUCCEEDED (siehe Branch-Abschlussbericht).
 
 ### Nicht angefasst (bewusst)
 - Keine Privacy-/Network-/Live-Upload-Änderungen.
 - Keine UI-Layout- oder Theme-Änderungen.
 - Force-Unwraps in `GPXImportParser`/`GoogleTimelineConverter`/`AppExportQueries` geprüft — alle nach guard-Initialisierung (idiomatisch sicher), keine Änderung.
 - `ImportMemoryProbe.print(...)` belassen — Diagnose-Probe ist absichtlich `print` (siehe Inline-Kommentar Z.86-88: Linux-/SwiftPM-Test-Kompatibilität).
+- `HistoryDateRangeFilterBar.localChipLabel` + `AppHistoryDateRangeControl.displayDate`: DateFormatter-Allokation pro Aufruf belassen, da Formatter `preferences.appLocale`-abhängig ist und sich zur Laufzeit ändern kann. Eine lokale-gekeyte Cache-Schicht wäre Mehraufwand ohne klaren Gewinn (Aufrufrate gering, nur bei Filter-Chip-Tap / Sheet-Open).
+- `RecordedTrackEditorDraft.dayFormatter` + `LiveTrackRecorder.dayFormatter`: bleiben computed property — `lazy var` ist auf `struct`-Werttypen nicht ohne Mutation nutzbar (würde `Equatable`-Synthese brechen). Aufrufrate niedrig (nur bei Save).
 
 ---
 
