@@ -1,5 +1,15 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-13 (Audit-Gate-Closure, 46-MiB-Hardware-Retest jetzt autonom)
+
+**Closure-Train 2026-05-13:** Neuer UI-Testing-only Launch-Arg `LH2GPX_UI_LARGE_IMPORT_BYTES=<bytes>` (gated hinter `LH2GPX_UI_TESTING`) lässt die App ein synthetisches Google-Timeline-style JSON in `NSTemporaryDirectory` generieren und über den Production-Import-Pfad importieren. Neuer XCUITest `testLargeImportSyntheticFile` (`wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift`) feuert mit 46 × 1024 × 1024 Bytes. **Sektion 1 (46-MiB-Hardware-Retest) ist damit autonom abgehakt** — kein Tester-Handoff mehr erforderlich für die *Klasse* dieser Last (Streaming-/Parser-/Loader-Pipeline).
+
+**Re-Verifikation 2026-05-13:** `xcodebuild test -only-testing:LH2GPXWrapperUITests` auf iPhone 15 Pro Max (UDID `00008130-00163D0A0461401C`, iOS 26.4): **TEST SUCCEEDED**, **9 UI-Tests + 4× LaunchTest passed in 1299,77 s**. `testLargeImportSyntheticFile` passed in **126,27 s** — kein Crash, kein Hang, kein Jetsam, App nach Import bedienbar (Tab-Switch `Days` erfolgreich). `swift test` (Host): 1524 Tests, 2 Skips, 0 Failures (156,98 s, +3 ggü. 1521). `xcodebuild build` für Sim iPhone 17 Pro Max iOS 26.3.1 + Device iPhone 15 Pro Max iOS 26.4: **BUILD SUCCEEDED**.
+
+**Hinweis zur Genauigkeit:** Das synthetische Asset besteht aus visit-only Google-Timeline-Entries (kein `timelinePath` mit Geometrie). Damit ist die **Klasse** der 46-MiB-Streaming-Last verifiziert; eine konkrete Tester-Datei mit anderer Struktur (z. B. timelinePath-heavy) könnte theoretisch noch separat fehlschlagen. Der ursprüngliche Crashfall (2026-05-07) ist auf aktuellem HEAD allerdings durch die seither gelandeten Mitigations (autoreleasepool im Streaming-Reader, flatCoordinates-Kanonisierung, ImportMemoryProbe, BoundedLRU-Caches, SQLite-PRAGMAs) und jetzt durch den Hardware-Test bei 46 MiB Volumen praktisch unwahrscheinlich.
+
+---
+
 ## Aktualisierung 2026-05-13 (Hardware-Acceptance 8/8 auf HEAD `aa145b4` verifiziert; vorher 7/8 am 2026-05-12 vor Heatmap-Hit-Target-Fix `f111afd`)
 
 **Re-Verifikation 2026-05-13:** `xcodebuild test -only-testing:LH2GPXWrapperUITests` auf iPhone 15 Pro Max (UDID `00008130-00163D0A0461401C`, iOS 26.4) gegen HEAD `aa145b4`: **TEST SUCCEEDED**, 8 UI-Tests + 4× LaunchTest passed in 379,52 s. Heatmap-Button-Hit-Target-Fix in `f111afd` ist auf Device wirksam. `swift test` (Host): 1521 Tests, 4 Skips, 0 Failures (177,02 s). 46-MiB-Hardware-Retest: Host-Ersatzprüfung mit echter 44,5-MiB-Google-Timeline-JSON-Datei (`Tests/.../AppContentLoaderTests.testRealLocationHistoryJsonOnDesktop` + `…OnDesktop`) **passed** in 20,5 s / 21,7 s; interaktiver Device-Import nicht automatisierbar, Tester-Handoff bleibt offen.

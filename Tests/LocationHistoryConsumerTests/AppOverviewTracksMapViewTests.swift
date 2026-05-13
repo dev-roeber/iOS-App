@@ -687,6 +687,150 @@ private func waitUntil(
     }
 }
 
+// MARK: - P0-EX-2 score-sampling-cap regression tests (Audit 2026-05-13)
+
+extension AppOverviewTracksMapViewTests {
+
+    /// When a Path has > `scoreSamplingCap` coordinates AND no
+    /// pre-computed `distanceM`, the score fallback must operate on a
+    /// stride-decimated sample, not the full coordinate list. This is
+    /// the perf gate from P0-EX-2: previously the score path was an
+    /// unbounded O(N) Haversine pass per candidate.
+    func testScoreSamplingCapAppliedForLargeCoordsWithoutDistanceM() {
+        let count = 2_000
+        XCTAssertGreaterThan(count, OverviewMapPreparation.scoreSamplingCap,
+                             "Fixture must exceed the cap to exercise the new sampling branch")
+
+        // Non-uniform polyline: lat is linear, lon oscillates. Stride
+        // sampling drops different points each step, so the chord-only
+        // distance from sample-only differs measurably from the full
+        // O(N) Haversine sum.
+        var coords: [(lat: Double, lon: Double)] = []
+        coords.reserveCapacity(count)
+        for i in 0..<count {
+            let lat: Double = 52.5 + Double(i) * 0.0001
+            let lon: Double = 13.4 + Double(i % 50) * 0.001
+            coords.append((lat: lat, lon: lon))
+        }
+        let points = coords.map { PathPoint(lat: $0.lat, lon: $0.lon, time: nil, accuracyM: nil) }
+        let path = Path(startTime: nil, endTime: nil, activityType: "WALKING",
+                        distanceM: nil, sourceType: nil,
+                        points: points, flatCoordinates: nil)
+        let day = Day(date: "2024-05-01", visits: [], activities: [], paths: [path])
+        let export = Self.makeMinimalExport(days: [day])
+
+        let result = OverviewMapPreparation.scanCandidates(
+            for: Set([day.date]), export: export, filter: nil
+        )
+        XCTAssertEqual(result.candidates.count, 1)
+        let candidate = result.candidates[0]
+
+        let clCoords = coords.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
+        let sampled = OverviewMapPreparation.strideDecimate(
+            clCoords, maxPoints: OverviewMapPreparation.scoreSamplingCap
+        )
+        XCTAssertLessThanOrEqual(sampled.count, OverviewMapPreparation.scoreSamplingCap)
+
+        let expectedBase = OverviewMapPreparation.approximateDistance(for: sampled)
+        let fullBase = OverviewMapPreparation.approximateDistance(for: clCoords)
+        XCTAssertNotEqual(expectedBase, fullBase, accuracy: 0.0,
+                          "Sanity: sample-distance must differ from full-coord distance for this fixture (otherwise the cap test is vacuous)")
+
+        let expectedScore = expectedBase + log(Double(count)) * 100
+        XCTAssertEqual(candidate.score, expectedScore, accuracy: 1e-6,
+                       "Score must be computed on the stride-decimated sample when distanceM is nil and coords.count > scoreSamplingCap")
+    }
+
+    /// When `distanceM` is provided by the importer (Google Timeline
+    /// almost always does), the fallback approximation MUST NOT run —
+    /// regardless of `coords.count`. The cap branch is a fallback,
+    /// not a redefinition of the score formula.
+    func testScoreUnaffectedWhenDistanceMProvided() {
+        let count = 2_000
+        var coords: [(lat: Double, lon: Double)] = []
+        coords.reserveCapacity(count)
+        for i in 0..<count {
+            let lat: Double = 52.5 + Double(i) * 0.0001
+            let lon: Double = 13.4 + Double(i) * 0.0001
+            coords.append((lat: lat, lon: lon))
+        }
+        let points = coords.map { PathPoint(lat: $0.lat, lon: $0.lon, time: nil, accuracyM: nil) }
+        let providedDistance = 12_345.6
+        let path = Path(startTime: nil, endTime: nil, activityType: nil,
+                        distanceM: providedDistance, sourceType: nil,
+                        points: points, flatCoordinates: nil)
+        let day = Day(date: "2024-05-02", visits: [], activities: [], paths: [path])
+        let export = Self.makeMinimalExport(days: [day])
+
+        let result = OverviewMapPreparation.scanCandidates(
+            for: Set([day.date]), export: export, filter: nil
+        )
+        XCTAssertEqual(result.candidates.count, 1)
+        let expectedScore = providedDistance + log(Double(count)) * 100
+        XCTAssertEqual(result.candidates[0].score, expectedScore, accuracy: 1e-6,
+                       "When path.distanceM is set, the sampling cap must not engage and the score must use the provided distance directly")
+    }
+
+    /// For paths with `coords.count <= scoreSamplingCap` and missing
+    /// `distanceM`, the cap must be a no-op — score equals the full
+    /// O(N) Haversine sum exactly as before the fix.
+    func testScoreCapNotAppliedForSmallCoordsWithoutDistanceM() {
+        let count = 100  // well below scoreSamplingCap
+        XCTAssertLessThan(count, OverviewMapPreparation.scoreSamplingCap)
+        var coords: [(lat: Double, lon: Double)] = []
+        coords.reserveCapacity(count)
+        for i in 0..<count {
+            let lat: Double = 52.5 + Double(i) * 0.001
+            let lon: Double = 13.4 + Double(i) * 0.001
+            coords.append((lat: lat, lon: lon))
+        }
+        let points = coords.map { PathPoint(lat: $0.lat, lon: $0.lon, time: nil, accuracyM: nil) }
+        let path = Path(startTime: nil, endTime: nil, activityType: nil,
+                        distanceM: nil, sourceType: nil,
+                        points: points, flatCoordinates: nil)
+        let day = Day(date: "2024-05-03", visits: [], activities: [], paths: [path])
+        let export = Self.makeMinimalExport(days: [day])
+
+        let result = OverviewMapPreparation.scanCandidates(
+            for: Set([day.date]), export: export, filter: nil
+        )
+        XCTAssertEqual(result.candidates.count, 1)
+        let clCoords = coords.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
+        let expectedBase = OverviewMapPreparation.approximateDistance(for: clCoords)
+        let expectedScore = expectedBase + log(Double(count)) * 100
+        XCTAssertEqual(result.candidates[0].score, expectedScore, accuracy: 1e-6,
+                       "Below the cap, score must equal the legacy full-coords approximation exactly")
+    }
+
+    // MARK: helper
+
+    fileprivate static func makeMinimalExport(days: [Day]) -> AppExport {
+        AppExport(
+            schemaVersion: .v1_0,
+            meta: Meta(
+                exportedAt: "2024-05-01T00:00:00Z",
+                toolVersion: "test",
+                source: Source(zipBasename: nil, zipPath: nil, inputFormat: "test"),
+                output: Output(outDir: nil),
+                config: ExportConfig(
+                    mode: "all",
+                    splitMidnight: nil,
+                    splitMode: "daily",
+                    exportFormat: ["json"],
+                    inputFormat: "auto"
+                ),
+                filters: ExportFilters(
+                    fromDate: nil, toDate: nil, year: nil, month: nil, weekday: nil,
+                    limit: nil, days: nil, has: nil, maxAccuracyM: nil,
+                    activityTypes: nil, minGapMin: nil
+                )
+            ),
+            data: DataBlock(days: days),
+            stats: nil
+        )
+    }
+}
+
 private extension DaySummary {
     static func stub(
         date: String,

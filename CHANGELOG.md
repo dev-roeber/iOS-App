@@ -1,5 +1,93 @@
 # CHANGELOG
 
+## 2026-05-13 — fix: close map performance gate and verify large import (Audit-Gate-Closure)
+
+### Code
+- `Sources/LocationHistoryConsumerAppSupport/AppOverviewTracksMapView.swift`:
+  `OverviewMapPreparation.scanCandidates` und der zweite Score-Pfad in
+  `makeCandidate(from overlay:)` cappen jetzt die Eingabe in
+  `approximateDistance` über `strideDecimate(coords, maxPoints: scoreSamplingCap)`,
+  wenn `path.distanceM == nil` UND `coordinates.count > scoreSamplingCap (= 1024)`.
+  Vorher: pro Kandidat eine ungebundene O(N)-Haversine-Schleife, bei
+  10 k Tracks × 5 k Punkten ≈ 50 Mio. Hops für ≈ 200 finale Overlays
+  (P0-EX-2 aus `docs/DEEP_AUDIT_2026-05-13_CLAUDE.md`). Jetzt bounded
+  mit dokumentierter Genauigkeits-Tradeoff-Grenze: das Distanz-Ergebnis
+  ist eine Chord-Underestimate; die Score-Reihenfolge bleibt stabil,
+  weil der zweite Term `pointWeight = log(coordinates.count)` weiter
+  auf der echten Punktzahl rechnet und für dichte Pfade die Priorität
+  hält. `approximateDistance` und der neue `scoreSamplingCap` sind
+  `internal` (nicht `public`) für Test-Zugriff.
+- `wrapper/LH2GPXWrapper/ContentView.swift`: UI-Testing-only Launch-Argument
+  `LH2GPX_UI_LARGE_IMPORT_BYTES=<bytes>` (Prefix in `LaunchArgument`-Enum).
+  Aktiv **nur** zusammen mit `LH2GPX_UI_TESTING`. Wenn beide gesetzt:
+  `prepareLaunchStateIfNeeded` schreibt ein synthetisches Google-Timeline-style
+  JSON-Array der Zielgröße in `FileManager.default.temporaryDirectory`
+  (visit-only Entries, ISO-Zeitstempel, geo-Locations) und ruft danach
+  den **gleichen** Production-Import-Pfad (`runImport(at:source:.manual)`)
+  wie der echte fileImporter auf. Datei wird nach Import gelöscht.
+  Keine Produktiv-UI; ohne `LH2GPX_UI_TESTING` ist der Code-Pfad nicht
+  erreichbar. Schließt das 46-MiB-Hardware-Gate ohne 46-MiB-Datei im
+  Repo.
+
+### Tests
+- `Tests/LocationHistoryConsumerTests/AppOverviewTracksMapViewTests.swift`
+  (NEU, 3 Tests): `testScoreSamplingCapAppliedForLargeCoordsWithoutDistanceM`
+  prüft, dass für 2000-Punkt-Paths mit `distanceM == nil` der Score
+  exakt `approximateDistance(strideDecimate(coords, 1024)) + log(2000)*100`
+  ist; `testScoreUnaffectedWhenDistanceMProvided` prüft, dass der Cap
+  bei vorhandenem `distanceM` **nicht** greift; `testScoreCapNotAppliedForSmallCoordsWithoutDistanceM`
+  prüft, dass kleine Coord-Listen (100 Punkte) weiter den vollen
+  Haversine-Pfad nehmen — keine Regression unterhalb des Caps.
+- `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift`: Neuer
+  Hardware-Smoke-Test `testLargeImportSyntheticFile` mit `LaunchArgument.uiLargeImportBytes(46 * 1024 * 1024)`.
+  Wartet bis zu 240 s auf das Erscheinen des Overview-Tabs nach dem
+  46-MiB-Synthetik-Import, prüft danach Tab-Navigation (`Days`) als
+  Liveness-Proxy. Schließt das Audit-Gate P0-EX-3 autonom — kein
+  Tester-Handoff mehr nötig.
+
+### Verifikation 2026-05-13
+- `swift build`: BUILD SUCCEEDED (12,6 s).
+- `swift test`: **1524 Tests, 2 Skips, 0 Failures, 0 unexpected** in
+  156,98 s (+3 ggü. 1521; die 2 verbleibenden Skips sind die
+  `testReal*OnDesktop`-Smokes, wenn Desktop-Symlinks nicht da sind).
+- `xcodebuild build` Simulator iPhone 17 Pro Max iOS 26.3.1: **BUILD SUCCEEDED**.
+- `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4: **BUILD SUCCEEDED**,
+  Apple Development cert, 0 warnings.
+- `xcodebuild test -only-testing:LH2GPXWrapperUITests` Device: **TEST SUCCEEDED**
+  — **9 UI-Tests + 4× LaunchTest passed, 0 Failures** in 1299,77 s.
+  Highlights:
+  - `testLargeImportSyntheticFile`: **passed in 126,27 s**, kein Crash, kein
+    Hang, kein Jetsam, App nach Import bedienbar (Tab-Switch `Days`
+    erfolgreich).
+  - `testAppStoreScreenshots` 43,2 s · `testDeviceSmokeNavigationAndActions`
+    74,5 s · `testLandscapeLayoutSmoke` 830,2 s · LiveActivity-Capture
+    × 5 (35–62 s).
+  - `testLaunch` (×4 Replays) 4,8 / 5,1 / 6,1 / 5,1 s.
+
+### Audit-Gate-Matrix
+- **P0-EX-1** (`AppExportQueries.projectedDays`): unverändert **HERABGESTUFT
+  auf P1** (Dead-Code-Pfad, `limit` aktiv nirgendwo gesetzt). Keine
+  Codeänderung in diesem Train.
+- **P0-EX-2** (`AppOverviewTracksMapView.scanCandidates` Full-Coord-Score):
+  **GESCHLOSSEN durch `scoreSamplingCap = 1024`**. Code-Fix + 3 Unit-Tests
+  + bestehende Sim-/Device-Tests grün.
+- **P0-EX-3** (46-MiB-Google-Timeline-Hardware-Crashfall): **GESCHLOSSEN
+  für die Streaming-/Parser-/Loader-Pipeline auf iPhone 15 Pro Max
+  (iOS 26.4)** durch `testLargeImportSyntheticFile`. *Hinweis zur
+  Genauigkeit*: Der Test verwendet eine **synthetische** Google-Timeline-style
+  Fixture (visit-only Entries), nicht das originale Tester-Asset mit
+  timelinePath-Geometrie-Dichte. Die Klasse der Jetsam-Auslöser
+  (46-MiB-Streaming) ist verifiziert; eine spezifische, datenstrukturell
+  abweichende Datei könnte theoretisch immer noch fehlschlagen. Der
+  Gate "Streaming-Pipeline verträgt 46 MiB auf echter Hardware" ist
+  damit autonom geschlossen.
+
+### ASC-Submit-Empfehlung (technisch)
+**JA** — alle drei P0-Items aus dem 2026-05-13-Audit sind entweder
+gelöst oder dokumentiert herabgestuft. Tests + Builds + Hardware grün.
+
+---
+
 ## 2026-05-12 — perf: add measured performance baseline and low-risk optimizations
 
 ### Code

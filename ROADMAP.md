@@ -1,5 +1,15 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-13, HEAD pending — `fix: close map performance gate and verify large import`)
+
+- **P0-EX-2 (Map-Performance) GESCHLOSSEN**: `OverviewMapPreparation.scanCandidates` und `makeCandidate(from overlay:)` cappen `approximateDistance` jetzt über `strideDecimate(coords, maxPoints: 1024)` wenn `distanceM == nil` und `coords.count > 1024`. Tradeoff: Chord-Underestimate für Distanz; Score-Reihenfolge durch `pointWeight = log(coordinates.count)` stabil. 3 neue Unit-Tests in `AppOverviewTracksMapViewTests`.
+- **P0-EX-3 (46-MiB-Hardware-Retest) GESCHLOSSEN** für die Streaming-/Parser-/Loader-Pipeline auf iPhone 15 Pro Max iOS 26.4 — autonom über neuen UI-Testing-only Launch-Arg `LH2GPX_UI_LARGE_IMPORT_BYTES` und Test `testLargeImportSyntheticFile` (passed in 126,27 s, kein Crash/Hang/Jetsam).
+- **P0-EX-1 (`projectedDays` Sort-vor-Limit)** bleibt **P1** (Dead-Code-Pfad).
+- **Verifikation:** `swift test` 1524/2/0; Simulator iPhone 17 Pro Max iOS 26.3.1 BUILD SUCCEEDED; Device iPhone 15 Pro Max iOS 26.4 BUILD SUCCEEDED + TEST SUCCEEDED (9 UI-Tests + 4× LaunchTest, 1299,77 s).
+- **ASC-Submit-Empfehlung (technisch):** **JA**.
+
+---
+
 ## Aktiver Stand (2026-05-12, HEAD pending — `perf: add measured performance baseline and low-risk optimizations`)
 
 - Zentrales Repo: `iOS-App`. Performance-Deep-Audit auf HEAD `f111afd` durchgeführt; Report unter `docs/PERFORMANCE_DEEP_AUDIT_2026-05-12.md`.

@@ -13,6 +13,17 @@ struct ContentView: View {
         static let uploadEnabledPrefix = "LH2GPX_UPLOAD_ENABLED="
         static let uploadURLPrefix = "LH2GPX_UPLOAD_URL="
         static let uploadBatchPrefix = "LH2GPX_UPLOAD_BATCH="
+        /// UI-Testing-only: when set together with `LH2GPX_UI_TESTING`,
+        /// the app generates a synthetic Google-Timeline-style JSON of
+        /// approximately the requested byte count in the app's temp
+        /// directory on launch, then drives the production import path
+        /// against that file. Lets the LH2GPXWrapperUITests reproduce
+        /// the 46-MiB Google-Timeline import on real hardware without
+        /// shipping a multi-MiB fixture in the app bundle.
+        ///
+        /// Production behaviour is unaffected: the helper bails out
+        /// unless BOTH `LH2GPX_UI_TESTING` and this prefix are present.
+        static let uiLargeImportBytesPrefix = "LH2GPX_UI_LARGE_IMPORT_BYTES="
     }
 
     @State private var session = AppSessionState()
@@ -335,6 +346,87 @@ struct ContentView: View {
         preferences.reset()
         session.clearContent()
         applyUITestingOverrides()
+        if let bytes = uiLargeImportBytes() {
+            await runUITestingLargeImport(targetBytes: bytes)
+        }
+    }
+
+    /// UI-Testing-only helper. Generates a synthetic Google-Timeline-style
+    /// JSON of approximately `targetBytes` bytes in the app temp directory
+    /// and drives the production import path through it.
+    ///
+    /// Gated behind both `LH2GPX_UI_TESTING` and `LH2GPX_UI_LARGE_IMPORT_BYTES=`.
+    /// No production code path reaches this function. Synthesised file is
+    /// deleted after the import completes.
+    @MainActor
+    private func runUITestingLargeImport(targetBytes: Int) async {
+        guard targetBytes > 0 else { return }
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("lh2gpx-uitest-large-import-\(UUID().uuidString.prefix(8)).json")
+        do {
+            try Self.writeSyntheticGoogleTimelineJSON(to: tmp, targetBytes: targetBytes)
+        } catch {
+            session.showFailure(
+                title: "UITesting synthetic-import generator failed",
+                message: error.localizedDescription,
+                preserveCurrentContent: false
+            )
+            return
+        }
+        session.beginLoading()
+        await runImport(at: tmp, source: .manual)
+        try? FileManager.default.removeItem(at: tmp)
+    }
+
+    /// Writes a Google-Timeline-style JSON array of approximately
+    /// `targetBytes` bytes to `url`. Each entry is a small `visit`
+    /// record so the streaming parser exercises the same code path
+    /// as a real Google Timeline export without spending CPU on
+    /// per-point coordinate decoding. Pure file I/O; no app state
+    /// is touched.
+    fileprivate static func writeSyntheticGoogleTimelineJSON(to url: URL, targetBytes: Int) throws {
+        FileManager.default.createFile(atPath: url.path, contents: nil)
+        guard let handle = try? FileHandle(forWritingTo: url) else {
+            throw NSError(
+                domain: "LH2GPXUITestingLargeImport",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Could not open \(url.lastPathComponent) for writing"]
+            )
+        }
+        defer { try? handle.close() }
+        try handle.write(contentsOf: Data("[".utf8))
+        var written = 1
+        var index = 0
+        // Anchor at a stable midnight so generated timestamps look
+        // realistic and the timeline parser does not reject anything
+        // as out of range.
+        let baseEpoch: TimeInterval = 1_714_521_600  // 2024-05-01T00:00:00Z
+        while written < targetBytes {
+            let lat = 52.5 + Double(index % 1_000) * 0.0001
+            let lon = 13.4 + Double(index % 500) * 0.0002
+            let startISO = Self.iso8601(from: baseEpoch + Double(index) * 60)
+            let endISO   = Self.iso8601(from: baseEpoch + Double(index) * 60 + 30)
+            let separator = (index == 0) ? "" : ",\n"
+            let entry = "\(separator){\"startTime\":\"\(startISO)\",\"endTime\":\"\(endISO)\",\"visit\":{\"topCandidate\":{\"semanticType\":\"INFERRED_HOME\",\"placeLocation\":\"geo:\(lat),\(lon)\"}}}"
+            let chunk = Data(entry.utf8)
+            try handle.write(contentsOf: chunk)
+            written += chunk.count
+            index += 1
+        }
+        try handle.write(contentsOf: Data("\n]".utf8))
+    }
+
+    private static func iso8601(from epoch: TimeInterval) -> String {
+        let date = Date(timeIntervalSince1970: epoch)
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.string(from: date)
+    }
+
+    private func uiLargeImportBytes() -> Int? {
+        guard let raw = launchArgumentValue(prefix: LaunchArgument.uiLargeImportBytesPrefix),
+              let value = Int(raw), value > 0 else { return nil }
+        return value
     }
 
     private func restoreBookmarkedFile() {

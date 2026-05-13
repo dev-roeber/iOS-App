@@ -655,6 +655,21 @@ enum OverviewMapPreparation {
         // makeOverlay(...), so a stride-decimate here is loss-free for the
         // visual result and trims persistent RAM by ~70-90% on dense paths.
         let candidateStorageCap = 512
+        // P0-EX-2 (Audit 2026-05-13): when a Path is imported without a
+        // pre-computed `distanceM` (rare for Google Timeline, common for
+        // synthetic / legacy data), the score fallback used to run a full
+        // O(N) Haversine pass over every coordinate before the path was
+        // even known to make the overlay cut. On pathological imports
+        // (10k tracks * 5k pts) that meant ~50 M Haversine hops for
+        // ranking ~200 finally-rendered overlays. Cap the work at
+        // `scoreSamplingCap` via the same stride-decimate already used
+        // for `storedCoordinates`. Tradeoff: the resulting `scoreBase`
+        // is a chord-only underestimate of the route length. Ranking
+        // impact is bounded because the second term `pointWeight =
+        // log(coordinates.count)` is computed on the real point count.
+        // Callers that need an exact distance-based score should fill
+        // `path.distanceM` (the legacy and Google Timeline paths do).
+        let scoreSamplingCap = OverviewMapPreparation.scoreSamplingCap
         var iterationCount = 0
 
         outer: for day in export.data.days {
@@ -717,7 +732,13 @@ enum OverviewMapPreparation {
                 guard coordinates.count >= 2 else { continue }
                 totalPointCount += coordinates.count
 
-                let scoreBase = path.distanceM ?? approximateDistance(for: coordinates)
+                let coordsForScoreBase: [CLLocationCoordinate2D]
+                if path.distanceM == nil, coordinates.count > scoreSamplingCap {
+                    coordsForScoreBase = strideDecimate(coordinates, maxPoints: scoreSamplingCap)
+                } else {
+                    coordsForScoreBase = coordinates
+                }
+                let scoreBase = path.distanceM ?? approximateDistance(for: coordsForScoreBase)
                 let pointWeight = log(Double(max(coordinates.count, 2)))
                 // Decimate by stride before storing — the makeOverlay step
                 // applies a finer Douglas-Peucker pass, so this is a pure
@@ -898,7 +919,16 @@ enum OverviewMapPreparation {
             if coord.longitude > pathMaxLon { pathMaxLon = coord.longitude }
         }
 
-        let scoreBase = overlay.distanceM ?? approximateDistance(for: coordinates)
+        // Same P0-EX-2 cap as scanCandidates: stride-decimate the
+        // approximateDistance input when distanceM is missing and the
+        // overlay is unusually point-dense.
+        let coordsForScoreBase: [CLLocationCoordinate2D]
+        if overlay.distanceM == nil, coordinates.count > OverviewMapPreparation.scoreSamplingCap {
+            coordsForScoreBase = strideDecimate(coordinates, maxPoints: OverviewMapPreparation.scoreSamplingCap)
+        } else {
+            coordsForScoreBase = coordinates
+        }
+        let scoreBase = overlay.distanceM ?? approximateDistance(for: coordsForScoreBase)
         let pointWeight = log(Double(max(overlay.coordinates.count, 2)))
         let midpointIndex = coordinates.count / 2
         var hasher = Hasher()
@@ -1045,7 +1075,14 @@ enum OverviewMapPreparation {
     /// inline haversine instead of `CLLocation.distance(from:)` so we do
     /// not allocate two `CLLocation` objects per coordinate pair on the
     /// distance-fallback path (paths without a precomputed `distanceM`).
-    private nonisolated static func approximateDistance(for coordinates: [CLLocationCoordinate2D]) -> Double {
+    /// Cap on the number of coordinates fed into `approximateDistance`
+    /// when a Path/Overlay has no pre-computed `distanceM`. See the
+    /// inline comment at the use site for the tradeoff rationale.
+    /// Exposed `internal` (not public) so tests can assert that the
+    /// sampling kicks in.
+    internal nonisolated static let scoreSamplingCap = 1024
+
+    internal nonisolated static func approximateDistance(for coordinates: [CLLocationCoordinate2D]) -> Double {
         guard coordinates.count >= 2 else { return 0 }
         let earthRadiusMeters = 6_371_000.0
         var total = 0.0

@@ -417,3 +417,62 @@ Keine Code-Änderungen in diesem Re-Audit. Keine Commit-Empfehlung für P0-EX-1/
 ### Empfehlung ASC-Submit (technisch, 2026-05-13)
 
 **Eingeschränkt JA** — Tests/Builds/Hardware grün; CSQLite-Linker-P0 gelöst; Doku-Truth synchron. Verbleibende Risiken: interaktiver 46-MiB-Device-UI-Import (Tester-Handoff), Apple-Review-extern (TestFlight-Build-Liste).
+
+---
+
+## Update 2026-05-13 Closure-Train (Audit-Gate final geschlossen)
+
+Nicht historisch verfälschend angefügt. Nach diesem Anhang sind beide noch offenen P0-Items aus diesem Audit-Report bearbeitet.
+
+### Code-Änderungen (klein, reviewbar)
+
+1. `Sources/LocationHistoryConsumerAppSupport/AppOverviewTracksMapView.swift`:
+   - **`OverviewMapPreparation.scanCandidates`** (≈ Z. 720) und **`makeCandidate(from overlay:)`** (≈ Z. 905) cappen die Eingabe in `approximateDistance` jetzt über `strideDecimate(coords, maxPoints: scoreSamplingCap)` wenn `distanceM == nil` UND `coordinates.count > scoreSamplingCap = 1024`. Neuer interner Konstanten-Anker `OverviewMapPreparation.scoreSamplingCap` (`internal nonisolated static let`). `approximateDistance` von `private` auf `internal` umgestellt für Tests.
+   - Tradeoff-Kommentare inline. Der zweite Score-Term `pointWeight = log(coordinates.count)` bleibt auf der echten Punktzahl, hält dichte Pfade priorisiert.
+
+2. `wrapper/LH2GPXWrapper/ContentView.swift`:
+   - Neuer Launch-Argument-Prefix `LH2GPX_UI_LARGE_IMPORT_BYTES=<bytes>` im `LaunchArgument`-Enum. Gated hinter `LH2GPX_UI_TESTING` UND `LH2GPX_RESET_PERSISTENCE`. In `prepareLaunchStateIfNeeded` → neue Helfer `uiLargeImportBytes()` + `runUITestingLargeImport(targetBytes:)` + `writeSyntheticGoogleTimelineJSON(to:targetBytes:)` (`fileprivate static`). Synthetik-Datei in `FileManager.default.temporaryDirectory`, nach Import gelöscht. Kein Produktivverhalten geändert.
+
+### Tests (neu)
+
+- `Tests/LocationHistoryConsumerTests/AppOverviewTracksMapViewTests.swift`:
+  - `testScoreSamplingCapAppliedForLargeCoordsWithoutDistanceM`
+  - `testScoreUnaffectedWhenDistanceMProvided`
+  - `testScoreCapNotAppliedForSmallCoordsWithoutDistanceM`
+- `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift`:
+  - `testLargeImportSyntheticFile` (46 × 1024 × 1024 Bytes Synthetik, Device-Smoke)
+
+### Re-Verifikations-Befehle (2026-05-13 Closure-Train)
+
+| # | Befehl | Ergebnis |
+|---|---|---|
+| 1 | `swift build` | BUILD SUCCEEDED (12,6 s) |
+| 2 | `swift test --filter ".*ScoreSamplingCap|.*ScoreUnaffected|.*ScoreCapNot.*"` | 3/0/0 (0,01 s) |
+| 3 | `swift test` (volles Set) | **1524 / 2 / 0** in 156,98 s (+3 ggü. 1521) |
+| 4 | `xcodebuild build` Simulator iPhone 17 Pro Max iOS 26.3.1 | **BUILD SUCCEEDED** |
+| 5 | `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4 | **BUILD SUCCEEDED**, 0 warnings |
+| 6 | `xcodebuild test -only-testing:LH2GPXWrapperUITests` Device | **TEST SUCCEEDED** — 9 + 4× LaunchTest, 1299,77 s |
+| 7 | `testLargeImportSyntheticFile` (in #6) | **passed in 126,27 s**, kein Crash/Hang/Jetsam |
+
+### Hardware-Matrix (Closure-Train)
+
+| Gerät | iOS | Build | Synthetik 46 MiB Import | Post-Import-Tab-Switch | Status |
+|---|---|---|---|---|---|
+| iPhone 15 Pro Max (`iPhone16,2`) | 26.4 | ✓ | gestartet+abgeschlossen in 126,27 s | `Days`-Tab ohne Dialog | **passed** |
+
+### Finale P0-Matrix
+
+| ID | vorher | nachher (Closure 2026-05-13) | Beleg |
+|---|---|---|---|
+| **P0-EX-1** | P0 → P1 (Re-Audit) | **bleibt P1** (Dead-Code, kein Train notwendig) | NEXT_STEPS.md L-02 unverändert |
+| **P0-EX-2** | offen | **GESCHLOSSEN durch `scoreSamplingCap = 1024`** | `AppOverviewTracksMapView.swift:720,905`, 3 Unit-Tests grün |
+| **P0-EX-3** | offen / Tester-Handoff | **GESCHLOSSEN für Streaming-/Parser-/Loader-Pipeline auf iPhone 15 Pro Max iOS 26.4** | Synthetik-Hardware-Test `testLargeImportSyntheticFile` 126,27 s passed |
+
+### Verbleibende Risiken
+
+- 46-MiB-Test verwendet **synthetisches Asset (visit-only)**, nicht die originale Tester-Datei (timelinePath-heavy). Klasse der Last verifiziert; konkrete File-Struktur-Edge-Cases sind weiter denkbar, aber durch die seither gelandeten Mitigations (autoreleasepool, flatCoordinates-Kanonisierung, ImportMemoryProbe, BoundedLRU-Caches, SQLite-PRAGMAs) plausibel unwahrscheinlich.
+- Apple-Review-extern (TestFlight-Build-Liste, ASC-Portal) bleibt extern.
+
+### Empfehlung ASC-Submit (technisch, Closure-Train 2026-05-13)
+
+**JA** (zuvor „eingeschränkt JA"). Alle drei P0-Items dieses Audits sind gelöst oder dokumentiert herabgestuft; Build/Test/Hardware-UITests grün; Doku-Truth synchron.

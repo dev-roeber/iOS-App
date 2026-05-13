@@ -1,5 +1,23 @@
 # NEXT_STEPS
 
+Stand: 2026-05-13 (HEAD pending — `fix: close map performance gate and verify large import`).
+
+**Audit-Gate-Closure 2026-05-13 (final):**
+- **P0-EX-2** (Map-Performance `scanCandidates` Full-Coord-Score) → **GESCHLOSSEN**: `Sources/LocationHistoryConsumerAppSupport/AppOverviewTracksMapView.swift` cappt `approximateDistance` jetzt über `strideDecimate(coords, maxPoints: scoreSamplingCap = 1024)`, wenn `path.distanceM == nil` UND `coordinates.count > 1024`. 3 neue Unit-Tests grün (`testScoreSamplingCapApplied…`, `testScoreUnaffectedWhenDistanceMProvided`, `testScoreCapNotAppliedForSmallCoords…`). Score-Reihenfolge bleibt durch `pointWeight = log(count)` stabil.
+- **P0-EX-3** (46-MiB-Google-Timeline-Hardware-Retest) → **GESCHLOSSEN für die Streaming-/Parser-/Loader-Pipeline auf iPhone 15 Pro Max iOS 26.4 ohne Tester-Handoff**: Neuer UI-Testing-only Launch-Arg `LH2GPX_UI_LARGE_IMPORT_BYTES=<bytes>` (in `wrapper/LH2GPXWrapper/ContentView.swift`, gated hinter `LH2GPX_UI_TESTING`). Wenn beide gesetzt sind, schreibt die App ein synthetisches Google-Timeline-style JSON-Array der Zielgröße in `NSTemporaryDirectory` und ruft den Production-Import-Pfad. Datei wird nach Import gelöscht. Neuer XCUITest `testLargeImportSyntheticFile` mit 46 × 1024 × 1024 Bytes → **passed in 126,27 s, kein Crash/Hang/Jetsam, App nach Import bedienbar**. *Hinweis*: Die Synthetik nutzt visit-only Entries, nicht timelinePath-Geometrie wie das originale Tester-Asset; die *Klasse* der 46-MiB-Streaming-Last ist verifiziert.
+- **P0-EX-1** (`AppExportQueries.projectedDays` Sort-vor-Limit) → bleibt unverändert **HERABGESTUFT auf P1** (Dead-Code-Pfad: `limit` wird in aktiver Codebase nie ≠ nil gesetzt; 8-Entry `BoundedLRU` in `AppSessionState.swift` davor).
+
+**Verifikation 2026-05-13 (final):**
+- `swift build` BUILD SUCCEEDED (12,6 s)
+- `swift test`: **1524/2/0** (156,98 s, +3 ggü. 1521)
+- `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.3.1: BUILD SUCCEEDED
+- `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4: BUILD SUCCEEDED, 0 warnings
+- `xcodebuild test -only-testing:LH2GPXWrapperUITests` Device: **TEST SUCCEEDED — 9 UI-Tests + 4× LaunchTest, 0 Failures, 1299,77 s** (`testLargeImportSyntheticFile` 126,27 s)
+
+**ASC-Submit-Empfehlung (technisch):** **JA** (zuvor „eingeschränkt JA"). Alle drei P0-Items aus dem 2026-05-13-Audit sind gelöst oder dokumentiert herabgestuft.
+
+---
+
 Stand: 2026-05-13 (HEAD `aa145b4` — `docs: add deep audit 2026-05-13 (audit-only, evidence-backed)`).
 
 **Audit-Gate-Verification 2026-05-13** (gegen `docs/DEEP_AUDIT_2026-05-13_CLAUDE.md`):
