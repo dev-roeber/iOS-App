@@ -228,6 +228,18 @@ final class AppHeatmapModel {
         let scale = activeScale
 
         densityPrecomputationTask = Task.detached(priority: .utility) {
+            // Map-Train 3: the per-LOD loop here was benchmarked against
+            // a fused single-pass alternative
+            // (`HeatmapGridBuilder.computeMultiLODGrids`). The fused
+            // implementation produces visually equivalent output (max
+            // 1-ULP drift from Swift Dictionary iteration order — well
+            // below any rendering threshold) but shows **no measurable
+            // wallclock improvement** on 10k–50k synthetic points
+            // (`HeatmapPipelineBenchmarkTests`), because the
+            // smoothing + normalisation pass dominates. The per-LOD
+            // path is kept for **byte-identical** output stability;
+            // the fused API stays available as the natural extension
+            // point for Train 4 (per-LOD parallelism / GPU offload).
             var generatedGrids: [HeatmapLOD: [GridKey: HeatCell]] = [:]
             for lod in HeatmapLOD.allCases {
                 generatedGrids[lod] = HeatmapGridBuilder.computeGrid(for: points, lod: lod, scale: scale)

@@ -1,5 +1,12 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-13, HEAD pending — `perf: optimize heatmap pipeline with golden benchmarks`, Branch `chore/mapkit-az-modernization-3`)
+
+- **MapKit A–Z Train 3** (kein Release, kein Merge): Heatmap-Pipeline mit 11 Golden-Output-Tests gelockt (Cell-Counts, byte-identische `normalizedIntensity` für stabile Insertion-Order, multi-LOD-Äquivalenz ≤ 1e-14). `HeatmapGridBuilder.computeGrid` an `binRaw` + `smoothAndNormalize` delegiert (byte-identisch zum Pre-Refactor). Neue API `computeMultiLODGrids(for:lods:scale:)` — fused single pass über points; **bewusst nicht produktiv verdrahtet**, da Benchmarks keinen Wallclock-Gewinn bei 10k/50k zeigen (Smoothing dominiert). Sim+Device BUILD SUCCEEDED.
+- **Map-Train 4 Backlog**: `TaskGroup`-Parallelism über LODs, Metal compute shader für Smoothing, MKMapView+MKMultiPolyline Heavy-Overview Spike, MKTileOverlay-Heatmap, WWDC24 Place ID. Vor jedem Schritt: Memory-/Wallclock-Spike messen, dann erst implementieren.
+
+---
+
 ## Aktiver Stand (2026-05-13, HEAD pending — `perf: harden map surfaces and heatmap large-data paths`, Branch `chore/mapkit-az-modernization-2`)
 
 - **MapKit A–Z Train 2** (kein Release, kein Merge): Sanitize-Ausweitung auf **Overview / Heatmap / ExportPreview** über neuen Foundation-only `CoordinateValidity.isValid`. `MapCoordinateGuard.isValid` delegiert dorthin (identische Semantik). Timestamps/Bounds bleiben aligned, Score-/Cap-Logik unverändert. 11 neue Tests grün (5 Validator + 3 Pipeline + 3 XCTMeasure-Benchmarks). Throughput ~4–5 M coords/s Foundation-Filter. Sim+Device BUILD SUCCEEDED.

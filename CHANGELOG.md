@@ -1,5 +1,61 @@
 # CHANGELOG
 
+## 2026-05-13 — perf: optimize heatmap pipeline with golden benchmarks (branch `chore/mapkit-az-modernization-3`)
+
+> **MapKit A–Z Modernization Train 3.** Kein Release, kein Build-Bump, kein ASC, kein Merge nach `main`. Basis: `chore/mapkit-az-modernization-2@42e4415` (Train 1 + 2 kumulativ). Fokus: Heatmap-Pipeline Golden-Output-Tests, refactor + Single-Pass-Multi-LOD API, ehrlicher Performance-Befund.
+
+### Was getan wurde
+- **`Sources/LocationHistoryConsumerAppSupport/HeatmapGridBuilder.swift`** — `computeGrid` an zwei extrahierte Helfer `binRaw(points:lod:)` und `smoothAndNormalize(raw:lod:scale:)` delegiert. **Output strikt byte-identisch zum Pre-Refactor** (Goldens locken das).
+- **`computeMultiLODGrids(for:lods:scale:)` neu** — fused single pass: ein cos pro Punkt, dann 4× bin pro Punkt; smoothing/normalisation weiter per LOD. Dedupliziert Lods, tolerant gegen empty points/lods.
+- **`Sources/LocationHistoryConsumerAppSupport/AppHeatmapModel.swift`** `ensureDensityPrecomputation` — auf den per-LOD-Loop **belassen**. Wiring auf `computeMultiLODGrids` getestet, dann bewusst zurückgenommen (kein messbarer Wallclock-Gewinn bei 10k/50k). Code-Kommentar erklärt die Entscheidung und verweist auf Train 4 (TaskGroup / Metal).
+
+### Tests (11 Cases Golden + 6 XCTMeasure Benchmarks, alle grün)
+- **`Tests/LocationHistoryConsumerTests/HeatmapGoldenOutputTests.swift`** NEU — Golden-Output für `computeGrid` + Multi-LOD-Äquivalenz. Lockt:
+  - Empty input → empty grids
+  - Single-point → ≥ 1 cell (fine LOD)
+  - Determinismus über N Läufe
+  - byte-identische `normalizedIntensity` (bitPattern-equality) bei wiederholtem per-LOD-`computeGrid` für dieselbe Insertion-Order
+  - Two-cluster spatial distinction (high LOD)
+  - Cell-Counts pro LOD für `smallCluster` Fixture
+  - **Multi-LOD-Äquivalenz**: gleiche Key-Sets, integer counts byte-identisch, Center-Coords byte-identisch, `normalizedIntensity` ≤ **1e-14** absolut (~50 ULPs an 1.0; reale Drift ~4 ULPs für 1k synth/linear; **unsichtbar** auf 8-bit Farbverlauf)
+  - Empty-LOD-Liste und Duplicate-LOD-Edge-Cases
+- **`Tests/LocationHistoryConsumerTests/HeatmapPipelineBenchmarkTests.swift`** NEU — 6 XCTMeasure-Cases.
+
+### Benchmark-Tabelle (XCTMeasure, macOS x86_64)
+| Datensatz | Per-LOD Baseline | Fused Multi-LOD | Δ |
+|---|---|---|---|
+| 1k synth × 4 LOD | 37 ms | **32 ms** | **−13 %** (RSD 15 %, Richtwert) |
+| 10k synth × 4 LOD | 280 ms | 282 ms | ~0 % |
+| 50k synth × 4 LOD | 1271 ms | 1281 ms | ~0 % |
+
+**Ehrlicher Befund**: Smoothing-Pass dominiert die Laufzeit bei 10k+; die im Fused-Pfad gesparten `cos()`-Aufrufe sind vernachlässigbar. Optimierung **bewusst nicht produktiv** verdrahtet, API für Train 4 verfügbar.
+
+### Verifikation
+- `swift build`: BUILD SUCCEEDED.
+- `swift test`: siehe Abschlussbericht (Baseline Train 2: 1541/2/0).
+- `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.0: **BUILD SUCCEEDED**.
+- `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4 (`-allowProvisioningUpdates`): **BUILD SUCCEEDED** (zweiter Versuch nach DerivedData-Lock).
+- Runtime-Smoke: kein App-Install/Launch in diesem Train (rein algorithmischer Refactor, kein UI-Drift; Goldens locken visuelle Äquivalenz).
+
+### Bewusst nicht umgesetzt (Train 4)
+- AppHeatmapModel auf fused multi-LOD verdrahten (kein messbarer Wallclock-Gewinn → Train 4 nach TaskGroup-/Metal-Spike)
+- Per-LOD Parallelism via `TaskGroup`
+- Metal compute shader für Smoothing-Kernel
+- MKMapView+MKMultiPolyline Heavy-Overview Spike
+- MKTileOverlay-Heatmap
+- WWDC24 Place ID
+
+### Doku
+- **`docs/MAPKIT_AZ_AUDIT_2026-05-13.md`** Train-3-Block ergänzt (Pipeline-Inventur, Golden-Vertrag, Benchmark-Tabelle, ehrlicher Befund, Train-4-Empfehlung).
+- `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md` synchronisiert.
+
+### Release-Safety
+- Keine externe Dependency, keine neuen Entitlements, keine Privacy-/Network-Folge.
+- Keine sichtbare Heatmap-Änderung — produktiver Pfad ist `computeGrid(for:lod:)` und liefert **byte-identische** Cells zum Pre-Train-3-Code (Refactor extrahiert nur Helfer).
+- Multi-LOD API existiert, wird aber nicht aufgerufen — Goldens und Equivalence-Tests locken das Verhalten falls Train 4 zuschaltet.
+
+---
+
 ## 2026-05-13 — perf: harden map surfaces and heatmap large-data paths (branch `chore/mapkit-az-modernization-2`)
 
 > **MapKit A–Z Modernization Train 2.** Kein Release, kein Build-Bump, kein ASC, kein Merge nach `main`. Basis: `chore/mapkit-az-modernization-1@d6a6191` (Train 1, ebenfalls nicht gemerged). Fokus: Sanitize auf Overview/Heatmap/ExportPreview ausgeweitet, Foundation-only Validator, Benchmark-Surface, Heatmap-Single-Pass als Train 3 formuliert.

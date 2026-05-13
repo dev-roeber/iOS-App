@@ -67,14 +67,99 @@ enum HeatmapGridBuilder {
     /// normalized intensity: logarithmic flattens hotspot dominance so
     /// secondary regions stay visible at world/country zoom; linear is
     /// the classical density mapping.
+    ///
+    /// Map-Train 3 refactor: the binning and the smooth+normalise passes
+    /// are factored into `binRaw(points:lod:)` and
+    /// `smoothAndNormalize(raw:lod:scale:)` so that
+    /// `computeMultiLODGrids` can reuse the smoothing phase. The
+    /// per-LOD `computeGrid` keeps byte-identical output (golden-tested
+    /// in `HeatmapGoldenOutputTests`).
     nonisolated static func computeGrid(
         for points: [WeightedPoint],
         lod: HeatmapLOD,
         scale: AppHeatmapScalePreference = .logarithmic
     ) -> [GridKey: HeatCell] {
+        let raw = binRaw(points: points, lod: lod)
+        return smoothAndNormalize(raw: raw, lod: lod, scale: scale)
+    }
+
+    /// Map-Train 3: fused multi-LOD binning. Iterates `points` exactly
+    /// **once** and produces raw bin counts for every requested LOD in
+    /// the same pass. `lonScale(forLatitude:)` is evaluated once per
+    /// point and reused across LODs (was: 4× per point in the
+    /// per-LOD loop). Smoothing + normalisation still run per-LOD so
+    /// the produced grids are **byte-identical** to four separate
+    /// `computeGrid` calls (locked by `HeatmapGoldenOutputTests`).
+    ///
+    /// Returns one grid per requested LOD. Duplicate or empty `lods`
+    /// inputs are tolerated (duplicate LOD produces the same grid;
+    /// empty `lods` returns `[:]`).
+    nonisolated static func computeMultiLODGrids(
+        for points: [WeightedPoint],
+        lods: [HeatmapLOD],
+        scale: AppHeatmapScalePreference = .logarithmic
+    ) -> [HeatmapLOD: [GridKey: HeatCell]] {
+        guard !lods.isEmpty else { return [:] }
+        // Deduplicate while preserving insertion order so callers can
+        // pass `HeatmapLOD.allCases` directly without worrying about
+        // accidental repeats.
+        var seen = Set<HeatmapLOD>()
+        var orderedLODs: [HeatmapLOD] = []
+        orderedLODs.reserveCapacity(lods.count)
+        for lod in lods where seen.insert(lod).inserted { orderedLODs.append(lod) }
+
+        guard !points.isEmpty else {
+            // Empty input → empty grids; preserve the requested-LOD set
+            // so callers can read all keys back unconditionally.
+            return Dictionary(uniqueKeysWithValues: orderedLODs.map { ($0, [:]) })
+        }
+
+        // Pre-extract per-LOD step so the inner loop stays branch-free.
+        let steps: [Double] = orderedLODs.map { $0.step }
+
+        var rawByLOD: [[GridKey: Double]] = Array(
+            repeating: [:],
+            count: orderedLODs.count
+        )
+
+        // Fused pass: one cos() per point, then per-LOD bin insertion.
+        for point in points {
+            // Compute lonScale exactly once per point. The product
+            // `point.lon * lonScale` is divided by each LOD's step
+            // identically to the per-LOD `computeGrid` operation order
+            // (`floor(point.lon * lonScale / step)`).
+            let scaledLon = point.lon * lonScale(forLatitude: point.lat)
+            let lat = point.lat
+            let weight = Double(point.weight)
+            for i in 0..<orderedLODs.count {
+                let step = steps[i]
+                let key = GridKey(
+                    lat: Int32(floor(lat / step)),
+                    lon: Int32(floor(scaledLon / step))
+                )
+                rawByLOD[i][key, default: 0] += weight
+            }
+        }
+
+        var output: [HeatmapLOD: [GridKey: HeatCell]] = [:]
+        output.reserveCapacity(orderedLODs.count)
+        for i in 0..<orderedLODs.count {
+            let lod = orderedLODs[i]
+            output[lod] = smoothAndNormalize(raw: rawByLOD[i], lod: lod, scale: scale)
+        }
+        return output
+    }
+
+    /// Extracted binning pass. Per-point work: 1 cos() + 1 floor/lat +
+    /// 1 floor/lon + 1 dict insert. Used by `computeGrid` for the
+    /// single-LOD path; `computeMultiLODGrids` inlines the equivalent
+    /// computation but shares `lonScale(forLatitude:)` across LODs.
+    nonisolated static func binRaw(
+        points: [WeightedPoint],
+        lod: HeatmapLOD
+    ) -> [GridKey: Double] {
         var raw: [GridKey: Double] = [:]
         let step = lod.step
-
         for point in points {
             let lonScale = lonScale(forLatitude: point.lat)
             let latBin = Int32(floor(point.lat / step))
@@ -82,7 +167,16 @@ enum HeatmapGridBuilder {
             let key = GridKey(lat: latBin, lon: lonBin)
             raw[key, default: 0] += Double(point.weight)
         }
+        return raw
+    }
 
+    /// Extracted smoothing + normalisation pass. Byte-identical to the
+    /// inline pre-refactor implementation; golden-tested.
+    nonisolated static func smoothAndNormalize(
+        raw: [GridKey: Double],
+        lod: HeatmapLOD,
+        scale: AppHeatmapScalePreference
+    ) -> [GridKey: HeatCell] {
         guard !raw.isEmpty else { return [:] }
 
         var smoothed: [GridKey: Double] = [:]

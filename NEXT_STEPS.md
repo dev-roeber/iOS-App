@@ -1,6 +1,18 @@
 # NEXT_STEPS
 
-Stand: 2026-05-13 (Branch `chore/mapkit-az-modernization-2`, pending HEAD — `perf: harden map surfaces and heatmap large-data paths`).
+Stand: 2026-05-13 (Branch `chore/mapkit-az-modernization-3`, pending HEAD — `perf: optimize heatmap pipeline with golden benchmarks`).
+
+**MapKit A–Z Modernization Train 3 — 2026-05-13 (kein Release, kein Merge):**
+- Branch `chore/mapkit-az-modernization-3` von `chore/mapkit-az-modernization-2@42e4415`. **Kein Build-Bump**, **kein ASC**, **kein Merge nach main**.
+- **Heatmap Golden-Output-Tests vor Optimierung**: 11 Cases lock-in vor jeder Codeänderung. Empty/single-point invariants, byte-identische `normalizedIntensity` (bitPattern), cell-counts Locked, two-cluster spatial distinction, multi-LOD-Äquivalenz mit 1e-14 Toleranz (Swift Dict iteration order ULP drift).
+- **Refactor**: `HeatmapGridBuilder.computeGrid` delegiert an extrahierte `binRaw` + `smoothAndNormalize`. Output **strikt byte-identisch** zum Pre-Refactor.
+- **Neue API `computeMultiLODGrids(for:lods:scale:)`**: fused single pass über points, ein `cos()` pro Punkt, 4 Bins pro Punkt. Smoothing+Normalisierung weiter per-LOD.
+- **Benchmarks (XCTMeasure)**: 1k: 37→32 ms (−13 %, RSD 15 %), 10k: ~0 %, 50k: ~0 %. Smoothing dominiert bei größeren Datensätzen.
+- **AppHeatmapModel bleibt auf per-LOD-Loop** — kein messbarer Wallclock-Gewinn → fused-API als Train-4-Extension-Point dokumentiert (TaskGroup/Metal).
+- **Verifikation**: Sim iPhone 17 Pro Max + Device iPhone 15 Pro Max BUILD SUCCEEDED.
+- **Bewusst nicht in Train 3**: AppHeatmapModel-Wiring, Per-LOD Parallelism via TaskGroup, Metal compute shader für Smoothing, MKMapView/MKMultiPolyline Spike, MKTileOverlay-Heatmap, WWDC24 Place ID.
+
+---
 
 **MapKit A–Z Modernization Train 2 — 2026-05-13 (kein Release, kein Merge):**
 - Branch `chore/mapkit-az-modernization-2` von `chore/mapkit-az-modernization-1@d6a6191` (Train 1, ebenfalls nicht gemerged). **Kein Build-Bump**, **kein ASC**, **kein Merge nach main**.

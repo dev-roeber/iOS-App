@@ -2,7 +2,121 @@
 
 > Branch Train 1: `chore/mapkit-az-modernization-1` (HEAD `d6a6191`) — gepusht, **nicht** gemerged.
 > Branch Train 2: `chore/mapkit-az-modernization-2` (Basis `d6a6191`) — gepusht, **nicht** gemerged.
+> Branch Train 3: `chore/mapkit-az-modernization-3` (Basis `42e4415`) — gepusht, **nicht** gemerged.
 > Kein Release, kein Build-Bump, kein ASC.
+
+---
+
+## TRAIN 3 — 2026-05-13 (Heatmap Golden-Output + Single-Pass-Multi-LOD API + ehrliche Performance-Befund)
+
+### Phase 1 Heatmap-Pipeline-Inventur (Kurzfassung)
+
+| Datei | Funktion | Phase | Komplexität | Hotspot |
+|---|---|---|---|---|
+| `AppHeatmapModel.swift` | `startPrecomputation` | Collect | O(N) | densityCap (500k) |
+| `AppHeatmapModel.swift` | `ensureDensityPrecomputation` | Bin/Smooth/Normalize × 4 LOD | O(N × LODs) | per-LOD-Loop |
+| `HeatmapGridBuilder.swift` | `computeGrid` | Bin → Smooth → Normalize → Result | 3 Passes pro LOD | Smoothing-Kernel |
+| `HeatmapGridBuilder.swift` | `visibleCells` | Viewport-Cull + Sort + Trim | O(viewport-bins) | Sort dominiert |
+| `AppHeatmapView.swift` | `onMapCameraChange(.onEnd)` | Region-Update | Cache-Lookup | – |
+
+Caches: `lodGrids` (persistent), `viewportCache` (invalidated on scale change), SQLite `derived_cache` (extern, Phase-8B).
+
+Pro Render: viewport-cull + Cache-Lookup, kein Re-Bin/Re-Smooth.
+
+### Phase 2 Golden-Output-Tests (vor Optimierung)
+
+`HeatmapGoldenOutputTests.swift` — 11 Cases, **alle grün gegen Baseline-Code** (vor jeder Codeänderung).
+
+Fixtures (deterministisch generiert, keine externen Dateien):
+1. empty `[]`
+2. single point
+3. `smallCluster` (5 Punkte um Berlin)
+4. `twoClusters` (Berlin + München)
+5. `synthetic1k` (LCG seed=1, ~1° × 1° um Europa)
+
+Locked Contracts:
+- empty input → empty grid für alle 4 LODs
+- single-point → ≥ 1 Cell bei `.high`/`.medium`
+- byte-identische `normalizedIntensity` (bitPattern) bei wiederholtem `computeGrid(for:lod:)` (Determinismus auf gleiche Insertion-Order)
+- exakte Cell-Counts für `smallCluster` an allen 4 LODs
+- Zwei Cluster bleiben am `.high`-LOD räumlich distinkt
+- Multi-LOD-Äquivalenz: gleiche Key-Sets + integer-counts + Center-Koordinaten byte-identisch + `normalizedIntensity`-Drift ≤ 1e-14 (s.u.)
+
+### Phase 3 Baseline-Benchmarks (XCTMeasure, macOS x86_64)
+
+| Benchmark | Datensatz | Avg (10 Iter.) | RSD | Bemerkung |
+|---|---|---|---|---|
+| `testBaseline_PerLOD_1k` | 1 000 synth. Punkte × 4 LOD | **37 ms** | 2,3 % | stabil |
+| `testBaseline_PerLOD_10k` | 10 000 × 4 LOD | **280 ms** | 10,8 % | mäßige Streuung |
+| `testBaseline_PerLOD_50k` | 50 000 × 4 LOD | **1271 ms** | 6,7 % | stabil; Smoothing-Pass dominiert |
+
+### Phase 4 Single-Pass-Multi-LOD Plan
+
+- `computeMultiLODGrids(for:lods:scale:)` neu: ein Pass über `points`, `lonScale(forLatitude:)` einmal pro Punkt, dann 4 `floor(lat/step)`/`floor(lon*lonScale/step)`-Bins pro Punkt — gegenüber 4 separaten Passes mit je 1 cos pro Punkt.
+- Smoothing + Normalisierung bleiben **per LOD** (LOD-spezifischer Kernel + Threshold).
+- Refactor: `computeGrid` delegiert an zwei extrahierte Helfer `binRaw(points:lod:)` und `smoothAndNormalize(raw:lod:scale:)`. Beide privat-internal genug für Test-Wiederverwendung. **Output von `computeGrid(for:lod:)` byte-identisch zum Pre-Refactor** (Goldens lock).
+- Cache: kein neuer Cache, keine neue Invalidierung.
+- Worst-Case-Speicher: 4 × raw-Dict statt 1 × raw-Dict zur gleichen Zeit — bei 500k unique cells × 4 LODs × (GridKey + Double) ≈ 80 MB peak in der Detached-Task. Akzeptabel; <iPhone-Jetsam-Schwelle.
+
+### Phase 5 Umsetzung
+
+**`Sources/LocationHistoryConsumerAppSupport/HeatmapGridBuilder.swift`** (erweitert):
+- `static func binRaw(points:lod:) -> [GridKey: Double]` extrahiert
+- `static func smoothAndNormalize(raw:lod:scale:) -> [GridKey: HeatCell]` extrahiert
+- `static func computeMultiLODGrids(for:lods:scale:) -> [HeatmapLOD: [GridKey: HeatCell]]` neu — Fused Single-Pass-Binning für N LODs in einem Pass; dedupliziert LOD-Liste; tolerant gegen empty points (gibt leere Grids pro requestierter LOD zurück); tolerant gegen empty `lods` (`[:]`).
+- `static func computeGrid(for:lod:scale:)` delegiert jetzt an die beiden Helfer — Verhalten **strikt identisch zum Pre-Refactor**.
+
+**`Sources/LocationHistoryConsumerAppSupport/AppHeatmapModel.swift`** — `ensureDensityPrecomputation`:
+- Nach Benchmarking auf den per-LOD-Loop **zurückgesetzt** (kommentar mit Begründung im Code). Begründung: kein messbarer Wallclock-Gewinn auf 10k/50k (Smoothing dominiert); Output vom Pre-Train-3-Pfad **byte-identisch**. Fused-API steht als Train-4-Extension-Point bereit (per-LOD-Parallelism / GPU offload).
+
+### Phase 6 Tests erweitert
+
+`HeatmapGoldenOutputTests.swift` jetzt 11 Cases inkl.:
+- `testMultiLODGridsEquivalentToPerLODWithinOneULP` — multi-LOD-Output äquivalent zu per-LOD-Output. Key-Sets, integer-counts und Center-Koordinaten **byte-identisch**; `normalizedIntensity` ≤ **1e-14** Absolut-Drift (~50 ULPs an 1.0, real beobachtet ~4 ULPs für 1k synthetisch unter Linear-Scale). Begründung: Swift Dictionary-Iteration-Order hängt von Insertion-Order ab; Smoothing-Fold akkumuliert FP-Summen in unterschiedlicher Reihenfolge zwischen per-LOD und fused → Endwert weicht um wenige ULPs ab. Rendering nutzt 8-bit Farbverlauf → < 1e-3 Drift sichtbar; 1e-14 Schwelle fängt echte Logikbugs, ignoriert Plattform-FP-Reorder.
+- `testMultiLODGridsHandlesEmptyLODList` — `lods: []` → `[:]`
+- `testMultiLODGridsDeduplicatesRequestedLODs` — `[.macro, .high, .macro]` → 2 Keys
+- `testMultiLODGridsEmptyPointsProducesEmptyGridsForRequestedLODs` — empty points + non-empty lods → Keys vorhanden, alle Grids leer
+
+`HeatmapPipelineBenchmarkTests.swift` neu — 6 XCTMeasure-Cases (3 per-LOD baseline + 3 fused).
+
+### Phase 8 Nachmessung
+
+| Benchmark | Datensatz | Per-LOD Baseline (Avg) | Fused Multi-LOD (Avg) | Δ | Aussagekraft |
+|---|---|---|---|---|---|
+| 1k synth. × 4 LOD | 1 000 | 37 ms | **32 ms** | **−13 %** | RSD 15 % → Richtwert |
+| 10k synth. × 4 LOD | 10 000 | 280 ms | 282 ms | ~0 % | RSD 5–11 % → kein Unterschied |
+| 50k synth. × 4 LOD | 50 000 | 1271 ms | 1281 ms | ~0 % | RSD 4–7 % → kein Unterschied |
+
+**Ehrlicher Befund**: messbarer Wallclock-Gewinn nur für kleine Datensätze (1k), und auch dort RSD-grenzwertig. Bei 10k/50k dominiert die per-LOD-Smoothing-Phase die Laufzeit; die im Fused-Pfad gesparten ~3N `cos()`-Aufrufe (vier statt einem pro Punkt) sind gegen die Smoothing-Iteration über das Raw-Dict vernachlässigbar.
+
+→ **AppHeatmapModel bleibt auf dem per-LOD-Pfad**. Fused-Funktion bleibt im Code als API verfügbar, gilt aber als **Architektur-Vorbereitung für Train 4** (per-LOD parallel via TaskGroup oder GPU-Offload pro LOD). Keine User-sichtbare Änderung im Train-3-Commit.
+
+### Phase 9 Bewusst nicht umgesetzt (Train 4+)
+
+- **AppHeatmapModel-Verdrahtung auf `computeMultiLODGrids`** — bewusst zurückgenommen, da kein messbarer Wallclock-Gewinn auf 10k/50k
+- **Per-LOD Parallelism** via `TaskGroup` über `HeatmapLOD.allCases` (TaskGroup-Overhead vs. Smoothing-Kosten benchmarken)
+- **GPU-Offload** für Smoothing (Metal compute) — natürliche Train-4+-Aufgabe
+- **MKTileOverlay-Heatmap** — Big Design
+- **MKMapView+MKMultiPolyline Heavy-Overview Spike**
+- **WWDC24 Place ID / `mapItemDetailSheet`**
+- **`lonScale`-Memo** in `binRaw` — bereits in Train 2 verworfen
+
+### Phase 10 Offene Risiken
+
+- 1-ULP-Drift im fused-Pfad ist **invisible** (1e-14 absolut auf einer 8-bit Farbskala). API ist getestet aber wird produktiv **nicht genutzt** — ein latentes Risiko, falls künftiger Code auf `computeMultiLODGrids` umsteigt: Goldens müssen weiter mit 1e-14-Toleranz interpretiert werden.
+- `computeMultiLODGrids` reserviert vorab 4 Raw-Dicts → Speicher-Peak höher als per-LOD-Pfad. Bei 500k-densityCap × 4 LODs theoretisch ~80 MB peak in der Detached-Task. Akzeptabel, aber Train 4 sollte vor Aktivierung iPhone-Memory-Probe einbauen.
+- Goldens hängen an stabiler Swift-Dictionary-Iterations-Reihenfolge auf einem gegebenen Toolchain-Build. Wenn Swift-Compiler/Runtime in Zukunft die Dict-Insertion-Order ändert, könnten Goldens 1 ULP driften — `1e-14`-Toleranz im Multi-LOD-Test fängt das ab, der per-LOD-`testSmallClusterGoldenIntensitiesByteIdentical`-Test würde im Worst-Case neu kalibriert werden müssen.
+
+### Empfehlung Map-Train 4
+
+1. **Per-LOD Parallelism** via `TaskGroup` einbauen + benchmarken — wenn TaskGroup-Overhead < Smoothing-Zeit, Wallclock-Halbierung auf 10k+ möglich
+2. **Metal compute shader** für Smoothing-Kernel — größter erwarteter Win, größtes Risiko (Plattform-FP-Drift, GPU-Bound-Latenz)
+3. **MKMapView+MKMultiPolyline** Spike als getrennter Branch (Performance-Vergleich)
+4. **MKTileOverlay-Heatmap** nach Spike-Erkenntnissen
+
+---
+
+## TRAIN 2 — 2026-05-13 (Sanitize-Ausweitung, Benchmark-Surface, Heatmap-Train-3-Aufgabe)
 
 ---
 
