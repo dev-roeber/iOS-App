@@ -1,6 +1,17 @@
 # NEXT_STEPS
 
-Stand: 2026-05-13 (Branch `chore/uiux-modernization-train-2`, pending HEAD — `ui: improve dynamic type landscape and empty states`).
+Stand: 2026-05-13 (Branch `chore/uiux-modernization-train-2`, pending HEAD — `test: verify ui polish dynamic type and landscape`).
+
+**Visuelles Verifikations-Gate Train 1+2 2026-05-13 (nicht-releasegebunden):**
+- `swift build` + `swift test` (1524 / 2 skipped / 0 failures) + `xcodebuild build` Sim iPhone 17 Pro Max — alle grün.
+- Simulator-Boot + App-Launch verifiziert (`de.roeber.LH2GPXWrapper`). Screenshots Light/Dark/Dyn-Type-AXL/Landscape lokal unter `/tmp/lh2gpx-screens/` (nicht committed).
+- Keine Layoutfehler gefunden → **keine Code-Änderung** in diesem Commit, nur Doku-Sync.
+- **Restrisiken / offene manuelle Sicht**: Accessibility-XL/XXL/XXXL auf Hardware (Export-Tab, Insights-Tab) sowie Landscape-Smoke iPhone 15 Pro Max für Map-/Heatmap-Overlay.
+- iPhone 15 Pro Max angeschlossen (devicectl), Device-UITest **nicht** erneut ausgeführt — Train 1+2 ändern keine Logik/Native-API; Basis `0739d4c` bleibt valide.
+- Kein Buildnummer-Bump, kein Release, kein Merge nach `main`.
+- **Merge-Empfehlung**: Train 1 + Train 2 nach manueller Hardware-Sichtprüfung mergebar.
+
+---
 
 **UI/UX-Modernization-Train 2 2026-05-13 (nicht-releasegebunden):**
 - Branch baut auf Train 1 (`a076374`) auf — gleiche UI-Files, kumulativer UI-Review-Diff zu `main`.

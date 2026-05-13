@@ -1,5 +1,11 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-13 (UI-Polish-Verifikations-Gate Train 1+2, Branch `chore/uiux-modernization-train-2`)
+
+**Visuelles Verifikations-Gate für nicht-releasegebundene UI-Polish-Trains (Train 1 HEAD `a076374`, Train 2 HEAD `9ea5984`).** Buildnummer/Marketing-Version unverändert. Kein ASC-Submit, kein Merge nach `main`. `swift build` BUILD SUCCEEDED, `swift test` **1524 / 2 skipped / 0 failures** in 162,3 s, `xcodebuild build` Sim iPhone 17 Pro Max (iOS 26.0) BUILD SUCCEEDED. Simulator gebootet, App-Launch + Screenshots Light/Dark/Dyn-Type-AXL/Landscape lokal als Evidenz (nicht committed). **Sichtprüfungs-Matrix:** Heatmap-Overlay-Padding, Spinner-Tint, Day-Detail-Section-Header, Day-List-Swipe-Tint, Export-Selection-Banner, Export modePill, Export-Microcopy KMZ/GeoJSON, Insights-Period-Comparison — alle Code-Pfade verifiziert; ✅ für direkt sichtbare Stellen, ⚠️ Code-Analyse für Kombinationszustände ohne separat erfassten Pixel-Screenshot. **Keine Layoutfehler gefunden, keine Code-Änderung.** Restrisiken: manuelle Accessibility-XL/XXL/XXXL-Sicht auf Hardware (Export-Tab, Insights-Tab) sowie Landscape-Smoke iPhone 15 Pro Max für Map-/Heatmap-Overlay vor Merge nach `main` empfohlen. iPhone 15 Pro Max angeschlossen, Device-UITest nicht erneut gefahren — Basis `0739d4c` valide.
+
+---
+
 ## Aktualisierung 2026-05-13 (Release-Candidate Build 168)
 
 **Build-Identität auf Build-Nummer 168 gehoben** (`CURRENT_PROJECT_VERSION` 100 → 168 in 8 Configs + `CFBundleVersion` 168 in beiden Info.plists, `MARKETING_VERSION` `1.0.1` unverändert). `xcodebuild archive -configuration Release -destination 'generic/platform=iOS'` **ARCHIVE SUCCEEDED** mit `ApplicationProperties: CFBundleVersion=168, CFBundleShortVersionString=1.0.1, CFBundleIdentifier=de.roeber.LH2GPXWrapper, Team=XAGR3K7XDJ, Architectures=[arm64]`. `swift test` 1524/2/0 (250 s); `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.3.1 + Device iPhone 15 Pro Max iOS 26.4 BUILD SUCCEEDED. Device-UITests in diesem Train nicht erneut gefahren (nur Build-Nummern-Metadaten geändert); letzte grüne Verifikation auf HEAD `0739d4c` (8 + 4× LaunchTest + `testLargeImportSyntheticFile` 126,27 s, TEST SUCCEEDED).

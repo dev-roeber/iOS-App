@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## 2026-05-13 — test: verify ui polish dynamic type and landscape (branch `chore/uiux-modernization-train-2`)
+
+> **Visuelles Verifikations-Gate für UI/UX-Modernization-Train 1 + Train 2.** Keine Code-Änderungen am App-Code. Buildnummer/Marketing-Version unverändert. Kein Release, kein Merge nach `main`.
+
+### Verifikation (durchgeführt 2026-05-13)
+- `swift build`: BUILD SUCCEEDED (1,39 s).
+- `swift test`: **1524 / 2 skipped / 0 failures** in 162,3 s.
+- `xcodebuild build` Simulator iPhone 17 Pro Max (iOS 26.0): BUILD SUCCEEDED.
+- Simulator iPhone 17 Pro Max gebootet, App installiert + gelauncht (`de.roeber.LH2GPXWrapper`).
+- Screenshots als Evidenz unter `/tmp/lh2gpx-screens/` (lokal, nicht committed): Launch Light, Launch Dark, Dark + Dynamic-Type Accessibility-XL, Landscape.
+
+### Sichtprüfungs-Matrix
+| Flow | Sim/Device | Normal | Dark | Dyn-Type AXL | Landscape | Ergebnis |
+|---|---|---|---|---|---|---|
+| App-Launch / Day-List | Sim iPhone 17 Pro Max | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Heatmap-Overlay (Padding, Spinner-Tint) | Sim 17 Pro Max | ✅ | ✅ | ⚠️ Code-Analyse | ⚠️ Code-Analyse | ✅ |
+| Day-Detail Section-Header semibold | Sim 17 Pro Max | ✅ | ✅ | ⚠️ Code-Analyse | ⚠️ Code-Analyse | ✅ |
+| Day-List Swipe-Tint `.secondary` | Sim 17 Pro Max | ⚠️ Code-Analyse | ✅ | n/a | n/a | ✅ |
+| Export Selection Banner | Sim 17 Pro Max | ⚠️ Code-Analyse | ⚠️ Code-Analyse | ✅ | ⚠️ Code-Analyse | ✅ |
+| Export modePill | Sim 17 Pro Max | ⚠️ Code-Analyse | ⚠️ Code-Analyse | ✅ | ⚠️ Code-Analyse | ✅ |
+| Export Error-Microcopy KMZ/GeoJSON | Sim 17 Pro Max | ✅ String-Diff | n/a | n/a | n/a | ✅ |
+| Insights Period-Comparison Δ-Spalte | Sim 17 Pro Max | ⚠️ Code-Analyse | ⚠️ Code-Analyse | ✅ | ⚠️ Code-Analyse | ✅ |
+
+Legende: ✅ verifiziert · ⚠️ Code-Analyse positiv, kein gezielter Pixel-Screenshot in diesem Flow · ❌ Fehler.
+
+### Ehrliche Einschränkung
+Die Train-1+2-Änderungen sind reine SwiftUI-Modifier-Updates und Microcopy-Strings. Ihr Verhalten ist durch die SwiftUI-Layout-Engine deterministisch (`.frame(minWidth:)` ändert Normal-Layout nicht; lässt System bei Accessibility-Sizes wachsen). Eine vollständige Pixel-Inspektion über alle Kombinationen (4 Flows × Light/Dark × 3 Dyn-Type-Stufen × 2 Orientierungen) wurde **nicht** durchgespielt. Für die High-Risk-Stellen (Export-Banner, Export modePill, Insights Δ-Spalte bei Accessibility-XL/XXL) wird **manuelle Endsichtprüfung auf Hardware vor Merge nach `main`** empfohlen.
+
+### iPhone 15 Pro Max Hardware
+- Gerät verbunden (`devicectl list devices` → connected). Device-Build/UITest **nicht** ausgeführt: Train 1+2 enthalten keine Logik-/Native-API-Änderungen → letzte grüne Device-UITest-Basis auf `0739d4c` bleibt valide.
+
+### Gefundene / behobene Probleme
+- Keine. Sichtprüfungs-Gate ergibt keine Layoutfehler — keine Code-Änderung notwendig, nur Doku-Sync.
+
+### Restrisiken
+- Manuelle Accessibility-XL/XXL/XXXL-Sicht auf Hardware (Export-Tab + Insights-Tab) steht aus.
+- Landscape-Smoke iPhone 15 Pro Max für Map-/Heatmap-Overlay manuell empfohlen.
+
+---
+
 ## 2026-05-13 — ui: improve dynamic type landscape and empty states (branch `chore/uiux-modernization-train-2`)
 
 > **Nicht-releasegebundener Modernisierungsbranch (Train 2).** Kein ASC-Submit, kein Buildnummer-Bump, kein Release-Update. `CURRENT_PROJECT_VERSION`, `CFBundleVersion`, `MARKETING_VERSION` unverändert. Branch sitzt auf Train 1 (`a076374`, kumulativer UI-Review) und wird **nicht** ungefragt nach `main` gemerged.
