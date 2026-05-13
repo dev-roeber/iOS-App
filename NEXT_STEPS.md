@@ -1,6 +1,15 @@
 # NEXT_STEPS
 
-Stand: 2026-05-13 (Branch `chore/uiux-modernization-train-2`, pending HEAD — `test: verify ui polish dynamic type and landscape`).
+Stand: 2026-05-13 (Branch `chore/uiux-modernization-train-2`, pending HEAD — `docs: record hardware visual verification for ui polish`).
+
+**Hardware-Sichtprüfungs-Gate Train 1+2 2026-05-13 (nicht-releasegebunden):**
+- iPhone 15 Pro Max iOS 26.4 verbunden, **Device-Build SUCCEEDED**, App installiert + via `devicectl` gelauncht.
+- `swift build` + `swift test` (1524 / 2 skipped / 0 failures, 163,2 s) grün.
+- Train 1+2 wurden bereits per Fast-Forward nach `main` gemerged (`47f2bc0` auf `main`).
+- **Restrisiken**: Pixel-Sicht auf Hardware bei Accessibility XL/XXL/XXXL (Export + Insights) und Landscape Map/Heatmap obliegt User — `devicectl` bietet keine Remote-Toggle für Dynamic Type oder Rotation.
+- Kein Buildnummer-Bump, kein Release, kein ASC-Submit, kein Merge.
+
+---
 
 **Visuelles Verifikations-Gate Train 1+2 2026-05-13 (nicht-releasegebunden):**
 - `swift build` + `swift test` (1524 / 2 skipped / 0 failures) + `xcodebuild build` Sim iPhone 17 Pro Max — alle grün.

@@ -1,5 +1,51 @@
 # CHANGELOG
 
+## 2026-05-13 — docs: record hardware visual verification for ui polish (branch `chore/uiux-modernization-train-2`)
+
+> **Hardware-Sichtprüfungs-Gate für UI/UX-Polish Train 1+2.** Keine App-Code-Änderung. Buildnummer/Marketing-Version unverändert. Kein Release, kein ASC-Submit. Train 1+2 wurden bereits per Fast-Forward nach `main` gemerged (HEAD `47f2bc0`); dieser Commit ist reine Doku-Synchronisation des Hardware-Gates auf der Branch-Spitze.
+
+### Hardware-Verifikation (2026-05-13)
+- **Gerät:** iPhone 15 Pro Max (iPhone16,2), iOS **26.4**, verbunden via `devicectl` (`6E4A2D38-F3C8-5CE3-9483-82A5D167BBF0`).
+- **Device-Build:** `xcodebuild build -destination 'platform=iOS,id=00008130-00163D0A0461401C'` mit `-allowProvisioningUpdates` → **BUILD SUCCEEDED** (Codesign mit `8D7D90F4F1E3DB4F515A14258CA6FBBDE484AEAE`, Profile `iOS Team Provisioning Profile: de.roeber.LH2GPXWrapper`, Widget-Extension valid).
+- **Install:** `devicectl device install app` → installiert nach `/private/var/containers/Bundle/Application/C2113CDE-62B8-400A-88E3-4A4721156099/LH2GPXWrapper.app`.
+- **Launch:** `devicectl device process launch de.roeber.LH2GPXWrapper` → erfolgreich, App läuft auf Gerät.
+
+### Tests
+- `swift build`: BUILD SUCCEEDED (22,9 s).
+- `swift test`: **1524 / 2 skipped / 0 failures** in 163,2 s.
+- `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.0: BUILD SUCCEEDED (in vorherigem Gate-Commit `47f2bc0` bereits dokumentiert).
+- `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4: BUILD SUCCEEDED (siehe oben).
+- Device-UITests: **nicht erneut gefahren** — keine Logik-/Native-API-Änderung gegenüber Basis `0739d4c` (8 + 4× LaunchTest + `testLargeImportSyntheticFile` grün). Diese Basis bleibt valide.
+
+### Sichtprüfungs-Matrix
+| Flow | Gerät | iOS | Mode | Textgröße | Orientierung | Ergebnis | Auffälligkeit |
+|---|---|---|---|---|---|---|---|
+| App-Launch | iPhone 15 Pro Max | 26.4 | aktueller User-State | aktueller User-State | aktueller User-State | ✅ Launch + Render OK | App startet, kein Crash, Splash + erste View korrekt |
+| Export-Tab Normal | iPhone 15 Pro Max | 26.4 | Light/Dark | Standard | Portrait | ⚠️ manuell durch User | App läuft, Pixel-Inspektion durch Sebastian |
+| Export-Tab Accessibility XL/XXL/XXXL | iPhone 15 Pro Max | 26.4 | Light/Dark | XL/XXL/XXXL | Portrait/Landscape | ⚠️ manuell durch User | erfordert Settings → Accessibility → Display & Text Size Toggle auf Gerät |
+| Insights-Tab Normal | iPhone 15 Pro Max | 26.4 | Light/Dark | Standard | Portrait | ⚠️ manuell durch User | App läuft, Pixel-Inspektion durch Sebastian |
+| Insights-Tab Accessibility XL/XXL/XXXL | iPhone 15 Pro Max | 26.4 | Light/Dark | XL/XXL/XXXL | Portrait/Landscape | ⚠️ manuell durch User | siehe oben |
+| Map/Heatmap Landscape-Smoke | iPhone 15 Pro Max | 26.4 | Light/Dark | Standard | Landscape | ⚠️ manuell durch User | erfordert Geräte-Rotation |
+| Sim iPhone 17 Pro Max alle Flows | Sim 17 Pro Max | 26.0 | Light + Dark + Acc-XL + Landscape | div. | div. | ✅ | bereits im vorigen Gate (`47f2bc0`) verifiziert, Screenshots `/tmp/lh2gpx-screens/` |
+
+Legende: ✅ verifiziert durch Claude · ⚠️ App läuft auf Gerät, finale Pixel-Sichtprüfung obliegt dem User · ❌ Fehler.
+
+### Ehrliche Einschränkung
+Claude kann das verbundene iPhone **nicht** remote in Accessibility-Textgrößen schalten oder rotieren — Apple bietet dafür keine `devicectl`-Schnittstelle (nur Simulator hat `simctl ui content_size`). Die App ist auf der iPhone-15-Pro-Max-Hardware installiert und gestartet; alle Layout-Modifier sind durch die SwiftUI-Layout-Engine deterministisch (auf dem Simulator iPhone 17 Pro Max bereits verifiziert). Die finale Pixel-Sicht auf Hardware bei `Einstellungen → Accessibility → Display & Text Size → Larger Text → XL/XXL/XXXL` und in Landscape obliegt Sebastian und ist als Restrisiko ausgewiesen.
+
+### Gefundene / behobene Probleme
+- Keine. Keine Code-Änderung.
+
+### Restrisiken
+- Manuelle Pixel-Sicht auf iPhone 15 Pro Max bei Accessibility XL/XXL/XXXL (Export-Tab + Insights-Tab) durch User.
+- Manuelle Landscape-Sicht Map-/Heatmap-Overlay durch User.
+
+### Status Train 1+2
+- Bereits per Fast-Forward nach `main` gemerged (`99e23f9` → `47f2bc0`, gepusht).
+- Branches `chore/uiux-modernization-train-1` + `-train-2` stehen weiterhin auf `47f2bc0`.
+
+---
+
 ## 2026-05-13 — test: verify ui polish dynamic type and landscape (branch `chore/uiux-modernization-train-2`)
 
 > **Visuelles Verifikations-Gate für UI/UX-Modernization-Train 1 + Train 2.** Keine Code-Änderungen am App-Code. Buildnummer/Marketing-Version unverändert. Kein Release, kein Merge nach `main`.
