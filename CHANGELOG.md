@@ -1,5 +1,53 @@
 # CHANGELOG
 
+## 2026-05-13 — perf: modernize map stack and large-data rendering (branch `chore/mapkit-az-modernization-1`)
+
+> **MapKit A–Z Modernization Train 1.** Kein Release, kein Build-Bump, kein ASC, kein Merge nach `main`. Branch von `main@c1314dc`. Fokus: punktuelle Härtung der Day-Detail-Map-Surface, vorbereitend für Map-Train 2 (Heavy Overview / Heatmap-Renderer-Wechsel).
+
+### Code-Änderungen
+- **`Sources/LocationHistoryConsumerAppSupport/AppDayMapView.swift`**:
+  - `DayMapRenderData` `private` → `internal` für Testbarkeit (Struct nicht öffentlich exportiert, kein API-Drift).
+  - `DayMapRenderData.PathOverlay` und `DayMapRenderData.VisitAnnotation` jetzt `Identifiable` mit stabilem `id: Int` (Insertion-Index, Snapshot-stabil).
+  - **`MapCoordinateGuard.isValid`-Filter** auf Day-Pfad ausgeweitet: NaN, ±Inf, lat outside ±90°, lon outside ±180°, Apple-Sentinel `(-180,-180)` werden in `init` verworfen. **Coords + parallele ISO-Timestamps gemeinsam gefiltert** → Sample-Alignment für Tempolayer bleibt korrekt. Visits ebenso.
+  - **`PathOverlay.speedSegments: [SpeedSegment]`** neu, einmalig in `init` aus `SpeedTrackBuilder.segments(from: samples)` befüllt. Map body greift jetzt auf das Cache-Array zu — vorher pro Body-Pass neu berechnet (Body läuft halo + core × N Pfade).
+  - 3× `ForEach(Array(...enumerated()), id: \.offset)` → `ForEach(renderData.pathOverlays)` / `ForEach(renderData.visitAnnotations)` via `Identifiable`.
+
+### Tests
+- **`Tests/LocationHistoryConsumerTests/AppDayMapRenderDataTests.swift`** neu (MapKit-gated `#if canImport(SwiftUI) && canImport(MapKit)`), 6 Cases:
+  1. `testSanitisesNaNAndInfinityCoordinates` (6 Roh → 3 valide)
+  2. `testSanitisesInvalidVisitCoordinates` (4 → 2)
+  3. `testStableIdentifiableIDsAcrossPaths` (IDs `[0,1,2]`)
+  4. `testSpeedSegmentsArePrecomputedAndAlignedToSanitisedCoords` (NaN-Coord + Timestamp gemeinsam gedroppt, Cache befüllt)
+  5. `testEmptyPathDoesNotCrash`
+  6. `testSingleValidCoordinateProducesNoSpeedSegments`
+- Alle 6 grün in 0,010 s.
+
+### Verifikation
+- `swift build`: BUILD SUCCEEDED.
+- `swift test`: siehe Abschlussbericht (separat erhoben, Baseline 1524 / 2 skipped / 0 failures, 162 s).
+- `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.0: BUILD SUCCEEDED.
+- `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4 (`-allowProvisioningUpdates`): siehe Abschlussbericht.
+- **Performance-Messung im engeren Sinn (FPS/Memory) nicht erhoben.** Qualitative Aussage: `SpeedTrackBuilder.segments()` läuft jetzt einmal pro Snapshot statt pro Body-Pass. Konkrete CPU-Einsparung **nicht gemessen, keine Behauptung**.
+
+### Bewusst nicht umgesetzt (Map-Train 2)
+- `AppOverviewTracksMapView.scanCandidates`-Streaming-Refactor (HIGH-RISK, Score-Reihenfolge-Tests müssen mitwandern; bewusst `MAP_ARCHITECTURE_AUDIT.md §Phase-10C` konform deferred).
+- MKMapView + MKMultiPolyline-Bridging für Heavy Overview/Heatmap (separater Performance-Vergleich Pflicht).
+- MKTileOverlay-Heatmap, AppHeatmapModel Single-Pass Tile-Sweep.
+- Sanitize-Ausweitung auf Overview/Export/Heatmap (eigene Commits pro Surface).
+- WWDC24 10097 Place ID / `mapItemDetailSheet` (iOS-18+-Check + UX-Entscheidung).
+
+### Doku
+- **`docs/MAPKIT_AZ_AUDIT_2026-05-13.md`** neu (Research-Matrix, A–Z-Inventur, Top-Kandidaten, Risiken, Map-Train-2-Backlog).
+- `docs/MAP_ARCHITECTURE_AUDIT.md` bleibt **kanonische** Bestandsaufnahme; neuer Audit-Doc ergänzt sie, ersetzt sie nicht.
+- `CHANGELOG.md`, `NEXT_STEPS.md` synchronisiert.
+
+### Release-Safety
+- Keine externe Dependency, keine neuen Entitlements, keine Privacy-/Network-Folge.
+- Keine sichtbare UX-Änderung bei gültigen Daten — kleine/normale Tages-Datasets sehen identisch aus.
+- Sanitize ist destruktiv (Filter, nicht Re-Map): bei reinen Valid-Daten **Identität**.
+
+---
+
 ## 2026-05-13 — chore: bump release train to 1.0.2 build 171 (branch `main`)
 
 > **Release-Train-Bump für ASC.** App Store Connect schließt 1.0.1 für neue Builds (Fehler 90186 + 90062 bei Upload). Neue Marketing-Version **1.0.2**, neue Buildnummer **171** (170 vermutlich in fehlgeschlagenem Upload verbraucht). Kein neues Feature, kein UI-Train.

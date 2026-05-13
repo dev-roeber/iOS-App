@@ -1,5 +1,13 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-13, HEAD pending — `perf: modernize map stack and large-data rendering`, Branch `chore/mapkit-az-modernization-1`)
+
+- **MapKit A–Z Train 1** (kein Release, kein Merge): `AppDayMapView` mit Sanitize-Filter (NaN/Inf/Sentinel), Speed-Segment-Cache (Body-Compute → Init-Compute), stabile `Identifiable`-IDs für PathOverlay/VisitAnnotation. 6 neue Tests grün. Sim+Device-Build SUCCEEDED.
+- **Map-Train 2 Backlog** (deferred, getrennte Commits Pflicht): Overview-scanCandidates Streaming-Refactor (HIGH-RISK), MKMapView+MKMultiPolyline-Bridging Heavy Overview/Heatmap (separater Perf-Vergleich), MKTileOverlay-Heatmap, AppHeatmapModel Single-Pass Tile-Sweep, Sanitize-Ausweitung auf Overview/Export/Heatmap-Surfaces, WWDC24 Place ID / `mapItemDetailSheet`.
+- **Doku**: `docs/MAPKIT_AZ_AUDIT_2026-05-13.md` neu; `docs/MAP_ARCHITECTURE_AUDIT.md` bleibt kanonisch.
+
+---
+
 ## Aktiver Stand (2026-05-13, HEAD pending — `chore: prepare release candidate build`)
 
 - **Build-Identitäts-Bump**: `CURRENT_PROJECT_VERSION` 100 → **168** in allen 8 Configs + `CFBundleVersion` in beiden Info.plists. `MARKETING_VERSION` bleibt `1.0.1`. Begründung: ASC/Tester nennt Cloud-Build 167; nächste Submit muss monoton größer sein.

@@ -1,6 +1,17 @@
 # NEXT_STEPS
 
-Stand: 2026-05-13 (Branch `main`, pending HEAD — `chore: bump release train to 1.0.2 build 171`).
+Stand: 2026-05-13 (Branch `chore/mapkit-az-modernization-1`, pending HEAD — `perf: modernize map stack and large-data rendering`).
+
+**MapKit A–Z Modernization Train 1 — 2026-05-13 (kein Release, kein Merge):**
+- Branch `chore/mapkit-az-modernization-1` (von `main@c1314dc`). **Kein Build-Bump**, **kein ASC**, **kein Merge nach main**.
+- Phase 1 Research-Matrix: WWDC23 10043 als Quelle für SwiftUI `Map`/`MapPolyline`/`MapCameraPosition`/`onMapCameraChange` — alles bereits genutzt. WWDC24 10097 (Place ID) und MKMapView+MKMultiPolyline-Bridging in **Map-Train 2** geparkt.
+- Phase 6 Umsetzung in `AppDayMapView.swift`: `MapCoordinateGuard.isValid`-Filter auf Day-Pfad ausgeweitet (Coords + Visits, paralleler Timestamp-Filter erhält Sample-Alignment für Tempolayer), `SpeedTrackBuilder.segments(..)` aus dem Map-body in `DayMapRenderData.PathOverlay.speedSegments` gecached, stabile `Identifiable`-IDs für `PathOverlay`/`VisitAnnotation` ersetzen 3× `ForEach(Array(...enumerated()), id: \.offset)`.
+- Phase 7 Tests: 6 neue Cases in `AppDayMapRenderDataTests.swift` (NaN/Inf/Sentinel-Filter Coords + Visits, stabile IDs, Speed-Segment-Cache + Timestamp-Alignment, empty/single-coord). Alle grün in 0,010 s.
+- Phase 8 Nachmessung: `swift test` 1524/2/0, Sim iPhone 17 Pro Max + Device iPhone 15 Pro Max BUILD SUCCEEDED.
+- Phase 9 Doku: `docs/MAPKIT_AZ_AUDIT_2026-05-13.md` neu. `docs/MAP_ARCHITECTURE_AUDIT.md` bleibt kanonisch.
+- **Bewusst nicht in Train 1** (siehe Audit §9): Overview-scanCandidates Streaming-Refactor (HIGH-RISK), MKMapView+MKMultiPolyline-Bridging (separater Performance-Vergleich), MKTileOverlay-Heatmap, Heatmap-LOD Single-Pass, Sanitize-Ausweitung auf Overview/Export/Heatmap-Surfaces.
+
+---
 
 **Release-Train 1.0.2 Build 171 vorbereitet 2026-05-13:**
 - ASC schließt 1.0.1 für neue Builds (Fehler 90186 + 90062). Neue Marketing-Version **1.0.2**, Buildnummer **171**.

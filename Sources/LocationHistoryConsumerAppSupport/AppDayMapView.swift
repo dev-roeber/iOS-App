@@ -96,7 +96,7 @@ public struct AppDayMapView: View {
             // region parameter retained for legacy callers; mapPosition is the source of truth
             let _ = region
             // Halo underlayer for every path — improves contrast on hybrid maps.
-            ForEach(Array(renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
+            ForEach(renderData.pathOverlays) { path in
                 MapPolyline(coordinates: displayCoords(for: path))
                     .stroke(
                         Color.white.opacity(MapTrackStyle.haloOpacity),
@@ -104,9 +104,9 @@ public struct AppDayMapView: View {
                     )
             }
             // Core stroke — speed-coloured segments OR activity-coloured polyline.
-            ForEach(Array(renderData.pathOverlays.enumerated()), id: \.offset) { _, path in
-                if useSpeed, !path.speedSamples.isEmpty {
-                    ForEach(SpeedTrackBuilder.segments(from: path.speedSamples)) { segment in
+            ForEach(renderData.pathOverlays) { path in
+                if useSpeed, !path.speedSegments.isEmpty {
+                    ForEach(path.speedSegments) { segment in
                         MapPolyline(coordinates: [segment.start, segment.end])
                             .stroke(
                                 SpeedColors.color(for: segment.normalizedSpeed),
@@ -122,7 +122,7 @@ public struct AppDayMapView: View {
                 }
             }
 
-            ForEach(Array(renderData.visitAnnotations.enumerated()), id: \.offset) { _, visit in
+            ForEach(renderData.visitAnnotations) { visit in
                 Marker(
                     t(displayNameForVisitType(visit.semanticType, default: "Visit")),
                     coordinate: visit.coordinate
@@ -148,13 +148,15 @@ public struct AppDayMapView: View {
     }
 }
 
-private struct DayMapRenderData {
-    struct VisitAnnotation {
+struct DayMapRenderData {
+    struct VisitAnnotation: Identifiable {
+        let id: Int
         let coordinate: CLLocationCoordinate2D
         let semanticType: String?
     }
 
-    struct PathOverlay {
+    struct PathOverlay: Identifiable {
+        let id: Int
         let coordinates: [CLLocationCoordinate2D]
         /// `coordinates` after `PathFilter.removeOutliers` + `PathSimplification.douglasPeucker`.
         /// Computed once at init so per-frame map rendering does not re-run
@@ -162,6 +164,10 @@ private struct DayMapRenderData {
         let simplifiedCoordinates: [CLLocationCoordinate2D]
         let activityType: String?
         let speedSamples: [TrackSample]
+        /// Pre-computed colour-graded segments for the speed layer. Cached
+        /// once at init so the per-frame Map body does not re-run percentile
+        /// + rolling-mean smoothing on every render pass.
+        let speedSegments: [SpeedSegment]
     }
 
     let visitAnnotations: [VisitAnnotation]
@@ -178,35 +184,55 @@ private struct DayMapRenderData {
     private static let isoFallback: ISO8601DateFormatter = ISO8601DateFormatter()
 
     init(mapData: DayMapData) {
-        self.visitAnnotations = mapData.visitAnnotations.map {
-            VisitAnnotation(
-                coordinate: CLLocationCoordinate2D(
-                    latitude: $0.coordinate.lat,
-                    longitude: $0.coordinate.lon
-                ),
-                semanticType: $0.semanticType
+        self.visitAnnotations = mapData.visitAnnotations.enumerated().compactMap { offset, visit in
+            let coord = CLLocationCoordinate2D(
+                latitude: visit.coordinate.lat,
+                longitude: visit.coordinate.lon
             )
+            // Skip invalid visit coordinates rather than handing NaN/Inf to MapKit.
+            guard MapCoordinateGuard.isValid(coord) else { return nil }
+            return VisitAnnotation(id: offset, coordinate: coord, semanticType: visit.semanticType)
         }
-        self.pathOverlays = mapData.pathOverlays.map { overlay in
-            let coords = overlay.coordinates.map {
+        self.pathOverlays = mapData.pathOverlays.enumerated().map { offset, overlay in
+            // Sanitise once at init so neither the per-frame Map body nor the
+            // simplification pipeline has to defend against NaN/Inf/sentinel
+            // coordinates downstream. Applies to Day Detail; Live already
+            // sanitises in its own pipeline.
+            let rawCoords = overlay.coordinates.map {
                 CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
             }
             let parsedTimes: [Date?] = overlay.timestamps.map { iso -> Date? in
                 guard let iso else { return nil }
                 return Self.isoFormatter.date(from: iso) ?? Self.isoFallback.date(from: iso)
             }
+            // Filter coords + parallel timestamps together so sample alignment holds.
+            var coords: [CLLocationCoordinate2D] = []
+            coords.reserveCapacity(rawCoords.count)
+            var alignedTimes: [Date?] = []
+            alignedTimes.reserveCapacity(rawCoords.count)
+            let hasAlignedTimes = parsedTimes.count == rawCoords.count
+            for (i, c) in rawCoords.enumerated() {
+                guard MapCoordinateGuard.isValid(c) else { continue }
+                coords.append(c)
+                alignedTimes.append(hasAlignedTimes ? parsedTimes[i] : nil)
+            }
             let samples: [TrackSample]
-            if parsedTimes.count == coords.count {
-                samples = zip(coords, parsedTimes).map { TrackSample(coordinate: $0.0, timestamp: $0.1) }
+            if hasAlignedTimes, alignedTimes.count == coords.count {
+                samples = zip(coords, alignedTimes).map { TrackSample(coordinate: $0.0, timestamp: $0.1) }
             } else {
                 samples = []
             }
             let simplified = PathSimplification.douglasPeucker(PathFilter.removeOutliers(coords))
+            // Pre-compute speed segments once so the body doesn't re-run
+            // smoothing + percentile bounds on every render.
+            let speedSegments = samples.isEmpty ? [] : SpeedTrackBuilder.segments(from: samples)
             return PathOverlay(
+                id: offset,
                 coordinates: coords,
                 simplifiedCoordinates: simplified,
                 activityType: overlay.activityType,
-                speedSamples: samples
+                speedSamples: samples,
+                speedSegments: speedSegments
             )
         }
         self.region = mapData.fittedRegion.map {
