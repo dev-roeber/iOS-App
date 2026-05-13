@@ -136,7 +136,7 @@ public struct LocalTimelineDayMapView: View {
 
     @ViewBuilder
     private var emptyRow: some View {
-        Text("No path metadata for this day.")
+        Label("No routes recorded for this day", systemImage: "location.slash")
             .font(.footnote)
             .foregroundStyle(.secondary)
             .accessibilityIdentifier("localTimeline.dayMap.empty")

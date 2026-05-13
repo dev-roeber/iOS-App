@@ -1,5 +1,38 @@
 # CHANGELOG
 
+## 2026-05-13 — ui: modernize app polish and interaction details (branch `chore/uiux-modernization-train-1`)
+
+> **Nicht-releasegebundener Modernisierungsbranch.** Kein ASC-Submit, kein Buildnummer-Bump, kein Release-Update. `CURRENT_PROJECT_VERSION` und `CFBundleVersion` unverändert. Branch sitzt auf `main` (`99e23f9`) und wird **nicht** ungefragt nach `main` gemerged.
+
+### UI/UX-Polish (klein, sicher, reviewbar)
+- **`AppHeatmapView.swift` (Map-Layer-Overlay)**: Asymmetrisches `.padding(.top, 8) + .padding(.trailing, 8)` durch konsistentes `.padding(12)` ersetzt — gleichmäßiger Abstand zu Safe Area & Dynamic Island, bessere Touch-Hit-Area.
+- **`AppHeatmapView.swift` (Computing-Overlay)**: `ProgressView()` bekommt `.tint(.accentColor)` — Spinner ist jetzt visuell mit App-Akzentfarbe verknüpft (vorher Default-Grau).
+- **`LocalTimelineDayMapView.swift` (Empty State)**: `Text("No path metadata for this day.")` ersetzt durch `Label("No routes recorded for this day", systemImage: "location.slash")` — klarere Microcopy, semantisches SF-Symbol, konsistent mit anderen Empty-State-Mustern.
+- **`AppDayListView.swift` (Favoriten-Swipe-Action)**: Hardcoded `.gray` tint durch `.secondary` ersetzt — respektiert Light/Dark-Mode-Kontraste systemkonform.
+- **`AppDayDetailView.swift` (Section Header)**: `.font(.headline)` → `.font(.headline.weight(.semibold))` für Day-Detail-Section-Cards (Visits/Activities/Paths-Header) — konsistentere visuelle Hierarchie zu anderen Section-Titeln.
+
+### Verifikation
+- `swift build`: BUILD SUCCEEDED (15,29 s).
+- `swift test`: siehe Branch-Abschlussbericht (Train-Ende).
+- `xcodebuild build` Simulator iPhone 17 Pro Max: siehe Branch-Abschlussbericht.
+
+### Bewusst nicht angefasst (in diesem Train)
+- Keine neuen Kartenlayer, keine iCloud, keine neuen Serverfunktionen, kein neues Dateiformat.
+- Kein komplettes Theme-System / Navigation-Refactor.
+- Keine externen Design-Libraries.
+- Keine Privacy-/Network-/Live-Upload-Änderungen.
+- `LHCollapsibleMapHeader.iconButton`: Accessibility-Label bereits vorhanden — keine Änderung.
+- `AppContentSplitView` Insights-Empty-State: bereits Icon + Headline + Subline — keine Änderung.
+- `AppExportView` Export-Fehler-Alert: `OK`-Button-Pattern ist Standard, kein Risiko ohne klaren Recovery-Pfad.
+- `HistoryDateRangeFilterBar` + `AppHistoryDateRangeControl` DateFormatter: Locale-abhängig, kein sicherer Cache-Pattern.
+
+### Nächster UI/UX-Train (Empfehlung)
+- Dynamic-Type-XL-Stresstest auf Insights-Cards (vermutete Clipping-Risiken).
+- Landscape-Layout-Smoke auf Map/Heatmap (Safe-Area-Insets).
+- Empty-State-Polish in Export-Selection (falls Nutzer-Feedback eintrifft).
+
+---
+
 ## 2026-05-13 — chore: prepare release candidate build (Build 100 → 168)
 
 ### Build-Identität

@@ -395,7 +395,7 @@ public struct AppDayListView: View {
                         systemImage: favoriteDayIDs.contains(summary.date) ? "star.slash.fill" : "star.fill"
                     )
                 }
-                .tint(favoriteDayIDs.contains(summary.date) ? .gray : .yellow)
+                .tint(favoriteDayIDs.contains(summary.date) ? .secondary : .yellow)
             }
         }
     }

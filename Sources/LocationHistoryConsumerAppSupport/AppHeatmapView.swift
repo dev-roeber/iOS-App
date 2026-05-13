@@ -32,8 +32,7 @@ public struct AppHeatmapView: View {
                         showsHeatmapControls: true,
                         fitToData: model.dataRegion == nil ? nil : fitToData
                     ))
-                    .padding(.top, 8)
-                    .padding(.trailing, 8)
+                    .padding(12)
                 }
             }
             .overlay(alignment: .bottom) {
@@ -115,6 +114,7 @@ public struct AppHeatmapView: View {
         HStack(spacing: 8) {
             ProgressView()
                 .controlSize(.small)
+                .tint(.accentColor)
             Text(t("Computing heatmap…"))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)

@@ -465,7 +465,7 @@ public struct AppDayDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Label(title, systemImage: icon)
-                    .font(.headline)
+                    .font(.headline.weight(.semibold))
                 Spacer()
                 Text("\(count)")
                     .font(.subheadline.weight(.medium))

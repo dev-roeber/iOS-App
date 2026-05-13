@@ -1,6 +1,26 @@
 # NEXT_STEPS
 
-Stand: 2026-05-13 (HEAD pending — `chore: prepare release candidate build`).
+Stand: 2026-05-13 (Branch `chore/uiux-modernization-train-1`, pending HEAD — `ui: modernize app polish and interaction details`).
+
+**UI/UX-Modernization-Train 2026-05-13 (nicht-releasegebunden):**
+- Branch von `main` (`99e23f9`) — **kein Release-Update, kein Buildnummer-Bump, kein ASC-Submit**. `CURRENT_PROJECT_VERSION` und `CFBundleVersion` unverändert.
+- 5 sichere UI-Polish-Edits (siehe CHANGELOG):
+  - Heatmap-Map-Layer-Overlay-Padding konsistent (`.padding(12)`).
+  - Heatmap-Computing-Spinner: `.tint(.accentColor)`.
+  - LocalTimelineDayMapView Empty-State: `Label` mit `location.slash`.
+  - DayList-Favoriten-Swipe: `.secondary` statt `.gray` (Dark-Mode-Kontrast).
+  - DayDetail-Section-Header: `.headline.weight(.semibold)` (Hierarchie).
+- Verifikation: `swift build` SUCCEEDED, Sim-Build iPhone 17 Pro Max SUCCEEDED, vollständige `swift test` siehe Train-Abschlussbericht.
+- Device-UITest: **nicht erforderlich** für diesen Train — Änderungen sind reine SwiftUI-Modifier ohne Logik-/Flow-Auswirkung. Letzte grüne Device-UITest-Verifikation auf `0739d4c` (2026-05-13) bleibt valide.
+- **Nicht-Release-Branch**: Branch wird gepusht, **nicht** ungefragt nach `main` gemerged. Vor Merge: optional manuelle iPhone-Sichtprüfung von Heatmap-Overlay-Padding und DayList-Swipe-Tint in Dark Mode.
+- Nächste UI/UX-Train-Kandidaten (in `chore/uiux-modernization-train-2`):
+  - Dynamic-Type-XL-Audit auf Insights/Day-Detail-Cards.
+  - Landscape-Layout-Smoke (Safe-Area-Insets in Map/Heatmap).
+  - Export-Selection Empty/Error-State-Polish.
+
+---
+
+Stand: 2026-05-13 (HEAD `99e23f9` — `chore: prepare release candidate build`).
 
 **Release-Candidate 2026-05-13 (Build 168):**
 - **Build-Identitäts-Bump**: `CURRENT_PROJECT_VERSION` **100 → 168** in allen 8 Build-Konfigurationen (`agvtool new-version -all 168`); `CFBundleVersion` in `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist` synchron `168`. `MARKETING_VERSION` unverändert `1.0.1`. Begründung: ASC/Tester referenzierte Cloud-Build `167`; strikt monoton → `168` als nächste Submission.
