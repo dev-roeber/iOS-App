@@ -1,6 +1,16 @@
 # NEXT_STEPS
 
-Stand: 2026-05-13 (Branch `chore/uiux-modernization-train-2`, pending HEAD — `docs: record hardware visual verification for ui polish`).
+Stand: 2026-05-13 (Branch `main`, pending HEAD — `chore: bump release train to 1.0.2 build 171`).
+
+**Release-Train 1.0.2 Build 171 vorbereitet 2026-05-13:**
+- ASC schließt 1.0.1 für neue Builds (Fehler 90186 + 90062). Neue Marketing-Version **1.0.2**, Buildnummer **171**.
+- 8 pbxproj-Configs + 2 Info.plists (App + Widget) konsistent auf `1.0.2 / 171` gehoben.
+- `swift test` 1524/2/0, Sim+Device-Build SUCCEEDED, **Archive SUCCEEDED** (`/tmp/lh2gpx-release/LH2GPXWrapper-build171.xcarchive`, 91 MB, Bundle-ID `de.roeber.LH2GPXWrapper`).
+- **Upload-Status: nicht hochgeladen.** Manuelle Schritte: Organizer → Distribute App → App Store Connect → Upload; in ASC neuen 1.0.2-Train verwenden, Build (171) auswählen.
+- Device-UITests nicht erneut gefahren — nur Versions-Strings; Basis `0739d4c` valide.
+- Bundle-ID, Privacy, Entitlements, Widget alle konsistent. Keine UI-/Feature-/Network-Änderung.
+
+---
 
 **Hardware-Sichtprüfungs-Gate Train 1+2 2026-05-13 (nicht-releasegebunden):**
 - iPhone 15 Pro Max iOS 26.4 verbunden, **Device-Build SUCCEEDED**, App installiert + via `devicectl` gelauncht.

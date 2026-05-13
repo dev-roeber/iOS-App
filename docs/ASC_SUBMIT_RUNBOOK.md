@@ -1,5 +1,13 @@
 # App Store Connect — Submit-Runbook
 
+Stand: 2026-05-13 (Release-Train **1.0.2 Build 171** — 1.0.1 von ASC für neue Builds geschlossen).
+
+> **Release-Train-Bump 2026-05-13 (1.0.2 / 171):** ASC lehnt neue Uploads für 1.0.1 mit 90186 (Pre-Release-Train geschlossen) + 90062 (CFBundleShortVersionString muss höher sein) ab. Konsequenz: `MARKETING_VERSION` `1.0.1` → **`1.0.2`** in allen 8 pbxproj-Configs; `CFBundleShortVersionString` literal `1.0.2` in `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist`; `CURRENT_PROJECT_VERSION` `168` → **`171`** (170 vermutlich in fehlgeschlagenem Upload verbraucht); `CFBundleVersion` `168` → **`171`** synchron in beiden Info.plists. Bundle-ID `de.roeber.LH2GPXWrapper` unverändert. `swift build` + `swift test` (1524/2/0, 195 s) + `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.0 + Device iPhone 15 Pro Max iOS 26.4 alle BUILD SUCCEEDED. `xcodebuild archive -configuration Release -destination 'generic/platform=iOS'` **ARCHIVE SUCCEEDED** → `/tmp/lh2gpx-release/LH2GPXWrapper-build171.xcarchive` (91 MB, Apple-Development-signed; Distribution-Re-Signing via Organizer beim Upload). Archive-Metadaten verifiziert: `CFBundleShortVersionString=1.0.2`, `CFBundleVersion=171`, `CFBundleIdentifier=de.roeber.LH2GPXWrapper`. **Upload noch nicht durchgeführt.** Manuelle Submit-Schritte: 1) Xcode → Organizer → Archive `LH2GPXWrapper-build171.xcarchive` auswählen. 2) Distribute App → App Store Connect → Upload. 3) In ASC neuen **1.0.2**-Pre-Release-Train verwenden (nicht 1.0.1). 4) Build **1.0.2 (171)** auswählen, Export-Compliance + Review-Notizen, einreichen.
+
+---
+
+## Historischer Stand (Build 168, 1.0.1)
+
 Stand: 2026-05-13 (Release-Candidate-Train, Build 168; ASC-/Cloud-Build-Liste ist im Repo nicht reverifizierbar — siehe Hinweisblock).
 
 > **Release-Candidate-Bump 2026-05-13:** `CURRENT_PROJECT_VERSION` ist auf **168** in allen 8 pbxproj-Configs (vorher 100); `CFBundleVersion` in `wrapper/Config/Info.plist` und `wrapper/LH2GPXWidget/Info.plist` synchron `168`. `MARKETING_VERSION` bleibt **`1.0.1`**. `xcodebuild archive -scheme LH2GPXWrapper -configuration Release -destination 'generic/platform=iOS'` **ARCHIVE SUCCEEDED** lokal — siehe `/tmp/lh2gpx-release/LH2GPXWrapper-build168.xcarchive` (91 MB inkl. dSYMs, signed Apple Development für Smoke; Distribution-Signing über Xcode Cloud / Organizer beim Upload).

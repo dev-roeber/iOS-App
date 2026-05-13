@@ -1,5 +1,13 @@
 # TestFlight + App Store Runbook
 
+Stand: 2026-05-13 (Release-Train **1.0.2 Build 171**; ASC hat 1.0.1 für neue Builds geschlossen, 90186 + 90062).
+
+> **Aktuelle Build-Identität (main pending HEAD):** Marketing-Version **`1.0.2`**, `CURRENT_PROJECT_VERSION = 171` in allen 8 pbxproj-Configs, `CFBundleShortVersionString = 1.0.2` + `CFBundleVersion = 171` in `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist`, Bundle-ID `de.roeber.LH2GPXWrapper` unverändert. `swift test` 1524/2/0 (195 s). `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.0 + Device iPhone 15 Pro Max iOS 26.4 BUILD SUCCEEDED. `xcodebuild archive -configuration Release -destination 'generic/platform=iOS'` **ARCHIVE SUCCEEDED** → `/tmp/lh2gpx-release/LH2GPXWrapper-build171.xcarchive`. Upload noch nicht durchgeführt — Organizer-Schritte siehe `docs/ASC_SUBMIT_RUNBOOK.md`.
+
+---
+
+## Historischer Stand (Build 168, 1.0.1)
+
 Stand: 2026-05-13 (Post-Audit-Truth-Sync; vorher 2026-05-12 / 2026-05-05 — siehe historischer Block unten).
 
 > **Build-Identitäts-Truth heute (Repo HEAD `aa145b4`):** Marketing-Version `1.0.1`, `CURRENT_PROJECT_VERSION = 100` (alle 8 pbxproj-Configs), Bundle ID unverändert. `swift test` 1521/4/0 (Mac, 177 s). `xcodebuild build` für iPhone 17 Pro Max Sim (iOS 26.3.1) **BUILD SUCCEEDED**. `xcodebuild build` für iPhone 15 Pro Max (iOS 26.4) **BUILD SUCCEEDED** (Apple Development cert, 0 warnings). `xcodebuild test -only-testing:LH2GPXWrapperUITests` auf iPhone 15 Pro Max: **8/8 UI-Tests + 4× LaunchTest passed, TEST SUCCEEDED** in 379 s. Der `xcodebuild archive`-Lauf vom 2026-04-30 (v1.0 Build 45) ist historisch und für den aktuellen Submit nicht mehr relevant.

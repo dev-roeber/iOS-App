@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## 2026-05-13 — chore: bump release train to 1.0.2 build 171 (branch `main`)
+
+> **Release-Train-Bump für ASC.** App Store Connect schließt 1.0.1 für neue Builds (Fehler 90186 + 90062 bei Upload). Neue Marketing-Version **1.0.2**, neue Buildnummer **171** (170 vermutlich in fehlgeschlagenem Upload verbraucht). Kein neues Feature, kein UI-Train.
+
+### Bumps
+- **MARKETING_VERSION**: `1.0.1` → **`1.0.2`** in allen 8 pbxproj-Configs (`wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`).
+- **CFBundleShortVersionString**: `$(MARKETING_VERSION)` → literal **`1.0.2`** (via `agvtool new-marketing-version 1.0.2`) in `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist`.
+- **CURRENT_PROJECT_VERSION**: `168` → **`171`** in allen 8 pbxproj-Configs (via `agvtool new-version -all 171`).
+- **CFBundleVersion**: `168` → **`171`** in `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist`.
+- Bundle Identifier unverändert: `de.roeber.LH2GPXWrapper`.
+
+### Verifikation
+- `swift build`: BUILD SUCCEEDED (1,22 s).
+- `swift test`: **1524 / 2 skipped / 0 failures** in 195,2 s.
+- `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.0: BUILD SUCCEEDED.
+- `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4 (`-allowProvisioningUpdates`): BUILD SUCCEEDED.
+- `xcodebuild archive -configuration Release -destination 'generic/platform=iOS'` → **ARCHIVE SUCCEEDED** unter `/tmp/lh2gpx-release/LH2GPXWrapper-build171.xcarchive` (91 MB inkl. dSYMs).
+- Archive-Metadaten: `CFBundleShortVersionString=1.0.2`, `CFBundleVersion=171`, `CFBundleIdentifier=de.roeber.LH2GPXWrapper`, `SigningIdentity=Apple Development: sebastian.roeber94@googlemail.com (2V7DV73UAB)`. Distribution-Re-Signing erfolgt beim Upload via Organizer.
+- Device-UITests **nicht** erneut gefahren — nur Versionsstrings geändert, keine Logik-/Native-API-Änderung; letzte grüne Device-UITest-Basis auf `0739d4c` bleibt valide.
+
+### Release-Safety
+- UI-Testing-Hooks (`LH2GPX_UI_TESTING`, `LH2GPX_RESET_PERSISTENCE`, `LH2GPX_UI_IMPORT_FILE`) sind ausschließlich launch-arg-gated im `ContentView.swift` und in UI-Test-Targets — nicht aktiv im Release-Build ohne explizite Launch-Args.
+- Keine neuen Secrets/Tokens, keine Privacy-/Network-/Live-Upload-Änderungen, kein Bundle-Identifier-Drift.
+
+### Upload-Status
+- **NICHT** hochgeladen in diesem Commit. Archive liegt lokal unter `/tmp/lh2gpx-release/LH2GPXWrapper-build171.xcarchive` bereit.
+
+### Manuelle ASC-Schritte
+1. Xcode → Window → Organizer.
+2. Archive **LH2GPXWrapper 2026-05-13 (1.0.2 171)** auswählen.
+3. **Distribute App → App Store Connect → Upload** → Distribution-Re-Signing automatisch.
+4. In App Store Connect neue Version **1.0.2** anlegen (nicht in 1.0.1-Train hochladen).
+5. Build **1.0.2 (171)** auswählen, Compliance-Fragen beantworten, einreichen.
+
+---
+
 ## 2026-05-13 — docs: record hardware visual verification for ui polish (branch `chore/uiux-modernization-train-2`)
 
 > **Hardware-Sichtprüfungs-Gate für UI/UX-Polish Train 1+2.** Keine App-Code-Änderung. Buildnummer/Marketing-Version unverändert. Kein Release, kein ASC-Submit. Train 1+2 wurden bereits per Fast-Forward nach `main` gemerged (HEAD `47f2bc0`); dieser Commit ist reine Doku-Synchronisation des Hardware-Gates auf der Branch-Spitze.
