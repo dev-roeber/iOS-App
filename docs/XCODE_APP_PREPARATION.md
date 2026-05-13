@@ -70,7 +70,7 @@ Damit sind beim App-Store-Upload **keine Export-Compliance-Unterlagen** erforder
 
 Unter Linux ist ehrlich verifiziert:
 
-- `swift test` (964 Tests, 2 Skips, 0 Failures am 2026-05-06 nach Doku-/Wiring-Audit-Polish; vorher 949 am 2026-05-06 09:57 unter HEAD `93109e0`; historisch: 647 am 2026-04-29)
+- `swift test` (1521 Tests, 4 Skips, 0 Failures am 2026-05-13 auf HEAD `aa145b4`, 177 s; vorher 964/2/0 am 2026-05-06 nach Doku-/Wiring-Audit-Polish; vorher 949 am 2026-05-06 09:57 unter HEAD `93109e0`; historisch: 647 am 2026-04-29)
 - Linux-Build der SwiftPM-Targets (historisch — Repo läuft inzwischen primär lokal auf macOS)
 - Linux-Fallback-Mains der Apple-UI-nahen Executables (historisch)
 

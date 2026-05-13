@@ -1,6 +1,19 @@
 # ROADMAP
 
-## Aktueller Stand (2026-05-06, HEAD post-`70254ff`)
+## Aktueller Stand (2026-05-13, HEAD `aa145b4` — Post-Deep-Audit-Truth-Sync)
+
+**Audit-Run 2026-05-13 (HEAD `aa145b4`):**
+- `swift test` (Mac): 1521 Tests, 4 Skips, 0 Failures (177 s)
+- `xcodebuild build` Simulator iPhone 17 Pro Max (iOS 26.3.1): **BUILD SUCCEEDED**
+- `xcodebuild build` Device iPhone 15 Pro Max (iOS 26.4): **BUILD SUCCEEDED**, 0 warnings
+- `xcodebuild test -only-testing:LH2GPXWrapperUITests` Device: **TEST SUCCEEDED** (8 UI-Tests + 4× LaunchTest, 379 s)
+- Ehemaliger P0 CSQLite-Linker: **GELÖST** in `5f83838`
+- Heatmap-Hit-Target-Fix: in `f111afd`, UITests jetzt 8/8 statt 7/8
+- 46-MiB-Hardware-Retest: Host-Ersatzprüfung (echte 44,5-MiB-Google-Timeline-JSON+ZIP) **passed** in 20,5 s / 21,7 s; interaktiver Device-Import nicht automatisierbar (kein UITest-Hook für File-Path), Tester-Handoff bleibt offen.
+
+---
+
+## Historischer Stand (2026-05-06, HEAD post-`70254ff`)
 
 ### 2026-05-06 — MapLayerMenu, Heatmap Next-Level, Build 100
 

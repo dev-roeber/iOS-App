@@ -376,3 +376,44 @@ Risiko: bei realen Nutzerdaten >50 MB Importpfad weiterhin Jetsam-Kill möglich;
 ---
 
 **Audit-Methodik:** 6 Sub-Agents (Doku, Import/Export, Persistenz, UI/Wrapper, Network/Live, Security/Privacy/App-Store, Performance) parallel + Build/Test/Hardware-Runs in Main-Session. Alle Befunde mit Datei-Pfad-Zeilenanker oder explizitem „nicht prüfbar weil X" gekennzeichnet. Keine Codeänderung, keine Commit-Aktion.
+
+---
+
+## Update 2026-05-13 (Audit-Gate-Verifikation auf HEAD `aa145b4`)
+
+Nicht historisch verfälschend angefügt nach Re-Audit auf HEAD `aa145b4` (`docs: add deep audit 2026-05-13 (audit-only, evidence-backed)`). 3 P0s aus Abschnitt 6 oben gegen aktuellen Code/Test/Hardware-Stand re-verifiziert.
+
+### P0-Matrix vorher / nachher
+
+| ID | Status vorher (Audit 2026-05-13) | Status nachher (Re-Audit 2026-05-13) | Beleg |
+|---|---|---|---|
+| **P0-EX-1** AppExportQueries.projectedDays Sort vor Limit | bestehend, ungeprüft | **HERABGESTUFT auf P1** | Sort/CompactMap vor `prefix(limit)` wahr (`Sources/LocationHistoryConsumer/Queries/AppExportQueries.swift:266–286`), aber `limit` in der aktiven Codebase nie ≠ nil; davor 8-Entry `BoundedLRU` in `AppSessionState.swift:108–109`. Dead-Code-Pfad heute. |
+| **P0-EX-2** AppOverviewTracksMapView.scanCandidates Score auf voller Coord-Liste | bestehend | **BLEIBT P0/P1** | `approximateDistance` über volle coords (`AppOverviewTracksMapView.swift:720`), `pointWeight = log(coordinates.count)` (`:721`), erst danach `strideDecimate` (`:725`). Sicherer kleiner Fix nicht möglich — Score-Reihenfolge ist Test-verankert (`AppOverviewTracksMapViewTests`); MAP_ARCHITECTURE_AUDIT §3 markiert Refactor-Risiko HOCH. |
+| **P0-EX-3** 46-MiB-Google-Timeline-Hardware-Crashfall | "pending hardware retest" | **Host-Ersatzprüfung PASSED, Device-Interactive offen** | Asset `/Users/sebastian/Desktop/Google_Maps/12_05_2026_location-history.json` (44,5 MiB) → `swift test --filter "AppContentLoaderTests.testRealLocationHistoryJsonOnDesktop|AppContentLoaderTests.testRealLocationHistoryZipOnDesktop"` **2/0/0** in 42,25 s (JSON 20,52 s, ZIP 21,73 s). iPhone-Jetsam-Verhalten damit NICHT widerlegt — bleibt Tester-Handoff (kein UITest-Hook für File-Path im Wrapper). |
+
+### Re-Verifikations-Befehle (2026-05-13)
+
+| # | Befehl | Ergebnis |
+|---|---|---|
+| 1 | `swift test --filter ".*OnDesktop"` | **Executed 2 tests, 0 failures** in 42,25 s |
+| 2 | `swift test` (volles Set) | **1521 / 4 skipped / 0 failures** in 177,02 s |
+| 3 | `xcodebuild build` Simulator iPhone 17 Pro Max iOS 26.3.1 | **BUILD SUCCEEDED** |
+| 4 | `xcodebuild build` Device iPhone 15 Pro Max iOS 26.4 | **BUILD SUCCEEDED**, 0 warnings |
+| 5 | `xcodebuild test -only-testing:LH2GPXWrapperUITests` Device | **TEST SUCCEEDED**, 8 UI-Tests + 4× LaunchTest, 379,52 s |
+
+### Doku-Sync 2026-05-13 (geänderte Dateien)
+
+- `README.md` — Hardware-Verifikations-Zeile auf 2026-05-13 / HEAD `aa145b4` / 8/8 UITests / 1521 Tests synced (statt 2026-05-05 / 964 Tests).
+- `NEXT_STEPS.md` — Neuer Top-Block „Audit-Gate-Verification 2026-05-13" mit P0-Verdikten und Re-Verifikations-Outputs.
+- `docs/XCODE_APP_PREPARATION.md` — Test-Zahl 964/2/0 → 1521/4/0 + Datum/HEAD.
+- `docs/APPLE_VERIFICATION_CHECKLIST.md` — Aktualisierungs-Header 2026-05-13 mit Re-Verifikations-Block.
+- `docs/ASC_SUBMIT_RUNBOOK.md` — Stand-Header 2026-05-13, CSQLite-P0-Banner als GELÖST (Commit `5f83838`).
+- `wrapper/docs/TESTFLIGHT_RUNBOOK.md` — Stand-Header 2026-05-13, CSQLite-P0-Banner als GELÖST.
+- `wrapper/NEXT_STEPS.md` — Test-Zahl 964/2/0 → 1521/4/0 + Hardware-UITest-Block ergänzt.
+- `wrapper/ROADMAP.md` — Neuer Stand-Header 2026-05-13; alter Stand als „Historischer Stand" markiert.
+
+Keine Code-Änderungen in diesem Re-Audit. Keine Commit-Empfehlung für P0-EX-1/EX-2 in dieser Runde (siehe NEXT_STEPS.md für Folge-Trains).
+
+### Empfehlung ASC-Submit (technisch, 2026-05-13)
+
+**Eingeschränkt JA** — Tests/Builds/Hardware grün; CSQLite-Linker-P0 gelöst; Doku-Truth synchron. Verbleibende Risiken: interaktiver 46-MiB-Device-UI-Import (Tester-Handoff), Apple-Review-extern (TestFlight-Build-Liste).

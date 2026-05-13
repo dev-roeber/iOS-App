@@ -1,10 +1,10 @@
 # App Store Connect — Submit-Runbook
 
-Stand: 2026-05-12 (Build-Identitäts-Sync nach Post-Pull-Deep-Audit; ASC-/Cloud-Build-Liste ist im Repo nicht reverifizierbar — siehe Hinweisblock).
+Stand: 2026-05-13 (Post-Audit-Truth-Sync; ASC-/Cloud-Build-Liste ist im Repo nicht reverifizierbar — siehe Hinweisblock).
 
-> **Hinweis zur Aktualität:** Die unten stehenden ASC-Status-Werte sind aus der 2026-05-05-Snapshot-Phase und gelten nur als historischer Eintrag. Repo-Truth heute: HEAD `30015c9`, MARKETING_VERSION `1.0.1`, `CURRENT_PROJECT_VERSION = 100`. Der frühere `docs/DEEP_AUDIT_2026-05-12.md` (auf HEAD `ae5de1f` erstellt) verweist auf einen ASC-Screenshot mit Build 167 — diese Zahl ist **nicht** lokal verifizierbar, sondern Tester-Angabe. Cloud-Builds 84 / 155–158 / 167 sind in unterschiedlichen Doku-Stellen genannt; die wahre ASC-Build-Liste muss im Apple-Portal manuell abgeglichen werden, bevor der nächste Submit erfolgt. Siehe `docs/DEEP_AUDIT_2026-05-12_POST_PULL.md` Findings F-04, F-08, F-14.
+> **Hinweis zur Aktualität:** Die unten stehenden ASC-Status-Werte sind aus der 2026-05-05-Snapshot-Phase und gelten nur als historischer Eintrag. Repo-Truth heute: HEAD `aa145b4`, MARKETING_VERSION `1.0.1`, `CURRENT_PROJECT_VERSION = 100`, `swift test` 1521/4/0 (Mac, 177 s), Device-UITests 8/8 + 4× LaunchTest passed auf iPhone 15 Pro Max (iOS 26.4, 379 s). Der frühere `docs/DEEP_AUDIT_2026-05-12.md` (auf HEAD `ae5de1f` erstellt) verweist auf einen ASC-Screenshot mit Build 167 — diese Zahl ist **nicht** lokal verifizierbar, sondern Tester-Angabe. Cloud-Builds 84 / 155–158 / 167 sind in unterschiedlichen Doku-Stellen genannt; die wahre ASC-Build-Liste muss im Apple-Portal manuell abgeglichen werden, bevor der nächste Submit erfolgt. Siehe `docs/DEEP_AUDIT_2026-05-12_POST_PULL.md` Findings F-04, F-08, F-14.
 >
-> **Bekannter Release-Blocker (P0):** Wrapper-iOS-`xcodebuild` bricht auf HEAD `30015c9` (CSQLite-Linker). Vor nächstem Submit muss dieser Fix gelandet sein. Siehe Audit-Sektion 9 P0-1.
+> **Ehemaliger Release-Blocker (P0) — GELÖST:** Der CSQLite-Linker-Bug (`Undefined symbols _sqlite3_*` im `LH2GPXWidget.appex`) ist auf HEAD `aa145b4` behoben durch Commit `5f83838` (`fix: conditionally link CSQLite shim for Linux` — `Package.swift` conditional `.when(platforms: [.linux])`). `xcodebuild build` für iPhone 15 Pro Max **BUILD SUCCEEDED** am 2026-05-13.
 
 ---
 

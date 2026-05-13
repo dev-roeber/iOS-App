@@ -1,5 +1,11 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-13 (Hardware-Acceptance 8/8 auf HEAD `aa145b4` verifiziert; vorher 7/8 am 2026-05-12 vor Heatmap-Hit-Target-Fix `f111afd`)
+
+**Re-Verifikation 2026-05-13:** `xcodebuild test -only-testing:LH2GPXWrapperUITests` auf iPhone 15 Pro Max (UDID `00008130-00163D0A0461401C`, iOS 26.4) gegen HEAD `aa145b4`: **TEST SUCCEEDED**, 8 UI-Tests + 4× LaunchTest passed in 379,52 s. Heatmap-Button-Hit-Target-Fix in `f111afd` ist auf Device wirksam. `swift test` (Host): 1521 Tests, 4 Skips, 0 Failures (177,02 s). 46-MiB-Hardware-Retest: Host-Ersatzprüfung mit echter 44,5-MiB-Google-Timeline-JSON-Datei (`Tests/.../AppContentLoaderTests.testRealLocationHistoryJsonOnDesktop` + `…OnDesktop`) **passed** in 20,5 s / 21,7 s; interaktiver Device-Import nicht automatisierbar, Tester-Handoff bleibt offen.
+
+---
+
 ## Aktualisierung 2026-05-12 (Heatmap-Hit-Target-Fix + Hardware-Acceptance-Train 8/8 auf HEAD pending)
 
 **Gerät:** iPhone 15 Pro Max (UDID `00008130-00163D0A0461401C`, iOS 26.4). **Xcode:** 26.3 (17C529). **Build-Identität:** unverändert (MARKETING_VERSION `1.0.1`, CURRENT_PROJECT_VERSION `100`). Signed Debug-Build via `xcodebuild -allowProvisioningUpdates` BUILD SUCCEEDED.

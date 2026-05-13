@@ -21,7 +21,7 @@ Bereits drin:
 - der dedizierte `Live`-Tab wurde visuell und funktional deutlich ausgebaut: klarere Map-/Recording-/Upload-/Library-Hierarchie, Status-Chips, Quick Actions und mehr Live-Metriken
 - der optionale Server-Upload zeigt Queue-, Failure- und Last-Success-Zustaende und unterstuetzt Pause/Resume sowie manuellen Queue-Flush
 - die Insights-Seite bietet segmentierte Oberflaechen (`Overview`, `Patterns`, `Breakdowns`) sowie KPI-Karten, Highlight-Karten, `Top Days`, Monatstrends und umschaltbare Distanz-/Route-/Event-Muster
-- frischer macOS-lokaler Nachweis fuer den eingebundenen Core-Stand liegt vor: `swift test` mit `964` Tests, `2` Skips und `0` Failures (HEAD post-`70254ff`, 2026-05-06)
+- frischer macOS-lokaler Nachweis fuer den eingebundenen Core-Stand liegt vor: `swift test` mit `1521` Tests, `4` Skips und `0` Failures (HEAD `aa145b4`, 2026-05-13; vorher 964/2/0 unter HEAD post-`70254ff`, 2026-05-06)
 
 Fehlt noch:
 - frische Apple-UI-Verifikation fuer den neuen `Live`-Tab inklusive Upload-Zustaenden, Quick Actions und groesserem Stat-Set
@@ -50,9 +50,11 @@ Fehlt noch:
 
 Status: **abgeschlossen**
 
-- macOS-lokal frisch verifiziert (2026-05-06, HEAD post-`70254ff`):
-  - `swift test`: `964` Tests, `2` Skips, `0` Failures
+- macOS-lokal frisch verifiziert (2026-05-13, HEAD `aa145b4`):
+  - `swift test`: `1521` Tests, `4` Skips, `0` Failures (vorher 964/2/0 unter HEAD post-`70254ff`, 2026-05-06)
   - `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build`: BUILD SUCCEEDED
+  - `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS,id=00008130-00163D0A0461401C' build`: BUILD SUCCEEDED (iPhone 15 Pro Max, iOS 26.4, Apple Development cert, 0 warnings)
+  - `xcodebuild test -only-testing:LH2GPXWrapperUITests` auf iPhone 15 Pro Max: 8/8 UI-Tests + 4× LaunchTest passed, TEST SUCCEEDED in 379 s
 - Apple-only Heatmap-Renderingstests sind fuer non-Apple-Plattformen korrekt gegated
 - die frueheren Test-vs-Code-Drifts (`minimumBatchSize`, Keychain-first, Gedankenstrich-Formatierung) sind repo-wahr bereinigt
 

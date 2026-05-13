@@ -1,10 +1,10 @@
 # TestFlight + App Store Runbook
 
-Stand: 2026-05-12 (Build-Identitäts-Sync nach Post-Pull-Deep-Audit; vorher 2026-05-05 / Phase 20 — siehe historischer Block unten).
+Stand: 2026-05-13 (Post-Audit-Truth-Sync; vorher 2026-05-12 / 2026-05-05 — siehe historischer Block unten).
 
-> **Build-Identitäts-Truth heute (Repo HEAD `30015c9`):** Marketing-Version `1.0.1`, `CURRENT_PROJECT_VERSION = 100` (alle 8 pbxproj-Configs), Bundle ID unverändert. Der `xcodebuild archive`-Lauf vom 2026-04-30 (v1.0 Build 45) ist historisch und für den aktuellen Submit nicht mehr relevant. Siehe `docs/DEEP_AUDIT_2026-05-12_POST_PULL.md` Finding F-11.
+> **Build-Identitäts-Truth heute (Repo HEAD `aa145b4`):** Marketing-Version `1.0.1`, `CURRENT_PROJECT_VERSION = 100` (alle 8 pbxproj-Configs), Bundle ID unverändert. `swift test` 1521/4/0 (Mac, 177 s). `xcodebuild build` für iPhone 17 Pro Max Sim (iOS 26.3.1) **BUILD SUCCEEDED**. `xcodebuild build` für iPhone 15 Pro Max (iOS 26.4) **BUILD SUCCEEDED** (Apple Development cert, 0 warnings). `xcodebuild test -only-testing:LH2GPXWrapperUITests` auf iPhone 15 Pro Max: **8/8 UI-Tests + 4× LaunchTest passed, TEST SUCCEEDED** in 379 s. Der `xcodebuild archive`-Lauf vom 2026-04-30 (v1.0 Build 45) ist historisch und für den aktuellen Submit nicht mehr relevant.
 >
-> **Bekannter Release-Blocker (P0):** `xcodebuild build` für das Wrapper-iOS-Target bricht auf HEAD `30015c9` (und pre-existing auf `799adc5`) mit `Undefined symbols for architecture arm64: _sqlite3_*` im `LH2GPXWidget.appex`-Linkschritt. Ursache: CSQLite-Linux-Shim wird in `Package.swift` unconditional an `LocationHistoryConsumerAppSupport` gehängt. Bis dieser Fix gelandet ist, ist **kein iOS-Archive erzeugbar**.
+> **Ehemaliger Release-Blocker (P0) — GELÖST:** Der CSQLite-Linker-Bug (`Undefined symbols _sqlite3_*` im `LH2GPXWidget.appex`) ist auf HEAD `aa145b4` behoben (Commit `5f83838`: `fix: conditionally link CSQLite shim for Linux` — `Package.swift` conditional `.when(platforms: [.linux])`). Archive-Erzeugung am 2026-05-13 nicht erneut getestet (kein neuer ASC-Submit-Lauf erforderlich), aber `xcodebuild build` für Device ist grün, was die Linker-Symptomatik fully entkräftet.
 
 ---
 
