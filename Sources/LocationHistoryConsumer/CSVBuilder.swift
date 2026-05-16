@@ -85,7 +85,7 @@ public enum CSVBuilder {
             nil, // endLon
             nil, // pointCount
         ]
-        return cols.map { csvEscape($0 ?? "") }.joined(separator: ",")
+        return joinEscapedRow(cols)
     }
 
     private static func activityRow(day: Day, activity: Activity) -> String {
@@ -107,7 +107,7 @@ public enum CSVBuilder {
             optionalDouble(activity.endLon),
             nil, // pointCount
         ]
-        return cols.map { csvEscape($0 ?? "") }.joined(separator: ",")
+        return joinEscapedRow(cols)
     }
 
     private static func routeRow(day: Day, path: Path, routeIndex: Int) -> String {
@@ -158,7 +158,7 @@ public enum CSVBuilder {
             optionalDouble(endLon),
             String(pointCount),
         ]
-        return cols.map { csvEscape($0 ?? "") }.joined(separator: ",")
+        return joinEscapedRow(cols)
     }
 
     private static func emptyDayRow(day: Day) -> String {
@@ -168,7 +168,7 @@ public enum CSVBuilder {
             "empty",
             nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
         ]
-        return cols.map { csvEscape($0 ?? "") }.joined(separator: ",")
+        return joinEscapedRow(cols)
     }
 
     // MARK: - Helpers
@@ -176,6 +176,26 @@ public enum CSVBuilder {
     private static func optionalDouble(_ value: Double?) -> String? {
         guard let value else { return nil }
         return String(format: "%.6f", value)
+    }
+
+    /// Joins an optional-string row into a single CSV line, escaping each
+    /// field via `csvEscape` and inserting a `,` separator — without the
+    /// intermediate `[String]` allocation of `cols.map { … }.joined(...)`.
+    /// Output is byte-identical to the previous map/joined pattern.
+    private static func joinEscapedRow(_ cols: [String?]) -> String {
+        var out = ""
+        // 16 chars per column is a rough mid-case estimate (timestamps + escaped strings).
+        out.reserveCapacity(cols.count * 16)
+        var first = true
+        for col in cols {
+            if first {
+                first = false
+            } else {
+                out.append(",")
+            }
+            out.append(csvEscape(col ?? ""))
+        }
+        return out
     }
 
     /// RFC 4180 CSV escaping: wrap in double-quotes if the value contains
