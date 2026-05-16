@@ -51,6 +51,16 @@ public final class LocalTimelineStore {
         try exec("PRAGMA busy_timeout = 3000;")
         try exec("PRAGMA synchronous = NORMAL;")
         try exec("PRAGMA temp_store = MEMORY;")
+        // Bound WAL growth and let SQLite checkpoint automatically. The
+        // explicit `checkpointWAL` API still runs at import finalize and
+        // on store delete; these pragmas just keep idle WAL from growing
+        // unbounded between explicit checkpoints. `journal_size_limit`
+        // caps the WAL file after each checkpoint truncation; setting it
+        // to ~16 MiB matches the typical app-store burst size we observe
+        // during a large Google Timeline import. `wal_autocheckpoint`
+        // (default 1000 pages = ~4 MiB) is made explicit for clarity.
+        try exec("PRAGMA journal_size_limit = 16777216;")
+        try exec("PRAGMA wal_autocheckpoint = 1000;")
         try applySchema()
     }
 
