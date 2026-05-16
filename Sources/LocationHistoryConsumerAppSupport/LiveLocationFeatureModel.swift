@@ -448,16 +448,14 @@ public final class LiveLocationFeatureModel: ObservableObject {
         clearPersistedSessionState()
 
         #if os(iOS)
-        if #available(iOS 16.1, *) {
-            ActivityManager.shared.endActivity(
-                distanceMeters: recorder.accumulatedDistanceM,
-                pointCount: recorder.points.count,
-                isPaused: isUploadPaused,
-                uploadQueueCount: pendingUploadQueue.count,
-                lastUploadSuccess: liveActivityLastUploadSuccess,
-                uploadState: liveActivityUploadState
-            )
-        }
+        ActivityManager.shared.endActivity(
+            distanceMeters: recorder.accumulatedDistanceM,
+            pointCount: recorder.points.count,
+            isPaused: isUploadPaused,
+            uploadQueueCount: pendingUploadQueue.count,
+            lastUploadSuccess: liveActivityLastUploadSuccess,
+            uploadState: liveActivityUploadState
+        )
         #endif
 
         let finishedTrack = recorder.stop()
@@ -553,10 +551,8 @@ public final class LiveLocationFeatureModel: ObservableObject {
         client?.startUpdatingLocation()
 
         #if os(iOS)
-        if #available(iOS 16.1, *) {
-            let trackName = "Live Track \(DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))"
-            ActivityManager.shared.startActivity(trackName: trackName, startTime: Date())
-        }
+        let trackName = "Live Track \(DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short))"
+        ActivityManager.shared.startActivity(trackName: trackName, startTime: Date())
         #endif
     }
 
@@ -607,9 +603,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
             enqueueUpload(points: acceptedPoints)
 
             #if os(iOS)
-            if #available(iOS 16.1, *) {
-                syncLiveActivityState()
-            }
+            syncLiveActivityState()
             #endif
         }
     }
@@ -833,17 +827,15 @@ public final class LiveLocationFeatureModel: ObservableObject {
 
     private func syncLiveActivityState() {
         #if os(iOS)
-        if #available(iOS 16.1, *) {
-            guard isRecording else { return }
-            ActivityManager.shared.updateActivity(
-                distanceMeters: recorder.accumulatedDistanceM,
-                pointCount: recorder.points.count,
-                isPaused: isUploadPaused,
-                uploadQueueCount: pendingUploadPointCount,
-                lastUploadSuccess: liveActivityLastUploadSuccess,
-                uploadState: liveActivityUploadState
-            )
-        }
+        guard isRecording else { return }
+        ActivityManager.shared.updateActivity(
+            distanceMeters: recorder.accumulatedDistanceM,
+            pointCount: recorder.points.count,
+            isPaused: isUploadPaused,
+            uploadQueueCount: pendingUploadPointCount,
+            lastUploadSuccess: liveActivityLastUploadSuccess,
+            uploadState: liveActivityUploadState
+        )
         #endif
     }
 

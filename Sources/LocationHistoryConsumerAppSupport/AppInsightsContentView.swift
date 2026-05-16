@@ -1690,11 +1690,14 @@ struct AppInsightsContentView: View {
 
     private var supportsChartSharing: Bool {
         #if os(iOS) || os(macOS)
-        if #available(iOS 16.0, macOS 13.0, *) {
-            return true
-        }
-        #endif
+        // iOS-17-minimum + macOS-13-minimum guarantee ImageRenderer is
+        // available; the gate is kept as a single boolean so the
+        // call-site fallback text can still surface if a future
+        // platform reintroduces an explicit availability check.
+        return true
+        #else
         return false
+        #endif
     }
 
     private func dayDrilldownTargets(for date: String) -> [InsightsDrilldownTarget] {
@@ -1750,31 +1753,29 @@ struct AppInsightsContentView: View {
             return
         }
 
-        if #available(iOS 16.0, macOS 13.0, *) {
-            let payload = ChartShareHelper.payload(for: cardType, dateRange: rangeFilter)
-            let captureView = InsightsShareCaptureView(
-                title: title,
-                icon: icon,
-                content: content
-            )
-            let renderer = ImageRenderer(content: captureView)
-            renderer.scale = 2
-            guard let pngData = renderedPNGData(from: renderer) else {
-                shareError = t("The chart image could not be rendered on this device.")
-                return
-            }
+        let payload = ChartShareHelper.payload(for: cardType, dateRange: rangeFilter)
+        let captureView = InsightsShareCaptureView(
+            title: title,
+            icon: icon,
+            content: content
+        )
+        let renderer = ImageRenderer(content: captureView)
+        renderer.scale = 2
+        guard let pngData = renderedPNGData(from: renderer) else {
+            shareError = t("The chart image could not be rendered on this device.")
+            return
+        }
 
-            do {
-                let url = FileManager.default.temporaryDirectory.appendingPathComponent(payload.suggestedFilename)
-                try pngData.write(to: url, options: .atomic)
-                shareSheetPayload = InsightsRenderedSharePayload(
-                    title: payload.title,
-                    filename: payload.suggestedFilename,
-                    url: url
-                )
-            } catch {
-                shareError = error.localizedDescription
-            }
+        do {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(payload.suggestedFilename)
+            try pngData.write(to: url, options: .atomic)
+            shareSheetPayload = InsightsRenderedSharePayload(
+                title: payload.title,
+                filename: payload.suggestedFilename,
+                url: url
+            )
+        } catch {
+            shareError = error.localizedDescription
         }
         #endif
     }

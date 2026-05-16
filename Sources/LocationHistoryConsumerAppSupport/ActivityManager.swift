@@ -22,9 +22,7 @@ public final class ActivityManager {
     /// Starts a new Live Activity for a recording session.
     public func startActivity(trackName: String, startTime: Date) {
         #if canImport(ActivityKit) && os(iOS)
-        if #available(iOS 16.2, *) {
-            _startActivityInternal(trackName: trackName, startTime: startTime)
-        }
+        _startActivityInternal(trackName: trackName, startTime: startTime)
         #endif
     }
 
@@ -39,19 +37,17 @@ public final class ActivityManager {
         uploadState: LiveActivityUploadState = .disabled
     ) {
         #if canImport(ActivityKit) && os(iOS)
-        if #available(iOS 16.2, *) {
-            let now = Date()
-            guard now.timeIntervalSince(lastUpdateTime) >= throttleInterval else { return }
-            lastUpdateTime = now
-            _updateActivityInternal(
-                distanceMeters: distanceMeters,
-                pointCount: pointCount,
-                isPaused: isPaused,
-                uploadQueueCount: uploadQueueCount,
-                lastUploadSuccess: lastUploadSuccess,
-                uploadState: uploadState
-            )
-        }
+        let now = Date()
+        guard now.timeIntervalSince(lastUpdateTime) >= throttleInterval else { return }
+        lastUpdateTime = now
+        _updateActivityInternal(
+            distanceMeters: distanceMeters,
+            pointCount: pointCount,
+            isPaused: isPaused,
+            uploadQueueCount: uploadQueueCount,
+            lastUploadSuccess: lastUploadSuccess,
+            uploadState: uploadState
+        )
         #endif
     }
 
@@ -66,29 +62,25 @@ public final class ActivityManager {
         uploadState: LiveActivityUploadState = .disabled
     ) {
         #if canImport(ActivityKit) && os(iOS)
-        if #available(iOS 16.2, *) {
-            _endActivityInternal(
-                distanceMeters: distanceMeters,
-                pointCount: pointCount,
-                isPaused: isPaused,
-                uploadQueueCount: uploadQueueCount,
-                lastUploadSuccess: lastUploadSuccess,
-                uploadState: uploadState
-            )
-        }
+        _endActivityInternal(
+            distanceMeters: distanceMeters,
+            pointCount: pointCount,
+            isPaused: isPaused,
+            uploadQueueCount: uploadQueueCount,
+            lastUploadSuccess: lastUploadSuccess,
+            uploadState: uploadState
+        )
         #endif
     }
 
     /// Immediately dismisses all live Activities — call on app launch to clean up stale sessions.
     public func cancelAllActivities() {
         #if canImport(ActivityKit) && os(iOS)
-        if #available(iOS 16.2, *) {
-            _cancelAllActivitiesInternal()
-        }
+        _cancelAllActivitiesInternal()
         #endif
     }
 
-    // MARK: - Private iOS 16.2+ helpers
+    // MARK: - Private ActivityKit helpers
 
     #if canImport(ActivityKit) && os(iOS)
     private func _startActivityInternal(trackName: String, startTime: Date) {

@@ -117,12 +117,9 @@ public struct LiveActivityFeatureAvailability: Equatable, Sendable {
 
     public static func current() -> LiveActivityFeatureAvailability {
         #if canImport(ActivityKit) && os(iOS)
-        if #available(iOS 16.2, *) {
-            return LiveActivityFeatureAvailability(
-                status: ActivityAuthorizationInfo().areActivitiesEnabled ? .available : .disabled
-            )
-        }
-        return LiveActivityFeatureAvailability(status: .unsupported)
+        return LiveActivityFeatureAvailability(
+            status: ActivityAuthorizationInfo().areActivitiesEnabled ? .available : .disabled
+        )
         #else
         return LiveActivityFeatureAvailability(status: .unsupported)
         #endif
