@@ -13,7 +13,12 @@ final class AppOverviewMapModel {
 
     private var allCandidates: [OverviewMapPathCandidate] = []
     private var totalPointCount: Int = 0
-    private var loadGeneration: UInt64 = 0
+    /// Train K, Phase 1 — replaces the previous inline `loadGeneration: UInt64`
+    /// counter. The gate semantics are identical (bumped on every new request,
+    /// `isStillCurrent(token)` re-checked before any MainActor write), but
+    /// now share the same Foundation-only helper as `AppHeatmapModel` and
+    /// stay independently unit-testable via `GenerationGateTests`.
+    private var loadGate = GenerationGate()
     private var overlayTask: Task<Void, Never>?
     /// Hash-token of the input set the most recent `loadData` was started with.
     /// Used as a secondary race-guard alongside `loadGeneration` so that a
@@ -33,8 +38,7 @@ final class AppOverviewMapModel {
         content: AppSessionContent?,
         filter: AppExportQueryFilter?
     ) async {
-        loadGeneration &+= 1
-        let gen = loadGeneration
+        let gen = loadGate.bump()
         let expectedToken = OverviewMapTaskKey.make(daySummaries: daySummaries, queryFilter: filter)
         currentLoadToken = expectedToken
         overlayTask?.cancel()
@@ -62,7 +66,7 @@ final class AppOverviewMapModel {
         // started with. The token check defends against the (rare) case
         // where a generation collision could otherwise let stale data win.
         guard !Task.isCancelled,
-              gen == loadGeneration,
+              loadGate.isStillCurrent(gen),
               expectedToken == currentLoadToken else { return }
         allCandidates = scanned.candidates
         dataRegion = scanned.dataRegion
@@ -91,7 +95,7 @@ final class AppOverviewMapModel {
         let pointCount = totalPointCount
         let dataReg = dataRegion
         let viewport = viewportRegion
-        let gen = loadGeneration
+        let gen = loadGate.current
         let expectedToken = currentLoadToken
         overlayTask = Task.detached(priority: .userInitiated) { [weak self] in
             let data = OverviewMapPreparation.buildOverlaysFromCandidates(
@@ -103,7 +107,7 @@ final class AppOverviewMapModel {
             guard !Task.isCancelled else { return }
             await MainActor.run { [weak self] in
                 guard let self else { return }
-                guard gen == self.loadGeneration,
+                guard self.loadGate.isStillCurrent(gen),
                       expectedToken == self.currentLoadToken else { return }
                 self.renderData = data
             }
