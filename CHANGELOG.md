@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## 2026-05-17 — Train M — Build 178 Smoke Documentation & Accessibility Identifier Rollout (`main`, in Arbeit)
+
+> **Train M, in Arbeit.** Externe Build-Truth-Aktualisierung + AccessibilityIdentifier-Rollout für UI-Test-Hooks. Keine Versions-Bumps, keine Verhaltensänderung.
+
+### Phase 0 — Build 178 extern grün
+Screenshots aus der Xcode-Cloud-Konsole und TestFlight belegen:
+- **Xcode Cloud Build 178** erfolgreich — Workflow `Release – Archive & TestFlight`, Schritte **Archive – iOS** ✅ und **TestFlight-interne Tests – iOS** ✅.
+- Letzter im Build 178 enthaltener Commit: `487833f` (`docs: sync train l modernization verification`).
+- Toolchain: Xcode 26.5 (17F42) / macOS Tahoe 26.4 (25E246).
+- Build 177 in der Build-Liste ebenfalls erfolgreich gemeldet (kein zusätzlicher Smoke-Screenshot vorgelegt).
+- iOS 17 Minimum extern bestätigt (Build-Sektion „Compatibility" zeigt iOS 17.0+).
+- Repo-Truth lokal weiterhin `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` — Cloud setzt `CFBundleVersion` via `CI_BUILD_NUMBER`.
+- TestFlight zeigt `LH2GPX 1.0.2 (178)` mit „Pre-production / Internal Test"-Banner.
+
+**Was Build 178 extern grün absichert:** Trains I (`d0c0a4c → f1c0b5e`), J (`980111d → b5c6dc0`), K (`84064c9 → a01ec7e`) und L (`574d522 → 487833f`) sind extern angekommen.
+
+**Partieller manueller Screenshot-Smoke (TestFlight Build 178, einzelnes Gerät, kein End-to-End-Hardware-Sweep):**
+- ✅ **Overview-Tab** öffnet, Karte mit Route + Active-Source-Card sichtbar.
+- ✅ **Live-Tab** öffnet, Recording-Screen mit Karte + Status-Chips sichtbar.
+- ✅ **Insights-Tab** öffnet, Kennzahl-Cards + Charts sichtbar.
+- ✅ **Export-Tab** öffnet, Empty-State sichtbar.
+
+**Was Build 178 NICHT belegt (bewusst unbestätigt):**
+- Kein vollständiger Hardware-Smoke quer durch Geräteflotte.
+- Dynamic Island / Lock-Screen-Live-Activity nicht visuell geprüft.
+- iPad-Layout nicht geprüft.
+- Großer Import (Google Timeline 100 MB+) nicht geprüft.
+- Export-Dateien (CSV/GPX/KML/KMZ/GeoJSON) nicht extern in Drittprogrammen validiert.
+- App-Review nicht eingereicht, ASC-Status nicht bestätigt.
+
+Train-M-Codeänderungen sind erst ab Build 179+ extern verifiziert.
+
 ## 2026-05-16 — Train L — Heatmap Testability, Store Query Verification, Operation UX & Final Performance Polish (`main`)
 
 > **Train L, zwei produktive Test-Commits + Doku-Sync.** Train L vertieft die Linux-Testabdeckung der bereits in Train I/J/K eingebauten Race-Gates und additiven Indizes. Keine Versions-Bumps, keine UI-Redesigns, keine Code-Verhaltensänderung außer einem neuen `internal` Test-Hook.
