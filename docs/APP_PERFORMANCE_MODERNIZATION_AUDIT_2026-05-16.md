@@ -1,5 +1,7 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-16 (Train H-Wire-1):** `LiveTrackRenderCap` (in Train H als pure Logic gelandet) ist jetzt in `AppLiveTrackingView.refreshTrackPresentationState()` verdrahtet. Default-Cap **10 000 Punkte (ON)** über `private static let liveRenderPointCap` — konsistent mit dem bestehenden `uploadQueueLimit = 10_000` mental model. Wirkt ausschließlich auf View-State (`@State polylineCoordinates`, `@State trackSamples`); `liveLocation.liveTrackPoints` (Rohdaten), `LiveTrackRecorder`-Persistence und `RecordedTrack`-Export sind unverändert. Erste + letzte Position immer erhalten. Quieter DE/EN-Hinweis nur bei tatsächlich gekapptem Track. Linux `swift test` **1475 / 2 Skips / 0 Failures** (+6 neue `LiveRenderCapWiringTests`). Realer iOS-Frame-Time-Effekt nur am Gerät mit Instruments verifizierbar.
+>
 > **Update 2026-05-16 (Train H — App Performance / Stability / UX Hardening):** 4 produktive Commits (`a741b76`, `254875a`, `86b3da6`, `7288a5f`):
 >
 > - 12× iOS-16-`@available`-Attribute entfernt (durch iOS-17-Minimum redundant). 11× `if #available(iOS 16.x, *)`-Runtime-Checks bewusst nicht angefasst (Dedenting-Risiko, separater Cleanup).

@@ -1,6 +1,31 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach **Train H — App Performance / Stability / UX Hardening**).
+Stand: 2026-05-16 (Branch `main`, nach `perf: wire live track render cap into map presentation`).
+
+**Train H-Wire-1 umgesetzt:**
+- `LiveTrackRenderCap` ist jetzt in `AppLiveTrackingView.refreshTrackPresentationState()` verdrahtet.
+- Default-Cap: **10 000 Punkte (ON)**, intern als `private static let liveRenderPointCap` (keine User-Settings-UI).
+- Wirkt nur auf `@State polylineCoordinates` + `@State trackSamples` (View-State). `liveLocation.liveTrackPoints` (Rohdaten), `LiveTrackRecorder`-Persistence und `RecordedTrack`-Export sind **unverändert**.
+- Erste + letzte Koordinate immer erhalten. Hinweis-Banner nur bei tatsächlich gekapptem Track (DE/EN lokalisiert).
+- Linux: `swift build` clean, `swift test` **1475 / 2 Skips / 0 Failures** (+6 neue `LiveRenderCapWiringTests`).
+
+**Externer Stand (unverändert):** Letzter verifizierter Build = **Xcode Cloud Build 175** (basiert auf `2bfc009`). Train H und H-Wire-1 sind noch nicht extern verifiziert.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build (→ Build 176+), TestFlight-Install + manueller Smoke:
+- Live-Recording 20 000+ Punkte → Hinweis erscheint, Start- + Endposition korrekt.
+- Live-Recording <10 000 Punkte → Hinweis erscheint NICHT.
+- Export einer gekappten Session → enthält volle Rohdaten.
+- Dynamic Island / Live Activity Lock-Screen sichtbar.
+- WAL-Korruptions-Check nach Force-Quit.
+- iPad-Layout, Widget, CSV-Export-Byte-Identität.
+
+**Folge-Trains:**
+- **H-Cleanup-2**: 11× `if #available(iOS 16.x, *)`-Runtime-Checks dedenten.
+- **D / G2**: Heatmap-Multi-LOD-Wiring, MKMapView-Bridge (Mac/Instruments).
+
+---
+
+Vorheriger Stand: nach **Train H — App Performance / Stability / UX Hardening**.
 
 **Train H umgesetzt (4 Commits, alle Linux-grün, alle gepusht):**
 - `a741b76` `chore: clean redundant ios 16 availability gates` — 12 `@available(iOS 16.x, *)`-Attribute entfernt.

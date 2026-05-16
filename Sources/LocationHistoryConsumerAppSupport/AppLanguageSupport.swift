@@ -519,6 +519,7 @@ enum AppGermanTranslations {
         "Live": "Live",
         "Live Tracking": "Live-Tracking",
         "Live Map": "Live-Karte",
+        "Live route display optimized for performance. Full tracking data remains unchanged.": "Live-Routenanzeige für Performance optimiert. Vollständige Trackingdaten bleiben unverändert.",
         "Recording": "Aufzeichnung",
         "Idle": "Bereit",
         "Foreground Only": "Nur Vordergrund",

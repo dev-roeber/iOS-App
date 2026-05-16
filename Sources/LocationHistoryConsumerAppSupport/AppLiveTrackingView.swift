@@ -23,6 +23,15 @@ public struct AppLiveTrackingView: View {
     @State private var metricSnapshot = LiveTrackingMetricSnapshot.empty
     @State private var polylineCoordinates: [CLLocationCoordinate2D] = []
     @State private var trackSamples: [TrackSample] = []
+    @State private var liveRenderWasCapped: Bool = false
+
+    /// Hard cap on how many `liveTrackPoints` are sent into the SwiftUI/MapKit
+    /// render path per frame. Train H-Wire-1 (2026-05-16). Pure render-side
+    /// optimization — raw `liveLocation.liveTrackPoints`, persistence
+    /// (`LiveTrackRecorder` / `RecordedTrack`) and export are unaffected.
+    /// 10 000 chosen to match the existing `uploadQueueLimit` budget so the
+    /// mental model stays consistent across the codebase.
+    private static let liveRenderPointCap: Int = 10_000
     @State private var isFullscreenMapPresented = false
     @State private var isDiagnosticsExpanded = false
     @State private var liveMapHeaderState = LHMapHeaderState(
@@ -182,6 +191,7 @@ public struct AppLiveTrackingView: View {
                 }
             }
             statusChipsRow
+            liveRenderCapHintIfNeeded
         }
         .padding(.horizontal, 12)
         .padding(.top, 4)
@@ -578,6 +588,23 @@ public struct AppLiveTrackingView: View {
         }
     }
 
+    // MARK: - Render-Cap Hint
+
+    /// Quiet single-line caption shown only when the render polyline has been
+    /// reduced. Calls out that the *display* is optimized, while raw tracking
+    /// data is untouched — no panic colour, no "data lost" wording.
+    @ViewBuilder
+    private var liveRenderCapHintIfNeeded: some View {
+        if liveRenderWasCapped {
+            Text(t("Live route display optimized for performance. Full tracking data remains unchanged."))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 4)
+                .accessibilityIdentifier("liveRenderCapHint")
+        }
+    }
+
     // MARK: - Status Chips
 
     private var statusChipsRow: some View {
@@ -696,6 +723,7 @@ public struct AppLiveTrackingView: View {
             }
 
             statusChipsRow
+            liveRenderCapHintIfNeeded
 
             Group {
                 if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
@@ -1129,15 +1157,22 @@ public struct AppLiveTrackingView: View {
     }
 
     private func refreshTrackPresentationState() {
-        polylineCoordinates = liveLocation.liveTrackPoints.map {
+        // Shape only the render-side projection of liveTrackPoints — raw
+        // recording data, persistence, and export are untouched.
+        let capResult = LiveTrackRenderCap.apply(
+            points: liveLocation.liveTrackPoints,
+            cap: Self.liveRenderPointCap
+        )
+        polylineCoordinates = capResult.points.map {
             CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
         }
-        trackSamples = liveLocation.liveTrackPoints.map {
+        trackSamples = capResult.points.map {
             TrackSample(
                 coordinate: CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude),
                 timestamp: $0.timestamp
             )
         }
+        liveRenderWasCapped = capResult.wasCapped
         if liveLocation.isRecording {
             recordingStartDate = liveLocation.liveTrackPoints.first?.timestamp ?? recordingStartDate ?? Date()
         } else if liveLocation.liveTrackPoints.isEmpty {

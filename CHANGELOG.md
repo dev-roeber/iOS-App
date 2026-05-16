@@ -1,5 +1,64 @@
 # CHANGELOG
 
+## 2026-05-16 — perf: wire live track render cap into map presentation (`main`)
+
+> **Train H-Wire-1 umgesetzt.** Verdrahtet den in `7288a5f` gelandeten `LiveTrackRenderCap`-Helper in den Live-Tracking-View. **Keine Rohdaten, keine Persistenz, kein Export betroffen** — die Cap wirkt ausschließlich auf die SwiftUI/MapKit-Render-Projektion (`@State polylineCoordinates` und `trackSamples`).
+
+### Datenfluss-Bestätigung
+- **Quelle:** `liveLocation.liveTrackPoints` (im `LiveLocationFeatureModel`) — unverändert.
+- **Render-Projektion:** `AppLiveTrackingView.refreshTrackPresentationState()` mappt jetzt durch `LiveTrackRenderCap.apply(points: liveLocation.liveTrackPoints, cap: Self.liveRenderPointCap)` und nutzt das `Result.points`-Subset für beide View-State-Arrays.
+- **Persistence:** `LiveTrackRecorder` / `RecordedTrack` greifen direkt auf das ungekappte `liveTrackPoints` zu. Unverändert.
+- **Export:** `RecordedTrack`-Items im Export-Pfad lesen ebenfalls die Rohdaten. Unverändert.
+
+### Cap-Konfiguration
+- **Default:** `liveRenderPointCap = 10_000` (ON-Default). Begründung: konsistent mit dem bestehenden `uploadQueueLimit = 10_000` mental model im Repo; typische Live-Sessions (8 000 Punkte und kürzer) sind nicht betroffen; Extremfälle (25 000+ Punkte aus Multi-Tages-Recording) werden render-seitig auf 10 000 reduziert.
+- **Implementation:** `private static let liveRenderPointCap: Int = 10_000` in `AppLiveTrackingView`. Bewusst keine `AppPreferences`-UI-Toggle — die Cap-Wirkung ist rein performance-orientiert, kein User-konfigurierbarer Behavior-Unterschied; eine UI-Surface hätte erhöhten Lokalisierungs-/Test-Aufwand bei minimalem UX-Mehrwert.
+
+### UX-Hinweis
+- Neue Localization-Strings:
+  - EN: „Live route display optimized for performance. Full tracking data remains unchanged."
+  - DE: „Live-Routenanzeige für Performance optimiert. Vollständige Trackingdaten bleiben unverändert."
+- Sichtbar nur wenn `liveRenderWasCapped == true` (d.h. nur bei tatsächlich gekappten Tracks). `.caption2`, `.foregroundStyle(.secondary)`, keine Panikfarbe, kein „Datenverlust"-Wording.
+- Eingehängt nach `statusChipsRow` in Portrait- und Landscape-Layout. Accessibility-Identifier `liveRenderCapHint` für UI-Tests.
+
+### Geänderte Dateien
+- **Code:** `Sources/LocationHistoryConsumerAppSupport/AppLiveTrackingView.swift`, `Sources/LocationHistoryConsumerAppSupport/AppLanguageSupport.swift`.
+- **Tests:** `Tests/LocationHistoryConsumerTests/LiveRenderCapWiringTests.swift` (neu, 6 Tests).
+- **Doku:** `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`, `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md`.
+
+### Verifikation (Linux)
+- `git diff --check`: clean.
+- `swift build`: clean, 1,73 s.
+- `swift test`: **1475 / 2 Skips / 0 Failures, 54,6 s** (vorher 1469 — +6 neue `LiveRenderCapWiringTests`).
+- `swift test --filter LiveTrackRenderCap`: 10/0.
+- `swift test --filter LiveRenderCap`: 6/0.
+
+### Code-Truth (kein Device-Benchmark, keine Behauptung absoluter Performance-Gewinne)
+- Vorher: `polylineCoordinates = liveTrackPoints.map { … }` (unbegrenzt) → MapKit re-evaluiert pro Tick die volle Liste.
+- Jetzt: Liste vor dem Map auf max. 10 000 Einträge reduziert (Tail-verbatim, Head-stride-dezimiert).
+- Realer Performance-Effekt auf iOS-Hardware unter Memory-Pressure ist **nur am Gerät mit Instruments** verifizierbar; auf Linux nicht messbar.
+
+### Was Linux nicht prüfen konnte
+- Tatsächliches MapKit-Render-Verhalten (Polyline-Frame-Time, Scroll-Smoothness) unter aktivem Cap.
+- Visuelle Sichtbarkeit der Stride-Dezimation auf realer Karte (sollte bei `tailCount = 5 000` für die letzten 5 000 Punkte exakt, davor moderat ausgedünnt erscheinen).
+- UX-Hinweis-Rendering im echten View-Hierarchy (Position, Schriftgröße, Sicht in Lock-Screen-Live-Activity).
+- Localization-Display unter realem iOS-Sprachsetup.
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+1. **Neuen Xcode-Cloud-Build** auslösen (→ Build 176+); Workflow `Release – Archive & TestFlight`.
+2. TestFlight-Install auf iPhone 14 Pro / iPhone 16 Pro Max.
+3. Live-Recording mit absichtlichem Überlauf:
+   - 20 000+ Punkte erzeugen (langes Recording oder kurze Recording-Intervalle), Hinweis muss erscheinen.
+   - Erste sichtbare Polyline-Position = Track-Start, aktuelle Position = letzter GPS-Fix.
+4. Live-Recording <10 000 Punkte: Hinweis **darf nicht** erscheinen.
+5. Export der Recording-Session: muss alle Original-Punkte enthalten (Cap nur Render, nicht Export).
+
+### Empfohlener nächster Train
+- **H-Cleanup-2**: 11× `if #available(iOS 16.x, *)`-Runtime-Checks dedenten.
+- **D / G2 (Mac/Instruments-only)**: Heatmap-Multi-LOD-Wiring + MKMapView/MKMultiPolyline-Bridge.
+
+---
+
 ## 2026-05-16 — Train H — App Performance / Stability / UX Hardening (`main`)
 
 > **Train H, mehrere zusammenhängende Commits.** Konservative Optimierungen über mehrere Bereiche. Keine Versions-Bumps, keine UI-Redesigns, keine App-Review-Behauptungen.
