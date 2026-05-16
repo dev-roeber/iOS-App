@@ -1,5 +1,19 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-16 (Train I — Performance Pipeline / Live-Heatmap-Wiring / Export-Store Hardening):** 4 produktive Commits (`d0c0a4c`, `41a8e6c`, `058a131`, `b0d49a3`):
+>
+> - **Phase 1 Live Camera Throttle:** Neuer Helper `LiveCameraUpdateThrottle` (Foundation-only, pure, deterministisch). Default ON (0,5 s + 25 m). In `AppLiveTrackingView.onChange(of: liveLocation.currentLocation?.timestamp)` verdrahtet. Initial-Seed und User-Tap auf „Center on me" bypassen Throttle. Keine MapCameraPosition-Endlosschleife (Verzweigung über `isFollowingLocation`, kein observer auf `mapPosition`). 9 Unit-Tests.
+> - **Phase 4 GPX/KML Allocation:** `lines.reserveCapacity(...)` aus schnellen Zähllauf in `GPXBuilder.build` und `KMLBuilder.build`. `KMLBuilder` ersetzt zusätzlich `path.points.map{}.joined()` durch direkten `String.append`-Loop mit Heuristik-`reserveCapacity`. Output byte-identisch (188/0 Tests).
+> - **Phase 5 SQLite Index:** Neuer Covering-Index `idx_derived_cache_kind_version_created` auf `derived_cache(cache_kind, version, created_at)`. Additiv, IF NOT EXISTS, kein `userVersion`-Bump. Schema-Test in `LocalTimelineDerivedCacheTests` erweitert.
+>
+> **Übersprungene Phasen mit Begründung:**
+> - Phase 2 — Live Render Cap abrunden: Bestehende H-Wire-1-Tests + Hinweis-Logik bereits ausreichend.
+> - Phase 3 — Heatmap-Pipeline härten: Race zwischen `Task.detached` und `performCulling` ohne injizierbares Scheduler/Clock-Protokoll nicht race-frei testbar; `.onMapCameraChange(.onEnd)` throttlet bereits ausreichend.
+> - Phase 6 — Identity B2: keine garantiert uniquen Domain-IDs in den Kandidaten-Datentypen; `id: \.offset` für append-only-read-only-Datenquellen unkritisch.
+> - Phase 7 — UI/UX-Polish: Bestehende Hinweise (Live-Render-Cap, Internal Test Toggles, Import Progress) decken Performance-Transparenz.
+>
+> Linux `swift test` 1484/2/0 (+9 `LiveCameraUpdateThrottleTests`). Build 176 enthält **keinen** Train-I-Commit; neuer Cloud-Build nötig.
+>
 > **Update 2026-05-16 (Train H-Wire-1):** `LiveTrackRenderCap` (in Train H als pure Logic gelandet) ist jetzt in `AppLiveTrackingView.refreshTrackPresentationState()` verdrahtet. Default-Cap **10 000 Punkte (ON)** über `private static let liveRenderPointCap` — konsistent mit dem bestehenden `uploadQueueLimit = 10_000` mental model. Wirkt ausschließlich auf View-State (`@State polylineCoordinates`, `@State trackSamples`); `liveLocation.liveTrackPoints` (Rohdaten), `LiveTrackRecorder`-Persistence und `RecordedTrack`-Export sind unverändert. Erste + letzte Position immer erhalten. Quieter DE/EN-Hinweis nur bei tatsächlich gekapptem Track. Linux `swift test` **1475 / 2 Skips / 0 Failures** (+6 neue `LiveRenderCapWiringTests`). Realer iOS-Frame-Time-Effekt nur am Gerät mit Instruments verifizierbar.
 >
 > **Update 2026-05-16 (Train H — App Performance / Stability / UX Hardening):** 4 produktive Commits (`a741b76`, `254875a`, `86b3da6`, `7288a5f`):

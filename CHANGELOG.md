@@ -1,5 +1,102 @@
 # CHANGELOG
 
+## 2026-05-16 — Train I — Performance Pipeline, Live/Heatmap Wiring, Export/Store Hardening (`main`)
+
+> **Train I, mehrere produktive Commits.** Konservative Optimierungen über mehrere Bereiche, keine Versions-Bumps, keine UI-Redesigns.
+
+### Umgesetzte Commits (Reihenfolge)
+1. **`d0c0a4c` `docs: record xcode cloud build 176 verification`** — Build 176 als extern belegt dokumentiert.
+2. **`41a8e6c` `perf: throttle live map camera updates`** — Phase 1. Neuer Helper `LiveCameraUpdateThrottle.shouldUpdate(...)`, ON-Default (0,5 s + 25 m), in `AppLiveTrackingView` verdrahtet. 9 Unit-Tests.
+3. **`058a131` `perf: reduce gpx and kml builder allocations`** — Phase 4. `lines.reserveCapacity(...)` aus Zähllauf in `GPXBuilder.build` und `KMLBuilder.build`; `KMLBuilder` ersetzt zusätzlich `path.points.map{}.joined()` durch direkten `String.append`-Loop. Output byte-identisch.
+4. **`b0d49a3` `perf: add covering index for derived cache prune queries`** — Phase 5. Neuer Index `idx_derived_cache_kind_version_created` auf `derived_cache(cache_kind, version, created_at)`. Additiv, kein `userVersion`-Bump.
+
+### Übersprungene Phasen (mit Grund)
+- **Phase 2 — Live Render Cap abrunden:** Bestehende H-Wire-1-Tests + Hinweis-Logik decken die Cap bereits. Eine zusätzliche Presentation-Model-Bündelung wäre Refactor ohne klaren Code-Truth-Gewinn.
+- **Phase 3 — Heatmap Update Pipeline härten:** Analyse zeigt Race-Risiko zwischen `Task.detached` in `ensureDensityPrecomputation` und `performCulling`. Die in der Inventur skizzierte „Region-Snapshot in `performCulling`"-Defensive ist ohne ein injizierbares `Scheduler/Clock`-Protokoll **nicht** sauber Linux-testbar — Risiko, race-flaky Tests einzuführen, ist höher als der konkrete Nutzen. `.onMapCameraChange(frequency: .onEnd)` throttlet die Pipeline bereits ausreichend. Übersprungen.
+- **Phase 6 — Identity B2:** Re-Check der 12 Treffer bestätigt das Train-H-Ergebnis: die im Body Index-ignorierenden Stellen (`_, item in`) funktionieren mit `id: \.offset` für die append-only-/read-only-Datenquellen (DayDetail, Overview, ExportPreview) korrekt; eine Migration auf Composite-Keys ohne garantiert unique Domain-IDs hätte Duplikat-ID-Risiko. Die zwei RISKY-Stellen (Editor mutable, topDays Index angezeigt) bleiben bewusst unangetastet. Übersprungen.
+- **Phase 7 — UI/UX Polish:** Bestehende Hinweise (Train H-Wire-1 Live-Render-Cap, Internal Test Toggles, Import Progress) decken die Performance-Transparenz. Kein konkreter UX-Mangel identifiziert, kein neuer Hinweis nötig. Übersprungen.
+
+### Geänderte Dateien nach Phase
+- **Phase 0 (Doku):** `CHANGELOG.md`, `ROADMAP.md`
+- **Phase 1 (Code+Tests):**
+  - `Sources/LocationHistoryConsumerAppSupport/LiveCameraUpdateThrottle.swift` (neu)
+  - `Sources/LocationHistoryConsumerAppSupport/AppLiveTrackingView.swift` (+ 2 Helper, + 1 State)
+  - `Tests/LocationHistoryConsumerTests/LiveCameraUpdateThrottleTests.swift` (neu, 9 Tests)
+- **Phase 4 (Code):**
+  - `Sources/LocationHistoryConsumer/GPXBuilder.swift` (reserveCapacity-Heuristik)
+  - `Sources/LocationHistoryConsumer/KMLBuilder.swift` (reserveCapacity + direkter String-Loop)
+- **Phase 5 (Schema+Tests):**
+  - `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStoreSchema.swift` (neuer Index + Bootstrap-Liste)
+  - `Tests/LocationHistoryConsumerTests/LocalTimelineDerivedCacheTests.swift` (Index-Existenz-Assertion)
+- **Phase 8 (Doku):** `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`, `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md`
+
+### Produktive Performance/Stability-Änderungen (Code-Truth, kein Device-Benchmark)
+| Änderung | Code-Truth | Linux-Test | Device-nötig |
+|---|---|---|---|
+| Live Camera Throttle 0,5 s + 25 m | Reduziert MapKit-Camera-Apply-Aufrufe bei Follow-On von „pro GPS-Sample" auf „nur wenn beide Schwellen überschritten" | ✅ 9/0 | ja, Frame-Time |
+| GPX/KML `reserveCapacity` | Vermeidet `[String]`-Reallokationen bei großen Multi-Day-Exports | ✅ Export 188/0 | nein (RSS optional Mac) |
+| KML direkter String-Loop | Spart die zwischengeschaltete `[String]`-Allokation pro Path mit `points` | ✅ 188/0 | nein |
+| Index `idx_derived_cache_kind_version_created` | Covering Index für `pruneDerivedCache`-Subquery | ✅ DerivedCache 15/0 | ja, EXPLAIN QUERY PLAN auf Gerät |
+
+### UI/UX-Änderungen
+**Keine in Train I.** Camera-Throttle ist transparent (Follow-State unverändert sichtbar). Keine neuen Strings, keine neuen Settings.
+
+### Feature-Flags und Defaults
+- `LiveCameraUpdateThrottle` Defaults: `minInterval = 0,5 s`, `minDistanceMeters = 25,0 m`. **ON** als interne Konstante (kein User-Toggle), Throttle gilt nur in Follow-On-Mode.
+- Erstaufruf und User-tap auf „Center on me" bypassen Throttle → `centerOnCurrentLocation()` snappt sofort.
+
+### Verifikation (Linux)
+- `git diff --check` (alle Commits): clean.
+- `swift build`: clean.
+- `swift test`: **1484 / 2 Skips / 0 Failures, 54,5 s** (vorher 1475 — +9 neue `LiveCameraUpdateThrottleTests`).
+- Filterläufe:
+  - `--filter Performance`: 38/0
+  - `--filter Map`: 222/0
+  - `--filter Live`: trifft u.a. `LiveCameraUpdateThrottleTests` + `LiveRenderCapWiringTests` + `LiveTrackRenderCapTests`
+  - `--filter Export`: 188/0
+  - `--filter Heatmap`: keine eigene Suite via Filter (im Full-Run enthalten)
+  - `--filter Store`: 180/0
+  - `--filter Timeline`: 105/0
+  - `--filter Insights`: 105/0
+  - `--filter Path`: 117/0
+
+### Repo-Truth (lokal, unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Letzter extern verifizierter Build: **Xcode Cloud Build 176** (basiert auf `556180c`).
+- Train-I-Commits (`d0c0a4c` → `b0d49a3`) sind **nicht** in Build 176. Sie kommen erst in einem neuen Xcode-Cloud-Build extern an.
+
+### Was Linux nicht prüfen konnte
+- MapKit-Frame-Time-Effekt des Camera-Throttle (mehr Frames pro Sekunde bei langem Live-Run erwartet).
+- Visuelle Smoothness der Follow-Mode-Bewegung — Throttle könnte für Nutzer wahrnehmbar „lockerer" wirken.
+- SQLite-Query-Plan-Verbesserung durch den neuen Index (Mac/Device-EXPLAIN-Test sinnvoll).
+- WAL-Verhalten unter realem iOS-Memory-Pressure.
+- iPad-Layout + Lock-Screen-Live-Activity nach Train I.
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+1. Neuen Xcode-Cloud-Build auslösen (→ Build 177+); Workflow `Release – Archive & TestFlight`.
+2. TestFlight-Install auf iPhone 14 Pro / iPhone 16 Pro Max.
+3. Smoke-Verifikation siehe nächste Sektion.
+
+### Manuelle Smoke-Test-Checkliste iPhone/iPad (Build 177+)
+- [ ] **Live Camera Throttle Follow ON:** Live-Recording starten, Follow-Button aktivieren, 1 min laufen lassen. Karte folgt der Bewegung ruhig, kein „Zucken" bei jedem GPS-Sample.
+- [ ] **Live Camera Throttle Follow OFF:** Follow deaktivieren → Karte bleibt stehen, GPS-Samples werden weiter aufgezeichnet (Polyline wächst).
+- [ ] **Live Camera Throttle Center-Now-Tap:** Manueller Tap auf „Center on me" → Kamera snappt sofort auf aktuelle Position, ungeachtet der Throttle-Schwellen.
+- [ ] **Live Render Cap (aus Train H-Wire-1):** Recording mit 20 000+ Punkten → Hinweis erscheint, Start- + Endposition korrekt.
+- [ ] **Export GPX 5 Tage / KML 5 Tage:** Export von Multi-Day-Daten → Datei öffnet in Google Earth / Apple Karten korrekt, Polyline intakt.
+- [ ] **CSV-Export:** Output byte-identisch zu Build 176 (Diff-Test).
+- [ ] **LocalTimelineStore Heatmap mit Cache:** Import → Heatmap → schließen → Heatmap erneut → Cache-Hit, schneller.
+- [ ] **WAL-Stabilität:** Großer Import + Force-Quit + Reopen → Daten intakt, kein Korruptions-Hinweis.
+- [ ] **Widget + Live Activity:** Widget zeigt aktuelle Daten, Live Activity bleibt sichtbar.
+- [ ] **iPad-Layout:** App auf iPad starten → kein Layout-Bruch, kein abgeschnittener Content.
+- [ ] **DE/EN Sprachwechsel:** App in Deutsch + Englisch, alle Train-H/I-Hinweise korrekt übersetzt.
+
+### Empfohlene nächste Trains
+- **H-Cleanup-2**: 11× `if #available(iOS 16.x, *)`-Runtime-Checks dedenten (mechanisch, niedrigstes Risiko).
+- **Heatmap-Pipeline-Härtung mit Scheduler-Injection**: Phase 3 von Train I, sobald ein injizierbares `Clock`-Protokoll im Repo verfügbar ist oder gleichzeitig geplant wird.
+- **D / G2 (Mac/Instruments-only)**: Heatmap-Multi-LOD-Wiring, MKMapView-Bridge.
+
+---
+
 ## 2026-05-16 — docs: record xcode cloud build 176 verification (`main`)
 
 > Reine Doku-Aktualisierung. Keine Code-Änderung, keine Versions-Bumps.

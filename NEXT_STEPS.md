@@ -1,6 +1,29 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach `perf: wire live track render cap into map presentation`).
+Stand: 2026-05-16 (Branch `main`, nach **Train I — Performance Pipeline / Live-Heatmap-Wiring / Export-Store Hardening**).
+
+**Train I umgesetzt (4 Commits gepusht):**
+- `d0c0a4c` Build 176 dokumentiert.
+- `41a8e6c` Live Camera Throttle (0,5 s + 25 m, ON, in `AppLiveTrackingView` verdrahtet; 9 neue Tests).
+- `058a131` GPX/KML reserveCapacity + KML direkter String-Loop (Output byte-identisch).
+- `b0d49a3` Index `idx_derived_cache_kind_version_created` (additiv).
+
+**Übersprungene Phasen:** 2 (Cap-Refactor ohne Code-Truth-Nutzen), 3 (Heatmap-Race-Härtung braucht Scheduler-Injection für saubere Tests), 6 (Identity B2 — keine garantiert uniquen IDs), 7 (kein UX-Bedarf identifiziert).
+
+**Tests:** `swift test` **1484 / 2 Skips / 0 Failures, 54,5 s** (+9 neue Tests).
+
+**Externer Stand:** Letzter verifizierter Build = **Xcode Cloud Build 176** (basiert auf `556180c`). Train-I-Commits (`d0c0a4c` → letzter Doku-Commit) sind **noch nicht** extern.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build (→ Build 177+), TestFlight-Install + manueller Smoke siehe CHANGELOG.
+
+**Folge-Trains:**
+- **H-Cleanup-2**: 11× `if #available(iOS 16.x, *)`-Runtime-Checks dedenten (mechanisch).
+- **Heatmap-Pipeline-Härtung** mit injizierbarem `Clock`-Protokoll (Race-Härtung sauber testbar).
+- **D / G2** (Mac/Instruments-only): Heatmap-Multi-LOD-Wiring + MKMapView/MKMultiPolyline-Bridge.
+
+---
+
+Vorheriger Stand: nach `perf: wire live track render cap into map presentation`.
 
 **Train H-Wire-1 umgesetzt:**
 - `LiveTrackRenderCap` ist jetzt in `AppLiveTrackingView.refreshTrackPresentationState()` verdrahtet.
