@@ -1,5 +1,20 @@
 # NEXT_STEPS
 
+Stand: 2026-05-16 (Branch `main`, HEAD pending — `docs: audit mapkit and app performance modernization plan`).
+
+**MapKit & Performance Audit 2026-05-16 (planerisch, kein Code-Change):**
+- Neuer Audit-Report: **`docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md`** mit 6 Map-Surface-Inventar, 17 priorisierten Hotspots und Mess-Baseline-Befund.
+- Verifikation: Linux `swift build` clean, `swift test` 1435/2/0 (41 s). Audit-Commit ändert nur Doku.
+- **Vorgeschlagene Trains (planerisch, in dieser Reihenfolge implementierbar — jeweils eigene Commits):**
+  - **Train A (Linux-CI, kein Verhaltenswechsel):** DouglasPeucker / PathFilter / Export-Builder Performance-Baselines (Drift-Erkennung, ohne Fail-Bar). Aufwand klein.
+  - **Train B (kein Verhaltenswechsel):** `ForEach(Array(...enumerated()), id: \.offset)` an 13 Stellen schrittweise auf stabile `Identifiable`-IDs; AppInsightsContentView 5× `.onChange` zu einer `.task(id:)`-Konsolidierung. Aufwand mittel, pro View ein PR.
+  - **Train C (mittel, Feature-Flag Default OFF):** Live-Track Polyline Hard-Cap mit Tail-Decimation; Camera-Update-Throttle im Follow-Mode. Verhalten bleibt für bestehende Sessions unverändert, bis Flag aktiviert.
+  - **Train D (Mac/Device/ASC, extern):** 46-MiB Original-Asset Hardware-Retest, Dynamic-Island Lock-Screen sichtprüfen, iPad-Layout, `xcarchive 1.0.2 (171)` Upload, Apple-Review-Resubmit.
+- **Bewusst aufgeschoben (P2, braucht Side-by-Side-Messung auf echter Hardware):** MKMapView+MKMultiPolyline-Bridging, MKTileOverlay-Heatmap, OverviewMapPreparation.scanCandidates Streaming-Refactor, TaskGroup-Parallelism für LODs.
+- Keine Behauptung „schneller" wurde getroffen; alle Schwellen-/Volumen-Aussagen im Report sind als **unmeasured** gekennzeichnet, wo keine Messung vorliegt.
+
+---
+
 Stand: 2026-05-16 (Branch `main`, HEAD `71f715b` — `perf: optimize heatmap pipeline with golden benchmarks`, Train 3 nach `main` gemerged).
 
 **Doku-Audit 2026-05-16 (kein Code-Change, kein Build-Bump):**

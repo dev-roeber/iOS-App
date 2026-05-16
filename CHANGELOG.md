@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 2026-05-16 — docs: audit mapkit and app performance modernization plan (`main`, pending HEAD)
+
+> **Reiner Planungs-Audit, kein Code-Change.** Belastbares Map-Surface-Inventar, Hotspot-Ranking und Mess-Baseline-Befund — alles vor jedem nächsten Implementierungs-Train.
+
+### Neu
+- **`docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md`** — vollständiger Audit-Report:
+  - Inventar aller 6 Map-Surfaces (Overview, Day Detail, Heatmap, Live Tracking, Export Preview, LocalTimeline Day Map) mit file:line, Tech, Datenquelle, Volumen-Schutz, State-Ownership, Test-Coverage.
+  - 17 priorisierte Hotspots (P0/P1/P2/Mac-only), darunter Live-Track-Polyline ohne Hard-Cap, `ForEach(.enumerated(), id: \.offset)` an 13 Stellen, AppInsightsContentView 5× redundante `.onChange`-Refreshes, MKTileOverlay-Heatmap/MKMultiPolyline-Bridging als bewusst aufgeschobene P2.
+  - Mess-Baseline-Inventar: 5 von ~16 existierenden `measure()`-Tests sind Linux-CI-tauglich; Vorschläge für neue Foundation-only Baselines (DouglasPeucker, PathFilter, Export-Builder) ohne Fail-Bar (Drift-Erkennung-only).
+  - 4 vorgeschlagene Trains (A: Baseline Strengthening, B: Identity & Surface Polish, C: Live Surface Hardening + Feature-Flag, D: Mac/Device-only).
+  - **Explizit:** keine Performance-Behauptungen ohne Messung, keine Deployment-Target-Anhebung, kein Build-Bump, keine ASC-Aktion.
+
+### Verifikation
+- Linux `swift test` (Swift 6.3.2 via swiftly, `libsqlite3-dev`): **1435 Tests, 2 Skips, 0 Failures, ~41 s** auf HEAD vor Audit-Commit.
+- `swift build`: clean.
+- `git diff --check`: clean.
+
+### Doku-Sync
+- `NEXT_STEPS.md`: Verweis auf Audit-Report und Train-A/B/C/D-Vorschläge ergänzt.
+- `ROADMAP.md`: Aktiver-Stand-Block 2026-05-16 erweitert um Audit-Verweis.
+
+### Bewusst unverändert
+- `docs/APP_FEATURE_INVENTORY.md`: Audit hat keine neuen Features gefunden, nur ein präziseres Map-Surface-Inventar — kein Änderungsbedarf.
+- `wrapper/README.md`, `docs/MAP_ARCHITECTURE_AUDIT.md`, `docs/MAPKIT_AZ_AUDIT_2026-05-13.md`: bleiben als historisch-kanonisch.
+
+---
+
 ## 2026-05-16 — docs: clean backup documentation artifacts after truth audit (HEAD `2f6d003` → pending, `main`)
 
 > **Repo-Hygiene + Truth-Glättung, kein Code-Change.** Folge-Sweep nach dem 2026-05-16-Truth-Audit.
