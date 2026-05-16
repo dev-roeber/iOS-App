@@ -247,6 +247,7 @@ public struct AppContentSplitView: View {
                 Label(t("Overview"), systemImage: "chart.bar.doc.horizontal")
             }
             .tag(0)
+            .accessibilityIdentifier(AppAccessibilityID.Tab.overview)
 
             NavigationStack(path: $daysNavigationPath) {
                 compactDayList
@@ -284,6 +285,7 @@ public struct AppContentSplitView: View {
                 Label(t("Days"), systemImage: "calendar")
             }
             .tag(1)
+            .accessibilityIdentifier(AppAccessibilityID.Tab.days)
 
             NavigationStack {
                 insightsPaneContent
@@ -304,6 +306,7 @@ public struct AppContentSplitView: View {
                 Label(t("Insights"), systemImage: "chart.xyaxis.line")
             }
             .tag(2)
+            .accessibilityIdentifier(AppAccessibilityID.Tab.insights)
 
             NavigationStack {
                 AppExportView(
@@ -334,6 +337,7 @@ public struct AppContentSplitView: View {
             }
             .tag(3)
             .badge(session.exportSelection.count)
+            .accessibilityIdentifier(AppAccessibilityID.Tab.export)
 
             if #available(iOS 17.0, macOS 14.0, *) {
                 NavigationStack {
@@ -351,6 +355,7 @@ public struct AppContentSplitView: View {
                     Label(t("Live"), systemImage: "record.circle")
                 }
                 .tag(4)
+                .accessibilityIdentifier(AppAccessibilityID.Tab.live)
             }
         }
         #if canImport(UIKit) && os(iOS)

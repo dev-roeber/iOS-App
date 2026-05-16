@@ -7,7 +7,7 @@ import XCTest
 final class AppAccessibilityIDTests: XCTestCase {
 
     func testRootIdentifiers() {
-        XCTAssertEqual(AppAccessibilityID.Root.preProductionBanner, "root.preProductionBanner")
+        XCTAssertEqual(AppAccessibilityID.Root.preProductionBanner, "localTimeline.testMode.banner")
     }
 
     func testTabIdentifiers() {

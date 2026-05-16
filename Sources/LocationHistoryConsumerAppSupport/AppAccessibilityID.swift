@@ -20,8 +20,11 @@ public enum AppAccessibilityID {
 
     public enum Root {
         /// The TestFlight-only "Pre-production / Internal Test" banner
-        /// rendered at the top of the app shell on Pre-Prod builds.
-        public static let preProductionBanner = "root.preProductionBanner"
+        /// rendered by `LocalTimelineTestModeBanner` at the top of the
+        /// app shell whenever the local-timeline feature flag is active.
+        /// The string matches the existing inline identifier on that
+        /// view to avoid a churn rename.
+        public static let preProductionBanner = "localTimeline.testMode.banner"
     }
 
     // MARK: - Compact / split tab bar
