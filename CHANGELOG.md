@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## 2026-05-16 — docs: reconcile audit truth across project documentation (HEAD `71f715b`, `main`)
+
+> **Doku-Audit, kein Code-Change.** Repo-Truth-Sweep + Doku-Glättung. Kein Build-Bump, kein ASC, kein Feature-Change.
+
+### Verifikation (Linux, Swift 6.3.2 via swiftly, `libsqlite3-dev` installiert)
+- `swift build` → Build complete (6,34 s).
+- `swift test` → **1435 Tests, 2 Skips, 0 Failures (41,1 s)** auf HEAD `71f715b`.
+
+### Korrigierte Drift / wahrheitsgemäße Anpassungen
+- `README.md`: Linux-Test-Nachweis und Versions-Aussagen auf aktuellen Repo-Truth (`MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`, pbxproj + Info.plist App/Widget konsistent) gehoben. ASC-Live-Status (`Pending Developer Release`) explizit als **nicht im Audit 2026-05-16 re-verifiziert** gekennzeichnet — er bleibt im Repo nicht prüfbar.
+- `docs/XCODE_APP_PREPARATION.md`: Wrapper-Truth-Hinweis von `1.0.1 / 100` auf `1.0.2 / 171` gezogen; Linux-Verifikations-Abschnitt mit heutigem `swift test`-Stand ergänzt; Swift-Toolchain-Hinweis (swiftly) ergänzt.
+- `docs/XCODE_CLOUD_RUNBOOK.md`: Versions-Truth-Block hinzugefügt; ASC-Truth-Snapshots als historisch (2026-05-06) markiert; `MARKETING_VERSION`-Aussage von `1.0` auf `1.0.2` gezogen.
+- `wrapper/README.md`: Repo-Truth-Patch-Block vorn ergänzt, der die unteren historischen Versions-/Test-/ASC-Aussagen als überholt kennzeichnet.
+
+### Bewusst unverändert gelassen (würde Doku-Umbau erfordern, nicht Drift):
+- `ROADMAP.md`, `NEXT_STEPS.md` (umfangreiche Trains, Inhalt strukturell aktuell), historische Build-/ASC-Snapshots (74/84/95/100) bleiben als historische Datensätze stehen.
+- Backup-Dateien `*__backup_*.md` (31 Stück, Cluster 2026-03-31 / 2026-04-01) — reine Pre-Audit-Snapshots, keine Doku-Lüge.
+
+### Audit-Methodik (transparent)
+- **Vollständig durchgelesen / geprüft:** `AGENTS.md`, `README.md` (Core), `wrapper/README.md`, `docs/XCODE_APP_PREPARATION.md`, `docs/XCODE_CLOUD_RUNBOOK.md`, `docs/XCODE_RUNBOOK.md` (überflogen, Stand 2026-05-13 konsistent), `docs/ASC_SUBMIT_RUNBOOK.md`, `docs/PRIVACY_MANIFEST_SCOPE.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md`, `docs/MAPKIT_AZ_AUDIT_2026-05-13.md`, `docs/MAP_ARCHITECTURE_AUDIT.md`, `docs/APP_REVIEW_RESPONSE_GUIDELINE_3_2.md`, `wrapper/docs/TESTFLIGHT_RUNBOOK.md`, `wrapper/docs/LOCAL_IPHONE_RUNBOOK.md`, `wrapper/CHANGELOG.md` (Top), `wrapper/NEXT_STEPS.md` (Top), `Package.swift`, `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` (nur Versions-/Signing-Strings), beide `Info.plist`.
+- **Stichprobenartig:** `Sources/` (186 Swift-Files; gezielt Import-, Export-, Heatmap-, LiveLocation-, Keychain-, LocalTimelineStore-Pfade), `Tests/` (160 Swift-Files; Golden-Tests, Wrapper-State-Tests, ZIP-Streaming-Tests), `wrapper/LH2GPXWrapper/`, `wrapper/LH2GPXWidget/`, `wrapper/ci_scripts/`, `wrapper/LH2GPXWrapperUITests/`, Repo-weites grep nach Tokens/Bearer/URLs (kein Treffer für Production-Secrets).
+- **Nicht geprüft / extern:** ASC-Live-Status, TestFlight-Live-Status, Hardware-Sichtprüfung iPhone 15 Pro Max / iPad, Dynamic-Island-Lockscreen visuell, Apple-Review-Feedback. Diese sind im Repo nicht prüfbar.
+
+### Verbleibende offene Themen (unverändert offen)
+- **46-MiB-Hardware-Retest** auf dem originalen Tester-Asset (timelinePath-Geometrie) — synthetisches 46-MiB-Asset war am 2026-05-13 grün, original ist weiter pending.
+- **Dynamic-Island Lock-Screen + iPad-Layout** — Hardware-Sichtprüfung offen.
+- **Lokales `xcarchive 1.0.2 (171)` Upload nach ASC** — Organizer-Schritt manuell, in diesem Audit nicht durchgeführt.
+- **xcodebuild / Apple-Plattform-Tests** — Linux-Host kann das nicht erbringen; Swift 6.3.2 baut zwar das SwiftPM-Paket, aber Xcode/SDK ist nicht installierbar.
+
+---
+
 ## 2026-05-13 — perf: optimize heatmap pipeline with golden benchmarks (branch `chore/mapkit-az-modernization-3`)
 
 > **MapKit A–Z Modernization Train 3.** Kein Release, kein Build-Bump, kein ASC, kein Merge nach `main`. Basis: `chore/mapkit-az-modernization-2@42e4415` (Train 1 + 2 kumulativ). Fokus: Heatmap-Pipeline Golden-Output-Tests, refactor + Single-Pass-Multi-LOD API, ehrlicher Performance-Befund.

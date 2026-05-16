@@ -1,5 +1,20 @@
 # NEXT_STEPS
 
+Stand: 2026-05-16 (Branch `main`, HEAD `71f715b` — `perf: optimize heatmap pipeline with golden benchmarks`, Train 3 nach `main` gemerged).
+
+**Doku-Audit 2026-05-16 (kein Code-Change, kein Build-Bump):**
+- Linux `swift build` + `swift test` (Swift 6.3.2 via swiftly, `libsqlite3-dev` installiert): **1435 / 2 Skips / 0 Failures**, 41,1 s.
+- Repo-Truth (pbxproj + Info.plist App/Widget): `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Drift in `README.md`, `wrapper/README.md`, `docs/XCODE_APP_PREPARATION.md`, `docs/XCODE_CLOUD_RUNBOOK.md` korrigiert; CHANGELOG-Eintrag ergänzt.
+- **Echte offene nächste Schritte** (unverändert offen, in diesem Audit nicht erledigt):
+  1. `xcarchive 1.0.2 (171)` per Organizer nach ASC hochladen (extern, Mac-Host nötig).
+  2. ASC-Live-Status für 1.0.2 prüfen (extern, im Repo nicht verifizierbar).
+  3. 46-MiB-Hardware-Retest mit dem originalen Tester-Asset auf iPhone 15 Pro Max (timelinePath-Geometrie).
+  4. Dynamic-Island Lock-Screen + iPad-Layout (UDID `3c955848…d4da0a5`, iPadOS 17.7.10) sichtprüfen — Gerät beim letzten Train offline.
+  5. Apple-Review-Resubmit für 1.0.2 vorbereiten (Response-Guideline 3.2 weiter relevant).
+
+---
+
 Stand: 2026-05-13 (Branch `chore/mapkit-az-modernization-3`, pending HEAD — `perf: optimize heatmap pipeline with golden benchmarks`).
 
 **MapKit A–Z Modernization Train 3 — 2026-05-13 (kein Release, kein Merge):**

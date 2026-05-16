@@ -44,7 +44,7 @@ Alternativ kann das Verzeichnis in Xcode geoeffnet werden. Die produktnahe App-S
 - kein Cloud-/Account-Sync fuer importierte History; optionaler Server-Upload ist separat, standardmaessig deaktiviert und Apple-Review-seitig weiter nicht voll eingeordnet
 - kein Auto-Resume laufender Live-Tracks; Background-Recording und End-to-End-Upload wurden historisch auf echter Apple-Hardware verifiziert, sind aber nicht als vollstaendige Gesamtverifikation aller heutigen Review-Pfade zu lesen
 
-**Hinweis Wrapper:** Der Xcode-Wrapper unter `wrapper/LH2GPXWrapper.xcodeproj` ist bereits vollständig mit Info.plist, Bundle-Identifier `de.roeber.LH2GPXWrapper`, Signing-Team `XAGR3K7XDJ`, Deployment Target iOS 16.0 (App + Unit-Tests) / 16.2 (Widget), `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` und `ITSAppUsesNonExemptEncryption = false` (App + Widget Info.plist) ausgestattet. Fuer den Release-/App-Store-Pfad ist der Repo-Truth: `CODE_SIGN_STYLE = Automatic`, keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`, keine explizite Release-`CODE_SIGN_IDENTITY`, `MARKETING_VERSION = 1.0.1` (seit 2026-05-05), `CURRENT_PROJECT_VERSION` lokal `100` (gesetzt in commit `8854eef`, 2026-05-06; Cloud-Builds nutzen weiterhin `CI_BUILD_NUMBER`), Widget-Embed via `CodeSignOnCopy`. ASC-Truth (Stand 2026-05-06): Build `74` (Version 1.0) ist nach Review-Response **akzeptiert**, Status `Pending Developer Release`; 1.0-Train geschlossen, Folge-Train `1.0.1` aktiv mit erfolgreichem Cloud-Build `84` (Build `≥100` muss vor nächstem Submit aus Xcode Cloud getriggert werden, damit MapLayerMenu-/Heatmap-Tier-2-/Tempolayer-/SIGABRT-Fix-Stand 2026-05-06 enthalten ist). Lokal ist `xcodebuild archive` für `1.0`-Snapshot historisch (2026-04-30) erfolgreich; `xcodebuild -exportArchive` bleibt auf diesem Host mangels Distribution-Zertifikat blockiert, deshalb läuft Submit jetzt über Xcode Cloud. Die Aussage "kein `.xcodeproj`" gilt nur für den Core-Package-Root, nicht für das Monorepo insgesamt.
+**Hinweis Wrapper:** Der Xcode-Wrapper unter `wrapper/LH2GPXWrapper.xcodeproj` ist bereits vollständig mit Info.plist, Bundle-Identifier `de.roeber.LH2GPXWrapper`, Signing-Team `XAGR3K7XDJ`, Deployment Target iOS 16.0 (App + Unit-Tests) / 16.2 (Widget), `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` und `ITSAppUsesNonExemptEncryption = false` (App + Widget Info.plist) ausgestattet. Repo-Truth (Stand 2026-05-16, HEAD `71f715b`): `CODE_SIGN_STYLE = Automatic`, keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`, keine explizite Release-`CODE_SIGN_IDENTITY`, `MARKETING_VERSION = 1.0.2` und `CURRENT_PROJECT_VERSION = 171` (8 pbxproj-Configs + Info.plist App/Widget konsistent, gebumpt im Release-Train 2026-05-13), Widget-Embed via `CodeSignOnCopy`. Cloud-Builds überschreiben `CFBundleVersion` weiterhin per `CI_BUILD_NUMBER` (`wrapper/ci_scripts/ci_pre_xcodebuild.sh`). Historischer ASC-Stand (laut Doku 2026-05-06): Build `74` (Version 1.0) nach Review-Response akzeptiert, Status `Pending Developer Release`; 1.0-Train geschlossen, Folge-Train `1.0.1` mit Cloud-Build `84`, später durch 1.0.2 abgelöst. **ASC-Live-Status ist im Audit 2026-05-16 nicht re-verifiziert** (extern). Lokal wurde am 2026-05-13 ein `1.0.2 (171)`-Archive erzeugt (`/tmp/lh2gpx-release/LH2GPXWrapper-build171.xcarchive`, laut NEXT_STEPS), nicht hochgeladen; `xcodebuild -exportArchive` bleibt mangels Distribution-Zertifikat auf diesem Host blockiert, deshalb läuft Submit über Xcode Cloud. Die Aussage "kein `.xcodeproj`" gilt nur für den Core-Package-Root, nicht für das Monorepo insgesamt.
 
 ## Export-Compliance
 
@@ -70,7 +70,7 @@ Damit sind beim App-Store-Upload **keine Export-Compliance-Unterlagen** erforder
 
 Unter Linux ist ehrlich verifiziert:
 
-- `swift test` (1521 Tests, 4 Skips, 0 Failures am 2026-05-13 auf HEAD `aa145b4`, 177 s; vorher 964/2/0 am 2026-05-06 nach Doku-/Wiring-Audit-Polish; vorher 949 am 2026-05-06 09:57 unter HEAD `93109e0`; historisch: 647 am 2026-04-29)
+- `swift test` (Linux, Swift 6.3.2 via swiftly, HEAD `71f715b`, 2026-05-16): **1435 Tests, 2 Skips, 0 Failures, 41,1 s**. Voraussetzung: `libsqlite3-dev` installiert. macOS-Stand (laut Doku): 1524/2/0 am 2026-05-13 HEAD `aa145b4` (inkl. Apple-only-Cases); vorher 964/2/0 am 2026-05-06; historisch: 647 am 2026-04-29.
 - Linux-Build der SwiftPM-Targets (historisch — Repo läuft inzwischen primär lokal auf macOS)
 - Linux-Fallback-Mains der Apple-UI-nahen Executables (historisch)
 
@@ -80,7 +80,7 @@ Unter Linux ist nicht verifiziert:
 - echter iOS-/macOS-SwiftUI-Lauf
 - `fileImporter` auf Apple-Plattformen
 - Signierung, Sandbox, Bundle-Metadaten
-- jeder neue `xcodebuild`-Nachweis fuer den aktuellen Repo-Stand, weil `xcodebuild` auf diesem Host nicht vorhanden ist
+- jeder neue `xcodebuild`-Nachweis fuer den aktuellen Repo-Stand, weil `xcodebuild` auf diesem Host nicht vorhanden ist (Swift Toolchain 6.3.2 ist via swiftly installiert, aber kein Xcode/SDK)
 
 Stand 2026-03-17 ist auf einer echten macOS-/Xcode-Maschine zusaetzlich verifiziert:
 

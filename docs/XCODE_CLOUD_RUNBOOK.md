@@ -1,6 +1,6 @@
 # Xcode Cloud Runbook
 
-Stand: 2026-04-30
+Stand: 2026-04-30 (Repo-Truth-Patch 2026-05-16 für aktuelle Build-/Versions-Stände — restlicher Inhalt ist Stand 2026-04-30)
 
 ## Repo-Struktur (relevant für Xcode Cloud)
 
@@ -84,15 +84,21 @@ App Store Connect konfiguriert werden — keine YAML-Dateien.
 - keine feste Release-`PROVISIONING_PROFILE_SPECIFIER`
 - keine feste Release-`CODE_SIGN_IDENTITY`
 - Widget-Embed via `CodeSignOnCopy`
-- `CURRENT_PROJECT_VERSION` lokal weiter `45`; Cloud-Builds nutzen `CI_BUILD_NUMBER` (zuletzt 84 grün, ≥96 vor Submit)
+- `CURRENT_PROJECT_VERSION` lokal `171` (Stand 2026-05-16, HEAD `71f715b`; vorher `100` per commit `8854eef` 2026-05-06, davor `45`); Cloud-Builds überschreiben `CFBundleVersion` weiterhin per `CI_BUILD_NUMBER`
 
-### Aktueller ASC-/Cloud-Truth (Stand 2026-05-06)
+### Aktueller Repo-Truth (Stand 2026-05-16, HEAD `71f715b`)
 
-- Build `74` (Version 1.0) ist nach Review-Response am 2026-05-05 **akzeptiert**, ASC-Status `Pending Developer Release` — 1.0-Train damit abgeschlossen, bewusst nicht freigegeben
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` — 8 pbxproj-Configs + Info.plist (App + Widget) konsistent
+- 1.0.2-Train wurde im Release-Vorbereitungs-Run 2026-05-13 angelegt (siehe `NEXT_STEPS.md`); lokales `xcarchive` für `1.0.2 (171)` erzeugt, **nicht** hochgeladen
+- **ASC-Live-Status nicht im Audit 2026-05-16 verifiziert** — folgende Punkte stammen aus historischen Doku-Snapshots, nicht aus aktueller ASC-Abfrage:
+
+### Historischer ASC-/Cloud-Truth (Stand 2026-05-06, laut Doku)
+
+- Build `74` (Version 1.0) war nach Review-Response am 2026-05-05 akzeptiert, ASC-Status `Pending Developer Release` — 1.0-Train damit abgeschlossen, bewusst nicht freigegeben
 - Builds `80`–`83` (1.0-Train) wurden mit ITMS-90186 / ITMS-90062 verworfen, weil der Train geschlossen war (kein Code-Fehler)
-- `MARKETING_VERSION` ist auf `1.0.1` angehoben; ASC hat Version `1.0.1` angelegt
+- `MARKETING_VERSION` wurde damals auf `1.0.1` angehoben; ASC legte Version `1.0.1` an
 - Xcode Cloud Build `84` (1.0.1) erfolgreich, in TestFlight Internal angekommen
-- Build `95` ist veraltet (vor Hero-Map / LiveStatusResolver / Export-Fix); Build `96` muss vor dem nächsten Submit aus Cloud getriggert werden
+- Build `95` war veraltet (vor Hero-Map / LiveStatusResolver / Export-Fix); inzwischen abgelöst durch 1.0.2-Train
 
 ### Historischer ASC-/Cloud-Truth (2026-04-30)
 
@@ -112,7 +118,7 @@ Vor dem ersten TestFlight-Upload müssen in App Store Connect gesetzt sein:
 
 `ci_pre_xcodebuild.sh` injiziert `CI_BUILD_NUMBER` (Xcode Cloud Auto-Variable)
 in `CFBundleVersion` beider Info.plist-Dateien (App + Widget).
-`MARKETING_VERSION` (1.0) bleibt unberührt — nur die Build-Nummer wird
+`MARKETING_VERSION` (lokal `1.0.2`, Stand 2026-05-16) bleibt unberührt — nur die Build-Nummer wird
 automatisch hochgezählt.
 
 **Wichtig:** Xcode Cloud erkennt nur diese exakten Skriptnamen:
