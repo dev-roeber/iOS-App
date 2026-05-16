@@ -30,7 +30,7 @@ public struct LHExportStepIndicator: View {
 
     public var body: some View {
         HStack(spacing: 0) {
-            ForEach(Array(Step.allCases.enumerated()), id: \.offset) { index, step in
+            ForEach(Array(Step.allCases.enumerated()), id: \.element) { index, step in
                 stepNode(step: step, index: index)
                 if index < Step.allCases.count - 1 {
                     connector(completed: index < currentStep.rawValue)
