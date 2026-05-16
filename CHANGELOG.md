@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## 2026-05-16 — docs: audit app performance modernization and ios 17 path (`main`)
+
+> **Reiner Audit-Train, keine produktive Code-Änderung.** Neuer App-weiter Performance-/Stabilitäts-/Speicher-/Rendering-Audit + formale iOS-17-Deployment-Target-Entscheidungsmatrix. Stützt sich ausschließlich auf offizielle Apple-Dokumentation als Primärquelle.
+
+### Neu
+- **`docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`** — repo-weite Tiefenanalyse: SwiftUI/MapKit/Heatmap/Live/Import-Export/Persistenz/Widgets/Tests, 20 priorisierte Hotspots (P0/P1/P2/M), Linux-testbare vs. Mac/Instruments-only Trennung, formale iOS-17-Entscheidungsmatrix mit 3 Optionen.
+
+### Deployment-Target-Empfehlung
+- **Status quo: iOS 16** (`Package.swift .iOS(.v16)`, 6× `IPHONEOS_DEPLOYMENT_TARGET = 16.0` + 2× `16.2` für Widget/Live-Activity).
+- **Empfehlung: Option 3 — iOS 17 vorbereiten, NICHT in diesem Train anheben.** Begründung: Reichweiten-Daten (`developer.apple.com/support/app-store/`) sind auf Linux nicht verifizierbar; Mechanik berührt 37 Source-Stellen + 8 pbxproj-Configs (Audit-Inventar zählt 28× iOS-17- und 9× iOS-16.2-Gates); Sim/Device-Smoke-Build vor Push Pflicht; Apple-Review-Punkte für `1.0.2 (171)` zuerst stabilisieren.
+
+### Apple-Quellen referenziert (Primärbeleg)
+_Improving your app's performance_, _Demystify SwiftUI performance_ (WWDC23 / 10160), _MapKit for SwiftUI_ (Map / MapContentBuilder / Marker / Annotation / MapPolyline / MapCameraPosition), _Map deprecations_ (iOS 17), _ActivityKit_ + HIG _Live Activities_, _Reducing your app's memory use_, _Reducing your app's launch time_, _MKMapView / MKMultiPolyline / MKTileOverlay_. URLs als von Apple gepflegte `developer.apple.com/...`-Pfade dokumentiert; Live-Verifikation auf Linux nicht möglich.
+
+### Verifikation
+- `git diff --check`: clean.
+- `swift build` (Swift 6.3.2 via swiftly, `libsqlite3-dev`): clean.
+- Linux `swift test`: **1459 / 2 Skips / 0 Failures, ~54 s** — unverändert.
+- Filterläufe alle grün, soweit Filter trifft (Heatmap/Import/Live/StreamReader trafen keine eigenen Suiten — Hinweis im Audit dokumentiert, kein Fehler).
+
+### Bewusst NICHT in diesem Train
+- Keine iOS-17-Anhebung (separater Train F vorbereitet).
+- Keine `KMZBuilder`-Streaming-Refactor (separater Train E1).
+- Keine `.onChange`-Konsolidierung (`.task(id:)` ist nicht semantik-äquivalent — Analyse im Audit).
+- Keine Identity-Fixes an Editor/Live/Overview/DayDetail (Train B2).
+- Kein Live-Polyline-Cap / Camera-Throttle (Train C, Feature-Flag default OFF).
+- Keine SQLite-Pragma-Erweiterung (Train E3).
+- Keine produktive Verdrahtung der Heatmap-Multi-LOD-API (Train D / Mac-only).
+
+### Empfohlene Trains (Reihenfolge)
+- **E1** (Linux, klein): KMZ-Streaming-Writer.
+- **E2** (Linux, mittel): GPX/KML/CSV/GeoJSON optionale Stream-API.
+- **E3** (Linux, klein): LocalTimelineStore-Pragmas.
+- **C** (gemischt, Feature-Flag default OFF): Live-Polyline-Cap + Camera-Throttle.
+- **B2** (gemischt): DayDetail/Overview/Export Identity-Wrapper.
+- **F** (Doku + Build): iOS-17-Anhebung.
+- **D** (Mac/Device/ASC): Heatmap-Multi-LOD-Wiring, MKMapView-Bridging, MKTileOverlay-Heatmap, Apple-Review-Resubmit.
+
+---
+
 ## 2026-05-16 — perf: stabilize swiftui identity surfaces (Train B1, `main`)
 
 > **Train B1 aus `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md` (kleinste sichere Teilmenge).** Nur SwiftUI-Identity in `AppInsightsContentView` an 3 unkritischen Stellen stabilisiert. **Keine** Live-Recording-Logik, **keine** Camera-Throttle, **kein** Polyline-Hard-Cap, **keine** `.onChange`-Konsolidierung. **Keine** Performance-Behauptung — auf Linux nicht visuell prüfbar; nur Build/Test-Verifikation.

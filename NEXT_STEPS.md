@@ -1,6 +1,25 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach `perf: stabilize swiftui identity surfaces`).
+Stand: 2026-05-16 (Branch `main`, nach `docs: audit app performance modernization and ios 17 path`).
+
+**App Performance Modernization Audit 2026-05-16 (umgesetzt, nur Doku):**
+- Neu: `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md` — repo-weite Performance-Tiefenanalyse + iOS-17-Entscheidungsmatrix.
+- **Deployment-Target-Empfehlung:** Option 3 — iOS 17 **vorbereiten, NICHT** in diesem Train anheben. Inventar: 28× iOS-17-Gates + 9× iOS-16.2-Gates, `Package.swift .iOS(.v16)`, 8 pbxproj-Configs auf 16.0/16.2.
+- Top-20-Hotspot-Liste mit P0/P1/P2/M, Linux-testbar vs. Mac-only getrennt.
+- Linux `swift test` 1459/2/0 (~54 s) unverändert.
+
+**Empfohlene Trains (in Reihenfolge):**
+- **E1** (Linux, klein): KMZ-Streaming-Writer — `KMZBuilder` heute mit Doppel-Pufferung (KML-String → Data → tmpURL → `Data(contentsOf:)`). Streaming-Provider direkt aus KML-File-Handle, kein zweiter In-Memory-Load.
+- **E2** (Linux, mittel): GPX/KML/CSV/GeoJSON optionale Stream-API (`build(into: URL)`-Variante). Bestehende API additiv erhalten.
+- **E3** (Linux, klein): `LocalTimelineStore` Pragmas — `journal_size_limit`, `wal_autocheckpoint`, optional `mmap_size`. iOS-Effekt nicht Linux-prüfbar.
+- **C** (gemischt, Feature-Flag default OFF): Live-Polyline Hard-Cap + Tail-Decimation + Camera-Throttle.
+- **B2** (gemischt): DayDetail/Overview/Export Identity-Wrapper.
+- **F** (Doku + Build): iOS-17-Anhebung (Reichweite vor Anhebung verifizieren via `developer.apple.com/support/app-store/`).
+- **D** (Mac/Device/ASC): Heatmap-Multi-LOD-Wiring, MKMapView-Bridging, MKTileOverlay-Heatmap, Apple-Review-Resubmit.
+
+---
+
+Vorheriger Stand 2026-05-16 (nach `perf: stabilize swiftui identity surfaces`).
 
 **Train B1 „Identity Polish — Insights" 2026-05-16 (umgesetzt, kein Verhaltenswechsel beabsichtigt):**
 - `Sources/.../AppInsightsContentView.swift` — 3 sichere `ForEach(Array(...enumerated()), id: \.offset)`-Stellen auf stabile Domain-IDs umgestellt (`id: \.activityType` / `\.semanticType` / `\.label`). Keine Index-Variable wurde genutzt.

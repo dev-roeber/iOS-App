@@ -1,5 +1,8 @@
 # MapKit & App-Performance Audit — 2026-05-16
 
+> **Folge-Audit 2026-05-16 (gleicher Tag, nach Trains A + B1):** `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md` ergänzt diesen Report um eine repo-weite Tiefenanalyse (SwiftUI/MapKit/Heatmap/Live/Import-Export/Persistenz/Widgets/Tests, 20 Hotspots, Linux-vs-Mac-Trennung) plus eine formale **iOS-17-Deployment-Target-Entscheidungsmatrix** (Empfehlung: vorbereiten, nicht in diesem Train anheben).
+
+
 **Branch:** `main`
 **HEAD:** `99c1549` (vor Audit-Commit), Audit-Commit folgt
 **Version:** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`
