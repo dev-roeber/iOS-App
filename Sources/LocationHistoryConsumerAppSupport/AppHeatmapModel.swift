@@ -57,6 +57,13 @@ final class AppHeatmapModel {
 
     private var updateTask: Task<Void, Never>?
     private var densityPrecomputationTask: Task<Void, Never>?
+    /// Train J, Phase 5 — race-guard for `await MainActor.run` writes from
+    /// the detached precomputation tasks. Bumped on every new
+    /// `startPrecomputation`, `updateScale` and `ensureDensityPrecomputation`
+    /// request so that stale completions (whose Task was cancelled but
+    /// already past the `Task.isCancelled` check) cannot overwrite freshly
+    /// computed grids.
+    private var precomputationGate = GenerationGate()
 
     init(export: AppExport) {
         self.export = export
@@ -69,6 +76,7 @@ final class AppHeatmapModel {
         let snapshot = export
 
         let cap = Self.densityPointCap
+        let token = precomputationGate.bump()
 
         Task.detached(priority: .userInitiated) {
             var points: [WeightedPoint] = []
@@ -144,6 +152,7 @@ final class AppHeatmapModel {
             )
 
             await MainActor.run {
+                guard self.precomputationGate.isStillCurrent(token) else { return }
                 self.densityPoints = completedPoints
                 self.lodGrids = [:]
                 self.viewportCache = [:]
@@ -169,6 +178,7 @@ final class AppHeatmapModel {
         viewportCache = [:]
         densityPrecomputationTask?.cancel()
         densityPrecomputationTask = nil
+        precomputationGate.bump()
         if let region = lastRegion {
             ensureDensityPrecomputation(for: region)
         }
@@ -226,6 +236,7 @@ final class AppHeatmapModel {
         isCalculating = true
         let points = densityPoints
         let scale = activeScale
+        let token = precomputationGate.bump()
 
         densityPrecomputationTask = Task.detached(priority: .utility) {
             // Map-Train 3: the per-LOD loop here was benchmarked against
@@ -247,6 +258,13 @@ final class AppHeatmapModel {
             let completedGrids = generatedGrids
 
             await MainActor.run {
+                guard self.precomputationGate.isStillCurrent(token) else {
+                    // A `updateScale` or fresh `startPrecomputation` invalidated
+                    // this run mid-flight; drop the stale grids and let the
+                    // newer pipeline write.
+                    if self.densityPrecomputationTask != nil { return }
+                    return
+                }
                 self.lodGrids = completedGrids
                 self.viewportCache = [:]
                 self.densityPrecomputationTask = nil
