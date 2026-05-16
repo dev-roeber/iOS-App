@@ -166,6 +166,17 @@ public enum LocalTimelineStoreSchema {
         ON derived_cache(cache_kind, created_at);
     """
 
+    /// Train I, Phase 5 (2026-05-16): covering index for the
+    /// `pruneDerivedCache(maxEntries:)` and `deleteDerivedCache(olderThan:)`
+    /// query paths, which scan `WHERE cache_kind = ? ORDER BY created_at`
+    /// and additionally select on `version`. Additive, IF NOT EXISTS;
+    /// no `userVersion` bump required because both the `version` column
+    /// and `created_at` already exist on the `derived_cache` table.
+    public static let createIndexDerivedCacheKindVersionCreatedSQL = """
+    CREATE INDEX IF NOT EXISTS idx_derived_cache_kind_version_created
+        ON derived_cache(cache_kind, version, created_at);
+    """
+
     public static let allBootstrapStatements: [String] = [
         createImportsSQL,
         createDaysSQL,
@@ -184,6 +195,7 @@ public enum LocalTimelineStoreSchema {
         createDerivedCacheSQL,
         createIndexDerivedCacheImportKindKeySQL,
         createIndexDerivedCacheKindCreatedSQL,
+        createIndexDerivedCacheKindVersionCreatedSQL,
     ]
 }
 

@@ -35,6 +35,8 @@ final class LocalTimelineDerivedCacheTests: XCTestCase {
         let names = Set(try store.indexNames(forTable: "derived_cache"))
         XCTAssertTrue(names.contains("idx_derived_cache_import_kind_key"))
         XCTAssertTrue(names.contains("idx_derived_cache_kind_created"))
+        XCTAssertTrue(names.contains("idx_derived_cache_kind_version_created"),
+                      "Train I, Phase 5: covering index for prune/delete query path")
     }
 
     func testPutAndReadRoundTrip() throws {
