@@ -24,6 +24,7 @@ public struct AppLiveTrackingView: View {
     @State private var polylineCoordinates: [CLLocationCoordinate2D] = []
     @State private var trackSamples: [TrackSample] = []
     @State private var liveRenderWasCapped: Bool = false
+    @State private var lastCameraUpdate: (timestamp: Date, coordinate: LiveCameraUpdateThrottle.Coordinate)?
 
     /// Hard cap on how many `liveTrackPoints` are sent into the SwiftUI/MapKit
     /// render path per frame. Train H-Wire-1 (2026-05-16). Pure render-side
@@ -95,8 +96,10 @@ public struct AppLiveTrackingView: View {
             refreshMetricSnapshot()
             if !hasSeededMap {
                 centerOnCurrentLocation()
-            } else if liveLocation.isFollowingLocation {
+                rememberCameraUpdate()
+            } else if shouldThrottledCameraFollow() {
                 centerOnCurrentLocation()
+                rememberCameraUpdate()
             }
         }
         .onChange(of: liveTrackSignature) { _, _ in
@@ -1145,6 +1148,40 @@ public struct AppLiveTrackingView: View {
             MKCoordinateRegion(
                 center: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
                 span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            )
+        )
+    }
+
+    /// Train I, Phase 1 (2026-05-16): combine the live `isFollowingLocation`
+    /// flag with the pure `LiveCameraUpdateThrottle` decision so that high-
+    /// frequency GPS samples do not re-center the map on every tick. Sub-
+    /// threshold updates are skipped; the most recent fix is still applied
+    /// when both the time- and distance-thresholds are crossed. The throttle
+    /// is bypassed entirely for the initial seed (`!hasSeededMap`) and for
+    /// the user-tapped "follow now" actions, which both call
+    /// `centerOnCurrentLocation()` directly.
+    private func shouldThrottledCameraFollow() -> Bool {
+        guard let location = liveLocation.currentLocation else { return false }
+        let coord = LiveCameraUpdateThrottle.Coordinate(
+            latitude: location.latitude,
+            longitude: location.longitude
+        )
+        let decision = LiveCameraUpdateThrottle.shouldUpdate(
+            isFollowing: liveLocation.isFollowingLocation,
+            coordinate: coord,
+            now: Date(),
+            lastUpdate: lastCameraUpdate
+        )
+        return decision == .update
+    }
+
+    private func rememberCameraUpdate() {
+        guard let location = liveLocation.currentLocation else { return }
+        lastCameraUpdate = (
+            timestamp: Date(),
+            coordinate: LiveCameraUpdateThrottle.Coordinate(
+                latitude: location.latitude,
+                longitude: location.longitude
             )
         )
     }
