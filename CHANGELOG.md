@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## 2026-05-16 — perf: stabilize swiftui identity surfaces (Train B1, `main`)
+
+> **Train B1 aus `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md` (kleinste sichere Teilmenge).** Nur SwiftUI-Identity in `AppInsightsContentView` an 3 unkritischen Stellen stabilisiert. **Keine** Live-Recording-Logik, **keine** Camera-Throttle, **kein** Polyline-Hard-Cap, **keine** `.onChange`-Konsolidierung. **Keine** Performance-Behauptung — auf Linux nicht visuell prüfbar; nur Build/Test-Verifikation.
+
+### Geändert — `Sources/LocationHistoryConsumerAppSupport/AppInsightsContentView.swift`
+- Z. 940: `ForEach(Array(insights.activityBreakdown.enumerated()), id: \.offset)` → `ForEach(insights.activityBreakdown, id: \.activityType)`. Index war ungenutzt (`_`), Liste statisch pro Render, `activityType: String` ist natürlicher eindeutiger Schlüssel.
+- Z. 958: dito für `visitTypeBreakdown` → `id: \.semanticType`.
+- Z. 984: dito für `periodBreakdown` → `id: \.label` (Item-`label` ist z.B. `"2026"` oder `"2026-03"`, pro Periode eindeutig).
+
+### Bewusst NICHT umgesetzt (in diesem Train aus Sicherheitsgründen)
+- `AppRecordedTrackEditorView.swift:202` — `draft.points` mit Index-getragener Binding-Logik, Delete/Insert/Reorder. Index-zu-Domain-ID-Umbau wäre semantischer Eingriff in den Editor.
+- `LHExportComponents.swift:33` — `Step.allCases.enumerated()` verwendet `index` aktiv für Label/Numbering.
+- `AppInsightsContentView.swift:1200` — `topDays`, `index`-Variable wird im Body angezeigt.
+- `AppLiveTrackingView.swift:562` / `AppLiveLocationSection.swift:132` — Live-Breadcrumb-Buckets ohne stabile Domain-ID (Algorithmus-derived). Live-Logik ist ausdrücklich nicht in Train B1 enthalten.
+- `AppOverviewTracksMapView.swift:202/409`, `AppExportPreviewMapView.swift:58/62`, `AppDayDetailView.swift:371/378/391/418` — Modelle ohne explizite stabile ID, würden `Identifiable`-Wrapper oder Modell-Erweiterung erfordern.
+- Konsolidierung der zwei 5× `.onChange`-Cluster in `AppInsightsContentView` (Z. 239–243, 465–469) — `.task(id:)` wäre **keine** semantik-äquivalente Ersetzung (zusätzlicher Lauf auf Initial-Appear, würde `refreshDerivedModel()` doppelt anstoßen und Picker-Resets duplizieren). Konsolidierung über kombiniertes `Equatable`-Struct hätte keinen messbaren Vorteil und entfernt Lesbarkeit. **Bewusst belassen.**
+
+### Verifikation
+- `git diff --check`: clean.
+- `swift build`: clean (1,65 s).
+- `swift test` (Swift 6.3.2 via swiftly, `libsqlite3-dev`, Linux x86_64): **1459 Tests, 2 Skips, 0 Failures, 54,3 s** — identisch zum Baseline-Stand vor Train B1.
+- Gefilterte Läufe alle grün:
+  - `swift test --filter Performance` → 38 Tests, 24,3 s
+  - `swift test --filter Insights` → 105 Tests, 0,43 s
+  - `swift test --filter Export` → 188 Tests, 6,4 s
+  - `swift test --filter Map` → 222 Tests, 1,33 s
+  - `swift test --filter Path` → 117 Tests, 0,92 s
+
+### Nicht auf Linux prüfbar
+- Visueller Identity-Effekt (SwiftUI-Diffing bei Inserts/Updates an `breakdown`-Listen): Auf Linux gibt es keinen SwiftUI-Renderer, daher kein Render-Test ergänzbar. Test-Coverage über Modell-Equality + bestehende `Insights`-Tests bleibt unverändert grün.
+
+### Empfohlener nächster Train
+- **Train B2 („Surface Polish — DayDetail/Overview Rows")** — Falls gewünscht: `Identifiable`-Wrapper oder ID-Erweiterung für `DayDetailViewState.VisitItem` / `ActivityItem` und `OverviewMapPathOverlay` / `PathOverlay` / `WaypointAnnotation`. Erfordert Modell-Edit, daher separater Train.
+- **Train C („Live Surface Hardening", Feature-Flag default OFF)** — Live-Track-Polyline Hard-Cap + Tail-Decimation + Camera-Update-Throttle in Follow-Mode. Verhaltensänderung am Live-Pfad, deshalb hinter Flag.
+
+---
+
 ## 2026-05-16 — test: add map and export performance baselines (Train A, `main`)
 
 > **Train A aus `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md` umgesetzt.** Reine Test-Ergänzung — **kein** Verhaltenswechsel, **keine** Performance-Optimierung, **keine** UI-Änderung. Ziel: deterministische, Linux-CI-taugliche Mess-Baseline ohne Fail-Bar, damit künftige MapKit-/Core-Optimierungen drift-erkennbar sind.

@@ -937,7 +937,7 @@ struct AppInsightsContentView: View {
                 sectionHint(activityMetric == .distance ? t("Compare activities by covered distance.") : t("Compare activities by entry count."))
                 #endif
 
-                ForEach(Array(insights.activityBreakdown.enumerated()), id: \.offset) { _, item in
+                ForEach(insights.activityBreakdown, id: \.activityType) { item in
                     activityBreakdownCard(item)
                 }
             } else {
@@ -955,7 +955,7 @@ struct AppInsightsContentView: View {
                 visitTypeChart
                 #endif
 
-                ForEach(Array(insights.visitTypeBreakdown.enumerated()), id: \.offset) { _, item in
+                ForEach(insights.visitTypeBreakdown, id: \.semanticType) { item in
                     visitTypeRow(item)
                 }
             } else {
@@ -981,7 +981,7 @@ struct AppInsightsContentView: View {
                 sectionHint(t(InsightsChartSupport.periodSectionHint(for: periodMetric)))
                 #endif
 
-                ForEach(Array(insights.periodBreakdown.enumerated()), id: \.offset) { _, item in
+                ForEach(insights.periodBreakdown, id: \.label) { item in
                     if let targets = periodDrilldownTargets(for: item), onDrilldown != nil {
                         Button {
                             presentDrilldown(title: "\(t("Period Breakdown")) · \(item.label)", targets: targets)

@@ -116,6 +116,15 @@ Vier Stufen, sortiert nach Nutzen/Risiko/Linux-Verifizierbarkeit. **Schweregrad-
 - Builder, DouglasPeucker, PathFilter ohne Linux-Baseline.
 - Hardware-/Memory-Verhalten nicht im Repo prüfbar.
 
+## Statusupdate 2026-05-16 — Train B1 umgesetzt (kleinste sichere Teilmenge von P0-4)
+
+- `Sources/.../AppInsightsContentView.swift` — drei `ForEach(Array(...enumerated()), id: \.offset)` (Z. 940, 958, 984) auf stabile Domain-IDs (`\.activityType` / `\.semanticType` / `\.label`). Index in allen drei Fällen ungenutzt; Listen statisch pro Render.
+- **Nicht in B1 enthalten (bewusst aufgeschoben):**
+  - P0-5 `.onChange`-Konsolidierung in `AppInsightsContentView`: `.task(id:)` ist hier **keine** semantik-äquivalente Ersetzung (zusätzlicher Lauf auf Appear → duplizierter `refreshDerivedModel`, duplizierte Picker-Resets). Kombiniertes `Equatable`-Struct hätte keinen messbaren Vorteil. **Status: KEEP AS IS.**
+  - P0-4 Rest: `AppRecordedTrackEditorView` (Index aktiv in Bindings), `LHExportComponents` (Index aktiv im Label), `AppInsightsContentView` `topDays` (Index angezeigt), Live-Breadcrumb-Buckets (Live-Pfad ausdrücklich nicht in B1), Overview/Export/DayDetail-Rows (Modelle ohne stabile Domain-ID — separater Train B2 nötig).
+- Linux `swift test`: **1459 / 2 Skips / 0 Failures, 54,3 s** — unverändert zum Stand vor Train B1.
+- **Auf Linux nicht visuell prüfbar:** SwiftUI-Identity-Diffing bei tatsächlichen `breakdown`-Insertions/Updates auf iOS-Renderer.
+
 ## Statusupdate 2026-05-16 — Train A umgesetzt
 
 - 3 neue Foundation-only Performance-Test-Files + 1 Erweiterung committed (siehe `CHANGELOG.md`-Eintrag zum gleichen Datum):
@@ -135,7 +144,9 @@ Vier Stufen, sortiert nach Nutzen/Risiko/Linux-Verifizierbarkeit. **Schweregrad-
 
 **Train B — „Identity & Surface Polish" (low risk, kein Verhaltenswechsel):**
 - P0-4: `ForEach(Array(...enumerated()))` Stellen schrittweise auf stabile IDs.
-- P0-5: AppInsightsContentView `.task(id:)`-Konsolidierung.
+  - **B1 umgesetzt 2026-05-16** — 3 Stellen in `AppInsightsContentView` (activity/visit/period breakdown). Siehe Statusupdate oben.
+  - B2 offen — DayDetail-Rows, Overview/Export-Overlays, RecordedTrackEditor (Modelle ohne Domain-ID; benötigt `Identifiable`-Erweiterung).
+- P0-5: AppInsightsContentView `.task(id:)`-Konsolidierung. **Nach Analyse 2026-05-16: KEEP AS IS** — `.task(id:)` ist keine semantik-äquivalente Ersetzung der bestehenden 5× `.onChange`-Cluster (würde Initial-Lauf duplizieren).
 
 **Train C — „Live Surface Hardening" (mittel, Default OFF):**
 - P0-1: Live-Track Polyline-Cap mit Tail-Decimation, Feature-Flag.

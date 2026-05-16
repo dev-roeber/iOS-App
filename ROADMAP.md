@@ -7,6 +7,7 @@
 - **Repo-Hygiene:** 32 `*__backup_*.md` aus dem aktiven Tree nach `docs/archive/backups-2026-05-16/` verschoben (Doku-Audit-Cleanup).
 - **Neu — MapKit & Performance Audit 2026-05-16:** `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md` mit 6 Map-Surfaces, 17 priorisierten Hotspots und Mess-Baseline-Befund. Vorgeschlagene Trains A–D (siehe `NEXT_STEPS.md`).
 - **Neu — Train A „Baseline Strengthening" umgesetzt 2026-05-16:** 3 neue Foundation-only Performance-Test-Files (PathSimplification, PathFilter, ExportBuilders) + GoogleTimelineStreamReader-10k-Erweiterung. Linux `swift test` 1459/2/0 (52,8 s). **Reine Test-Ergänzung, kein Verhaltenswechsel.**
+- **Neu — Train B1 „Identity Polish — Insights" umgesetzt 2026-05-16:** In `AppInsightsContentView` drei `ForEach(Array(...enumerated()), id: \.offset)`-Stellen (activity / visit / period breakdown) auf stabile Domain-IDs (`\.activityType` / `\.semanticType` / `\.label`) umgestellt. Index war ungenutzt. **Keine** `.onChange`-Konsolidierung, **keine** Live-/Camera-/Map-Änderungen. Linux `swift test` 1459/2/0 (54,3 s) unverändert. Visueller SwiftUI-Identity-Effekt auf Linux nicht prüfbar.
 - **Offen / extern nicht prüfbar (unverändert):** ASC-Live-Status für 1.0.2, TestFlight-Upload `1.0.2 (171)`, 46-MiB-Hardware-Retest mit Original-Asset, Dynamic-Island Lock-Screen, iPad-Layout-Sichtprüfung.
 
 ---

@@ -1,6 +1,19 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, HEAD pending — `docs: audit mapkit and app performance modernization plan`).
+Stand: 2026-05-16 (Branch `main`, nach `perf: stabilize swiftui identity surfaces`).
+
+**Train B1 „Identity Polish — Insights" 2026-05-16 (umgesetzt, kein Verhaltenswechsel beabsichtigt):**
+- `Sources/.../AppInsightsContentView.swift` — 3 sichere `ForEach(Array(...enumerated()), id: \.offset)`-Stellen auf stabile Domain-IDs umgestellt (`id: \.activityType` / `\.semanticType` / `\.label`). Keine Index-Variable wurde genutzt.
+- **Bewusst NICHT enthalten:**
+  - Keine `.onChange`-Konsolidierung (Agent-Analyse: `.task(id:)` wäre keine semantik-äquivalente Ersetzung — würde `refreshDerivedModel()` doppelt anstoßen, Picker-Reset duplizieren).
+  - Keine Eingriffe in `AppRecordedTrackEditorView` (Index-getragene Bindings), `LHExportComponents` (Index aktiv genutzt), `AppDayDetailView`-Rows, Live-Pfade, Map-Overlays.
+  - Kein Live-Polyline-Cap, kein Camera-Throttle (Train C).
+- Linux `swift test`: **1459 / 2 Skips / 0 Failures, 54,3 s** — identisch zur Baseline vor Train B1.
+- **Auf Linux nicht visuell prüfbar:** SwiftUI-Identity-Diffing-Effekt; nur über Build/Test grün-gehalten.
+
+**Empfohlener nächster Train (Stand 2026-05-16, nach Train B1):**
+- **Train B2 („Surface Polish — DayDetail/Overview Rows")** — `Identifiable`-Wrapper oder ID-Erweiterung für `DayDetailViewState.VisitItem` / `ActivityItem` und Overview/Export-Overlay-Typen. Erfordert Modell-Edit, daher separater Train.
+- Alternativ **Train C („Live Surface Hardening", Feature-Flag Default OFF)** — Live-Track Polyline Hard-Cap + Tail-Decimation, Camera-Update-Throttle im Follow-Mode.
 
 **Train A „Baseline Strengthening" 2026-05-16 (umgesetzt, kein Verhaltenswechsel):**
 - 3 neue Performance-Test-Files (Foundation-only, Linux-CI-portabel, ohne Fail-Bar) + 1 Erweiterung:
