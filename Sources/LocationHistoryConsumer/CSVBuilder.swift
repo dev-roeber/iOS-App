@@ -36,6 +36,14 @@ public enum CSVBuilder {
     /// - Returns: UTF-8 CSV string including header and all rows.
     public static func build(from days: [Day]) -> String {
         var lines: [String] = [header.map(csvEscape).joined(separator: ",")]
+        // Rough upper-bound row estimate: header + one row per visit/activity/path/empty.
+        // Avoids repeated array reallocations on multi-day exports.
+        var rowEstimate = 0
+        for day in days {
+            let dayRows = day.visits.count + day.activities.count + day.paths.count
+            rowEstimate += dayRows == 0 ? 1 : dayRows
+        }
+        lines.reserveCapacity(1 + rowEstimate)
 
         for day in days {
             for visit in day.visits {
