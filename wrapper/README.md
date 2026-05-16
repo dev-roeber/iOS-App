@@ -59,7 +59,7 @@ Genutzte Produkte:
 
 - **Bundle Identifier:** `de.roeber.LH2GPXWrapper`
 - **Display Name:** LH2GPX
-- **Version:** 1.0.1 (`MARKETING_VERSION`); 1.0-Train abgeschlossen — Build 74 in ASC-Status `Pending Developer Release` (akzeptiert nach Review-Response 2026-05-05); 1.0.1-Train Xcode Cloud Build 84 grün; `CURRENT_PROJECT_VERSION = 100` lokal gesetzt (commit `8854eef`, 2026-05-06), Xcode Cloud Build ≥100 vor nächstem Submit nötig (Stand 2026-05-06)
+- **Version (Stand 2026-05-16):** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (8 pbxproj-Configs + Info.plist App/Widget konsistent). Historie: 1.0-Train abgeschlossen (Build 74 ASC `Pending Developer Release` laut Doku 2026-05-06, im aktuellen Audit nicht re-verifiziert); 1.0.1-Train historisch (Build 84 Cloud, `CURRENT_PROJECT_VERSION = 100` per commit `8854eef`, dann auf 168 in 2026-05-13, dann auf 171); aktuell aktiver Train ist 1.0.2.
 - **Deployment Target:** iOS 16.0 (App + Tests) / iOS 16.2 (`LH2GPXWidget`). Die Inkonsistenz ist bewusst: ActivityKit Live Activities erfordern iOS 16.2 und sind in `wrapper/.../LH2GPXWidget/Info.plist` verankert; der App-Pfad bleibt auf 16.0, damit ältere iPhones die App weiter nutzen können (Widget/Live-Activity-UI fällt dort sichtbar zurück).
 - **Signing:** Automatic (Team XAGR3K7XDJ); lokaler Release-Archive-Pfad baut derzeit mit `Apple Development`, weil auf diesem Host keine Distribution-Identitaet verfuegbar ist
 - **App Icon:** Map-Pin + "LH2GPX", 1024x1024 (Interims-Design, kein Gradient-Placeholder mehr)

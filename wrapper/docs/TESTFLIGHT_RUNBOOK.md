@@ -22,8 +22,8 @@ Stand: 2026-05-13 (Post-Audit-Truth-Sync; vorher 2026-05-12 / 2026-05-05 — sie
 |-------|--------|---------|
 | `xcodebuild archive` | **historisch verifiziert** | 2026-04-30, v1.0 Build 45, lokales Release-Archive erzeugbar (vor MARKETING_VERSION-Bump auf 1.0.1) |
 | Bundle Identifier | `de.roeber.LH2GPXWrapper` | project.pbxproj |
-| Marketing Version (damals) | `1.0` (heute Repo-Truth: **`1.0.1`**) | project.pbxproj |
-| Build Number (damals) | `45` (heute Repo-Truth: **`100`**) | project.pbxproj |
+| Marketing Version (damals) | `1.0` (heute Repo-Truth: **`1.0.2`**, Stand 2026-05-16) | project.pbxproj |
+| Build Number (damals) | `45` (heute Repo-Truth: **`171`**, Stand 2026-05-16) | project.pbxproj |
 | Display Name | `LH2GPX` | project.pbxproj |
 | Deployment Target | iOS 16.0 (App, Tests); iOS 16.2 (Widget) | project.pbxproj |
 | Signing | Automatic, Team `XAGR3K7XDJ`; lokaler Host signiert Archive derzeit mit `Apple Development`, Export zu ASC braucht zusaetzlich eine Distribution-Identitaet | project.pbxproj + lokaler Archive-Lauf 2026-04-30 |

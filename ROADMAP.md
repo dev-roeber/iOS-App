@@ -1,5 +1,14 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-16, HEAD `2f6d003`, Branch `main`)
+
+- **Repo-Truth:** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (8 pbxproj-Configs + Info.plist App/Widget konsistent). Frühere Stände `1.0.1 / 100 / 168` in den darunterliegenden Blocks sind historisch.
+- **Linux-Verifikation (Swift 6.3.2 via swiftly, `libsqlite3-dev`):** `swift build` clean, `swift test` **1435 / 2 Skips / 0 Failures**, 41,1 s.
+- **Repo-Hygiene:** 32 `*__backup_*.md` aus dem aktiven Tree nach `docs/archive/backups-2026-05-16/` verschoben (Doku-Audit-Cleanup).
+- **Offen / extern nicht prüfbar (unverändert):** ASC-Live-Status für 1.0.2, TestFlight-Upload `1.0.2 (171)`, 46-MiB-Hardware-Retest mit Original-Asset, Dynamic-Island Lock-Screen, iPad-Layout-Sichtprüfung.
+
+---
+
 ## Aktiver Stand (2026-05-13, HEAD pending — `perf: optimize heatmap pipeline with golden benchmarks`, Branch `chore/mapkit-az-modernization-3`)
 
 - **MapKit A–Z Train 3** (kein Release, kein Merge): Heatmap-Pipeline mit 11 Golden-Output-Tests gelockt (Cell-Counts, byte-identische `normalizedIntensity` für stabile Insertion-Order, multi-LOD-Äquivalenz ≤ 1e-14). `HeatmapGridBuilder.computeGrid` an `binRaw` + `smoothAndNormalize` delegiert (byte-identisch zum Pre-Refactor). Neue API `computeMultiLODGrids(for:lods:scale:)` — fused single pass über points; **bewusst nicht produktiv verdrahtet**, da Benchmarks keinen Wallclock-Gewinn bei 10k/50k zeigen (Smoothing dominiert). Sim+Device BUILD SUCCEEDED.

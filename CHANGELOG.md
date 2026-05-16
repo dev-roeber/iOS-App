@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2026-05-16 — docs: clean backup documentation artifacts after truth audit (HEAD `2f6d003` → pending, `main`)
+
+> **Repo-Hygiene + Truth-Glättung, kein Code-Change.** Folge-Sweep nach dem 2026-05-16-Truth-Audit.
+
+### Repo-Hygiene
+- 32 `*__backup_*.md` (Cluster 2026-03-30 / 2026-03-31 / 2026-04-01) per `git mv` in **`docs/archive/backups-2026-05-16/`** verschoben unter Beibehaltung der Original-Pfadstruktur. Quelle: Root, `docs/`, `docs/archive/`, `audits/`, `wrapper/`, `wrapper/docs/`. Damit verschwinden alle `__backup_*`-Dateien aus dem aktiven Tree. Empfohlen vom Deep Audit (P2-11, `docs/DEEP_AUDIT_2026-05-13_CLAUDE.md`).
+- Keine Inhaltsänderung an den Backup-Dateien; Git-Rename-Detection erhält Historie.
+
+### Weitere Truth-Glättung
+- `ROADMAP.md`: Neuer Stand-Block 2026-05-16 ganz oben mit aktuellem Repo-Truth (1.0.2 / 171) und Linux-Test-Stand 1435/2/0; darunterliegende historische Blöcke (1.0.1 / 100 / 168) bleiben unverändert als Historie.
+- `wrapper/README.md`: Version-Zeile auf `1.0.2 / 171` korrigiert, frühere Trains (1.0 / 1.0.1) als Historie umfomuliert.
+- `wrapper/docs/TESTFLIGHT_RUNBOOK.md`: „heute Repo-Truth: 1.0.1 / 100"-Spalte in der historischen Tabelle auf aktuellen Stand 1.0.2 / 171 nachgezogen.
+
+### Verifikation
+- `git diff --check`: clean.
+- Linux `swift build` + `swift test` (Swift 6.3.2 via swiftly): siehe Eintrag oben — Code-Pfade nicht berührt, Ergebnis wird in diesem Commit erneut gemessen und bleibt bei 1435/2/0 erwartet.
+
+---
+
 ## 2026-05-16 — docs: reconcile audit truth across project documentation (HEAD `71f715b`, `main`)
 
 > **Doku-Audit, kein Code-Change.** Repo-Truth-Sweep + Doku-Glättung. Kein Build-Bump, kein ASC, kein Feature-Change.
