@@ -1,5 +1,20 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-16 (Xcode Cloud Build 175 extern verifiziert, Branch `main`)
+
+**Extern belegt (Screenshots 2026-05-16):** Workflow `Release – Archive & TestFlight` Build **175** erfolgreich, letzter Commit `2bfc009` (`docs: g1 mapkit ios 17 migration is already complete`). Schritte: `Archive - iOS` ✅, `TestFlight-interne Tests - iOS` ✅. Toolchain Cloud-Run: **Xcode 26.5 (17F42)**, **macOS Tahoe 26.4 (25E246)**. TestFlight zeigt `LH2GPX 1.0.2 (175)`. App-Info: „Erfordert iOS 17.0 oder neuer".
+
+Damit sind extern enthalten:
+- **`ff963c1`** — iOS-17-onChange-Deprecation-Fix (24 Stellen).
+- **`2bfc009`** — G1-Befund: MapKit-iOS-17-API-Migration bereits abgeschlossen (`coordinateRegion:` / `annotationItems:` repo-weit 0 Treffer).
+- **`92dc447`** — iOS-17-Minimum-Anhebung (Train F).
+
+**Repo-Truth lokal unverändert:** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`. Build-Nummer `175` kommt aus `CI_BUILD_NUMBER`.
+
+**Nicht behauptet in diesem Train:** keine App-Review-Submission, kein App-Review-Accept, kein Hardware-Smoke unter Build 175, keine Dynamic-Island-Sichtprüfung, kein iPad-Layout-Test, keine 46-MiB-Retest. Sektion 4 (ASC / TestFlight / Apple Review) bleibt **OFFEN**.
+
+---
+
 ## Aktualisierung 2026-05-16 (Xcode Cloud Build 174 + iOS-17-Deprecation-Fix, Branch `main`)
 
 **Extern belegt (Screenshots):** Workflow `Release – Archive & TestFlight` Build **174** erfolgreich, letzter Commit `92dc447`. TestFlight zeigt `LH2GPX 1.0.2 (174)`, 90 Tage. App-Info: „Erfordert iOS 17.0 oder neuer" — Train-F-Anhebung damit extern bestätigt.

@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## 2026-05-16 — docs: record xcode cloud build 175 verification (`main`)
+
+> **Reine Doku-Aktualisierung.** Keine Code-Änderung, keine Versions-Bumps.
+
+### Extern belegter Stand (Screenshots, 2026-05-16)
+- **Xcode Cloud Build 175** erfolgreich, Workflow `Release – Archive & TestFlight`.
+- Letzter Commit im Build: **`2bfc009`** (`docs: g1 mapkit ios 17 migration is already complete`).
+- Damit sind **`ff963c1`** (onChange-Fix, alle 24 single-arg `onChange`-Stellen auf Zwei-Parameter-Form) und **`2bfc009`** (G1 MapKit iOS-17-API-Stand) extern in Xcode Cloud/TestFlight angekommen.
+- Schritte des Workflow-Runs: `Archive - iOS` ✅ erfolgreich, `TestFlight-interne Tests - iOS` ✅ erfolgreich.
+- Toolchain im Build: **Xcode 26.5 (17F42)**, **macOS Tahoe 26.4 (25E246)**.
+- TestFlight zeigt **LH2GPX 1.0.2 (175)**.
+- Kompatibilität: „Erfordert iOS 17.0 oder neuer" — iOS-17-Minimum aus Train F extern weiterhin bestätigt.
+
+### Repo-Truth (lokal, unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (pbxproj, 8 Configs konsistent).
+- Build-Nummer **175** stammt aus Xcode-Cloud-Zählung (`wrapper/ci_scripts/ci_pre_xcodebuild.sh` setzt `CFBundleVersion` aus `CI_BUILD_NUMBER`). Lokale Build-Nummer wird **nicht** auf 175 nachgezogen.
+
+### Geändert (nur Doku)
+- `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/XCODE_CLOUD_RUNBOOK.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md`, `wrapper/docs/TESTFLIGHT_RUNBOOK.md`.
+
+### Nicht behauptet (mangels Belegen)
+- Keine App-Review-Submission, kein App-Review-Accept.
+- Kein Hardware-Smoke auf realer Hardware unter Build 175.
+- Keine Dynamic-Island-Sichtprüfung.
+- Kein iPad-Layout-Test.
+- Kein 46-MiB-Hardware-Retest.
+
+### Verifikation (Linux)
+- `git diff --check`: clean.
+- `swift build` (Swift 6.3.2): clean.
+- `swift test`: **1459 / 2 Skips / 0 Failures** — unverändert (keine Code-Änderung).
+
+### Empfohlener nächster Train
+- TestFlight-Install Build **175** auf iPhone 14 Pro / iPhone 16 Pro Max: DayMap / LiveTracking / Heatmap / Overview / ExportPreview je einmal manuell, Crash- + Render-Stabilität bestätigen. Dynamic-Island-Lock-Screen-Sichtprüfung. iPad-Layout.
+- ODER **Train C** (Linux + Feature-Flag default OFF): Live-Polyline Hard-Cap-UI-Warnung + Camera-Throttle.
+- ODER Cleanup-Train: 18× redundante `@available(iOS 16.0/16.1/16.2, *)`-Gates abbauen.
+
+---
+
 ## 2026-05-16 — docs: g1 mapkit ios 17 migration is already complete (`main`)
 
 > **Train G1 — Befund: kein Migrationsbedarf.** Reine Doku-Korrektur, keine Code-Änderung.

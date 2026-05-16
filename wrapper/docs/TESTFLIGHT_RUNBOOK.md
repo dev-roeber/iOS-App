@@ -1,8 +1,8 @@
 # TestFlight + App Store Runbook
 
-Stand: 2026-05-16 (Xcode Cloud Build **174** = TestFlight `1.0.2 (174)`; Repo-Truth lokal weiterhin `1.0.2 / 171`, Build-Nummer aus `CI_BUILD_NUMBER`).
+Stand: 2026-05-16 (Xcode Cloud Build **175** = TestFlight `1.0.2 (175)`; Repo-Truth lokal weiterhin `1.0.2 / 171`, Build-Nummer aus `CI_BUILD_NUMBER`).
 
-> **Update 2026-05-16:** Xcode Cloud Workflow `Release – Archive & TestFlight` **Build 174** erfolgreich, letzter Commit `92dc447` (`chore: raise minimum ios target to 17`). TestFlight zeigt `LH2GPX 1.0.2 (174)`, 90 Tage. App-Info: „Erfordert iOS 17.0 oder neuer" — Train-F-Minimum extern bestätigt. Im Build 174 gemeldete iOS-17-Deprecation-Warnung (`onChange(of:perform:)`, `ContentView.swift:125`) in `fix: update ios 17 onchange usage and document build 174` behoben + repo-weit 23 weitere single-arg `onChange`-Stellen migriert. **Nicht behauptet:** kein Hardware-Retest auf neuem Build, keine Apple-Review-Submission, keine Dynamic-Island-Sichtprüfung.
+> **Update 2026-05-16 (Build 175):** Xcode Cloud Workflow `Release – Archive & TestFlight` **Build 175** erfolgreich, letzter Commit `2bfc009` (`docs: g1 mapkit ios 17 migration is already complete`). Schritte: `Archive - iOS` ✅, `TestFlight-interne Tests - iOS` ✅. Toolchain Cloud-Run: **Xcode 26.5 (17F42)**, **macOS Tahoe 26.4 (25E246)**. TestFlight zeigt `LH2GPX 1.0.2 (175)`. App-Info: „Erfordert iOS 17.0 oder neuer". Damit enthalten: Train-F-iOS-17-Minimum (`92dc447`), onChange-Deprecation-Fix (`ff963c1`, 24 Stellen) und G1-MapKit-Stand (`2bfc009`). Vorgänger-Build 174 enthielt `ff963c1`/`2bfc009` noch nicht. **Nicht behauptet:** kein Hardware-Smoke unter Build 175, keine Apple-Review-Submission/-Accept, keine Dynamic-Island-Sichtprüfung, kein iPad-Layout-Test.
 
 ---
 

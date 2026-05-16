@@ -93,12 +93,18 @@ App Store Connect konfiguriert werden — keine YAML-Dateien.
 
 ### Aktueller Xcode-Cloud-Stand (extern belegt, Screenshots 2026-05-16)
 
-- Workflow `Release – Archive & TestFlight` Build **174** **erfolgreich**, letzter Commit im Build: `92dc447` (`chore: raise minimum ios target to 17`).
-- TestFlight zeigt `LH2GPX 1.0.2 (174)`, 90 Tage Gültigkeit.
+- Workflow `Release – Archive & TestFlight` Build **175** **erfolgreich**, letzter Commit im Build: `2bfc009` (`docs: g1 mapkit ios 17 migration is already complete`). Schritte: `Archive - iOS` ✅, `TestFlight-interne Tests - iOS` ✅. Toolchain im Cloud-Run: **Xcode 26.5 (17F42)**, **macOS Tahoe 26.4 (25E246)**.
+- TestFlight zeigt `LH2GPX 1.0.2 (175)`. App-Info: „Erfordert iOS 17.0 oder neuer" — iOS-17-Minimum aus Train F extern weiterhin bestätigt. Damit auch `ff963c1` (onChange-Fix) und `2bfc009` (G1 MapKit-Stand) extern angekommen — der vorhergehende Build 174 enthielt diese noch nicht.
+- Build-Nummer **175** stammt aus Xcode-Cloud-Zählung (`wrapper/ci_scripts/ci_pre_xcodebuild.sh` setzt `CFBundleVersion` via `CI_BUILD_NUMBER`); lokale `CURRENT_PROJECT_VERSION` bleibt `171`.
+- **Nicht behauptet:** keine App-Review-Submission, kein Hardware-Smoke unter Build 175, keine Dynamic-Island-Sichtprüfung, kein iPad-Layout-Test.
+
+### Historischer Xcode-Cloud-Stand (2026-05-16, vor Build 175)
+
+- Workflow `Release – Archive & TestFlight` Build **174** erfolgreich, letzter Commit im Build: `92dc447` (`chore: raise minimum ios target to 17`).
+- TestFlight zeigte zwischenzeitlich `LH2GPX 1.0.2 (174)`, 90 Tage Gültigkeit; durch Build 175 abgelöst.
 - App-Info: „Erfordert iOS 17.0 oder neuer" — Train-F-Anhebung extern bestätigt.
-- Xcode-Cloud-Warnung im Build 174: `'onChange(of:perform:)' was deprecated in iOS 17.0`, Quelle `wrapper/LH2GPXWrapper/ContentView.swift:125`. Behoben in `fix: update ios 17 onchange usage and document build 174` (2026-05-16); 24 single-arg `onChange`-Closures repo-weit auf Zwei-Parameter-Form migriert.
-- Build-Nummer **174** stammt aus Xcode-Cloud-Zählung (`wrapper/ci_scripts/ci_pre_xcodebuild.sh` setzt `CFBundleVersion` via `CI_BUILD_NUMBER`); lokale `CURRENT_PROJECT_VERSION` bleibt `171` und wurde bewusst nicht angepasst.
-- **Nicht behauptet:** keine App-Review-Submission, kein Hardware-Retest, keine Dynamic-Island-Sichtprüfung, kein iPad-Layout-Test.
+- Xcode-Cloud-Warnung im Build 174: `'onChange(of:perform:)' was deprecated in iOS 17.0`, Quelle `wrapper/LH2GPXWrapper/ContentView.swift:125`. Behoben in `fix: update ios 17 onchange usage and document build 174` (Commit `ff963c1`); 24 single-arg `onChange`-Closures repo-weit auf Zwei-Parameter-Form migriert. Build 175 enthält den Fix.
+- Build-Nummer **174** stammte aus Xcode-Cloud-Zählung (`CI_BUILD_NUMBER`); lokale `CURRENT_PROJECT_VERSION` weiter `171`.
 - **ASC-Live-Status nicht im Audit 2026-05-16 verifiziert** — folgende Punkte stammen aus historischen Doku-Snapshots, nicht aus aktueller ASC-Abfrage:
 
 ### Historischer ASC-/Cloud-Truth (Stand 2026-05-06, laut Doku)

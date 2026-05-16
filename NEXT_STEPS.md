@@ -1,6 +1,26 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach `docs: g1 mapkit ios 17 migration is already complete`).
+Stand: 2026-05-16 (Branch `main`, nach `docs: record xcode cloud build 175 verification`).
+
+**Xcode Cloud Build 175 extern verifiziert (Screenshots):**
+- Workflow `Release – Archive & TestFlight` Build **175** erfolgreich, letzter Commit `2bfc009`.
+- Damit sind `ff963c1` (onChange-Fix) und `2bfc009` (G1 MapKit-Stand) extern auf TestFlight angekommen.
+- `Archive - iOS` ✅, `TestFlight-interne Tests - iOS` ✅.
+- Toolchain: Xcode 26.5 (17F42), macOS Tahoe 26.4 (25E246).
+- TestFlight: `LH2GPX 1.0.2 (175)`. App-Info: „Erfordert iOS 17.0 oder neuer".
+
+**Repo-Truth lokal unverändert:** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`. Build 175 entstand durch `CI_BUILD_NUMBER`.
+
+**Nicht behauptet:** keine App-Review-Submission/-Accept, kein Hardware-Smoke unter Build 175, keine Dynamic-Island-Sichtprüfung, kein iPad-Layout-Test.
+
+**Nächste empfohlene Schritte:**
+- TestFlight-Install Build 175 auf iPhone 14 Pro / iPhone 16 Pro Max: DayMap, LiveTracking, Heatmap, Overview, ExportPreview je einmal manuell, Crash- + Render-Stabilität bestätigen. Dynamic-Island-Lock-Screen-Sichtprüfung. iPad-Layout.
+- **Train C** (Linux, Feature-Flag default OFF): Live-Polyline Hard-Cap-UI-Warnung + Camera-Throttle.
+- Cleanup-Train: 18× redundante `@available(iOS 16.0/16.1/16.2, *)`-Gates abbauen (mechanisch).
+
+---
+
+Vorheriger Stand: nach `docs: g1 mapkit ios 17 migration is already complete`.
 
 **Train G1 — Befund: kein Migrationsbedarf.**
 - `rg "coordinateRegion:|annotationItems:|MapMarker|MapAnnotation\("` repo-weit: **0 Treffer**.
