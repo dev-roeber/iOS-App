@@ -1,6 +1,29 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach `perf: reduce kmz export memory copies`).
+Stand: 2026-05-16 (Branch `main`, nach `chore: raise minimum ios target to 17`).
+
+**Train F umgesetzt (iOS-17-Anhebung):**
+- `Package.swift`: `.iOS(.v16)` → `.iOS(.v17)`; `macOS(.v13)` unverändert.
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`: alle 6 `IPHONEOS_DEPLOYMENT_TARGET` auf `17.0` (vorher 4× `16.0` + 2× `16.2`).
+- `README.md` + `wrapper/README.md` ziehen den neuen Minimum-Stand nach.
+- Marketing-Version / Build (`1.0.2 / 171`) unverändert.
+- **Bewusst nicht abgebaut:** `@available(iOS 16.0/16.1/16.2, *)`-Gates bleiben (4 + 5 + 9 = 18 Stellen). Durch iOS-17-Minimum redundant, aber funktional korrekt — Aufräumung separater Folge-Train.
+- **Bewusst nicht angetastet:** `@available(iOS 17, macOS 14, *)`-Gates (28 Stellen). Viele gaten zusätzlich macOS 14, das bleibt nötig.
+- Linux: `swift build` clean, `swift test` 1459/2/0 ~53,6 s.
+
+**Zwingender Mac/Xcode-Cloud-Smoke vor weiterer Arbeit:**
+1. Wrapper in Xcode öffnen, Sim-Build iOS 17 grün.
+2. Geräte-Smoke `xcodebuild -destination 'generic/platform=iOS'` grün.
+3. Xcode-Cloud-Archive `1.0.2 (171)` mit neuem Minimum erstellen + ASC-Validierung.
+4. ASC-Reichweiten-Snapshot (`developer.apple.com/support/app-store/`) prüfen.
+
+**Nächster empfohlener Train:**
+- **G** (Linux + Mac): MapKit-iOS-17-API-Migration — `Map { … }`-Builder durchgängig, `MapCameraPosition`, deprecated `coordinateRegion:`/`annotationItems:` ersetzen. Großer Refactor, jetzt sauber möglich.
+- ODER **C** (gemischt, Feature-Flag default OFF): Live-Polyline-Hard-Cap-UI-Warnung + Camera-Throttle.
+
+---
+
+Vorheriger Stand: nach `perf: reduce kmz export memory copies`.
 
 **Train E1 umgesetzt (KMZ-Memory-Refactor):**
 - `KMZBuilder.build(from:)` schreibt jetzt direkt in einen In-Memory-`Archive` (ZIPFoundation `Archive(data:, accessMode: .create)` + `archive.data`).

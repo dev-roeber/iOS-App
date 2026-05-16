@@ -25,7 +25,7 @@ Stand: 2026-05-13 (Post-Audit-Truth-Sync; vorher 2026-05-12 / 2026-05-05 — sie
 | Marketing Version (damals) | `1.0` (heute Repo-Truth: **`1.0.2`**, Stand 2026-05-16) | project.pbxproj |
 | Build Number (damals) | `45` (heute Repo-Truth: **`171`**, Stand 2026-05-16) | project.pbxproj |
 | Display Name | `LH2GPX` | project.pbxproj |
-| Deployment Target | iOS 16.0 (App, Tests); iOS 16.2 (Widget) | project.pbxproj |
+| Deployment Target | iOS 17.0 (App, Tests, Widget — einheitlich seit Train F 2026-05-16) | project.pbxproj |
 | Signing | Automatic, Team `XAGR3K7XDJ`; lokaler Host signiert Archive derzeit mit `Apple Development`, Export zu ASC braucht zusaetzlich eine Distribution-Identitaet | project.pbxproj + lokaler Archive-Lauf 2026-04-30 |
 | PrivacyInfo.xcprivacy | lokal sichtbar: kein Tracking, UserDefaults CA92.1, `PreciseLocation` fuer optionalen Live-Upload | PrivacyInfo.xcprivacy |
 | App Icon | Map-Pin + "LH2GPX", 1024x1024 | Assets.xcassets/AppIcon.appiconset/ |

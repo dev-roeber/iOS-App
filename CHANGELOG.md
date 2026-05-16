@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## 2026-05-16 — chore: raise minimum ios target to 17 (`main`)
+
+> **Train F umgesetzt.** Deployment Target des Cores und des Wrappers konsistent auf iOS 17.0 angehoben. Keine MapKit-/UI-Refactors, keine Format-Änderungen, keine `@available`-Aufräumung (Folge-Train).
+
+### Geändert
+- **`Package.swift`** — `.iOS(.v16)` → `.iOS(.v17)` (Cores Minimum). `macOS(.v13)` unverändert.
+- **`wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj`** — alle 6 `IPHONEOS_DEPLOYMENT_TARGET`-Einträge (vorher 4× `16.0` App/Tests + 2× `16.2` Widget) einheitlich auf `17.0`. Widget-Target braucht keinen abweichenden Wert mehr, da ActivityKit (16.1) und Live-Activity-UI (16.2) im neuen Minimum enthalten sind.
+- **`README.md`** — Live-Aufzeichnungs-Eintrag erwähnt jetzt iOS 17 Minimum; Dynamic-Island-Hinweis bleibt geräteabhängig (iPhone 14 Pro+).
+- **`wrapper/README.md`** — Deployment-Target-Zeile von „iOS 16.0/16.2" auf „iOS 17.0" mit Train-F-Verweis.
+- **`NEXT_STEPS.md`**, **`ROADMAP.md`** — neuer Stand dokumentiert.
+
+### Bewusst NICHT in diesem Train
+- Keine Entfernung von `@available(iOS 16.0/16.1/16.2, *)`-Gates (vorher: 4× 16.0, 5× 16.1, 9× 16.2). Diese sind durch iOS-17-Minimum redundant, bleiben aber funktional korrekt. Aufräumung als Folge-Train (z.B. **G**).
+- Keine Entfernung von `@available(iOS 17, *)`-Gates. Viele gaten zusätzlich macOS 14, und `macOS` bleibt `.v13` → Gates bleiben für macOS-Pfade nötig.
+- Keine MapKit-API-Migration (`coordinateRegion:` / `annotationItems:` etc. — Train G).
+- Keine Marketing-Version / Build-Nummer geändert (`1.0.2 / 171` unverändert).
+- Keine Privacy-Manifest- oder Apple-Review-Punkte angefasst.
+
+### Verifikation (Linux)
+- `git diff --check`: clean.
+- `swift build` (Swift 6.3.2 via swiftly, `libsqlite3-dev`): clean, 0,23 s.
+- `swift test`: **1459 / 2 Skips / 0 Failures, ~53,6 s** — unverändert.
+
+### Was Linux nicht prüfen kann
+- Xcode-Projekt-Konsistenz unter realer Xcode-Toolchain (Sim-Build, Asset-Catalog-Auflösung, Bundle-Validierung).
+- Xcode-Cloud-Build mit dem neuen Minimum.
+- Geräte-Smoke auf iPhone 14 Pro / iPhone 16 Pro Max / iPad gegen iOS 17+.
+- App-Store-Connect-Reichweiten-Snapshot (`developer.apple.com/support/app-store/`).
+- Dynamic-Island-Lock-Screen-Sichtprüfung.
+
+### Zwingender nächster Mac/Xcode-Schritt
+1. Wrapper in Xcode öffnen → Sim-Build (iOS 17 Simulator) durchlaufen lassen.
+2. Geräte-Smoke (`xcodebuild -destination 'generic/platform=iOS'`) erfolgreich.
+3. Xcode-Cloud-Archive `1.0.2 (171)` mit iOS 17 Minimum bauen und in ASC validieren.
+4. ASC-Reichweiten-Snapshot prüfen, ob iOS 17 Minimum für die Zielgruppe akzeptabel ist.
+
+### Empfohlener nächster Train
+- **G** (Linux + Mac): MapKit-iOS-17-API-Migration (`Map { … }`-Builder durchgängig, `MapCameraPosition`, deprecated `coordinateRegion:`/`annotationItems:` ersetzen). Großer, aber jetzt sauber möglich.
+- ODER **C** (gemischt): Live-Polyline Hard-Cap UI-Warnung + Camera-Throttle (Feature-Flag default OFF).
+
+---
+
 ## 2026-05-16 — perf: reduce kmz export memory copies (`main`)
 
 > **Train E1 umgesetzt.** Punktueller Memory-Refactor in `KMZBuilder`. Keine UI-/MapKit-/Format-Änderung, keine API-Brüche, keine iOS-17-Anhebung.

@@ -684,7 +684,7 @@ Ausgefuehrt auf: macOS, Xcode 26.3, iPhone 15 Pro Max (UDID 00008130-00163D0A046
 - **Release-Signing-Konfiguration**: `LH2GPXWrapper` + `LH2GPXWidget` stehen auf `CODE_SIGN_STYLE = Automatic`, `DEVELOPMENT_TEAM = XAGR3K7XDJ`, ohne feste Release-`PROVISIONING_PROFILE_SPECIFIER` und ohne explizite Release-`CODE_SIGN_IDENTITY`; Buildnummer lokal auf `45` angehoben; `com.apple.security.application-groups = group.de.roeber.LH2GPXWrapper` in App + Widget vorhanden
 - **Widget-Embed**: `LH2GPXWidget.appex` wird mit `CodeSignOnCopy` eingebettet
 - **Sicherheit**: keine hartcodierten Tokens/Secrets; defaultTestEndpointURLString=""; HTTPS fuer non-localhost erzwungen; Bearer-Token via Keychain
-- **Deployment Target**: iOS 16.0 (App, LH2GPXWrapperTests) / 16.2 (Widget, UITests) — verifiziert in project.pbxproj
+- **Deployment Target**: iOS 17.0 (alle Targets — App, LH2GPXWrapperTests, Widget, UITests) — angehoben in Train F (2026-05-16), verifiziert in project.pbxproj
 - **Bundle IDs**: de.roeber.LH2GPXWrapper / de.roeber.LH2GPXWrapper.Widget / de.roeber.LH2GPXWrapperTests / de.roeber.LH2GPXWrapper.UITests — korrekt
 - **ZIPFoundation**: Fork dev-roeber/ZIPFoundation, Tag 0.9.20-devroeber.1, .exact() — gepinnt
 - **ci_scripts**: ci_post_clone.sh, ci_pre_xcodebuild.sh, ci_post_xcodebuild.sh — ausführbar, korrekte Xcode-Cloud-Namen

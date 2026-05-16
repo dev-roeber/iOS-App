@@ -36,7 +36,7 @@ Das Swift Package im Root (`Package.swift`) wird automatisch als lokale Dependen
 - **Import**: Google Timeline JSON/ZIP, LH2GPX App-Export JSON/ZIP, GPX 1.1, TCX 2.0
 - **Tagesansicht**: Days-Liste (absteigend), Day-Detail mit Karte, Suche, Favoriten, Filterchips
 - **Pfadmodus im Day-Detail**: Originalpfad oder vereinfachte Darstellung (`Simplified`); im vereinfachten Modus: GPS-Ausreisserfilter (distanzbasiert, PathFilter) + Douglas-Peucker; kein echtes Straßen-/Wege-Snapping
-- **Live-Aufzeichnung**: ActivityKit Live Activity / Dynamic Island (iOS 16.2+ fuer Widget-/Island-UI), Fullscreen-Live-Karte, Follow-Location, optionaler HTTP(S)-Upload an einen selbst betriebenen Endpunkt (standardmäßig deaktiviert, kein zentraler Dienst, keine Organisationsbindung)
+- **Live-Aufzeichnung**: ActivityKit Live Activity / Dynamic Island (iOS 17 Minimum seit Train F 2026-05-16; Dynamic Island weiterhin nur auf iPhone 14 Pro und neuer), Fullscreen-Live-Karte, Follow-Location, optionaler HTTP(S)-Upload an einen selbst betriebenen Endpunkt (standardmäßig deaktiviert, kein zentraler Dienst, keine Organisationsbindung)
 - **Insights**: Overview, Patterns, Breakdowns, KPI-Karten, Top Days, Monatstrends ohne 24-Monats-Cap, Heatmap
 - **Export**: GPX, KML, KMZ, GeoJSON, CSV; Filter nach Datum, Genauigkeit, Aktivitaetstyp, Rectangle / Bounding Box (TCX nur als Import-Format unterstützt)
 - **Google Maps Export-Hilfe**: Inline-Anleitung fuer iPhone-Export aus Google Maps
