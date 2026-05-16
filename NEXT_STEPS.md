@@ -1,6 +1,27 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach **Train K — Shared Race Gates, Runtime Cleanup, Overview/Heatmap Hardening**).
+Stand: 2026-05-16 (Branch `main`, nach **Train L — Heatmap Testability, Store Query Verification**).
+
+**Train L umgesetzt (2 produktive Test-Commits + Doku-Sync):**
+- `574d522` Build-176-Baseline-Doku.
+- `c5e86ef` `HeatmapGenerationLifecycleTests` (8 neue Tests, deterministisch, kein Timer; A→B→A flip, stale-completion, updateScale-Invalidierung).
+- `a63f827` Neuer `internal LocalTimelineStore.queryPlan(for:)` (EXPLAIN-QUERY-PLAN-Hook für Tests) + `LocalTimelineDerivedCacheQueryPlanTests` (3 Tests; Lookup und Prune-ORDER-BY-LIMIT nutzen beide `idx_derived_cache_*`-Indizes).
+
+**Übersprungene Phasen:** 2 (Heatmap-Debounce-Path-Analyse zeigt kein State-Write-Race-Risiko), 4-7 (kein konkreter UX-Defekt, AccessibilityIdentifier-Breitenausbau invasiv), 8 (alle Allocation-Hotspots in Train H/I/J/K abgedeckt).
+
+**Tests:** `swift test` **1503 / 2 Skips / 0 Failures, 55,2 s** (+11 neue Tests).
+
+**Externer Stand:** Letzter verifizierter Build = **Xcode Cloud Build 176** (basiert auf `556180c`). Train-I/J/K/L sind **noch nicht** extern.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build (→ Build 177+), TestFlight-Install + manueller Smoke siehe CHANGELOG.
+
+**Folge-Trains:**
+- **AccessibilityIdentifier-Train**: gezielt 5-10 zentrale UI-Elemente (Heatmap, Live-Status-Chips, Export-Button) identifizieren, getrieben durch konkreten UI-Test-Bedarf.
+- **D / G2** (Mac/Instruments-only): Heatmap-Multi-LOD-Wiring + MKMapView/MKMultiPolyline-Bridge.
+
+---
+
+Vorheriger Stand: 2026-05-16 nach Train K.
 
 **Train K umgesetzt (4 produktive Commits + 1 Doku-Sync):**
 - `84064c9` Build-176-Baseline-Doku.

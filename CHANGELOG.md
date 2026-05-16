@@ -1,12 +1,65 @@
 # CHANGELOG
 
-## 2026-05-16 — Train L — Heatmap Testability, Store Query Verification, Operation UX & Final Performance Polish (`main`, in Arbeit)
+## 2026-05-16 — Train L — Heatmap Testability, Store Query Verification, Operation UX & Final Performance Polish (`main`)
 
-> **Train L, in Arbeit.** Heatmap Race-Gate-Coverage, Store-Query-Plan-Test, UX-Polish, sichere Allocation-Polish. Keine Versions-Bumps, keine UI-Redesigns, keine Rohdaten-Änderungen.
+> **Train L, zwei produktive Test-Commits + Doku-Sync.** Train L vertieft die Linux-Testabdeckung der bereits in Train I/J/K eingebauten Race-Gates und additiven Indizes. Keine Versions-Bumps, keine UI-Redesigns, keine Code-Verhaltensänderung außer einem neuen `internal` Test-Hook.
 
-### Phase 0 — Baseline
-- Letzter extern belegter Build bleibt **Xcode Cloud Build 176** (basiert auf `556180c`). Train-I/J/K und Train-L-Commits sind **nicht** extern verifiziert.
-- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+### Umgesetzte Commits (Reihenfolge)
+1. **`574d522` `docs: prepare train l from build 176 baseline`** — Phase 0.
+2. **`c5e86ef` `test: harden heatmap generation race coverage`** — Phase 1. Neue `HeatmapGenerationLifecycleTests` (8 Tests), die `GenerationGate` durch heatmap-Lifecycle-Sequenzen (startPrecomputation, updateScale, ensureDensityPrecomputation early-return, A→B→A flip, monotone Uniqueness) führen. Vollständig deterministisch, kein Timer.
+3. **`a63f827` `test: verify local timeline derived cache query plan`** — Phase 3. Neuer `internal func queryPlan(for: String)` in `LocalTimelineStore` (wrappt `EXPLAIN QUERY PLAN`); neue `LocalTimelineDerivedCacheQueryPlanTests` (3 Tests) prüfen Helper-Sanity, dass der `(cache_kind, cache_key)`-Lookup einen `idx_derived_cache_*`-Index nutzt und dass der Prune-ORDER-BY-LIMIT-Pfad ebenfalls einen `idx_derived_cache_*`-Index hat (verifiziert Train-I-Covering-Index in Praxis). Plan-Match ist Substring auf `idx_derived_cache_` (SQLite-Versionsstabil).
+
+### Übersprungene Phasen (mit Grund)
+- **Phase 2 — Heatmap State-Commit-Policy:** `AppHeatmapModel` State-Writes nach `Task.detached` sind bereits durch Train-J `precomputationGate` geschützt; Explore-Agent-Analyse des `debounceUpdateForRegion`-100 ms-Sleep-Pfades zeigt: `performCulling`-Writes laufen synchron und ihre Effekte (`visibleCells = []`, Cache-Lookup) sind unter konkurrent gebumptem Gate weder unsicher noch dauerhaft falsch (LOD-Grid-Lookup findet leere Map und triggert sauber neuen `ensureDensityPrecomputation`). Kein State-Write-Race-Risiko identifiziert.
+- **Phase 4 — Import UX:** `LocalTimelineImportProgress` (8 Phasen) + Throttle + 12 Error-Cases + `LocalTimelineImportProgressView` (bereits 5 AccessibilityIdentifier) sauber modelliert. Kein konkreter UX-Defekt.
+- **Phase 5 — Export UX:** `LHExportStepIndicator` (Train J `id: \.element`) und `LHExportComponents` (5 AccessibilityIdentifier) bereits stabil.
+- **Phase 6 — Overview Map Robustness:** Train K `GenerationGate` + hash-token bereits doppelt geschützt.
+- **Phase 7 — Live UX:** `AppShellRootView` (home.*), `AppRecordedTracksLibraryView` (liveTracks.*) bereits identifiziert; weitere AccessibilityIdentifier in 10 ungetesteten Views ohne konkreten UI-Test-Failure wären invasiv.
+- **Phase 8 — Safe Perf Polish:** Explore-Agent-Inventar bestätigt: CSV/GPX/KML/GeoJSON/KMZ-Hotspots zu ~100 % in Train H/I/J/K abgedeckt (CSV `joinEscapedRow`, KML direct-append, GPX/KML/GeoJSON `reserveCapacity`). Kein neuer sicherer Hotspot.
+
+### Geänderte Dateien nach Phase
+- **Phase 0:** `CHANGELOG.md`
+- **Phase 1:** `Tests/LocationHistoryConsumerTests/HeatmapGenerationLifecycleTests.swift` (neu, 8 Tests)
+- **Phase 3:** `Sources/LocationHistoryConsumerAppSupport/LocalTimelineStore.swift` (+ `internal func queryPlan(for:)` Helper, ~25 Zeilen), `Tests/LocationHistoryConsumerTests/LocalTimelineDerivedCacheQueryPlanTests.swift` (neu, 3 Tests)
+- **Phase 9 (Doku):** `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`
+
+### Produktive Performance/Stability-Änderungen
+**Keine** Verhaltensänderung im App-Pfad. Phase 3 fügt einen `internal` Test-Hook (`LocalTimelineStore.queryPlan(for:)`) hinzu — nicht Teil der Public-Surface, nicht von Produktionscode aufgerufen.
+
+### UI/UX-Änderungen
+**Keine in Train L.**
+
+### Feature-Flags und Defaults
+- Keine neuen Flags oder Defaults in Train L.
+
+### Repo-Truth (lokal, unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Letzter extern verifizierter Build: **Xcode Cloud Build 176** (basiert auf `556180c`).
+- Train-I/J/K und Train-L-Commits sind **nicht** in Build 176.
+
+### Verifikation (Linux, Swift 6.3.2)
+- `git diff --check`: clean.
+- `swift build`: clean.
+- `swift test`: **1503 / 2 Skips / 0 Failures, 55,2 s** (vorher 1492 — +11 neue Tests: 8 `HeatmapGenerationLifecycleTests` + 3 `LocalTimelineDerivedCacheQueryPlanTests`).
+
+### Was Linux nicht prüfen konnte
+- `AppHeatmapModel`-Wiring bleibt Apple-only verifizierbar; Train-L-Tests prüfen ausschließlich die deterministische Policy-Schicht (`GenerationGate`-Sequenzen).
+- MapKit-Rendering, Live Activity / Dynamic Island, iPad-Layout.
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+Neuen Xcode-Cloud-Build auf `main` (HEAD nach Doku-Sync) auslösen → Build 177+. Trains I + J + K + L kommen gemeinsam an.
+
+### Manuelle Smoke-Test-Checkliste iPhone/iPad (Build 177+)
+- [ ] Heatmap-Scale-Wechsel: schnelles A→B→A → keine veralteten Grids, kein Flackern.
+- [ ] Heatmap-Cache-Hit nach Reopen.
+- [ ] Derived-Cache: Import → mehrere Heatmaps → wieder öffnen → Performance gleich/besser.
+- [ ] Overview-Map (Train K Gate): schnelles Filter-Switching → keine veralteten Overlays.
+- [ ] Live-Tracking + Live Activity korrekt (Train K iOS-16-Cleanup).
+- [ ] Export CSV/GPX/KML/KMZ/GeoJSON byte-identisch zu Build 176.
+- [ ] WAL: großer Import + Force-Quit + Reopen.
+- [ ] Widget, iPad-Layout, DE/EN.
+
+
 
 ## 2026-05-16 — Train K — Shared Race Gates, Runtime Cleanup, Overview/Heatmap Hardening (`main`)
 

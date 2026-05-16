@@ -1,5 +1,14 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-16 (Train L — Heatmap Testability, Store Query Verification):** 2 produktive Test-Commits (`c5e86ef`, `a63f827`):
+>
+> - **Phase 1 Heatmap Lifecycle Tests:** Neue `HeatmapGenerationLifecycleTests` (8 deterministische Tests, kein Timer) führen `GenerationGate` durch die exakten Sequenzen, die `AppHeatmapModel` produziert: startPrecomputation, updateScale-Invalidierung, ensureDensityPrecomputation early-return, A→B→A region/scale flip, monotone Uniqueness über 32 bumps. Die MainActor-Wiring selbst bleibt Apple-only verifizierbar; diese Tests decken die Policy-Schicht deterministisch ab.
+> - **Phase 3 Query-Plan-Verifikation:** Neuer `internal func queryPlan(for:)` auf `LocalTimelineStore` wrappt SQLite `EXPLAIN QUERY PLAN`; nicht Teil der Public-Surface. Neue `LocalTimelineDerivedCacheQueryPlanTests` (3 Tests) prüfen Helper-Sanity, dass der `(cache_kind, cache_key)`-Lookup einen `idx_derived_cache_*`-Index nutzt und dass der Prune-ORDER-BY-LIMIT-Pfad ebenfalls einen `idx_derived_cache_*`-Index hat. Verifiziert Train-I-Covering-Index `idx_derived_cache_kind_version_created` in der Praxis.
+>
+> **Übersprungene Phasen:** 2 (Heatmap-Debounce-Path zeigt kein State-Write-Race-Risiko), 4-7 (kein konkreter UX-Defekt, AccessibilityIdentifier-Breitenausbau ohne UI-Test-Failure invasiv), 8 (alle Allocation-Hotspots in Train H/I/J/K abgedeckt).
+>
+> Linux `swift test` **1503 / 2 Skips / 0 Failures, 55,2 s** (+11).
+>
 > **Update 2026-05-16 (Train K — Shared Race Gates, Runtime Cleanup, Overview/Heatmap Hardening):** 4 produktive Commits (`84064c9`, `924370a`, `555123d`, `f959f2e`):
 >
 > - **Phase 1 Overview Gate:** `AppOverviewMapModel` `loadGeneration: UInt64` durch shared `GenerationGate` ersetzt; Semantik identisch (bump auf neue Anfrage, `isStillCurrent(token)` vor `renderData`-Write in scan + overlay completion). Hash-basierter `currentLoadToken` bleibt als zweites Race-Guard.

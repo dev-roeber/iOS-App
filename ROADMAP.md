@@ -1,6 +1,10 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-16, Branch `main`, HEAD pending — Train K)
+## Aktiver Stand (2026-05-16, Branch `main`, HEAD pending — Train L)
+
+- **Train L umgesetzt (2 produktive Test-Commits + Doku-Sync):** `574d522` Build-176-Baseline-Doku · `c5e86ef` `HeatmapGenerationLifecycleTests` (8 Tests; A→B→A flip, stale-completion, updateScale-Invalidierung) · `a63f827` `internal LocalTimelineStore.queryPlan(for:)` (EXPLAIN-QUERY-PLAN-Hook) + `LocalTimelineDerivedCacheQueryPlanTests` (3 Tests; Lookup und Prune-ORDER-BY-LIMIT nutzen `idx_derived_cache_*`-Indizes — Train-I-Covering-Index in Praxis verifiziert). Linux `swift test` **1503 / 2 Skips / 0 Failures, 55,2 s** (+11). Train-L-Commits sind **noch nicht** in Build 176. Übersprungen: Phasen 2 (kein Race-Risiko), 4-7 (kein UX-Defekt, AccessibilityIdentifier-Breitenausbau invasiv), 8 (Hotspots in Train H/I/J/K abgedeckt).
+
+## Aktiver Stand (2026-05-16, Branch `main`, HEAD `a01ec7e` — Train K)
 
 - **Train K umgesetzt (4 produktive Commits + Doku-Sync):** `84064c9` Build-176-Baseline-Doku · `924370a` `AppOverviewMapModel` loadGeneration → shared `GenerationGate` (Hash-Token bleibt zusätzlich) · `555123d` 11× `if #available(iOS 16.x, *)`-Runtime-Branches dedenten (ActivityManager 4×, LiveActivityPresentation 1×, AppInsightsContentView 2×, LiveLocationFeatureModel 4×) · `f959f2e` CSV-Row `joinEscapedRow`-Helper (byte-identisch). Übersprungen: Phasen 3 (Test-Injection), 4/5/9 (kein UX-Defekt), 7 (Store-EXPLAIN), 8 (verbleibende offset-id ohne Domain-IDs). Linux `swift test` **1492 / 2 Skips / 0 Failures, 53,7 s**. Noch nicht in Build 176.
 
