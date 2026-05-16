@@ -1,6 +1,37 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach `docs: record xcode cloud build 175 verification`).
+Stand: 2026-05-16 (Branch `main`, nach **Train H — App Performance / Stability / UX Hardening**).
+
+**Train H umgesetzt (4 Commits, alle Linux-grün, alle gepusht):**
+- `a741b76` `chore: clean redundant ios 16 availability gates` — 12 `@available(iOS 16.x, *)`-Attribute entfernt.
+- `254875a` `perf: reduce csv export array reallocations` — CSV-Builder reserveCapacity.
+- `86b3da6` `perf: cap wal growth in local timeline store` — `journal_size_limit` + `wal_autocheckpoint` Pragmas.
+- `7288a5f` `perf: add live track render cap helper` — Pure Helper `LiveTrackRenderCap` mit 10 Tests, **noch nicht in View verdrahtet**.
+
+**Übersprungene Phasen:**
+- Identity Surface B2: Items haben keine garantiert uniquen IDs → Risiko > Nutzen.
+- Heatmap-Debounce: View hat bereits `.onMapCameraChange(frequency: .onEnd)` → unnötig.
+- UX-Polish: Eng gekoppelt an Live-Render-Cap-Wiring (separater Folge-Train).
+
+**Tests:** `swift test` **1469 / 2 Skips / 0 Failures** (+10 neue Tests).
+
+**Externer Stand:** Letzter extern verifizierter Build ist **Xcode Cloud Build 175** (basiert auf `2bfc009`). Train-H-Commits sind **noch nicht** extern verifiziert.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build auslösen (→ Build 176+), TestFlight-Install + manueller Smoke-Test:
+- Live-Recording 5+ Min ohne Crash, Polyline-Update flüssig.
+- Live Activity / Dynamic Island sichtbar (iPhone 14 Pro+).
+- Großer Import, Force-Quit + Reopen → keine WAL-Korruption.
+- Heatmap Pan/Zoom responsiv. CSV-Export byte-identisch.
+- Widget zeigt aktuelle Daten. iPad-Layout ok.
+
+**Folge-Trains:**
+- **H-Wire-1**: `LiveTrackRenderCap` in `AppLiveTrackingView` verdrahten + Preference-Toggle (Default OFF) + UX-Hinweis.
+- **H-Cleanup-2**: 11 `if #available(iOS 16.x, *)`-Runtime-Checks dedenten.
+- **D / G2 (Mac/Instruments)**: Heatmap-Multi-LOD-Wiring, MKMapView-Bridge.
+
+---
+
+Vorheriger Stand: nach `docs: record xcode cloud build 175 verification`.
 
 **Xcode Cloud Build 175 extern verifiziert (Screenshots):**
 - Workflow `Release – Archive & TestFlight` Build **175** erfolgreich, letzter Commit `2bfc009`.

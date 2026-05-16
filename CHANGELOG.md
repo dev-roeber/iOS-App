@@ -1,5 +1,56 @@
 # CHANGELOG
 
+## 2026-05-16 — Train H — App Performance / Stability / UX Hardening (`main`)
+
+> **Train H, mehrere zusammenhängende Commits.** Konservative Optimierungen über mehrere Bereiche. Keine Versions-Bumps, keine UI-Redesigns, keine App-Review-Behauptungen.
+
+### Umgesetzte Commits (Reihenfolge)
+1. **`a741b76` `chore: clean redundant ios 16 availability gates`** — 12 `@available(iOS 16.0/16.1/16.2[, macOS 13.0], *)`-Attribute entfernt (`ActivityManager` 4×, `LH2GPXLoadingBackground` 2×, `TrackingLiveActivityWidget` 2×, `AppInsightsContentView` 1×, `TrackingAttributes` 1×, `LH2GPXHomeWidget` 1×, `LH2GPXWidgetBundle` 1×). 11 `if #available(iOS 16.x, *)`-Runtime-Checks bewusst nicht angefasst (Dedenting-Risiko, separater Cleanup).
+2. **`254875a` `perf: reduce csv export array reallocations`** — `CSVBuilder.build(from:)` ruft jetzt `lines.reserveCapacity(estimated)` aus einem schnellen `visits+activities+paths`-Zähllauf pro Tag. GPX/KML/GeoJSON hatten bereits `reserveCapacity`; CSV war der Outlier. Output-Bytes unverändert.
+3. **`86b3da6` `perf: cap wal growth in local timeline store`** — Zwei WAL-sichere SQLite-Pragmas in `LocalTimelineStore.init(url:)`: `PRAGMA journal_size_limit = 16777216` (16 MiB Cap nach Checkpoint), `PRAGMA wal_autocheckpoint = 1000` (Default, explizit gemacht). `mmap_size` bewusst nicht gesetzt (iOS-Sandbox-Verhalten Linux-nicht-prüfbar). Bestehende `checkpointWAL`-API unverändert.
+4. **`7288a5f` `perf: add live track render cap helper`** — Neuer Foundation-only Helper `LiveTrackRenderCap` mit reiner Funktion `apply(points:cap:)`. Hält `cap/2` neueste Punkte verbatim + stride-dezimiert die ältere Hälfte; erste und letzte Position immer erhalten. **Bewusst noch nicht in `AppLiveTrackingView` verdrahtet** — Device-Validierung der Cap-Werte + UX-Hinweis für gekappten Zustand sind Folge-Train. Raw `liveTrackPoints` (Persistence/Export) unberührt. 10 Unit-Tests.
+
+### Übersprungene Phasen (mit Grund)
+- **Phase 3 — Identity Surface B2:** Die im Audit als „SAFE" markierten Stellen (`AppDayDetailView` 371/378, `AppExportPreviewMapView` 58/62, `AppOverviewTracksMapView` 202/409) liefern bei genauer Code-Inspektion **keine garantiert unique stabilen Domain-IDs**: `ActivityItem.startTime`, `VisitItem.startTime`, `DayMapVisitAnnotation.startTime` sind Optional, Koordinaten können bei Duplikat-Daten kollidieren. Composite-Key-Migration hätte Risiko von SwiftUI-Duplikat-ID-Warnungen ohne sichtbaren Nutzen für read-only-Listen. **Übersprungen aus Risiko-Nutzen-Gründen.** Inventur in den Audits dokumentiert.
+- **Phase 4 — Heatmap-Debounce-Wiring:** `AppHeatmapView.swift:80` nutzt bereits `.onMapCameraChange(frequency: .onEnd)`, d.h. `updateForRegion` wird nur am **Ende** einer Geste aufgerufen. Ein zusätzlicher 100 ms-Debounce (`debounceUpdateForRegion` im Model) würde den finalen Render verzögern, ohne nennenswert Rebuilds zu sparen. `debounceUpdateForRegion` bleibt im Model unwidered. **Übersprungen, weil bereits ausreichend geworfelt.**
+- **Phase 7 — UI/UX-Polish (Performance-Transparenz):** UX-Hinweise (z.B. „Live route display optimized for performance") sind eng an die Live-Render-Cap-Verdrahtung gekoppelt — solange `LiveTrackRenderCap` nicht im View verdrahtet ist, wäre eine Statuszeile irreführend. Mit Phase 2 als Folge-Train.
+
+### Verifikation (Linux)
+- `git diff --check` (alle Commits): clean.
+- `swift build`: clean.
+- `swift test`: **1469 / 2 Skips / 0 Failures, ~55 s** (vorher 1459 — +10 Tests aus `LiveTrackRenderCapTests`).
+- Filterläufe ohne Fehler: `Performance`, `Map`, `Live`, `Export` (188/0), `Heatmap`, `Timeline`, `Store` (180/0), `Insights`, `Path`. Filter ohne eigene Suite (z.B. `Live`) trafen Tests aus anderen Suites, kein Fehler.
+
+### Repo-Truth (lokal, unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Letzter extern verifizierter Build: **Xcode Cloud Build 175** (basiert auf `2bfc009`).
+- Train-H-Commits (`a741b76` → `7288a5f`) sind **nicht** in Build 175. Sie kommen erst in einem neuen Xcode-Cloud-Build extern an.
+
+### Was Linux nicht prüfen kann
+- Tatsächliches Render-Verhalten der Live-Polyline (MapKit/SwiftUI, iOS-Speicherdruck) bei aktivem Cap.
+- iOS-spezifisches WAL-Verhalten unter Memory-Pressure / Jetsam.
+- Widget/Live-Activity-Layout nach Removal der iOS-16-Attribute (kompiliert, aber visuell unverifiziert).
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+1. **Neuer Xcode-Cloud-Build** auslösen → Build 176 (oder höher), basiert auf HEAD nach Train H.
+2. TestFlight-Install auf iPhone 14 Pro / iPhone 16 Pro Max.
+3. **Manuelle Smoke-Test-Checkliste:**
+   - Live-Recording 5+ Minuten ohne Crash, Polyline-Update flüssig.
+   - Live Activity auf Lock-Screen + Dynamic Island sichtbar (Geräte mit iPhone 14 Pro+).
+   - Home-Widget zeigt aktuelle Daten.
+   - LocalTimelineStore: großer Import (≥10 MiB), Export, Force-Quit + Reopen → keine WAL-Korruption, Daten intakt.
+   - Heatmap: schnelles Pan/Zoom auf großem Dataset bleibt responsiv.
+   - CSV-Export mehrerer Tage funktioniert, Inhalt byte-identisch zum vorherigen Build.
+   - iPad-Layout funktional.
+
+### Empfohlener nächster Train
+- **H-Wire-1**: `LiveTrackRenderCap` in `AppLiveTrackingView` verdrahten mit Preference-Toggle (Default OFF) + UX-Hinweis-String.
+- **H-Cleanup-2**: Die 11 `if #available(iOS 16.x, *)`-Runtime-Checks dedenten.
+- **B2-Wrap**: Die im Audit aufgeführten Identity-Stellen mit explizitem `IdentifiableWrapper(id: UUID(), value: …)`-Pattern stabilisieren, falls Render-Stabilität auf Device beobachtbar Probleme zeigt.
+- **D / G2 (Mac/Instruments-only)**: Heatmap-Multi-LOD-Wiring, MKMapView-Bridge.
+
+---
+
 ## 2026-05-16 — docs: record xcode cloud build 175 verification (`main`)
 
 > **Reine Doku-Aktualisierung.** Keine Code-Änderung, keine Versions-Bumps.

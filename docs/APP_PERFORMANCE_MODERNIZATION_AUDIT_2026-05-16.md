@@ -1,5 +1,16 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-16 (Train H — App Performance / Stability / UX Hardening):** 4 produktive Commits (`a741b76`, `254875a`, `86b3da6`, `7288a5f`):
+>
+> - 12× iOS-16-`@available`-Attribute entfernt (durch iOS-17-Minimum redundant). 11× `if #available(iOS 16.x, *)`-Runtime-Checks bewusst nicht angefasst (Dedenting-Risiko, separater Cleanup).
+> - `CSVBuilder.build` ruft jetzt `reserveCapacity` aus einem schnellen visits+activities+paths-Zähllauf pro Tag (vorher Outlier; GPX/KML/GeoJSON hatten es schon).
+> - `LocalTimelineStore` setzt zusätzlich `PRAGMA journal_size_limit = 16777216;` und `PRAGMA wal_autocheckpoint = 1000;` (WAL-Wachstum gekappt, Default-Checkpoint explizit). `mmap_size` bewusst nicht gesetzt (iOS-Sandbox-Verhalten Linux-nicht-prüfbar).
+> - Neuer Helper `LiveTrackRenderCap` mit reiner `apply(points:cap:)`-Funktion (Foundation-only, 10 Linux-Tests, deterministisch). Hält `cap/2` neueste Punkte verbatim + stride-dezimiert die ältere Hälfte; erste + letzte Position immer erhalten. **Bewusst noch nicht in `AppLiveTrackingView` verdrahtet** — Device-Validierung der Cap-Werte + UX-Hinweis-String sind Folge-Train H-Wire-1.
+>
+> Übersprungen mit Begründung: Identity B2 (Items haben keine garantiert uniquen IDs — Composite-Key-Migration würde Duplikat-ID-Warnungen riskieren), Heatmap-Debounce (`AppHeatmapView` nutzt bereits `.onMapCameraChange(frequency: .onEnd)`, zusätzlicher 100 ms-Debounce wäre nur Verzögerung), UX-Polish (an Live-Cap-Wiring gekoppelt).
+>
+> Linux `swift test` 1469/2/0 (+10 neue `LiveTrackRenderCapTests`). Build 175 enthält **keinen** Train-H-Commit; neuer Cloud-Build nötig.
+>
 > **Update 2026-05-16 (Train G1 — Befund: bereits migriert):** `rg "coordinateRegion:|annotationItems:|MapMarker|MapAnnotation\("` repo-weit **0 Treffer**. Alle 8 SwiftUI-`Map(...)`-Surfaces (DayMap, LiveTracking 2×, RecordedTrackEditor 2×, LiveLocationSection, Heatmap, OverviewTracksMapView 2×, ExportPreview) nutzen bereits `Map(position: $mapPosition) { MapContent }` mit `MapCameraPosition`, `Marker`, `Annotation`, `MapPolyline`. Die in der iOS-17-Decision-Matrix als „lebt weiter, falls noch genutzt" aufgeführten deprecated SwiftUI-Map-Initializer waren tatsächlich bereits in einer früheren Phase abgelöst worden. **Keine Code-Migration in G1 nötig** — nur diese Audit-Korrektur. MKMapView-Bridge / MKTileOverlay-Heatmap (UIKit-Pfad) bleiben als separate Hotspots (Mac/Instruments-only) bestehen. Linux `swift test` unverändert 1459/2/0.
 >
 > **Update 2026-05-16 (iOS-17-Deprecation-Fix + Build-174 extern bestätigt):** Xcode Cloud Build **174** (Workflow `Release – Archive & TestFlight`, letzter Commit `92dc447`) grün; TestFlight zeigt `LH2GPX 1.0.2 (174)`, App-Info „Erfordert iOS 17.0 oder neuer". Build-Nummer 174 aus `CI_BUILD_NUMBER`, Repo-`CURRENT_PROJECT_VERSION` bleibt 171. Im Build 174 gemeldete `onChange(of:perform:)`-Warnung (`ContentView.swift:125`) behoben + 23 weitere single-arg `onChange`-Stellen repo-weit auf Zwei-Parameter-Form migriert (24 Stellen total, semantik-exakt). Linux `swift test` 1459/2/0. Keine App-Review-Aussage, kein Hardware-Retest.
