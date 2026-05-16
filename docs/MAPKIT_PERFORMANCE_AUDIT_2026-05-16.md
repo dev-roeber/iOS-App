@@ -1,5 +1,7 @@
 # MapKit & App-Performance Audit — 2026-05-16
 
+> **Update 2026-05-16 (Train G1 — kein Migrationsbedarf):** Verifikation per `rg` repo-weit: **0 Treffer** für `coordinateRegion:`, `annotationItems:`, `MapMarker`, `MapAnnotation(`. Alle 8 SwiftUI-`Map(...)`-Surfaces nutzen bereits `Map(position: $mapPosition) { MapContent }` mit `MapCameraPosition` + `Marker`/`Annotation`/`MapPolyline`. Die in diesem Audit als „deprecated lebt weiter" geführten Stellen existieren tatsächlich nicht (mehr) — Migration war in früherer Phase erfolgt. G1 ist damit eine reine Doku-Korrektur, keine Code-Änderung. **Weiterhin offen** (Mac/Instruments-only, nicht G1-Scope): MKMapView/MKMultiPolyline-Bridge für sehr große Overview-Datasets und MKTileOverlay-Heatmap. Live-Polyline-Cap-UI + Camera-Throttle bleiben Train C.
+>
 > **Folge-Audit 2026-05-16 (gleicher Tag, nach Trains A + B1):** `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md` ergänzt diesen Report um eine repo-weite Tiefenanalyse (SwiftUI/MapKit/Heatmap/Live/Import-Export/Persistenz/Widgets/Tests, 20 Hotspots, Linux-vs-Mac-Trennung) plus eine formale **iOS-17-Deployment-Target-Entscheidungsmatrix** (Empfehlung: vorbereiten, nicht in diesem Train anheben).
 
 

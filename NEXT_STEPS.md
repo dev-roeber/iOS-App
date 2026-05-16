@@ -1,6 +1,25 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach `fix: update ios 17 onchange usage and document build 174`).
+Stand: 2026-05-16 (Branch `main`, nach `docs: g1 mapkit ios 17 migration is already complete`).
+
+**Train G1 — Befund: kein Migrationsbedarf.**
+- `rg "coordinateRegion:|annotationItems:|MapMarker|MapAnnotation\("` repo-weit: **0 Treffer**.
+- Alle 8 SwiftUI-`Map(...)`-Surfaces sind bereits auf `Map(position: $mapPosition) { … }` mit `MapCameraPosition` + `Marker` / `Annotation` / `MapPolyline` (DayMap, LiveTracking 2×, RecordedTrackEditor 2×, LiveLocationSection, Heatmap, OverviewTracksMapView 2×, ExportPreview).
+- Migration war in früherer Phase vor diesem Audit erfolgt; die Audit-Annahme „deprecated lebt weiter, falls noch genutzt" war ungenau.
+- Audit-Docs `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md` + `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md` korrigiert.
+- Keine Code-Änderung, keine API-Brüche, keine Versions-Bumps. Linux `swift test` unverändert 1459/2/0.
+
+**Externer Stand (unverändert):** Xcode Cloud Build 174 basiert auf `92dc447`; weder `ff963c1` (`onChange`-Fix) noch G1-Doku darin enthalten. **Neuer Xcode-Cloud-Build erforderlich**, damit `onChange`-Deprecation-Warnung extern entfällt.
+
+**Nächste empfohlene Schritte:**
+- Externer Xcode-Cloud-Build auf aktuellem `main` (HEAD nach G1) + TestFlight-Install Smoke auf iPhone 14 Pro / iPhone 16 Pro Max (DayMap / LiveTracking / Heatmap / Overview / ExportPreview je einmal manuell, Crash- + Render-Stabilität).
+- **Train C** (Live Surface Hardening, Feature-Flag default OFF): Live-Polyline-Hard-Cap-UI-Warnung + Camera-Throttle.
+- ODER **Cleanup-Train**: 18× redundante `@available(iOS 16.0/16.1/16.2, *)`-Gates abbauen (mechanisch).
+- **G2** (Mac/Instruments-only, nicht in Linux-Trains): MKMapView/MKMultiPolyline-Bridge-Prototyp für Overview-Heavy-Datasets.
+
+---
+
+Vorheriger Stand: nach `fix: update ios 17 onchange usage and document build 174`.
 
 **iOS-17-Deprecation-Warnung behoben + extern Build-174-Stand dokumentiert:**
 - `wrapper/LH2GPXWrapper/ContentView.swift:125` (Xcode-Cloud-gemeldete Stelle) auf zwei-Parameter-Form migriert.

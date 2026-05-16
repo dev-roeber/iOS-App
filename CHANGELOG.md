@@ -1,5 +1,63 @@
 # CHANGELOG
 
+## 2026-05-16 — docs: g1 mapkit ios 17 migration is already complete (`main`)
+
+> **Train G1 — Befund: kein Migrationsbedarf.** Reine Doku-Korrektur, keine Code-Änderung.
+
+### Verifikation
+- `rg "coordinateRegion:|annotationItems:|MapMarker|MapAnnotation\("` über `Sources/`, `wrapper/`, `Tests/`: **0 Treffer**.
+- Alle 8 SwiftUI-`Map(...)`-Surfaces nutzen bereits den iOS-17-Stil `Map(position: $mapPosition) { MapContent }` mit `MapCameraPosition` und `Marker` / `Annotation` / `MapPolyline`:
+  - `AppDayMapView.swift:95`
+  - `AppLiveTrackingView.swift:460`, `:633`
+  - `AppRecordedTrackEditorView.swift:92`, `:159`
+  - `AppLiveLocationSection.swift:107`
+  - `AppHeatmapView.swift:72`
+  - `AppOverviewTracksMapView.swift:201`, `:408`
+  - `AppExportPreviewMapView.swift` (Marker-Pfad)
+- `MKCoordinateRegion`-Treffer existieren weiterhin — aber **als Datenmodell** (Region-Storage / -Fitting / -Culling), nicht als deprecated SwiftUI-`Map(coordinateRegion:)`-Initializer. Keine Migration.
+
+### Konsequenz
+- Geplante G1-Migration (deprecated SwiftUI-Map-Initializer auf iOS-17-API) ist **bereits abgeschlossen** — vermutlich in einer früheren Phase vor diesem Audit.
+- Eintrag in `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md` Kapitel 4 Option 2 („`Map(coordinateRegion:)` als deprecated Pfad lebt weiter, falls noch genutzt") + `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md` entsprechend korrigiert.
+
+### Geändert (nur Doku)
+- `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`
+- `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md`
+- `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`
+
+### Bewusst NICHT in diesem Train
+- Keine MKMapView/MKMultiPolyline-Bridge (Mac/Instruments-only, kein Linux-Pfad).
+- Keine MKTileOverlay-Heatmap (Mac/Device-Verifikation Pflicht).
+- Kein Live-Polyline-Cap, kein Camera-Throttle (separater Train **C**, Feature-Flag default OFF).
+- Keine `@available(iOS 16.x, *)`-Gate-Bereinigung (18 Stellen, separater Aufräum-Train).
+- Keine `@Observable` / Observation-Framework-Migration (großer separater Train).
+
+### Externer Stand (unverändert seit `fix: update ios 17 onchange usage and document build 174`)
+- Xcode Cloud Build **174** grün, basiert auf `92dc447` (enthält den `onChange`-Fix `ff963c1` **noch nicht**).
+- TestFlight: `LH2GPX 1.0.2 (174)`, 90 Tage. App-Info: „Erfordert iOS 17.0 oder neuer".
+- Damit weiterhin `fix: update ios 17 onchange usage ...` **und** dieses Train G1 erst durch einen **neuen** Xcode-Cloud-Build extern verifizierbar.
+
+### Verifikation (Linux)
+- `git diff --check`: clean.
+- `swift build` (Swift 6.3.2): clean.
+- `swift test`: **1459 / 2 Skips / 0 Failures** — unverändert (es gibt keine Code-Änderung).
+
+### Was Linux nicht prüfen kann
+- Sichtprüfung der Map-Surfaces unter Xcode-Simulator / iPhone (Kameraverhalten, Markers, Annotations, Polylines).
+- Tatsächliches Rendering der `Map(position:)`-Bindings.
+- Dynamic-Island-Live-Activity-Layout, iPad-Layout.
+
+### Zwingender nächster Xcode-Cloud-/Device-Test
+- **Neuer Xcode-Cloud-Build** auf `main` (HEAD `ff963c1` + dieser G1-Doku-Commit), damit der `onChange`-Fix extern auf TestFlight ankommt und keine Deprecation-Warnung mehr im Build-Log steht.
+- TestFlight-Install des neuen Builds auf iPhone 14 Pro / iPhone 16 Pro Max: DayMap / LiveTracking / Heatmap / Overview / ExportPreview je einmal manuell aufrufen und Crash-/Render-Stabilität bestätigen.
+
+### Empfohlener nächster Train
+- **C** — Live Surface Hardening (Feature-Flag default OFF): Live-Polyline-Hard-Cap-UI-Warnung + Camera-Throttle. Kein Format-/User-Verhaltens-Bruch.
+- ODER **Cleanup-Train**: 18× redundante `@available(iOS 16.0/16.1/16.2, *)`-Gates abbauen (risikoarm, mechanisch).
+- ODER **G2** (Mac/Instruments-only, nicht Linux-startbar): MKMapView/MKMultiPolyline-Bridge prototypisch für Overview-Heavy-Datasets.
+
+---
+
 ## 2026-05-16 — fix: update ios 17 onchange usage and document build 174 (`main`)
 
 > Folge-Train zu `chore: raise minimum ios target to 17`. Behebt die in **Xcode Cloud Build 174** (Workflow „Release – Archive & TestFlight") gemeldete iOS-17-Deprecation-Warnung und zieht die Doku auf den extern belegten TestFlight-Stand `1.0.2 (174)` glatt.
