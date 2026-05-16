@@ -1,6 +1,32 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach **Train I — Performance Pipeline / Live-Heatmap-Wiring / Export-Store Hardening**).
+Stand: 2026-05-16 (Branch `main`, nach **Train J — App Responsiveness, Workload Wiring, UI/UX State Modernization**).
+
+**Train J umgesetzt (4 produktive Commits + 1 Doku-Sync):**
+- `980111d` Build-176-Baseline-Doku.
+- `731c290` GeoJSON `features.reserveCapacity` (byte-identisch).
+- `d0b2f1b` `GenerationGate` (Sendable, 8 Tests) + Heatmap-Wiring gegen stale `MainActor.run`-Completions.
+- `7dfcce7` `LHExportStepIndicator` `id: \.element` (Step Hashable, allCases unique).
+
+**Übersprungene Phasen:** 2 (Import-Progress bereits modelliert, Export-Builder sind synchron), 3 (Repo nutzt bereits konsequent `Task.detached`), 6 (Live-Pipeline modular über `LiveStatusResolver`/`LiveTrackingPresentation`), 7 (kein konkreter UX-Defekt), 8 (13 Indizes vorhanden, kein EXPLAIN-Beleg für weitere).
+
+**Tests:** `swift test` **1492 / 2 Skips / 0 Failures, 54,9 s** (+8 neue `GenerationGateTests`).
+
+**Externer Stand:** Letzter verifizierter Build = **Xcode Cloud Build 176** (basiert auf `556180c`). Train-I-Commits **und** Train-J-Commits (`980111d → …`) sind **noch nicht** extern.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build (→ Build 177+), TestFlight-Install + manueller Smoke siehe CHANGELOG.
+
+**Folge-Trains:**
+- **Overview-Gate-Migration**: `AppOverviewMapModel.loadGeneration: UInt64` + `currentLoadToken: Int` auf `GenerationGate` umstellen, falls Apple-side stabil.
+- **H-Cleanup-2**: 11× `if #available(iOS 16.x, *)`-Runtime-Checks dedenten (mechanisch).
+- **Heatmap-Pipeline-Härtung** mit injizierbarem `Clock`-Protokoll für race-flaky-freie Tests.
+- **D / G2** (Mac/Instruments-only): Heatmap-Multi-LOD-Wiring + MKMapView/MKMultiPolyline-Bridge.
+
+---
+
+**Train I umgesetzt (4 Commits gepusht):**
+
+Vorheriger Stand: 2026-05-16 nach Train I.
 
 **Train I umgesetzt (4 Commits gepusht):**
 - `d0c0a4c` Build 176 dokumentiert.

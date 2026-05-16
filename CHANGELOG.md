@@ -1,12 +1,78 @@
 # CHANGELOG
 
-## 2026-05-16 — Train J — App Responsiveness, Workload Wiring, UI/UX State Modernization (`main`, in Arbeit)
+## 2026-05-16 — Train J — App Responsiveness, Workload Wiring, UI/UX State Modernization (`main`)
 
-> **Train J, mehrere produktive Commits.** Modernisierung von Operation-Progress/Cancellation, MainActor-Entlastung, weitere Export-Optimierungen, optionaler Heatmap-Staleness-Schutz, Live-Presentation-Hardening, UI/UX-State-Polish, Store-Query-Härtung. Keine Versions-Bumps, keine UI-Redesigns, keine Rohdaten-Änderungen.
+> **Train J, vier produktive Commits.** Konservative Performance- und Stabilitäts-Härtung. Keine Versions-Bumps, keine UI-Redesigns, keine Rohdaten-Änderungen, keine Migration.
 
-### Phase 0 — Baseline
-- Letzter extern belegter Build bleibt **Xcode Cloud Build 176** (basiert auf `556180c`). Train-I-Commits `d0c0a4c → f1c0b5e` sind weiterhin **nicht** extern verifiziert; Train-J-Commits darauf aufbauend ebenfalls nicht.
-- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+### Umgesetzte Commits (Reihenfolge)
+1. **`980111d` `docs: prepare train j from build 176 baseline`** — Phase 0. Train-J-Header in CHANGELOG, Build-176 bleibt externer Stand.
+2. **`731c290` `perf: reduce geojson feature array reallocations`** — Phase 4. `features.reserveCapacity(...)` aus Pfad-+Visit-Zähllauf in `GeoJSONBuilder.build`. Output byte-identisch.
+3. **`d0b2f1b` `perf: guard heatmap precomputation against stale completions`** — Phase 5. Neuer Foundation-only `GenerationGate` (Sendable, value type) + 8 Unit-Tests; in `AppHeatmapModel` verdrahtet (Bump auf `startPrecomputation`/`updateScale`/`ensureDensityPrecomputation`, `isStillCurrent(token)` in beiden `MainActor.run`-Blöcken).
+4. **`7dfcce7` `perf: stabilize export step indicator identity`** — Phase 9. `LHExportStepIndicator.ForEach`-ID von `\.offset` auf `\.element` (Step ist Hashable, allCases garantiert unique).
+
+### Übersprungene Phasen (mit Grund)
+- **Phase 2 — Operation Progress/Cancellation State:** Import-Pfad bereits durch `LocalTimelineImportProgress` (8 Phasen: idle/preparing/sniffing/importing/finalizing/completed/cancelled/failed) + `LocalTimelineImportProgressThrottle` (entry-stride + phase-change emission) gut modelliert. Export-Builder sind synchron pure-Foundation, kein Cancellation/Progress nötig. Ein neuer abstrakter Helper ohne sichere Wiring-Site wäre dead code.
+- **Phase 3 — MainActor-Entlastung:** Repo nutzt bereits konsequent `Task.detached(priority: .userInitiated)` für schwere Workloads (`AppContentLoader` 2×, `AppOverviewMapModel` Scan + Overlay mit doppelter Race-Guard via `loadGeneration` + Hash-Token, `AppHeatmapModel` precomputation). Keine sichere zusätzliche Extraktion ohne Refactor mit Race-Risiko.
+- **Phase 6 — Live Presentation State Hardening:** Pipeline bereits modular durch `LiveStatusResolver` (Permission/GPS/Recording State-Machine), `LiveTrackingPresentation` (Metric/GPS-Label/Upload-Visibility Helpers), `LiveCameraUpdateThrottle` (Train I) und `LiveTrackRenderCap` (Train H). Keine konkrete Duplikation identifiziert.
+- **Phase 7 — UI/UX State Polish:** Train I hat dies bereits dokumentiert geskippt — bestehende Hinweise (Live-Render-Cap-Banner DE/EN, Import-Progress, Internal-Test-Toggles) decken die Performance-Transparenz. Kein konkreter UX-Defekt identifiziert.
+- **Phase 8 — Store Query Hardening II:** Store hat bereits **13 Indizes** (`days` 3×, `paths` 4×, `visits` 1×, `activities` 1×, `derived_cache` 3×, inkl. Train-I `idx_derived_cache_kind_version_created` und Train-H WAL-Pragmas `journal_size_limit` 16 MiB + `wal_autocheckpoint` 1000). Ohne Mac/Device-EXPLAIN-QUERY-PLAN-Belegung weiterer Hot-Paths würde ein zusätzlicher Index gegen die Regel „Index nur wenn Query klar belegt" verstoßen.
+
+### Geänderte Dateien nach Phase
+- **Phase 0 (Doku):** `CHANGELOG.md`
+- **Phase 4 (Code):** `Sources/LocationHistoryConsumer/GeoJSONBuilder.swift` (+8 Zeilen reserveCapacity-Heuristik)
+- **Phase 5 (Code+Tests):**
+  - `Sources/LocationHistoryConsumerAppSupport/GenerationGate.swift` (neu, 32 Zeilen, public Sendable struct)
+  - `Sources/LocationHistoryConsumerAppSupport/AppHeatmapModel.swift` (+1 Property, 3× Bump-Aufruf, 2× `isStillCurrent`-Check)
+  - `Tests/LocationHistoryConsumerTests/GenerationGateTests.swift` (neu, 8 Tests)
+- **Phase 9 (Code):** `Sources/LocationHistoryConsumerAppSupport/LHExportComponents.swift` (1-Zeile: `id: \.offset` → `id: \.element`)
+- **Phase 10 (Doku):** `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`
+
+### Produktive Performance/Stability-Änderungen (Code-Truth, kein Device-Benchmark)
+| Änderung | Code-Truth | Linux-Test | Device-nötig |
+|---|---|---|---|
+| GeoJSON `features.reserveCapacity` | Vermeidet `[[String: Any]]`-Reallokationen bei Multi-Day-Exports | ✅ Export 188/0 | nein |
+| `GenerationGate` (pure helper) | Race-Guard, formal getestet | ✅ 8/0 | nein |
+| `AppHeatmapModel` Gate-Wiring | Stale `MainActor.run`-Completion kann LOD-Grids nicht überschreiben | indirekt (Heatmap-Tests 26/0) | ja, Apple-side im Cloud-Build |
+| `LHExportStepIndicator` `id: \.element` | Stable SwiftUI-Identity für 4 Step-Cases | nicht direkt | ja, Apple-side |
+
+### UI/UX-Änderungen
+**Keine in Train J.** Step-Indicator-Identity-Wechsel ist visuell unsichtbar (Layout identisch). Keine neuen Strings, keine neuen Settings.
+
+### Feature-Flags und Defaults
+- `GenerationGate`: keine Feature-Flag, immer aktiv. Default-Start-Token `0`.
+
+### Repo-Truth (lokal, unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Letzter extern verifizierter Build: **Xcode Cloud Build 176** (basiert auf `556180c`).
+- Train-I-Commits (`d0c0a4c → f1c0b5e`) **und** Train-J-Commits (`980111d → 7dfcce7`) sind **nicht** in Build 176. Sie kommen erst in einem neuen Xcode-Cloud-Build extern an.
+
+### Verifikation (Linux, Swift 6.3.2 via swiftly, libsqlite3-dev)
+- `git diff --check` (alle 4 Commits): clean.
+- `swift build`: clean.
+- `swift test`: **1492 / 2 Skips / 0 Failures, 54,9 s** (vorher 1484 — +8 neue `GenerationGateTests`).
+
+### Was Linux nicht prüfen konnte
+- `AppHeatmapModel`-Gate-Wiring: Wiring ist in einem Apple-only File (`#if canImport(SwiftUI) && canImport(MapKit)`) — Apple-side Xcode-Cloud-Build erforderlich.
+- Tatsächliche Race-Eliminierung unter realer iPhone-MapKit-Camera-Wechsel-Last.
+- Visuelle Stabilität des Step-Indicators.
+- iPad-Layout, Lock-Screen-Live-Activity, Dynamic Island.
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+1. Neuen Xcode-Cloud-Build auf `main` (HEAD `7dfcce7` + nachfolgenden Doku-Commit) auslösen → Build 177+; Workflow `Release – Archive & TestFlight`.
+2. TestFlight-Install auf iPhone 14 Pro / iPhone 16 Pro Max + iPad.
+3. Smoke-Verifikation siehe Sektion unten.
+
+### Manuelle Smoke-Test-Checkliste iPhone/iPad (Build 177+)
+- [ ] Heatmap-Wechsel: Import → Heatmap öffnen → schnell zwischen Scale-Modi wechseln → keine veralteten Grids sichtbar, kein Flackern.
+- [ ] Heatmap-Cache-Hit: Import → Heatmap → schließen → wieder öffnen → Cache-Hit schneller.
+- [ ] Export-Stepper: Auswahl → Format → Inhalt → Fertig: alle 4 Steps mit Verbindungslinien angezeigt.
+- [ ] GeoJSON-Export 5 Tage: Datei öffnet in `geojson.io` oder QGIS korrekt.
+- [ ] CSV-/GPX-/KML-/KMZ-Exporte byte-identisch zu Build 176.
+- [ ] Live-Tracking + Camera Throttle (Train I): ruhige Kamera in Follow-On, sofort bei Center-Now-Tap.
+- [ ] Live-Render-Cap (Train H-Wire-1): 20 000+ Punkte → Hinweis, Start+End korrekt.
+- [ ] WAL: großer Import + Force-Quit + Reopen → Daten intakt.
+- [ ] Widget zeigt aktuelle Daten, Lock-Screen-Live-Activity sichtbar.
+- [ ] iPad-Layout funktional, DE/EN konsistent.
 
 ## 2026-05-16 — Train I — Performance Pipeline, Live/Heatmap Wiring, Export/Store Hardening (`main`)
 

@@ -1,5 +1,15 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-16 (Train J — App Responsiveness, Workload Wiring, UI/UX State Modernization):** 4 produktive Commits (`980111d`, `731c290`, `d0b2f1b`, `7dfcce7`):
+>
+> - **Phase 4 GeoJSON Allocation:** `GeoJSONBuilder.build` reserviert `features.reserveCapacity(...)` aus Pfad-+Visit-Zähllauf. Output byte-identisch. Konsistent mit Train H/I CSV/GPX/KML-Pattern.
+> - **Phase 5 Heatmap Generation Gate:** Neuer Foundation-only `GenerationGate` (Sendable struct, 8 Unit-Tests). `AppHeatmapModel` bumpt das Gate auf `startPrecomputation`/`updateScale`/`ensureDensityPrecomputation`; beide `MainActor.run`-Completion-Blöcke prüfen `isStillCurrent(token)` bevor sie `lodGrids`/`viewportCache`/`densityPoints` schreiben. Damit kann eine stale Detached-Task, deren `Task.isCancelled`-Check vor der Cancellation lag, keine veralteten Grids mehr aufzwingen. Apple-side im Cloud-Build zu verifizieren.
+> - **Phase 9 Step Indicator Identity:** `LHExportStepIndicator.ForEach` Identity von `\.offset` auf `\.element` (Step ist Hashable Int-Enum, allCases garantiert unique).
+>
+> **Übersprungene Phasen mit Begründung:** 2 (Import-Progress bereits durch `LocalTimelineImportProgress` + Throttle modelliert, Export synchron), 3 (Repo nutzt konsequent `Task.detached`), 6 (Live-Pipeline durch `LiveStatusResolver`/`LiveTrackingPresentation` modular), 7 (kein konkreter UX-Defekt), 8 (13 Indizes vorhanden, kein EXPLAIN-Beleg für weitere).
+>
+> Linux `swift test` **1492 / 2 Skips / 0 Failures, 54,9 s** (+8 `GenerationGateTests`).
+>
 > **Update 2026-05-16 (Train I — Performance Pipeline / Live-Heatmap-Wiring / Export-Store Hardening):** 4 produktive Commits (`d0c0a4c`, `41a8e6c`, `058a131`, `b0d49a3`):
 >
 > - **Phase 1 Live Camera Throttle:** Neuer Helper `LiveCameraUpdateThrottle` (Foundation-only, pure, deterministisch). Default ON (0,5 s + 25 m). In `AppLiveTrackingView.onChange(of: liveLocation.currentLocation?.timestamp)` verdrahtet. Initial-Seed und User-Tap auf „Center on me" bypassen Throttle. Keine MapCameraPosition-Endlosschleife (Verzweigung über `isFollowingLocation`, kein observer auf `mapPosition`). 9 Unit-Tests.
