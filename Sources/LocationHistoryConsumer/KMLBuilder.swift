@@ -4,7 +4,17 @@ import Foundation
 ///
 public enum KMLBuilder {
     public static func build(from days: [Day], mode: ExportMode = .tracks) -> String {
+        // Reserve a rough upper bound for the `lines` accumulator so multi-day
+        // exports with many paths don't reallocate the backing buffer. Each
+        // track placemark produces ~7 lines and each waypoint ~7 lines; add a
+        // 16-line fixed-header allowance.
+        var rowEstimate = 16
+        for day in days {
+            if mode.includesTracks { rowEstimate += day.paths.count * 7 }
+            if mode.includesWaypoints { rowEstimate += day.visits.count * 7 }
+        }
         var lines: [String] = []
+        lines.reserveCapacity(rowEstimate)
 
         lines.append(#"<?xml version="1.0" encoding="UTF-8"?>"#)
         lines.append(#"<kml xmlns="http://www.opengis.net/kml/2.2">"#)
@@ -36,9 +46,26 @@ public enum KMLBuilder {
                     // and have an empty `points` array.
                     let coordinates: String
                     if !path.points.isEmpty {
-                        coordinates = path.points
-                            .map { "\(coordinateString($0.lon)),\(coordinateString($0.lat))" }
-                            .joined(separator: " ")
+                        // Direct String-append loop avoids the intermediate
+                        // `[String]` allocation of `map { … }.joined(...)`.
+                        // Output is byte-identical: space-separated
+                        // `lon,lat` triples in the same order as the source.
+                        var built = ""
+                        // Heuristic: ~26 chars per coordinate pair plus the
+                        // separating space.
+                        built.reserveCapacity(path.points.count * 27)
+                        var isFirst = true
+                        for point in path.points {
+                            if isFirst {
+                                isFirst = false
+                            } else {
+                                built.append(" ")
+                            }
+                            built.append(coordinateString(point.lon))
+                            built.append(",")
+                            built.append(coordinateString(point.lat))
+                        }
+                        coordinates = built
                     } else if let flat = path.flatCoordinates,
                               flat.count >= 2,
                               flat.count.isMultiple(of: 2) {

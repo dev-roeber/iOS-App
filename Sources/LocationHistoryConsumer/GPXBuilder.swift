@@ -66,7 +66,33 @@ public enum GPXBuilder {
         additionalTracks: [GPXTrack] = [],
         mode: ExportMode = .tracks
     ) -> String {
+        // Reserve a rough upper bound for the `lines` accumulator. Each track
+        // emits ~5 framing lines plus ~1 line per point; each waypoint ~10
+        // lines; plus a small fixed XML/gpx header allowance.
+        var rowEstimate = 16
+        if mode.includesTracks {
+            for day in days {
+                for path in day.paths {
+                    let pointCount: Int
+                    if !path.points.isEmpty {
+                        pointCount = path.points.count
+                    } else if let flat = path.flatCoordinates {
+                        pointCount = flat.count / 2
+                    } else {
+                        pointCount = 0
+                    }
+                    rowEstimate += 5 + pointCount
+                }
+            }
+            rowEstimate += additionalTracks.reduce(0) { acc, t in acc + 5 + t.points.count }
+        }
+        if mode.includesWaypoints {
+            for day in days {
+                rowEstimate += day.visits.count * 10
+            }
+        }
         var lines: [String] = []
+        lines.reserveCapacity(rowEstimate)
 
         lines.append(#"<?xml version="1.0" encoding="UTF-8"?>"#)
         lines.append("""
