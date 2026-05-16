@@ -1,5 +1,15 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-16 (Train K — Shared Race Gates, Runtime Cleanup, Overview/Heatmap Hardening):** 4 produktive Commits (`84064c9`, `924370a`, `555123d`, `f959f2e`):
+>
+> - **Phase 1 Overview Gate:** `AppOverviewMapModel` `loadGeneration: UInt64` durch shared `GenerationGate` ersetzt; Semantik identisch (bump auf neue Anfrage, `isStillCurrent(token)` vor `renderData`-Write in scan + overlay completion). Hash-basierter `currentLoadToken` bleibt als zweites Race-Guard.
+> - **Phase 2 iOS-16 Cleanup:** 11× `if #available(iOS 16.x, *)`-Runtime-Branches dedenten. `#if os(iOS)`/`canImport(ActivityKit)` Gates bleiben.
+> - **Phase 6 CSV Row Allocations:** Neuer `joinEscapedRow(_:)`-Helper ersetzt 4× `cols.map { csvEscape(...) }.joined(separator: ",")` in `visitRow`/`activityRow`/`routeRow`/`emptyDayRow`. Output byte-identisch.
+>
+> **Übersprungene Phasen:** 3 (Heatmap-Test braucht Scheduler-Injection), 4/5/9 (kein UX-Defekt), 7 (Store-EXPLAIN braucht Public-API-Eingriff), 8 (offset-id Sites ohne Domain-IDs).
+>
+> Linux `swift test` **1492 / 2 Skips / 0 Failures, 53,7 s** (unverändert).
+>
 > **Update 2026-05-16 (Train J — App Responsiveness, Workload Wiring, UI/UX State Modernization):** 4 produktive Commits (`980111d`, `731c290`, `d0b2f1b`, `7dfcce7`):
 >
 > - **Phase 4 GeoJSON Allocation:** `GeoJSONBuilder.build` reserviert `features.reserveCapacity(...)` aus Pfad-+Visit-Zähllauf. Output byte-identisch. Konsistent mit Train H/I CSV/GPX/KML-Pattern.

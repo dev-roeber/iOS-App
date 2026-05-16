@@ -1,12 +1,72 @@
 # CHANGELOG
 
-## 2026-05-16 — Train K — Shared Race Gates, Runtime Cleanup, Overview/Heatmap Hardening (`main`, in Arbeit)
+## 2026-05-16 — Train K — Shared Race Gates, Runtime Cleanup, Overview/Heatmap Hardening (`main`)
 
-> **Train K, in Arbeit.** Verdrahtet bestehende Performance- und Stabilitäts-Pattern (`GenerationGate`, iOS-17-Minimum-Cleanup) breiter. Keine Versions-Bumps, keine UI-Redesigns, keine Rohdaten-Änderungen.
+> **Train K, vier produktive Commits.** Verdrahtet bestehende Performance- und Stabilitäts-Pattern (`GenerationGate`, iOS-17-Minimum-Cleanup, Export-Allocation) breiter. Keine Versions-Bumps, keine UI-Redesigns, keine Rohdaten-Änderungen.
 
-### Phase 0 — Baseline
-- Letzter extern belegter Build bleibt **Xcode Cloud Build 176** (basiert auf `556180c`). Train-I (`d0c0a4c → f1c0b5e`), Train-J (`980111d → b5c6dc0`) und Train-K-Commits sind weiterhin **nicht** extern verifiziert.
-- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+### Umgesetzte Commits (Reihenfolge)
+1. **`84064c9` `docs: prepare train k from build 176 baseline`** — Phase 0.
+2. **`924370a` `perf: reuse generation gate in overview map pipeline`** — Phase 1. `AppOverviewMapModel.loadGeneration: UInt64` durch shared `GenerationGate` ersetzt; Semantik identisch (bump auf neue Anfrage, `isStillCurrent(token)` vor `renderData`-Write in scan + overlay completion). Hash-basierter `currentLoadToken` bleibt als zweites Race-Guard.
+3. **`555123d` `chore: remove redundant ios 16 runtime gates`** — Phase 2. Alle 11 verbleibenden `if #available(iOS 16.x, *)`-Runtime-Branches dedenten: 4× iOS 16.2 in `ActivityManager`, 1× iOS 16.2 in `LiveActivityPresentation`, 2× iOS 16.0/macOS 13.0 in `AppInsightsContentView`, 4× iOS 16.1 in `LiveLocationFeatureModel`. `#if os(iOS)`/`canImport(ActivityKit)` bleiben.
+4. **`f959f2e` `perf: reduce csv row intermediate allocations`** — Phase 6. Neuer `joinEscapedRow(_:)`-Helper ersetzt 4× `cols.map { csvEscape(...) }.joined(separator: ",")` in `visitRow`/`activityRow`/`routeRow`/`emptyDayRow`. Output byte-identisch.
+
+### Übersprungene Phasen (mit Grund)
+- **Phase 3 — Heatmap Test Coverage:** `GenerationGate` ist bereits isoliert via 8 Tests verifiziert; Integrationstest in `AppHeatmapModel` braucht Clock/Scheduler-Injection (Train I/J dokumentiert).
+- **Phase 4 — Import UX:** `LocalTimelineImportProgress` (8 Phasen) + `LocalTimelineImportProgressThrottle` + 12 ImportError-Cases bereits sauber modelliert. Kein konkreter UX-Defekt.
+- **Phase 5 — Export UX:** `AppExportView` + `LHExportStepIndicator` (Train-J `id: \.element`) bereits stabil; keine konkrete Verbesserung ohne Redesign.
+- **Phase 7 — Store EXPLAIN QUERY PLAN Test:** Würde Public-API-Erweiterung (`prepareForExplain`-Methode) oder Friend-Access erfordern; nicht risikoarm einführbar.
+- **Phase 8 — Identity Rest:** Alle verbleibenden `id: \.offset`-Sites (DayDetail 5×, Editor 1×, Live-Breadcrumb 2×, Export-Preview 2×, Insights topDays 1×, Overview 2×) haben keine garantiert uniquen Domain-IDs — Train H/I/J dokumentiert.
+- **Phase 9 — UI/UX Polish:** Train I + J haben dies bereits dokumentiert geskippt; kein konkreter Mangel.
+
+### Geänderte Dateien nach Phase
+- **Phase 0:** `CHANGELOG.md`
+- **Phase 1:** `Sources/LocationHistoryConsumerAppSupport/AppOverviewTracksMapView.swift` (loadGeneration → loadGate, 3 Use-Sites)
+- **Phase 2:** `Sources/LocationHistoryConsumerAppSupport/ActivityManager.swift`, `LiveActivityPresentation.swift`, `AppInsightsContentView.swift`, `LiveLocationFeatureModel.swift`
+- **Phase 6:** `Sources/LocationHistoryConsumer/CSVBuilder.swift` (+ helper, 4 use-sites)
+- **Phase 10:** `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`
+
+### Produktive Performance/Stability-Änderungen (Code-Truth)
+| Änderung | Code-Truth | Linux-Test |
+|---|---|---|
+| `AppOverviewMapModel` GenerationGate | Inline UInt64 durch shared Helper ersetzt; isStillCurrent(token) statt `==` | ✅ Overview/Map 47/0 + 222/0 |
+| 11× iOS-16 #available dedenten | Tote Branches entfernt; iOS-17-Minimum kanonisch | ✅ Live 181/0, Activity 11/0 |
+| CSV `joinEscapedRow` Helper | Spart `[String]`-Allokation pro Row | ✅ CSV 19/0 + Export 188/0 |
+
+### UI/UX-Änderungen
+**Keine in Train K.** Alle Änderungen sind Code-Truth-/Allocation-/Race-Härtung.
+
+### Feature-Flags und Defaults
+- `AppOverviewMapModel.loadGate`: kein Flag, immer aktiv. Initial-Token `0`.
+
+### Repo-Truth (lokal, unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Letzter extern verifizierter Build: **Xcode Cloud Build 176** (basiert auf `556180c`).
+- Train-I-, Train-J- und Train-K-Commits sind **nicht** in Build 176.
+
+### Verifikation (Linux)
+- `git diff --check` (alle 4 produktiven Commits): clean.
+- `swift build`: clean.
+- `swift test`: **1492 / 2 Skips / 0 Failures, 53,7 s** (unverändert zu Train-J-Baseline).
+
+### Was Linux nicht prüfen konnte
+- `AppOverviewMapModel`-Race-Verhalten unter realer MapKit-Pan/Zoom-Last.
+- Live Activity / Dynamic Island Rendering nach Dedent.
+- iPad-Layout, Insights-Chart-Sharing visuell.
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+Neuen Xcode-Cloud-Build auf `main` auslösen → Build 177+. Trains I + J + K kommen gemeinsam an.
+
+### Manuelle Smoke-Test-Checkliste iPhone/iPad (Build 177+)
+- [ ] Overview-Map: schnelles Filter-Switching → keine veralteten Overlays, kein Flackern.
+- [ ] Live-Tracking starten/pausieren/beenden → Live Activity korrekt aktualisiert.
+- [ ] Heatmap-Scale-Wechsel (Train J): keine veralteten Grids.
+- [ ] CSV-Export 5 Tage: byte-identisch zu Build 176.
+- [ ] GeoJSON/GPX/KML/KMZ unverändert.
+- [ ] Insights-Chart-Sharing: ImageRenderer → PNG → Share-Sheet auf iPhone + iPad.
+- [ ] WAL: großer Import + Force-Quit + Reopen.
+- [ ] Widget, iPad-Layout, DE/EN.
+
+
 
 ## 2026-05-16 — Train J — App Responsiveness, Workload Wiring, UI/UX State Modernization (`main`)
 

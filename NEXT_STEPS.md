@@ -1,6 +1,31 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach **Train J — App Responsiveness, Workload Wiring, UI/UX State Modernization**).
+Stand: 2026-05-16 (Branch `main`, nach **Train K — Shared Race Gates, Runtime Cleanup, Overview/Heatmap Hardening**).
+
+**Train K umgesetzt (4 produktive Commits + 1 Doku-Sync):**
+- `84064c9` Build-176-Baseline-Doku.
+- `924370a` `AppOverviewMapModel` `loadGeneration: UInt64` → shared `GenerationGate` (Semantik identisch, Hash-Token bleibt als zweites Race-Guard).
+- `555123d` 11× `if #available(iOS 16.x, *)`-Runtime-Branches dedenten (ActivityManager 4×, LiveActivityPresentation 1×, AppInsightsContentView 2×, LiveLocationFeatureModel 4×).
+- `f959f2e` CSV `joinEscapedRow`-Helper ersetzt 4× `cols.map{...}.joined()` in row-builders (byte-identisch).
+
+**Übersprungene Phasen:** 3 (Heatmap-Test braucht Scheduler-Injection), 4 (Import-UX bereits modelliert), 5 (Export-UX stabil), 7 (Store-EXPLAIN braucht Public-API-Eingriff), 8 (verbleibende offset-id Sites ohne Domain-IDs), 9 (kein UX-Defekt).
+
+**Tests:** `swift test` **1492 / 2 Skips / 0 Failures, 53,7 s** (unverändert).
+
+**Externer Stand:** Letzter verifizierter Build = **Xcode Cloud Build 176** (basiert auf `556180c`). Train-I/J/K (`d0c0a4c → f959f2e`) sind **noch nicht** extern.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build (→ Build 177+), TestFlight-Install + manueller Smoke siehe CHANGELOG.
+
+**Folge-Trains:**
+- **Heatmap-Pipeline-Härtung** mit injizierbarem `Clock`-Protokoll für race-flaky-freie Tests.
+- **Store-EXPLAIN-Plan-Test** via testbar gekapselter Friend-Method.
+- **D / G2** (Mac/Instruments-only): Heatmap-Multi-LOD-Wiring + MKMapView/MKMultiPolyline-Bridge.
+
+---
+
+Vorheriger Stand: 2026-05-16 nach Train J.
+
+**Train J umgesetzt (4 produktive Commits + 1 Doku-Sync):**
 
 **Train J umgesetzt (4 produktive Commits + 1 Doku-Sync):**
 - `980111d` Build-176-Baseline-Doku.

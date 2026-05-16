@@ -1,6 +1,10 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-16, Branch `main`, HEAD pending — Train J)
+## Aktiver Stand (2026-05-16, Branch `main`, HEAD pending — Train K)
+
+- **Train K umgesetzt (4 produktive Commits + Doku-Sync):** `84064c9` Build-176-Baseline-Doku · `924370a` `AppOverviewMapModel` loadGeneration → shared `GenerationGate` (Hash-Token bleibt zusätzlich) · `555123d` 11× `if #available(iOS 16.x, *)`-Runtime-Branches dedenten (ActivityManager 4×, LiveActivityPresentation 1×, AppInsightsContentView 2×, LiveLocationFeatureModel 4×) · `f959f2e` CSV-Row `joinEscapedRow`-Helper (byte-identisch). Übersprungen: Phasen 3 (Test-Injection), 4/5/9 (kein UX-Defekt), 7 (Store-EXPLAIN), 8 (verbleibende offset-id ohne Domain-IDs). Linux `swift test` **1492 / 2 Skips / 0 Failures, 53,7 s**. Noch nicht in Build 176.
+
+## Aktiver Stand (2026-05-16, Branch `main`, HEAD `b5c6dc0` — Train J)
 
 - **Train J umgesetzt (4 produktive Commits + Doku-Sync):** `980111d` Build-176-Baseline-Doku · `731c290` GeoJSON `features.reserveCapacity` (byte-identisch) · `d0b2f1b` neuer `GenerationGate` (Sendable, 8 Tests) + `AppHeatmapModel` Gate-Wiring gegen stale `MainActor.run`-Completions (Bump auf start/updateScale/ensure; `isStillCurrent(token)` in beiden MainActor.run-Blöcken) · `7dfcce7` `LHExportStepIndicator` `id: \.element` (Step Hashable). Übersprungen: Phasen 2 (Import-Progress modelliert, Export-Builder synchron), 3 (Repo bereits konsequent `Task.detached`), 6 (Live-Pipeline modular), 7 (kein UX-Defekt), 8 (13 Indizes, kein EXPLAIN-Beleg). Linux `swift test` **1492 / 2 Skips / 0 Failures, 54,9 s** (+8 GenerationGateTests). Train-J-Commits sind **noch nicht** in Build 176.
 - **Train I umgesetzt (4 Commits):** `d0c0a4c` Build-176-Doku · `41a8e6c` Live Camera Throttle (ON, 0,5 s + 25 m, 9 Tests) · `058a131` GPX/KML reserveCapacity + KML direkter Coord-Loop (byte-identisches Output) · `b0d49a3` Index `idx_derived_cache_kind_version_created` (additiv). Übersprungen: Phasen 2/3/6/7 mit Begründung. Linux `swift test` **1484 / 2 Skips / 0 Failures**. Noch nicht in Build 176.
