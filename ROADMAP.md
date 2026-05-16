@@ -5,7 +5,8 @@
 - **Repo-Truth:** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (8 pbxproj-Configs + Info.plist App/Widget konsistent). Frühere Stände `1.0.1 / 100 / 168` in den darunterliegenden Blocks sind historisch.
 - **Linux-Verifikation (Swift 6.3.2 via swiftly, `libsqlite3-dev`):** `swift build` clean, `swift test` **1435 / 2 Skips / 0 Failures**, 41,1 s.
 - **Repo-Hygiene:** 32 `*__backup_*.md` aus dem aktiven Tree nach `docs/archive/backups-2026-05-16/` verschoben (Doku-Audit-Cleanup).
-- **Neu — MapKit & Performance Audit 2026-05-16:** `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md` mit 6 Map-Surfaces, 17 priorisierten Hotspots und Mess-Baseline-Befund. Vorgeschlagene Trains A–D (siehe `NEXT_STEPS.md`). **Reine Planung, keine Code-Änderung.**
+- **Neu — MapKit & Performance Audit 2026-05-16:** `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md` mit 6 Map-Surfaces, 17 priorisierten Hotspots und Mess-Baseline-Befund. Vorgeschlagene Trains A–D (siehe `NEXT_STEPS.md`).
+- **Neu — Train A „Baseline Strengthening" umgesetzt 2026-05-16:** 3 neue Foundation-only Performance-Test-Files (PathSimplification, PathFilter, ExportBuilders) + GoogleTimelineStreamReader-10k-Erweiterung. Linux `swift test` 1459/2/0 (52,8 s). **Reine Test-Ergänzung, kein Verhaltenswechsel.**
 - **Offen / extern nicht prüfbar (unverändert):** ASC-Live-Status für 1.0.2, TestFlight-Upload `1.0.2 (171)`, 46-MiB-Hardware-Retest mit Original-Asset, Dynamic-Island Lock-Screen, iPad-Layout-Sichtprüfung.
 
 ---

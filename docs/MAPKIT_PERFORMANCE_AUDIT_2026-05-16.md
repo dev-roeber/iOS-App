@@ -116,7 +116,17 @@ Vier Stufen, sortiert nach Nutzen/Risiko/Linux-Verifizierbarkeit. **Schweregrad-
 - Builder, DouglasPeucker, PathFilter ohne Linux-Baseline.
 - Hardware-/Memory-Verhalten nicht im Repo prüfbar.
 
-## Empfohlene Trains (planerisch, NICHT umgesetzt)
+## Statusupdate 2026-05-16 — Train A umgesetzt
+
+- 3 neue Foundation-only Performance-Test-Files + 1 Erweiterung committed (siehe `CHANGELOG.md`-Eintrag zum gleichen Datum):
+  - `PathSimplificationPerformanceTests` (5 Cases)
+  - `PathFilterPerformanceTests` (6 Cases)
+  - `ExportBuildersPerformanceTests` (12 Cases, KMZ ausgelassen — wrappt KML)
+  - `GoogleTimelineStreamReaderPerformanceTests` +1 10k-Case
+- Linux `swift test`: **1459 / 2 Skips / 0 Failures, 52,8 s** (vorher 1435).
+- **Keine Code-/Verhaltens-Änderung an App-Surfaces.** Alle P0/P1/P2/Mac-only Hotspots aus diesem Report bleiben **offen**.
+
+## Empfohlene Trains (Train A umgesetzt, Rest planerisch)
 
 **Train A — „Baseline Strengthening" (Linux-CI, low risk, kein Verhaltenswechsel):**
 - P0-2: DouglasPeucker, PathFilter Performance-Tests.

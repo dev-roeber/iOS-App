@@ -52,6 +52,25 @@ final class GoogleTimelineStreamReaderPerformanceTests: XCTestCase {
         }
     }
 
+    // MARK: - Larger disk-streaming path (Train A, 2026-05-16)
+
+    /// 10 000-entry synthetic file via the disk-streaming path. Same shape
+    /// as the 5 000-entry case above; doubling the entry count keeps the
+    /// generator deterministic and the file well under any CI disk-quota
+    /// threshold (~few MB).
+    func testPerformanceConvertStreamingFromDiskTenThousand() throws {
+        let url = try writeSyntheticTimelineFile(entryCount: 10_000)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        measure {
+            do {
+                _ = try GoogleTimelineConverter.convertStreaming(contentsOf: url)
+            } catch {
+                XCTFail("Streaming convert from disk threw: \(error)")
+            }
+        }
+    }
+
     // MARK: - Incremental chunk-fed parser
 
     /// Mirrors the ZIP-entry streaming hot path: feed the parser tiny chunks

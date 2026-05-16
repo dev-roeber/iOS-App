@@ -2,6 +2,29 @@
 
 Stand: 2026-05-16 (Branch `main`, HEAD pending — `docs: audit mapkit and app performance modernization plan`).
 
+**Train A „Baseline Strengthening" 2026-05-16 (umgesetzt, kein Verhaltenswechsel):**
+- 3 neue Performance-Test-Files (Foundation-only, Linux-CI-portabel, ohne Fail-Bar) + 1 Erweiterung:
+  - `Tests/.../PathSimplificationPerformanceTests.swift` (5 Cases — DouglasPeucker 1k/5k @ ε=15 m, 5k @ ε=5 m, Korrektheits-Invarianten)
+  - `Tests/.../PathFilterPerformanceTests.swift` (6 Cases — removeOutliers clean/outlier, Korrektheits-Invarianten)
+  - `Tests/.../ExportBuildersPerformanceTests.swift` (12 Cases — GPX/KML/CSV/GeoJSON 1k + 3×5k + Struktur-Asserts)
+  - `Tests/.../GoogleTimelineStreamReaderPerformanceTests.swift` — neuer 10k-Disk-Streaming-Case
+- Linux `swift test`: 1459 / 2 Skips / 0 Failures, 52,8 s (vorher 1435).
+- **Keine Performance-Verbesserung behauptet** — Train A ergänzt nur Mess-Baselines.
+- **KMZ-Builder ausgelassen:** wrappt KML in ZIPFoundation-Archive; KML-Baseline ist die relevante Messung.
+
+**Empfohlener nächster Train (Stand 2026-05-16):**
+- **Train B („Identity & Surface Polish")** — pro View ein PR, Verhalten unverändert:
+  - `ForEach(Array(...enumerated()), id: \.offset)` an 13 Stellen schrittweise auf stabile `Identifiable`-IDs.
+  - AppInsightsContentView 5× `.onChange` zu einer `.task(id:)`-Konsolidierung.
+- alternativ **Train C („Live Surface Hardening", Feature-Flag Default OFF)**:
+  - Live-Track Polyline Hard-Cap + Tail-Decimation.
+  - Camera-Update-Throttle im Follow-Mode.
+
+**Mac/Device/ASC (Train D, unverändert offen):**
+- 46-MiB Original-Tester-Asset Hardware-Retest, Dynamic-Island Lock-Screen Sichtprüfung, iPad-Layout, `xcarchive 1.0.2 (171)` Upload, Apple-Review-Resubmit.
+
+---
+
 **MapKit & Performance Audit 2026-05-16 (planerisch, kein Code-Change):**
 - Neuer Audit-Report: **`docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md`** mit 6 Map-Surface-Inventar, 17 priorisierten Hotspots und Mess-Baseline-Befund.
 - Verifikation: Linux `swift build` clean, `swift test` 1435/2/0 (41 s). Audit-Commit ändert nur Doku.

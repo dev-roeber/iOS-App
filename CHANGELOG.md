@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## 2026-05-16 — test: add map and export performance baselines (Train A, `main`)
+
+> **Train A aus `docs/MAPKIT_PERFORMANCE_AUDIT_2026-05-16.md` umgesetzt.** Reine Test-Ergänzung — **kein** Verhaltenswechsel, **keine** Performance-Optimierung, **keine** UI-Änderung. Ziel: deterministische, Linux-CI-taugliche Mess-Baseline ohne Fail-Bar, damit künftige MapKit-/Core-Optimierungen drift-erkennbar sind.
+
+### Neu — Performance-Tests (alle Foundation-only, Linux-portable, `measure { … }` ohne `XCTPerformanceMetric_…`-Fail-Bar)
+- **`Tests/.../PathSimplificationPerformanceTests.swift`** — 5 Cases: `douglasPeucker` 1k/5k bei ε=15 m und 5k bei ε=5 m, plus Korrektheits-Invarianten (Endpunkt-Preservation, Output ≤ Input, kurze Pfade unverändert).
+- **`Tests/.../PathFilterPerformanceTests.swift`** — 6 Cases: `removeOutliers` 1k/5k clean, 5k mit 1-zu-100-Outlier-Rhythmus, plus Korrektheits-Invarianten (Identity auf cleanen Walks, Big-Jump-Rejection, Short-Input-Passthrough).
+- **`Tests/.../ExportBuildersPerformanceTests.swift`** — 12 Cases: `GPXBuilder` / `KMLBuilder` / `CSVBuilder` / `GeoJSONBuilder` auf 1k-Punkt-Single-Day und 3×5k-Punkt-Multi-Day, plus Strukturmarker-Asserts und JSONSerialization-Parsebarkeit für GeoJSON. **KMZ bewusst ausgelassen** — `KMZBuilder` wrappt KML in einen ZIP-Archive; der KML-String-Baseline ist die relevante Messung.
+- **`Tests/.../GoogleTimelineStreamReaderPerformanceTests.swift`** — erweitert um `testPerformanceConvertStreamingFromDiskTenThousand` (10k synthetische Entries, deterministischer Generator, Datei in `temporaryDirectory`).
+
+### Verifikation
+- `swift build` + `swift build --build-tests`: clean.
+- `git diff --check`: clean.
+- Linux `swift test` (Swift 6.3.2 via swiftly, `libsqlite3-dev`): **1459 Tests, 2 Skips, 0 Failures, 52,8 s** (vorher 1435, +24 neue Test-Cases).
+- Gefilterte Läufe alle grün:
+  - `swift test --filter Performance` → 38 Tests, 24,4 s
+  - `swift test --filter Douglas` → 5 Tests, 0,03 s
+  - `swift test --filter Path` → 117 Tests, 0,6 s
+  - `swift test --filter Export` → 188 Tests, 5,7 s
+  - `swift test --filter StreamReader` → 22 Tests, 20,1 s
+
+### Bewusst NICHT in diesem Train
+- Keine Verdrahtungs-Änderung in `AppOverviewTracksMapView`, `AppHeatmapModel`, `AppDayMapView`, `AppLiveTrackingView`, `AppExportPreviewMapView`.
+- Keine produktive Performance-Optimierung — Hotspots aus dem 2026-05-16-Audit (Live-Track-Hard-Cap, ForEach-Identity, Insights-OnChange-Konsolidierung, MKMapView-Bridging, MKTileOverlay-Heatmap) bleiben **offen**.
+- Keine Fail-Bar auf neuen `measure`-Tests — CI fail nur bei Korrektheits-Asserts, nicht bei Wall-Clock-Drift.
+
+### Empfohlener nächster Train
+- **Train B („Identity & Surface Polish")** — `ForEach(Array(...enumerated()), id: \.offset)` schrittweise auf stabile `Identifiable`-IDs; AppInsightsContentView 5× `.onChange` zu `.task(id:)` konsolidieren. Verhalten muss identisch bleiben, durch Golden-/Render-Tests gedeckt.
+- alternativ **Train C („Live Surface Hardening", Feature-Flag default OFF)** — Live-Track Polyline Hard-Cap mit Tail-Decimation; Camera-Update-Throttle.
+
+---
+
 ## 2026-05-16 — docs: audit mapkit and app performance modernization plan (`main`, pending HEAD)
 
 > **Reiner Planungs-Audit, kein Code-Change.** Belastbares Map-Surface-Inventar, Hotspot-Ranking und Mess-Baseline-Befund — alles vor jedem nächsten Implementierungs-Train.
