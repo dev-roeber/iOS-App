@@ -1,5 +1,7 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-16 (Train E1 umgesetzt):** `KMZBuilder` schreibt nun direkt in einen In-Memory-`Archive(accessMode: .create)` (ZIPFoundation `Archive(data:, accessMode:)` + `archive.data`). Damit entfällt das Temp-File-Roundtrip (`temporaryDirectory.appendingPathComponent(UUID...kmz)` + `Data(contentsOf:)`) komplett. **Code-Truth:** 1× Temp-Write + 1× Temp-Read entfernt; 1× UTF-8-KML-Buffer + 1× Zip-Buffer bleiben. iOS-Peak-RSS-Effekt nur am Gerät mit Instruments verifizierbar. Tests 1459/2/0. Hotspot E1 in §5/§6 damit **erledigt**.
+>
 > **Scope:** Repo-weite Performance-/Stabilitäts-/Speicher-/Rendering-Tiefenanalyse für die LH2GPX iOS-App (Core + Wrapper). Plus formale iOS-17-Deployment-Target-Entscheidung. **Audit-Train: keine produktive Code-Änderung.** Tests bleiben grün (1459/2/0).
 >
 > **Start-HEAD:** `1a4d859` (`perf: stabilize swiftui identity surfaces`).

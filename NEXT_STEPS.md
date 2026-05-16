@@ -1,6 +1,18 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach `docs: audit app performance modernization and ios 17 path`).
+Stand: 2026-05-16 (Branch `main`, nach `perf: reduce kmz export memory copies`).
+
+**Train E1 umgesetzt (KMZ-Memory-Refactor):**
+- `KMZBuilder.build(from:)` schreibt jetzt direkt in einen In-Memory-`Archive` (ZIPFoundation `Archive(data:, accessMode: .create)` + `archive.data`).
+- Entfernt: `temporaryDirectory`-Roundtrip + `Data(contentsOf: tmpURL)` Re-Read.
+- API/Output-Bytes unverändert. 1459/2/0 grün, 6 KMZ-Tests grün.
+- iOS-Memory-Pressure-Effekt nur am Gerät mit Instruments verifizierbar.
+
+**Nächster empfohlener Train: F (iOS-17-Anhebung).** Räumt iOS-16-Reste konsistent ab; Voraussetzung für saubere MapKit-iOS-17-API-Migration.
+
+---
+
+Vorheriger Stand: nach `docs: audit app performance modernization and ios 17 path`.
 
 **App Performance Modernization Audit 2026-05-16 (umgesetzt, nur Doku):**
 - Neu: `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md` — repo-weite Performance-Tiefenanalyse + iOS-17-Entscheidungsmatrix.

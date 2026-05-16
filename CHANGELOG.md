@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 2026-05-16 — perf: reduce kmz export memory copies (`main`)
+
+> **Train E1 umgesetzt.** Punktueller Memory-Refactor in `KMZBuilder`. Keine UI-/MapKit-/Format-Änderung, keine API-Brüche, keine iOS-17-Anhebung.
+
+### Geändert
+- **`Sources/LocationHistoryConsumerAppSupport/KMZBuilder.swift`** — schreibt das KMZ jetzt direkt in einen In-Memory-`Archive(accessMode: .create)` (ZIPFoundation `Archive(data:, accessMode:)` + `archive.data`). Der Zwischenschritt `temporaryDirectory.appendingPathComponent(UUID().uuidString + ".kmz")` plus `Data(contentsOf: tmpURL)` entfällt vollständig. KML-Payload-Buffer bleibt erhalten (ZIPFoundation `provider` benötigt wahlfreien Zugriff). Öffentliche Signatur, ZIP-Layout und Output-Bytes (`PK…`, `doc.kml`) unverändert.
+
+### Code-Truth (keine Device-Messung, kein behaupteter MB-Wert)
+- entfernt: 1× Temp-Datei-Write (`Archive(url:, accessMode: .create)`), 1× Temp-Datei-Read (`Data(contentsOf: tmpURL)`).
+- erhalten: 1× UTF-8-Encode des KML-Strings, 1× In-Memory-Zip-Buffer.
+- Effekt unter realer iOS-Memory-Pressure und das tatsächliche Peak-RSS-Delta sind **nur auf Gerät mit Instruments** verifizierbar — auf Linux nicht messbar.
+
+### Verifikation
+- `git diff --check`: clean.
+- `swift build` (Swift 6.3.2): clean, 1,62 s.
+- `swift test --filter KMZExportTests`: **6 / 0 Failures**.
+- `swift test`: **1459 / 2 Skips / 0 Failures, ~54 s** — unverändert zum vorherigen HEAD.
+
+### Bewusst NICHT in diesem Train
+- Keine Streaming-API für GPX/KML/CSV/GeoJSON (Train E2).
+- Keine API-Änderung an `KMZBuilder.build(from:)` (bleibt `throws -> Data`).
+- Keine SQLite-Pragma-Erweiterung (Train E3).
+- Keine iOS-17-Anhebung (Train F).
+- Keine UI-Texte/Lokalisierungsänderungen.
+
+### Empfohlener nächster Train
+- **F** (Doku + Build): iOS-17-Anhebung — entfernt iOS-16-Reste konsistent, Voraussetzung für saubere MapKit-iOS-17-Migration; ODER **C** (Feature-Flag default OFF): Live-Polyline-Cap-UI-Warnung + Camera-Throttle.
+
+---
+
 ## 2026-05-16 — docs: audit app performance modernization and ios 17 path (`main`)
 
 > **Reiner Audit-Train, keine produktive Code-Änderung.** Neuer App-weiter Performance-/Stabilitäts-/Speicher-/Rendering-Audit + formale iOS-17-Deployment-Target-Entscheidungsmatrix. Stützt sich ausschließlich auf offizielle Apple-Dokumentation als Primärquelle.

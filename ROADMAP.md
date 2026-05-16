@@ -2,6 +2,7 @@
 
 ## Aktiver Stand (2026-05-16, Branch `main`, HEAD pending)
 
+- **Train E1 umgesetzt (`perf: reduce kmz export memory copies`):** `KMZBuilder` nutzt In-Memory-`Archive(accessMode: .create)` + `archive.data` (ZIPFoundation). Entfernt: Temp-Datei-Write + `Data(contentsOf:)` Re-Read. Public API + Output-Bytes unverändert. Linux `swift test` 1459/2/0.
 - **Repo-Truth:** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (8 pbxproj-Configs + Info.plist App/Widget konsistent). Frühere Stände `1.0.1 / 100 / 168` in den darunterliegenden Blocks sind historisch.
 - **Linux-Verifikation (Swift 6.3.2 via swiftly, `libsqlite3-dev`):** `swift build` clean, `swift test` **1435 / 2 Skips / 0 Failures**, 41,1 s.
 - **Repo-Hygiene:** 32 `*__backup_*.md` aus dem aktiven Tree nach `docs/archive/backups-2026-05-16/` verschoben (Doku-Audit-Cleanup).
