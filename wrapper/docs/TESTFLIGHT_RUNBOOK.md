@@ -1,6 +1,12 @@
 # TestFlight + App Store Runbook
 
-Stand: 2026-05-13 (Release-Train **1.0.2 Build 171**; ASC hat 1.0.1 für neue Builds geschlossen, 90186 + 90062).
+Stand: 2026-05-16 (Xcode Cloud Build **174** = TestFlight `1.0.2 (174)`; Repo-Truth lokal weiterhin `1.0.2 / 171`, Build-Nummer aus `CI_BUILD_NUMBER`).
+
+> **Update 2026-05-16:** Xcode Cloud Workflow `Release – Archive & TestFlight` **Build 174** erfolgreich, letzter Commit `92dc447` (`chore: raise minimum ios target to 17`). TestFlight zeigt `LH2GPX 1.0.2 (174)`, 90 Tage. App-Info: „Erfordert iOS 17.0 oder neuer" — Train-F-Minimum extern bestätigt. Im Build 174 gemeldete iOS-17-Deprecation-Warnung (`onChange(of:perform:)`, `ContentView.swift:125`) in `fix: update ios 17 onchange usage and document build 174` behoben + repo-weit 23 weitere single-arg `onChange`-Stellen migriert. **Nicht behauptet:** kein Hardware-Retest auf neuem Build, keine Apple-Review-Submission, keine Dynamic-Island-Sichtprüfung.
+
+---
+
+## Vorheriger Stand (2026-05-13, Release-Train 1.0.2 Build 171)
 
 > **Aktuelle Build-Identität (main pending HEAD):** Marketing-Version **`1.0.2`**, `CURRENT_PROJECT_VERSION = 171` in allen 8 pbxproj-Configs, `CFBundleShortVersionString = 1.0.2` + `CFBundleVersion = 171` in `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist`, Bundle-ID `de.roeber.LH2GPXWrapper` unverändert. `swift test` 1524/2/0 (195 s). `xcodebuild build` Sim iPhone 17 Pro Max iOS 26.0 + Device iPhone 15 Pro Max iOS 26.4 BUILD SUCCEEDED. `xcodebuild archive -configuration Release -destination 'generic/platform=iOS'` **ARCHIVE SUCCEEDED** → `/tmp/lh2gpx-release/LH2GPXWrapper-build171.xcarchive`. Upload noch nicht durchgeführt — Organizer-Schritte siehe `docs/ASC_SUBMIT_RUNBOOK.md`.
 

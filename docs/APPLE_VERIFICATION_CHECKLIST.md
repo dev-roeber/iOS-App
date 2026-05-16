@@ -1,5 +1,17 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-16 (Xcode Cloud Build 174 + iOS-17-Deprecation-Fix, Branch `main`)
+
+**Extern belegt (Screenshots):** Workflow `Release – Archive & TestFlight` Build **174** erfolgreich, letzter Commit `92dc447`. TestFlight zeigt `LH2GPX 1.0.2 (174)`, 90 Tage. App-Info: „Erfordert iOS 17.0 oder neuer" — Train-F-Anhebung damit extern bestätigt.
+
+**Behoben in `fix: update ios 17 onchange usage and document build 174`:** iOS-17-Deprecation-Warnung `'onChange(of:perform:)' was deprecated in iOS 17.0` aus `wrapper/LH2GPXWrapper/ContentView.swift:125` und repo-weit 23 weitere single-arg `.onChange(of:)`-Stellen auf Zwei-Parameter-Form migriert. Semantik exakt erhalten. Linux `swift test` 1459/2/0.
+
+**Repo-Truth lokal unverändert:** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`. Build 174 stammt aus Xcode-Cloud-Zählung (`CI_BUILD_NUMBER`).
+
+**Nicht behauptet in diesem Train:** keine App-Review-Submission, kein App-Review-Accept, kein Hardware-Retest auf iPhone 14 Pro / iPhone 16 Pro Max / iPad, keine Dynamic-Island-Sichtprüfung, keine 46-MiB-Retest. Sektion 4 (ASC / TestFlight / Apple Review) bleibt **OFFEN**.
+
+---
+
 ## Aktualisierung 2026-05-13 (Release-Train-Bump 1.0.2 Build 171, Branch `main`)
 
 **ASC schließt 1.0.1 für neue Builds (90186 + 90062).** Bump `MARKETING_VERSION` 1.0.1 → **1.0.2** in 8 pbxproj-Configs, `CFBundleShortVersionString` literal **1.0.2** in App+Widget Info.plist; `CURRENT_PROJECT_VERSION` 168 → **171** in 8 Configs, `CFBundleVersion` **171** in App+Widget Info.plist. Bundle-ID `de.roeber.LH2GPXWrapper` unverändert. `swift build` + `swift test` (1524 / 2 skipped / 0 failures, 195,2 s) + Sim iPhone 17 Pro Max iOS 26.0 Build + Device iPhone 15 Pro Max iOS 26.4 Build alle SUCCEEDED. `xcodebuild archive -configuration Release` **ARCHIVE SUCCEEDED** → `/tmp/lh2gpx-release/LH2GPXWrapper-build171.xcarchive` (91 MB). PlistBuddy-Verifikation: `CFBundleShortVersionString=1.0.2`, `CFBundleVersion=171`, `CFBundleIdentifier=de.roeber.LH2GPXWrapper`. Device-UITests nicht erneut gefahren (nur Versionsstrings); Basis `0739d4c` valide. **Upload noch nicht durchgeführt** — manuelle Submit-Schritte via Organizer dokumentiert. Kein UI-/Feature-Bump, keine Privacy-/Network-Änderung.

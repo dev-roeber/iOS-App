@@ -122,7 +122,7 @@ struct ContentView: View {
                     }
                 }
                 .preferredColorScheme(.dark)
-                .onChange(of: session.isLoading) { isLoading in
+                .onChange(of: session.isLoading) { _, isLoading in
                     if isLoading {
                         loadingProgress.start()
                     } else if session.content != nil {

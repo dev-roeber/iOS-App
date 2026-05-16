@@ -194,11 +194,11 @@ public struct AppContentSplitView: View {
 
     private var liveTrackingObservers: some View {
         liveTrackingObserversBase
-            .onChange(of: preferences.sendsLiveLocationToServer) { _ in syncLiveRecordingSettings() }
-            .onChange(of: preferences.liveLocationServerUploadURLString) { _ in syncLiveRecordingSettings() }
-            .onChange(of: preferences.liveLocationServerUploadBearerToken) { _ in syncLiveRecordingSettings() }
-            .onChange(of: preferences.liveTrackingUploadBatch) { _ in syncLiveRecordingSettings() }
-            .onChange(of: session.source) { source in
+            .onChange(of: preferences.sendsLiveLocationToServer) { _, _ in syncLiveRecordingSettings() }
+            .onChange(of: preferences.liveLocationServerUploadURLString) { _, _ in syncLiveRecordingSettings() }
+            .onChange(of: preferences.liveLocationServerUploadBearerToken) { _, _ in syncLiveRecordingSettings() }
+            .onChange(of: preferences.liveTrackingUploadBatch) { _, _ in syncLiveRecordingSettings() }
+            .onChange(of: session.source) { _, source in
                 if let source = source {
                     pathMutationStore.validateSource(source.displayName)
                 }
@@ -216,10 +216,10 @@ public struct AppContentSplitView: View {
         .onAppear {
             syncLiveRecordingSettings()
         }
-        .onChange(of: preferences.liveTrackingAccuracy) { _ in syncLiveRecordingSettings() }
-        .onChange(of: preferences.liveTrackingDetail) { _ in syncLiveRecordingSettings() }
-        .onChange(of: preferences.allowsBackgroundLiveTracking) { _ in syncLiveRecordingSettings() }
-        .onChange(of: liveLocation.navigateToLiveTabRequested) { requested in
+        .onChange(of: preferences.liveTrackingAccuracy) { _, _ in syncLiveRecordingSettings() }
+        .onChange(of: preferences.liveTrackingDetail) { _, _ in syncLiveRecordingSettings() }
+        .onChange(of: preferences.allowsBackgroundLiveTracking) { _, _ in syncLiveRecordingSettings() }
+        .onChange(of: liveLocation.navigateToLiveTabRequested) { _, requested in
             guard requested else { return }
             selectedTab = 4
             liveLocation.navigateToLiveTabRequested = false
@@ -375,7 +375,7 @@ public struct AppContentSplitView: View {
             selectedTab = preferences.startTab.tabIndex
             refreshFavoriteDays()
         }
-        .onChange(of: preferences.startTab) { newValue in
+        .onChange(of: preferences.startTab) { _, newValue in
             selectedTab = newValue.tabIndex
         }
     }

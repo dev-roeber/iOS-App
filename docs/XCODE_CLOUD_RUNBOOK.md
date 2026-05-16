@@ -90,6 +90,15 @@ App Store Connect konfiguriert werden — keine YAML-Dateien.
 
 - `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` — 8 pbxproj-Configs + Info.plist (App + Widget) konsistent
 - 1.0.2-Train wurde im Release-Vorbereitungs-Run 2026-05-13 angelegt (siehe `NEXT_STEPS.md`); lokales `xcarchive` für `1.0.2 (171)` erzeugt, **nicht** hochgeladen
+
+### Aktueller Xcode-Cloud-Stand (extern belegt, Screenshots 2026-05-16)
+
+- Workflow `Release – Archive & TestFlight` Build **174** **erfolgreich**, letzter Commit im Build: `92dc447` (`chore: raise minimum ios target to 17`).
+- TestFlight zeigt `LH2GPX 1.0.2 (174)`, 90 Tage Gültigkeit.
+- App-Info: „Erfordert iOS 17.0 oder neuer" — Train-F-Anhebung extern bestätigt.
+- Xcode-Cloud-Warnung im Build 174: `'onChange(of:perform:)' was deprecated in iOS 17.0`, Quelle `wrapper/LH2GPXWrapper/ContentView.swift:125`. Behoben in `fix: update ios 17 onchange usage and document build 174` (2026-05-16); 24 single-arg `onChange`-Closures repo-weit auf Zwei-Parameter-Form migriert.
+- Build-Nummer **174** stammt aus Xcode-Cloud-Zählung (`wrapper/ci_scripts/ci_pre_xcodebuild.sh` setzt `CFBundleVersion` via `CI_BUILD_NUMBER`); lokale `CURRENT_PROJECT_VERSION` bleibt `171` und wurde bewusst nicht angepasst.
+- **Nicht behauptet:** keine App-Review-Submission, kein Hardware-Retest, keine Dynamic-Island-Sichtprüfung, kein iPad-Layout-Test.
 - **ASC-Live-Status nicht im Audit 2026-05-16 verifiziert** — folgende Punkte stammen aus historischen Doku-Snapshots, nicht aus aktueller ASC-Abfrage:
 
 ### Historischer ASC-/Cloud-Truth (Stand 2026-05-06, laut Doku)

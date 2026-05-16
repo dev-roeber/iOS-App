@@ -236,11 +236,11 @@ struct AppInsightsContentView: View {
         }
         .ignoresSafeArea(edges: .top)
         .onAppear { refreshDerivedModel() }
-        .onChange(of: insights) { _ in refreshDerivedModel() }
-        .onChange(of: daySummaries) { _ in refreshDerivedModel() }
-        .onChange(of: rangeFilter) { _ in refreshDerivedModel() }
-        .onChange(of: preferences.distanceUnit) { _ in refreshDerivedModel() }
-        .onChange(of: preferences.appLanguage) { _ in refreshDerivedModel() }
+        .onChange(of: insights) { _, _ in refreshDerivedModel() }
+        .onChange(of: daySummaries) { _, _ in refreshDerivedModel() }
+        .onChange(of: rangeFilter) { _, _ in refreshDerivedModel() }
+        .onChange(of: preferences.distanceUnit) { _, _ in refreshDerivedModel() }
+        .onChange(of: preferences.appLanguage) { _, _ in refreshDerivedModel() }
         .confirmationDialog(
             pendingDrilldownTitle,
             isPresented: Binding(
@@ -462,11 +462,11 @@ struct AppInsightsContentView: View {
             .onAppear {
                 refreshDerivedModel()
             }
-            .onChange(of: insights) { _ in refreshDerivedModel() }
-            .onChange(of: daySummaries) { _ in refreshDerivedModel() }
-            .onChange(of: rangeFilter) { _ in refreshDerivedModel() }
-            .onChange(of: preferences.distanceUnit) { _ in refreshDerivedModel() }
-            .onChange(of: preferences.appLanguage) { _ in refreshDerivedModel() }
+            .onChange(of: insights) { _, _ in refreshDerivedModel() }
+            .onChange(of: daySummaries) { _, _ in refreshDerivedModel() }
+            .onChange(of: rangeFilter) { _, _ in refreshDerivedModel() }
+            .onChange(of: preferences.distanceUnit) { _, _ in refreshDerivedModel() }
+            .onChange(of: preferences.appLanguage) { _, _ in refreshDerivedModel() }
             .confirmationDialog(
                 pendingDrilldownTitle,
                 isPresented: Binding(

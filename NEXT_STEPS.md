@@ -1,6 +1,30 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach `chore: raise minimum ios target to 17`).
+Stand: 2026-05-16 (Branch `main`, nach `fix: update ios 17 onchange usage and document build 174`).
+
+**iOS-17-Deprecation-Warnung behoben + extern Build-174-Stand dokumentiert:**
+- `wrapper/LH2GPXWrapper/ContentView.swift:125` (Xcode-Cloud-gemeldete Stelle) auf zwei-Parameter-Form migriert.
+- Repo-weit alle 23 verbleibenden single-arg `.onChange(of:) { _ in / X in … }` ebenfalls auf `{ _, _ in / _, X in … }` umgestellt (AppInsightsContentView 10×, AppExportView 3×, AppContentSplitView 10×). Semantik exakt erhalten.
+- `rg "\.onChange\(of: [^)]+\) \{ [a-zA-Z_]+ in"`: 0 Treffer.
+- Linux: `swift build` clean, `swift test` 1459/2/0.
+
+**Extern belegter Stand (Screenshots):**
+- Xcode Cloud Build **174** erfolgreich, Workflow `Release – Archive & TestFlight`, letzter Commit `92dc447`.
+- TestFlight: `LH2GPX 1.0.2 (174)`, 90 Tage.
+- App-Info: „Erfordert iOS 17.0 oder neuer" — Train-F-Anhebung extern bestätigt.
+
+**Repo-Truth (lokal):** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`. Build 174 entstand durch Xcode-Cloud-Zählung (`ci_pre_xcodebuild.sh` überschreibt `CFBundleVersion` mit `CI_BUILD_NUMBER`). Lokale Build-Nummer bewusst nicht auf 174 gezogen.
+
+**Nicht belegt / nicht behauptet:** keine App-Review-Submission, kein Hardware-Retest, keine Dynamic-Island-Sichtprüfung, kein iPad-Layout-Test.
+
+**Nächste empfohlene Schritte:**
+- Mac/Device: TestFlight-Install Build 174 auf iPhone 14 Pro / iPhone 16 Pro Max, Live-Activity- + Dynamic-Island-Sichtprüfung, iPad-Layout.
+- ODER Train **G**: MapKit-iOS-17-API-Migration (`coordinateRegion:` / `annotationItems:` durch `MapContentBuilder` / `MapCameraPosition` ablösen).
+- Optional: 18× redundante `@available(iOS 16.x, *)`-Gates abbauen (risikoarm, reines Aufräumen).
+
+---
+
+Vorheriger Stand: nach `chore: raise minimum ios target to 17`.
 
 **Train F umgesetzt (iOS-17-Anhebung):**
 - `Package.swift`: `.iOS(.v16)` → `.iOS(.v17)`; `macOS(.v13)` unverändert.

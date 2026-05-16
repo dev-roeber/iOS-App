@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## 2026-05-16 — fix: update ios 17 onchange usage and document build 174 (`main`)
+
+> Folge-Train zu `chore: raise minimum ios target to 17`. Behebt die in **Xcode Cloud Build 174** (Workflow „Release – Archive & TestFlight") gemeldete iOS-17-Deprecation-Warnung und zieht die Doku auf den extern belegten TestFlight-Stand `1.0.2 (174)` glatt.
+
+### Extern belegter Stand (Screenshot, Stand 2026-05-16)
+- Xcode Cloud Build **174** erfolgreich erzeugt (letzter Commit im Build: `92dc447 chore: raise minimum ios target to 17`).
+- TestFlight zeigt **LH2GPX 1.0.2 (174)**, 90 Tage Gültigkeit.
+- App-Info: **Erfordert iOS 17.0 oder neuer** — Anhebung aus Train F extern bestätigt.
+- Xcode-Cloud-Warnung (in Train F entstanden, jetzt behoben): `'onChange(of:perform:)' was deprecated in iOS 17.0: Use 'onChange' with a two or zero parameter action closure instead.` — Quelle: `wrapper/LH2GPXWrapper/ContentView.swift:125`.
+
+### Geändert (Code)
+- **`wrapper/LH2GPXWrapper/ContentView.swift:125`** — `.onChange(of: session.isLoading) { isLoading in … }` → `.onChange(of: session.isLoading) { _, isLoading in … }` (semantik-exakte iOS-17-Form).
+- **`Sources/LocationHistoryConsumerAppSupport/AppInsightsContentView.swift`** — 10 weitere `.onChange(of:) { _ in handler() }` auf `.onChange(of:) { _, _ in handler() }` migriert (Zeilen 239–243 + 465–469).
+- **`Sources/LocationHistoryConsumerAppSupport/AppExportView.swift`** — 3 Stellen migriert (Zeilen 1284 `{ tracks in` → `{ _, tracks in`, 1287/1291 `{ _ in` → `{ _, _ in`).
+- **`Sources/LocationHistoryConsumerAppSupport/AppContentSplitView.swift`** — 10 Stellen migriert (`syncLiveRecordingSettings()`-Cluster + `session.source`-Branch + `navigateToLiveTabRequested` + `startTab`).
+- **Summe:** 24 einzeilige Closure-Signaturen umgeschrieben. Semantik unverändert (neuer Wert war in beiden Formen der gleiche Parameter; alter Wert weiterhin ungenutzt).
+
+### Repo-Truth (lokal unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (pbxproj). **Nicht** auf 174 angehoben: Build 174 entstand durch Xcode-Cloud-Zählung (`wrapper/ci_scripts/ci_pre_xcodebuild.sh` überschreibt `CFBundleVersion` mit `CI_BUILD_NUMBER`); Repo bleibt bei 171, Cloud weicht ab. Doku-Texte nennen jetzt beides separat.
+
+### Geändert (Doku)
+- README.md / wrapper/README.md / NEXT_STEPS.md / ROADMAP.md / docs/XCODE_CLOUD_RUNBOOK.md / docs/XCODE_APP_PREPARATION.md / docs/APPLE_VERIFICATION_CHECKLIST.md / wrapper/docs/TESTFLIGHT_RUNBOOK.md / docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md — ergänzen Build-174-TestFlight-Stand und iOS-17-Minimum-Bestätigung.
+
+### Nicht behauptet (mangels Belegen)
+- Keine App-Review-Submission, kein App-Review-Accept.
+- Kein vollständiger Hardware-Retest, keine Dynamic-Island-Sichtprüfung, kein iPad-Layout-Test.
+- Keine 46-MiB-Asset-Verifikation.
+
+### Verifikation (Linux)
+- `git diff --check`: clean.
+- `swift build` (Swift 6.3.2 via swiftly): clean, 1,42 s.
+- `swift test`: **1459 / 2 Skips / 0 Failures, ~55 s** — unverändert.
+- `rg "\.onChange\(of: [^)]+\) \{ [a-zA-Z_]+ in"`: keine Treffer mehr → deprecated Single-Arg-Form repo-weit entfernt.
+
+### Empfohlener nächster Train
+- **Mac/Device-Smoke** auf Build 174: TestFlight-Install auf iPhone 14 Pro / iPhone 16 Pro Max, Live Activity + Dynamic Island Lock-Screen-Sichtprüfung, iPad-Layout.
+- ODER **G**: MapKit-iOS-17-API-Migration (`coordinateRegion:` / `annotationItems:` ablösen).
+
+---
+
 ## 2026-05-16 — chore: raise minimum ios target to 17 (`main`)
 
 > **Train F umgesetzt.** Deployment Target des Cores und des Wrappers konsistent auf iOS 17.0 angehoben. Keine MapKit-/UI-Refactors, keine Format-Änderungen, keine `@available`-Aufräumung (Folge-Train).

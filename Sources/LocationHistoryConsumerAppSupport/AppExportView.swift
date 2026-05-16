@@ -1281,14 +1281,14 @@ public struct AppExportView: View {
             } message: {
                 Text(exportError ?? t("An unexpected error occurred. Please check your selection and try again."))
             }
-            .onChange(of: liveLocation.recordedTracks) { tracks in
+            .onChange(of: liveLocation.recordedTracks) { _, tracks in
                 pruneInvalidRecordedTrackSelection(validTracks: tracks)
             }
-            .onChange(of: importedSelectionPruneTrigger) { _ in
+            .onChange(of: importedSelectionPruneTrigger) { _, _ in
                 normalizeDateFilterBounds()
                 pruneInvalidImportedDaySelection(summaries: filteredSummaries)
             }
-            .onChange(of: session.sourceSummary) { _ in
+            .onChange(of: session.sourceSummary) { _, _ in
                 resetLocalFilters()
             }
     }
