@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-05-16 — Train L — Heatmap Testability, Store Query Verification, Operation UX & Final Performance Polish (`main`, in Arbeit)
+
+> **Train L, in Arbeit.** Heatmap Race-Gate-Coverage, Store-Query-Plan-Test, UX-Polish, sichere Allocation-Polish. Keine Versions-Bumps, keine UI-Redesigns, keine Rohdaten-Änderungen.
+
+### Phase 0 — Baseline
+- Letzter extern belegter Build bleibt **Xcode Cloud Build 176** (basiert auf `556180c`). Train-I/J/K und Train-L-Commits sind **nicht** extern verifiziert.
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+
 ## 2026-05-16 — Train K — Shared Race Gates, Runtime Cleanup, Overview/Heatmap Hardening (`main`)
 
 > **Train K, vier produktive Commits.** Verdrahtet bestehende Performance- und Stabilitäts-Pattern (`GenerationGate`, iOS-17-Minimum-Cleanup, Export-Allocation) breiter. Keine Versions-Bumps, keine UI-Redesigns, keine Rohdaten-Änderungen.
