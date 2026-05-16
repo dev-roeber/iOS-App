@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 2026-05-16 — docs: record xcode cloud build 176 verification (`main`)
+
+> Reine Doku-Aktualisierung. Keine Code-Änderung, keine Versions-Bumps.
+
+### Extern belegter Stand (Screenshots 2026-05-16)
+- **Xcode Cloud Build 176** erfolgreich, Workflow `Release – Archive & TestFlight`.
+- Letzter Commit im Build: **`556180c`** (`perf: wire live track render cap into map presentation`).
+- Schritte: `Archive - iOS` ✅, `TestFlight-interne Tests - iOS` ✅.
+- TestFlight zeigt **`LH2GPX 1.0.2 (176)`**. App-Info: „Erfordert iOS 17.0 oder neuer".
+- Damit extern in TestFlight enthalten: gesamter Train H + H-Wire-1 (iOS-16-Gate-Cleanup, CSV `reserveCapacity`, WAL-Pragmas, `LiveTrackRenderCap`-Helper + Wiring).
+
+### Repo-Truth (lokal, unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (pbxproj).
+- Build-Nummer 176 stammt aus Xcode-Cloud-`CI_BUILD_NUMBER`.
+
+### Nicht behauptet
+- Keine App-Review-Submission/-Accept.
+- Kein Hardware-Smoke unter Build 176.
+- Keine Dynamic-Island-Sichtprüfung.
+- Kein iPad-Layout-Test.
+
+---
+
 ## 2026-05-16 — perf: wire live track render cap into map presentation (`main`)
 
 > **Train H-Wire-1 umgesetzt.** Verdrahtet den in `7288a5f` gelandeten `LiveTrackRenderCap`-Helper in den Live-Tracking-View. **Keine Rohdaten, keine Persistenz, kein Export betroffen** — die Cap wirkt ausschließlich auf die SwiftUI/MapKit-Render-Projektion (`@State polylineCoordinates` und `trackSamples`).
