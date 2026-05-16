@@ -1019,6 +1019,30 @@ public final class LocalTimelineStore {
         }
     }
 
+    /// Train L, Phase 3 — test-only access to SQLite's `EXPLAIN QUERY PLAN`
+    /// for the given statement. Returns each plan row's textual `detail`
+    /// column (column index 3 per SQLite docs). `internal` so the test
+    /// target can introspect index usage without exposing query-plan
+    /// internals on the public store API.
+    ///
+    /// The returned strings vary between SQLite versions; tests should
+    /// match against substrings (e.g. `idx_derived_cache_`), not exact
+    /// text.
+    internal func queryPlan(for sql: String) throws -> [String] {
+        let stmt = try prepare("EXPLAIN QUERY PLAN \(sql)")
+        defer { sqlite3_finalize(stmt) }
+        var out: [String] = []
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_DONE { break }
+            guard rc == SQLITE_ROW else { throw stepError(rc: rc) }
+            if let cString = sqlite3_column_text(stmt, 3) {
+                out.append(String(cString: cString))
+            }
+        }
+        return out
+    }
+
     private func prepare(_ sql: String) throws -> OpaquePointer? {
         guard let db else { throw LocalTimelineStoreError.notOpen }
         var stmt: OpaquePointer?
