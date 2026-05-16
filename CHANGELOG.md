@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-05-16 — Train J — App Responsiveness, Workload Wiring, UI/UX State Modernization (`main`, in Arbeit)
+
+> **Train J, mehrere produktive Commits.** Modernisierung von Operation-Progress/Cancellation, MainActor-Entlastung, weitere Export-Optimierungen, optionaler Heatmap-Staleness-Schutz, Live-Presentation-Hardening, UI/UX-State-Polish, Store-Query-Härtung. Keine Versions-Bumps, keine UI-Redesigns, keine Rohdaten-Änderungen.
+
+### Phase 0 — Baseline
+- Letzter extern belegter Build bleibt **Xcode Cloud Build 176** (basiert auf `556180c`). Train-I-Commits `d0c0a4c → f1c0b5e` sind weiterhin **nicht** extern verifiziert; Train-J-Commits darauf aufbauend ebenfalls nicht.
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+
 ## 2026-05-16 — Train I — Performance Pipeline, Live/Heatmap Wiring, Export/Store Hardening (`main`)
 
 > **Train I, mehrere produktive Commits.** Konservative Optimierungen über mehrere Bereiche, keine Versions-Bumps, keine UI-Redesigns.
