@@ -41,6 +41,7 @@ struct AppExportPreviewMapView: View {
                         .padding(.bottom, 8)
                 }
                 .accessibilityLabel(mapAccessibilityLabel)
+                .accessibilityIdentifier(AppAccessibilityID.Map.exportPreviewRoot)
                 .onChange(of: previewData) { _, newValue in
                     let newRender = ExportPreviewRenderData(previewData: newValue)
                     renderData = newRender

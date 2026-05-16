@@ -63,6 +63,7 @@ public struct AppHeatmapView: View {
 #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
 #endif
+        .accessibilityIdentifier(AppAccessibilityID.Map.heatmapRoot)
     }
 
     // MARK: - Map

@@ -197,6 +197,7 @@ struct AppOverviewTracksMapView: View {
                 hasSetInitialPosition = true
             }
         }
+        .accessibilityIdentifier(AppAccessibilityID.Map.overviewRoot)
     }
 
     // MARK: - Map

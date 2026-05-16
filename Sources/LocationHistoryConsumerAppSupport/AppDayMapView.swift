@@ -48,6 +48,7 @@ public struct AppDayMapView: View {
                         .padding(.bottom, 8)
                 }
                 .accessibilityLabel(mapAccessibilityLabel)
+                .accessibilityIdentifier(AppAccessibilityID.Map.dayDetailRoot)
                 .onChange(of: mapData) { _, newValue in
                     let newRender = DayMapRenderData(mapData: newValue)
                     renderData = newRender
