@@ -11,6 +11,14 @@ public enum GeoJSONBuildError: LocalizedError {
 public enum GeoJSONBuilder {
     public static func build(from days: [Day], mode: ExportMode = .tracks) throws -> String {
         var features: [[String: Any]] = []
+        var featureEstimate = 0
+        if mode.includesTracks {
+            for day in days { featureEstimate += day.paths.count }
+        }
+        if mode.includesWaypoints {
+            for day in days { featureEstimate += day.visits.count }
+        }
+        features.reserveCapacity(featureEstimate)
 
         if mode.includesTracks {
             for day in days {
