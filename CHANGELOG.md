@@ -1,8 +1,65 @@
 # CHANGELOG
 
-## 2026-05-17 — Train M — Build 178 Smoke Documentation & Accessibility Identifier Rollout (`main`, in Arbeit)
+## 2026-05-17 — Train M — Build 178 Smoke Documentation & Accessibility Identifier Rollout (`main`)
 
-> **Train M, in Arbeit.** Externe Build-Truth-Aktualisierung + AccessibilityIdentifier-Rollout für UI-Test-Hooks. Keine Versions-Bumps, keine Verhaltensänderung.
+> **Train M, vier produktive Commits + Doku-Sync.** Externe Build-Truth-Aktualisierung + zentrale AccessibilityIdentifier-Struktur + 9 neue Identifier (5 Tabs + 4 Map-Roots) + 1 Banner-Alias auf bestehenden Identifier. Keine Versions-Bumps, keine Verhaltensänderung.
+
+### Umgesetzte Commits (Reihenfolge)
+1. **`a476fb0` `docs: record build 178 screenshot smoke baseline`** — Phase 0. Build 178 als extern grün dokumentiert, partieller TestFlight-Screenshot-Smoke.
+2. **`efa68c4` `test: centralize app accessibility identifiers`** — Phase 2. Neuer `AppAccessibilityID`-Namespace (`Root`/`Tab`/`Map`), 10 Konstanten, 6 Tests (Wert, Eindeutigkeit, Whitespace-Verbot).
+3. **`ebae73f` `test: add navigation overview and live tab identifiers`** — Phase 3. 5 Tab-Identifier (overview/days/insights/export/live) in `AppContentSplitView.compactTabView` verdrahtet; Pre-Production-Banner-Konstante mappt auf bereits bestehenden `localTimeline.testMode.banner`.
+4. **`5de7017` `test: add insights export and import map root identifiers`** — Phase 4-8. 4 Map-Root-Identifier auf `AppHeatmapView`, `AppOverviewTracksMapView` (compact), `AppExportPreviewMapView`, `AppDayMapView`.
+
+### Übersprungene Phasen
+- **Phase 1 — Identifier-Inventar als Doku-Artefakt:** statt einer separaten Inventar-Datei dokumentiert im CHANGELOG (siehe „Identifier-Gruppen" unten).
+- **Phasen 5-8 (Per-Element-IDs für Live/Insights/Export/Import-Buttons/Chips/Cards):** Die 155 bestehenden Inline-Identifier (`home.*`, `live.*`, `export.*`, `insights.*`, `localTimeline.*`, `days.*`, `dayDetail.*`, `options.*`, `app.*`) decken die meisten zentralen UI-Elemente. Eine Migration zum Namespace ohne konkreten XCUITest-Konsumenten wäre Churn ohne Nutzen — Folge-Train kann Per-Element-Konstanten in den Namespace hochziehen, sobald ein UI-Test-Target existiert.
+- **Phase 9 (UI-Test-Smoke-Erweiterung):** Kein XCUITest-Target im SwiftPM-Tree; Smoke-Tests müssen im Apple-Xcode-Projekt (`wrapper/LH2GPXWrapper.xcodeproj`) laufen — separater Train.
+
+### Identifier-Gruppen (neu in Train M)
+| Namespace | Konstante | Wert | Wirkort |
+|---|---|---|---|
+| `Root` | `preProductionBanner` | `localTimeline.testMode.banner` | `LocalTimelineTestModeBanner` (bestehend, alias) |
+| `Tab` | `overview` | `tab.overview` | `AppContentSplitView` Tab 0 |
+| `Tab` | `days` | `tab.days` | `AppContentSplitView` Tab 1 |
+| `Tab` | `insights` | `tab.insights` | `AppContentSplitView` Tab 2 |
+| `Tab` | `export` | `tab.export` | `AppContentSplitView` Tab 3 |
+| `Tab` | `live` | `tab.live` | `AppContentSplitView` Tab 4 |
+| `Map` | `overviewRoot` | `map.overview.root` | `AppOverviewTracksMapView` |
+| `Map` | `heatmapRoot` | `map.heatmap.root` | `AppHeatmapView` |
+| `Map` | `exportPreviewRoot` | `map.exportPreview.root` | `AppExportPreviewMapView` |
+| `Map` | `dayDetailRoot` | `map.dayDetail.root` | `AppDayMapView` |
+
+### Geänderte Dateien
+- **Phase 0:** `CHANGELOG.md`
+- **Phase 2:** `Sources/LocationHistoryConsumerAppSupport/AppAccessibilityID.swift` (neu, ~70 Zeilen), `Tests/LocationHistoryConsumerTests/AppAccessibilityIDTests.swift` (neu, 6 Tests)
+- **Phase 3:** `Sources/LocationHistoryConsumerAppSupport/AppContentSplitView.swift` (+5 Modifier-Zeilen), `Sources/LocationHistoryConsumerAppSupport/AppAccessibilityID.swift` (banner alias)
+- **Phase 4-8:** `Sources/LocationHistoryConsumerAppSupport/AppHeatmapView.swift`, `AppOverviewTracksMapView.swift`, `AppExportPreviewMapView.swift`, `AppDayMapView.swift` (je 1 Modifier-Zeile)
+- **Phase 10 (Doku):** `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/XCODE_CLOUD_RUNBOOK.md`, `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`
+
+### UI/UX-Änderungen
+**Keine sichtbaren Änderungen.** `.accessibilityIdentifier(_:)` ist ein reiner XCUITest-Hint, ändert kein State/Layout/Rendering.
+
+### Code-Truth
+- Linux `swift build`: clean.
+- Linux `swift test`: **1509 / 2 Skips / 0 Failures, 54,6 s** (+6 `AppAccessibilityIDTests`).
+- Alle 4 Map-Surface-Views kompilieren auf Linux unverändert.
+
+### Repo-Truth
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+- Letzter extern verifizierter Build: **Xcode Cloud Build 178** (basiert auf `487833f`).
+- Train-M-Commits (`a476fb0 → 5de7017`) sind **nicht** in Build 178; brauchen neuen Cloud-Build (179+).
+
+### Was Linux nicht prüfen konnte
+- Tatsächliche XCUITest-Auffindbarkeit der neuen Identifier — braucht Xcode-Run auf Mac.
+- Tab-Bar-Navigation auf iPad-Layout (Split-View).
+- TestFlight-Pre-Production-Banner-Sichtbarkeit visuell.
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+Neuen Xcode-Cloud-Build auf `main` (HEAD nach Doku-Sync) → Build 179+. Verifikation:
+- Pre-production-Banner bleibt im TestFlight-Build sichtbar.
+- App startet, alle 5 Tabs erreichbar.
+- Heatmap/Overview/Export-Preview/Day-Map öffnen.
+- Identifier-Existenz via Xcode Accessibility Inspector auf Sim/Device.
 
 ### Phase 0 — Build 178 extern grün
 Screenshots aus der Xcode-Cloud-Konsole und TestFlight belegen:

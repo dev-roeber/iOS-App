@@ -1,5 +1,7 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-17 (Train M — Build 178 Smoke Documentation & Accessibility Identifier Rollout):** Build 178 extern grün auf `487833f` (Train L tip); Trains I/J/K/L extern angekommen. Partieller TestFlight-Screenshot-Smoke: Overview/Live/Insights/Export-Tabs öffnen. 4 produktive Commits Train M: `AppAccessibilityID`-Namespace (10 Konstanten, 6 Tests), 5 Tab-Identifier in `AppContentSplitView`, 4 Map-Root-Identifier (`AppHeatmapView`, `AppOverviewTracksMapView`, `AppExportPreviewMapView`, `AppDayMapView`). Pre-Production-Banner-Konstante mappt auf bestehenden `localTimeline.testMode.banner`. Linux `swift test` **1509 / 2 Skips / 0 Failures, 54,6 s** (+6). Train-M-Commits noch nicht in Build 178 — Cloud-Build 179+ erforderlich.
+>
 > **Update 2026-05-16 (Train L — Heatmap Testability, Store Query Verification):** 2 produktive Test-Commits (`c5e86ef`, `a63f827`):
 >
 > - **Phase 1 Heatmap Lifecycle Tests:** Neue `HeatmapGenerationLifecycleTests` (8 deterministische Tests, kein Timer) führen `GenerationGate` durch die exakten Sequenzen, die `AppHeatmapModel` produziert: startPrecomputation, updateScale-Invalidierung, ensureDensityPrecomputation early-return, A→B→A region/scale flip, monotone Uniqueness über 32 bumps. Die MainActor-Wiring selbst bleibt Apple-only verifizierbar; diese Tests decken die Policy-Schicht deterministisch ab.

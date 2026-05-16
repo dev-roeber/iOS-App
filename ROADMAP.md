@@ -1,6 +1,11 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-16, Branch `main`, HEAD pending — Train L)
+## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train M)
+
+- **Xcode Cloud Build 178 extern verifiziert (`docs: record build 178 screenshot smoke baseline`):** Workflow `Release – Archive & TestFlight` Build **178** grün (Archive iOS ✅ + TestFlight-interne Tests ✅), letzter Commit `487833f`. TestFlight zeigt `LH2GPX 1.0.2 (178)` mit Pre-production-Banner. Toolchain Xcode 26.5 (17F42) / macOS Tahoe 26.4 (25E246). Damit Train H/H-Wire-1/I/J/K/L (Cap, Throttle, GenerationGate, iOS-16-Cleanup, CSV-Helper, Heatmap-Lifecycle-Tests, Query-Plan-Hook) extern angekommen. Partieller TestFlight-Screenshot-Smoke: Overview/Live/Insights/Export-Tabs öffnen; Hardware-Sweep / Dynamic Island / iPad / großer Import / externe Export-Validierung bewusst unbestätigt. Kein Hardware-Smoke, keine App-Review-Aussage.
+- **Train M umgesetzt (4 produktive Commits + Doku-Sync):** `a476fb0` Build-178-Doku · `efa68c4` Zentrale `AppAccessibilityID`-Struct (`Root`/`Tab`/`Map`, 10 Konstanten, 6 Tests) · `ebae73f` 5 Tab-Identifier in `AppContentSplitView` + Banner-Alias auf bestehenden `localTimeline.testMode.banner` · `5de7017` 4 Map-Root-Identifier (`map.{overview,heatmap,exportPreview,dayDetail}.root`). Übersprungen: Per-Element-Migration der 155 bestehenden Inline-Identifier (kein XCUITest-Konsument) + UI-Test-Smoke-Erweiterung (kein XCUITest-Target im SwiftPM-Tree). Linux `swift test` **1509 / 2 Skips / 0 Failures, 54,6 s**. Train-M-Commits sind **noch nicht** in Build 178.
+
+## Aktiver Stand (2026-05-16, Branch `main`, HEAD `487833f` — Train L)
 
 - **Train L umgesetzt (2 produktive Test-Commits + Doku-Sync):** `574d522` Build-176-Baseline-Doku · `c5e86ef` `HeatmapGenerationLifecycleTests` (8 Tests; A→B→A flip, stale-completion, updateScale-Invalidierung) · `a63f827` `internal LocalTimelineStore.queryPlan(for:)` (EXPLAIN-QUERY-PLAN-Hook) + `LocalTimelineDerivedCacheQueryPlanTests` (3 Tests; Lookup und Prune-ORDER-BY-LIMIT nutzen `idx_derived_cache_*`-Indizes — Train-I-Covering-Index in Praxis verifiziert). Linux `swift test` **1503 / 2 Skips / 0 Failures, 55,2 s** (+11). Train-L-Commits sind **noch nicht** in Build 176. Übersprungen: Phasen 2 (kein Race-Risiko), 4-7 (kein UX-Defekt, AccessibilityIdentifier-Breitenausbau invasiv), 8 (Hotspots in Train H/I/J/K abgedeckt).
 

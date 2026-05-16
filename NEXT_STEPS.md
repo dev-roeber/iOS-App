@@ -1,6 +1,33 @@
 # NEXT_STEPS
 
-Stand: 2026-05-16 (Branch `main`, nach **Train L — Heatmap Testability, Store Query Verification**).
+Stand: 2026-05-17 (Branch `main`, nach **Train M — Build 178 Smoke Documentation & Accessibility Identifier Rollout**).
+
+**Build 178 extern grün** (Xcode Cloud, Archive iOS ✅ + TestFlight interne Tests ✅) auf `487833f` (Train L tip). Toolchain Xcode 26.5 (17F42) / macOS Tahoe 26.4 (25E246). TestFlight zeigt `LH2GPX 1.0.2 (178)` mit Pre-production-Banner. Damit Trains I/J/K/L extern angekommen.
+
+**Partieller TestFlight-Screenshot-Smoke Build 178:** Overview/Live/Insights/Export-Tabs öffnen. Hardware-Sweep, Dynamic Island, iPad, großer Import, externe Export-Validierung sind bewusst unbestätigt. App-Review nicht eingereicht.
+
+**Train M umgesetzt (4 produktive Commits + Doku-Sync):**
+- `a476fb0` Build-178-Doku.
+- `efa68c4` Neuer zentraler `AppAccessibilityID`-Namespace (`Root`/`Tab`/`Map`, 10 Konstanten, 6 Tests).
+- `ebae73f` 5 Tab-Identifier (`tab.overview` … `tab.live`) in `AppContentSplitView`; Pre-Production-Banner-Konstante mappt auf bestehenden `localTimeline.testMode.banner`.
+- `5de7017` 4 Map-Root-Identifier (`map.overview.root`, `map.heatmap.root`, `map.exportPreview.root`, `map.dayDetail.root`).
+
+**Übersprungen:** Phase 5-8 Per-Element-Identifier-Migration der 155 bestehenden Inline-Identifier (kein XCUITest-Konsument); Phase 9 UI-Test-Smoke (kein XCUITest-Target im SwiftPM-Tree, braucht Apple-Xcode-Projekt).
+
+**Tests:** `swift test` **1509 / 2 Skips / 0 Failures, 54,6 s** (+6).
+
+**Externer Stand:** Letzter verifizierter Build = **Xcode Cloud Build 178**. Train-M-Commits sind **noch nicht** extern.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build (→ Build 179+), Identifier-Existenz via Xcode Accessibility Inspector am Simulator/Gerät prüfen, vollständiger Hardware-Smoke nachreichen.
+
+**Folge-Trains:**
+- **XCUITest-Target** im Apple-Xcode-Projekt für Tab-/Map-Navigation-Smoke.
+- **Per-Element-Migration** der bestehenden Inline-Identifier in `AppAccessibilityID`, getrieben durch UI-Test-Bedarf.
+- **D / G2** (Mac/Instruments-only): Heatmap-Multi-LOD-Wiring + MKMapView-Bridge.
+
+---
+
+Vorheriger Stand: 2026-05-16 nach Train L.
 
 **Train L umgesetzt (2 produktive Test-Commits + Doku-Sync):**
 - `574d522` Build-176-Baseline-Doku.

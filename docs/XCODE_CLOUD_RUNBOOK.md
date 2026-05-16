@@ -91,12 +91,19 @@ App Store Connect konfiguriert werden — keine YAML-Dateien.
 - `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` — 8 pbxproj-Configs + Info.plist (App + Widget) konsistent
 - 1.0.2-Train wurde im Release-Vorbereitungs-Run 2026-05-13 angelegt (siehe `NEXT_STEPS.md`); lokales `xcarchive` für `1.0.2 (171)` erzeugt, **nicht** hochgeladen
 
-### Aktueller Xcode-Cloud-Stand (extern belegt, Screenshots 2026-05-16)
+### Aktueller Xcode-Cloud-Stand (extern belegt, Screenshots 2026-05-17)
 
-- Workflow `Release – Archive & TestFlight` Build **175** **erfolgreich**, letzter Commit im Build: `2bfc009` (`docs: g1 mapkit ios 17 migration is already complete`). Schritte: `Archive - iOS` ✅, `TestFlight-interne Tests - iOS` ✅. Toolchain im Cloud-Run: **Xcode 26.5 (17F42)**, **macOS Tahoe 26.4 (25E246)**.
-- TestFlight zeigt `LH2GPX 1.0.2 (175)`. App-Info: „Erfordert iOS 17.0 oder neuer" — iOS-17-Minimum aus Train F extern weiterhin bestätigt. Damit auch `ff963c1` (onChange-Fix) und `2bfc009` (G1 MapKit-Stand) extern angekommen — der vorhergehende Build 174 enthielt diese noch nicht.
-- Build-Nummer **175** stammt aus Xcode-Cloud-Zählung (`wrapper/ci_scripts/ci_pre_xcodebuild.sh` setzt `CFBundleVersion` via `CI_BUILD_NUMBER`); lokale `CURRENT_PROJECT_VERSION` bleibt `171`.
-- **Nicht behauptet:** keine App-Review-Submission, kein Hardware-Smoke unter Build 175, keine Dynamic-Island-Sichtprüfung, kein iPad-Layout-Test.
+- Workflow `Release – Archive & TestFlight` Build **178** **erfolgreich**, letzter Commit im Build: `487833f` (`docs: sync train l modernization verification`). Schritte: `Archive - iOS` ✅, `TestFlight-interne Tests - iOS` ✅. Toolchain im Cloud-Run: **Xcode 26.5 (17F42)**, **macOS Tahoe 26.4 (25E246)**.
+- Build 177 in der Build-Liste ebenfalls als erfolgreich gemeldet (kein eigener Smoke-Screenshot vorgelegt).
+- TestFlight zeigt `LH2GPX 1.0.2 (178)` mit „Pre-production · Internal test mode"-Banner. App-Info weiterhin „Erfordert iOS 17.0 oder neuer". Damit Trains H/H-Wire-1/I/J/K/L (Cap, Throttle, GenerationGate, iOS-16-Cleanup, CSV-Helper, Heatmap-Lifecycle-Tests, Query-Plan-Hook) extern angekommen.
+- Partieller manueller Screenshot-Smoke Build 178 (einzelnes Gerät, kein End-to-End-Sweep): Overview-Tab öffnet ✅, Live-Tab + Recording-Screen sichtbar ✅, Insights-Tab + Kennzahl-Cards ✅, Export-Tab + Empty-State ✅.
+- Build-Nummer **178** stammt aus Xcode-Cloud-Zählung (`wrapper/ci_scripts/ci_pre_xcodebuild.sh` setzt `CFBundleVersion` via `CI_BUILD_NUMBER`); lokale `CURRENT_PROJECT_VERSION` bleibt `171`.
+- **Nicht behauptet:** kein vollständiger Hardware-Smoke unter Build 178, keine Dynamic-Island-Sichtprüfung, keine Lock-Screen-Live-Activity-Sichtprüfung, kein iPad-Layout-Test, keine externe Validierung der Export-Dateien, keine App-Review-Submission.
+- Train-M-Commits (`a476fb0 → 5de7017`, AccessibilityIdentifier-Rollout) sind **nicht** in Build 178 — neuer Cloud-Build (179+) erforderlich, anschließend Identifier-Existenz via Xcode Accessibility Inspector verifizieren.
+
+### Historischer Xcode-Cloud-Stand (vor Build 178)
+
+- **Build 175** (2026-05-16): letzter Commit `2bfc009` (`docs: g1 mapkit ios 17 migration is already complete`); siehe historischen Block weiter unten.
 
 ### Historischer Xcode-Cloud-Stand (2026-05-16, vor Build 175)
 
