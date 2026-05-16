@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-05-16 — Train K — Shared Race Gates, Runtime Cleanup, Overview/Heatmap Hardening (`main`, in Arbeit)
+
+> **Train K, in Arbeit.** Verdrahtet bestehende Performance- und Stabilitäts-Pattern (`GenerationGate`, iOS-17-Minimum-Cleanup) breiter. Keine Versions-Bumps, keine UI-Redesigns, keine Rohdaten-Änderungen.
+
+### Phase 0 — Baseline
+- Letzter extern belegter Build bleibt **Xcode Cloud Build 176** (basiert auf `556180c`). Train-I (`d0c0a4c → f1c0b5e`), Train-J (`980111d → b5c6dc0`) und Train-K-Commits sind weiterhin **nicht** extern verifiziert.
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+
 ## 2026-05-16 — Train J — App Responsiveness, Workload Wiring, UI/UX State Modernization (`main`)
 
 > **Train J, vier produktive Commits.** Konservative Performance- und Stabilitäts-Härtung. Keine Versions-Bumps, keine UI-Redesigns, keine Rohdaten-Änderungen, keine Migration.
