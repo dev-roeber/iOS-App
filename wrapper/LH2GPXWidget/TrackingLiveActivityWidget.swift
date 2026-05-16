@@ -6,7 +6,6 @@ import LocationHistoryConsumerAppSupport
 
 // MARK: - Lock Screen / Notification Banner View
 
-@available(iOS 16.2, *)
 private struct TrackingLockScreenView: View {
     let context: ActivityViewContext<TrackingAttributes>
     private var selectedDisplay: DynamicIslandCompactDisplay {
@@ -78,7 +77,6 @@ private struct TrackingLockScreenView: View {
 
 // MARK: - Widget Configuration
 
-@available(iOS 16.2, *)
 struct TrackingLiveActivityWidget: Widget {
 
     private func selectedDisplay() -> DynamicIslandCompactDisplay {

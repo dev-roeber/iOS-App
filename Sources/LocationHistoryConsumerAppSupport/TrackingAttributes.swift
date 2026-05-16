@@ -5,7 +5,6 @@ import Foundation
 import ActivityKit
 
 /// ActivityAttributes for the Live Activity / Dynamic Island shown during an active track recording.
-@available(iOS 16.1, *)
 public struct TrackingAttributes: ActivityAttributes {
     public typealias ContentState = TrackingStatus
 

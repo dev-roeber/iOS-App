@@ -91,7 +91,6 @@ public final class ActivityManager {
     // MARK: - Private iOS 16.2+ helpers
 
     #if canImport(ActivityKit) && os(iOS)
-    @available(iOS 16.2, *)
     private func _startActivityInternal(trackName: String, startTime: Date) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
@@ -116,7 +115,6 @@ public final class ActivityManager {
         }
     }
 
-    @available(iOS 16.2, *)
     private func _updateActivityInternal(
         distanceMeters: Double,
         pointCount: Int,
@@ -144,7 +142,6 @@ public final class ActivityManager {
         }
     }
 
-    @available(iOS 16.2, *)
     private func _endActivityInternal(
         distanceMeters: Double,
         pointCount: Int,
@@ -178,7 +175,6 @@ public final class ActivityManager {
         }
     }
 
-    @available(iOS 16.2, *)
     private func _cancelAllActivitiesInternal() {
         Task { @MainActor in
             for activity in Activity<TrackingAttributes>.activities {

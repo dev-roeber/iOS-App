@@ -1780,7 +1780,6 @@ struct AppInsightsContentView: View {
     }
 
     #if os(iOS) || os(macOS)
-    @available(iOS 16.0, macOS 13.0, *)
     private func renderedPNGData<Content: View>(from renderer: ImageRenderer<Content>) -> Data? {
         #if os(iOS)
         return renderer.uiImage?.pngData()

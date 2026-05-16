@@ -13,7 +13,6 @@ import SwiftUI
 /// The component never replaces the wrapped background — it only layers
 /// modifiers and overlays. It is therefore safe to drop in around an existing
 /// `Image` / `ZStack` / gradient stack without rebuilding the asset pipeline.
-@available(iOS 16.0, macOS 13.0, *)
 public struct LH2GPXLoadingBackground<Background: View>: View {
     private let rawProgress: Double
     private let background: Background
@@ -113,7 +112,6 @@ public struct LH2GPXLoadingBackground<Background: View>: View {
 /// centre of the frame. Mimics the cinematic "route shimmer" without needing
 /// any SVG path data — a soft narrow vertical gradient stripe whose opacity
 /// pulses gently. Active only outside Reduce Motion and only mid-load.
-@available(iOS 16.0, macOS 13.0, *)
 private struct RoutePulseOverlay: View {
     let progress: Double
 

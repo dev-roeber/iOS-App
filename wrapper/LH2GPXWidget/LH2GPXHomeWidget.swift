@@ -176,7 +176,6 @@ struct LH2GPXWidgetEntryView: View {
 
 // MARK: - Widget Definition
 
-@available(iOS 16.0, *)
 struct LH2GPXHomeWidget: Widget {
     let kind: String = "LH2GPXHomeWidget"
 
