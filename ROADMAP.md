@@ -1,5 +1,9 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train P)
+
+- **Train P umgesetzt (4 produktive Commits + Doku-Sync):** `56a76ed` Build-179-Baseline · `eaa149f` `ImportValidationSummaryPresentation` (10 Tests; title/range/counts/warnings DE/EN, en_US_POSIX→de_DE/en_US Date-Reformat, Pluralisierung) · `936fae6` `ExportFormatGuidancePresentation` (6 Tests; title/primaryUse/tools/strengths mit `• `-Bullet) · `ecde6cc` `RouteQualitySummaryPresentation` (12 Tests; level labels, gerundete Spacing/Gap-Lines mit 3-Bucket-Rundung, Gap-Surfacing nur für sparse/containsGaps) · `e5cdafc` `AppAccessibilityID.ProductInfo` (15 Konstanten, 2 Tests). Übersprungen: Phasen 4/6/7 (Vorrats-Code/redundant). **Bewusst kein SwiftUI-View-Wiring** — Linux kann Layout-Korrektheit nicht final prüfen; Strings + Identifier sind gelocked, Layout-Integration folgt im nächsten Train. Linux `swift test` **1568 / 2 Skips / 0 Failures** (+30). Train-P-Commits sind **noch nicht** in Build 179.
+
 ## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train O)
 
 - **Train O umgesetzt (4 produktive Commits + Doku-Sync):** `f349a06` Build-179-Baseline · `82b685b` `ImportValidationSummary` (Foundation, 10 Tests, Counts/Date-Range/3-Warnungen, Privacy-Vertrag) · `408c93b` `ExportFormatGuidance.copy(for:german:)` (5 Formate × DE/EN, 7 Tests, Format-Default unverändert) · `17b9b6a` `RouteQualitySummary.evaluate(points:)` (Haversine, 10 Tests, empty/sparse/containsGaps/good) · `9a23031` `AppAccessibilityID.Action`-Namespace (6 Konstanten, 2 Tests). Übersprungen: Phasen 4-8 (kein UX-Defekt; Polish-Surface erschöpft). Linux `swift test` **1538 / 2 Skips / 0 Failures** (+29). Train-O-Commits sind **noch nicht** in Build 179.

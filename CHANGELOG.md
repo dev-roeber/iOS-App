@@ -1,12 +1,69 @@
 # CHANGELOG
 
-## 2026-05-17 — Train P — Import/Export/Route-Quality Presentation Wiring (`main`, in Arbeit)
+## 2026-05-17 — Train P — Import/Export/Route-Quality Presentation Wiring (`main`)
 
-> **Train P, in Arbeit.** Hebt die in Train O eingeführten Foundation-Helper auf eine UI-präsentierbare Schicht: deterministische DE/EN-Strings, AccessibilityIdentifier-Namespaces, Privacy-Vertrag. Die finale SwiftUI-View-Integration bleibt einem Folge-Train vorbehalten — Train P liefert die exakt zu rendernden Strings + Identifier-Hooks, damit ein UI-Wiring-Schritt nur noch Layout-Arbeit ist.
+> **Train P, vier produktive Commits + Doku-Sync.** Hebt die Train-O-Foundation-Helper auf eine UI-präsentierbare Schicht: deterministische DE/EN-Strings, AccessibilityIdentifier-Namespace, Privacy-Vertrag. Die SwiftUI-Layout-Integration bleibt einem Folge-Train vorbehalten — Train P liefert die exakt zu rendernden Strings + Identifier-Hooks.
 
-### Phase 0 — Baseline
-- Letzter extern belegter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`). Train-O- und Train-P-Commits sind **nicht** extern verifiziert.
-- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+### Umgesetzte Commits (Reihenfolge)
+1. **`56a76ed` `docs: prepare train p from build 179 baseline`** — Phase 0.
+2. **`eaa149f` `ui: surface import validation summaries`** — Phase 1. Neuer `ImportValidationSummaryPresentation.strings(for:german:)` (Foundation, 10 Tests). Title, `rangeSubtitle` (long-form DE/EN mit `en_US_POSIX`→`de_DE`/`en_US`-Reformat), `countsLine` mit DE/EN-Pluralisierung (`12 Tage · 30 Routen · 4 Aktivitäten · 7 Besuche` / EN-Äquivalent, Zero-Counts werden weggelassen), `warningLines` (3 strukturelle Warnungen DE/EN).
+3. **`936fae6` `ui: surface export format guidance`** — Phase 2. Neuer `ExportFormatGuidancePresentation.rendered(for:german:)` (6 Tests). `title` (`"GPX guidance"` / `"GPX-Hilfe"`), `primaryUse`, `tools` (DE/EN-Prefix), `strengths` (mit `"• "` Präfix).
+4. **`ecde6cc` `ui: surface route quality summaries`** — Phase 3. Neuer `RouteQualitySummaryPresentation.strings(for:german:)` (12 Tests). `title`, `levelLabel`, `levelHint` (alle 4 Levels in DE/EN), `spacingLine` (`"~12 m"`-Format, 3-Bucket-Rundung: 1 m/5 m/50 m), `largestGapLine` (nur für `.sparse`/`.containsGaps`).
+5. **`e5cdafc` `ui: add product info accessibility identifiers`** — Phase 5. `AppAccessibilityID.ProductInfo` Namespace mit 15 Konstanten (`importSummary.*` × 5, `exportGuidance.*` × 5, `routeQuality.*` × 5). 2 neue Tests (canonical strings + uniqueness/whitespace).
+
+### Übersprungene Phasen (mit Grund)
+- **Phase 4 (Shared Product Info Components):** Eine `AppInfoCard`-SwiftUI-Komponente ohne konkrete View-Integration wäre Vorrats-Code; die Presentation-Models genügen, damit eine spätere Card-Komponente trivial wird.
+- **Phase 6 (UX Copy / Lokalisierung):** Die DE/EN-Strings sind direkt in den Presentation-Helpern enthalten und durch Tests gelockt — keine `AppLanguageSupport`-Anpassung nötig.
+- **Phase 7 (Existing UX Consistency Sweep):** Train P fügt keine sichtbare UI hinzu; ein Consistency-Sweep ergibt erst bei der nachfolgenden View-Integration Sinn.
+
+### Was NICHT in diesem Train passiert
+- **Kein SwiftUI-View-Wiring.** Keine View in `Sources/LocationHistoryConsumerAppSupport/*View.swift` wurde modifiziert. Train P liefert exakt die DE/EN-Strings + Identifier — die Layout-Integration (Card-Hosting, Disclosure-Section, Footnote-Slot) ist Sache eines Folge-Trains.
+- **Begründung:** Die meisten Ziel-Views (`AppExportView`, `AppDayDetailView`, Import-Completion-Card) sind SwiftUI-Großstrukturen, deren Renderlogik Linux nicht final prüfen kann. Statt blind Code in nicht-testbare Views einzufügen, liefert Train P die exakt benötigten Strings + Identifier-Konstanten und sichert deren Korrektheit über Linux-Tests. Ein UI-Train nach extern verifiziertem Cloud-Build kann dann *nur Layout-Arbeit* tun.
+
+### Neue Nutzerfunktionen (vorbereitet, noch nicht in UI verdrahtet)
+- **Import-Übersicht (Presentation):** `ImportValidationSummaryPresentation` liefert Title, Range-Subtitle, Counts-Line, Warning-Lines in DE/EN.
+- **Export-Format-Hilfe (Presentation):** `ExportFormatGuidancePresentation` liefert Title, PrimaryUse, Tools-Line, Strength-Bullets in DE/EN pro Format.
+- **Route-Qualitätshinweis (Presentation):** `RouteQualitySummaryPresentation` liefert Title, Level-Label, Level-Hint, optionale Spacing/Largest-Gap-Lines in DE/EN.
+
+### Neue AccessibilityIdentifier (Namespace `AppAccessibilityID.ProductInfo`)
+- **Import-Summary** (5): `productInfo.importSummary.{root,title,range,counts,warning}`
+- **Export-Guidance** (5): `productInfo.exportGuidance.{root,title,primaryUse,tools,strength}`
+- **Route-Quality** (5): `productInfo.routeQuality.{root,level,hint,spacing,largestGap}`
+
+### Geänderte Dateien
+- **Phase 0:** `CHANGELOG.md`
+- **Phase 1:** `Sources/LocationHistoryConsumerAppSupport/ImportValidationSummaryPresentation.swift` (neu, ~145 Zeilen), `Tests/.../ImportValidationSummaryPresentationTests.swift` (neu, 10 Tests)
+- **Phase 2:** `Sources/LocationHistoryConsumerAppSupport/ExportFormatGuidancePresentation.swift` (neu, ~55 Zeilen), `Tests/.../ExportFormatGuidancePresentationTests.swift` (neu, 6 Tests)
+- **Phase 3:** `Sources/LocationHistoryConsumerAppSupport/RouteQualitySummaryPresentation.swift` (neu, ~125 Zeilen), `Tests/.../RouteQualitySummaryPresentationTests.swift` (neu, 12 Tests)
+- **Phase 5:** `Sources/LocationHistoryConsumerAppSupport/AppAccessibilityID.swift` (+ `ProductInfo` namespace, 15 Konstanten), `Tests/.../AppAccessibilityIDTests.swift` (+ 2 Tests)
+- **Phase 9 (Doku):** `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`
+
+### UI/UX-Änderungen
+**Keine sichtbaren UI-Änderungen in diesem Train.** Train P bereitet vollständig die Presentation-Schicht vor — UI-Layout-Integration folgt.
+
+### Feature-Flags und Defaults
+- Keine neuen Feature-Flags. `RouteQualitySummaryPresentation.roundedMetres` nutzt feste Bucket-Schwellen (1 m / 5 m / 50 m).
+
+### Repo-Truth (unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Letzter extern verifizierter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`).
+- Train-O- und Train-P-Commits sind **nicht** in Build 179.
+
+### Verifikation (Linux)
+- `git diff --check`: clean.
+- `swift build`: clean.
+- `swift test`: **1568 / 2 Skips / 0 Failures** (+30 neue Tests gegenüber 1538).
+
+### Was Linux nicht prüfen konnte
+- Die finale SwiftUI-Layout-Integration der Presentation-Strings.
+- Visuelle Qualität / Dynamic Type / VoiceOver der späteren Karten.
+- TestFlight-Sichtbarkeit der `ProductInfo`-Identifier (XCUITest auf Mac).
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+Neuen Xcode-Cloud-Build auf `main` (HEAD nach Doku-Sync) → Build 180+. Verifikation:
+- App startet, alle 5 Tabs erreichbar.
+- Bestehende UI unverändert (Train P hat keine Views modifiziert).
+- Anschließend: UI-Layout-Train, der Presentation-Strings und ProductInfo-Identifier in `AppExportView`, `AppDayDetailView` / `AppExportPreviewMapView` und Active-Source-/Import-Completion-Card verdrahtet.
 
 ## 2026-05-17 — Train O — Product UX, Feature Expansion & Wiring Verification (`main`)
 

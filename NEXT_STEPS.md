@@ -1,6 +1,32 @@
 # NEXT_STEPS
 
-Stand: 2026-05-17 (Branch `main`, nach **Train O — Product UX, Feature Expansion & Wiring Verification**).
+Stand: 2026-05-17 (Branch `main`, nach **Train P — Import/Export/Route-Quality Presentation Wiring**).
+
+**Train P umgesetzt (4 produktive Commits + Doku-Sync):**
+- `56a76ed` Build-179-Baseline-Doku.
+- `eaa149f` `ImportValidationSummaryPresentation.strings(for:german:)` (10 Tests) — title, rangeSubtitle (long-form DE/EN), countsLine mit Pluralisierung + Zero-Drop, warningLines.
+- `936fae6` `ExportFormatGuidancePresentation.rendered(for:german:)` (6 Tests) — title/primaryUse/tools/strengths mit Bullet-Präfix.
+- `ecde6cc` `RouteQualitySummaryPresentation.strings(for:german:)` (12 Tests) — level labels DE/EN, gerundete Spacing/Gap-Lines (1 m/5 m/50 m Buckets), Gap-Line nur für sparse/containsGaps.
+- `e5cdafc` `AppAccessibilityID.ProductInfo` Namespace (15 Konstanten, 2 Tests).
+
+**Übersprungen:** Phase 4 (Shared Components — Vorrats-Code), 6 (Lokalisierung — direkt in Helpern), 7 (UX-Sweep — erst bei View-Integration sinnvoll).
+
+**Bewusst NICHT in Train P:** Kein SwiftUI-View-Wiring. Train P liefert reine Presentation-Strings + Identifier-Hooks. UI-Layout-Integration ist ein eigener Folge-Train.
+
+**Tests:** `swift test` **1568 / 2 Skips / 0 Failures** (+30).
+
+**Externer Stand:** Letzter verifizierter Build = **Xcode Cloud Build 179**. Train-O- und Train-P-Commits sind **noch nicht** extern.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build (→ Build 180+). Anschließend UI-Layout-Train, der die drei Presentation-Helper + 15 ProductInfo-Identifier in `AppExportView`, `AppDayDetailView` und Active-Source-/Import-Completion-Card verdrahtet.
+
+**Folge-Trains:**
+- **UI-Layout-Train:** SwiftUI-Karten für Import-Summary (Active Source / Import-Completion), Export-Format-Hilfe (Export-Sheet Disclosure/Footer), Route-Quality (Export-Preview Card / Day-Detail Tile). Layout-only — alle Strings + Identifier sind bereits gelocked.
+- **XCUITest-Target** im Apple-Xcode-Projekt nutzt `AppAccessibilityID.{Tab,Map,Action,ProductInfo}`.
+- **D / G2** (Mac/Instruments-only): Heatmap-Multi-LOD + MKMapView-Bridge.
+
+---
+
+Vorheriger Stand: 2026-05-17 nach Train O.
 
 **Build 179 extern grün** (Xcode Cloud) auf `ff789a4` (Train M tip). Train-N (sofern vorhanden) und Train-O sind **nicht** extern in Build 179 enthalten.
 

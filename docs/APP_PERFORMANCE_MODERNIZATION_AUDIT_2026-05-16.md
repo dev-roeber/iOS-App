@@ -1,5 +1,14 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-17 (Train P — Presentation Wiring):** 4 produktive Commits + Doku-Sync. Drei neue Presentation-Helper auf die Train-O-Foundation-Helper:
+>
+> - `ImportValidationSummaryPresentation.strings(for:german:)` — title, rangeSubtitle (long-form DE/EN), countsLine (Pluralisierung + Zero-Drop), warningLines. 10 Tests.
+> - `ExportFormatGuidancePresentation.rendered(for:german:)` — title/primaryUse/tools/strengths (Bullet-Präfix). 6 Tests.
+> - `RouteQualitySummaryPresentation.strings(for:german:)` — level labels DE/EN, gerundete Spacing/Gap-Lines (1 m/5 m/50 m Buckets), Gap-Surfacing nur für sparse/containsGaps. 12 Tests.
+> - `AppAccessibilityID.ProductInfo` Namespace (15 Konstanten, 2 Tests).
+>
+> **Bewusst kein SwiftUI-View-Wiring** — Layout-Integration folgt nach extern verifiziertem Cloud-Build. Linux `swift test` **1568 / 2 Skips / 0 Failures** (+30).
+>
 > **Update 2026-05-17 (Train O — Product UX, Feature Expansion):** 4 produktive Commits (`82b685b`, `408c93b`, `17b9b6a`, `9a23031`):
 >
 > - **Phase 1 ImportValidationSummary:** Foundation-only Helper (`Sources/LocationHistoryConsumer/ImportValidationSummary.swift`) zählt Tage/Visits/Activities/Paths/Path-Points einer `AppExport`-Struktur, liefert sortiertes Datum-Range und 3 strukturelle Warnungen (`emptyImport`, `noGPSPoints`, `singleDayOnly`). Privacy-Vertrag durch Test gelockt. 10 Tests.
