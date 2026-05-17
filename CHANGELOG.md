@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-05-17 — Train P — Import/Export/Route-Quality Presentation Wiring (`main`, in Arbeit)
+
+> **Train P, in Arbeit.** Hebt die in Train O eingeführten Foundation-Helper auf eine UI-präsentierbare Schicht: deterministische DE/EN-Strings, AccessibilityIdentifier-Namespaces, Privacy-Vertrag. Die finale SwiftUI-View-Integration bleibt einem Folge-Train vorbehalten — Train P liefert die exakt zu rendernden Strings + Identifier-Hooks, damit ein UI-Wiring-Schritt nur noch Layout-Arbeit ist.
+
+### Phase 0 — Baseline
+- Letzter extern belegter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`). Train-O- und Train-P-Commits sind **nicht** extern verifiziert.
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+
 ## 2026-05-17 — Train O — Product UX, Feature Expansion & Wiring Verification (`main`)
 
 > **Train O, vier produktive Commits + Doku-Sync.** Drei neue Foundation-only Presentation-Helper (Import-Validation, Export-Format-Guidance, Route-Quality) + Action-Control-Identifier-Aliase. Keine UI-Redesigns, keine Default-Output-Änderungen, keine Versions-Bumps.
