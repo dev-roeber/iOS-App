@@ -50,6 +50,37 @@ public enum AppAccessibilityID {
         public static let dayDetailRoot     = "map.dayDetail.root"
     }
 
+    // MARK: - Product info tiles (Train P)
+
+    /// Identifier hooks for the three Train-O / Train-P info tiles
+    /// (`ImportValidationSummaryPresentation`,
+    /// `ExportFormatGuidancePresentation`,
+    /// `RouteQualitySummaryPresentation`). UI integration ships in a
+    /// follow-up; the namespace fixes the canonical strings now so
+    /// XCUITest call-sites and Apple-side wiring can refer to them.
+    public enum ProductInfo {
+        // Import summary tile
+        public static let importSummaryRoot     = "productInfo.importSummary.root"
+        public static let importSummaryTitle    = "productInfo.importSummary.title"
+        public static let importSummaryRange    = "productInfo.importSummary.range"
+        public static let importSummaryCounts   = "productInfo.importSummary.counts"
+        public static let importSummaryWarning  = "productInfo.importSummary.warning"
+
+        // Export format guidance tile
+        public static let exportGuidanceRoot       = "productInfo.exportGuidance.root"
+        public static let exportGuidanceTitle      = "productInfo.exportGuidance.title"
+        public static let exportGuidancePrimaryUse = "productInfo.exportGuidance.primaryUse"
+        public static let exportGuidanceTools      = "productInfo.exportGuidance.tools"
+        public static let exportGuidanceStrength   = "productInfo.exportGuidance.strength"
+
+        // Route quality tile
+        public static let routeQualityRoot       = "productInfo.routeQuality.root"
+        public static let routeQualityLevel      = "productInfo.routeQuality.level"
+        public static let routeQualityHint       = "productInfo.routeQuality.hint"
+        public static let routeQualitySpacing    = "productInfo.routeQuality.spacing"
+        public static let routeQualityLargestGap = "productInfo.routeQuality.largestGap"
+    }
+
     // MARK: - Action controls (Train O, Phase 9)
     //
     // These constants are aliases that mirror existing inline identifier
