@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-05-17 — Train Q — Product Info SwiftUI Wiring (`main`, in Arbeit)
+
+> **Train Q, in Arbeit.** SwiftUI-Layout-Integration der Train-O/P Presentation-Helper: ProductInfoCard-Komponente + tatsächliche View-Integration in `AppExportView`, ggf. Export-Preview. Keine Default-Output-Änderungen.
+
+### Phase 0 — Baseline
+- Letzter extern belegter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`). Train-O/P/Q-Commits sind **nicht** extern verifiziert.
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+
 ## 2026-05-17 — Train P — Import/Export/Route-Quality Presentation Wiring (`main`)
 
 > **Train P, vier produktive Commits + Doku-Sync.** Hebt die Train-O-Foundation-Helper auf eine UI-präsentierbare Schicht: deterministische DE/EN-Strings, AccessibilityIdentifier-Namespace, Privacy-Vertrag. Die SwiftUI-Layout-Integration bleibt einem Folge-Train vorbehalten — Train P liefert die exakt zu rendernden Strings + Identifier-Hooks.
