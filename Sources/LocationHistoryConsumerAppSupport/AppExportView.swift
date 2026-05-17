@@ -195,6 +195,7 @@ public struct AppExportView: View {
         }
 
         if hasImportedExport {
+            importSummaryCard
             rangeFilterCard
                 .accessibilityIdentifier("export.range.card")
         }
@@ -712,6 +713,31 @@ public struct AppExportView: View {
                     formatPill(format)
                 }
             }
+        }
+    }
+
+    // MARK: - Import Summary (Train Q, Phase 5)
+
+    /// Renders Train-P's `ImportValidationSummaryPresentation` for the
+    /// currently active session content. The card surfaces what was
+    /// loaded — date range, counts, structural warnings — without ever
+    /// exposing coordinates, filenames or place IDs (privacy contract
+    /// is locked by `ImportValidationSummaryPresentationTests`).
+    @ViewBuilder
+    private var importSummaryCard: some View {
+        if let export = session.content?.export {
+            let summary = ImportValidationSummary.summarize(export)
+            let strings = ImportValidationSummaryPresentation.strings(
+                for: summary,
+                german: preferences.appLanguage.isGerman
+            )
+            ProductInfoCard(
+                title: strings.title,
+                subtitle: strings.rangeSubtitle,
+                headline: strings.countsLine,
+                bullets: strings.warningLines,
+                rootIdentifier: AppAccessibilityID.ProductInfo.importSummaryRoot
+            )
         }
     }
 
