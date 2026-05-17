@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-05-17 — Train O — Product UX, Feature Expansion & Wiring Verification (`main`, in Arbeit)
+
+> **Train O, in Arbeit.** Konservative Produkt-Erweiterungen über Foundation-only Helper: Import-Validation-Summary, Export-Format-Guidance, Route-Quality-Summary, weitere Accessibility-Identifier. Keine UI-Redesigns, keine Default-Output-Änderungen, keine Versions-Bumps.
+
+### Phase 0 — Baseline
+- Letzter extern belegter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`, Train M tip). Train-O-Commits sind **nicht** extern verifiziert — neuer Cloud-Build (180+) erforderlich.
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+
 ## 2026-05-17 — Train M — Build 178 Smoke Documentation & Accessibility Identifier Rollout (`main`)
 
 > **Train M, vier produktive Commits + Doku-Sync.** Externe Build-Truth-Aktualisierung + zentrale AccessibilityIdentifier-Struktur + 9 neue Identifier (5 Tabs + 4 Map-Roots) + 1 Banner-Alias auf bestehenden Identifier. Keine Versions-Bumps, keine Verhaltensänderung.
