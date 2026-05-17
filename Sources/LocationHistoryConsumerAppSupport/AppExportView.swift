@@ -217,6 +217,8 @@ public struct AppExportView: View {
         formatCard
             .accessibilityIdentifier("export.format.card")
 
+        formatGuidanceCard
+
         if selectedFormat == .csv {
             csvNoteCard
         } else {
@@ -711,6 +713,27 @@ public struct AppExportView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Format Guidance (Train Q, Phase 2)
+
+    /// Renders Train-P's `ExportFormatGuidancePresentation` for the
+    /// currently selected format. Card sits below `formatCard` so the
+    /// user immediately sees what GPX / KMZ / KML / GeoJSON / CSV are
+    /// actually good for after picking a pill.
+    @ViewBuilder
+    private var formatGuidanceCard: some View {
+        let rendered = ExportFormatGuidancePresentation.rendered(
+            for: selectedFormat,
+            german: preferences.appLanguage.isGerman
+        )
+        ProductInfoCard(
+            title: rendered.title,
+            headline: rendered.primaryUse,
+            secondary: rendered.tools,
+            bullets: rendered.strengths,
+            rootIdentifier: AppAccessibilityID.ProductInfo.exportGuidanceRoot
+        )
     }
 
     @ViewBuilder
