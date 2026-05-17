@@ -1,5 +1,13 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-17 (Train R — Export Selection Summary):** 2 produktive Commits + Doku-Sync. Neue Export-Selection-Übersicht im Export-Tab:
+>
+> - Neuer `ExportSelectionSummaryPresentation` Foundation-Helper mit privacy-safe `Counts`-Struct (`selectedDayCount`, `selectedRecordedTrackCount`, `hasExplicitPerRouteSelection`). `strings(for:german:) -> Strings?`, gibt `nil` bei leerer Auswahl. Secondary-Line für Mixed-Source bzw. Per-Route-Narrowing.
+> - Verdrahtet in `AppExportView.selectionSummaryProductInfoCard` zwischen Format-Hilfe und Content-Card.
+> - 3 neue `AppAccessibilityID.ProductInfo.exportSelection.*`-Konstanten.
+>
+> RouteQuality-Wiring im Single-Selection/Live-Kontext und Active-Source-Card-Wiring übersprungen (Apple-Verifikations-Risiko). Linux `swift test` **1578 / 2 Skips / 0 Failures** (+10).
+>
 > **Update 2026-05-17 (Train Q — SwiftUI Layout Integration):** 3 produktive Commits + Doku-Sync. Erste sichtbare UI-Integration der Train-O/P-Helper:
 >
 > - Neue `ProductInfoCard`-SwiftUI-Komponente (LHCard-Chrome, layout-only).

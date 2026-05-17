@@ -1,6 +1,29 @@
 # NEXT_STEPS
 
-Stand: 2026-05-17 (Branch `main`, nach **Train Q — Product Info SwiftUI Wiring**).
+Stand: 2026-05-17 (Branch `main`, nach **Train R — Export Selection Summary & UX Refinements**).
+
+**Train R umgesetzt (2 produktive Commits + Doku-Sync):**
+- `150513e` Build-179-Baseline-Doku.
+- `55547fd` Neuer `ExportSelectionSummaryPresentation` Foundation-Helper (10 Tests, privacy-safe Counts, DE/EN-Pluralisierung, Mixed-Source + Per-Route-Narrowing als Secondary-Line). Verdrahtet in `AppExportView` als `selectionSummaryProductInfoCard` zwischen Format-Hilfe und Content-Card. 3 neue ProductInfo-Identifier (`exportSelection.{root,title,detail}`).
+
+**Sichtbare neue UI-Funktion:** Export-Auswahl-Übersicht-Card im Export-Tab.
+
+**Übersprungen:** Phasen 2 (RouteQuality-Single-Route-Selection — Inline-Pfad-Lookup ohne Apple-Verifikation riskant), 3 (Live-Kontext — Throttling-Design fehlt), 4 (Active-Source-Card — eigener Train), 5 (Guidance-Layout-Polish — ohne Sichtprüfung riskant).
+
+**Tests:** `swift test` **1578 / 2 Skips / 0 Failures** (+10).
+
+**Externer Stand:** Letzter verifizierter Build = **Xcode Cloud Build 179**. Train-O/P/Q/R sind **noch nicht** extern.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build (→ Build 180+). Sicht-Verifikation der drei sichtbaren Cards (Import-Summary, Format-Hilfe, Auswahl-Übersicht).
+
+**Folge-Trains:**
+- **Per-Track-Detail-Train:** RouteQuality-Card im Single-Path-Detail bei eindeutiger Track-Auswahl.
+- **Active-Source-Card-Train:** Import-Summary an zweiter Stelle (Home/Active-Source), Doppelung vermeiden.
+- **XCUITest-Target** für ProductInfo-Identifier auf Mac/Simulator.
+
+---
+
+Vorheriger Stand: 2026-05-17 nach Train Q.
 
 **Train Q umgesetzt (3 produktive Commits + Doku-Sync):**
 - `4bad00c` Build-179-Baseline-Doku.

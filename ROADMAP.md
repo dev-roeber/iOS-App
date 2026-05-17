@@ -1,5 +1,9 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train R)
+
+- **Train R umgesetzt (2 produktive Commits + Doku-Sync):** `150513e` Build-179-Baseline · `55547fd` neuer `ExportSelectionSummaryPresentation` (10 Tests, privacy-safe `Counts`, DE/EN-Pluralisierung, Mixed-Source / Per-Route-Narrowing Secondary-Line, `strings(for:german:) -> Strings?` mit Nil-bei-leer) verdrahtet in `AppExportView` als `selectionSummaryProductInfoCard` + 3 neue `AppAccessibilityID.ProductInfo.exportSelection.*`-Konstanten. Übersprungen: Phasen 2/3/4/5 (RouteQuality-Single-Selection / Live-Kontext / Active-Source-Card / Guidance-Layout-Polish — alle mit Apple-Verifikations-Risiko begründet). Linux `swift test` **1578 / 2 Skips / 0 Failures** (+10). Train-R-Commits sind **noch nicht** in Build 179.
+
 ## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train Q)
 
 - **Train Q umgesetzt (3 produktive Commits + Doku-Sync):** `4bad00c` Build-179-Baseline · `9e89340` Neue `ProductInfoCard`-SwiftUI-Komponente (layout-only, LHCard-Chrome, accessibilityElement(.contain)) · `80c9dae` `formatGuidanceCard` in `AppExportView` unter der Format-Auswahl (rendert `ExportFormatGuidancePresentation.rendered(for:german:)`, Identifier `productInfo.exportGuidance.root`) · `a1585af` `importSummaryCard` in `AppExportView` nach dem Titel bei aktivem Import (rendert `ImportValidationSummary.summarize(export)` über Presentation-Helper, Identifier `productInfo.importSummary.root`). **Sichtbare neue UI:** Import-Übersicht-Card + Format-Hilfe-Card im Export-Tab. Übersprungen: Phasen 3+4 (RouteQuality im Multi-Path-Preview/Day-Detail wäre mehrdeutig). Linux `swift test` **1568 / 2 Skips / 0 Failures** unverändert. Train-Q-Commits sind **noch nicht** in Build 179.

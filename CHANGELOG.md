@@ -1,12 +1,63 @@
 # CHANGELOG
 
-## 2026-05-17 — Train R — Export Selection Summary & UX Refinements (`main`, in Arbeit)
+## 2026-05-17 — Train R — Export Selection Summary & UX Refinements (`main`)
 
-> **Train R, in Arbeit.** Konservative UX-Verfeinerung: neue Export-Selection-Summary-Card, AccessibilityIdentifier-Erweiterung. Keine Default-Output-Änderungen.
+> **Train R, zwei produktive Commits + Doku-Sync.** Neue privacy-safe Export-Selection-Summary-Card; AccessibilityIdentifier-Erweiterung um `exportSelection.*`. RouteQuality-Wiring bleibt mit dokumentierten Gründen verschoben. Keine Default-Output-Änderungen, keine Versions-Bumps.
 
-### Phase 0 — Baseline
-- Letzter extern belegter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`). Train-O/P/Q/R-Commits sind **nicht** extern verifiziert.
-- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+### Umgesetzte Commits (Reihenfolge)
+1. **`150513e` `docs: prepare train r from build 179 baseline`** — Phase 0.
+2. **`55547fd` `ui: add export selection summary presentation`** — Phasen 1 + 6 (gebündelt). Neuer `ExportSelectionSummaryPresentation` Foundation-Helper (privacy-safe Counts-Struct mit `selectedDayCount` / `selectedRecordedTrackCount` / `hasExplicitPerRouteSelection`); `strings(for:german:)` liefert `Strings?` mit `title` / `detail` / `secondaryDetail`, gibt `nil` bei leerer Auswahl zurück. Verdrahtet in `AppExportView` als neuer `selectionSummaryProductInfoCard` direkt nach der Format-Hilfe. Drei neue Identifier-Konstanten in `AppAccessibilityID.ProductInfo` (`exportSelectionRoot/Title/Detail`).
+
+### Übersprungene Phasen (mit Grund)
+- **Phase 2 (RouteQuality nur bei Single-Route Selection):** Übersprungen — die `ExportSelectionState` kennt zwar Per-Route-Selektion, aber das Mapping „1 Tag mit 1 Route ohne `routeSelections`-Eintrag" vs. „1 Tag mit 1 expliziter Route-Index-Auswahl" auf eine eindeutige Koordinatensequenz erfordert View-seitig den Pfad-Lookup über `session.content?.export.data.days`. Das wäre Inline-Code in einem SwiftUI-body, der ohne Apple-Side-Verifikation ein Layout-Risiko darstellt. Helper bleiben für eine zukünftige Per-Track-Detail-View bereit.
+- **Phase 3 (RouteQuality im Live-Kontext):** Übersprungen — Live-Track-Daten sind dynamisch (jeder GPS-Sample triggert State), und ein RouteQuality-Recompute pro Sample wäre verschwenderisch. Ein durchdachtes Throttling/Debouncing braucht eigenes UX-Design.
+- **Phase 4 (Import-Summary an besserer Stelle):** Übersprungen — Train Q hat die Import-Summary im Export-Tab platziert; eine zweite Platzierung in Home/Active-Source ist nur sinnvoll, wenn dort eine `session.content?.export`-Bindung sauber verfügbar ist und nicht doppelt rendert. Das gehört in einen Active-Source-Card-Train.
+- **Phase 5 (Format-Guidance-Layout-Polish):** Übersprungen — die in Train Q eingeführte Card ist konsistent mit der `LHCard`-Reihe; ohne TestFlight-Sichtprüfung wäre eine vorzeitige Disclosure-Conversion riskant.
+- **Phase 7 (UX Copy/Privacy Sweep):** Phase ist in die produktiven Commits integriert (jeder Presentation-Helper hat einen Privacy-Regex-Test).
+- **Phase 8 (Regression-Run):** Im Train-R-Doku-Sync-Commit ausgeführt (siehe Filtertests unten).
+
+### Sichtbare neue UI-Funktionen
+**Im Export-Tab (`AppExportView`):**
+- **Export-Auswahl-Übersicht** (zwischen Format-Hilfe und Content-Card, nur bei nicht-leerer Auswahl): „Export selection" / „Export-Auswahl" mit Detail-Line (`"3 days · 1 saved track"`) und optionaler Secondary-Line für Mixed-Source-Auswahl bzw. Per-Route-Narrowing.
+
+### Geänderte Dateien
+- **Phase 0:** `CHANGELOG.md`
+- **Phase 1 + 6:**
+  - `Sources/LocationHistoryConsumerAppSupport/ExportSelectionSummaryPresentation.swift` (neu, ~110 Zeilen)
+  - `Sources/LocationHistoryConsumerAppSupport/AppExportView.swift` (+ `selectionSummaryProductInfoCard`, 1 Render-Site)
+  - `Sources/LocationHistoryConsumerAppSupport/AppAccessibilityID.swift` (+ 3 Konstanten)
+  - `Tests/LocationHistoryConsumerTests/ExportSelectionSummaryPresentationTests.swift` (neu, 10 Tests)
+- **Phase 9 (Doku):** `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`
+
+### Neue Presentation-Helper
+- **`ExportSelectionSummaryPresentation`** mit `Counts`, `Strings`, `strings(for:german:)`.
+
+### Neue/benutzte AccessibilityIdentifier (Namespace `AppAccessibilityID.ProductInfo`)
+- **Neu in Train R:** `productInfo.exportSelection.{root,title,detail}` (3 Konstanten)
+- **Aktiv genutzt:** `productInfo.exportSelection.root` (Card-Root)
+- **Aus Train Q weiterhin aktiv:** `productInfo.importSummary.root`, `productInfo.exportGuidance.root`
+
+### Repo-Truth (unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Letzter extern verifizierter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`).
+- Train-O/P/Q/R-Commits sind **nicht** in Build 179.
+
+### Verifikation (Linux)
+- `git diff --check`: clean.
+- `swift build`: clean.
+- `swift test`: **1578 / 2 Skips / 0 Failures** (+10 gegenüber 1568).
+
+### Was Linux nicht prüfen konnte
+- Visuelle Reihenfolge der drei neuen Cards (Import-Summary, Format-Guidance, Selection-Summary).
+- Dynamic Type / VoiceOver-Verhalten.
+- iPhone-/iPad-Layout, Long-Form-Sprachen-Truncation.
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+Neuer Xcode-Cloud-Build auf `main` → Build 180+. Verifikation:
+- Auswahl-Übersicht-Card erscheint bei nicht-leerer Auswahl, ist nach Format-Hilfe positioniert.
+- Detail-Line korrekt pluralisiert.
+- Secondary-Line zeigt sich nur bei Mixed-Source oder Per-Route-Narrowing.
+- Accessibility Inspector findet `productInfo.exportSelection.root`.
 
 ## 2026-05-17 — Train Q — Product Info SwiftUI Wiring (`main`)
 
