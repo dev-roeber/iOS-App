@@ -1,5 +1,14 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-17 (Train O — Product UX, Feature Expansion):** 4 produktive Commits (`82b685b`, `408c93b`, `17b9b6a`, `9a23031`):
+>
+> - **Phase 1 ImportValidationSummary:** Foundation-only Helper (`Sources/LocationHistoryConsumer/ImportValidationSummary.swift`) zählt Tage/Visits/Activities/Paths/Path-Points einer `AppExport`-Struktur, liefert sortiertes Datum-Range und 3 strukturelle Warnungen (`emptyImport`, `noGPSPoints`, `singleDayOnly`). Privacy-Vertrag durch Test gelockt. 10 Tests.
+> - **Phase 2 ExportFormatGuidance:** DE/EN-Hilfe-Copy (`Sources/LocationHistoryConsumerAppSupport/ExportFormatGuidance.swift`) für die 5 `ExportFormat`-Cases — pro Sprache `primaryUseCase`, `typicalTools`, 2-3 Strengths-Bullets. Builder-Output und `ExportFormat.description` bleiben unverändert. 7 Tests.
+> - **Phase 3 RouteQualitySummary:** Foundation-Haversine-Helper (`Sources/LocationHistoryConsumer/RouteQualitySummary.swift`) bewertet eine `(lat, lon)`-Sequenz mit Level `empty/sparse/containsGaps/good`. Schwellen public-konstant (`sparsePointCountThreshold = 10`, `gapMultiplier = 5×`, `gapAbsoluteFloorM = 250 m`). 10 Tests inkl. Haversine-Sanity und Privacy-Vertrag.
+> - **Phase 9 AppAccessibilityID.Action:** 6 Aliase auf bestehende Inline-Identifier (`home.import.primary`, `export.primaryButton`, `live.cta.pause`, `insights.share.chart`, `days.exportBar`) + neuer `export.step.root`. 2 Tests.
+>
+> Linux `swift test` **1538 / 2 Skips / 0 Failures** (+29). Train-O-Commits sind nicht in Build 179 — neuer Cloud-Build erforderlich. UI-Wiring der drei Helper ist auf einen Folge-Train verschoben.
+>
 > **Update 2026-05-17 (Train M — Build 178 Smoke Documentation & Accessibility Identifier Rollout):** Build 178 extern grün auf `487833f` (Train L tip); Trains I/J/K/L extern angekommen. Partieller TestFlight-Screenshot-Smoke: Overview/Live/Insights/Export-Tabs öffnen. 4 produktive Commits Train M: `AppAccessibilityID`-Namespace (10 Konstanten, 6 Tests), 5 Tab-Identifier in `AppContentSplitView`, 4 Map-Root-Identifier (`AppHeatmapView`, `AppOverviewTracksMapView`, `AppExportPreviewMapView`, `AppDayMapView`). Pre-Production-Banner-Konstante mappt auf bestehenden `localTimeline.testMode.banner`. Linux `swift test` **1509 / 2 Skips / 0 Failures, 54,6 s** (+6). Train-M-Commits noch nicht in Build 178 — Cloud-Build 179+ erforderlich.
 >
 > **Update 2026-05-16 (Train L — Heatmap Testability, Store Query Verification):** 2 produktive Test-Commits (`c5e86ef`, `a63f827`):

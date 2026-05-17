@@ -1,5 +1,10 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train O)
+
+- **Train O umgesetzt (4 produktive Commits + Doku-Sync):** `f349a06` Build-179-Baseline · `82b685b` `ImportValidationSummary` (Foundation, 10 Tests, Counts/Date-Range/3-Warnungen, Privacy-Vertrag) · `408c93b` `ExportFormatGuidance.copy(for:german:)` (5 Formate × DE/EN, 7 Tests, Format-Default unverändert) · `17b9b6a` `RouteQualitySummary.evaluate(points:)` (Haversine, 10 Tests, empty/sparse/containsGaps/good) · `9a23031` `AppAccessibilityID.Action`-Namespace (6 Konstanten, 2 Tests). Übersprungen: Phasen 4-8 (kein UX-Defekt; Polish-Surface erschöpft). Linux `swift test` **1538 / 2 Skips / 0 Failures** (+29). Train-O-Commits sind **noch nicht** in Build 179.
+- **Externer Build 179** auf `ff789a4` (Train M tip) bleibt letzter extern belegter Stand.
+
 ## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train M)
 
 - **Xcode Cloud Build 178 extern verifiziert (`docs: record build 178 screenshot smoke baseline`):** Workflow `Release – Archive & TestFlight` Build **178** grün (Archive iOS ✅ + TestFlight-interne Tests ✅), letzter Commit `487833f`. TestFlight zeigt `LH2GPX 1.0.2 (178)` mit Pre-production-Banner. Toolchain Xcode 26.5 (17F42) / macOS Tahoe 26.4 (25E246). Damit Train H/H-Wire-1/I/J/K/L (Cap, Throttle, GenerationGate, iOS-16-Cleanup, CSV-Helper, Heatmap-Lifecycle-Tests, Query-Plan-Hook) extern angekommen. Partieller TestFlight-Screenshot-Smoke: Overview/Live/Insights/Export-Tabs öffnen; Hardware-Sweep / Dynamic Island / iPad / großer Import / externe Export-Validierung bewusst unbestätigt. Kein Hardware-Smoke, keine App-Review-Aussage.

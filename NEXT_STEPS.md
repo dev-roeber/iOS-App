@@ -1,6 +1,32 @@
 # NEXT_STEPS
 
-Stand: 2026-05-17 (Branch `main`, nach **Train M — Build 178 Smoke Documentation & Accessibility Identifier Rollout**).
+Stand: 2026-05-17 (Branch `main`, nach **Train O — Product UX, Feature Expansion & Wiring Verification**).
+
+**Build 179 extern grün** (Xcode Cloud) auf `ff789a4` (Train M tip). Train-N (sofern vorhanden) und Train-O sind **nicht** extern in Build 179 enthalten.
+
+**Train O umgesetzt (4 produktive Commits + Doku-Sync):**
+- `f349a06` Build-179-Baseline-Doku.
+- `82b685b` Neuer `ImportValidationSummary` (Foundation, 10 Tests) — Tage/Visits/Activities/Paths/Points-Counts, sortiertes Datum-Range, 3 Warnungen (`emptyImport`/`noGPSPoints`/`singleDayOnly`). Privacy-Vertrag.
+- `408c93b` Neuer `ExportFormatGuidance.copy(for:german:)` (7 Tests) — DE/EN-Use-Case-Hilfe pro Format. Format-Defaults unverändert.
+- `17b9b6a` Neuer `RouteQualitySummary.evaluate(points:)` (10 Tests, Haversine) — `empty/sparse/containsGaps/good` mit Average-Spacing + Largest-Gap in Metern.
+- `9a23031` `AppAccessibilityID.Action`-Namespace (6 Aliase auf bestehende Inline-Identifier, +2 Tests).
+
+**Übersprungen:** Phasen 4-8 (kein konkreter UX-Defekt; bestehende Architektur sauber; Performance-Polish bereits in Train H-L erschöpft).
+
+**Tests:** `swift test` **1538 / 2 Skips / 0 Failures** (+29).
+
+**Externer Stand:** Letzter verifizierter Build = **Xcode Cloud Build 179**. Train-O-Commits sind **noch nicht** extern.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build (→ Build 180+). Anschließend UI-Wiring-Train, der die drei Helper in passenden Views verdrahtet (Import-Summary nach erfolgreichem Import, Export-Format-Hilfe im Export-Sheet, Route-Quality im Export-Preview/Day-Detail).
+
+**Folge-Trains:**
+- **Helper-UI-Wiring-Train:** Helper aus Train O in die zuständigen Views integrieren.
+- **XCUITest-Target** im Apple-Xcode-Projekt, das die zentralen `AppAccessibilityID`-Konstanten nutzt.
+- **D / G2** (Mac/Instruments-only): Heatmap-Multi-LOD-Wiring + MKMapView-Bridge.
+
+---
+
+Vorheriger Stand: 2026-05-17 nach Train M.
 
 **Build 178 extern grün** (Xcode Cloud, Archive iOS ✅ + TestFlight interne Tests ✅) auf `487833f` (Train L tip). Toolchain Xcode 26.5 (17F42) / macOS Tahoe 26.4 (25E246). TestFlight zeigt `LH2GPX 1.0.2 (178)` mit Pre-production-Banner. Damit Trains I/J/K/L extern angekommen.
 

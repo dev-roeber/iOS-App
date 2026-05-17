@@ -1,12 +1,71 @@
 # CHANGELOG
 
-## 2026-05-17 — Train O — Product UX, Feature Expansion & Wiring Verification (`main`, in Arbeit)
+## 2026-05-17 — Train O — Product UX, Feature Expansion & Wiring Verification (`main`)
 
-> **Train O, in Arbeit.** Konservative Produkt-Erweiterungen über Foundation-only Helper: Import-Validation-Summary, Export-Format-Guidance, Route-Quality-Summary, weitere Accessibility-Identifier. Keine UI-Redesigns, keine Default-Output-Änderungen, keine Versions-Bumps.
+> **Train O, vier produktive Commits + Doku-Sync.** Drei neue Foundation-only Presentation-Helper (Import-Validation, Export-Format-Guidance, Route-Quality) + Action-Control-Identifier-Aliase. Keine UI-Redesigns, keine Default-Output-Änderungen, keine Versions-Bumps.
 
-### Phase 0 — Baseline
-- Letzter extern belegter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`, Train M tip). Train-O-Commits sind **nicht** extern verifiziert — neuer Cloud-Build (180+) erforderlich.
-- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+### Umgesetzte Commits (Reihenfolge)
+1. **`f349a06` `docs: prepare train o from build 179 baseline`** — Phase 0.
+2. **`82b685b` `feat: add import validation summary presentation`** — Phase 1. Neuer `ImportValidationSummary` (Foundation, Sendable) + `summarize(_:AppExport)`; zählt Tage/Visits/Activities/Paths/Path-Points (PathPoint.points UND flatCoordinates/2 mit Odd-Length-Reject), liefert sortierte `firstDate`/`lastDate` und drei strukturelle Warnungen (`emptyImport`, `noGPSPoints`, `singleDayOnly`). **Privacy-Vertrag durch Test gelockt** (keine Koordinaten/PlaceIDs in Summary-Dump). 10 Tests.
+3. **`408c93b` `feat: add export format guidance and presets`** — Phase 2. Neuer `ExportFormatGuidance.copy(for:german:)` (DE/EN) liefert `primaryUseCase`, `typicalTools`, 2–3 Stärken-Bullets pro `ExportFormat` (gpx/kmz/kml/geoJSON/csv). Bestehendes `ExportFormat.description` bleibt **unverändert**, ebenso Builder-Output (byte-identisch zu Build 179). 7 Tests inkl. Privacy-Regex (keine koordinaten-ähnlichen Zahlen, keine `place_id=`).
+4. **`17b9b6a` `feat: add route quality summary helpers`** — Phase 3. Neuer `RouteQualitySummary.evaluate(points:)` (Haversine, Foundation) bewertet Punktanzahl, Average-Spacing, Largest-Gap und liefert Level `empty/sparse/containsGaps/good`. Schwellen sind public Konstanten (`sparsePointCountThreshold = 10`, `gapMultiplier = 5×`, `gapAbsoluteFloorM = 250 m`). 10 Tests inkl. Haversine-Sanity (1° Lat ≈ 111 km ±5 %) und Privacy-Vertrag.
+5. **`9a23031` `test: expand accessibility identifiers for action controls`** — Phase 9. `AppAccessibilityID.Action`-Namespace aliased 6 bestehende Inline-Identifier (`home.import.primary`, `export.primaryButton`, `live.cta.pause`, `insights.share.chart`, `days.exportBar`, plus neu `export.step.root`). 2 neue Tests prüfen Alias-Gleichheit und Eindeutigkeit; static-non-empty-Vertrag erweitert.
+
+### Übersprungene Phasen (mit Grund)
+- **Phase 4 — Overview/Days/DayDetail UX:** Bestehende Identifier-Abdeckung (Train M `tab.*`, `map.*` + 155 inline Identifier) reicht; kein konkreter UX-Defekt identifiziert. Helfer aus Phase 1+3 können später per View-Polish wired werden.
+- **Phase 5 — Heatmap UX:** Heatmap hat bereits `MapLayerMenu`, `calculatingOverlay`, `statsBadge` Overlays und Train-K-Race-Guard. Kein konkreter UX-Defekt; Tile-Overlay/Legende explizit ausgeschlossen.
+- **Phase 6 — Live UX Expansion:** `LiveStatusResolver`, `LiveTrackingPresentation`, `LiveCameraUpdateThrottle`, `LiveTrackRenderCap` decken die Live-Domäne sauber. Kein neuer User-sichtbarer Bedarf ohne Apple-Smoke-Verifikation.
+- **Phase 7 — Settings/Preferences Refactor:** `AppPreferences` ist umfangreich aber konsistent; eine Aufräumaktion ohne konkreten Bug-Befund wäre Churn-Risiko.
+- **Phase 8 — Export/Import Performance Polish III:** Train H/I/J/K/L haben alle erkannten Hotspots abgedeckt; ohne neuen Mess-Befund kein weiterer Polish-Spielraum.
+
+### Geänderte Dateien nach Phase
+- **Phase 0:** `CHANGELOG.md`
+- **Phase 1:** `Sources/LocationHistoryConsumer/ImportValidationSummary.swift` (neu, ~145 Zeilen), `Tests/LocationHistoryConsumerTests/ImportValidationSummaryTests.swift` (neu, 10 Tests)
+- **Phase 2:** `Sources/LocationHistoryConsumerAppSupport/ExportFormatGuidance.swift` (neu, ~140 Zeilen), `Tests/LocationHistoryConsumerTests/ExportFormatGuidanceTests.swift` (neu, 7 Tests)
+- **Phase 3:** `Sources/LocationHistoryConsumer/RouteQualitySummary.swift` (neu, ~115 Zeilen), `Tests/LocationHistoryConsumerTests/RouteQualitySummaryTests.swift` (neu, 10 Tests)
+- **Phase 9:** `Sources/LocationHistoryConsumerAppSupport/AppAccessibilityID.swift` (+ Action namespace, 6 Konstanten), `Tests/LocationHistoryConsumerTests/AppAccessibilityIDTests.swift` (+ 2 Tests)
+- **Phase 10:** `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_FEATURE_INVENTORY.md`, `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`
+
+### Neue Nutzerfunktionen (vorbereitet, noch nicht in UI verdrahtet)
+- **Import-Validierungsbericht (Helper, nicht in UI):** Zählt Tage/Visits/Activities/Paths/Path-Points, sortiertes Datum-Range, drei Warnungen.
+- **Export-Format-Hilfe (Helper, nicht in UI):** Pro Format DE/EN-Erklärung mit Use-Case, typischen Tools, 2-3 Stärken-Bullets.
+- **Route-Qualitätshinweis (Helper, nicht in UI):** Sparse/Gaps/Good-Klassifizierung mit Average-Spacing und Largest-Gap in Metern.
+
+### UI/UX-Änderungen
+**Keine sichtbaren UI-Änderungen in diesem Train.** Alle drei Helper sind reine Presentation-Models — sie warten auf einen UI-Wiring-Train, der nach externer Verifikation des Build 180+ folgen kann.
+
+### Neue AccessibilityIdentifier
+- `AppAccessibilityID.Action.homeImportPrimary` (alias `home.import.primary`)
+- `AppAccessibilityID.Action.exportPrimary` (alias `export.primaryButton`)
+- `AppAccessibilityID.Action.livePauseCTA` (alias `live.cta.pause`)
+- `AppAccessibilityID.Action.insightsShareChart` (alias `insights.share.chart`)
+- `AppAccessibilityID.Action.daysExportBar` (alias `days.exportBar`)
+- `AppAccessibilityID.Action.exportStepRoot` (neu, `export.step.root`)
+
+### Feature-Flags und Defaults (unverändert)
+- `RouteQualitySummary` Schwellen sind public Konstanten, nicht User-Toggle: `sparsePointCountThreshold = 10`, `gapMultiplier = 5.0`, `gapAbsoluteFloorM = 250.0`.
+- Keine neuen Feature-Flags.
+
+### Repo-Truth (unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Letzter extern verifizierter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`).
+- Train-O-Commits (`f349a06 → 9a23031`) sind **nicht** in Build 179.
+
+### Verifikation (Linux)
+- `git diff --check` (alle 4 produktiven + Doku-Sync): clean.
+- `swift build`: clean.
+- `swift test`: **1538 / 2 Skips / 0 Failures** (+29 neue Tests gegenüber 1509).
+
+### Was Linux nicht prüfen konnte
+- Wiring der Helper in SwiftUI-Views (visuell).
+- TestFlight-Sichtbarkeit der Action-Identifier-Aliasse (XCUITest auf Mac).
+- iPad-Layout, Live Activity, Dynamic Island.
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+Neuen Xcode-Cloud-Build auf `main` (HEAD nach Doku-Sync) → Build 180+. Verifikation:
+- App startet, alle 5 Tabs erreichbar.
+- Bestehende Inline-Identifier funktional via Accessibility Inspector.
+- Optional: erste Helfer-Integration (Import-Summary nach erfolgreichem Import) als nächster UI-Train.
 
 ## 2026-05-17 — Train M — Build 178 Smoke Documentation & Accessibility Identifier Rollout (`main`)
 
