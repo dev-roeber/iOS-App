@@ -73,6 +73,11 @@ public enum AppAccessibilityID {
         public static let exportGuidanceTools      = "productInfo.exportGuidance.tools"
         public static let exportGuidanceStrength   = "productInfo.exportGuidance.strength"
 
+        // Export selection summary tile (Train R)
+        public static let exportSelectionRoot   = "productInfo.exportSelection.root"
+        public static let exportSelectionTitle  = "productInfo.exportSelection.title"
+        public static let exportSelectionDetail = "productInfo.exportSelection.detail"
+
         // Route quality tile
         public static let routeQualityRoot       = "productInfo.routeQuality.root"
         public static let routeQualityLevel      = "productInfo.routeQuality.level"

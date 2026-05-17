@@ -220,6 +220,8 @@ public struct AppExportView: View {
 
         formatGuidanceCard
 
+        selectionSummaryProductInfoCard
+
         if selectedFormat == .csv {
             csvNoteCard
         } else {
@@ -713,6 +715,33 @@ public struct AppExportView: View {
                     formatPill(format)
                 }
             }
+        }
+    }
+
+    // MARK: - Selection Summary (Train R, Phase 1)
+
+    /// Renders Train-R's `ExportSelectionSummaryPresentation` for the
+    /// current `session.exportSelection`. Returns `nil` (i.e. no card)
+    /// when the selection is empty, so the existing empty-state UI
+    /// downstream stays the canonical place that says "nothing
+    /// selected".
+    @ViewBuilder
+    private var selectionSummaryProductInfoCard: some View {
+        let counts = ExportSelectionSummaryPresentation.Counts(
+            selectedDayCount: session.exportSelection.selectedDayCount,
+            selectedRecordedTrackCount: session.exportSelection.selectedRecordedTrackCount,
+            hasExplicitPerRouteSelection: session.exportSelection.hasExplicitRouteSelection
+        )
+        if let strings = ExportSelectionSummaryPresentation.strings(
+            for: counts,
+            german: preferences.appLanguage.isGerman
+        ) {
+            ProductInfoCard(
+                title: strings.title,
+                headline: strings.detail,
+                secondary: strings.secondaryDetail,
+                rootIdentifier: AppAccessibilityID.ProductInfo.exportSelectionRoot
+            )
         }
     }
 
