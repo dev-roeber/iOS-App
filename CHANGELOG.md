@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-05-17 — Train R — Export Selection Summary & UX Refinements (`main`, in Arbeit)
+
+> **Train R, in Arbeit.** Konservative UX-Verfeinerung: neue Export-Selection-Summary-Card, AccessibilityIdentifier-Erweiterung. Keine Default-Output-Änderungen.
+
+### Phase 0 — Baseline
+- Letzter extern belegter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`). Train-O/P/Q/R-Commits sind **nicht** extern verifiziert.
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+
 ## 2026-05-17 — Train Q — Product Info SwiftUI Wiring (`main`)
 
 > **Train Q, drei produktive Commits + Doku-Sync.** SwiftUI-Layout-Integration der Train-O/P Presentation-Helper: neue `ProductInfoCard`-Komponente + View-Integration in `AppExportView` (Format-Guidance + Import-Summary). Keine Default-Output-Änderungen, keine Versions-Bumps.
