@@ -1,5 +1,9 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train Q)
+
+- **Train Q umgesetzt (3 produktive Commits + Doku-Sync):** `4bad00c` Build-179-Baseline · `9e89340` Neue `ProductInfoCard`-SwiftUI-Komponente (layout-only, LHCard-Chrome, accessibilityElement(.contain)) · `80c9dae` `formatGuidanceCard` in `AppExportView` unter der Format-Auswahl (rendert `ExportFormatGuidancePresentation.rendered(for:german:)`, Identifier `productInfo.exportGuidance.root`) · `a1585af` `importSummaryCard` in `AppExportView` nach dem Titel bei aktivem Import (rendert `ImportValidationSummary.summarize(export)` über Presentation-Helper, Identifier `productInfo.importSummary.root`). **Sichtbare neue UI:** Import-Übersicht-Card + Format-Hilfe-Card im Export-Tab. Übersprungen: Phasen 3+4 (RouteQuality im Multi-Path-Preview/Day-Detail wäre mehrdeutig). Linux `swift test` **1568 / 2 Skips / 0 Failures** unverändert. Train-Q-Commits sind **noch nicht** in Build 179.
+
 ## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train P)
 
 - **Train P umgesetzt (4 produktive Commits + Doku-Sync):** `56a76ed` Build-179-Baseline · `eaa149f` `ImportValidationSummaryPresentation` (10 Tests; title/range/counts/warnings DE/EN, en_US_POSIX→de_DE/en_US Date-Reformat, Pluralisierung) · `936fae6` `ExportFormatGuidancePresentation` (6 Tests; title/primaryUse/tools/strengths mit `• `-Bullet) · `ecde6cc` `RouteQualitySummaryPresentation` (12 Tests; level labels, gerundete Spacing/Gap-Lines mit 3-Bucket-Rundung, Gap-Surfacing nur für sparse/containsGaps) · `e5cdafc` `AppAccessibilityID.ProductInfo` (15 Konstanten, 2 Tests). Übersprungen: Phasen 4/6/7 (Vorrats-Code/redundant). **Bewusst kein SwiftUI-View-Wiring** — Linux kann Layout-Korrektheit nicht final prüfen; Strings + Identifier sind gelocked, Layout-Integration folgt im nächsten Train. Linux `swift test` **1568 / 2 Skips / 0 Failures** (+30). Train-P-Commits sind **noch nicht** in Build 179.

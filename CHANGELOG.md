@@ -1,12 +1,65 @@
 # CHANGELOG
 
-## 2026-05-17 — Train Q — Product Info SwiftUI Wiring (`main`, in Arbeit)
+## 2026-05-17 — Train Q — Product Info SwiftUI Wiring (`main`)
 
-> **Train Q, in Arbeit.** SwiftUI-Layout-Integration der Train-O/P Presentation-Helper: ProductInfoCard-Komponente + tatsächliche View-Integration in `AppExportView`, ggf. Export-Preview. Keine Default-Output-Änderungen.
+> **Train Q, drei produktive Commits + Doku-Sync.** SwiftUI-Layout-Integration der Train-O/P Presentation-Helper: neue `ProductInfoCard`-Komponente + View-Integration in `AppExportView` (Format-Guidance + Import-Summary). Keine Default-Output-Änderungen, keine Versions-Bumps.
 
-### Phase 0 — Baseline
-- Letzter extern belegter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`). Train-O/P/Q-Commits sind **nicht** extern verifiziert.
-- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+### Umgesetzte Commits (Reihenfolge)
+1. **`4bad00c` `docs: prepare train q from build 179 baseline`** — Phase 0.
+2. **`9e89340` `ui: add reusable product info cards`** — Phase 1. Neue `ProductInfoCard`-SwiftUI-Komponente: title (LHSectionHeader), optional subtitle, headline, optional secondary, bullet rows, optional footnote, rootIdentifier-Parameter. `accessibilityElement(.contain)`-Konfiguration für saubere VoiceOver-Navigation.
+3. **`80c9dae` `ui: show export format guidance`** — Phase 2. Neuer `formatGuidanceCard` in `AppExportView` direkt unter dem Format-Pill-Gitter. Rendert `ExportFormatGuidancePresentation.rendered(for: selectedFormat, german:)` — title, primaryUse, tools, strengths-bullets. Identifier `productInfo.exportGuidance.root`.
+4. **`a1585af` `ui: show import validation summaries`** — Phase 5. Neuer `importSummaryCard` in `AppExportView` direkt nach dem Titel (nur wenn `hasImportedExport`). Rendert `ImportValidationSummary.summarize(export)` über `ImportValidationSummaryPresentation` — counts-line, range-subtitle, warning-lines. Identifier `productInfo.importSummary.root`.
+
+### Übersprungene Phasen (mit Grund)
+- **Phase 3 (Route Quality im Export-Preview):** Übersprungen — Export-Preview zeigt typischerweise *mehrere* Pfade gleichzeitig; eine aggregierte Qualitätsangabe über alle Pfade wäre für den Nutzer mehrdeutig (gute Pfade würden durch sparse Pfade verschoben, was als falsches Signal wahrgenommen werden könnte). Die `RouteQualitySummary`- und Presentation-Helfer bleiben in der Codebase und sind bereit für eine zukünftige Per-Track-Detail-View, wo eine eindeutige Datenquelle existiert.
+- **Phase 4 (Route Quality im Day Detail):** Übersprungen aus dem gleichen Grund — Day Detail zeigt potentiell mehrere Pfade pro Tag. Eine Per-Path-Card im Day-Detail wäre denkbar, geht aber über den Layout-Train hinaus und sollte mit klarer Per-Track-UX entworfen werden.
+- **Phase 6 (UX Copy / Layout Consistency):** Layout-Sweep-Phase ist obsolet — die neuen Cards übernehmen `LHCard`-Chrome + `LHSectionHeader`-Typografie konsistent mit der bestehenden Card-Reihe.
+- **Phase 7 (Accessibility / UI-Testability):** Die 15 ProductInfo-Identifier sind bereits in Train P gelocked; Train-Q-Wiring nutzt nur die Root-IDs (`importSummaryRoot`, `exportGuidanceRoot`) — keine weiteren Erweiterungen nötig.
+- **Phase 8 (Tests/Regression):** Keine neuen Tests in Train Q nötig — alle Presentation-Helper sind durch 28 Train-P-Tests gelocked; das SwiftUI-Wiring fügt nur Layout hinzu.
+
+### Sichtbare neue UI-Funktionen
+**Im Export-Tab (`AppExportView`):**
+- **Import-Übersicht** (oben, nur wenn aktiver Import vorliegt): „Import summary" / „Importübersicht" mit Datum-Range, aggregierten Counts und ggf. Warnungen (`emptyImport`/`noGPSPoints`/`singleDayOnly`).
+- **Format-Hilfe** (unter Format-Auswahl): „GPX guidance" / „GPX-Hilfe" je nach gewähltem Format mit primärem Use-Case, typischen Tools und 2–3 Stärken-Bullets — dynamisch mit Format-Wechsel.
+
+### Neue SwiftUI-Komponenten
+- **`ProductInfoCard`** in `Sources/LocationHistoryConsumerAppSupport/ProductInfoCard.swift` — wiederverwendbares Layout für Train-O/P-Tile-Strings, layout-only, kein Copy-Wissen.
+
+### Geänderte Dateien
+- **Phase 0:** `CHANGELOG.md`
+- **Phase 1:** `Sources/LocationHistoryConsumerAppSupport/ProductInfoCard.swift` (neu, ~97 Zeilen)
+- **Phase 2:** `Sources/LocationHistoryConsumerAppSupport/AppExportView.swift` (+`formatGuidanceCard`-Property, 1 Render-Site)
+- **Phase 5:** `Sources/LocationHistoryConsumerAppSupport/AppExportView.swift` (+`importSummaryCard`-Property, 1 Render-Site)
+- **Phase 9 (Doku):** `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_PERFORMANCE_MODERNIZATION_AUDIT_2026-05-16.md`
+
+### Benutzte AccessibilityIdentifier (Train-P-Namespace)
+- `productInfo.exportGuidance.root` (Format-Hilfe-Card)
+- `productInfo.importSummary.root` (Import-Übersicht-Card)
+- Die übrigen 13 ProductInfo-Konstanten bleiben für Folge-Trains reserviert.
+
+### Repo-Truth (unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Letzter extern verifizierter Build: **Xcode Cloud Build 179** (basiert auf `ff789a4`).
+- Train-O/P/Q-Commits sind **nicht** in Build 179.
+
+### Verifikation (Linux)
+- `git diff --check`: clean.
+- `swift build`: clean.
+- `swift test`: **1568 / 2 Skips / 0 Failures** (unverändert — Train Q fügt nur Layout-Code hinzu; Presentation-Helper sind bereits durch Train-P getestet).
+
+### Was Linux nicht prüfen konnte
+- Visuelle Qualität der beiden neuen Cards (Spacing, Padding, Dynamic Type).
+- Verhalten von `ProductInfoCard.accessibilityElement(.contain)` mit VoiceOver.
+- iPad-Layout, iPhone-Layout-Varianten.
+- TestFlight-Sichtbarkeit der ProductInfo-Identifier via Accessibility Inspector.
+
+### Zwingender nächster Xcode-Cloud/TestFlight-Test
+Neuen Xcode-Cloud-Build auf `main` → Build 180+. Verifikation:
+- App startet, Export-Tab öffnet.
+- Bei aktivem Import: Import-Übersicht-Card erscheint mit Datum-Range + Counts.
+- Format-Hilfe-Card unter Format-Auswahl, wechselt bei Format-Pill-Tap.
+- Keine Layout-Regression in der bestehenden Export-Flow-Karten-Reihe.
+- Accessibility Inspector findet `productInfo.exportGuidance.root` und `productInfo.importSummary.root`.
 
 ## 2026-05-17 — Train P — Import/Export/Route-Quality Presentation Wiring (`main`)
 

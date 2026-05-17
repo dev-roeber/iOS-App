@@ -1,6 +1,31 @@
 # NEXT_STEPS
 
-Stand: 2026-05-17 (Branch `main`, nach **Train P — Import/Export/Route-Quality Presentation Wiring**).
+Stand: 2026-05-17 (Branch `main`, nach **Train Q — Product Info SwiftUI Wiring**).
+
+**Train Q umgesetzt (3 produktive Commits + Doku-Sync):**
+- `4bad00c` Build-179-Baseline-Doku.
+- `9e89340` Neue `ProductInfoCard`-SwiftUI-Komponente (LHCard-basiert, layout-only).
+- `80c9dae` `formatGuidanceCard` in `AppExportView` — sichtbar unter Format-Auswahl, rendert ExportFormatGuidancePresentation.
+- `a1585af` `importSummaryCard` in `AppExportView` — sichtbar nach Titel bei aktivem Import, rendert ImportValidationSummary-Helper.
+
+**Sichtbare neue UI-Funktionen im Export-Tab:** Import-Übersicht (Counts + Range + Warnungen), Format-Hilfe (Use-Case + Tools + Stärken).
+
+**Übersprungen:** Phasen 3+4 (RouteQuality im Export-Preview / Day-Detail — Multi-Path-Aggregation wäre mehrdeutig; Helper bleiben für Per-Track-Detail bereit), 6 (Layout-Sweep — Cards nutzen bereits LHCard-Konsistenz), 7 (Identifier — bereits in Train P gelocked), 8 (Presentation-Tests bereits in Train P).
+
+**Tests:** `swift test` **1568 / 2 Skips / 0 Failures** (unverändert).
+
+**Externer Stand:** Letzter verifizierter Build = **Xcode Cloud Build 179**. Train-O/P/Q sind **noch nicht** extern.
+
+**Zwingend nächster Schritt:** Neuer Xcode-Cloud-Build (→ Build 180+). Sicht-Verifikation der beiden neuen Cards auf iPhone und iPad.
+
+**Folge-Trains:**
+- **Per-Track-Detail-Train:** RouteQuality-Card im Single-Path-Detail, sobald eine Per-Track-Detail-View existiert.
+- **XCUITest-Target** für ProductInfo-Identifier auf Mac/Simulator.
+- **D / G2** (Mac/Instruments-only): Heatmap-Multi-LOD + MKMapView-Bridge.
+
+---
+
+Vorheriger Stand: 2026-05-17 nach Train P.
 
 **Train P umgesetzt (4 produktive Commits + Doku-Sync):**
 - `56a76ed` Build-179-Baseline-Doku.

@@ -1,5 +1,14 @@
 # App Performance Modernization Audit — 2026-05-16
 
+> **Update 2026-05-17 (Train Q — SwiftUI Layout Integration):** 3 produktive Commits + Doku-Sync. Erste sichtbare UI-Integration der Train-O/P-Helper:
+>
+> - Neue `ProductInfoCard`-SwiftUI-Komponente (LHCard-Chrome, layout-only).
+> - `formatGuidanceCard` in `AppExportView` rendert `ExportFormatGuidancePresentation` unter der Format-Auswahl.
+> - `importSummaryCard` in `AppExportView` rendert `ImportValidationSummary` + Presentation nach dem Titel (nur bei aktivem Import).
+> - Identifier-Hooks: `productInfo.exportGuidance.root`, `productInfo.importSummary.root`.
+>
+> RouteQuality-Wiring übersprungen (Multi-Path-Preview/Day-Detail wäre mehrdeutig). Linux `swift test` **1568 / 2 Skips / 0 Failures** unverändert.
+>
 > **Update 2026-05-17 (Train P — Presentation Wiring):** 4 produktive Commits + Doku-Sync. Drei neue Presentation-Helper auf die Train-O-Foundation-Helper:
 >
 > - `ImportValidationSummaryPresentation.strings(for:german:)` — title, rangeSubtitle (long-form DE/EN), countsLine (Pluralisierung + Zero-Drop), warningLines. 10 Tests.
