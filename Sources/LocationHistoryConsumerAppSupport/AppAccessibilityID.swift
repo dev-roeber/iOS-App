@@ -49,4 +49,30 @@ public enum AppAccessibilityID {
         /// `AppDayMapView` root container.
         public static let dayDetailRoot     = "map.dayDetail.root"
     }
+
+    // MARK: - Action controls (Train O, Phase 9)
+    //
+    // These constants are aliases that mirror existing inline identifier
+    // literals used by user-facing action buttons so XCUITest call-sites
+    // can refer to them through the central namespace without forcing a
+    // churn rename of the view files. The right-hand-side string is the
+    // canonical inline value — keep both in lockstep.
+
+    public enum Action {
+        /// Home-tab primary "Choose file…" / import button.
+        public static let homeImportPrimary    = "home.import.primary"
+        /// Export-flow primary CTA at the bottom of the export sheet.
+        public static let exportPrimary        = "export.primaryButton"
+        /// Live-tracking "Pause recording" button on the recording screen.
+        public static let livePauseCTA         = "live.cta.pause"
+        /// Insights chart-share affordance (per-card share button is
+        /// `insights.share.<rawValue>`, this is the surface-level one).
+        public static let insightsShareChart   = "insights.share.chart"
+        /// Days list "Edit export bar" surface (multi-select selection bar).
+        public static let daysExportBar        = "days.exportBar"
+        /// Export step indicator (one entry per Step.allCases via
+        /// `export.step.<accessibilityID>`; this constant is the surface
+        /// alias for the indicator root used by the four-step UI.
+        public static let exportStepRoot       = "export.step.root"
+    }
 }

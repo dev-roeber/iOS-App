@@ -46,6 +46,31 @@ final class AppAccessibilityIDTests: XCTestCase {
         XCTAssertEqual(Set(all).count, all.count, "Map root identifiers must be unique.")
     }
 
+    // MARK: - Action constants (Train O, Phase 9)
+
+    func testActionIdentifiersMatchExistingInlineLiterals() {
+        // Each Action.* constant must equal the inline string literal
+        // already used at the matching view's call-site. If a view
+        // renames its identifier, this test must be updated in lockstep.
+        XCTAssertEqual(AppAccessibilityID.Action.homeImportPrimary,  "home.import.primary")
+        XCTAssertEqual(AppAccessibilityID.Action.exportPrimary,      "export.primaryButton")
+        XCTAssertEqual(AppAccessibilityID.Action.livePauseCTA,       "live.cta.pause")
+        XCTAssertEqual(AppAccessibilityID.Action.insightsShareChart, "insights.share.chart")
+        XCTAssertEqual(AppAccessibilityID.Action.daysExportBar,      "days.exportBar")
+    }
+
+    func testActionIdentifiersAreUnique() {
+        let all = [
+            AppAccessibilityID.Action.homeImportPrimary,
+            AppAccessibilityID.Action.exportPrimary,
+            AppAccessibilityID.Action.livePauseCTA,
+            AppAccessibilityID.Action.insightsShareChart,
+            AppAccessibilityID.Action.daysExportBar,
+            AppAccessibilityID.Action.exportStepRoot,
+        ]
+        XCTAssertEqual(Set(all).count, all.count, "Action identifiers must be unique.")
+    }
+
     func testIdentifiersAreStaticAndNonEmpty() {
         let all = [
             AppAccessibilityID.Root.preProductionBanner,
@@ -58,6 +83,12 @@ final class AppAccessibilityIDTests: XCTestCase {
             AppAccessibilityID.Map.heatmapRoot,
             AppAccessibilityID.Map.exportPreviewRoot,
             AppAccessibilityID.Map.dayDetailRoot,
+            AppAccessibilityID.Action.homeImportPrimary,
+            AppAccessibilityID.Action.exportPrimary,
+            AppAccessibilityID.Action.livePauseCTA,
+            AppAccessibilityID.Action.insightsShareChart,
+            AppAccessibilityID.Action.daysExportBar,
+            AppAccessibilityID.Action.exportStepRoot,
         ]
         for id in all {
             XCTAssertFalse(id.isEmpty, "Identifier '\(id)' must not be empty.")
