@@ -1,5 +1,73 @@
 # CHANGELOG
 
+## 2026-05-19 — Deep Audit Follow-up: Feature-Inventory + Wrapper-Roadmap Truth-Sync (Branch `chore/deep-audit-doc-truth-sync-2026-05-19`)
+
+> **Schließt die im Audit-Bericht 2026-05-19 §10 als offen markierten Doku-Risiken zu `docs/APP_FEATURE_INVENTORY.md` und `wrapper/ROADMAP.md`.** Kein Code, kein Test, kein Versions-Bump.
+
+### Geänderte Dateien
+- `docs/APP_FEATURE_INVENTORY.md` — Header-Datum auf 2026-05-19 aktualisiert; Sektion 9 (Export) um die Train-Q/R Produkt-Info-Karten (`importSummaryCard`, `formatGuidanceCard`, `selectionSummaryProductInfoCard`) ergänzt; neue **Sektion 13** „Trains M–R — Identifier-Namespace, Foundation-only Helper, SwiftUI Wiring" dokumentiert `AppAccessibilityID`-Subnamespaces (Root/Tab/Map/ProductInfo/Action), 4 Train-O/P/R Foundation+Presentation-Helper, `ProductInfoCard`-SwiftUI-Komponente.
+- `wrapper/ROADMAP.md` — „Aktueller Stand"-Block auf 2026-05-19 aktualisiert; Repo-Truth (1.0.2 / 171, iOS 17.0) und Linux-Build/Test (1578/2/0, 54,67 s) verbindlich oben; 2026-05-13-Block als historisch beibehalten; nicht-re-verifizierte Apple-/ASC-/Hardware-Punkte explizit ausgewiesen.
+- `docs/DEEP_AUDIT_DOC_TRUTH_SYNC_2026-05-19.md` — §10 (Offene Risiken) aktualisiert: `APP_FEATURE_INVENTORY` und `wrapper/ROADMAP` Aktueller-Stand-Block als **geschlossen** markiert; weiterhin offene externe Punkte und nicht-aktualisierte historische Audit-Reports bleiben in der Liste.
+
+### Code-Belege (`rg` auf HEAD `549c310`)
+- `Sources/LocationHistoryConsumerAppSupport/AppAccessibilityID.swift` — 5 Subnamespaces, 34 Konstanten.
+- `Sources/LocationHistoryConsumerAppSupport/ProductInfoCard.swift` — reusable SwiftUI-Komponente.
+- `Sources/LocationHistoryConsumer/ImportValidationSummary.swift` + `Sources/LocationHistoryConsumerAppSupport/ImportValidationSummaryPresentation.swift` + Tests.
+- `Sources/LocationHistoryConsumerAppSupport/ExportFormatGuidance.swift` + `ExportFormatGuidancePresentation.swift` + Tests.
+- `Sources/LocationHistoryConsumer/RouteQualitySummary.swift` + `Sources/LocationHistoryConsumerAppSupport/RouteQualitySummaryPresentation.swift` + Tests.
+- `Sources/LocationHistoryConsumerAppSupport/ExportSelectionSummaryPresentation.swift` + Tests.
+- View-Wiring in `Sources/LocationHistoryConsumerAppSupport/AppExportView.swift` — `importSummaryCard` (L756), `formatGuidanceCard` (L780), `selectionSummaryProductInfoCard` (L729).
+
+### Bewusst NICHT geändert
+- Code-Logik / Tests (Linux `swift test` weiterhin 1578/2/0).
+- Historische Audit-Reports in `docs/DEEP_AUDIT_2026-05-*` und `audits/*` (Snapshots, kein laufender Doku-Stand).
+- Historische Blöcke in `wrapper/ROADMAP.md` / `wrapper/CHANGELOG.md` / `ROADMAP.md` / `NEXT_STEPS.md` Body — die Aktiv-Stand-Blöcke führen aktuelle Repo-Truth.
+
+### Verifikation (Linux)
+- `git diff --check`: clean.
+- `swift build`: clean.
+- `swift test`: 1578 Tests, 2 Skips, 0 Failures, ~55 s.
+- `git diff | rg -n "Bearer|token|secret|api[_-]?key|password|Authorization|sslip|live-location"`: keine Secret-Treffer im neuen Diff.
+
+### Weiterhin offen (extern / nicht auf Linux verifizierbar)
+- ASC-Live-Status 1.0.2 / Build 179, TestFlight-Submission, Dynamic-Island Lock-Screen, iPad-Layout, 46-MiB-Original-Tester-Asset.
+- `xcodebuild`-/Simulator-/Device-Builds: kein Xcode auf Linux-Host.
+
+---
+
+## 2026-05-19 — Deep Audit & Doc-Truth-Sync (Branch `chore/deep-audit-doc-truth-sync-2026-05-19`)
+
+> **Fokussierter Repo-Truth-Audit auf HEAD `31c4351` (Train R tip).** Kein Code, kein Test, kein Versions-Bump. Targeted Doku-Korrekturen + Audit-Bericht.
+
+### Audit-Verifikation (Linux-Host)
+- `git status --short`: clean (vor Branch-Wechsel).
+- `swift build`: Build complete (0,48 s).
+- `swift test`: **1578 Tests, 2 Skips, 0 Failures, 54,673 s** — bestätigt `NEXT_STEPS.md` Train-R-Aussage.
+- `rg`-Secret-Scan in `Sources/` + `wrapper/`: keine hartcodierten Tokens / API-Keys / Live-URLs gefunden.
+- `xcodebuild`-Schritte: **nicht ausgeführt** (kein Xcode auf Linux-Host).
+
+### Korrigierte Doku-Drift
+- `README.md`: Repo-Truth-Patch 2026-05-19 oben ergänzt; 1435-Snapshot in §"Repo-Struktur" / §"Testen" als historisch (2026-05-16 HEAD `71f715b`) eingeordnet, aktueller Linux-Test-Stand 1578/2/0 ausgewiesen.
+- `wrapper/README.md`: Repo-Truth-Patch 2026-05-19 oben ergänzt; 2026-05-16-Block als historisch beibehalten. Roadmap-/Next-Steps-Links von absoluten Mac-Pfaden (`/Users/sebastian/iOS-App/...`) auf relative Pfade (`../ROADMAP.md`, `../NEXT_STEPS.md`) korrigiert.
+- `wrapper/NEXT_STEPS.md`: Phase 19.57 — CSV und KMZ aus „kommt erst nach Verifikation" entfernt (sind seit langem implementiert via `CSVBuilder.swift` / `KMZBuilder.swift`); Aufzählung bereinigt.
+
+### Pfadabweichung dokumentiert
+- Im Audit-Auftrag genannte Pfade `/home/sebastian/repos/LocationHistory2GPX-iOS` und `/home/sebastian/repos/LH2GPXWrapper` existieren auf diesem Host nicht. Einziges aktives LH2GPX-Repo: `~/Repos/iOS_App` (dieses Repo). Wrapper lebt als `wrapper/` im Monorepo.
+
+### Bewusst NICHT geändert
+- `docs/APP_FEATURE_INVENTORY.md` Body (Header „Last analysis 2026-05-09" — Trains M–R nicht eingearbeitet; siehe Audit-Bericht §10 als offenes Risiko).
+- `wrapper/ROADMAP.md` „Aktueller Stand"-Block (2026-05-13, HEAD `aa145b4`, 1521 Mac-Tests) — separater Doku-Train empfohlen.
+- Historische `docs/DEEP_AUDIT_2026-05-*` und `audits/*` Reports.
+
+### Verifikationsdokument
+- `docs/DEEP_AUDIT_DOC_TRUTH_SYNC_2026-05-19.md` (neu) — vollständiger Audit-Bericht mit Coverage-Tabelle, Feature-Truth-Matrix, Drift-Findings, offenen Risiken und nicht-verifizierbaren Punkten.
+
+### Repo-Truth (unverändert)
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`.
+- Letzter externer Build laut Doku: Xcode Cloud Build **179** (basiert auf `ff789a4`). Trains O–R sind **nicht** in Build 179. Externer Stand im Audit nicht re-verifiziert.
+
+---
+
 ## 2026-05-17 — Train R — Export Selection Summary & UX Refinements (`main`)
 
 > **Train R, zwei produktive Commits + Doku-Sync.** Neue privacy-safe Export-Selection-Summary-Card; AccessibilityIdentifier-Erweiterung um `exportSelection.*`. RouteQuality-Wiring bleibt mit dokumentierten Gründen verschoben. Keine Default-Output-Änderungen, keine Versions-Bumps.

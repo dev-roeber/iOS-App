@@ -1,6 +1,30 @@
 # ROADMAP
 
-## Aktueller Stand (2026-05-13, HEAD `aa145b4` — Post-Deep-Audit-Truth-Sync)
+## Aktueller Stand (2026-05-19, Branch `chore/deep-audit-doc-truth-sync-2026-05-19`, HEAD pending — Post-Deep-Audit-Follow-up)
+
+**Repo-Truth (Code/Config, unverändert seit Train F-Bump):**
+- `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (8 pbxproj-Configs + Info.plist App/Widget konsistent).
+- `IPHONEOS_DEPLOYMENT_TARGET = 17.0`, Swift-Tools `5.9`, `.iOS(.v17)` in `Package.swift`.
+- Bundle-ID `de.roeber.LH2GPXWrapper`. Team `XAGR3K7XDJ`.
+
+**Audit-Run 2026-05-19 (Linux-Host, HEAD `549c310` Doc-Truth-Audit + Train R tip `31c4351`):**
+- `swift build`: Build complete (0,48 s).
+- `swift test` (Linux, Swift 6.x via swiftly, `libsqlite3-dev`): **1578 Tests, 2 Skips, 0 Failures, 54,67 s** (+57 ggü. 2026-05-13-Snapshot 1521/4/0, weil Linux- und Mac-Counts seitdem konvergiert sind und Trains M–R 57 zusätzliche Linux-Cases gelandet haben).
+- `git diff --check`: clean. Keine hartcodierten Secrets im Diff.
+
+**Seit dem 2026-05-13-Snapshot extern bei Apple Cloud angekommen (laut Doku, im Audit 2026-05-19 nicht re-verifiziert):**
+- Xcode Cloud Build 174 (iOS-17-onChange-Migration), Build 175 (G1 MapKit-Befund), Build 176, Build 178, Build 179 (letzter dokumentierter externer Stand, basiert auf `ff789a4` — Train M tip).
+- Trains O / P / Q / R sind laut Doku **noch nicht** in Build 179.
+
+**Nicht im Audit 2026-05-19 re-verifiziert (Linux-Host, kein Xcode):**
+- `xcodebuild -list -project wrapper/LH2GPXWrapper.xcodeproj`, Simulator-/Device-Builds, `LH2GPXWrapperUITests` (8/8 + LaunchTests + `testLargeImportSyntheticFile` 126 s), Heatmap-Hit-Target-Fix `f111afd` Device-Wirksamkeit.
+- ASC-Live-Status für 1.0.2 / Build 179, TestFlight-Submission-Status, Dynamic-Island-Lock-Screen, iPad-Layout, 46-MiB-Original-Tester-Asset.
+
+**Historische Snapshots:** Der Block „Historischer Stand (2026-05-13, HEAD `aa145b4`)" unten dokumentiert den vorherigen Audit-Run (Mac, 1521/4/0, 8/8 UITests, Build 100). Versionsangaben dort (Build 100) sind historisch — aktuelle Repo-Truth siehe Repo-Truth-Block oben.
+
+---
+
+## Historischer Stand (2026-05-13, HEAD `aa145b4` — Post-Deep-Audit-Truth-Sync)
 
 **Audit-Run 2026-05-13 (HEAD `aa145b4`):**
 - `swift test` (Mac): 1521 Tests, 4 Skips, 0 Failures (177 s)
