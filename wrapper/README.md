@@ -4,10 +4,16 @@ Xcode-Wrapper-Projekt fuer die iOS-App von LocationHistory2GPX.
 
 **Aktiver Repo-Kontext:** Dieses `wrapper/`-Verzeichnis lebt heute im aktiven Repo `iOS-App`. Aeltere Hinweise auf `LocationHistory2GPX-Monorepo` sind nur noch historischer Kontext.
 
-> **Repo-Truth-Patch 2026-05-16 (HEAD `71f715b`):**
-> - `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (8 pbxproj-Configs + Info.plist App/Widget konsistent). Frühere Versions-Aussagen in diesem Dokument (1.0.1 / Build 100 / Build 84) sind historisch.
-> - Linux `swift test` (Swift 6.3.2 via swiftly, libsqlite3-dev installiert): **1435 Tests, 2 Skips, 0 Failures, 41,1 s**. Frühere Test-Counts unten (1034 / 1077 / 991 etc.) sind historische Snapshots.
-> - **ASC-Live-Status nicht im Audit 2026-05-16 verifiziert** — alle „akzeptiert" / „Pending Developer Release" / „in TestFlight" / „Build X grün"-Aussagen weiter unten sind externe Doku-Snapshots aus 2026-05-06/08/13 und im aktuellen Audit nicht re-bestätigt.
+> **Repo-Truth-Patch 2026-05-19 (HEAD `31c4351` — Train R tip):**
+> - `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (unverändert; 8 pbxproj-Configs + Info.plist App/Widget konsistent). Frühere Versions-Aussagen in diesem Dokument (1.0.1 / Build 100 / Build 84) sind historisch.
+> - Linux `swift test` heute: **1578 Tests, 2 Skips, 0 Failures, 54,67 s** (Trains M–R seit dem 2026-05-16-Snapshot mit 1435/2/0 sind gemerged). Frühere Test-Counts (1034 / 1077 / 991 etc.) sind historische Snapshots.
+> - **Apple-/Xcode-/ASC-/Hardware-Aussagen** in diesem Wrapper-README sind historische Snapshots und im Audit 2026-05-19 (Linux-Host) **nicht** re-verifiziert.
+> - Hostpfade weiter unten (`~/Desktop/XCODE/iOS-App`, `/Users/sebastian/...`) stammen aus früheren Mac-Audits; auf dem aktiven Linux-Host gilt `~/Repos/iOS_App` als Repo-Root.
+
+> **Repo-Truth-Patch 2026-05-16 (HEAD `71f715b`, historisch):**
+> - `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`. Frühere Versions-Aussagen unten (1.0.1 / Build 100 / Build 84) sind historisch.
+> - Linux `swift test`: 1435 Tests, 2 Skips, 0 Failures, 41,1 s (Snapshot 2026-05-16). Frühere Test-Counts unten (1034 / 1077 / 991 etc.) sind historische Snapshots.
+> - ASC-Live-Status nicht im Audit 2026-05-16 verifiziert.
 
 > **Hinweis 2026-05-08 (Phase-10B Weg 3 — Foundation-only):** Phase-10B PointLayer/Budget bleiben default OFF; kein Verhaltenswechsel im Wrapper.
 
@@ -215,5 +221,5 @@ Vollstaendiger Submission-Leitfaden: `docs/TESTFLIGHT_RUNBOOK.md`
 ## Roadmap
 
 Die kanonischen Planungsdateien liegen im Root dieses aktiven Repos:
-- [ROADMAP.md](/Users/sebastian/iOS-App/ROADMAP.md)
-- [NEXT_STEPS.md](/Users/sebastian/iOS-App/NEXT_STEPS.md)
+- [ROADMAP.md](../ROADMAP.md)
+- [NEXT_STEPS.md](../NEXT_STEPS.md)

@@ -2,6 +2,12 @@
 
 **Dieses Repo (`dev-roeber/iOS-App`) ist das zentrale aktive Repository fuer die vollstaendige LH2GPX iOS-App.**
 
+> **Repo-Truth-Patch 2026-05-19 (Branch `main`, HEAD `31c4351` — Train R tip):**
+> - `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (8 pbxproj-Configs + Info.plist App/Widget konsistent) — unverändert.
+> - Linux `swift test` heute auf HEAD `31c4351`: **1578 Tests, 2 Skips, 0 Failures, 54,67 s** (+143 ggü. 1435-Snapshot in §"Repo-Struktur" / §"Testen", der den Stand 2026-05-16 HEAD `71f715b` festhält). Trains M–R sind seither gemerged.
+> - Audit-Bericht: `docs/DEEP_AUDIT_DOC_TRUTH_SYNC_2026-05-19.md`.
+> - Apple-/Xcode-/ASC-/Hardware-Aussagen in diesem README werden im Audit 2026-05-19 **nicht** re-verifiziert (Linux-Host); historische Snapshots in §"Testen" und §"Bewusst offen" bleiben mit ihrem Originaldatum stehen.
+
 ## Was die App macht
 
 **LH2GPX ist eine öffentliche Consumer-/Utility-App für alle, die ihre persönliche Google-Maps-Standorthistorie lokal auswerten und als GPX/KML/CSV exportieren möchten.**

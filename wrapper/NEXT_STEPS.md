@@ -105,10 +105,15 @@ Fehlt noch:
 
 ## 7. Phase 19.57 – Erst danach weitere Feature-Arbeit
 
-Status: **bewusst nachgelagert**
+Status: **bewusst nachgelagert** (Repo-Truth-Patch 2026-05-19: CSV und KMZ sind längst implementiert; Aufzählung bereinigt)
+
+Bereits implementiert (Repo-Truth 2026-05-19):
+- `CSV`-Export — `Sources/LocationHistoryConsumer/CSVBuilder.swift`
+- `KMZ`-Export — `Sources/LocationHistoryConsumerAppSupport/KMZBuilder.swift`
+- `KML`- und `GeoJSON`-Export — produktiv im Export-Tab
 
 Kommt erst nach den Verifikations- und Wahrheitsthemen oben:
-- weitere Exportformate wie `CSV` oder `KMZ`
+- weitere Importformate (z. B. `FIT`, `GeoJSON`-Import) — nicht produktiv im Repo
 - weiterer Insights-Ausbau ueber den aktuellen Batch hinaus sowie Zeitraumsauswahl
 - breitere Lokalisierungsabdeckung
 
