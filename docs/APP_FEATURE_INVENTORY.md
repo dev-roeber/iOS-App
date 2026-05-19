@@ -1,6 +1,8 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-09 (L-04 — Bounded LRU für AppSessionContent-Caches: neuer Foundation-only `BoundedLRU<K,V>`; alle 5 Filter-/Detail-Caches und der `projectedDaysCache` laufen darüber. Capacities 8/8/8/32/16/8. Semantik unverändert.)
+Last analysis: 2026-05-19 (Follow-up des Deep-Audit-Doc-Truth-Sync 2026-05-19 — Trains M–R sind seit dem 2026-05-09-Stand gemerged; siehe Sektion 13 für die in Train M–R neu eingeführten Foundation-only Presentation-Helper, die `ProductInfoCard`-SwiftUI-Komponente, deren View-Wiring in `AppExportView` (Import-/Format-/Selection-Cards) und den zentralen `AppAccessibilityID`-Namespace mit `Root`/`Tab`/`Map`/`ProductInfo`/`Action`-Subnamespaces. Linux `swift test` heute 1578/2/0 in 54,67 s, HEAD `549c310`.)
+
+Davor: 2026-05-09 (L-04 — Bounded LRU für AppSessionContent-Caches: neuer Foundation-only `BoundedLRU<K,V>`; alle 5 Filter-/Detail-Caches und der `projectedDaysCache` laufen darüber. Capacities 8/8/8/32/16/8. Semantik unverändert.)
 
 Davor: 2026-05-09 (L-01 — In-Memory-Import-Gate: `AppContentLoader.decodeFile(at:)` lehnt Full-Reads via `Data(contentsOf:)` über 64 MiB jetzt kontrolliert ab. Neuer Error-Case `AppContentLoaderError.importTooLargeForInMemoryLoad`. Google-Timeline-JSON streamt unverändert.)
 
@@ -316,6 +318,10 @@ Present:
 - selection review card with 4-KPI grid: Days / Tracks / Period / Points using `LHMetricCard`; `Review in Days` returns to the selectable day list
 - format pills (GPX / KMZ / KML / GeoJSON / CSV) and mode pills (Tracks / Waypoints / Both) with active fill highlight
 - `ExportPresentation.reviewSnapshot`, `selectionSummary`, `bottomBarSummary` and `disabledReason` drive the Checkout presentation from the existing real export state
+- **Train-Q/R Product Info Cards in `AppExportView` (2026-05-17):**
+  - `importSummaryCard` — sichtbar nach dem Titel bei aktivem Import; rendert `ImportValidationSummary.summarize(export)` via `ImportValidationSummaryPresentation` (counts, optional range, warning lines); Identifier `productInfo.importSummary.root`
+  - `formatGuidanceCard` — sichtbar unter der Format-Auswahl; rendert `ExportFormatGuidancePresentation.rendered(for:german:)` (title, primary use, tools, strengths bullets); Identifier `productInfo.exportGuidance.root`
+  - `selectionSummaryProductInfoCard` — sichtbar zwischen Format-Hilfe und Content-Card bei nicht-leerer Auswahl; rendert `ExportSelectionSummaryPresentation.strings(for:german:)` mit privacy-safe Counts (`selectedDayCount` / `selectedRecordedTrackCount` / `hasExplicitPerRouteSelection`) und optionaler Mixed-Source/Per-Route-Secondary-Line; Identifier `productInfo.exportSelection.root`
 
 Bewusst deaktiviert, aber vorhanden:
 - export architecture can still grow beyond the active `GPX`/`KMZ`/`KML`/`GeoJSON`/`CSV` formats
@@ -504,3 +510,45 @@ Present:
 
 ### C8. derived_cache prune-API (Store-Pfad, Phase-10C)
 - **derived_cache prune-API**: `LocalTimelineStore.deleteDerivedCache(olderThan:cacheKind:)` (TTL) und `pruneDerivedCache(maxEntries:cacheKind:)` (Größe) als offizielles Cache-Lifecycle-Werkzeug. `deleteAll` löscht weiter `derived_cache`. Tests: `LocalTimelineDerivedCachePurgeTests.swift` (8 Cases). Store-Pfad bleibt default OFF.
+
+## 13. Trains M–R — Identifier-Namespace, Foundation-only Helper, SwiftUI Wiring
+
+Eingearbeitet im Doc-Truth-Sync-Follow-up 2026-05-19. Alle Belege per `rg` auf HEAD `549c310` verifiziert.
+
+### 13.1 AppAccessibilityID Namespace (Train M / O / P / R)
+
+Code: `Sources/LocationHistoryConsumerAppSupport/AppAccessibilityID.swift`. Public Top-Level-Enum `AppAccessibilityID` mit fünf Subnamespaces — alle Konstanten reine String-Literals ohne Runtime-Daten:
+
+- `Root` (Train M, 1 Konstante) — `preProductionBanner = "localTimeline.testMode.banner"` (Alias auf bestehende Inline-ID des `LocalTimelineTestModeBanner`).
+- `Tab` (Train M, 5 Konstanten) — `tab.overview` / `tab.days` / `tab.insights` / `tab.export` / `tab.live`. Verdrahtet in `AppContentSplitView`.
+- `Map` (Train M, 4 Konstanten) — `map.overview.root` / `map.heatmap.root` / `map.exportPreview.root` / `map.dayDetail.root`.
+- `ProductInfo` (Train P + R, 18 Konstanten) — `productInfo.importSummary.*` (root/title/range/counts/warning), `productInfo.exportGuidance.*` (root/title/primaryUse/tools/strength), `productInfo.exportSelection.*` (root/title/detail — Train R), `productInfo.routeQuality.*` (root/level/hint/spacing/largestGap).
+- `Action` (Train O, 6 Konstanten) — Aliase auf bestehende Inline-Identifier-Strings: `home.import.primary`, `export.primaryButton`, `live.cta.pause`, `insights.share.chart`, `days.exportBar`, `export.step.root`.
+
+Bewusst nicht in dieser Phase: Per-Element-Migration der ~155 bestehenden Inline-Identifier in `Sources/.../*View.swift` (`home.*`, `days.*`, `dayDetail.*`, `export.*`, `insights.*`, `live.*`, `localTimeline.*`, `options.*`, `app.*`) — bleibt churn-arm separat.
+
+### 13.2 Foundation-only Helper (Train O / P)
+
+Pro Helper jeweils Datenmodell in `Sources/LocationHistoryConsumer/` + Presentation-Schicht in `Sources/LocationHistoryConsumerAppSupport/`. Alle privacy-safe (keine Koordinaten, keine Pfade, keine Tokens). Tests in `Tests/LocationHistoryConsumerTests/`:
+
+- **`ImportValidationSummary`** (Train O) + **`ImportValidationSummaryPresentation`** (Train P) — Counts (days/visits/activities/paths/totalPathPoints), Date-Range (`firstDate`/`lastDate` aus `yyyy-MM-dd`-Keys), 3 strukturelle Warnungen (`emptyImport`/`noGPSPoints`/`singleDayOnly`). DE/EN-Pluralisierung, en_US_POSIX → de_DE/en_US Date-Reformat. Tests: `ImportValidationSummaryTests.swift`, `ImportValidationSummaryPresentationTests.swift`.
+- **`ExportFormatGuidance`** (Train O) + **`ExportFormatGuidancePresentation`** (Train P) — Use-Case-/Tool-/Strength-Copy pro Export-Format (GPX/KMZ/KML/GeoJSON/CSV). Bullet-Präfix `• `. Tests: `ExportFormatGuidanceTests.swift`, `ExportFormatGuidancePresentationTests.swift`.
+- **`RouteQualitySummary`** (Train O) + **`RouteQualitySummaryPresentation`** (Train P) — Haversine-basierte Bewertung `empty/sparse/containsGaps/good` mit Average-Spacing + Largest-Gap in Metern. Level-Labels DE/EN, gerundete Spacing-/Gap-Lines (1 m/5 m/50 m Buckets), Gap-Line nur für sparse/containsGaps. Tests: `RouteQualitySummaryTests.swift`, `RouteQualitySummaryPresentationTests.swift`.
+- **`ExportSelectionSummaryPresentation`** (Train R) — Privacy-safe `Counts` (`selectedDayCount`, `selectedRecordedTrackCount`, `hasExplicitPerRouteSelection`). `strings(for:german:) -> Strings?` liefert `nil` bei leerer Auswahl, sonst `title/detail/secondaryDetail` mit DE/EN-Pluralisierung; Secondary-Line nur bei Mixed-Source-Auswahl oder Per-Route-Narrowing. Tests: `ExportSelectionSummaryPresentationTests.swift`.
+
+### 13.3 SwiftUI Wiring (Train Q / R)
+
+- **`ProductInfoCard`** (Train Q) — reusable layout-only SwiftUI-View in `Sources/LocationHistoryConsumerAppSupport/ProductInfoCard.swift`. LHCard-Chrome + `LHSectionHeader`. Felder: `title`, optional `subtitle`, `headline`, optional `secondary`, Bullet-Rows, optional Footnote, `rootIdentifier`. `accessibilityElement(.contain)`-Konfiguration für VoiceOver-Gruppierung.
+- **View-Verdrahtung in `AppExportView`** — siehe Sektion 9 „Export / Teilen / Server / Sync" (Train-Q/R Produkt-Info-Karten).
+
+### 13.4 Build / Test-Status (Linux)
+
+- `swift build`: clean.
+- `swift test`: 1578 Tests, 2 Skips, 0 Failures, 54,67 s (Linux Swift 6.x, HEAD `549c310`, 2026-05-19).
+
+### 13.5 Nicht in Train M–R behauptet
+
+- Keine `xcodebuild`-/Simulator-/Hardware-Verifikation in diesem Train (Linux-Host).
+- Keine externe ASC-/TestFlight-/Build-179-Re-Verifikation in diesem Train.
+- Keine Per-Element-Migration der bestehenden ~155 Inline-Identifier (separat geplant).
+- Kein XCUITest-Target im SwiftPM-Tree — die neuen Identifier sind XCUITest-ready, aber Consumer (`LH2GPXWrapperUITests`) wird unabhängig auf Apple-Seite verdrahtet.

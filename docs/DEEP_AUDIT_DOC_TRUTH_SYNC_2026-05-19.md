@@ -140,8 +140,10 @@ Bewusst NICHT geändert:
 
 ## 10. Offene Risiken
 
-- **`docs/APP_FEATURE_INVENTORY.md`** ist um Trains M–R nicht aktualisiert (keine Aussage über `productInfo.*` Identifier, `ProductInfoCard`, `ImportValidationSummary`, `ExportFormatGuidance`, `RouteQualitySummary`, `ExportSelectionSummary`, `AppAccessibilityID` Tab-/Map-/Action-Konstanten). Risiko: Inventar driftet weiter, je länger der Doku-Train aufgeschoben wird.
-- **`wrapper/ROADMAP.md` „Aktueller Stand"-Block** zeigt 2026-05-13 / Build 100-Bezugnahmen. Aktive Repo-Truth (1.0.2 / 171, Build 179) ist nur im Wrapper-README-Repo-Truth-Patch oben festgehalten — Risiko, dass Leser des Wrapper-ROADMAP-Body veralteten Status für aktuell hält.
+> **Update 2026-05-19 (Follow-up-Commit, HEAD pending):** Die ersten beiden Punkte sind geschlossen — siehe §13 unten und CHANGELOG-Eintrag „Deep Audit Follow-up". Die verbleibenden Punkte bleiben offen.
+
+- ~~`docs/APP_FEATURE_INVENTORY.md` ist um Trains M–R nicht aktualisiert~~ — **geschlossen**: Header auf 2026-05-19 gesetzt, Sektion 9 (Export) um die Train-Q/R Produkt-Info-Karten ergänzt, neue Sektion 13 dokumentiert `AppAccessibilityID`-Subnamespaces (Root/Tab/Map/ProductInfo/Action mit 34 Konstanten), 4 Foundation+Presentation-Helper-Paare aus Train O/P/R und `ProductInfoCard`-Komponente — alle mit `rg`-Code-Beleg verifiziert.
+- ~~`wrapper/ROADMAP.md` „Aktueller Stand"-Block zeigt 2026-05-13 / Build 100-Bezugnahmen~~ — **geschlossen**: Neuer Aktiv-Block 2026-05-19 mit aktueller Repo-Truth (1.0.2 / 171, iOS 17, Linux `swift test` 1578/2/0) ist obenan; 2026-05-13-Block bleibt explizit als historisch markiert.
 - **Audit-Reports in `docs/DEEP_AUDIT_2026-05-*` und `audits/*`** sind alle historische Snapshots ohne klare „historisch ab Datum X"-Banner; Leser könnte sie für aktuell halten. Mitigation hier: dieser Bericht legt das offen, korrigiert sie aber nicht.
 - **Apple-Review-Live-Status** (Build 74 G3.2-Final, Build 179 extern) bleibt in jedem Audit auf diesem Host nicht direkt prüfbar.
 - **Mac-Pfade in mehreren `docs/*.md`** verweisen auf `/Users/sebastian/...` — als historische Snapshots korrekt; aktive Runbooks zeigen denselben Pfad und sind dort potenziell irreführend (siehe `docs/ASC_SUBMIT_RUNBOOK.md`-Beispiel-Command).
@@ -168,3 +170,10 @@ Bewusst NICHT geändert:
 - `swift test` 1578 / 2 / 0 (Linux, heute).
 - Keine Secrets im Diff. `git diff --check` clean.
 - Open Risks dokumentiert in §10–11; weitergehende Doku-Aktualisierung von `APP_FEATURE_INVENTORY.md` als separater Doku-Train empfohlen.
+
+### Follow-up-Commit am 2026-05-19 (am selben Tag, separater Commit auf demselben Branch)
+
+- `docs/APP_FEATURE_INVENTORY.md` Header auf 2026-05-19 aktualisiert; Sektion 9 (Export) um Train-Q/R Produkt-Info-Karten ergänzt; neue Sektion 13 „Trains M–R — Identifier-Namespace, Foundation-only Helper, SwiftUI Wiring" mit Code-Belegen.
+- `wrapper/ROADMAP.md` „Aktueller Stand"-Block 2026-05-19 mit aktueller Repo-Truth (1.0.2 / 171, iOS 17, Linux `swift test` 1578/2/0); 2026-05-13-Block als historisch.
+- §10 oben aktualisiert: die beiden Doku-Risiken zu APP_FEATURE_INVENTORY und wrapper/ROADMAP sind geschlossen.
+- Linux-Re-Verifikation: `swift build` clean, `swift test` 1578/2/0, `git diff --check` clean, kein Secret im Diff.
