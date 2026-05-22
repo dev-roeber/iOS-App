@@ -2,7 +2,29 @@
 
 **Dieses Repo (`dev-roeber/iOS-App`) ist das zentrale aktive Repository fuer die vollstaendige LH2GPX iOS-App.**
 
-> **Repo-Truth-Patch 2026-05-19 (Branch `main`, HEAD `31c4351` — Train R tip):**
+> **Repo-Truth-Patch 2026-05-22 (Branch `main`, HEAD `4f0813a` — Audit-Report-merge):**
+> - Neuer Audit-Report `docs/DEEP_AUDIT_FULL_APP_REDESIGN_ICLOUD_2026-05-22.md`
+>   (read-only Tiefenaudit + iCloud-Machbarkeit + Train-Reihenfolge).
+> - Begleitende Spezifikation `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md`
+>   (auf Branch `chore/redesign-interaction-spec`).
+> - **App ist heute iPhone-only** — `TARGETED_DEVICE_FAMILY = 1` in allen 8
+>   Configs. iPad-Layout ist im Code (`regularSplitView`) vorhanden, aber
+>   nicht freigeschaltet; frühere Doku-Aussage „iPad-Layout offen / iPad
+>   offline" wird damit präziser gefasst.
+> - **iCloud ist heute nicht implementiert** — keine `iCloud.*`-Entitlement,
+>   kein CloudKit, kein `NSUbiquitous*`. Saved Live Tracks und der
+>   LocalTimelineStore sind `isExcludedFromBackup = true`. iCloud-Plan
+>   ist *Phase A/B/C* in der Spec, **keine** Implementation.
+> - **Force-Dark-UI** — `preferredColorScheme(.dark)` plus harte schwarze
+>   Backgrounds. `UIUserInterfaceStyle = Dark` ist im Info.plist *noch
+>   nicht* gesetzt (Train A).
+> - `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`
+>   unverändert. Linker extern grüner Build laut historischer Doku =
+>   Xcode Cloud Build 179 auf `ff789a4` (Train M tip).
+> - In diesem Patch wurden **keine Tests gefahren, keine Builds, keine
+>   Code-Änderungen**.
+
+> **Historischer Repo-Truth-Patch 2026-05-19 (Branch `main`, HEAD `31c4351` — Train R tip):**
 > - `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (8 pbxproj-Configs + Info.plist App/Widget konsistent) — unverändert.
 > - Linux `swift test` heute auf HEAD `31c4351`: **1578 Tests, 2 Skips, 0 Failures, 54,67 s** (+143 ggü. 1435-Snapshot in §"Repo-Struktur" / §"Testen", der den Stand 2026-05-16 HEAD `71f715b` festhält). Trains M–R sind seither gemerged.
 > - Audit-Bericht: `docs/DEEP_AUDIT_DOC_TRUTH_SYNC_2026-05-19.md`.
