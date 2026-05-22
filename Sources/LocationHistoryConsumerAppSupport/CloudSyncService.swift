@@ -149,3 +149,24 @@ public final class InMemoryCloudSyncService: CloudSyncService {
         status = CloudSyncStatus(accountStatus: .disabled)
     }
 }
+
+// MARK: - Service factory
+
+/// Picks the right `CloudSyncService` implementation for the current
+/// platform. On Apple platforms with CloudKit available, returns a
+/// `CloudKitCloudSyncService` bound to the entitlement container; on
+/// Linux (or anywhere CloudKit is unavailable), returns
+/// `DefaultCloudSyncService`. The returned service still respects the
+/// `isEnabled` flag — capability is *prepared*, not auto-activated.
+@MainActor
+public enum CloudSyncServiceFactory {
+    public static func makeProductionService(
+        isEnabled: Bool = false
+    ) -> CloudSyncService {
+        #if canImport(CloudKit)
+        return CloudKitCloudSyncService(isEnabled: isEnabled)
+        #else
+        return DefaultCloudSyncService(isEnabled: isEnabled)
+        #endif
+    }
+}

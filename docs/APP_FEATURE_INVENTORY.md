@@ -1,6 +1,18 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-22 (Integration-Follow-up auf Branch
+Last analysis: 2026-05-22 (Train-F.1-Follow-up auf Branch
+`feature/icloud-capability-f1`). **iCloud Capability vorbereitet, nicht
+aktiviert.** `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements`
+enthält jetzt `com.apple.developer.icloud-container-identifiers` und
+`com.apple.developer.icloud-services = [CloudKit]`. Neuer
+`CloudKitCloudSyncService` ist `#if canImport(CloudKit)`-gegated und
+liefert nur `CKAccountStatus`-Mapping — kein echter Sync, keine Records,
+keine Subscriptions, keine Public DB. Apple Developer Portal Container
+`iCloud.de.roeber.LH2GPXWrapper` muss extern noch registriert werden,
+bevor ein signierter Mac-Build möglich ist. Privacy-Manifest unverändert
+(kein neuer Datentyp gesammelt — kommt mit Train F.2).
+
+Davor: 2026-05-22 (Integration-Follow-up auf Branch
 `integration/full-app-redesign-icloud-verify`). Kombiniert:
 
 1. **Redesign-Spec** (`docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md`)

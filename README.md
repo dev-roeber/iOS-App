@@ -2,7 +2,24 @@
 
 **Dieses Repo (`dev-roeber/iOS-App`) ist das zentrale aktive Repository fuer die vollstaendige LH2GPX iOS-App.**
 
-> **Repo-Truth-Patch 2026-05-22 (Branch `main`, HEAD `4f0813a` — Audit-Report-merge):**
+> **Repo-Truth-Patch 2026-05-22 (Train F.1 — iCloud Capability Preparation, Branch `feature/icloud-capability-f1`):**
+> - `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` erweitert um
+>   `com.apple.developer.icloud-container-identifiers = [iCloud.de.roeber.LH2GPXWrapper]`
+>   und `com.apple.developer.icloud-services = [CloudKit]`. Widget-
+>   Entitlement unverändert.
+> - Neuer `Sources/LocationHistoryConsumerAppSupport/CloudKitCloudSyncService.swift`,
+>   `#if canImport(CloudKit)`-gegated. Nur `CKAccountStatus`-Mapping —
+>   **kein** Sync, **keine** Records, **keine** Subscriptions, **keine**
+>   Public DB, **keine** Historien-Synchronisation.
+> - **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper`
+>   noch NICHT registriert** — Pflicht-Apple-Schritt vor jedem signierten
+>   Mac-Build (siehe `docs/ICLOUD_SYNC_ARCHITECTURE.md` §2a + §5).
+> - Privacy-Manifest unverändert (kein neuer Datentyp gesammelt — kommt
+>   erst mit Train F.2).
+> - Linux: `swift build` ✅, `swift test` ✅ 1578/2/0.
+> - iPhone-only, Force-Dark, LocalTimelineStore default OFF — unverändert.
+
+> **Historischer Repo-Truth-Patch 2026-05-22 (Branch `main`, HEAD `4f0813a` — Audit-Report-merge):**
 > - Neuer Audit-Report `docs/DEEP_AUDIT_FULL_APP_REDESIGN_ICLOUD_2026-05-22.md`
 >   (read-only Tiefenaudit + iCloud-Machbarkeit + Train-Reihenfolge).
 > - Begleitende Spezifikation `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md`

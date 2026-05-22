@@ -1,5 +1,60 @@
 # NEXT_STEPS
 
+## Stand 2026-05-22 — Train F.1: iCloud Capability Preparation (Branch `feature/icloud-capability-f1`, Apple-Validierung deferred)
+
+> **Hinweis**: F.1 wird mit Linux-Grün gemerged. Der Mac-/Xcode-/
+> Simulator-Pass ist auf diesem Host nicht möglich und wird bewusst auf
+> den nächsten Xcode-Cloud-Workflow `Release – Archive & TestFlight`
+> verschoben. **Apple Developer Portal Container
+> `iCloud.de.roeber.LH2GPXWrapper` ist bis zum Cloud-Lauf weiter nicht
+> verifiziert** — wenn er fehlt, wird Xcode Cloud beim Signing scheitern.
+
+**Umgesetzt** (Capability-Vorbereitung, kein echter Sync):
+- `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` erweitert um
+  `com.apple.developer.icloud-container-identifiers = [iCloud.de.roeber.LH2GPXWrapper]`
+  und `com.apple.developer.icloud-services = [CloudKit]`. Widget-
+  Entitlement unverändert.
+- `Sources/.../CloudKitCloudSyncService.swift` (NEU) —
+  `#if canImport(CloudKit)`-gegated `CKContainer`-Adapter. **Nur**
+  `CKAccountStatus`-Mapping; keine Records, keine Subscriptions, keine
+  Public DB.
+- `CloudSyncServiceFactory.makeProductionService(...)` wählt CloudKit
+  oder Default je nach Plattform.
+
+**Linux-Verifikation**:
+- `swift build` ✅ Build complete (1,97 s).
+- `swift test` ✅ 1578 / 2 skipped / 0 failures (55,9 s).
+
+**Apple-Pflicht-Schritte (extern, OFFEN, sind in den Xcode-Cloud-Run verschoben):**
+- Apple Developer Portal: App-ID `de.roeber.LH2GPXWrapper` → Capability
+  „iCloud" → Service „CloudKit" zuweisen + Container
+  `iCloud.de.roeber.LH2GPXWrapper` anlegen. **Muss vor dem nächsten
+  Xcode-Cloud-Build erledigt sein, sonst bricht der Signing-Schritt.**
+- Xcode-Cloud-Workflow `Release – Archive & TestFlight` triggern → Build > 179.
+- Cloud-Logs: Signing + Archive + interne Tests müssen grün sein.
+- Erst dann: Hardware-Smoke (iPhone mit echtem iCloud-Login),
+  TestFlight-Sicht-Verifikation (kein „Sync aktiv"-Claim in Settings).
+
+**Zwingend nächster Schritt** nach Apple-Pflicht-Schritten:
+- **Train F.2** — CloudKit Private-Metadata-Schema (`LiveTrackMeta`
+  CKRecord mit `schemaVersion: Int`, `startedAt`, `endedAt`,
+  `pointCount`, `distanceM`, `sourceFilename`; ohne Vollkoordinaten),
+  Privacy-Manifest erweitern um `NSPrivacyAccessedAPICategoryFileTimestamp`,
+  Konflikt-UX über `LHXInfoCard`.
+- ODER **Train F.3** — Phase C iCloud-Drive-Export-Hint (kein
+  CloudKit-Code nötig, nur UI-Card im Export-Sheet).
+- ODER **Train F.4** — Settings-Card-Adoption: `LHXSyncStatusCard` in
+  `AppOptionsView` verdrahten gegen `CloudSyncServiceFactory.makeProductionService`.
+
+**Sicherheitslinie unverändert** (Spec §6, Architektur §2):
+- Keine Public Database, keine sharedCloudDatabase.
+- Keine automatische Historien-Synchronisation.
+- iCloud bleibt opt-in (`AppPreferences.iCloudSyncEnabled = false`
+  per Default) und deaktivierbar.
+- Privacy-Manifest unverändert — wird erst mit Train F.2 erweitert.
+
+---
+
 ## Stand 2026-05-22 — Integration `integration/full-app-redesign-icloud-verify`
 
 Kombiniert: Audit (`4f0813a` auf main) + Redesign-Spec

@@ -1,5 +1,30 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-22, Branch `feature/icloud-capability-f1` — Train F.1)
+
+- **Train F.1 „iCloud Capability Preparation"** umgesetzt:
+  - `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` erweitert um
+    `com.apple.developer.icloud-container-identifiers` (Container
+    `iCloud.de.roeber.LH2GPXWrapper`) und
+    `com.apple.developer.icloud-services = [CloudKit]`.
+  - `Sources/.../CloudKitCloudSyncService.swift` neu, `#if canImport(CloudKit)`-
+    gegated, nur `CKAccountStatus`-Adapter. **Keine** Records,
+    Subscriptions, Assets oder Public-DB-Zugriffe.
+  - `CloudSyncServiceFactory.makeProductionService(isEnabled:)` neu.
+- **Apple-Pflicht-Schritte OFFEN**: Container im Apple Developer Portal
+  registrieren, Provisioning-Profile regenerieren, Mac-`xcodebuild`-
+  Sanity-Check. Erst danach signiert ein Mac-Build sauber.
+- **Linux-Verifikation**: `swift build` ✅, `swift test` ✅
+  1578/2/0 in 55,9 s.
+- **Unverändert**: `TARGETED_DEVICE_FAMILY = 1` (iPhone-only),
+  `UIUserInterfaceStyle` undeklariert (Force-Dark), LocalTimelineStore
+  default OFF, Privacy-Manifest (kein neuer Datentyp gesammelt — kommt
+  mit Train F.2), Xcode-Cloud-Build 179 weiter letzter extern grüner
+  Stand.
+- **Nächste Trains**: F.2 (CloudKit Private-Metadata-Schema) ODER F.3
+  (iCloud-Drive-Export-Hint im Export-Sheet) ODER F.4 (Settings-Card-
+  Adoption).
+
 ## Aktiver Stand (2026-05-22, Branch `integration/full-app-redesign-icloud-verify`)
 
 - **Integrationsbranch** kombiniert Audit (`4f0813a` auf `main`),
