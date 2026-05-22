@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## 2026-05-22 — Train F.1: iCloud Capability Preparation (Branch `feature/icloud-capability-f1`)
+
+> **Capability-Vorbereitung.** Entitlement-Datei + CloudKit-AccountStatus-Adapter. **Kein echter Sync, keine Records, keine Subscriptions, keine Public DB, keine Historien-Synchronisation.** Apple Developer Portal Container muss extern noch registriert werden, bevor ein signierter Mac-Build möglich ist. Linux `swift build` + `swift test` bleiben grün (1578/2/0).
+
+### Geänderte Dateien
+- `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` — neue Keys `com.apple.developer.icloud-container-identifiers = [iCloud.de.roeber.LH2GPXWrapper]` und `com.apple.developer.icloud-services = [CloudKit]`. Kommentar dokumentiert die noch offene Portal-Registrierung.
+- `Sources/LocationHistoryConsumerAppSupport/CloudSyncService.swift` — neue `CloudSyncServiceFactory.makeProductionService(isEnabled:)` wählt CloudKit oder Default automatisch.
+
+### Neue Dateien
+- `Sources/LocationHistoryConsumerAppSupport/CloudKitCloudSyncService.swift` — `#if canImport(CloudKit)`-gegated. `CKContainer(identifier:)` mit Default `iCloud.de.roeber.LH2GPXWrapper`, `CKAccountStatus → CloudSyncAccountStatus`-Mapping, **nur** `accountStatus()`-Call.
+
+### Sicherheitslinie (verbindlich, unverändert)
+- **Keine** Records / Subscriptions / Assets in diesem Commit.
+- **Nur** `privateCloudDatabase` referenziert (über `privateDatabase`-Property), aber nicht benutzt. Keine Public DB.
+- **Keine** automatische Synchronisation importierter Standorthistorien.
+- iCloud bleibt opt-in (`AppPreferences.iCloudSyncEnabled` Default `false`); `disable()` setzt sauber zurück.
+- Privacy-Manifest unverändert (kein neuer `NSPrivacyCollectedDataType`, weil nur AccountStatus abgefragt wird).
+
+### Bewusst NICHT in diesem Commit
+- Kein Apple Developer Portal Edit (extern).
+- Kein `xcodebuild`-/Hardware-/Simulator-Build (Linux-Host).
+- Keine `LHXSyncStatusCard`-Adoption in `AppOptionsView`.
+- Kein `com.apple.developer.ubiquity-kvstore-identifier` (Phase A optional, nicht in v0).
+- Kein `com.apple.developer.ubiquity-container-identifiers` (iCloud Documents bleibt Train F.3 / Phase C).
+- Keine `iCloud.*`-Entitlement im Widget-Target (Widget braucht keinen direkten CloudKit-Zugriff).
+- Keine Privacy-Manifest-Änderung — kommt mit Train F.2 (echte Records).
+- Keine iPad-Aktivierung, kein Light-Mode-Umbau.
+
 ## 2026-05-22 — Integration: Redesign + UI-Foundation + iCloud-Foundation (Branch `integration/full-app-redesign-icloud-verify`)
 
 Kombiniert drei vorausgehende Trains in einem Integrationsbranch. Build- und Testlauf siehe `docs/FULL_APP_REDESIGN_ICLOUD_INTEGRATION_VERIFICATION_2026-05-22.md`.

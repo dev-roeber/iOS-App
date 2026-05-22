@@ -6,5 +6,28 @@
 	<array>
 		<string>group.de.roeber.LH2GPXWrapper</string>
 	</array>
+	<!--
+	  iCloud capability prepared for Train F.1.
+
+	  Container `iCloud.de.roeber.LH2GPXWrapper` must additionally be
+	  registered in the Apple Developer Portal (App-ID "de.roeber.LH2GPXWrapper"
+	  → iCloud service → container "iCloud.de.roeber.LH2GPXWrapper"). The
+	  entitlement file declares the container the app uses; the Portal
+	  declares the container exists. Without the Portal step, signing on a
+	  development team will fail. See docs/ICLOUD_SYNC_ARCHITECTURE.md §5
+	  (Train F.1) for the exact Apple-host workflow.
+
+	  No CloudKit data is read or written in this commit. The
+	  CloudSyncService default implementation only reads `CKAccountStatus`
+	  when the user opts in; no records, no subscriptions, no assets.
+	-->
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.de.roeber.LH2GPXWrapper</string>
+	</array>
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudKit</string>
+	</array>
 </dict>
 </plist>

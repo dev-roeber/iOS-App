@@ -1,14 +1,34 @@
 # iCloud Sync Architecture
 
-Stand: **2026-05-22** · Branch `feature/icloud-sync-foundation` · basiert
-auf `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §6.
+Stand: **2026-05-22** · zuletzt erweitert auf Branch
+`feature/icloud-capability-f1` (Train F.1 — Capability-Vorbereitung).
+Ursprung: `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §6.
 
-> Foundation-only Commit. **Keine Xcode-Capability aktiviert, kein
-> `iCloud.*`-Container registriert, kein CloudKit-Code im Build.**
-> Dieser Commit liefert die Swift-Service-Schicht, zwei
-> `AppPreferences`-Toggles und diese Architektur-Notiz. Die
-> Apple-Xcode-Schritte (Capability + Container + Entitlement-Wiring) sind
-> *explizit* nicht enthalten und werden separat dokumentiert.
+> **Train F.1 Status:** Entitlement-Datei + CloudKit-Capability-Adapter
+> in der Codebase vorbereitet. **Apple Developer Portal noch nicht
+> registriert** (`iCloud.de.roeber.LH2GPXWrapper`-Container muss extern
+> angelegt werden, bevor ein Mac-Build signiert). Linux `swift build` +
+> `swift test` weiter grün (1578/2/0); CloudKit-Code ist `#if
+> canImport(CloudKit)`-gegated und fällt auf Linux komplett raus.
+> Echter Sync ist **nicht** implementiert — nur `CKAccountStatus`-Adapter.
+> Keine Records, keine Subscriptions, keine Assets, keine Historien-
+> Synchronisation.
+
+## Ist-Zustand 2026-05-22 (Train F.1)
+
+| Punkt | Status |
+|---|---|
+| `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` | erweitert um `com.apple.developer.icloud-container-identifiers` + `com.apple.developer.icloud-services = CloudKit` |
+| Container-ID | `iCloud.de.roeber.LH2GPXWrapper` (passt zum Bundle-ID, nicht hardcoded für Team) |
+| `wrapper/LH2GPXWidget/LH2GPXWidget.entitlements` | unverändert (Widget braucht keinen direkten CloudKit-Zugriff) |
+| `CODE_SIGN_ENTITLEMENTS` in pbxproj | unverändert — war bereits korrekt gesetzt |
+| `Sources/.../CloudKitCloudSyncService.swift` | NEU, `#if canImport(CloudKit)`-gated, AccountStatus-Adapter, **keine** Records |
+| `CloudSyncServiceFactory.makeProductionService(...)` | NEU, wählt CloudKit oder Default automatisch |
+| `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` | unverändert (kein neuer Datenfluss, weil keine Records geschrieben werden) |
+| Apple Developer Portal Container | **OFFEN** — muss extern angelegt werden, bevor signed Mac-Build möglich |
+| AppPreferences `iCloudSyncEnabled` | unverändert (Default `false`, opt-in) |
+| Echter Datensync | nicht implementiert (Train F.2) |
+| Historien-Sync | weiterhin **explizit ausgeschlossen** |
 
 ---
 
@@ -56,6 +76,49 @@ und ein klarer Multi-Device-Mehrwert ohne Risiko erkennbar ist.
    unverändert.
 
 ---
+
+## 2a. Train F.1 — Capability-Vorbereitung (2026-05-22)
+
+Code-/Doku-Änderungen auf Branch `feature/icloud-capability-f1`:
+
+1. `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements`
+   - `com.apple.developer.icloud-container-identifiers = [iCloud.de.roeber.LH2GPXWrapper]`.
+   - `com.apple.developer.icloud-services = [CloudKit]`.
+   - **Kein** `com.apple.developer.ubiquity-kvstore-identifier` in dieser
+     Phase (Phase-A KV-Store ist laut Spec optional und nicht in v0).
+   - **Kein** `com.apple.developer.ubiquity-container-identifiers` (kein
+     iCloud-Documents-Container in dieser Phase; Train F.3 / Phase C
+     entscheidet später).
+2. `Sources/.../CloudKitCloudSyncService.swift` — `#if canImport(CloudKit)`,
+   liefert `CKContainer(identifier:)` mit Default
+   `iCloud.de.roeber.LH2GPXWrapper`, mapped `CKAccountStatus` →
+   `CloudSyncAccountStatus`. **Nur** `accountStatus()`-Call,
+   **keine** Record-Operationen, **keine** Subscriptions,
+   **keine** Assets, **keine** sharedCloudDatabase, **keine**
+   publicCloudDatabase.
+3. `Sources/.../CloudSyncService.swift` — neue
+   `CloudSyncServiceFactory.makeProductionService(isEnabled:)`:
+   - Apple-Plattformen: `CloudKitCloudSyncService`.
+   - Linux: `DefaultCloudSyncService` (unverändert, weiter
+     `.disabled`/`.couldNotDetermine`).
+4. `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` — **unverändert**.
+   Begründung: kein Datentyp wird *neu gesammelt*, nur die
+   Capability-Erkennung wird über `CKAccountStatus` abgefragt — das
+   ist keine Datenerhebung im Sinne von `NSPrivacyCollectedDataTypes`.
+   Sobald Train F.2 echte Records schreibt, wird das Manifest erweitert.
+
+### Apple Developer Portal — **noch zu tun** (extern)
+- App-ID `de.roeber.LH2GPXWrapper` → Capability "iCloud" → Service
+  "CloudKit" zuweisen.
+- iCloud-Container `iCloud.de.roeber.LH2GPXWrapper` anlegen, falls noch
+  nicht vorhanden.
+- Provisioning-Profile regenerieren (Xcode "Automatically manage
+  signing" tut das automatisch nach Capability-Aktivierung).
+
+### Linux-Verifikation 2026-05-22
+- `swift build` ✅ Build complete.
+- `swift test` ✅ 1578 / 2 skipped / 0 failures.
+- `xcodebuild` nicht verfügbar (Linux-Host).
 
 ## 3. Was dieser Commit liefert
 
