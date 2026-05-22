@@ -75,7 +75,7 @@ public struct LHXStatCard: View {
 /// import-first call-to-action.
 public struct LHXActionCard: View {
     public let title: String
-    public let body: String?
+    public let message: String?
     public let systemImage: String?
     public let primaryActionTitle: String
     public let primaryAction: () -> Void
@@ -85,7 +85,7 @@ public struct LHXActionCard: View {
 
     public init(
         title: String,
-        body: String? = nil,
+        message: String? = nil,
         systemImage: String? = nil,
         primaryActionTitle: String,
         primaryAction: @escaping () -> Void,
@@ -94,7 +94,7 @@ public struct LHXActionCard: View {
         accessibilityIdentifier: String? = nil
     ) {
         self.title = title
-        self.body = body
+        self.message = message
         self.systemImage = systemImage
         self.primaryActionTitle = primaryActionTitle
         self.primaryAction = primaryAction
@@ -114,8 +114,8 @@ public struct LHXActionCard: View {
             Text(title)
                 .font(.headline)
                 .foregroundStyle(LH2GPXTheme.textPrimary)
-            if let body {
-                Text(body)
+            if let message {
+                Text(message)
                     .font(.subheadline)
                     .foregroundStyle(LH2GPXTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)

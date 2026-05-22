@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-05-22 — Hotfix: `LHXActionCard` SwiftUI body redeclaration (Branch `fix/lhxactioncard-body-redeclaration`)
+
+> **Xcode-Cloud-Build (Archive – iOS) auf main-HEAD `8a83f35` schlug fehl** mit `Invalid redeclaration of 'body'` in `LHXCards.swift:106`. Ursache: gespeichertes Property `LHXActionCard.body: String?` kollidiert mit der SwiftUI-`var body: some View`. **Linux hat das nicht gemeldet**, weil die ganze Datei hinter `#if canImport(SwiftUI)` steht — Linux überspringt sie komplett, der Apple-Compiler nicht.
+
+### Geänderte Dateien
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXCards.swift` — `LHXActionCard.body` (String) → `LHXActionCard.message` (String). Body-VStack zieht jetzt `message` statt `body`. Init-Parameterlabel angepasst. Keine Adoption in bestehenden Views vorhanden, also keine Caller-Migration nötig (per `rg LHXActionCard\(` repo-weit 0 Treffer).
+
+### Linux-Verifikation
+- `swift build` ✅ Build complete (1,45 s).
+- `swift test` ✅ 1578 tests, 2 skipped, 0 failures, 56,137 s.
+
+### Lehre / Folge
+- SwiftUI-Views auf Linux nicht echt verifizierbar — der `#if canImport(SwiftUI)`-Gate verhindert Compile-Check. Konsequenz: jede neue SwiftUI-Komponente braucht ab jetzt einen Apple-Host-Build, bevor sie als „grün" gemerged wird. Wird in der nächsten APPLE_VERIFICATION_CHECKLIST-Aktualisierung sauber festgehalten.
+
 ## 2026-05-22 — Train F.1: iCloud Capability Preparation (Branch `feature/icloud-capability-f1`)
 
 > **Capability-Vorbereitung.** Entitlement-Datei + CloudKit-AccountStatus-Adapter. **Kein echter Sync, keine Records, keine Subscriptions, keine Public DB, keine Historien-Synchronisation.** Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` muss extern noch registriert werden, bevor ein signierter Mac-Build möglich ist. Linux `swift build` + `swift test` bleiben grün (1578/2/0).
