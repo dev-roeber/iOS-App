@@ -1,5 +1,30 @@
 # NEXT_STEPS
 
+## Stand 2026-05-22 — Train F.0 "iCloud Sync Foundation" (Branch `feature/icloud-sync-foundation`)
+
+**Umgesetzt (Foundation-only, kein CloudKit, kein Xcode-Capability):**
+- `Sources/LocationHistoryConsumerAppSupport/CloudSyncService.swift` —
+  `CloudSyncAccountStatus`, `CloudSyncStatus`, `CloudSyncService` (Protokoll,
+  `@MainActor`), `DefaultCloudSyncService` (ehrliche
+  `.disabled`/`.couldNotDetermine`-Implementation), `InMemoryCloudSyncService`.
+- `Sources/LocationHistoryConsumerAppSupport/AppPreferences.swift` — neue
+  Toggles `iCloudSyncEnabled` (Default `false`) + `preferCloudDriveExport`
+  (Default `false`); `reset()`-kompatibel.
+- `docs/ICLOUD_SYNC_ARCHITECTURE.md` — Architektur-Entscheidung (A + C, **nicht
+  B** in v0), Sicherheitslinie, Privacy-Manifest-Plan, Folge-Trains F.1–F.4.
+
+**Tests/Builds**: bewusst nicht gefahren.
+
+**Zwingend nächster Schritt (Apple-Xcode-Pflicht):**
+- **Train F.1** — Capability Pass (iCloud-Container im Developer Portal,
+  Capability in Xcode, automatischer Entitlement-Update).
+- **Train F.2** — CloudKit-Adapter (`CloudKitCloudSyncService` mit
+  `#if canImport(CloudKit)`-Gate, `LiveTrackMeta`-Record-Schema).
+- **Train F.3** — Phase C Export-Hint im `AppExportView`.
+- **Train F.4** — Settings-Card-Verdrahtung in `AppOptionsView`.
+
+---
+
 Stand: 2026-05-17 (Branch `main`, nach **Train R — Export Selection Summary & UX Refinements**).
 
 **Train R umgesetzt (2 produktive Commits + Doku-Sync):**

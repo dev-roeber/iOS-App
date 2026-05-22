@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## 2026-05-22 — iCloud Sync Foundation (Branch `feature/icloud-sync-foundation`)
+
+> **Foundation-only.** Kein CloudKit-Code, keine Xcode-Capability, kein Entitlement-Edit. Kein Test- oder Build-Lauf in diesem Commit. Reine Vorbereitung für den Apple-Xcode-Pass.
+
+### Neue Dateien
+- `Sources/LocationHistoryConsumerAppSupport/CloudSyncService.swift` — Foundation-only Service-Schicht: `CloudSyncAccountStatus` Enum, `CloudSyncStatus` Snapshot, `CloudSyncService` Protokoll, `DefaultCloudSyncService` (ehrliche `.disabled`/`.couldNotDetermine`-Implementation, **kein** CloudKit-Aufruf), `InMemoryCloudSyncService` für Previews/Tests.
+- `docs/ICLOUD_SYNC_ARCHITECTURE.md` — Architektur-Entscheidung (Variante A + C, **nicht** B in v0), Sicherheitslinie, Konfliktstrategie-Vorbereitung, Privacy-Manifest-Plan, Test-Pflicht, Folge-Trains F.1–F.4.
+
+### Geänderte Dateien
+- `Sources/LocationHistoryConsumerAppSupport/AppPreferences.swift` — Neue Toggles `iCloudSyncEnabled` (Default `false`) und `preferCloudDriveExport` (Default `false`); via `reset()` bereinigt.
+- `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_FEATURE_INVENTORY.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md`, `README.md` — Stand-Block 2026-05-22 mit Verweis auf Architektur-Notiz und expliziter Aussage, dass iCloud **noch nicht** aktiviert ist.
+
+### Sicherheitslinie (verbindlich)
+- **Keine** Public CloudKit Database.
+- **Keine** automatische Synchronisation importierter Standorthistorien.
+- iCloud bleibt deaktivierbar; `disable()` setzt Service in `.disabled` zurück.
+- Lokale Funktion bleibt unabhängig von iCloud-Status verfügbar.
+
+### Bewusst NICHT in diesem Commit
+- Keine Aktivierung von iCloud/CloudKit-Capabilities im pbxproj.
+- Keine Edit am `LH2GPXWrapper.entitlements` (`com.apple.developer.icloud-*` Keys werden ausschließlich in Xcode gesetzt).
+- Keine Anbindung der `LHXSyncStatusCard` in `AppOptionsView`.
+- Keine Privacy-Manifest-Änderungen.
+- Keine Tests, keine Builds, keine `xcodebuild`-Verifikation.
+
 ## 2026-05-19 — Deep Audit Follow-up: Feature-Inventory + Wrapper-Roadmap Truth-Sync (Branch `chore/deep-audit-doc-truth-sync-2026-05-19`)
 
 > **Schließt die im Audit-Bericht 2026-05-19 §10 als offen markierten Doku-Risiken zu `docs/APP_FEATURE_INVENTORY.md` und `wrapper/ROADMAP.md`.** Kein Code, kein Test, kein Versions-Bump.

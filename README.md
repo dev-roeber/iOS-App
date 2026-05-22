@@ -2,7 +2,21 @@
 
 **Dieses Repo (`dev-roeber/iOS-App`) ist das zentrale aktive Repository fuer die vollstaendige LH2GPX iOS-App.**
 
-> **Repo-Truth-Patch 2026-05-19 (Branch `main`, HEAD `31c4351` — Train R tip):**
+> **Repo-Truth-Patch 2026-05-22 (Branch `feature/icloud-sync-foundation`):**
+> - **iCloud Sync Foundation** eingecheckt — Service-Schicht
+>   (`CloudSyncService` Protokoll + `DefaultCloudSyncService` +
+>   `InMemoryCloudSyncService`), zwei `AppPreferences`-Toggles
+>   (`iCloudSyncEnabled`, `preferCloudDriveExport`, beide Default
+>   `false`) und Architektur-Notiz
+>   `docs/ICLOUD_SYNC_ARCHITECTURE.md`. **Keine** Aktivierung der
+>   iCloud-Capability, **kein** CloudKit-Import, **kein**
+>   Entitlement-Edit — Apple-Xcode-Schritte sind in
+>   `docs/APPLE_VERIFICATION_CHECKLIST.md` als Pflichtliste hinterlegt.
+> - **Sicherheitslinie unverändert**: keine Public Database, keine
+>   automatische Historien-Synchronisation, iCloud deaktivierbar.
+> - **Tests/Builds nicht gefahren** in diesem Patch.
+
+> **Historischer Repo-Truth-Patch 2026-05-19 (Branch `main`, HEAD `31c4351` — Train R tip):**
 > - `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` (8 pbxproj-Configs + Info.plist App/Widget konsistent) — unverändert.
 > - Linux `swift test` heute auf HEAD `31c4351`: **1578 Tests, 2 Skips, 0 Failures, 54,67 s** (+143 ggü. 1435-Snapshot in §"Repo-Struktur" / §"Testen", der den Stand 2026-05-16 HEAD `71f715b` festhält). Trains M–R sind seither gemerged.
 > - Audit-Bericht: `docs/DEEP_AUDIT_DOC_TRUTH_SYNC_2026-05-19.md`.
