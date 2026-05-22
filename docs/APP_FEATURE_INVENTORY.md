@@ -1,6 +1,18 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-19 (Follow-up des Deep-Audit-Doc-Truth-Sync 2026-05-19 — Trains M–R sind seit dem 2026-05-09-Stand gemerged; siehe Sektion 13 für die in Train M–R neu eingeführten Foundation-only Presentation-Helper, die `ProductInfoCard`-SwiftUI-Komponente, deren View-Wiring in `AppExportView` (Import-/Format-/Selection-Cards) und den zentralen `AppAccessibilityID`-Namespace mit `Root`/`Tab`/`Map`/`ProductInfo`/`Action`-Subnamespaces. Linux `swift test` heute 1578/2/0 in 54,67 s, HEAD `549c310`.)
+Last analysis: 2026-05-22 (Redesign-Spec-Follow-up). Spec liegt vor unter
+`docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md`. **In dieser Welle
+keine Code-Änderung**; Spec ist Planungspapier, nicht Implementations-
+Nachweis. Wahrheitskorrekturen:
+
+- App ist `TARGETED_DEVICE_FAMILY = 1` → iPhone-only. iPad-Aussagen unten
+  bleiben als „geplant" stehen, **nicht** als „bereit".
+- iCloud ist nicht implementiert (keine Entitlement, kein CloudKit).
+- Force-Dark-UI ohne `UIUserInterfaceStyle=Dark`-Deklaration.
+- Trains O/P/Q/R bleiben extern in TestFlight unbestätigt (letzter
+  verifizierter Cloud-Build: 179 auf `ff789a4`).
+
+Davor: 2026-05-19 (Follow-up des Deep-Audit-Doc-Truth-Sync 2026-05-19 — Trains M–R sind seit dem 2026-05-09-Stand gemerged; siehe Sektion 13 für die in Train M–R neu eingeführten Foundation-only Presentation-Helper, die `ProductInfoCard`-SwiftUI-Komponente, deren View-Wiring in `AppExportView` (Import-/Format-/Selection-Cards) und den zentralen `AppAccessibilityID`-Namespace mit `Root`/`Tab`/`Map`/`ProductInfo`/`Action`-Subnamespaces. Linux `swift test` heute 1578/2/0 in 54,67 s, HEAD `549c310`.)
 
 Davor: 2026-05-09 (L-04 — Bounded LRU für AppSessionContent-Caches: neuer Foundation-only `BoundedLRU<K,V>`; alle 5 Filter-/Detail-Caches und der `projectedDaysCache` laufen darüber. Capacities 8/8/8/32/16/8. Semantik unverändert.)
 

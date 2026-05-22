@@ -1,6 +1,52 @@
 # NEXT_STEPS
 
-Stand: 2026-05-17 (Branch `main`, nach **Train R — Export Selection Summary & UX Refinements**).
+## Stand 2026-05-22 — Redesign-/Interaktions-/iCloud-Spec (planning only)
+
+Auf Branch `chore/redesign-interaction-spec`. **Kein Code, keine Tests,
+keine Builds** in diesem Train. Doku-only.
+
+- Neuer Audit-Report: `docs/DEEP_AUDIT_FULL_APP_REDESIGN_ICLOUD_2026-05-22.md`
+  (mainline-merged in HEAD `4f0813a`).
+- Neue Spezifikation: `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` —
+  kanonisches Redesign-/Interaktions-/iCloud-Strategie-Dokument inkl.
+  Train-Reihenfolge A–H, Vollverdrahtungs-Zielmatrix, Refactor-Plan für
+  die drei großen Hub-Views und iCloud-Phasenmodell A/B/C.
+
+**Wichtige Wahrheitskorrekturen** in der Spec:
+- App ist heute iPhone-only (`TARGETED_DEVICE_FAMILY = 1`). iPad bleibt
+  geplant, **nicht** „offen offen", sondern *aktiv ausgeschlossen* bis
+  Family=1,2 + Hardware-Smoke.
+- iCloud heute **nicht vorhanden** (keine Entitlement, kein CloudKit-
+  Import, `isExcludedFromBackup=true` für LocalTimelineStore).
+- Force-Dark-UI ohne `UIUserInterfaceStyle=Dark`-Deklaration — Empfehlung:
+  bewusst Dark-only deklarieren (Train A).
+- LocalTimelineStore bleibt Spike / default OFF; 46-MiB-Original-Asset-
+  Retest bleibt offen.
+
+**Nächste konkrete Trains** (Reihenfolge laut Spec §10):
+- **Train A — Doc-Truth-Sync v3** (`chore/doc-truth-sync-v3`): README/
+  ROADMAP/NEXT_STEPS aufräumen, iPad/iCloud/Light-Mode ehrlich.
+- **Train B — UI-Komponentenbasis** (`chore/full-app-redesign-foundation`):
+  additive `LHX*`-Komponenten.
+- **Train C — Start/Import/Export UX**: Cancel-Button + Polygon-Picker +
+  Custom-Filename.
+- **Train D — Karte/Timeline/Heatmap Interaktion**.
+- **Train E — Insights Refactor**.
+- **Train F — iCloud Foundation** (`feature/icloud-sync-foundation`):
+  Service-Schicht + Settings-Card, *keine* automatische Historien-
+  Synchronisation.
+- **Train G — Vollverdrahtungs-Matrix-Sweep**.
+- **Train H — Tests/Builds/Xcode-Cloud/TestFlight**.
+
+**Tests:** in dieser Phase **nicht gefahren** (Linux-Host, Doku-only).
+
+**Externer Stand unverändert:** Letzter extern grüner Build laut README =
+Xcode Cloud Build 179 auf `ff789a4` (Train M tip). Trains O/P/Q/R sind
+weiter nicht extern.
+
+---
+
+## Vorheriger Stand: 2026-05-17 (Branch `main`, nach **Train R — Export Selection Summary & UX Refinements**).
 
 **Train R umgesetzt (2 produktive Commits + Doku-Sync):**
 - `150513e` Build-179-Baseline-Doku.
