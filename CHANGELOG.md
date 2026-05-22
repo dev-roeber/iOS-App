@@ -1,23 +1,27 @@
 # CHANGELOG
 
-## 2026-05-22 — Additive UI-Foundation (Branch `chore/full-app-redesign-foundation`)
+## 2026-05-22 — Integration: Redesign + UI-Foundation + iCloud-Foundation (Branch `integration/full-app-redesign-icloud-verify`)
 
-> **Additive Komponentenbasis aus `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §4.** Keine Adoption in bestehenden Views, kein Tab-/Navigation-Umbau in diesem Train. Keine Tests, keine Builds.
+Kombiniert drei vorausgehende Trains in einem Integrationsbranch. Build- und Testlauf siehe `docs/FULL_APP_REDESIGN_ICLOUD_INTEGRATION_VERIFICATION_2026-05-22.md`.
 
-### Neue Dateien
-- `Sources/LocationHistoryConsumerAppSupport/UI/LHXStateViews.swift` — `LHXEmptyState`, `LHXErrorState`, `LHXLoadingState`.
-- `Sources/LocationHistoryConsumerAppSupport/UI/LHXCards.swift` — `LHXStatCard`, `LHXActionCard`, `LHXInfoCard`, `LHXSyncStatusCard`.
-- `Sources/LocationHistoryConsumerAppSupport/UI/LHXButtons.swift` — `LHXPrimaryActionButton`, `LHXSecondaryActionButton`, `LHXMapOverlayControl`.
-- `Sources/LocationHistoryConsumerAppSupport/UI/README.md` — Inventar, Designprinzipien, Adoption-Checkliste.
+### Gemerged
+- `chore/redesign-interaction-spec` — `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` (Spec, Planning only).
+- `chore/full-app-redesign-foundation` — `Sources/LocationHistoryConsumerAppSupport/UI/{LHXStateViews,LHXCards,LHXButtons,README}.swift|.md` (additive Komponenten: `LHXEmptyState`, `LHXErrorState`, `LHXLoadingState`, `LHXStatCard`, `LHXActionCard`, `LHXInfoCard`, `LHXSyncStatusCard`, `LHXPrimaryActionButton`, `LHXSecondaryActionButton`, `LHXMapOverlayControl`). **Keine Adoption** in bestehenden Views.
+- `feature/icloud-sync-foundation` — `Sources/LocationHistoryConsumerAppSupport/CloudSyncService.swift` (`CloudSyncAccountStatus`, `CloudSyncStatus`, `CloudSyncService` Protokoll, `DefaultCloudSyncService` mit `.disabled`/`.couldNotDetermine`-only, `InMemoryCloudSyncService`). `AppPreferences.iCloudSyncEnabled` + `preferCloudDriveExport` (beide Default `false`). `docs/ICLOUD_SYNC_ARCHITECTURE.md`.
 
-### Geänderte Dateien
-- `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_FEATURE_INVENTORY.md` — Stand-Block 2026-05-22, Verweis auf neue Foundation. Keine Feature-Häkchen gesetzt.
+### Sicherheitslinie (verbindlich, unverändert)
+- **Keine** Public CloudKit Database.
+- **Keine** automatische Synchronisation importierter Standorthistorien.
+- iCloud bleibt opt-in und deaktivierbar; `disable()` setzt Service in `.disabled` zurück.
+- Lokale Funktion bleibt unabhängig vom iCloud-Status verfügbar.
 
-### Bewusst NICHT in diesem Train
-- **Keine** Änderung an `AppContentSplitView`, `AppExportView`, `AppInsightsContentView` oder anderen bestehenden Views — Adoption erfolgt in Trains C/D/E/G mit Sichtprüfung + Tests.
-- **Kein** Light-Mode (`UIUserInterfaceStyle = Dark` bleibt undeklariert; Entscheidung in Train A).
-- **Keine** iPad-Aktivierung (`TARGETED_DEVICE_FAMILY = 1` unverändert).
-- **Kein** Test-Lauf, kein Build, keine `xcodebuild`-Verifikation. Adoption-Validierung gehört in Train H.
+### Bewusst NICHT in diesem Integrationspass
+- **Keine** Adoption der `LHX*`-Komponenten in `AppContentSplitView`/`AppExportView`/`AppInsightsContentView`.
+- **Kein** Light-Mode (`UIUserInterfaceStyle = Dark` weiter undeklariert).
+- **Keine** iPad-Aktivierung (`TARGETED_DEVICE_FAMILY = 1`).
+- **Keine** Aktivierung von iCloud/CloudKit-Capabilities, kein Entitlement-Edit, kein Privacy-Manifest-Update.
+- **Kein** Adoption-Wiring der `LHXSyncStatusCard` in `AppOptionsView`.
+- **Kein** `xcodebuild`-/Hardware-/Xcode-Cloud-/TestFlight-Run (Linux-Host).
 
 ## 2026-05-19 — Deep Audit Follow-up: Feature-Inventory + Wrapper-Roadmap Truth-Sync (Branch `chore/deep-audit-doc-truth-sync-2026-05-19`)
 

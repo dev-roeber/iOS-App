@@ -1,5 +1,35 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-22 (iCloud Sync Foundation — Apple-Pflichtarbeit, Branch `feature/icloud-sync-foundation`)
+
+**Offen / Apple-Xcode-Pflicht** (Train F.1, siehe
+`docs/ICLOUD_SYNC_ARCHITECTURE.md` §5):
+
+1. Apple Developer Portal:
+   - App-ID `de.roeber.LH2GPXWrapper` mit Capability "iCloud" verbinden.
+   - Neuen Container `iCloud.de.roeber.LH2GPXWrapper` anlegen.
+2. Xcode → Project → Signing & Capabilities → "+ Capability" → "iCloud":
+   - **CloudKit** aktivieren.
+   - Container `iCloud.de.roeber.LH2GPXWrapper` auswählen.
+3. Xcode aktualisiert automatisch:
+   - `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements`
+     (`com.apple.developer.icloud-container-identifiers`,
+     `com.apple.developer.icloud-services = CloudKit`,
+     `com.apple.developer.ubiquity-container-identifiers`).
+   - `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` (SystemCapabilities).
+4. `xcodebuild -scheme LH2GPXWrapper build` validieren.
+5. `xcodebuild test` Hardware-Smoke iPhone mit aktivem iCloud-Login.
+6. `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` aktualisieren —
+   mindestens `NSPrivacyAccessedAPICategoryFileTimestamp` Reason und
+   gegebenenfalls weitere ergänzen (siehe Architektur-Notiz §7).
+7. ASC-/TestFlight-Workflow neu auslösen.
+
+**In diesem Commit nicht behauptet**: keine der oben gelisteten Schritte
+ist umgesetzt. Foundation-Code im Package ist `couldNotDetermine`-only,
+solange die Capability nicht aktiv ist.
+
+---
+
 ## Aktualisierung 2026-05-16 (Xcode Cloud Build 175 extern verifiziert, Branch `main`)
 
 **Extern belegt (Screenshots 2026-05-16):** Workflow `Release – Archive & TestFlight` Build **175** erfolgreich, letzter Commit `2bfc009` (`docs: g1 mapkit ios 17 migration is already complete`). Schritte: `Archive - iOS` ✅, `TestFlight-interne Tests - iOS` ✅. Toolchain Cloud-Run: **Xcode 26.5 (17F42)**, **macOS Tahoe 26.4 (25E246)**. TestFlight zeigt `LH2GPX 1.0.2 (175)`. App-Info: „Erfordert iOS 17.0 oder neuer".
