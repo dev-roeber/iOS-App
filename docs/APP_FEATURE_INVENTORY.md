@@ -1,16 +1,33 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-22 (Redesign-Spec-Follow-up). Spec liegt vor unter
-`docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md`. **In dieser Welle
-keine Code-Änderung**; Spec ist Planungspapier, nicht Implementations-
-Nachweis. Wahrheitskorrekturen:
+Last analysis: 2026-05-22 (Integration-Follow-up auf Branch
+`integration/full-app-redesign-icloud-verify`). Kombiniert:
 
-- App ist `TARGETED_DEVICE_FAMILY = 1` → iPhone-only. iPad-Aussagen unten
-  bleiben als „geplant" stehen, **nicht** als „bereit".
-- iCloud ist nicht implementiert (keine Entitlement, kein CloudKit).
+1. **Redesign-Spec** (`docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md`)
+   — Planungspapier, keine Code-Änderung daran.
+2. **Train B "Additive UI-Foundation"** —
+   `Sources/LocationHistoryConsumerAppSupport/UI/` mit `LHXEmptyState`,
+   `LHXErrorState`, `LHXLoadingState`, `LHXStatCard`, `LHXActionCard`,
+   `LHXInfoCard`, `LHXSyncStatusCard`, `LHXPrimaryActionButton`,
+   `LHXSecondaryActionButton`, `LHXMapOverlayControl`. **Keine Adoption
+   in bestehenden Views.**
+3. **Train F.0 "iCloud Sync Foundation"** — `CloudSyncService` Protokoll
+   + `DefaultCloudSyncService` (`.disabled` / `.couldNotDetermine`-only,
+   **kein** CloudKit-Aufruf) + `InMemoryCloudSyncService`. Zwei neue
+   `AppPreferences`-Toggles (`iCloudSyncEnabled`, `preferCloudDriveExport`,
+   Default `false`). Architektur: `docs/ICLOUD_SYNC_ARCHITECTURE.md`.
+
+**Wahrheitskorrekturen (gelten weiter):**
+- App ist `TARGETED_DEVICE_FAMILY = 1` → iPhone-only.
+- iCloud ist als Foundation eingecheckt, aber **nicht aktiviert**
+  (Xcode-Capability + Entitlement-Edit sind Apple-Pflicht, siehe
+  `docs/APPLE_VERIFICATION_CHECKLIST.md` Aktualisierung 2026-05-22).
 - Force-Dark-UI ohne `UIUserInterfaceStyle=Dark`-Deklaration.
 - Trains O/P/Q/R bleiben extern in TestFlight unbestätigt (letzter
   verifizierter Cloud-Build: 179 auf `ff789a4`).
+
+**Test-/Build-Stand des Integrationsbranchs**: siehe Final-Report
+`docs/FULL_APP_REDESIGN_ICLOUD_INTEGRATION_VERIFICATION_2026-05-22.md`.
 
 Davor: 2026-05-19 (Follow-up des Deep-Audit-Doc-Truth-Sync 2026-05-19 — Trains M–R sind seit dem 2026-05-09-Stand gemerged; siehe Sektion 13 für die in Train M–R neu eingeführten Foundation-only Presentation-Helper, die `ProductInfoCard`-SwiftUI-Komponente, deren View-Wiring in `AppExportView` (Import-/Format-/Selection-Cards) und den zentralen `AppAccessibilityID`-Namespace mit `Root`/`Tab`/`Map`/`ProductInfo`/`Action`-Subnamespaces. Linux `swift test` heute 1578/2/0 in 54,67 s, HEAD `549c310`.)
 

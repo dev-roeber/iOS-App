@@ -1,48 +1,70 @@
 # NEXT_STEPS
 
-## Stand 2026-05-22 — Redesign-/Interaktions-/iCloud-Spec (planning only)
+## Stand 2026-05-22 — Integration `integration/full-app-redesign-icloud-verify`
 
-Auf Branch `chore/redesign-interaction-spec`. **Kein Code, keine Tests,
-keine Builds** in diesem Train. Doku-only.
+Kombiniert: Audit (`4f0813a` auf main) + Redesign-Spec
+(`chore/redesign-interaction-spec`) + UI-Foundation
+(`chore/full-app-redesign-foundation`) + iCloud-Foundation
+(`feature/icloud-sync-foundation`).
 
-- Neuer Audit-Report: `docs/DEEP_AUDIT_FULL_APP_REDESIGN_ICLOUD_2026-05-22.md`
-  (mainline-merged in HEAD `4f0813a`).
-- Neue Spezifikation: `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` —
-  kanonisches Redesign-/Interaktions-/iCloud-Strategie-Dokument inkl.
-  Train-Reihenfolge A–H, Vollverdrahtungs-Zielmatrix, Refactor-Plan für
-  die drei großen Hub-Views und iCloud-Phasenmodell A/B/C.
+**Spec (planning only)** — Branch `chore/redesign-interaction-spec`:
+- Neuer Audit-Report `docs/DEEP_AUDIT_FULL_APP_REDESIGN_ICLOUD_2026-05-22.md`
+  (auf main).
+- Neue Spezifikation `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md`
+  mit Train-Reihenfolge A–H, Vollverdrahtungs-Zielmatrix, Refactor-Plan
+  für die drei großen Hub-Views und iCloud-Phasenmodell A/B/C.
 
-**Wichtige Wahrheitskorrekturen** in der Spec:
-- App ist heute iPhone-only (`TARGETED_DEVICE_FAMILY = 1`). iPad bleibt
-  geplant, **nicht** „offen offen", sondern *aktiv ausgeschlossen* bis
-  Family=1,2 + Hardware-Smoke.
-- iCloud heute **nicht vorhanden** (keine Entitlement, kein CloudKit-
-  Import, `isExcludedFromBackup=true` für LocalTimelineStore).
-- Force-Dark-UI ohne `UIUserInterfaceStyle=Dark`-Deklaration — Empfehlung:
-  bewusst Dark-only deklarieren (Train A).
+**Train B "Additive UI-Foundation"** — Branch
+`chore/full-app-redesign-foundation`, rein additiv:
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXStateViews.swift`
+  (`LHXEmptyState`, `LHXErrorState`, `LHXLoadingState`).
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXCards.swift`
+  (`LHXStatCard`, `LHXActionCard`, `LHXInfoCard`, `LHXSyncStatusCard`).
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXButtons.swift`
+  (`LHXPrimaryActionButton`, `LHXSecondaryActionButton`,
+  `LHXMapOverlayControl`; 44 pt Tap-Targets, `disabledReason` als
+  `accessibilityHint`).
+- `Sources/LocationHistoryConsumerAppSupport/UI/README.md`.
+
+**Train F.0 "iCloud Sync Foundation"** — Branch
+`feature/icloud-sync-foundation`, Foundation-only:
+- `Sources/LocationHistoryConsumerAppSupport/CloudSyncService.swift`
+  (`CloudSyncAccountStatus`, `CloudSyncStatus`, `CloudSyncService` Protokoll,
+  `DefaultCloudSyncService`, `InMemoryCloudSyncService`).
+- `AppPreferences.iCloudSyncEnabled` + `preferCloudDriveExport`,
+  Default `false`.
+- `docs/ICLOUD_SYNC_ARCHITECTURE.md`.
+
+**Wichtige Wahrheitskorrekturen** (gelten weiter):
+- App ist heute iPhone-only (`TARGETED_DEVICE_FAMILY = 1`).
+- iCloud heute **nicht aktiviert** (kein Capability-/Entitlement-Edit
+  in diesem Integration-Pass; CloudKit-Code wird **nicht** gegenwärtig
+  ausgeführt — `DefaultCloudSyncService` ist `.disabled` /
+  `.couldNotDetermine`).
+- Force-Dark-UI ohne `UIUserInterfaceStyle=Dark`-Deklaration.
 - LocalTimelineStore bleibt Spike / default OFF; 46-MiB-Original-Asset-
   Retest bleibt offen.
 
+**Tests/Builds in der Integrationsbranch**: siehe Final-Report
+`docs/FULL_APP_REDESIGN_ICLOUD_INTEGRATION_VERIFICATION_2026-05-22.md`.
+
+**Externer Stand unverändert**: letzter extern grüner Build laut README
+= Xcode Cloud Build 179 auf `ff789a4` (Train M tip). Trains O/P/Q/R
+sind weiter nicht extern; Integrationsbranch erst recht nicht.
+
 **Nächste konkrete Trains** (Reihenfolge laut Spec §10):
-- **Train A — Doc-Truth-Sync v3** (`chore/doc-truth-sync-v3`): README/
-  ROADMAP/NEXT_STEPS aufräumen, iPad/iCloud/Light-Mode ehrlich.
-- **Train B — UI-Komponentenbasis** (`chore/full-app-redesign-foundation`):
-  additive `LHX*`-Komponenten.
-- **Train C — Start/Import/Export UX**: Cancel-Button + Polygon-Picker +
-  Custom-Filename.
+- **Train A — Doc-Truth-Sync v3** (Wahrheitskorrekturen).
+- **Train C — Start/Import/Export UX-Polish** (Cancel-Button + Polygon-
+  Picker + Custom-Filename).
 - **Train D — Karte/Timeline/Heatmap Interaktion**.
 - **Train E — Insights Refactor**.
-- **Train F — iCloud Foundation** (`feature/icloud-sync-foundation`):
-  Service-Schicht + Settings-Card, *keine* automatische Historien-
-  Synchronisation.
+- **Train F.1 — Apple Capability Pass (Xcode-only)**: iCloud-Container
+  im Developer-Portal + Xcode-Capability + automatisches Entitlement-
+  Update. Pflicht-Apple-Schritt vor jeder weiteren iCloud-Arbeit.
+- **Train F.2/F.3/F.4** — CloudKit-Adapter, iCloud-Drive-Hint im Export,
+  Settings-Card-Wiring.
 - **Train G — Vollverdrahtungs-Matrix-Sweep**.
 - **Train H — Tests/Builds/Xcode-Cloud/TestFlight**.
-
-**Tests:** in dieser Phase **nicht gefahren** (Linux-Host, Doku-only).
-
-**Externer Stand unverändert:** Letzter extern grüner Build laut README =
-Xcode Cloud Build 179 auf `ff789a4` (Train M tip). Trains O/P/Q/R sind
-weiter nicht extern.
 
 ---
 

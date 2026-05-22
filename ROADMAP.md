@@ -1,27 +1,33 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-22, Branch `chore/redesign-interaction-spec`, HEAD pending — Redesign-Spec)
+## Aktiver Stand (2026-05-22, Branch `integration/full-app-redesign-icloud-verify`)
 
-- **Doku-only Train**, kein Code, keine Tests, keine Builds.
-- Neuer Audit-Report **`docs/DEEP_AUDIT_FULL_APP_REDESIGN_ICLOUD_2026-05-22.md`**
-  ist seit `4f0813a` auf `main`.
-- Neue Spezifikation **`docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md`**
-  ist das kanonische Redesign-/Interaktions-/iCloud-Strategie-Dokument.
-  Sie enthält Informationsarchitektur, Navigation, UI-Komponenten-System,
-  Interaktivitätsmodell, iCloud-Phasen A/B/C, Privacy/App-Store-Bewertung,
-  Refactor-Plan für `AppContentSplitView`/`AppExportView`/`AppInsightsContentView`,
-  Vollverdrahtungs-Zielmatrix und die Train-Reihenfolge A–H.
-- **Repo-Truth-Korrekturen** in der Spec:
-  - App ist `TARGETED_DEVICE_FAMILY = 1` (iPhone-only). iPad bleibt
-    geplant.
-  - iCloud heute nicht vorhanden (keine Entitlement, kein CloudKit-Import).
-  - Force-Dark-UI ohne `UIUserInterfaceStyle = Dark`-Deklaration.
-  - LocalTimelineStore bleibt Spike / default OFF.
-- **Trains-Schlange (laut Spec):**
-  A) Doc-Truth-Sync v3 · B) UI-Komponentenbasis ·
-  C) Import/Export UX · D) Karte/Timeline/Heatmap ·
-  E) Insights Refactor · F) iCloud Optional Foundation ·
-  G) Vollverdrahtungs-Sweep · H) Tests/Builds/Xcode-Cloud/TestFlight.
+- **Integrationsbranch** kombiniert Audit (`4f0813a` auf `main`),
+  `chore/redesign-interaction-spec`, `chore/full-app-redesign-foundation`,
+  `feature/icloud-sync-foundation`.
+- **Verifikationsbericht**:
+  `docs/FULL_APP_REDESIGN_ICLOUD_INTEGRATION_VERIFICATION_2026-05-22.md`.
+- **Spec** (planning only):
+  `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` — Train-Reihenfolge
+  A–H, Vollverdrahtungs-Zielmatrix, iCloud-Phasen A/B/C.
+- **Train B "Additive UI-Foundation"** (gemerged): vier neue Files unter
+  `Sources/LocationHistoryConsumerAppSupport/UI/`. Komponenten:
+  `LHXEmptyState`, `LHXErrorState`, `LHXLoadingState`, `LHXStatCard`,
+  `LHXActionCard`, `LHXInfoCard`, `LHXSyncStatusCard`,
+  `LHXPrimaryActionButton`, `LHXSecondaryActionButton`,
+  `LHXMapOverlayControl`. **Keine Adoption** in bestehenden Views.
+- **Train F.0 "iCloud Sync Foundation"** (gemerged): Foundation-only
+  `CloudSyncService` (Default-Impl liefert `.disabled` /
+  `.couldNotDetermine`), zwei `AppPreferences`-Toggles
+  (`iCloudSyncEnabled`, `preferCloudDriveExport`, beide Default `false`),
+  Architektur-Notiz `docs/ICLOUD_SYNC_ARCHITECTURE.md`. **Keine**
+  Xcode-Capability, **kein** CloudKit-Code aktiv.
+- **Unverändert / explizit nicht behauptet**: `TARGETED_DEVICE_FAMILY = 1`
+  (iPhone-only), `UIUserInterfaceStyle` weiter undeklariert (Force-Dark),
+  LocalTimelineStore default OFF, ASC/TestFlight/Apple-Review extern
+  nicht re-verifiziert.
+- **Repo-Truth**: `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171`
+  unverändert.
 
 ## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train R)
 
