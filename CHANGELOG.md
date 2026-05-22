@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 2026-05-22 — Integration: Redesign + UI-Foundation + iCloud-Foundation (Branch `integration/full-app-redesign-icloud-verify`)
+
+Kombiniert drei vorausgehende Trains in einem Integrationsbranch. Build- und Testlauf siehe `docs/FULL_APP_REDESIGN_ICLOUD_INTEGRATION_VERIFICATION_2026-05-22.md`.
+
+### Gemerged
+- `chore/redesign-interaction-spec` — `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` (Spec, Planning only).
+- `chore/full-app-redesign-foundation` — `Sources/LocationHistoryConsumerAppSupport/UI/{LHXStateViews,LHXCards,LHXButtons,README}.swift|.md` (additive Komponenten: `LHXEmptyState`, `LHXErrorState`, `LHXLoadingState`, `LHXStatCard`, `LHXActionCard`, `LHXInfoCard`, `LHXSyncStatusCard`, `LHXPrimaryActionButton`, `LHXSecondaryActionButton`, `LHXMapOverlayControl`). **Keine Adoption** in bestehenden Views.
+- `feature/icloud-sync-foundation` — `Sources/LocationHistoryConsumerAppSupport/CloudSyncService.swift` (`CloudSyncAccountStatus`, `CloudSyncStatus`, `CloudSyncService` Protokoll, `DefaultCloudSyncService` mit `.disabled`/`.couldNotDetermine`-only, `InMemoryCloudSyncService`). `AppPreferences.iCloudSyncEnabled` + `preferCloudDriveExport` (beide Default `false`). `docs/ICLOUD_SYNC_ARCHITECTURE.md`.
+
+### Sicherheitslinie (verbindlich, unverändert)
+- **Keine** Public CloudKit Database.
+- **Keine** automatische Synchronisation importierter Standorthistorien.
+- iCloud bleibt opt-in und deaktivierbar; `disable()` setzt Service in `.disabled` zurück.
+- Lokale Funktion bleibt unabhängig vom iCloud-Status verfügbar.
+
+### Bewusst NICHT in diesem Integrationspass
+- **Keine** Adoption der `LHX*`-Komponenten in `AppContentSplitView`/`AppExportView`/`AppInsightsContentView`.
+- **Kein** Light-Mode (`UIUserInterfaceStyle = Dark` weiter undeklariert).
+- **Keine** iPad-Aktivierung (`TARGETED_DEVICE_FAMILY = 1`).
+- **Keine** Aktivierung von iCloud/CloudKit-Capabilities, kein Entitlement-Edit, kein Privacy-Manifest-Update.
+- **Kein** Adoption-Wiring der `LHXSyncStatusCard` in `AppOptionsView`.
+- **Kein** `xcodebuild`-/Hardware-/Xcode-Cloud-/TestFlight-Run (Linux-Host).
+
 ## 2026-05-19 — Deep Audit Follow-up: Feature-Inventory + Wrapper-Roadmap Truth-Sync (Branch `chore/deep-audit-doc-truth-sync-2026-05-19`)
 
 > **Schließt die im Audit-Bericht 2026-05-19 §10 als offen markierten Doku-Risiken zu `docs/APP_FEATURE_INVENTORY.md` und `wrapper/ROADMAP.md`.** Kein Code, kein Test, kein Versions-Bump.

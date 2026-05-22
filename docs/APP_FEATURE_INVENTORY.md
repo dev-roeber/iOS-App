@@ -1,6 +1,35 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-19 (Follow-up des Deep-Audit-Doc-Truth-Sync 2026-05-19 — Trains M–R sind seit dem 2026-05-09-Stand gemerged; siehe Sektion 13 für die in Train M–R neu eingeführten Foundation-only Presentation-Helper, die `ProductInfoCard`-SwiftUI-Komponente, deren View-Wiring in `AppExportView` (Import-/Format-/Selection-Cards) und den zentralen `AppAccessibilityID`-Namespace mit `Root`/`Tab`/`Map`/`ProductInfo`/`Action`-Subnamespaces. Linux `swift test` heute 1578/2/0 in 54,67 s, HEAD `549c310`.)
+Last analysis: 2026-05-22 (Integration-Follow-up auf Branch
+`integration/full-app-redesign-icloud-verify`). Kombiniert:
+
+1. **Redesign-Spec** (`docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md`)
+   — Planungspapier, keine Code-Änderung daran.
+2. **Train B "Additive UI-Foundation"** —
+   `Sources/LocationHistoryConsumerAppSupport/UI/` mit `LHXEmptyState`,
+   `LHXErrorState`, `LHXLoadingState`, `LHXStatCard`, `LHXActionCard`,
+   `LHXInfoCard`, `LHXSyncStatusCard`, `LHXPrimaryActionButton`,
+   `LHXSecondaryActionButton`, `LHXMapOverlayControl`. **Keine Adoption
+   in bestehenden Views.**
+3. **Train F.0 "iCloud Sync Foundation"** — `CloudSyncService` Protokoll
+   + `DefaultCloudSyncService` (`.disabled` / `.couldNotDetermine`-only,
+   **kein** CloudKit-Aufruf) + `InMemoryCloudSyncService`. Zwei neue
+   `AppPreferences`-Toggles (`iCloudSyncEnabled`, `preferCloudDriveExport`,
+   Default `false`). Architektur: `docs/ICLOUD_SYNC_ARCHITECTURE.md`.
+
+**Wahrheitskorrekturen (gelten weiter):**
+- App ist `TARGETED_DEVICE_FAMILY = 1` → iPhone-only.
+- iCloud ist als Foundation eingecheckt, aber **nicht aktiviert**
+  (Xcode-Capability + Entitlement-Edit sind Apple-Pflicht, siehe
+  `docs/APPLE_VERIFICATION_CHECKLIST.md` Aktualisierung 2026-05-22).
+- Force-Dark-UI ohne `UIUserInterfaceStyle=Dark`-Deklaration.
+- Trains O/P/Q/R bleiben extern in TestFlight unbestätigt (letzter
+  verifizierter Cloud-Build: 179 auf `ff789a4`).
+
+**Test-/Build-Stand des Integrationsbranchs**: siehe Final-Report
+`docs/FULL_APP_REDESIGN_ICLOUD_INTEGRATION_VERIFICATION_2026-05-22.md`.
+
+Davor: 2026-05-19 (Follow-up des Deep-Audit-Doc-Truth-Sync 2026-05-19 — Trains M–R sind seit dem 2026-05-09-Stand gemerged; siehe Sektion 13 für die in Train M–R neu eingeführten Foundation-only Presentation-Helper, die `ProductInfoCard`-SwiftUI-Komponente, deren View-Wiring in `AppExportView` (Import-/Format-/Selection-Cards) und den zentralen `AppAccessibilityID`-Namespace mit `Root`/`Tab`/`Map`/`ProductInfo`/`Action`-Subnamespaces. Linux `swift test` heute 1578/2/0 in 54,67 s, HEAD `549c310`.)
 
 Davor: 2026-05-09 (L-04 — Bounded LRU für AppSessionContent-Caches: neuer Foundation-only `BoundedLRU<K,V>`; alle 5 Filter-/Detail-Caches und der `projectedDaysCache` laufen darüber. Capacities 8/8/8/32/16/8. Semantik unverändert.)
 

@@ -64,7 +64,8 @@ let package = Package(
                 // `Undefined symbols: _sqlite3_*` at link time.
                 .target(name: "CSQLite", condition: .when(platforms: [.linux])),
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
-            ]
+            ],
+            exclude: ["UI/README.md"]
         ),
         .target(
             name: "LocationHistoryConsumerDemoSupport",
