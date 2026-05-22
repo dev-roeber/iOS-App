@@ -2,7 +2,9 @@
 
 ## 2026-05-22 — Train F.1: iCloud Capability Preparation (Branch `feature/icloud-capability-f1`)
 
-> **Capability-Vorbereitung.** Entitlement-Datei + CloudKit-AccountStatus-Adapter. **Kein echter Sync, keine Records, keine Subscriptions, keine Public DB, keine Historien-Synchronisation.** Apple Developer Portal Container muss extern noch registriert werden, bevor ein signierter Mac-Build möglich ist. Linux `swift build` + `swift test` bleiben grün (1578/2/0).
+> **Capability-Vorbereitung.** Entitlement-Datei + CloudKit-AccountStatus-Adapter. **Kein echter Sync, keine Records, keine Subscriptions, keine Public DB, keine Historien-Synchronisation.** Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` muss extern noch registriert werden, bevor ein signierter Mac-Build möglich ist. Linux `swift build` + `swift test` bleiben grün (1578/2/0).
+
+> **Apple-Host-Validierung bewusst auf Xcode Cloud verschoben.** Der Mac-`xcodebuild`-Sanity-Check auf dem Integration-/Feature-HEAD ist auf diesem Linux-Host strukturell nicht möglich. F.1 wird deshalb mit Linux-Grün gemerged; die echte Capability-Validierung (Signing, Entitlement-Wiring, iOS-Simulator-Smoke) erfolgt durch den nächsten Xcode-Cloud-Workflow `Release – Archive & TestFlight` auf dem neuen main-HEAD. **Apple Developer Portal Container ist bis zu diesem Cloud-Lauf weiter nicht verifiziert** — das ist das offene Hauptrisiko.
 
 ### Geänderte Dateien
 - `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` — neue Keys `com.apple.developer.icloud-container-identifiers = [iCloud.de.roeber.LH2GPXWrapper]` und `com.apple.developer.icloud-services = [CloudKit]`. Kommentar dokumentiert die noch offene Portal-Registrierung.

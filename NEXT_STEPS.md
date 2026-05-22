@@ -1,6 +1,13 @@
 # NEXT_STEPS
 
-## Stand 2026-05-22 — Train F.1: iCloud Capability Preparation (Branch `feature/icloud-capability-f1`)
+## Stand 2026-05-22 — Train F.1: iCloud Capability Preparation (Branch `feature/icloud-capability-f1`, Apple-Validierung deferred)
+
+> **Hinweis**: F.1 wird mit Linux-Grün gemerged. Der Mac-/Xcode-/
+> Simulator-Pass ist auf diesem Host nicht möglich und wird bewusst auf
+> den nächsten Xcode-Cloud-Workflow `Release – Archive & TestFlight`
+> verschoben. **Apple Developer Portal Container
+> `iCloud.de.roeber.LH2GPXWrapper` ist bis zum Cloud-Lauf weiter nicht
+> verifiziert** — wenn er fehlt, wird Xcode Cloud beim Signing scheitern.
 
 **Umgesetzt** (Capability-Vorbereitung, kein echter Sync):
 - `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` erweitert um
@@ -18,14 +25,15 @@
 - `swift build` ✅ Build complete (1,97 s).
 - `swift test` ✅ 1578 / 2 skipped / 0 failures (55,9 s).
 
-**Apple-Pflicht-Schritte (extern, OFFEN):**
+**Apple-Pflicht-Schritte (extern, OFFEN, sind in den Xcode-Cloud-Run verschoben):**
 - Apple Developer Portal: App-ID `de.roeber.LH2GPXWrapper` → Capability
   „iCloud" → Service „CloudKit" zuweisen + Container
-  `iCloud.de.roeber.LH2GPXWrapper` anlegen.
-- Xcode "Automatically manage signing" sollte Provisioning-Profile
-  danach automatisch regenerieren.
-- `xcodebuild -scheme LH2GPXWrapper build` auf Mac als erster
-  Sanity-Check (Linux nicht möglich).
+  `iCloud.de.roeber.LH2GPXWrapper` anlegen. **Muss vor dem nächsten
+  Xcode-Cloud-Build erledigt sein, sonst bricht der Signing-Schritt.**
+- Xcode-Cloud-Workflow `Release – Archive & TestFlight` triggern → Build > 179.
+- Cloud-Logs: Signing + Archive + interne Tests müssen grün sein.
+- Erst dann: Hardware-Smoke (iPhone mit echtem iCloud-Login),
+  TestFlight-Sicht-Verifikation (kein „Sync aktiv"-Claim in Settings).
 
 **Zwingend nächster Schritt** nach Apple-Pflicht-Schritten:
 - **Train F.2** — CloudKit Private-Metadata-Schema (`LiveTrackMeta`

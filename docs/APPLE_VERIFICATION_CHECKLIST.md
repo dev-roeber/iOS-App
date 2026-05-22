@@ -1,5 +1,47 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-22 (Train F.1 Merge — Apple-Validierung auf Xcode Cloud verschoben)
+
+**Merge-Stand auf main:** `feature/icloud-capability-f1` (HEAD `6011a66`)
+wurde mit Linux-Grün (1578/2/0) nach main gemerged. **Mac-`xcodebuild`-
+Sanity-Check wurde NICHT auf einem Apple-Host durchgeführt**, da nur ein
+Linux-Server zur Verfügung steht. Die Apple-Validierung wird *bewusst*
+auf den nächsten Xcode-Cloud-Run verschoben.
+
+**Pflicht-Apple-Schritte vor dem nächsten Xcode-Cloud-Build:**
+
+1. Apple Developer Portal:
+   - App-ID `de.roeber.LH2GPXWrapper` → Capability "iCloud" aktivieren →
+     Service "CloudKit" zuweisen.
+   - iCloud-Container `iCloud.de.roeber.LH2GPXWrapper` anlegen.
+2. **Hauptrisiko**: ohne den Portal-Container scheitert der Xcode-Cloud-
+   Signing-Schritt mit „provisioning profile doesn't match entitlement".
+3. Nach Portal-Aktivierung: Xcode-Cloud-Workflow `Release – Archive &
+   TestFlight` triggern → erwarteter Build > 179.
+4. Cloud-Logs prüfen: Signing + Archive + interne Tests müssen grün
+   sein.
+5. **Erst danach** Hardware-Smoke + TestFlight-Sicht-Verifikation:
+   - App startet ohne Crash.
+   - Settings zeigt KEINEN „Sync aktiv"-Claim.
+   - `CloudSyncStatus` zeigt `disabled` oder `couldNotDetermine` (User
+     hat noch nicht opt-in gedrückt).
+6. **Erst nach Cloud-Grün** Train F.2 starten (Records + Privacy-
+   Manifest-Erweiterung).
+
+**Aussagen, die in diesem Merge NICHT gemacht werden:**
+- ❌ „iCloud Capability auf Apple-Host verifiziert" — wurde nicht
+  geprüft.
+- ❌ „Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper`
+  registriert" — extern noch zu erledigen.
+- ❌ „Xcode Cloud Build bestanden" — letzter extern grüner Build
+  bleibt 179.
+- ❌ „TestFlight Smoke bestanden" — nicht durchgeführt.
+- ❌ „iPad unterstützt" — `TARGETED_DEVICE_FAMILY = 1` unverändert.
+- ❌ „Light Mode unterstützt" — `UIUserInterfaceStyle` weiter undeklariert.
+- ❌ „Historien-Sync aktiv" — kein Sync-Code existiert.
+
+---
+
 ## Aktualisierung 2026-05-22 (Train F.1 — iCloud Capability Preparation, Branch `feature/icloud-capability-f1`)
 
 **Lokal umgesetzt** (Linux-Pass):
