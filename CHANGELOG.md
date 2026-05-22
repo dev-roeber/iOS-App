@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2026-05-22 — Additive UI-Foundation (Branch `chore/full-app-redesign-foundation`)
+
+> **Additive Komponentenbasis aus `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §4.** Keine Adoption in bestehenden Views, kein Tab-/Navigation-Umbau in diesem Train. Keine Tests, keine Builds.
+
+### Neue Dateien
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXStateViews.swift` — `LHXEmptyState`, `LHXErrorState`, `LHXLoadingState`.
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXCards.swift` — `LHXStatCard`, `LHXActionCard`, `LHXInfoCard`, `LHXSyncStatusCard`.
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXButtons.swift` — `LHXPrimaryActionButton`, `LHXSecondaryActionButton`, `LHXMapOverlayControl`.
+- `Sources/LocationHistoryConsumerAppSupport/UI/README.md` — Inventar, Designprinzipien, Adoption-Checkliste.
+
+### Geänderte Dateien
+- `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APP_FEATURE_INVENTORY.md` — Stand-Block 2026-05-22, Verweis auf neue Foundation. Keine Feature-Häkchen gesetzt.
+
+### Bewusst NICHT in diesem Train
+- **Keine** Änderung an `AppContentSplitView`, `AppExportView`, `AppInsightsContentView` oder anderen bestehenden Views — Adoption erfolgt in Trains C/D/E/G mit Sichtprüfung + Tests.
+- **Kein** Light-Mode (`UIUserInterfaceStyle = Dark` bleibt undeklariert; Entscheidung in Train A).
+- **Keine** iPad-Aktivierung (`TARGETED_DEVICE_FAMILY = 1` unverändert).
+- **Kein** Test-Lauf, kein Build, keine `xcodebuild`-Verifikation. Adoption-Validierung gehört in Train H.
+
 ## 2026-05-19 — Deep Audit Follow-up: Feature-Inventory + Wrapper-Roadmap Truth-Sync (Branch `chore/deep-audit-doc-truth-sync-2026-05-19`)
 
 > **Schließt die im Audit-Bericht 2026-05-19 §10 als offen markierten Doku-Risiken zu `docs/APP_FEATURE_INVENTORY.md` und `wrapper/ROADMAP.md`.** Kein Code, kein Test, kein Versions-Bump.

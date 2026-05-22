@@ -1,5 +1,14 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-22, Branch `chore/full-app-redesign-foundation`, HEAD pending — Train B Foundation)
+
+- **Train B „Additive UI-Foundation" umgesetzt:** vier neue Files unter `Sources/LocationHistoryConsumerAppSupport/UI/` (LHXStateViews, LHXCards, LHXButtons, README). Komponenten: `LHXEmptyState`, `LHXErrorState`, `LHXLoadingState`, `LHXStatCard`, `LHXActionCard`, `LHXInfoCard`, `LHXSyncStatusCard`, `LHXPrimaryActionButton`, `LHXSecondaryActionButton`, `LHXMapOverlayControl`. Keine Adoption in bestehenden Views.
+- **Keine Adoption** in `AppContentSplitView`/`AppExportView`/`AppInsightsContentView` o. ä. — bewusst additiv, Adoption folgt in Trains C/D/E/G.
+- **Light-Mode/iPad** unverändert: `UIUserInterfaceStyle` nicht deklariert (Force-Dark), `TARGETED_DEVICE_FAMILY = 1`.
+- **iCloud** weiterhin nicht implementiert — `LHXSyncStatusCard` ist presentational-only und wartet auf `CloudSyncService` aus Train F.
+- **Tests/Builds**: nicht gefahren (Linux-Host).
+- **Repo-Truth**: `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+
 ## Aktiver Stand (2026-05-17, Branch `main`, HEAD pending — Train R)
 
 - **Train R umgesetzt (2 produktive Commits + Doku-Sync):** `150513e` Build-179-Baseline · `55547fd` neuer `ExportSelectionSummaryPresentation` (10 Tests, privacy-safe `Counts`, DE/EN-Pluralisierung, Mixed-Source / Per-Route-Narrowing Secondary-Line, `strings(for:german:) -> Strings?` mit Nil-bei-leer) verdrahtet in `AppExportView` als `selectionSummaryProductInfoCard` + 3 neue `AppAccessibilityID.ProductInfo.exportSelection.*`-Konstanten. Übersprungen: Phasen 2/3/4/5 (RouteQuality-Single-Selection / Live-Kontext / Active-Source-Card / Guidance-Layout-Polish — alle mit Apple-Verifikations-Risiko begründet). Linux `swift test` **1578 / 2 Skips / 0 Failures** (+10). Train-R-Commits sind **noch nicht** in Build 179.

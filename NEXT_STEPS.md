@@ -1,5 +1,34 @@
 # NEXT_STEPS
 
+## Stand 2026-05-22 — Train B "Additive UI-Foundation" (Branch `chore/full-app-redesign-foundation`)
+
+**Umgesetzt** (rein additiv, keine Adoption in bestehenden Views):
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXStateViews.swift` —
+  `LHXEmptyState` / `LHXErrorState` / `LHXLoadingState`.
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXCards.swift` —
+  `LHXStatCard` / `LHXActionCard` / `LHXInfoCard` / `LHXSyncStatusCard`.
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXButtons.swift` —
+  `LHXPrimaryActionButton` / `LHXSecondaryActionButton` /
+  `LHXMapOverlayControl` (44 pt Tap-Targets, `disabledReason` als
+  `accessibilityHint`).
+- `Sources/LocationHistoryConsumerAppSupport/UI/README.md` —
+  Komponenten-Inventar + Adoption-Checkliste.
+
+**Tests/Builds**: in dieser Phase **bewusst nicht gefahren** (Linux-Host;
+SwiftUI-View-Tests benötigen Apple-Toolchain). Adoption-Verifikation
+gehört in Train H.
+
+**Zwingend nächster Schritt**:
+Train A (`chore/doc-truth-sync-v3`) für die Wahrheitskorrekturen in
+README/ROADMAP/NEXT_STEPS/FeatureInventory; danach Train C
+(`chore/ux-import-export-polish`) für die erste echte Adoption in
+einer engen Surface (Import-Cancel + Empty-State).
+
+**Folge-Trains** (laut Spec §10):
+A · **B (✅ Foundation hier)** · C · D · E · F · G · H.
+
+---
+
 Stand: 2026-05-17 (Branch `main`, nach **Train R — Export Selection Summary & UX Refinements**).
 
 **Train R umgesetzt (2 produktive Commits + Doku-Sync):**

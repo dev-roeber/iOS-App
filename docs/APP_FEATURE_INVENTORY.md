@@ -1,6 +1,17 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-19 (Follow-up des Deep-Audit-Doc-Truth-Sync 2026-05-19 — Trains M–R sind seit dem 2026-05-09-Stand gemerged; siehe Sektion 13 für die in Train M–R neu eingeführten Foundation-only Presentation-Helper, die `ProductInfoCard`-SwiftUI-Komponente, deren View-Wiring in `AppExportView` (Import-/Format-/Selection-Cards) und den zentralen `AppAccessibilityID`-Namespace mit `Root`/`Tab`/`Map`/`ProductInfo`/`Action`-Subnamespaces. Linux `swift test` heute 1578/2/0 in 54,67 s, HEAD `549c310`.)
+Last analysis: 2026-05-22 (Train-B-Foundation-Follow-up — additive
+`LHX*`-Komponenten in `Sources/LocationHistoryConsumerAppSupport/UI/`
+hinzugefügt. **Keine Adoption in bestehenden Views**, keine Feature-
+Häkchen gesetzt. Light-Mode bleibt undeklariert (Force-Dark);
+`TARGETED_DEVICE_FAMILY = 1` (iPhone-only); iCloud weiterhin nicht
+implementiert. Komponenten: `LHXEmptyState`, `LHXErrorState`,
+`LHXLoadingState`, `LHXStatCard`, `LHXActionCard`, `LHXInfoCard`,
+`LHXSyncStatusCard`, `LHXPrimaryActionButton`,
+`LHXSecondaryActionButton`, `LHXMapOverlayControl`. Tests/Builds nicht
+gefahren.)
+
+Davor: 2026-05-19 (Follow-up des Deep-Audit-Doc-Truth-Sync 2026-05-19 — Trains M–R sind seit dem 2026-05-09-Stand gemerged; siehe Sektion 13 für die in Train M–R neu eingeführten Foundation-only Presentation-Helper, die `ProductInfoCard`-SwiftUI-Komponente, deren View-Wiring in `AppExportView` (Import-/Format-/Selection-Cards) und den zentralen `AppAccessibilityID`-Namespace mit `Root`/`Tab`/`Map`/`ProductInfo`/`Action`-Subnamespaces. Linux `swift test` heute 1578/2/0 in 54,67 s, HEAD `549c310`.)
 
 Davor: 2026-05-09 (L-04 — Bounded LRU für AppSessionContent-Caches: neuer Foundation-only `BoundedLRU<K,V>`; alle 5 Filter-/Detail-Caches und der `projectedDaysCache` laufen darüber. Capacities 8/8/8/32/16/8. Semantik unverändert.)
 
