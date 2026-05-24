@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## 2026-05-25 — Test-Stabilization: `testDeviceSmokeNavigationAndActions` robust gegen Concurrent-Load (Branch `main`, HEAD `da1e12e` → folgt)
+
+> Der gestern rote Hardware-UITest war **isoliert grün** (Repro auf `da1e12e` ohne Parallel-Last: passed in 76,5 s). Der Failure entstand unter Concurrent-Load (parallel laufende Sim-UITest + Device-UITest + `swift build`/`swift test`), nicht durch App-Code. Minimal-Robustness-Hotfix im Test, keine UI-Änderung, keine Logik-Änderung.
+
+### Geänderte Dateien
+- `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift` — zwei Timeout-Bumps:
+  - `byIdentifier.waitForExistence(timeout: 2)` → `timeout: 5` für `overview.range.heatmap.button`. Begründung: Accessibility-Tree-Population kann unter parallel laufendem `xcodebuild` mehrere Sekunden verzögert sein, vor allem nach `range.chip.all`-Tap, der ein LazyVGrid-Re-Layout triggert.
+  - `scrollUntilHittable`-RunLoop-Settle `0.3 s` → `0.5 s` (beide Vorkommen — Forward-Scroll + Overshoot-Recovery). Begründung: dieselbe Last-Situation verzögert die UI-Idle zwischen Drags; 0,3 s lassen den nächsten `isHittable`-Check vor abgeschlossenem Re-Layout laufen.
+- Keine App-Code-Änderung. `overview.range.card`-Accessibility-Identifier (`AppContentSplitView.swift:886`) und `overview.range.heatmap.button` (`:871`) unverändert.
+
+### Verifikation (HEAD `da1e12e` + Test-Fix, macOS 15.7 / Xcode 26.3 / iPhone 15 Pro Max iOS 26.4)
+- `swift build` ✅ Build complete (1,16 s, DerivedData warm) — 0E/0W.
+- `swift test` ✅ **1558 Tests, 2 Skips, 0 Failures, 181,7 s**.
+- `xcodebuild build` Sim (iPhone 17 Pro Max 26.3.1) ✅ BUILD SUCCEEDED.
+- `xcodebuild test -only-testing:LH2GPXWrapperUITests/LH2GPXWrapperUITests/testDeviceSmokeNavigationAndActions` Device ✅ **TEST SUCCEEDED, passed in 78,4 s** auf iPhone 15 Pro Max (UDID `00008130-00163D0A0461401C`). Device-Build mit `-allowProvisioningUpdates` lief erneut grün — iCloud-Capability/Signing implizit re-validiert (Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` registriert).
+- Komplette Device-UITest-Suite **nicht** erneut ausgeführt (gezielt nur der vorher rote Test); restliche 12 Tests waren auf `da1e12e` schon grün und sind durch diesen Test-Only-Fix nicht betroffen.
+
+### Bewusst nicht behauptet / weiter offen
+- Xcode Cloud Workflow `Release – Archive & TestFlight` auf neuem HEAD **nicht** ausgelöst — letzter extern grüner Cloud-Build bleibt **179**.
+- TestFlight-Submission / ASC-Re-Verifikation nicht durchgeführt.
+- Hardware-Smoke gegen echten iCloud-Login nicht gefahren — Train F.2-Pflicht.
+- iPad (`TARGETED_DEVICE_FAMILY = 1`), Light Mode (`UIUserInterfaceStyle` undeklariert) unverändert.
+- iCloud Sync weiter **nicht** implementiert; nur `CKContainer.accountStatus()`-Adapter; keine Records, keine Public/shared DB, keine Historien-Sync.
+
 ## 2026-05-25 — Apple-Host-Validierung Train F.1 + macOS-Host swift build Hotfix (Branch `main`, HEAD `2845d82` → folgt)
 
 > Erster echter macOS/Xcode/iPhone-Validierungslauf seit dem `LHXActionCard`-Hotfix. Train F.1 iCloud-Capability ist damit lokal Apple-validiert — das **Apple Developer Portal-Container `iCloud.de.roeber.LH2GPXWrapper` ist registriert** (sonst hätte Xcode `-allowProvisioningUpdates` kein Provisioning Profile mit der iCloud-Entitlement ausstellen können). Zusätzlich war `swift build` auf macOS-Host seit `ff963c1` (16.05. abends) wegen API/Platform-Mismatch kaputt — minimal-Hotfix Package.swift `.macOS(.v13)` → `.v14`.

@@ -208,10 +208,12 @@ final class LH2GPXWrapperUITests: XCTestCase {
 
         // Stable identifier set in AppContentSplitView.overviewRangeCard.
         // Falls back to a label-based predicate so older builds without the
-        // identifier still resolve the same control.
+        // identifier still resolve the same control. Identifier timeout
+        // raised from 2s → 5s to stay reliable under concurrent system load
+        // (parallel xcodebuild runs delay accessibility tree population).
         let heatmapButton: XCUIElement = {
             let byIdentifier = app.buttons["overview.range.heatmap.button"]
-            if byIdentifier.waitForExistence(timeout: 2) { return byIdentifier }
+            if byIdentifier.waitForExistence(timeout: 5) { return byIdentifier }
             return app.buttons.matching(NSPredicate(format: "label CONTAINS 'Heatmap'")).firstMatch
         }()
         XCTAssertTrue(scrollUntilHittable(heatmapButton, in: app))
@@ -603,14 +605,14 @@ final class LH2GPXWrapperUITests: XCTestCase {
         for _ in 0..<maxIterations {
             if element.exists && element.isHittable { return true }
             bottom.press(forDuration: 0.05, thenDragTo: top)
-            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         }
 
         // Overshoot recovery: scroll back down in smaller increments.
         for _ in 0..<maxIterations {
             if element.exists && element.isHittable { return true }
             top.press(forDuration: 0.05, thenDragTo: bottom)
-            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         }
 
         return element.exists && element.isHittable

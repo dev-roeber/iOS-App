@@ -1,5 +1,29 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (später) — UITest-Hotfix `testDeviceSmokeNavigationAndActions`
+
+**HEAD:** `da1e12e` + Test-Only-Patch (`wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift`).
+**Befund:** Der gestern auf `da1e12e` rote Hardware-UITest war **isoliert grün** (76,5 s). Failure war Concurrent-Load (parallele xcodebuild-Runs). Minimal-Hotfix im Test ohne UI-Änderung: Identifier-Timeout 2→5 s, Scroll-Settle 0.3→0.5 s.
+
+### ✅ Re-validiert in diesem Pass
+- `xcodebuild test -only-testing:.../testDeviceSmokeNavigationAndActions` (Device, iPhone 15 Pro Max) **TEST SUCCEEDED, 78,4 s**. Device-Build mit `-allowProvisioningUpdates` grün → iCloud-Capability/Signing implizit re-validiert.
+- `swift build` ✅, `swift test` ✅ 1558/2/0 (181,7 s), Sim Build ✅.
+
+### ❌ Nicht ausgeführt in diesem Pass
+- Komplette Device-UITest-Suite (nur der vorher rote Test gezielt).
+- Xcode Cloud `Release – Archive & TestFlight` auf neuem HEAD nicht getriggert.
+- TestFlight-Submission / ASC-Re-Verifikation.
+- Hardware-Smoke gegen echten iCloud-Login (Train F.2-Pflicht).
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ CloudKit Records aktiv.
+- ❌ Public/shared DB genutzt.
+- ❌ iPad-/Light-Mode-Support.
+- ❌ Xcode Cloud Build / TestFlight bestanden (auf diesem HEAD).
+
+---
+
 ## Aktualisierung 2026-05-25 (Train F.1 lokal Apple-Host-validiert auf iPhone 15 Pro Max)
 
 **HEAD:** `2845d82` (+ Package.swift `.macOS(.v14)`-Bump als minimal-Hotfix für macOS-Host-`swift build`).

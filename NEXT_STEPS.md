@@ -1,5 +1,17 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (später) — UITest-Hotfix `testDeviceSmokeNavigationAndActions` (Branch `main`, HEAD `da1e12e` → folgt)
+
+> Der gestern rote Hardware-UITest war **isoliert grün** auf `da1e12e` (76,5 s). Failure entstand unter Concurrent-Load. Minimal-Robustness-Patch im Test (kein App-Code).
+
+**Geändert:** `wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift` — `byIdentifier.waitForExistence(timeout: 2 → 5)`, `scrollUntilHittable` RunLoop-Settle `0.3 → 0.5 s`.
+
+**Verifiziert (Apple-Host):** `swift build` ✅, `swift test` ✅ 1558/2/0, Sim Build ✅, gezielter Device-UITest ✅ 78,4 s auf iPhone 15 Pro Max. Komplette Device-Suite nicht erneut ausgeführt.
+
+**Nächste Schritte:** Xcode Cloud `Release – Archive & TestFlight` auf neuem HEAD triggern → Build > 179. Danach Train F.2/F.3/F.4 freigeben.
+
+---
+
 ## Stand 2026-05-25 — Train F.1: iCloud Capability Apple-Host-validiert (Branch `main`, HEAD `2845d82` + Package.swift macOS-Bump)
 
 > **F.1 ist auf Apple-Host lokal validiert.** macOS 15.7 / Xcode 26.3 / iPhone 15 Pro Max iOS 26.4. Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` ist registriert (implizit nachgewiesen — Xcode hat Provisioning Profile mit iCloud-Container-Entitlement ausgestellt). **Echter Sync bleibt nicht implementiert** — Train F.2/F.3/F.4 weiter offen.
