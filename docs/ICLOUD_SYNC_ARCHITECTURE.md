@@ -4,10 +4,17 @@ Stand: **2026-05-22** · zuletzt erweitert auf Branch
 `feature/icloud-capability-f1` (Train F.1 — Capability-Vorbereitung).
 Ursprung: `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §6.
 
-> **Train F.1 Status:** Entitlement-Datei + CloudKit-Capability-Adapter
-> in der Codebase vorbereitet. **Apple Developer Portal noch nicht
-> registriert** (`iCloud.de.roeber.LH2GPXWrapper`-Container muss extern
-> angelegt werden, bevor ein Mac-Build signiert). Linux `swift build` +
+> **Train F.1 Status (2026-05-25):** Apple-Host lokal validiert auf
+> macOS 15.7 / Xcode 26.3 / iPhone 15 Pro Max iOS 26.4.
+> **`iCloud.de.roeber.LH2GPXWrapper`-Container ist im Apple Developer
+> Portal registriert** — implizit nachgewiesen über `xcodebuild
+> -allowProvisioningUpdates build`, das ein Provisioning Profile mit
+> beiden iCloud-Entitlement-Keys ausgestellt hat. Signiertes Device-
+> Bundle (`codesign -d --entitlements -`) zeigt
+> `com.apple.developer.icloud-container-identifiers =
+> [iCloud.de.roeber.LH2GPXWrapper]` und
+> `com.apple.developer.icloud-services = [CloudKit]`. (Vorher als
+> "noch nicht registriert" markiert.) Linux `swift build` +
 > `swift test` weiter grün (1578/2/0); CloudKit-Code ist `#if
 > canImport(CloudKit)`-gegated und fällt auf Linux komplett raus.
 > Echter Sync ist **nicht** implementiert — nur `CKAccountStatus`-Adapter.
@@ -25,7 +32,7 @@ Ursprung: `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §6.
 | `Sources/.../CloudKitCloudSyncService.swift` | NEU, `#if canImport(CloudKit)`-gated, AccountStatus-Adapter, **keine** Records |
 | `CloudSyncServiceFactory.makeProductionService(...)` | NEU, wählt CloudKit oder Default automatisch |
 | `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` | unverändert (kein neuer Datenfluss, weil keine Records geschrieben werden) |
-| Apple Developer Portal Container | **OFFEN** — muss extern angelegt werden, bevor signed Mac-Build möglich |
+| Apple Developer Portal Container | **REGISTRIERT** (2026-05-25 lokal nachgewiesen via Provisioning + Embedded-Entitlements im signierten iPhone-Bundle) |
 | AppPreferences `iCloudSyncEnabled` | unverändert (Default `false`, opt-in) |
 | Echter Datensync | nicht implementiert (Train F.2) |
 | Historien-Sync | weiterhin **explizit ausgeschlossen** |

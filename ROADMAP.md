@@ -1,5 +1,15 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `2845d82` + Package.swift macOS-Bump — Train F.1 Apple-Host-validiert)
+
+- **Train F.1 lokal Apple-Host-validiert** auf macOS 15.7 / Xcode 26.3 / iPhone 15 Pro Max iOS 26.4.
+- **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` REGISTRIERT** (implizit nachgewiesen — Provisioning Profile mit iCloud-Entitlement ausgestellt; signiertes Device-Bundle enthält beide iCloud-Keys + App-Group). Bisherige Doku-Behauptung „noch nicht registriert" ist überholt.
+- **Echter Sync weiter NICHT implementiert** — nur `CKContainer.accountStatus()`-Adapter. Keine Records, Subscriptions, Assets, Public/shared DB, kein Historien-Sync.
+- **Minimal-Hotfix Package.swift**: `.macOS(.v13)` → `.macOS(.v14)`. `swift build` auf macOS-Host war seit `ff963c1` (16.05.) wegen `onChange(of:initial:_:)`-API/Platform-Mismatch kaputt. Bump folgt der bereits eingeführten API-Nutzung. iPhone-App-Wahrheit unverändert.
+- **Build/Test-Wahrheit (Apple-Host):** xcodebuild Sim Build ✅, Sim Test CI 8/8 ✅, Device Build mit Signing ✅, Device UITests **12/13 passed** (1 Fail `testDeviceSmokeNavigationAndActions`/`overview.range.card`-Hit-Target, kein App-Crash), `swift build` ✅, `swift test` 1558/2/0 ✅, App-Launch auf iPhone ohne Crash + Widget-Extension live.
+- **Bewusst offen:** Xcode Cloud `Release – Archive & TestFlight` auf neuem HEAD nicht ausgelöst (letzter extern grüner Build bleibt 179), TestFlight/ASC unverändert, Hardware-Smoke gegen echten iCloud-Login (Train F.2-Pflicht), iPad (`TARGETED_DEVICE_FAMILY = 1`), Light Mode (`UIUserInterfaceStyle` undeklariert), LHX*-UI-Adoption (Train F.4).
+- **Repo-Truth:** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` unverändert.
+
 ## Aktiver Stand (2026-05-22, Branch `feature/icloud-capability-f1` — Train F.1)
 
 - **Train F.1 „iCloud Capability Preparation"** umgesetzt:

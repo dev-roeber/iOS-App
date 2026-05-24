@@ -2,6 +2,11 @@
 
 **Dieses Repo (`dev-roeber/iOS-App`) ist das zentrale aktive Repository fuer die vollstaendige LH2GPX iOS-App.**
 
+> **Repo-Truth-Patch 2026-05-25 (Train F.1 Apple-Host-validiert, `main` HEAD `2845d82` + Package.swift macOS-Bump):**
+> - Apple-Host-Validierung auf macOS 15.7 / Xcode 26.3 / iPhone 15 Pro Max iOS 26.4 lokal durchgeführt. `xcodebuild` Sim Build/Test ✅, Device Build mit Signing ✅, App-Launch ohne Crash, Device UITests 12/13 (1 Fail `testDeviceSmokeNavigationAndActions`-Hit-Target). `swift build`/`swift test` macOS-Host ✅ (1558/2/0 in 186 s) nach Package.swift `.macOS(.v13)`→`.v14`-Bump (Hotfix für seit 16.05. kaputtes macOS-CLI nach onChange-Migration in `ff963c1`).
+> - **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` registriert** — implizit nachgewiesen via Provisioning-Profile + Embedded-Entitlements im signierten Device-Bundle.
+> - Echter Sync, CloudKit-Records, Historien-Sync, Public/shared DB, iPad, Light Mode, Xcode Cloud auf neuem HEAD, TestFlight, ASC: weiter **nicht** behauptet. Siehe `docs/APPLE_VERIFICATION_CHECKLIST.md` Block 2026-05-25.
+
 > **Repo-Truth-Patch 2026-05-22 (Train F.1 — iCloud Capability Preparation, Branch `feature/icloud-capability-f1`):**
 > - `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` erweitert um
 >   `com.apple.developer.icloud-container-identifiers = [iCloud.de.roeber.LH2GPXWrapper]`

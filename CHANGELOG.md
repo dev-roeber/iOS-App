@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## 2026-05-25 — Apple-Host-Validierung Train F.1 + macOS-Host swift build Hotfix (Branch `main`, HEAD `2845d82` → folgt)
+
+> Erster echter macOS/Xcode/iPhone-Validierungslauf seit dem `LHXActionCard`-Hotfix. Train F.1 iCloud-Capability ist damit lokal Apple-validiert — das **Apple Developer Portal-Container `iCloud.de.roeber.LH2GPXWrapper` ist registriert** (sonst hätte Xcode `-allowProvisioningUpdates` kein Provisioning Profile mit der iCloud-Entitlement ausstellen können). Zusätzlich war `swift build` auf macOS-Host seit `ff963c1` (16.05. abends) wegen API/Platform-Mismatch kaputt — minimal-Hotfix Package.swift `.macOS(.v13)` → `.v14`.
+
+### Geänderte Dateien
+- `Package.swift` — `.macOS(.v13)` → `.macOS(.v14)`. Begründung: `ff963c1` hat 24 `onChange(of:)`-Calls auf die zweiargumentige Form `onChange(of:initial:_:)` migriert, die iOS 17 / macOS 14 verlangt. iOS-min war bereits `.v17`, macOS war unverändert `.v13` geblieben — `swift build` auf macOS-Host warf seither 90 Errors. Bump auf `.v14` ist der minimal-Fix, der zur faktischen API-Nutzung passt. Die App selbst bleibt iPhone-only; macOS ist nur Dev-Host-Triple für SwiftPM-CLI.
+
+### Apple-Host-Verifikation
+**Umgebung:** macOS 15.7 (Build 24G222, Intel x86_64), Xcode 26.3 (17C529), iPhone 15 Pro Max iOS 26.4 (UDID `00008130-00163D0A0461401C`), Simulator-Ersatz iPhone 17 Pro Max iOS 26.3.1 (`F671FA96-892A-4849-AD86-3EE9FF8FEB36`, da iPhone 15 Pro Max in Xcode 26.3 nicht mehr als Simulator-Variante angeboten wird).
+
+- `swift build` (macOS-Host) ✅ **Build complete (357,93 s, 0 Errors, 67 Warnings)** nach Platform-Bump. Pre-Bump waren es 90 Errors. Verbleibende Warnings: 12× Swift-6-Concurrency-Hinweise auf `CloudKitCloudSyncService.defaultContainerIdentifier` (Main-Actor-Isolation), 55× Deprecation/Style — alle pre-existing, kein Fail.
+- `swift test` (macOS-Host) ✅ **1558 Tests, 2 Skips, 0 Failures, 186,3 s** (`Test Suite 'All tests' passed`). Differenz zu Linux 1578 sind Linux-only-Cases (`#if os(Linux)`-Guards in CSQLite-Pfad/Network-Stubs).
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,id=F671FA96-…' -testPlan CI test` ✅ **TEST SUCCEEDED, 8/8 LH2GPXWrapperTests passed**.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS,id=00008130-…401C' -allowProvisioningUpdates build` ✅ **BUILD SUCCEEDED, 0 Errors, 0 Warnings** auf iPhone 15 Pro Max. Embedded Entitlements im signierten Bundle (`codesign -d --entitlements -`):
+  - `application-identifier = XAGR3K7XDJ.de.roeber.LH2GPXWrapper`
+  - `com.apple.developer.team-identifier = XAGR3K7XDJ`
+  - `com.apple.developer.icloud-container-identifiers = [iCloud.de.roeber.LH2GPXWrapper]`
+  - `com.apple.developer.icloud-services = [CloudKit]`
+  - `com.apple.security.application-groups = [group.de.roeber.LH2GPXWrapper]`
+  - Signed Time: 25. Mai 2026 at 00:02:06, TeamIdentifier `XAGR3K7XDJ`.
+- `xcrun devicectl device install app + process launch` ✅ App auf iPhone installiert, gestartet — Wrapper PID 64130, Widget-Extension PID 64122. **Kein Crash.**
+- `xcodebuild ... -only-testing:LH2GPXWrapperUITests test` (Device, iPhone 15 Pro Max): **12 passed / 1 failed**. Passed: `testAppStoreScreenshots`, `testLandscapeLayoutSmoke`, `testLargeImportSyntheticFile` (233 s, 46-MiB-Hardware-Gate bleibt geschlossen), 5× `testLiveActivityHardwareCapture*`, 4× `testLaunch`. Failed: `testDeviceSmokeNavigationAndActions` an Zeile 217 — `scrollUntilHittable` findet `overview.range.card` Button nicht (XCTAssertTrue). Identifier ist im Code definiert (`AppContentSplitView.swift:886`); der Helper-Drag-Pfad scheint mit der Train-O/P/R-Layoutänderung nicht mehr stabil zu treffen. **Kein neuer Crash, kein Build-Fail — UITest-Hit-Target-Detail-Problem.** Nicht als hotfix-pflichtig eingestuft (UI-Detail, nicht Xcode/SwiftUI/Signing).
+- `xcodebuild ... -only-testing:LH2GPXWrapperUITests test` (Simulator iPhone 17 Pro Max): 4× `testLaunch` passed; `testAppStoreScreenshots` failed nach 0,000 s mit `No matching device (19248ABD-…) in set at /Users/sebastian/Library/Developer/XCTestDevices`. **Test-Infrastruktur-Race**: parallel zum vorherigen `-testPlan CI` Sim-Lauf wurde der Test-Clone-Pool aufgeräumt, bevor der UITest-Lauf seine xctest installieren konnte. Kein App-Bug; bei sequenzieller Ausführung würde der UITest grün laufen wie auf Device. Nicht als App-Fail gewertet.
+
+### iCloud-Status (verbindliche Wahrheit)
+- **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper`: REGISTRIERT** — implizit nachgewiesen durch ausgestelltes Provisioning Profile mit beiden iCloud-Entitlement-Keys. Bisherige Doku-Behauptung „noch nicht registriert" ist **überholt**.
+- **Echter Sync: weiterhin NICHT implementiert.** Nur `CKContainer.accountStatus()`-Read-Pfad. Keine Records, keine Subscriptions, keine Assets, keine Public/shared Database. Kein automatischer Historien-Sync. `AppPreferences.iCloudSyncEnabled` Default `false`.
+- **Privacy-Manifest unverändert** — kein neuer Datentyp gesammelt.
+- **Kein Hardware-Smoke gegen echten iCloud-Login** in diesem Pass durchgeführt (Train F.2-Pflicht).
+
+### Weiterhin offen / explizit nicht behauptet
+- Xcode Cloud Workflow `Release – Archive & TestFlight` auf neuem main-HEAD **nicht** ausgelöst — letzter extern grüner Cloud-Build bleibt **179** auf `ff789a4`.
+- TestFlight-Submission nicht durchgeführt, ASC-Status nicht re-verifiziert.
+- **iPad** weiter nicht freigeschaltet (`TARGETED_DEVICE_FAMILY = 1` an allen 8 pbxproj-Stellen).
+- **Light Mode** weiter nicht unterstützt — `UIUserInterfaceStyle` undeklariert, Force-Dark via `.preferredColorScheme(.dark)`.
+- LHX*-UI-Komponenten (`LHXEmptyState`, `LHXErrorState`, `LHXLoadingState`, `LHXStatCard`, `LHXActionCard`, `LHXInfoCard`, `LHXSyncStatusCard`, `LHXPrimaryActionButton`, `LHXSecondaryActionButton`, `LHXMapOverlayControl`) sind **nirgends in produktiven Views adopted** — Smoke-Punkt „keine toten LHX-UI" damit trivial nicht-sichtbar. Adoption ist Train F.4.
+- 1 Device-UITest (`testDeviceSmokeNavigationAndActions`) ist rot — `overview.range.card`-`scrollUntilHittable`-Detail. Separat zu fixen.
+
+### Lehre (wirksam ab jetzt)
+- SwiftUI-Dateien hinter `#if canImport(SwiftUI)` gelten **erst nach Apple-Host- oder Xcode-Cloud-Build** als compiler-grün — Linux überspringt sie komplett. Diese Validierung schließt den entsprechenden Apple-Host-Anker für HEAD `2845d82`.
+- Wenn iOS-Min steigt, **Package.swift macOS-Min synchron heben** — sonst läuft der macOS-Host-Build in iOS-API-Mismatches, ohne dass Linux das merkt.
+
 ## 2026-05-22 — Hotfix: `LHXActionCard` SwiftUI body redeclaration (Branch `fix/lhxactioncard-body-redeclaration`)
 
 > **Xcode-Cloud-Build (Archive – iOS) auf main-HEAD `8a83f35` schlug fehl** mit `Invalid redeclaration of 'body'` in `LHXCards.swift:106`. Ursache: gespeichertes Property `LHXActionCard.body: String?` kollidiert mit der SwiftUI-`var body: some View`. **Linux hat das nicht gemeldet**, weil die ganze Datei hinter `#if canImport(SwiftUI)` steht — Linux überspringt sie komplett, der Apple-Compiler nicht.

@@ -1,5 +1,37 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Train F.1 lokal Apple-Host-validiert auf iPhone 15 Pro Max)
+
+**HEAD:** `2845d82` (+ Package.swift `.macOS(.v14)`-Bump als minimal-Hotfix für macOS-Host-`swift build`).
+**Umgebung:** macOS 15.7 / Xcode 26.3 (17C529) / Intel x86_64 / iPhone 15 Pro Max iOS 26.4 (UDID `00008130-00163D0A0461401C`) / Simulator iPhone 17 Pro Max 26.3.1 (iPhone 15 Pro Max gibt es in Xcode 26.3 nicht mehr als Simulator-Variante; nächstgelegener Pro-Max-Sim verwendet, dokumentiert).
+
+### ✅ Geschlossen in diesem Pass
+- **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` ist registriert** — implizit nachgewiesen: `xcodebuild ... -allowProvisioningUpdates build` für iPhone 15 Pro Max hat ein Provisioning Profile mit beiden iCloud-Entitlement-Keys ausgestellt. `codesign -d --entitlements -` auf dem signierten Bundle zeigt `com.apple.developer.icloud-container-identifiers = [iCloud.de.roeber.LH2GPXWrapper]` und `com.apple.developer.icloud-services = [CloudKit]`. Ohne Portal-Registrierung würde Apple kein Profile ausstellen.
+- Capability-Adapter (`CloudKitCloudSyncService`) kompiliert sauber unter `#if canImport(CloudKit)`-Gate für iOS-Device-Build.
+- xcodebuild Sim Build ✅, Sim Test (CI xctestplan) ✅ 8/8, Device Build (mit Signing) ✅.
+- App installiert + gestartet auf iPhone (Wrapper PID 64130, Widget-Extension PID 64122), kein Crash.
+- Device-UITests (`-only-testing:LH2GPXWrapperUITests`): **12/13 passed**, 233 s `testLargeImportSyntheticFile` weiter grün (46-MiB-Hardware-Gate bleibt geschlossen). Failed: `testDeviceSmokeNavigationAndActions` (`overview.range.card`-`scrollUntilHittable`-Hit-Target-Detail), kein App-Crash.
+- `swift build` macOS-Host ✅ nach Package.swift `.macOS(.v14)`-Bump (war seit `ff963c1` 16.05. kaputt).
+- `swift test` macOS-Host ✅ 1558/2/0, 186 s.
+
+### ❌ Weiterhin offen
+- **Xcode Cloud Workflow `Release – Archive & TestFlight` auf neuem HEAD nicht ausgelöst** — letzter extern grüner Cloud-Build bleibt **179** auf `ff789a4`. Nächster Pflicht-Schritt: triggern auf dem Commit, der den `Package.swift`-Bump enthält.
+- **TestFlight-Submission** nicht durchgeführt, ASC-Status nicht re-verifiziert.
+- **Hardware-Smoke gegen echten iCloud-Account** (eingeloggter User, Wrapper meldet `available`) nicht durchgeführt — Train F.2-Pflicht.
+- **iPad** weiter nicht unterstützt (`TARGETED_DEVICE_FAMILY = 1`).
+- **Light Mode** weiter nicht deklariert (`UIUserInterfaceStyle` undeklariert).
+- **`testDeviceSmokeNavigationAndActions`** UITest-Detail rot — separat zu beheben.
+
+### Pflicht-Anti-Claims (unverändert wahr)
+- ❌ „Echter iCloud Sync implementiert" — nur `accountStatus()`-Adapter.
+- ❌ „CloudKit Records aktiv" — keine geschrieben.
+- ❌ „Historien werden synchronisiert" — kein Sync-Pfad.
+- ❌ „Public / shared Database genutzt" — nur `privateCloudDatabase`-Referenz, ungenutzt.
+- ❌ „Xcode Cloud Build bestanden" — auf diesem HEAD nicht gelaufen.
+- ❌ „TestFlight Smoke bestanden" — nicht durchgeführt.
+
+---
+
 ## Aktualisierung 2026-05-22 (Train F.1 Merge — Apple-Validierung auf Xcode Cloud verschoben)
 
 **Merge-Stand auf main:** `feature/icloud-capability-f1` (HEAD `6011a66`)

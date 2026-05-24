@@ -1,5 +1,34 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 — Train F.1: iCloud Capability Apple-Host-validiert (Branch `main`, HEAD `2845d82` + Package.swift macOS-Bump)
+
+> **F.1 ist auf Apple-Host lokal validiert.** macOS 15.7 / Xcode 26.3 / iPhone 15 Pro Max iOS 26.4. Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` ist registriert (implizit nachgewiesen — Xcode hat Provisioning Profile mit iCloud-Container-Entitlement ausgestellt). **Echter Sync bleibt nicht implementiert** — Train F.2/F.3/F.4 weiter offen.
+
+**Verifiziert (lokal, Apple-Host):**
+- `xcodebuild build` Simulator (iPhone 17 Pro Max 26.3.1) ✅ 0E/0W.
+- `xcodebuild test` Simulator (CI xctestplan) ✅ 8/8 LH2GPXWrapperTests passed.
+- `xcodebuild build` iPhone 15 Pro Max (Device, mit Provisioning) ✅ 0E/0W.
+- Signiertes Device-Bundle Embedded Entitlements ✅ enthält `iCloud.de.roeber.LH2GPXWrapper`, `CloudKit`, `group.de.roeber.LH2GPXWrapper`, Team `XAGR3K7XDJ`.
+- App auf iPhone gelaufen ohne Crash, Widget-Extension live.
+- `xcodebuild test` Device UITests: **12/13 passed**. `testLargeImportSyntheticFile` 233 s grün → 46-MiB-Gate bleibt geschlossen. **Failed:** `testDeviceSmokeNavigationAndActions` (`overview.range.card`-`scrollUntilHittable`-Detail, kein App-Crash).
+- `swift build` macOS-Host ✅ nach Package.swift `.macOS(.v14)`-Bump (vorher 90 Errors wegen `onChange(of:initial:_:)` ohne synchrones macOS-Min).
+- `swift test` macOS-Host ✅ **1558/2/0, 186 s**.
+
+**Bewusst nicht behauptet:**
+- Xcode Cloud Workflow `Release – Archive & TestFlight` auf neuem main-HEAD **nicht** ausgelöst — letzter extern grüner Cloud-Build bleibt 179.
+- TestFlight-Submission / ASC-Re-Verifikation nicht durchgeführt.
+- Hardware-Smoke gegen echten iCloud-Login nicht gefahren — Train F.2-Pflicht.
+- iPad / Light Mode unverändert (`TARGETED_DEVICE_FAMILY = 1`, `UIUserInterfaceStyle` undeklariert).
+- LHX*-UI-Komponenten weiter unadopted (Train F.4).
+
+**Nächste konkrete Schritte:**
+1. Xcode Cloud Workflow `Release – Archive & TestFlight` auf neuem main-HEAD (mit dem `Package.swift`-Bump-Commit) triggern → Build > 179.
+2. Cloud-Logs prüfen: Signing + Archive + interne Tests grün.
+3. Failed `testDeviceSmokeNavigationAndActions` separat fixen (overview.range.card scroll-Helper).
+4. Train F.2 oder F.3 oder F.4 freigeben (siehe Architektur-Notiz §5).
+
+---
+
 ## Stand 2026-05-22 — Train F.1: iCloud Capability Preparation (Branch `feature/icloud-capability-f1`, Apple-Validierung deferred)
 
 > **Hinweis**: F.1 wird mit Linux-Grün gemerged. Der Mac-/Xcode-/
