@@ -1,5 +1,59 @@
 # CHANGELOG
 
+## 2026-05-25 — Train F.3: user-initiierter iCloud-Drive-/Files-Export-Hint (Branch `main`, HEAD `fe2809b` → folgt)
+
+> **Reiner UX-Hint, kein neuer Datenpfad.** Der bestehende `fileExporter`-Flow bleibt unverändert; die System-Save-Sheet zeigt iCloud Drive bereits automatisch, sobald der User in iCloud Drive eingeloggt ist (Apple-Verhalten, keine App-Capability nötig). Train F.3 macht das im UI sichtbar: neuer Toggle in Settings → iCloud bindet an `AppPreferences.preferCloudDriveExport`, der Export-Screen zeigt bei aktiver Preference einen expliziten „Suggest iCloud Drive"-Hinweis im `exportTargetCard`. **Kein automatischer Upload, kein CloudKit-Sync, keine neue Entitlement, keine Historien-Synchronisation, kein Code-Pfad-Wechsel am `fileExporter`.**
+
+### Geprüfte Apple-Doku (vor Implementation)
+- SwiftUI `fileExporter(isPresented:document:contentType:defaultFilename:onCompletion:)` — präsentiert die System-Save-Sheet (intern `UIDocumentPickerViewController`); iCloud Drive erscheint automatisch im Picker, sobald der User es aktiviert hat. **KEIN App-Entitlement nötig** (https://developer.apple.com/documentation/swiftui/view/fileexporter(ispresented:document:contenttype:defaultfilename:oncompletion:))
+- SwiftUI `fileExporter(documents:)` Multi-Variante (iOS 16+) (https://developer.apple.com/documentation/swiftui/view/fileexporter(ispresented:documents:contenttype:oncompletion:))
+- `UIDocumentPickerViewController.init(forExporting:asCopy:)` — moderner Initializer, ersetzt deprecated `init(url:in:)` + `UIDocumentPickerMode` (https://developer.apple.com/documentation/uikit/uidocumentpickerviewcontroller/init(forexporting:ascopy:))
+- `UIDocumentPickerDelegate` (https://developer.apple.com/documentation/uikit/uidocumentpickerdelegate)
+- iCloud Documents vs. „Save to Files": `com.apple.developer.icloud-container-identifiers` / iCloud-Documents-Service sind **nur** nötig, wenn die App einen eigenen iCloud-Container, NSMetadataQuery oder FileProvider-Sync nutzt — nicht für User-Save-to-Files (https://developer.apple.com/icloud/documentation/)
+- `FileDocument` / `Transferable` (https://developer.apple.com/documentation/swiftui/filedocument)
+- HIG „File Management" + „Sharing and Actions" + „Buttons" (https://developer.apple.com/design/human-interface-guidelines/file-management)
+- `ShareLink` als Alternative bei Share-zentrierten Use-Cases (https://developer.apple.com/documentation/swiftui/sharelink)
+- `UTType` Status (`.gpx`/`.kml`/`.geoJSON` nicht system-definiert → bereits über Repo-Truth deklariert)
+
+### Implementation
+| Datei | Änderung |
+|---|---|
+| `Sources/.../AppExportView.swift` | `exportTargetCard` zeigt jetzt bei aktiver Preference einen `icloud.and.arrow.up`-Hinweis „Suggest iCloud Drive in the system save sheet…", andernfalls Hinweis-Text „Tip: enable Suggest iCloud Drive in Settings". `exportTargetDescription` ergänzt Erwähnung iCloud Drive als Ziel-Option im System-Sheet. |
+| `Sources/.../AppICloudOptionsView.swift` | Neue `iCloudDriveExportHintCard`-Section mit `Toggle($preferences.preferCloudDriveExport)` + Begründungs-Caption + Footer „This hint is purely cosmetic". |
+| `AppPreferences.preferCloudDriveExport` | bereits seit Train F.0 vorhanden (Default `false`, UserDefaults-backed); ab F.3 erstmals UI-gebunden. |
+| Entitlements | **Unverändert.** Kein iCloud Documents Capability ergänzt — Apple-Doku belegt, dass System-Save-Sheet das Ziel auch ohne App-Entitlement bietet. |
+| `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` | **Unverändert** — kein neuer Datenfluss, kein neuer Required-Reason-API-Call. |
+| CloudKit / `LiveTrackMetadataSchema` | **Unverändert** — F.3 berührt das F.2-Schema nicht. |
+
+### Verwendete API
+- Bestehende `View.fileExporter(isPresented:document:contentType:defaultFilename:onCompletion:)` (unverändert, exakt der heutige Aufruf in `AppExportView:1337-1352`).
+- SwiftUI `Toggle($Binding)` + `LHCard` / `LHSectionHeader` für die Settings-Card.
+- Kein `UIDocumentPickerViewController` direkt aufgerufen (SwiftUI-Wrapper genügt).
+- Kein deprecated `init(url:in:)` / `UIDocumentPickerMode` eingeführt.
+
+### Export-UX
+1. User tippt im Export-Screen auf „Export" → wie bisher öffnet sich die System-Save-Sheet.
+2. Bei aktivem Toggle: vor dem Tap ist im `exportTargetCard` ein expliziter „Suggest iCloud Drive"-Hinweis sichtbar mit Caption „The system picker still asks you which folder to use; no file is uploaded automatically".
+3. Bei inaktivem Toggle: neutraler „Tip: enable…"-Verweis auf Settings → iCloud.
+4. **Default `false`** — opt-in, kein Verhaltens-Change für Bestands-User.
+5. Lokaler Export (Files-App → On My iPhone) bleibt sichtbar und gleichwertig — der Hinweis suggeriert ein Ziel, erzwingt es nicht.
+
+### Build-only Validierung (in diesem Train)
+- `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), 16,52 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+- Statische Sweeps ✅: 0 `UIDocumentPickerViewController(url:`/`UIDocumentPickerMode`/`publicCloudDatabase`/`sharedCloudDatabase`/`CKRecord`/`CKQuery`/`CKSubscription`/`CKAsset`/`.save(`/`.fetch(` in den geänderten Files.
+- Secret-Sweep ✅: 0 Treffer in den geänderten Files.
+- False-Claim-Sweep ✅: 1 Treffer = bestehende explizite Negativ-Aussage „no automatic sync happens" in `AppICloudOptionsView`.
+
+### Bewusst NICHT ausgeführt
+- `swift test` / `xcodebuild test` / UITests / manueller Smoke / TestFlight-Smoke / Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**UI-Adoption-Folge-Trains** — weitere LHX*-Komponenten (`LHXEmptyState`/`LHXErrorState`/`LHXLoadingState`/`LHXInfoCard`/`LHXStatCard`) in echte Screens (build-only bis Punkt 10).
+
+---
+
 ## 2026-05-25 — Train F.2: CloudKit Private-Metadata-Schema vorbereitet (Branch `main`, HEAD `627ca41` → folgt)
 
 > **Reine Schema-Vorbereitung.** Neuer Foundation-only Value-Type `LiveTrackMetadata` + Schema-Descriptor `LiveTrackMetadataSchema` mit `CKRecord`-Mapping in `Sources/LocationHistoryConsumerAppSupport/CloudKitLiveTrackMetadataSchema.swift` (`#if canImport(CloudKit)`-gegated). **Keine** Records werden geschrieben, gelesen, gequeried, gelöscht, subscribed oder als Asset hochgeladen. **Keine** Koordinaten/Polylines/Place-IDs im Schema. **Keine** Public/shared Database. iCloud bleibt opt-in (`AppPreferences.iCloudSyncEnabled` = `false`). Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.

@@ -88,6 +88,8 @@ public struct AppICloudOptionsView: View {
                 .accessibilityIdentifier("options.icloud.refresh")
                 .accessibilityLabel(t("Refresh iCloud account status"))
 
+                iCloudDriveExportHintCard
+
                 Text(privacyFooterText)
                     .font(.caption)
                     .foregroundStyle(LH2GPXTheme.textSecondary)
@@ -144,6 +146,46 @@ public struct AppICloudOptionsView: View {
 
     private var privacyFooterText: String {
         t("Your imported location history is never uploaded. This screen only checks Apple's iCloud account availability — no records are written, no automatic sync happens, no data leaves the device in this version.")
+    }
+
+    // MARK: - iCloud Drive export hint (Train F.3)
+
+    /// User-initiated export-destination preference. Pure UX hint —
+    /// toggling this does **not** change which file APIs the app uses
+    /// or which entitlements the bundle ships with. The system
+    /// `fileExporter` sheet already lists iCloud Drive automatically
+    /// whenever the user is signed in to iCloud Drive. This toggle just
+    /// surfaces an explicit "Suggest iCloud Drive" hint in the export
+    /// screen so the destination is obvious before the system sheet
+    /// opens.
+    @ViewBuilder
+    private var iCloudDriveExportHintCard: some View {
+        LHCard {
+            LHSectionHeader(t("Export Destination"))
+            VStack(alignment: .leading, spacing: 10) {
+                Toggle(isOn: $preferences.preferCloudDriveExport) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(t("Suggest iCloud Drive in export sheet"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(t("Adds a visible hint next to the Export Destination card. The system save sheet still asks you which folder to use — nothing is uploaded automatically."))
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityIdentifier("options.icloud.driveExportToggle")
+
+                Text(iCloudDriveHintFooter)
+                    .font(.caption2)
+                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("options.icloud.driveExportFooter")
+            }
+        }
+    }
+
+    private var iCloudDriveHintFooter: String {
+        t("This hint is purely cosmetic. The app does not require iCloud Drive — local export keeps working, and the system picker controls the final destination.")
     }
 
     private func t(_ english: String) -> String { preferences.localized(english) }

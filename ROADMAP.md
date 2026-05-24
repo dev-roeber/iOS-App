@@ -1,5 +1,17 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `fe2809b` + Train F.3 → folgt — user-initiierter iCloud-Drive-/Files-Export-Hint)
+
+- **Train F.3 umgesetzt (build-only):** Neue `iCloudDriveExportHintCard` in `AppICloudOptionsView` mit `Toggle($preferences.preferCloudDriveExport)`; `exportTargetCard` in `AppExportView` zeigt bei aktiver Preference einen `icloud.and.arrow.up`-Hinweis, sonst „Tip: enable Suggest iCloud Drive in Settings". `exportTargetDescription` ergänzt iCloud Drive als sichtbares Ziel im System-Sheet.
+- **Bestehender `fileExporter`-Code-Pfad unverändert:** SwiftUI `View.fileExporter(...)`-Call in `AppExportView:1337-1352` bleibt 1:1 erhalten. iCloud Drive erscheint laut Apple-Doku automatisch in der System-Save-Sheet, sobald der User in iCloud Drive eingeloggt ist — **keine App-Capability nötig**.
+- **Keine Entitlement-Änderung:** `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` unverändert. Kein `com.apple.developer.ubiquity-container-identifiers` ergänzt (nicht nötig laut Apple-Doku).
+- **Kein automatischer Upload, kein CloudKit-Sync, kein Historien-Sync.** `preferCloudDriveExport` ist purer UX-Hint, kein Datenpfad-Switch.
+- **`PrivacyInfo.xcprivacy` unverändert** — kein neuer Datenfluss, kein neuer Required-Reason-API-Call.
+- **Build-only verifiziert (in diesem Train):** `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅. **Tests bewusst nicht ausgeführt** — deferred bis Punkt 10.
+- **Extern unverändert:** letzter extern grüner Xcode-Cloud-Build bleibt **190** auf `b25c27d`.
+- **Weiter offen:** UI-Adoption-Folge-Trains (weitere LHX*-Komponenten in echten Screens), Export/Import/Map/Insights-Polish, finaler Sync vor Testphase, vollständige Tests.
+- **Unverändert / explizit nicht behauptet:** Echter iCloud-Sync, automatischer iCloud-Drive-Upload, CloudKit-Records aktiv, Historien-Sync, Public/shared DB, iPad (`TARGETED_DEVICE_FAMILY = 1`), Light Mode (`UIUserInterfaceStyle` undeklariert).
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `627ca41` + Train F.2 → folgt — CloudKit Private-Metadata-Schema vorbereitet)
 
 - **Train F.2 umgesetzt (build-only):** Neuer Foundation+CloudKit Value-Type `LiveTrackMetadata` + Schema-Descriptor `LiveTrackMetadataSchema` mit `CKRecord`-Mapping in `Sources/.../CloudKitLiveTrackMetadataSchema.swift` (`#if canImport(CloudKit)`-gegated). Felder: `schemaVersion`, `startedAt`, `endedAt`, `pointCount`, `distanceM`, `sourceFilename`, `createdAt`, `updatedAt`. **Keine Koordinaten, keine Polylines, keine Place-IDs, keine rohen Punkte.**

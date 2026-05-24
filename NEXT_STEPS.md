@@ -1,5 +1,23 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Train F.3) — user-initiierter iCloud-Drive-/Files-Export-Hint (Branch `main`, HEAD `fe2809b` → folgt)
+
+> **Reiner UX-Hint.** Bestehender `fileExporter`-Flow unverändert; System-Save-Sheet bietet iCloud Drive automatisch (Apple-Verhalten, keine App-Capability nötig). Neuer Toggle in Settings → iCloud bindet `AppPreferences.preferCloudDriveExport`; Export-Screen zeigt bei aktiver Preference einen sichtbaren „Suggest iCloud Drive"-Hinweis im `exportTargetCard`. **Kein automatischer Upload, kein CloudKit-Sync, keine neue Entitlement, kein Historien-Sync, kein `fileExporter`-Code-Pfad-Wechsel.** Default `false` — opt-in.
+
+**Geänderte Dateien:**
+- `Sources/LocationHistoryConsumerAppSupport/AppExportView.swift` (`exportTargetCard` + `exportTargetDescription`)
+- `Sources/LocationHistoryConsumerAppSupport/AppICloudOptionsView.swift` (neue `iCloudDriveExportHintCard`)
+
+**Build-only verifiziert:** `swift build` ✅ 0E/1W (pre-existing F.1-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅. Statische Sweeps clean.
+
+**Nächste Trains (build-only bis Punkt 10):**
+1. **UI-Adoption-Folge-Trains** — weitere LHX*-Komponenten (`LHXEmptyState`/`LHXErrorState`/`LHXLoadingState`/`LHXInfoCard`/`LHXStatCard`) in echte Screens.
+2. **Export/Import/Map-/Timeline-/Heatmap-/Insights-Polish-Trains** — UX-only.
+3. **Finaler Build-/Doku-Sync vor Testphase.**
+4. **Vollständige Tests:** `swift test`, `xcodebuild test`, UITests Sim+Device, TestFlight-Smoke, Xcode Cloud Workflow.
+
+---
+
 ## Stand 2026-05-25 (Train F.2) — CloudKit Private-Metadata-Schema vorbereitet (Branch `main`, HEAD `627ca41` → folgt)
 
 > **Reine Schema-Vorbereitung.** `LiveTrackMetadata`-Value-Type + `LiveTrackMetadataSchema`-Descriptor mit `CKRecord`-Mapping (neue Datei `Sources/.../CloudKitLiveTrackMetadataSchema.swift`, `#if canImport(CloudKit)`). **Keine** save/fetch/query/delete/subscribe-Operationen, **keine** Records werden tatsächlich angelegt, **keine** Koordinaten, **keine** Public/shared DB, **keine** Historien-Synchronisation. `PrivacyInfo.xcprivacy` um `NSPrivacyAccessedAPICategoryFileTimestamp` (Reason `0A2A.1`) ergänzt — `FileManager.attributesOfItem` wird in `AppContentLoader`/`GoogleTimelineStoreImporter` nur für `.size`-Reads (Import-Size-Gating) gegen vom User per File-Picker freigegebene Dateien genutzt. Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.

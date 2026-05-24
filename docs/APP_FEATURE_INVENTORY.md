@@ -1,6 +1,16 @@
 # APP Feature Inventory
 
-Last analysis: **2026-05-25** (Train F.2 build-only auf `main` HEAD
+Last analysis: **2026-05-25** (Train F.3 build-only auf `main` HEAD
+`fe2809b` + Train-F.3-Diff). User-initiierter iCloud-Drive-/Files-
+Export-Hint: neuer Toggle in `AppICloudOptionsView.iCloudDriveExportHintCard`
+bindet `AppPreferences.preferCloudDriveExport`; `AppExportView.exportTargetCard`
+rendert bei aktiver Preference sichtbaren „Suggest iCloud Drive"-Hinweis,
+sonst Settings-Tipp. **Bestehender `fileExporter` unverändert**, **kein
+automatischer Upload**, **kein CloudKit-Sync**, **keine Entitlement-/
+Privacy-Manifest-Änderung**. Default `false`, opt-in. Tests deferred
+bis Punkt 10.
+
+Voriger Stand: Train F.2 build-only auf `main` HEAD
 `627ca41` + Train-F.2-Diff). Neue Foundation+CloudKit-Schema-Schicht
 `LiveTrackMetadataSchema` (`recordType = "LiveTrackMeta"`,
 `schemaVersion = 1`) in `Sources/.../CloudKitLiveTrackMetadataSchema.swift`

@@ -904,6 +904,23 @@ public struct AppExportView: View {
                 Text(exportTargetDescription)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                if preferences.preferCloudDriveExport {
+                    Label {
+                        Text(t("Suggest iCloud Drive in the system save sheet. The system picker still asks you which folder to use; no file is uploaded automatically."))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "icloud.and.arrow.up")
+                            .foregroundStyle(LH2GPXTheme.primaryBlue)
+                    }
+                    .accessibilityIdentifier("export.target.iCloudDriveHint")
+                } else {
+                    Text(t("Tip: enable \u{201C}Suggest iCloud Drive\u{201D} in Settings → iCloud to highlight the Files/iCloud Drive destination here."))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("export.target.iCloudDriveHint.off")
+                }
                 if !hasImportedExport && !liveLocation.recordedTracks.isEmpty {
                     Text(t("Saved live tracks are exported through the same system sheet and remain local unless you explicitly share the generated file."))
                         .font(.caption2)
@@ -1456,9 +1473,9 @@ public struct AppExportView: View {
 
     private var exportTargetDescription: String {
         if preferences.appLanguage.isGerman {
-            return "Nach dem Tippen auf Export öffnet die Systemfreigabe den echten \(selectedFormat.rawValue)-Export. Dort kannst du die Datei in Dateien sichern oder direkt teilen."
+            return "Nach dem Tippen auf Export öffnet die System-Freigabe den echten \(selectedFormat.rawValue)-Export. Du wählst dort selbst das Ziel — z.\u{202F}B. \u{201E}Dateien\u{201C}, einen Ordner auf dem Gerät oder iCloud Drive, falls du in iCloud eingeloggt bist."
         }
-        return "After you tap Export, the system sheet opens the real generated \(selectedFormat.rawValue) file so you can save it to Files or share it directly."
+        return "After you tap Export, the system sheet opens the real generated \(selectedFormat.rawValue) file. You choose the destination yourself — e.g. Files, an on-device folder, or iCloud Drive when you are signed in."
     }
 
     private func openDaysReview() {

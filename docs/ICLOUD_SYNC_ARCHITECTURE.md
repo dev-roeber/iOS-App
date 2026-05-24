@@ -1,5 +1,20 @@
 # iCloud Sync Architecture
 
+> **Train F.3 Status (2026-05-25, später):** **User-initiierter
+> iCloud-Drive-/Files-Export-Hint adoptiert.** `AppPreferences.preferCloudDriveExport`
+> (seit F.0 als Toggle existent, Default `false`) ist ab F.3 UI-gebunden:
+> neuer Toggle in `AppICloudOptionsView.iCloudDriveExportHintCard`,
+> `AppExportView.exportTargetCard` rendert bei aktiver Preference einen
+> sichtbaren „Suggest iCloud Drive"-Hinweis (sonst Settings-Tipp).
+> **Bestehender `fileExporter`-Aufruf unverändert** — Apple-Doku belegt,
+> dass die System-Save-Sheet iCloud Drive automatisch anbietet, sobald
+> der User in iCloud Drive eingeloggt ist (kein App-Entitlement nötig,
+> insbesondere kein `com.apple.developer.ubiquity-container-identifiers`).
+> **Kein automatischer Upload, kein CloudKit-Sync, kein neuer
+> Datenfluss, keine Entitlement-Erweiterung, kein Privacy-Manifest-
+> Update.** Build-only verifiziert (`swift build`, xcodebuild Sim +
+> generic iOS Build); Tests deferred bis Punkt 10.
+>
 Stand: **2026-05-22** · zuletzt erweitert auf Branch
 `feature/icloud-capability-f1` (Train F.1 — Capability-Vorbereitung).
 Ursprung: `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §6.

@@ -1,5 +1,38 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Train F.3) — user-initiierter iCloud-Drive-/Files-Export-Hint
+
+**HEAD:** `fe2809b` + Train-F.3-Diff (`AppExportView.swift` + `AppICloudOptionsView.swift`).
+
+### ✅ In diesem Pass build-only verifiziert
+- Neuer Toggle in Settings → iCloud (`AppICloudOptionsView.iCloudDriveExportHintCard`) bindet `AppPreferences.preferCloudDriveExport` (Default `false`).
+- `AppExportView.exportTargetCard` zeigt bei aktiver Preference einen `icloud.and.arrow.up`-Hinweis „Suggest iCloud Drive in the system save sheet"; bei inaktiver Preference einen Tipp-Hinweis auf die Settings-Option.
+- `exportTargetDescription` ergänzt iCloud Drive als sichtbares Ziel im System-Sheet-Text.
+- **`fileExporter`-Code-Pfad unverändert** (`AppExportView:1337-1352`).
+- **Entitlements unverändert** — Apple-Doku belegt: System-Save-Sheet zeigt iCloud Drive automatisch ohne App-Capability.
+- **`PrivacyInfo.xcprivacy` unverändert** — kein neuer Datenfluss / kein neuer Required-Reason-API-Call.
+- `swift build` ✅ 0E/1W (pre-existing F.1 Swift-6-Concurrency-Warning aus `CloudKitCloudSyncService.swift:48`).
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+- Statischer Sweep ✅: 0 `UIDocumentPickerViewController(url:`/`UIDocumentPickerMode`/`publicCloudDatabase`/`sharedCloudDatabase`/`CKRecord`/`CKQuery`/`CKSubscription`/`CKAsset`/`.save(`/`.fetch(` in den geänderten Files.
+
+### Geprüfte Apple-Doku (vor Implementation)
+SwiftUI `fileExporter(isPresented:document:contentType:defaultFilename:onCompletion:)` · `fileExporter(documents:)`-Multi · `UIDocumentPickerViewController.init(forExporting:asCopy:)` vs. deprecated `init(url:in:)`/`UIDocumentPickerMode` · `UIDocumentPickerDelegate` · iCloud Documents vs. „Save to Files" (kein App-Entitlement nötig für User-Save-Sheet) · `FileDocument`/`Transferable` · HIG „File Management" / „Sharing and Actions" / „Buttons" · `ShareLink` als Alternative · `UTType`-Status für `.gpx`/`.kml`/`.geoJSON` (nicht system-definiert). URLs siehe CHANGELOG-Block.
+
+### ⏸️ In diesem Pass bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller iPhone-Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Automatischer iCloud-Drive-Upload (User entscheidet aktiv im System-Picker).
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ CloudKit Records werden geschrieben/gelesen.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ iPad / Light Mode unterstützt.
+- ❌ Neuer Xcode-Cloud-Build / TestFlight-Build für F.3 verfügbar — letzter extern grüner Stand bleibt **190** auf `b25c27d`.
+
+---
+
 ## Aktualisierung 2026-05-25 (Train F.2) — CloudKit Private-Metadata-Schema vorbereitet
 
 **HEAD:** `627ca41` + Train-F.2-Diff (`Sources/.../CloudKitLiveTrackMetadataSchema.swift` neu, `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` um FileTimestamp-Reason erweitert).
