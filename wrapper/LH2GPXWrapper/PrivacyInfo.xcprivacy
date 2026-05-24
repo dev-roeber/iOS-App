@@ -48,6 +48,34 @@
 				<string>CA92.1</string>
 			</array>
 		</dict>
+		<!--
+		  NSPrivacyAccessedAPICategoryFileTimestamp
+
+		  The app calls `FileManager.attributesOfItem(atPath:)` against
+		  files the user has explicitly granted access to via the system
+		  document picker (LH2GPX `app_export.json/.zip`, Google Timeline
+		  `location-history.json/.zip`, GPX, TCX). The call is used to
+		  read `.size` (`FileAttributeKey.size`) for input-gating:
+		    - `AppContentLoader.swift` (3 sites): autoRestore size cap,
+		      max-supported-file-size guard, in-memory-import cap
+		      (64 MiB).
+		    - `GoogleTimelineStoreImporter.swift` (1 site): total-byte
+		      hint for the streaming progress emitter.
+
+		  We do not read `.modificationDate` / `.creationDate` and never
+		  surface file timestamps to the user. The API category is still
+		  declared because `attributesOfItem` itself is on Apple's list
+		  of timestamp-accessing APIs. Reason `0A2A.1` covers files the
+		  user has specifically granted the app access to.
+		-->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>0A2A.1</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

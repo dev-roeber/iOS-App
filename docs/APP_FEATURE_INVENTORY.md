@@ -1,7 +1,18 @@
 # APP Feature Inventory
 
-Last analysis: **2026-05-25** (Train F.4 build-only auf `main` HEAD
-`bf0b6dc` + Train-F.4-Diff). Settings → iCloud bekommt jetzt eine
+Last analysis: **2026-05-25** (Train F.2 build-only auf `main` HEAD
+`627ca41` + Train-F.2-Diff). Neue Foundation+CloudKit-Schema-Schicht
+`LiveTrackMetadataSchema` (`recordType = "LiveTrackMeta"`,
+`schemaVersion = 1`) in `Sources/.../CloudKitLiveTrackMetadataSchema.swift`
+— rein Datenform-Definition, **keine** Records werden geschrieben/
+gelesen/gequeried/gelöscht/subscribed, **keine** Koordinaten, **keine**
+Public/shared DB, **keine** Historien-Sync. `PrivacyInfo.xcprivacy`
+um `NSPrivacyAccessedAPICategoryFileTimestamp`-Reason `0A2A.1` erweitert
+(deckt `FileManager.attributesOfItem`-`.size`-Reads für Import-Size-
+Gating ab). Tests deferred bis Punkt 10.
+
+Voriger Stand: Train F.4 build-only auf `main` HEAD
+`bf0b6dc` + Train-F.4-Diff. Settings → iCloud bekommt jetzt eine
 sichtbare `LHXSyncStatusCard` über die neue Sub-Page
 `AppICloudOptionsView` (`Sources/.../AppICloudOptionsView.swift`).
 Cloud-Nutzung weiterhin **nur** `CKContainer.accountStatus()`

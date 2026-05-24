@@ -1,5 +1,69 @@
 # CHANGELOG
 
+## 2026-05-25 — Train F.2: CloudKit Private-Metadata-Schema vorbereitet (Branch `main`, HEAD `627ca41` → folgt)
+
+> **Reine Schema-Vorbereitung.** Neuer Foundation-only Value-Type `LiveTrackMetadata` + Schema-Descriptor `LiveTrackMetadataSchema` mit `CKRecord`-Mapping in `Sources/LocationHistoryConsumerAppSupport/CloudKitLiveTrackMetadataSchema.swift` (`#if canImport(CloudKit)`-gegated). **Keine** Records werden geschrieben, gelesen, gequeried, gelöscht, subscribed oder als Asset hochgeladen. **Keine** Koordinaten/Polylines/Place-IDs im Schema. **Keine** Public/shared Database. iCloud bleibt opt-in (`AppPreferences.iCloudSyncEnabled` = `false`). Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku (vor Implementation)
+- `CKRecord` Initializer/Werttypen/Limits (https://developer.apple.com/documentation/cloudkit/ckrecord)
+- `CKRecord.ID` Default- vs Custom-Zone (https://developer.apple.com/documentation/cloudkit/ckrecord/id)
+- `CKRecord.RecordType` Naming (alphanum+`_`, kein führendes `_`) (https://developer.apple.com/documentation/cloudkit/ckrecord/recordtype)
+- `CKContainer.privateCloudDatabase` vs public/shared (https://developer.apple.com/documentation/cloudkit/ckcontainer)
+- `CKContainer.accountStatus()` async + `CKAccountStatus`-Werte (https://developer.apple.com/documentation/cloudkit/ckaccountstatus)
+- „Designing and Creating a CloudKit Database" — Schema-first, Development vs Production (https://developer.apple.com/documentation/cloudkit/designing-and-creating-a-cloudkit-database)
+- Privacy Manifest Files (https://developer.apple.com/documentation/bundleresources/privacy-manifest-files)
+- „Describing use of required reason API" — FileTimestamp-Reasons `C617.1`/`3B52.1`/`0A2A.1`/`DDA9.1`, UserDefaults-Reasons `CA92.1`/`1C8F.1`/`C56D.1`/`AC6B.1` (https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api)
+- App Privacy / Nutrition Labels: reine Schema-Definition ohne Write ≠ Data Collection (https://developer.apple.com/app-store/app-privacy-details/)
+
+### Schema-Felder (`LiveTrackMeta`)
+| Feld | Typ | Zweck |
+|---|---|---|
+| `schemaVersion` | Int | Forward-Compat-Migration (Start `1`) |
+| `startedAt` | Date | Beginn der Live-Aufzeichnung |
+| `endedAt` | Date? | Ende (optional bei laufender Aufzeichnung) |
+| `pointCount` | Int | Anzahl akzeptierter GPS-Punkte (Metadatum, keine Koordinate) |
+| `distanceM` | Double? | aggregierte Gesamtdistanz in Metern |
+| `sourceFilename` | String? | Quelle (z.B. `live-2026-05-25.gpx`) |
+| `createdAt` | Date | Record-Anlage |
+| `updatedAt` | Date | letzte Änderung |
+
+**Explizit nicht im Schema**: Koordinaten, Polylines, rohe GPS-Punkte, Place-IDs, besuchte Orte, Höhenprofile, Activity-Detail, User-IDs, Bearer-Tokens.
+
+### Warum nur Private DB
+- `privateCloudDatabase` ist user-scoped: nur der eingeloggte iCloud-User sieht seine eigenen Records.
+- `publicCloudDatabase` / `sharedCloudDatabase` sind **verbindlich ausgeschlossen** (Architektur-Sicherheitslinie §2).
+- Standortdaten — auch in reduzierter Metadaten-Form — gehören niemals in eine app-weit lesbare DB.
+
+### Warum keine Historien/Koordinaten
+- Importierte Google-Timeline-Historien bleiben weiterhin `isExcludedFromBackup = true` und werden niemals in CloudKit synchronisiert (Sicherheitslinie §2.3).
+- `LiveTrackMetadata` ist bewusst koordinatenfrei: ein potentiell kompromittierter iCloud-Account würde nur erfahren *dass* eine Aufzeichnung existierte und wie groß sie war, niemals *wo* der User war.
+
+### PrivacyInfo.xcprivacy
+**Erweitert** um `NSPrivacyAccessedAPICategoryFileTimestamp` mit Reason **`0A2A.1`** ("Files user specifically granted access to"). Begründung: `FileManager.attributesOfItem(atPath:)` wird in `AppContentLoader.swift` (3 Stellen) und `GoogleTimelineStoreImporter.swift` (1 Stelle) gegen vom User per System-File-Picker freigegebene Dateien aufgerufen, ausschließlich um `.size` für Import-Gating zu lesen (autoRestore-Cap, max-Supported-Size, 64 MiB-In-Memory-Cap, Progress-Total-Bytes). `.modificationDate` / `.creationDate` werden nicht gelesen, Timestamps werden nicht UI-seitig dargestellt — die Kategorie ist trotzdem deklariert, weil `attributesOfItem` als ganzes auf Apples Required-Reason-Liste steht. `NSPrivacyCollectedDataTypes` **unverändert** — reine Schema-Definition ohne CKRecord-Write zählt laut Apples App-Privacy-Doku nicht als Datenerhebung.
+
+### Geänderte/neue Dateien
+| Datei | Art |
+|---|---|
+| `Sources/LocationHistoryConsumerAppSupport/CloudKitLiveTrackMetadataSchema.swift` | **NEU** (Foundation+CloudKit, `#if canImport(CloudKit)`-gegated, ~170 LOC) |
+| `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` | FileTimestamp-Reason `0A2A.1` ergänzt |
+| `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md`, `docs/ICLOUD_SYNC_ARCHITECTURE.md`, `docs/APP_FEATURE_INVENTORY.md` | Doku-Sync |
+
+### Build-only Validierung (in diesem Train)
+- `swift build` ✅ 0E/1W (1 pre-existing F.1-Swift-6-Concurrency-Warning aus `CloudKitCloudSyncService.swift:48`, nicht durch F.2 verursacht), 12,65 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ **BUILD SUCCEEDED**.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ **BUILD SUCCEEDED**.
+- Statischer Sweep ✅: 0 Treffer für `publicCloudDatabase|sharedCloudDatabase|CKSubscription|CKAsset|CKQuery|deleteRecord|modifyRecords` in Source-Code (3 Treffer sind: lokaler `LiveLocationFeatureModel.deleteRecordedTrack(id:)` UUID-Local-Delete unabhängig von CloudKit, lokaler Aufruf davon in `AppRecordedTrackEditorView`, dokumentierter Negativ-Kommentar in `CloudKitLiveTrackMetadataSchema.swift`).
+- Statischer Sweep ✅: 0 `.save(`/`.fetch(` in `CloudKit*.swift`.
+- Statischer Sweep ✅: 0 `latitude|longitude|coordinate|polyline|placeID` in `CloudKit*.swift` (nur die expliziten Negativ-Kommentare).
+
+### Bewusst NICHT ausgeführt
+- `swift test` / `xcodebuild test` / UITests / manueller Smoke / TestFlight-Smoke / Xcode Cloud — alles deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train F.3 — iCloud Drive Export-Hint** (UI-Card im Export-Sheet + Adoption `AppPreferences.preferCloudDriveExport`-Toggle). Build-only bis Punkt 10.
+
+---
+
 ## 2026-05-25 — Train F.4: sichtbare iCloud-/SyncStatusCard in Settings/AppOptionsView (Branch `main`, HEAD `bf0b6dc` → folgt)
 
 > **Erste sichtbare Adoption der LHX*-UI-Foundation.** Neue Settings-Sub-Page `iCloud` zeigt die `LHXSyncStatusCard` gegen `CloudSyncServiceFactory.makeProductionService(...)` — rein `CKContainer.accountStatus()`-basiert. **Kein echter Sync, keine Records, keine Subscriptions, keine Assets, keine Public/shared DB, keine Historien-Synchronisation.** iCloud bleibt opt-in (`AppPreferences.iCloudSyncEnabled`, Default `false`). **In diesem Train wurden keine Tests ausgeführt** (Build-only-Validierung, Tests sind bis zum „vollständige Tests"-Punkt 10 deferred).

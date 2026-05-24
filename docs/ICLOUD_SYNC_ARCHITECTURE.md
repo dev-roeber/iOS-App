@@ -4,6 +4,24 @@ Stand: **2026-05-22** · zuletzt erweitert auf Branch
 `feature/icloud-capability-f1` (Train F.1 — Capability-Vorbereitung).
 Ursprung: `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §6.
 
+> **Train F.2 Status (2026-05-25, später):** **CloudKit Private-Metadata-
+> Schema vorbereitet (build-only).** Neuer Foundation+CloudKit Value-Type
+> `LiveTrackMetadata` + Schema-Descriptor `LiveTrackMetadataSchema`
+> (`recordType = "LiveTrackMeta"`, `schemaVersion = 1`) mit reinem
+> `CKRecord`-Mapping in `Sources/.../CloudKitLiveTrackMetadataSchema.swift`
+> (`#if canImport(CloudKit)`-gegated). Felder: `schemaVersion`,
+> `startedAt`, `endedAt`, `pointCount`, `distanceM`, `sourceFilename`,
+> `createdAt`, `updatedAt`. **Keine Koordinaten, keine Polylines, keine
+> Place-IDs, keine rohen Punkte.** **Keine** save/fetch/query/delete/
+> subscribe — reine Datenform. `PrivacyInfo.xcprivacy` erweitert um
+> `NSPrivacyAccessedAPICategoryFileTimestamp` mit Reason `0A2A.1` (deckt
+> `FileManager.attributesOfItem(atPath:)`-`.size`-Reads in
+> `AppContentLoader`/`GoogleTimelineStoreImporter` gegen User-File-
+> Picker-Dateien ab). `NSPrivacyCollectedDataTypes` unverändert — reine
+> Schema-Definition zählt laut Apples App-Privacy-Doku nicht als
+> Datenerhebung. Build-only verifiziert (`swift build`, xcodebuild Sim +
+> generic iOS Build); Tests deferred bis Punkt 10.
+>
 > **Train F.4 Status (2026-05-25):** **Sichtbare iCloud-/SyncStatusCard
 > in Settings adoptiert.** Neue `AppICloudOptionsView`
 > (`Sources/.../AppICloudOptionsView.swift`) rendert `LHXSyncStatusCard`

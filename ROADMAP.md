@@ -1,5 +1,15 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `627ca41` + Train F.2 → folgt — CloudKit Private-Metadata-Schema vorbereitet)
+
+- **Train F.2 umgesetzt (build-only):** Neuer Foundation+CloudKit Value-Type `LiveTrackMetadata` + Schema-Descriptor `LiveTrackMetadataSchema` mit `CKRecord`-Mapping in `Sources/.../CloudKitLiveTrackMetadataSchema.swift` (`#if canImport(CloudKit)`-gegated). Felder: `schemaVersion`, `startedAt`, `endedAt`, `pointCount`, `distanceM`, `sourceFilename`, `createdAt`, `updatedAt`. **Keine Koordinaten, keine Polylines, keine Place-IDs, keine rohen Punkte.**
+- **CloudKit-Nutzung in der App:** weiterhin **nur** `CKContainer.accountStatus()` (read-only, on-demand). **Keine** Records werden geschrieben/gelesen/gequeried/gelöscht/subscribed; das neue Schema bleibt reine Datenform-Definition. Keine Public/shared DB, keine Historien-Sync.
+- **PrivacyInfo.xcprivacy erweitert:** `NSPrivacyAccessedAPICategoryFileTimestamp` mit Reason `0A2A.1` ergänzt. Begründung: `FileManager.attributesOfItem(atPath:)` in `AppContentLoader.swift` (3×) und `GoogleTimelineStoreImporter.swift` (1×) liest `.size` gegen User-File-Picker-Dateien für Import-Size-Gating. `NSPrivacyCollectedDataTypes` unverändert — reine Schema-Definition ist laut Apple keine Datenerhebung.
+- **Build-only verifiziert (in diesem Train):** `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅. **Tests bewusst nicht ausgeführt** — deferred bis Punkt 10.
+- **Extern unverändert:** letzter extern grüner Xcode-Cloud-Build bleibt **190** auf `b25c27d`.
+- **Weiter offen:** Train F.3 (iCloud-Drive-Export-Hint), weitere LHX*-UI-Adoption, Export/Import/Map/Insights-Polish, finaler Sync vor Testphase, vollständige Tests.
+- **Unverändert / explizit nicht behauptet:** Echter iCloud-Sync, CloudKit-Records aktiv, Historien-Sync, Public/shared DB, iPad (`TARGETED_DEVICE_FAMILY = 1`), Light Mode (`UIUserInterfaceStyle` undeklariert).
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `bf0b6dc` + Train F.4 → folgt — sichtbare iCloud-/SyncStatusCard)
 
 - **Train F.4 umgesetzt:** Neue Sub-Page `AppICloudOptionsView` (`Sources/.../AppICloudOptionsView.swift`) in Settings → iCloud verdrahtet `LHXSyncStatusCard` gegen `CloudSyncServiceFactory.makeProductionService(...)`. Erste sichtbare Adoption der LHX*-UI-Foundation.

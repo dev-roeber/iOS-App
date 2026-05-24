@@ -1,5 +1,24 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Train F.2) — CloudKit Private-Metadata-Schema vorbereitet (Branch `main`, HEAD `627ca41` → folgt)
+
+> **Reine Schema-Vorbereitung.** `LiveTrackMetadata`-Value-Type + `LiveTrackMetadataSchema`-Descriptor mit `CKRecord`-Mapping (neue Datei `Sources/.../CloudKitLiveTrackMetadataSchema.swift`, `#if canImport(CloudKit)`). **Keine** save/fetch/query/delete/subscribe-Operationen, **keine** Records werden tatsächlich angelegt, **keine** Koordinaten, **keine** Public/shared DB, **keine** Historien-Synchronisation. `PrivacyInfo.xcprivacy` um `NSPrivacyAccessedAPICategoryFileTimestamp` (Reason `0A2A.1`) ergänzt — `FileManager.attributesOfItem` wird in `AppContentLoader`/`GoogleTimelineStoreImporter` nur für `.size`-Reads (Import-Size-Gating) gegen vom User per File-Picker freigegebene Dateien genutzt. Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.
+
+**Neue/geänderte Dateien:**
+- `Sources/LocationHistoryConsumerAppSupport/CloudKitLiveTrackMetadataSchema.swift` (neu)
+- `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` (FileTimestamp-Reason `0A2A.1` ergänzt)
+
+**Build-only verifiziert:** `swift build` ✅ 0E/1W (pre-existing F.1 Concurrency-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅. Statische Sweeps: 0 verbotene CK-Ops, 0 Koordinaten in CloudKit-Files, 0 False-Claims.
+
+**Nächste Trains (build-only bis Punkt 10):**
+1. **Train F.3** — iCloud-Drive-Export-Hint im Export-Sheet (UI-Card + `preferCloudDriveExport`-Toggle-Adoption).
+2. **UI-Adoption-Folge-Trains** — weitere LHX*-Komponenten in echte Screens.
+3. **Export/Import/Map-/Timeline-/Heatmap-/Insights-Polish-Trains** — UX-only.
+4. **Finaler Build-/Doku-Sync vor Testphase.**
+5. **Vollständige Tests:** `swift test`, `xcodebuild test`, UITests Sim+Device, TestFlight-Smoke, Xcode Cloud Workflow.
+
+---
+
 ## Stand 2026-05-25 (Train F.4) — sichtbare iCloud-/SyncStatusCard in Settings (Branch `main`, HEAD `bf0b6dc` → folgt)
 
 > **Erste sichtbare Adoption von `LHXSyncStatusCard`.** Settings → iCloud zeigt jetzt den Capability-/Account-Status gegen `CloudSyncServiceFactory.makeProductionService(...)`. **Kein echter Sync, keine Records, keine Subscriptions, keine Public/shared DB, keine Historien-Sync.** Tests in diesem Train **bewusst nicht** ausgeführt — siehe Punkt 10.

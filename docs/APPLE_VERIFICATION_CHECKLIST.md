@@ -1,5 +1,35 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Train F.2) — CloudKit Private-Metadata-Schema vorbereitet
+
+**HEAD:** `627ca41` + Train-F.2-Diff (`Sources/.../CloudKitLiveTrackMetadataSchema.swift` neu, `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` um FileTimestamp-Reason erweitert).
+
+### ✅ In diesem Pass build-only verifiziert
+- Neuer Value-Type `LiveTrackMetadata` + Schema-Descriptor `LiveTrackMetadataSchema` (`recordType = "LiveTrackMeta"`, `schemaVersion = 1`) mit reinem `CKRecord`-Mapping. **Keine** save/fetch/query/delete/subscribe-Operationen.
+- `PrivacyInfo.xcprivacy` ergänzt um `NSPrivacyAccessedAPICategoryFileTimestamp` mit Reason `0A2A.1`. Begründung: `FileManager.attributesOfItem` in `AppContentLoader.swift:433/721/752` + `GoogleTimelineStoreImporter.swift:61-62` liest `.size` gegen vom User per File-Picker freigegebene Dateien (LH2GPX-JSON/ZIP, Google-Timeline-JSON/ZIP, GPX, TCX). `.modificationDate`/`.creationDate` werden **nicht** gelesen; Timestamps werden **nicht** UI-seitig dargestellt.
+- `NSPrivacyCollectedDataTypes` **unverändert** — reine Schema-Definition ohne CKRecord-Write ist laut Apples App-Privacy-Doku keine Datenerhebung.
+- `swift build` ✅ 0E/1W (pre-existing F.1 Swift-6-Concurrency-Warning aus `CloudKitCloudSyncService.swift:48`).
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+- Statische Sweeps ✅: 0 `publicCloudDatabase|sharedCloudDatabase|CKSubscription|CKAsset|CKQuery` in Sources, 0 `.save(`/`.fetch(` in `CloudKit*.swift`, 0 `latitude|longitude|coordinate|polyline|placeID` in `CloudKit*.swift` (nur explizite Negativ-Kommentare).
+
+### Geprüfte Apple-Doku (vor Implementation)
+`CKRecord` · `CKRecord.ID` · `CKRecord.RecordType` (Naming-Regeln, kein führendes `_`) · `CKContainer.privateCloudDatabase` vs public/shared · `CKContainer.accountStatus` async + `CKAccountStatus`-Cases · „Designing and Creating a CloudKit Database" (Schema-first, Development→Production-Deploy) · Privacy Manifest Files · „Describing use of required reason API" (FileTimestamp-Reasons `C617.1`/`3B52.1`/`0A2A.1`/`DDA9.1`, UserDefaults-Reasons `CA92.1`/`1C8F.1`/`C56D.1`/`AC6B.1`) · App Privacy / Nutrition Labels. Detail-URLs siehe CHANGELOG-Block.
+
+### ⏸️ In diesem Pass bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller iPhone-Smoke, TestFlight-Smoke, Xcode Cloud — alles deferred bis Punkt 10.
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ CloudKit Records werden tatsächlich geschrieben/gelesen.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ Koordinaten/Polylines/Place-IDs in iCloud.
+- ❌ iPad / Light Mode unterstützt.
+- ❌ Neuer Xcode-Cloud-Build / TestFlight-Build für F.2 verfügbar — letzter extern grüner Stand bleibt **190** auf `b25c27d`.
+
+---
+
 ## Aktualisierung 2026-05-25 (Train F.4) — sichtbare iCloud-/SyncStatusCard in Settings
 
 **HEAD:** `bf0b6dc` + Train-F.4-Diff (`AppICloudOptionsView.swift` neu, `AppOptionsView.swift` um sectionLink erweitert).
