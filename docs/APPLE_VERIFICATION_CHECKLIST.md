@@ -1,5 +1,34 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Train F.4) — sichtbare iCloud-/SyncStatusCard in Settings
+
+**HEAD:** `bf0b6dc` + Train-F.4-Diff (`AppICloudOptionsView.swift` neu, `AppOptionsView.swift` um sectionLink erweitert).
+
+### ✅ In diesem Pass build-only verifiziert
+- Settings → iCloud zeigt jetzt `LHXSyncStatusCard` mit Capability-/Account-Status; Toggle flippt `AppPreferences.iCloudSyncEnabled`; Refresh-Button löst einzelnen `CKContainer.accountStatus()`-Call aus.
+- `swift build` ✅, `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅.
+- Statischer Sweep ✅: 0 Treffer für `publicCloudDatabase`/`sharedCloudDatabase`/`CKRecord`/`CKQuery`/`CKSubscription`/`CKAsset` in `Sources/` und `wrapper/`.
+- Apple-Doku vor Implementation geprüft (`CKContainer.accountStatus()` + `CKAccountStatus`-Werte, Entitlement-Schema, SwiftUI-Form/Section + HIG-Settings/Status). Implementations-Entscheidungen siehe CHANGELOG-Block.
+
+### ⏸️ In diesem Pass bewusst NICHT ausgeführt
+- `swift test`
+- `xcodebuild test` (Sim + Device)
+- UITests
+- Manueller iPhone-Smoke / TestFlight-Smoke
+- Xcode Cloud Workflow
+
+Tests/Smokes/Cloud sind bis zum Pflicht-„vollständige Tests"-Punkt 10 deferred (siehe NEXT_STEPS).
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ CloudKit Records aktiv.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ iPad / Light Mode unterstützt.
+- ❌ Neuer Xcode-Cloud-Build / TestFlight-Build für F.4 verfügbar — letzter extern grüner Stand bleibt **190** auf `b25c27d`.
+
+---
+
 ## Aktualisierung 2026-05-25 — Xcode Cloud Build 190 extern grün + TestFlight 1.0.2 (190) verfügbar
 
 **HEAD:** `b25c27d` (`test: stabilize device smoke navigation hit target`).

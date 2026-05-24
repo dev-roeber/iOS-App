@@ -4,6 +4,17 @@ Stand: **2026-05-22** · zuletzt erweitert auf Branch
 `feature/icloud-capability-f1` (Train F.1 — Capability-Vorbereitung).
 Ursprung: `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §6.
 
+> **Train F.4 Status (2026-05-25):** **Sichtbare iCloud-/SyncStatusCard
+> in Settings adoptiert.** Neue `AppICloudOptionsView`
+> (`Sources/.../AppICloudOptionsView.swift`) rendert `LHXSyncStatusCard`
+> gegen `CloudSyncServiceFactory.makeProductionService(...)`; Toggle
+> flippt `AppPreferences.iCloudSyncEnabled`, Refresh-Button löst einen
+> `CKContainer.accountStatus()`-Call aus. **Kein echter Sync, keine
+> Records, keine Subscriptions, keine Assets, keine Public/shared DB,
+> keine Historien-Synchronisation.** In diesem Train build-only
+> verifiziert (`swift build`, xcodebuild Sim + generic iOS Build); Tests
+> deferred bis zum Pflicht-„vollständige Tests"-Punkt.
+>
 > **Train F.1 Status (2026-05-25, später):** **Xcode Cloud Build 190
 > auf `b25c27d` extern grün** — Workflow `Release – Archive & TestFlight`
 > (Cloud-Umgebung Xcode 26.5 / macOS Tahoe 26.4): Archive – iOS ✅,

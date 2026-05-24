@@ -91,6 +91,16 @@ public struct AppOptionsView: View {
                 }
 
                 sectionLink(
+                    icon: "icloud",
+                    title: t("iCloud"),
+                    description: t("Account status only — no data is uploaded"),
+                    color: LH2GPXTheme.primaryBlue,
+                    identifier: "options.icloud"
+                ) {
+                    AppICloudOptionsView(preferences: preferences)
+                }
+
+                sectionLink(
                     icon: "wrench.and.screwdriver",
                     title: t("Technical"),
                     description: t("Reset all options to defaults"),

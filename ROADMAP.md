@@ -1,5 +1,15 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `bf0b6dc` + Train F.4 → folgt — sichtbare iCloud-/SyncStatusCard)
+
+- **Train F.4 umgesetzt:** Neue Sub-Page `AppICloudOptionsView` (`Sources/.../AppICloudOptionsView.swift`) in Settings → iCloud verdrahtet `LHXSyncStatusCard` gegen `CloudSyncServiceFactory.makeProductionService(...)`. Erste sichtbare Adoption der LHX*-UI-Foundation.
+- **CloudKit-Nutzung in der App:** weiterhin **nur** `CKContainer.accountStatus()` (read-only, on-demand). Keine Records, Subscriptions, Assets, keine Public/shared Database, keine Historien-Sync. Verifiziert per `rg`: 0 Treffer für `publicCloudDatabase|sharedCloudDatabase|CKRecord|CKQuery|CKSubscription|CKAsset` in `Sources/` und `wrapper/`.
+- **iCloud bleibt opt-in:** `AppPreferences.iCloudSyncEnabled` Default `false`; Card-Toggle flippt die Preference, `onChange` driver Service-Refresh.
+- **Build-only verifiziert (in diesem Train):** `swift build` ✅ 0E/1W (pre-existing F.1 Swift-6-Concurrency-Hinweis), `xcodebuild` Sim Build ✅ 0E/0W, `xcodebuild` generic iOS Build ✅ 0E/0W. **Tests bewusst nicht ausgeführt** — deferred bis vollständige Test-Phase (Punkt 10).
+- **Extern unverändert:** letzter extern grüner Xcode-Cloud-Build bleibt **190** auf `b25c27d`; F.4 ist noch nicht über Cloud gegangen.
+- **Weiter offen:** Train F.2 (Records-Schema + Privacy-Manifest), Train F.3 (iCloud-Drive-Export-Hint), weitere LHX*-UI-Adoption, Export/Import/Map/Insights-Polish, finaler Sync vor Testphase, vollständige Tests.
+- **Unverändert / explizit nicht behauptet:** Echter iCloud-Sync, CloudKit-Records, Historien-Sync, Public/shared DB, iPad (`TARGETED_DEVICE_FAMILY = 1`), Light Mode (`UIUserInterfaceStyle` undeklariert), App-Review für 1.0.2 (190).
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `b25c27d` — Xcode Cloud Build 190 extern grün + TestFlight 1.0.2 (190) verfügbar)
 
 - **Externer Cloud-Pass:** Build 179 → **190** auf `b25c27d`. Workflow `Release – Archive & TestFlight` (Cloud-Umgebung Xcode 26.5 / macOS Tahoe 26.4) — Archive – iOS ✅, TestFlight-interne Tests – iOS ✅. TestFlight zeigt `LH2GPX 1.0.2 (190)`, 90 Tage verfügbar, App öffnet sich, Startscreen lädt ohne Crash.

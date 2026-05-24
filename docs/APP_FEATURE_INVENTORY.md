@@ -1,6 +1,16 @@
 # APP Feature Inventory
 
-Last analysis: **2026-05-25** (Xcode Cloud Build 190 extern grün auf
+Last analysis: **2026-05-25** (Train F.4 build-only auf `main` HEAD
+`bf0b6dc` + Train-F.4-Diff). Settings → iCloud bekommt jetzt eine
+sichtbare `LHXSyncStatusCard` über die neue Sub-Page
+`AppICloudOptionsView` (`Sources/.../AppICloudOptionsView.swift`).
+Cloud-Nutzung weiterhin **nur** `CKContainer.accountStatus()`
+(read-only); 0 Treffer für `publicCloudDatabase`/`sharedCloudDatabase`/
+`CKRecord`/`CKQuery`/`CKSubscription`/`CKAsset` in `Sources/` und
+`wrapper/`. Letzter extern grüner Xcode-Cloud-Build bleibt **190**
+auf `b25c27d`. Tests in Train F.4 bewusst nicht ausgeführt.
+
+Davor: **2026-05-25** (Xcode Cloud Build 190 extern grün auf
 `main` HEAD `b25c27d`; TestFlight `LH2GPX 1.0.2 (190)` verfügbar).
 **iCloud-Capability ist extern bestätigt** (Cloud-Distribution-Signing +
 TestFlight-Aufnahme akzeptieren das Provisioning Profile mit

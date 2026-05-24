@@ -1,5 +1,68 @@
 # CHANGELOG
 
+## 2026-05-25 — Train F.4: sichtbare iCloud-/SyncStatusCard in Settings/AppOptionsView (Branch `main`, HEAD `bf0b6dc` → folgt)
+
+> **Erste sichtbare Adoption der LHX*-UI-Foundation.** Neue Settings-Sub-Page `iCloud` zeigt die `LHXSyncStatusCard` gegen `CloudSyncServiceFactory.makeProductionService(...)` — rein `CKContainer.accountStatus()`-basiert. **Kein echter Sync, keine Records, keine Subscriptions, keine Assets, keine Public/shared DB, keine Historien-Synchronisation.** iCloud bleibt opt-in (`AppPreferences.iCloudSyncEnabled`, Default `false`). **In diesem Train wurden keine Tests ausgeführt** (Build-only-Validierung, Tests sind bis zum „vollständige Tests"-Punkt 10 deferred).
+
+### Geprüfte offizielle Apple-Doku (vor Implementation)
+- `CKContainer.accountStatus()` / `CKAccountStatus` — Werte `.available`, `.noAccount`, `.restricted`, `.couldNotDetermine`, `.temporarilyUnavailable`; idiomatisch `try await container.accountStatus()`. → Mapping deckt alle 5 Werte + `@unknown default` ab (`CloudKitCloudSyncService.map(_:)` bereits aus F.1).
+- `CKContainer(identifier:)` vs. `.default()` — Identifier-Form ist sinnvoll, sobald Container-ID nicht 1:1 dem Bundle-ID-Schema folgt oder zwischen Targets geteilt wird. Unser Container `iCloud.de.roeber.LH2GPXWrapper` (Wrapper + Widget-Bundle-Group) bleibt deshalb über `CKContainer(identifier:)`, wie in `CloudKitCloudSyncService` aus F.1.
+- `privateCloudDatabase` — Speicher zählt zum iCloud-Quota des Users, lesbar nur durch ihn auf seinen Geräten. In F.4 nicht angefasst (kein Read/Write); F.2 später Train.
+- iCloud-Entitlements — für reinen CloudKit-Container-Zugriff genügen `com.apple.developer.icloud-container-identifiers` + `com.apple.developer.icloud-services = [CloudKit]`. **Kein** `ubiquity-kvstore-identifier`, **kein** `ubiquity-container-identifiers`. Stand unverändert seit F.1.
+- SwiftUI Form/Section + HIG „Settings": Status-Block mit klarem Account-Label + Footer-Text für „bewusste Nicht-Aktivität" ist HIG-konform. Wir nutzen das Hub-Layout (`ScrollView { LHPageScaffold { ... } }`) konsistent zum bestehenden `AppOptionsView`-Stil, weil `LHXSyncStatusCard` eigenes `cardChrome` bringt; Footer-Text gem. HIG mit ehrlicher Privacy-Erklärung statt Alarm-Optik.
+
+### Neue Dateien
+- `Sources/LocationHistoryConsumerAppSupport/AppICloudOptionsView.swift` — neue öffentliche Settings-Sub-Page `AppICloudOptionsView`. Hält intern eine kleine SwiftUI-Hülle `ICloudSyncViewModel: ObservableObject`, die `CloudSyncService` re-published; der Foundation-only Core-Service (`CloudSyncService.swift`) bleibt SwiftUI-/Combine-frei (Linux-Build-Stabilität).
+
+### Geänderte Dateien
+- `Sources/LocationHistoryConsumerAppSupport/AppOptionsView.swift` — neuer `sectionLink` `iCloud` (Icon `icloud`, Tint `LH2GPXTheme.primaryBlue`, Identifier `options.icloud`) zwischen `Privacy` und `Technical`. Navigiert zu `AppICloudOptionsView(preferences:)`.
+
+### UX (sichtbar in App-Settings → iCloud)
+- **Status-Card** (`LHXSyncStatusCard`):
+  - `disabled` → grauer Slash-Icon + „iCloud sync is turned off. All your data stays on this device."
+  - `available` → grüner iCloud-Icon + „Signed in to iCloud. Status is checked on demand — no data is uploaded automatically."
+  - `signedOut` → orange Person-Badge + „Sign in to iCloud in System Settings to use this feature."
+  - `restricted`/`couldNotDetermine`/`temporarilyUnavailable` → orange Slash + jeweils klarer Text („Checking iCloud account status…" / „temporarily unavailable" / „restricted on this device").
+  - `error(message)` → roter Error-Icon + die `localizedDescription` aus dem letzten Service-Call.
+- **Toggle-Action der Card**: flippt `preferences.iCloudSyncEnabled` (UserDefaults-backed). `onChange` triggert `viewModel.setEnabled(...)`, das den Service-Flag setzt und bei `true` einen einzelnen `refresh()` ausführt.
+- **„Refresh status"-Button**: `arrow.clockwise`-Label, 44 pt Tap-Target, ist während `status.isWorking` disabled. Identifier `options.icloud.refresh`, eigenes `accessibilityLabel`.
+- **Footer-Text**: „Your imported location history is never uploaded. This screen only checks Apple's iCloud account availability — no records are written, no automatic sync happens, no data leaves the device in this version." (klares Anti-Claim, HIG-konformer „bewusste Nicht-Aktivität"-Text.)
+- Accessibility: alle interaktiven Elemente haben Identifier; Dynamic-Type-resilient (Footer-Text mit `.fixedSize(horizontal: false, vertical: true)`); Tap-Targets 44 pt.
+
+### CloudKit-Nutzung in F.4
+| Pfad | Status |
+|---|---|
+| `CKContainer(identifier:)` (in `CloudKitCloudSyncService`, F.1-Erbe) | unverändert |
+| `CKContainer.accountStatus()` (read-only) | **einziger CloudKit-Call**, weiterhin nur on-demand (App-Start + Toggle + Refresh-Button) |
+| `privateCloudDatabase` | weiter ungenutzt (nur als Property referenziert, kein Call) |
+| `CKRecord` / `CKQuery` / `CKSubscription` / `CKAsset` | **nicht eingeführt** (verifiziert per `rg`: 0 Treffer in `Sources/` und `wrapper/`) |
+| `publicCloudDatabase` / `sharedCloudDatabase` | **nicht referenziert** (verifiziert per `rg`: 0 Treffer) |
+| automatischer Historien-Sync | **nicht implementiert** |
+
+### Build-only Validierung (in diesem Train)
+- `swift build` (macOS-Host) ✅ Build complete (27,0 s), 0 Errors, 1 Warning (pre-existing Swift-6-Concurrency-Hinweis in `CloudKitCloudSyncService.swift:48` aus F.1, nicht durch F.4 verursacht).
+- `xcodebuild -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.3.1' build` ✅ BUILD SUCCEEDED, 0E/0W.
+- `xcodebuild -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED, 0E/0W (nach sequenziellem Re-Run; erster parallel-Versuch failte mit `build.db is locked` — DerivedData wird nicht für zwei xcodebuilds gleichzeitig akzeptiert).
+
+### Bewusst NICHT in diesem Train ausgeführt (deferred bis „vollständige Tests"-Punkt 10)
+- `swift test`
+- `xcodebuild test` (Sim oder Device)
+- UITests (Sim oder Device)
+- Manueller iPhone-Smoke / TestFlight-Smoke
+- Xcode Cloud Workflow
+
+### Bewusst weiter NICHT behauptet
+- Echter iCloud-Sync implementiert.
+- CloudKit Records aktiv.
+- Historien-Synchronisation aktiv.
+- Public/shared Database genutzt.
+- iPad-Support.
+- Light-Mode-Support.
+- App Store / App Review für 1.0.2 (190) bestanden.
+
+### Nächster Schritt
+**Train F.2 — CloudKit Private-Metadata-Schema (build-only)**: `LiveTrackMeta`-`CKRecord`-Skeleton (`schemaVersion: Int`, `startedAt`, `endedAt`, `pointCount`, `distanceM`, `sourceFilename` — ohne Koordinaten), `PrivacyInfo.xcprivacy` um `NSPrivacyAccessedAPICategoryFileTimestamp` ergänzen. Tests bleiben bis Punkt 10 deferred.
+
 ## 2026-05-25 — Xcode Cloud Build 190 extern verifiziert + TestFlight 1.0.2 (190) verfügbar (Branch `main`, HEAD `b25c27d`)
 
 > **Erster extern grüner Xcode-Cloud-Build seit Build 179.** Workflow `Release – Archive & TestFlight` auf `b25c27d` (`test: stabilize device smoke navigation hit target`) ist durchgelaufen — Archive – iOS ✅, TestFlight-interne Tests – iOS ✅. TestFlight zeigt `LH2GPX 1.0.2 (190)` mit 90 Tagen Verfügbarkeit, App öffnet sich. Damit ist Train F.1 (iCloud-Capability) + Package.swift macOS-Bump + UITest-Stabilization extern angekommen.

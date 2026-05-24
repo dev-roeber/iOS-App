@@ -1,5 +1,25 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Train F.4) — sichtbare iCloud-/SyncStatusCard in Settings (Branch `main`, HEAD `bf0b6dc` → folgt)
+
+> **Erste sichtbare Adoption von `LHXSyncStatusCard`.** Settings → iCloud zeigt jetzt den Capability-/Account-Status gegen `CloudSyncServiceFactory.makeProductionService(...)`. **Kein echter Sync, keine Records, keine Subscriptions, keine Public/shared DB, keine Historien-Sync.** Tests in diesem Train **bewusst nicht** ausgeführt — siehe Punkt 10.
+
+**Neue/geänderte Dateien:**
+- `Sources/LocationHistoryConsumerAppSupport/AppICloudOptionsView.swift` (neu): `AppICloudOptionsView` + interner `ICloudSyncViewModel: ObservableObject`-Wrapper.
+- `Sources/LocationHistoryConsumerAppSupport/AppOptionsView.swift`: neuer `sectionLink` `iCloud` zwischen `Privacy` und `Technical`.
+
+**Build-only verifiziert (in diesem Train):** `swift build` ✅, `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅. CloudKit-Nutzung weiter nur `CKContainer.accountStatus()` read-only — verifiziert per `rg`: 0 Treffer für `publicCloudDatabase`/`sharedCloudDatabase`/`CKRecord`/`CKQuery`/`CKSubscription`/`CKAsset` in `Sources/` und `wrapper/`.
+
+**Nächste Trains (build-only bis Punkt 10):**
+1. **Train F.2** — `LiveTrackMeta`-`CKRecord`-Schema (nur Skeleton + Privacy-Manifest, noch keine Historien-Synchronisation).
+2. **Train F.3** — iCloud-Drive-Export-Hint im Export-Sheet (UI-Card + `preferCloudDriveExport`-Toggle-Adoption).
+3. **UI-Adoption-Folge-Trains** — weitere LHX*-Komponenten (`LHXEmptyState`/`LHXErrorState`/`LHXLoadingState`/`LHXInfoCard`/`LHXStatCard`) in echte Screens.
+4. **Export/Import/Map-/Timeline-/Heatmap-/Insights-Polish-Trains** — UX-only.
+5. **Finaler Build-/Doku-Sync vor Testphase.**
+6. **Vollständige Tests:** `swift test`, `xcodebuild test`, UITests Sim+Device, TestFlight-Smoke, Xcode Cloud Workflow.
+
+---
+
 ## Stand 2026-05-25 — Xcode Cloud Build 190 extern grün + TestFlight 1.0.2 (190) verfügbar (Branch `main`, HEAD `b25c27d`)
 
 > **Externer Cloud-Pass erfolgt.** Build 179 → **190** auf `b25c27d`. Workflow `Release – Archive & TestFlight` durch (Archive ✅, TestFlight-interne Tests ✅). TestFlight zeigt `LH2GPX 1.0.2 (190)`, 90 Tage gültig, App öffnet sich, Startscreen lädt ohne Crash. **iCloud Capability/Signing damit extern via Cloud-Distribution-Signing + TestFlight-Aufnahme bestätigt** (vorher nur lokal via `-allowProvisioningUpdates` auf `da1e12e`).
