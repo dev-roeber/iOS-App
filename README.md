@@ -2,6 +2,12 @@
 
 **Dieses Repo (`dev-roeber/iOS-App`) ist das zentrale aktive Repository fuer die vollstaendige LH2GPX iOS-App.**
 
+> **Repo-Truth-Patch 2026-05-25 (Xcode Cloud Build 190 extern grün + TestFlight 1.0.2 (190) verfügbar, `main` HEAD `b25c27d`):**
+> - Xcode Cloud Workflow `Release – Archive & TestFlight` auf `b25c27d` durchgelaufen (Cloud-Umgebung Xcode 26.5 / macOS Tahoe 26.4): Archive – iOS ✅, TestFlight-interne Tests – iOS ✅. TestFlight zeigt `LH2GPX 1.0.2 (190)`, 90 Tage verfügbar, App öffnet sich, Startscreen lädt ohne Crash. Build 179 → 190.
+> - **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` extern bestätigt** (Cloud-Distribution-Signing + TestFlight-Aufnahme akzeptieren das Provisioning Profile mit beiden iCloud-Entitlement-Keys).
+> - **TestFlight-Smoke nur teilweise:** App-Launch + Startscreen ohne Crash geprüft; alle weiteren Bereiche (Overview/Import/Tage/Karte/Heatmap/Insights/Export/Live/Settings/iCloud-Sichtprüfung/Bereichswechsel) **nicht geprüft** — Details siehe CHANGELOG-Block.
+> - Echter iCloud-Sync, CloudKit-Records, Historien-Sync, Public/shared DB, iPad, Light Mode, App Review-Submission für 1.0.2 (190), LHX*-UI-Adoption: weiter **nicht** behauptet.
+
 > **Repo-Truth-Patch 2026-05-25 (Train F.1 Apple-Host-validiert, `main` HEAD `2845d82` + Package.swift macOS-Bump):**
 > - Apple-Host-Validierung auf macOS 15.7 / Xcode 26.3 / iPhone 15 Pro Max iOS 26.4 lokal durchgeführt. `xcodebuild` Sim Build/Test ✅, Device Build mit Signing ✅, App-Launch ohne Crash, Device UITests 12/13 (1 Fail `testDeviceSmokeNavigationAndActions`-Hit-Target). `swift build`/`swift test` macOS-Host ✅ (1558/2/0 in 186 s) nach Package.swift `.macOS(.v13)`→`.v14`-Bump (Hotfix für seit 16.05. kaputtes macOS-CLI nach onChange-Migration in `ff963c1`).
 > - **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` registriert** — implizit nachgewiesen via Provisioning-Profile + Embedded-Entitlements im signierten Device-Bundle.

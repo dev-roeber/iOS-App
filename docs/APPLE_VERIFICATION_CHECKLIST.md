@@ -1,6 +1,45 @@
 # Apple Verification Checklist
 
-## Aktualisierung 2026-05-25 (später) — UITest-Hotfix `testDeviceSmokeNavigationAndActions`
+## Aktualisierung 2026-05-25 — Xcode Cloud Build 190 extern grün + TestFlight 1.0.2 (190) verfügbar
+
+**HEAD:** `b25c27d` (`test: stabilize device smoke navigation hit target`).
+**Cloud-Umgebung:** Xcode 26.5 / macOS Tahoe 26.4.
+
+### ✅ Extern verifiziert in diesem Pass
+- **Xcode Cloud Workflow `Release – Archive & TestFlight` auf `b25c27d`:** Archive – iOS ✅, TestFlight-interne Tests – iOS ✅. Build-Nummer **190** (löst 179 ab).
+- **TestFlight-Sicht:** `LH2GPX 1.0.2 (190)`, 90 Tage verfügbar, App öffnet sich, Startscreen lädt **ohne Crash**.
+- **iCloud-Capability/Signing extern bestätigt** — Cloud-Distribution-Signing + TestFlight-Aufnahme akzeptiert das Provisioning Profile mit `com.apple.developer.icloud-container-identifiers = [iCloud.de.roeber.LH2GPXWrapper]` und `com.apple.developer.icloud-services = [CloudKit]`. Der Apple Developer Portal Container ist damit nicht nur lokal (`da1e12e`-`-allowProvisioningUpdates`-Pass), sondern auch in Cloud + ASC akzeptiert.
+
+### ⏸️ TestFlight-Smoke 190 — nur teilweise geprüft
+| Punkt | Status |
+|---|---|
+| App startet ohne Crash | ✅ geprüft |
+| App-Startscreen lädt | ✅ geprüft |
+| Overview/Import/Demo/Tage/Karte/Heatmap/Insights/Export/Live/Settings öffnen | ⏸️ **nicht geprüft** |
+| iCloud/Sync-Settings Sichtprüfung (`disabled`/`couldNotDetermine`) | ⏸️ **nicht geprüft (Settings nicht geöffnet)** |
+| Kein Historien-Sync-Claim sichtbar | ⏸️ **nicht geprüft** |
+| Keine Public/shared-Cloud-Aussage sichtbar | ⏸️ **nicht geprüft** |
+| Bereichswechsel ohne Crash | ⏸️ **nicht geprüft (kein Wechsel ausgeführt)** |
+
+### ❌ Weiterhin offen
+- Vollständiger TestFlight-Smoke (alle Hauptbereiche, Settings → iCloud-Block-Sichtprüfung).
+- Hardware-Smoke gegen **echten iCloud-Login** (Train F.2-Pflicht — eingeloggter User, Wrapper meldet `available`).
+- App Review-Submission für 1.0.2 (190) via ASC.
+- iPad (`TARGETED_DEVICE_FAMILY = 1`).
+- Light Mode (`UIUserInterfaceStyle` undeklariert).
+- `testDeviceSmokeNavigationAndActions` läuft im Cloud-Test-Plan **nicht** (`LH2GPXWrapperUITests` bewusst aus CI xctestplan ausgeschlossen) — gezielter Device-Run blieb lokal (`b25c27d` 78,4 s grün, siehe Vorblock).
+
+### Pflicht-Anti-Claims (unverändert wahr)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ CloudKit Records aktiv.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ iPad-/Light-Mode-Support.
+- ❌ App Store akzeptiert / App Review für 1.0.2 (190) bestanden.
+
+---
+
+## Aktualisierung 2026-05-25 (früher) — UITest-Hotfix `testDeviceSmokeNavigationAndActions`
 
 **HEAD:** `da1e12e` + Test-Only-Patch (`wrapper/LH2GPXWrapperUITests/LH2GPXWrapperUITests.swift`).
 **Befund:** Der gestern auf `da1e12e` rote Hardware-UITest war **isoliert grün** (76,5 s). Failure war Concurrent-Load (parallele xcodebuild-Runs). Minimal-Hotfix im Test ohne UI-Änderung: Identifier-Timeout 2→5 s, Scroll-Settle 0.3→0.5 s.

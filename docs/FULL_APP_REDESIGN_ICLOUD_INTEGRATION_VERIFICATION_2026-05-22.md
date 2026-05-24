@@ -2,6 +2,23 @@
 
 Stand: **2026-05-22** · Branch `integration/full-app-redesign-icloud-verify`.
 
+> **Nachtrag 2026-05-25:** Die in diesem Bericht beschriebene
+> iCloud-Foundation ist inzwischen über **Xcode Cloud Build 190** auf
+> `main` HEAD `b25c27d` extern verifiziert (Workflow `Release – Archive &
+> TestFlight`: Archive – iOS ✅, TestFlight-interne Tests – iOS ✅; Cloud-
+> Umgebung Xcode 26.5 / macOS Tahoe 26.4). TestFlight zeigt `LH2GPX
+> 1.0.2 (190)` mit 90 Tagen Verfügbarkeit, App-Launch + Startscreen
+> ohne Crash (Stand: 2026-05-25). Apple Developer Portal Container
+> `iCloud.de.roeber.LH2GPXWrapper` ist damit Cloud-Distribution-signiert
+> und ASC-akzeptiert. Echter iCloud-Sync, CloudKit-Records, Historien-
+> Synchronisation, Public/shared DB, iPad-Aktivierung und Light Mode
+> bleiben weiterhin **nicht** implementiert. LHX*-UI-Komponenten weiter
+> alle **unadopted** (Train F.4). Vollständiger TestFlight-Smoke (alle
+> Hauptbereiche, Settings → iCloud-Block-Sichtprüfung, Tab-Wechsel)
+> **nicht** durchgeführt. Der hier dokumentierte 2026-05-22-Stand
+> bleibt als historischer Snapshot stehen und wird nicht rückwirkend
+> umgeschrieben.
+
 ---
 
 ## 1. Eingang / Reihenfolge

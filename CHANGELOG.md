@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## 2026-05-25 — Xcode Cloud Build 190 extern verifiziert + TestFlight 1.0.2 (190) verfügbar (Branch `main`, HEAD `b25c27d`)
+
+> **Erster extern grüner Xcode-Cloud-Build seit Build 179.** Workflow `Release – Archive & TestFlight` auf `b25c27d` (`test: stabilize device smoke navigation hit target`) ist durchgelaufen — Archive – iOS ✅, TestFlight-interne Tests – iOS ✅. TestFlight zeigt `LH2GPX 1.0.2 (190)` mit 90 Tagen Verfügbarkeit, App öffnet sich. Damit ist Train F.1 (iCloud-Capability) + Package.swift macOS-Bump + UITest-Stabilization extern angekommen.
+
+### Extern verifizierter Stand
+- **Workflow:** `Release – Archive & TestFlight`
+- **Build-Nummer:** 190 (löst 179 als letzten extern grünen Stand ab)
+- **Commit:** `b25c27d`
+- **Cloud-Umgebung:** Xcode 26.5 / macOS Tahoe 26.4
+- **Archive – iOS:** ✅ erfolgreich
+- **TestFlight-interne Tests – iOS:** ✅ erfolgreich
+- **TestFlight-Sicht:** `LH2GPX 1.0.2 (190)`, 90 Tage verfügbar, App lässt sich starten, App-Startscreen lädt **ohne Crash**.
+
+### TestFlight-Smoke (Build 190 auf iPhone)
+| Punkt | Status |
+|---|---|
+| App startet ohne Crash | ✅ geprüft |
+| App-Startscreen lädt | ✅ geprüft |
+| Start/Overview öffnet | ⏸️ **nicht geprüft** |
+| Import-Screen öffnet | ⏸️ **nicht geprüft** |
+| Demo-Daten laden | ⏸️ **nicht ausgeführt** |
+| Tage/Timeline öffnet | ⏸️ **nicht geprüft** |
+| Karte/Hero-Map lädt | ⏸️ **nicht geprüft** |
+| Heatmap-/Layer-Menüs öffnen | ⏸️ **nicht geprüft** |
+| Insights öffnet | ⏸️ **nicht geprüft** |
+| Export öffnet | ⏸️ **nicht geprüft** |
+| Live öffnet | ⏸️ **nicht geprüft** |
+| Settings öffnet | ⏸️ **nicht geprüft** |
+| iCloud/Sync behauptet keinen aktiven Sync | ⏸️ **nicht geprüft (Settings nicht geöffnet)** |
+| Kein sichtbarer Historien-Sync-Claim | ⏸️ **nicht geprüft** |
+| Keine Public/shared-Cloud-Aussage | ⏸️ **nicht geprüft** |
+| Kein Crash beim Wechsel zwischen Hauptbereichen | ⏸️ **nicht geprüft (kein Wechsel ausgeführt)** |
+
+### iCloud-Capability/Signing (extern bestätigt)
+- **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` ist registriert und vom Cloud-Signing akzeptiert** — Xcode Cloud konnte ein Distribution-Signed Archive bauen, das Apple zur Verteilung über TestFlight angenommen hat. Damit ist die F.1-Capability nicht mehr nur lokal (`da1e12e`-Pass mit `-allowProvisioningUpdates`), sondern extern via Xcode Cloud + TestFlight-Aufnahme bestätigt.
+- App-Signing-Identity / Provisioning-Profile sind im Cloud-Umlauf (Xcode Cloud Automatic Signing, Team `XAGR3K7XDJ`).
+
+### Bewusst weiter NICHT behauptet
+- **Echter iCloud-Sync: nicht implementiert.** Nur `CKContainer.accountStatus()`-Adapter im Code. Keine Records geschrieben.
+- **Historien-Synchronisation: nicht umgesetzt.** Imports/LocalTimelineStore bleiben `isExcludedFromBackup = true`.
+- **Keine CloudKit Records, keine Public/shared Database, keine Subscriptions, keine Assets.**
+- **iPad weiter nicht freigeschaltet** (`TARGETED_DEVICE_FAMILY = 1`).
+- **Light Mode weiter nicht unterstützt** (`UIUserInterfaceStyle` undeklariert).
+- **LHX*-UI-Komponenten weiter unadopted** (`LHXEmptyState`, `LHXErrorState`, `LHXLoadingState`, `LHXStatCard`, `LHXActionCard`, `LHXInfoCard`, `LHXSyncStatusCard`, `LHXPrimaryActionButton`, `LHXSecondaryActionButton`, `LHXMapOverlayControl`) — Adoption ist Train F.4-Pflicht.
+- **Hardware-Smoke gegen echten iCloud-Login** auf Build 190 nicht durchgeführt — Train F.2-Pflicht.
+- **Apple Review / ASC-Status-Re-Verifikation** nicht durchgeführt; ASC-Live-Status der vorherigen Build-Trains bleibt nicht im Repo prüfbar.
+
+### Empfohlener nächster Schritt
+**Train F.4 — `LHXSyncStatusCard` in `AppOptionsView` verdrahten** (gegen `CloudSyncServiceFactory.makeProductionService`), um die Foundation-Komponente sichtbar zu machen und den iCloud-Status in der App anzuzeigen. *Alternativ:* App-Review/ASC-Schritt für Build 190 (Submission via App Store Connect aus dem TestFlight-Build heraus).
+
 ## 2026-05-25 — Test-Stabilization: `testDeviceSmokeNavigationAndActions` robust gegen Concurrent-Load (Branch `main`, HEAD `da1e12e` → folgt)
 
 > Der gestern rote Hardware-UITest war **isoliert grün** (Repro auf `da1e12e` ohne Parallel-Last: passed in 76,5 s). Der Failure entstand unter Concurrent-Load (parallel laufende Sim-UITest + Device-UITest + `swift build`/`swift test`), nicht durch App-Code. Minimal-Robustness-Hotfix im Test, keine UI-Änderung, keine Logik-Änderung.

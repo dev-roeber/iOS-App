@@ -4,7 +4,19 @@ Stand: **2026-05-22** · zuletzt erweitert auf Branch
 `feature/icloud-capability-f1` (Train F.1 — Capability-Vorbereitung).
 Ursprung: `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §6.
 
-> **Train F.1 Status (2026-05-25):** Apple-Host lokal validiert auf
+> **Train F.1 Status (2026-05-25, später):** **Xcode Cloud Build 190
+> auf `b25c27d` extern grün** — Workflow `Release – Archive & TestFlight`
+> (Cloud-Umgebung Xcode 26.5 / macOS Tahoe 26.4): Archive – iOS ✅,
+> TestFlight-interne Tests – iOS ✅. TestFlight zeigt `LH2GPX 1.0.2
+> (190)`, 90 Tage verfügbar, App öffnet sich, Startscreen lädt ohne
+> Crash. **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper`
+> ist extern bestätigt** (Cloud-Distribution-Signing + TestFlight-
+> Aufnahme akzeptieren das Provisioning Profile mit beiden iCloud-
+> Entitlement-Keys). Vollständiger TestFlight-Smoke (Settings → iCloud-
+> Block-Sichtprüfung, Tab-Wechsel) **nicht durchgeführt**. Echter Sync
+> bleibt **nicht implementiert** — Train F.2-Pflicht.
+>
+> **Train F.1 Status (2026-05-25, früher):** Apple-Host lokal validiert auf
 > macOS 15.7 / Xcode 26.3 / iPhone 15 Pro Max iOS 26.4.
 > **`iCloud.de.roeber.LH2GPXWrapper`-Container ist im Apple Developer
 > Portal registriert** — implizit nachgewiesen über `xcodebuild

@@ -1,6 +1,26 @@
 # NEXT_STEPS
 
-## Stand 2026-05-25 (später) — UITest-Hotfix `testDeviceSmokeNavigationAndActions` (Branch `main`, HEAD `da1e12e` → folgt)
+## Stand 2026-05-25 — Xcode Cloud Build 190 extern grün + TestFlight 1.0.2 (190) verfügbar (Branch `main`, HEAD `b25c27d`)
+
+> **Externer Cloud-Pass erfolgt.** Build 179 → **190** auf `b25c27d`. Workflow `Release – Archive & TestFlight` durch (Archive ✅, TestFlight-interne Tests ✅). TestFlight zeigt `LH2GPX 1.0.2 (190)`, 90 Tage gültig, App öffnet sich, Startscreen lädt ohne Crash. **iCloud Capability/Signing damit extern via Cloud-Distribution-Signing + TestFlight-Aufnahme bestätigt** (vorher nur lokal via `-allowProvisioningUpdates` auf `da1e12e`).
+
+**TestFlight-Smoke-Stand:** Nur **App-Launch + Startscreen ohne Crash** geprüft. Alle weiteren Bereiche (Overview, Import, Demo, Tage, Karte, Heatmap, Insights, Export, Live, Settings, iCloud-Settings-Sichtprüfung, Bereichswechsel) **nicht geprüft** — siehe Tabelle im CHANGELOG-Block.
+
+**Nächste konkrete Schritte (Auswahl):**
+1. **TestFlight-Smoke ausführen** und Punkte einzeln verifizieren (Settings → iCloud-Block sehen `disabled`/`couldNotDetermine`; Tab-Wechsel ohne Crash). Pflicht vor Train F.4.
+2. **Train F.4 — `LHXSyncStatusCard` in `AppOptionsView` verdrahten** gegen `CloudSyncServiceFactory.makeProductionService(isEnabled:)`. Macht die Foundation-Komponente sichtbar. Erste Adoption der LHX*-UI.
+3. *Optional:* **App Review-Submission** für 1.0.2 (190) aus dem TestFlight-Build via ASC.
+4. Train F.2 (CloudKit Private-Metadata-Schema) bleibt **nach** F.4 in der Reihenfolge (Privacy-Manifest-Erweiterung erforderlich, sobald echte Records geschrieben werden).
+
+**Sicherheitslinie unverändert (verbindlich):**
+- Keine Public Database, keine sharedCloudDatabase.
+- Keine automatische Historien-Synchronisation.
+- iCloud bleibt opt-in (`AppPreferences.iCloudSyncEnabled = false` per Default).
+- LHX*-UI-Komponenten weiter alle unadopted bis Train F.4 sie verdrahtet.
+
+---
+
+## Stand 2026-05-25 (früher) — UITest-Hotfix `testDeviceSmokeNavigationAndActions` (Branch `main`, HEAD `da1e12e` → folgt)
 
 > Der gestern rote Hardware-UITest war **isoliert grün** auf `da1e12e` (76,5 s). Failure entstand unter Concurrent-Load. Minimal-Robustness-Patch im Test (kein App-Code).
 

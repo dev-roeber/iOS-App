@@ -1,5 +1,16 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `b25c27d` — Xcode Cloud Build 190 extern grün + TestFlight 1.0.2 (190) verfügbar)
+
+- **Externer Cloud-Pass:** Build 179 → **190** auf `b25c27d`. Workflow `Release – Archive & TestFlight` (Cloud-Umgebung Xcode 26.5 / macOS Tahoe 26.4) — Archive – iOS ✅, TestFlight-interne Tests – iOS ✅. TestFlight zeigt `LH2GPX 1.0.2 (190)`, 90 Tage verfügbar, App öffnet sich, Startscreen lädt ohne Crash.
+- **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` extern bestätigt** — Cloud-Distribution-Signing + TestFlight-Aufnahme akzeptiert das Provisioning Profile mit iCloud-Entitlement. (Vorher nur lokal via `-allowProvisioningUpdates` auf `da1e12e`.)
+- **TestFlight-Smoke (Build 190):** Nur **App-Launch + Startscreen ohne Crash** geprüft; alle weiteren Bereiche (Overview, Import, Demo, Tage/Timeline, Karte/Hero-Map, Heatmap/Layer-Menüs, Insights, Export, Live, Settings, iCloud-Settings-Sichtprüfung, Bereichswechsel) **nicht geprüft**.
+- **Echter Sync weiter NICHT implementiert** — `CKContainer.accountStatus()`-Adapter only. Keine Records, keine Subscriptions, keine Assets, keine Public/shared DB, kein Historien-Sync.
+- **LHX*-UI-Komponenten weiter alle unadopted** (`LHXEmptyState`, `LHXErrorState`, `LHXLoadingState`, `LHXStatCard`, `LHXActionCard`, `LHXInfoCard`, `LHXSyncStatusCard`, `LHXPrimaryActionButton`, `LHXSecondaryActionButton`, `LHXMapOverlayControl`). Adoption ist Train F.4.
+- **Repo-Truth:** `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` im pbxproj (TestFlight zeigt 190 — Cloud-Build-Nummer wird von Xcode Cloud pro Run hochgezählt, pbxproj-Stempel bleibt der lokal eingecheckte Stand). Package.swift `.macOS(.v14)` aus `da1e12e`-Bump-Patch.
+- **Weiter offen:** Hardware-Smoke gegen echten iCloud-Login (Train F.2-Pflicht), iPad (`TARGETED_DEVICE_FAMILY = 1`), Light Mode (`UIUserInterfaceStyle` undeklariert), App Review-Submission für 1.0.2 (190), vollständiger TestFlight-Smoke.
+- **Empfohlener nächster Train:** F.4 (`LHXSyncStatusCard` in `AppOptionsView`) oder App-Review/ASC-Schritt für 1.0.2 (190).
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `2845d82` + Package.swift macOS-Bump — Train F.1 Apple-Host-validiert)
 
 - **Train F.1 lokal Apple-Host-validiert** auf macOS 15.7 / Xcode 26.3 / iPhone 15 Pro Max iOS 26.4.

@@ -1,6 +1,20 @@
 # APP Feature Inventory
 
-Last analysis: 2026-05-22 (Train-F.1-Follow-up auf Branch
+Last analysis: **2026-05-25** (Xcode Cloud Build 190 extern grün auf
+`main` HEAD `b25c27d`; TestFlight `LH2GPX 1.0.2 (190)` verfügbar).
+**iCloud-Capability ist extern bestätigt** (Cloud-Distribution-Signing +
+TestFlight-Aufnahme akzeptieren das Provisioning Profile mit
+`com.apple.developer.icloud-container-identifiers =
+[iCloud.de.roeber.LH2GPXWrapper]` und
+`com.apple.developer.icloud-services = [CloudKit]`). **Echter Sync ist
+weiter NICHT implementiert** — `CloudKitCloudSyncService` bleibt
+`CKAccountStatus`-Adapter only, keine Records, keine Subscriptions,
+keine Public/shared DB, kein automatischer Historien-Sync. Privacy-
+Manifest unverändert (kein neuer Datentyp gesammelt — kommt mit Train
+F.2). LHX*-UI-Komponenten weiter alle unadopted (Train F.4-Pflicht für
+sichtbare Adoption).
+
+Davor: 2026-05-22 (Train-F.1-Follow-up auf Branch
 `feature/icloud-capability-f1`). **iCloud Capability vorbereitet, nicht
 aktiviert.** `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements`
 enthält jetzt `com.apple.developer.icloud-container-identifiers` und
