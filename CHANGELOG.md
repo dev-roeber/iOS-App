@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.15: Final Build-only Consolidation (Branch `main`, HEAD `bd99bf0` → folgt)
+
+> **Finaler Build-only-Sync vor Punkt 10.** Gesamter Stand nach Trains 8.0–8.14 (24 Commits, Range `bf0b6dc..bd99bf0`) konsolidiert in [`docs/BUILD_ONLY_FULL_APP_MODERNIZATION_SYNC_2026-05-25.md`](docs/BUILD_ONLY_FULL_APP_MODERNIZATION_SYNC_2026-05-25.md). Repo-Truth-Abgleich ✅, Privacy-Manifest `plutil -lint OK`, alle Must-be-absent-Sweeps grün. **Keine** Code-Änderung. Tests deferred bis Punkt 10.
+
+### Final Report enthält
+- Vollständige Train-Übersicht (24 Commits seit `bf0b6dc`).
+- Build-only-Validierungsmatrix (alle 24 Stages grün, 138 → 0 Warnings ab 8.4).
+- Repo-Truth-Abgleich (11 Claim-Verifikationen TRUE).
+- Must-be-absent-Sweeps (CloudKit/Sync/Test-Claims) — 0 problematische Treffer.
+- Privacy-Manifest gegen Code-Realität (4 Einträge konsistent).
+- App-Intents-Status (3 daten-freie Intents).
+- UI-Wiring-Status (alle Bereiche identifiziert).
+- 13 Pflicht-Anti-Claims (unverändert wahr).
+- 9-stufiger Punkt-10-Testplan.
+- 5 offene Risiken mit Mitigation.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `docs/BUILD_ONLY_FULL_APP_MODERNIZATION_SYNC_2026-05-25.md` | **NEU** — finaler Konsolidierungsreport 8.0–8.14 |
+| `CHANGELOG.md`, `ROADMAP.md` | Doku-Sync |
+
+### Build-only Validierung
+- `swift build` ✅ (0,54 s Cache-Hit, 0 Warnings).
+- `xcodebuild` Sim ✅ `BUILD SUCCEEDED`.
+- `xcodebuild` generic iOS ✅ `BUILD SUCCEEDED`.
+- `plutil -lint` PrivacyInfo ✅ `OK`.
+
+### Bewusst NICHT verändert
+- Keine Code-Änderung.
+- Keine ASC-/TestFlight-/Cloud-Mutation.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Punkt 10 — Vollständige automatisierte Tests + Xcode Cloud + TestFlight** (Tests nun erlaubt + Pflicht).
+
+---
+
 ## 2026-05-25 — Train 8.14: App Store / Privacy / Review Readiness (Branch `main`, HEAD `c9f06b2` → folgt)
 
 > **Build-only Review-Readiness-Audit.** Vollständiger Abgleich PrivacyInfo.xcprivacy ↔ Code-Realität, iCloud-Capability-Status (F.1–F.4), Info.plist Purpose Strings, Reviewer-Notes-Vorschlag, DSA/Encryption-Disclosure-Hinweis, offene Risiken. Neuer Detail-Bericht: [`docs/APP_REVIEW_READINESS_2026-05-25.md`](docs/APP_REVIEW_READINESS_2026-05-25.md). **Keine** Code-Änderung, **keine** Submission, **keine** ASC-Mutation. Tests deferred bis Punkt 10.

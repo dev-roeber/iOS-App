@@ -24,7 +24,7 @@
 | 8.12 | Heatmap / Insights / Statistik Modernisierung | ✅ erledigt — Heatmap-Hints + KPI-Grid-Hint |
 | 8.13 | Widget / Dynamic-Island / Live-Status Konsistenz | ✅ erledigt — Doc-Confirm-Train (bereits konsistent + privacy-safe) |
 | 8.14 | App Store / Privacy / Review Readiness | ✅ erledigt — `docs/APP_REVIEW_READINESS_2026-05-25.md` |
-| 8.15 | Final Build-only Consolidation | offen |
+| 8.15 | Final Build-only Consolidation | ✅ erledigt — `docs/BUILD_ONLY_FULL_APP_MODERNIZATION_SYNC_2026-05-25.md` |
 | **10** | **Vollständige Tests / Xcode Cloud / TestFlight** | offen |
 
 ### Verbindliche Regel für 8.0–8.15
