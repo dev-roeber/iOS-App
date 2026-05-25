@@ -59,7 +59,13 @@ public final class CloudKitCloudSyncService: CloudSyncService {
     /// Default container identifier. Matches the entry in
     /// `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` and the
     /// Apple Developer Portal container that Train F.1 registers.
-    public static let defaultContainerIdentifier = "iCloud.de.roeber.LH2GPXWrapper"
+    ///
+    /// `nonisolated` so the value can be read from non-MainActor
+    /// contexts (e.g. as the default argument for `init`, which itself
+    /// must remain `@MainActor` because the class is). Reading a
+    /// `let` constant is inherently safe; this annotation just tells
+    /// the Swift 6 isolation checker so 138 build warnings disappear.
+    public nonisolated static let defaultContainerIdentifier = "iCloud.de.roeber.LH2GPXWrapper"
 
     public func refresh() async {
         guard isEnabled else { return }

@@ -411,9 +411,14 @@ public enum AppContentLoader {
         let ext = url.pathExtension.lowercased()
 
         if ext == "zip" {
-            guard let archive = try? Archive(url: url, accessMode: .read) else {
-                // Treat unreadable archives as auto-restore skip rather than
-                // hard-failing on launch.
+            // ZIPFoundation 0.9.20-devroeber.1 keeps the throwing initializer as the
+            // recommended path; the legacy failable form is deprecated in newer
+            // ZIPFoundation builds (Swift 6 mode flags it). Catch and translate to
+            // the same auto-restore-skip error we already produced.
+            let archive: Archive
+            do {
+                archive = try Archive(url: url, accessMode: .read)
+            } catch {
                 throw AppContentLoaderError.autoRestoreSkippedLargeFile(filename)
             }
             for entry in archive {

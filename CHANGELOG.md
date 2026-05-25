@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.4: Performance/Concurrency — 138 → 0 Build-Warnings (Branch `main`, HEAD `edf017a` → folgt)
+
+> **Swift-6-Concurrency-Warnings vollständig eliminiert + ZIPFoundation-Deprecation behoben.** Zwei lokal eindeutige, additive Fixes — keine Architektur-/Parser-/Algorithmus-Änderung, keine neue Dependency. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- Swift Concurrency `nonisolated` (https://developer.apple.com/documentation/swift/concurrency)
+- `@MainActor` Isolation Rules (https://developer.apple.com/documentation/swift/mainactor)
+- `Task` cancellation + `Task.checkCancellation` (https://developer.apple.com/documentation/swift/task)
+- SwiftUI „Demystify SwiftUI performance" WWDC23 (`@StateObject` für Owner, `@ObservedObject` für übergeben; `Equatable` + `EquatableView` für Diff-Skip)
+- HIG „Feedback"/„Loading" (responsiveness)
+
+### Warnstatus vorher/nachher
+| Stand | Warnings | Errors |
+|---|---|---|
+| **vor 8.4** (HEAD `edf017a` clean rebuild) | **138** | 0 |
+| **nach Fix 1** (`CloudKitCloudSyncService.defaultContainerIdentifier` → `nonisolated`) | 92 | 0 |
+| **nach Fix 2** (`AppContentLoader` ZIPFoundation `Archive(url:accessMode:)` → throwing form) | **0** | 0 |
+
+### Konkrete Optimierungen
+1. **`Sources/.../CloudKitCloudSyncService.swift:62`** — `public static let defaultContainerIdentifier` als `nonisolated` markiert. Vorher 138 Warnings „main actor-isolated static property … can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode" (1 echte Stelle, vom Compiler 138× in unterschiedlichen Compile-Kontexten ausgegeben). Reading eines `let`-Konstantenwerts ist von Natur aus thread-safe — die Annotation gibt dem Swift-6-Isolation-Checker explizit den Hinweis. **Klasse bleibt `@MainActor`**, nur die Konstante wird isolations-frei.
+2. **`Sources/.../AppContentLoader.swift:414`** — `Archive(url: url, accessMode: .read)` von der deprecated `try?`-Failable-Form auf die offizielle `throws`-Form umgestellt (`do { archive = try Archive(...) } catch { throw … }`). Fehlerverhalten 1:1 erhalten (auto-restore skip), keine Verhaltens-/API-Änderung am Aufrufpfad.
+
+### Bewusst NICHT verändert
+- Keine Core-Parser-Großänderung (`GoogleTimelineStreamReader`, `GPXImportParser`, `TCXImportParser` unverändert).
+- Keine Heatmap-Algorithmusänderung (`AppHeatmapModel`, `HeatmapGridBuilder`, `HeatmapLOD`, `HeatmapVisualStyle`, `HeatmapPalette` unverändert).
+- Keine Persistenzmigration (`LocalTimelineStore*` unverändert).
+- Keine neue externe Dependency.
+- Keine `@MainActor`-Umstellung an Foundation-only Services (`CloudSyncService`-Protokoll unverändert).
+- Keine SwiftUI `body`-Hotspot-Refactors in diesem Train (bestehende `Equatable`/`@StateObject`-Architektur bleibt).
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../CloudKitCloudSyncService.swift` | `defaultContainerIdentifier` `nonisolated` + Begründungs-Kommentar |
+| `Sources/.../AppContentLoader.swift` | ZIPFoundation throwing-Form für `Archive(url:accessMode:)` |
+| Doku | CHANGELOG, ROADMAP |
+
+### Build-only Validierung
+- `swift package clean && swift build` ✅ Build complete (93,5 s), **0 Warnings**, 0 Errors.
+- `xcodebuild` Sim ✅ BUILD SUCCEEDED.
+- `xcodebuild` generic iOS ✅ BUILD SUCCEEDED.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.5 — Accessibility / Dynamic Type / Localization Polish** (build-only).
+
+---
+
 ## 2026-05-25 — Train 8.3: App Intents / Shortcuts Skeleton (Branch `main`, HEAD `9aa4eaf` → folgt)
 
 > **Sicherer, daten-freier App-Intents-Skeleton.** Drei `AppIntent`s + `AppShortcutsProvider` in `wrapper/LH2GPXWrapper/LH2GPXAppIntents.swift` (alle `@available(iOS 17.0, *)`, `#if canImport(AppIntents)`-gated). Jeder Intent öffnet **nur** die App; **keine** Standortauslesung, **keine** Historien-Übergabe, **keine** automatische Import-/Export-/Live-/iCloud-Aktion. Navigation zu konkretem Screen ist **bewusst deferred** (`openAppWhenRun = true` ohne Routing-Hook). Tests deferred bis Punkt 10.

@@ -13,7 +13,7 @@
 | 8.1 | Full Wiring Audit + Dead-Control-Fix | ✅ erledigt — `docs/UI_WIRING_MATRIX_2026-05-25.md` |
 | 8.2 | Settings & Privacy Center Modernisierung | ✅ erledigt — Top-Banner + Privacy-Rows |
 | 8.3 | App Shortcuts / App Intents Skeleton | ✅ erledigt — 3 Intents + Shortcuts, Navigation deferred |
-| 8.4 | Performance & Concurrency Modernisierung | offen |
+| 8.4 | Performance & Concurrency Modernisierung | ✅ erledigt — 138 → 0 Build-Warnings |
 | 8.5 | Accessibility / Dynamic Type / Localization Polish | offen |
 | 8.6 | Map Layer & Route Interaction Upgrade | offen |
 | 8.7 | Error Handling / Diagnostics / User Feedback | offen |
