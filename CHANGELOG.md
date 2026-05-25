@@ -1,5 +1,107 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 9.0: Variant B Pro Design + erweiterte iCloud-Sync-Settings (Branch `main`, HEAD `81a78c4` → folgt)
+
+> **Build-only.** Adoption der Design-Sprache *Variant B Pro · Topographic Outdoor* (`variant-b-pro.html`) als additive Token-Schicht in `LH2GPXTheme` + Glass-Card-Modifier, plus 4 neue iCloud-Sync-Preferences mit dediziertem `AppICloudSyncConflictPolicy`-Enum und sechs neuen Settings-Karten in `AppICloudOptionsView`. **Funktionserhalt vor Optik** — keine bestehende Identifier entfernt, keine Tab-Struktur umgebaut, keine Navigation gebrochen. **Punkt 10 weiter zurückgestellt.** Tests deferred.
+
+### Geprüfte Apple-Doku
+- *Adopting Liquid Glass* + *Applying Liquid Glass to custom views* — iOS 26 `glassEffect`/`GlassEffectContainer`-APIs deferred wegen Stabilitäts-Frist; SwiftUI `Material` (`ultraThin`/`regular`/`thick`) als sicherer Fallback genutzt.
+- HIG *Materials* / *Color* / *Layout* / *Tab bars* / *Buttons* / *Motion* — warm Dark-Outdoor-Surfaces, 44 pt Tap Targets, hairline Borders, sanfte Schatten, kein Bewegungs-Overkill.
+- SwiftUI `Material`, `NavigationStack`, `TabView`, `Form`/`List`/`Section`, `accessibilityLabel/Value/Hint`, `safeAreaInset`, `toolbar`.
+- CloudKit `CKContainer(identifier:)`, `CKContainer.accountStatus`, `privateCloudDatabase` (Referenz, nicht ausgeführt); `publicCloudDatabase`/`sharedCloudDatabase` nur zur Abgrenzung (kategorisch ausgeschlossen).
+- Privacy Manifest Files / Required Reason APIs — keine neuen API-Aufrufe, deshalb keine neuen Reasons.
+- App Store Review Guidelines (Privacy / User Data / Location Data) — Container-ID wird angezeigt (kein Team-Identifier, kein sensibler Wert).
+
+### Design-Tokens neu (`LH2GPXTheme.VariantBPro`)
+- **Surface:** bgBase/Shell/Warm, elev1/2/3, glassThin/Deep
+- **Hairlines:** hair1/2/3, hairSpec
+- **Text:** primary/secondary/tertiary/quaternary (cream-based)
+- **Terra:** 50/100/300/500/700
+- **Semantic:** moss/mossDark, teal, azure, plum, recordingRed/Dark, amber
+- **Radii:** radiusCardLarge/Medium/Small/Pill
+
+### Neuer Glass-Card-Modifier
+- `View.variantBProGlassCard(cornerRadius:material:padding:)` mit `VariantBProGlassMaterial.thin/regular/deep` → mappt auf `Material.ultraThinMaterial/regularMaterial/thickMaterial` + hairline-Border + spekuläre Top-Highlight-Linie + weicher Schatten.
+
+### Neue iCloud-Sync-Preferences (additiv, opt-in, Defaults konservativ)
+| Preference | Default | Wirkung heute | Wirkung später |
+|---|---|---|---|
+| `syncLiveTrackMetadataEnabled` | `false` | reines Vorbereitungs-Gate für `LiveTrackMeta`-Schema | Sync-Engine schreibt/liest Metadata-Records |
+| `iCloudStatusAutoRefreshEnabled` | `false` | triggert `CKContainer.accountStatus()` bei Settings-View-Refresh | unverändert |
+| `iCloudSyncAllowCellular` | `false` | nur gespeichert + angezeigt | Sync-Engine-Network-Gate |
+| `iCloudSyncConflictPolicy` (enum) | `.manual` | nur gespeichert + angezeigt | Anwendung bei echter Konfliktauflösung |
+
+Alle 4 Preferences sind in `AppPreferences` `@Published`, persistieren in `UserDefaults`, werden in `init` korrekt geladen, und in `reset()` sauber gelöscht. Bestehende UserDefaults-Keys bleiben unverändert (keine Migration nötig).
+
+### Neues Enum
+`AppICloudSyncConflictPolicy: String, CaseIterable, Codable, Sendable` mit Cases `.manual` / `.preferLocal` / `.preferCloud` und lokalisierten `titleKey`/`captionKey`-Properties (Pass-through via `t(_:)` in der View).
+
+### `AppICloudOptionsView` — 6 neue Settings-Karten
+1. **Metadata Sync** (`options.icloud.metadataSync.card` + Toggle `.toggle` + Hint)
+2. **Status Refresh** (`options.icloud.autoRefresh.card`)
+3. **Network Policy** (`options.icloud.cellular.card`)
+4. **Conflict Policy** (`options.icloud.conflictPolicy.card` + Segmented-Picker + Caption)
+5. **Container** (`options.icloud.container.card` mit Container-ID in `VariantBPro.terra300`)
+6. **Deferred Cloud Actions** (`options.icloud.deferred.card` mit disabled „Delete cloud metadata"-Hinweis + Disclaimer)
+
+`onChange(of: preferences.iCloudStatusAutoRefreshEnabled)` triggert `viewModel.refresh()` nur bei Toggle-On — kein refresh-Loop.
+
+### CloudKit-Nutzung (unverändert)
+- ✅ `CKContainer(identifier:)` + `CKContainer.accountStatus()` über `CloudKitCloudSyncService` (`#if canImport(CloudKit)`-gated).
+- ✅ `privateCloudDatabase` nur als Referenz im Schema-Doku-Kommentar.
+- ❌ `.save(` / `.fetch(` / `CKQuery` / `deleteRecord` / `modifyRecords` — keine Aufrufe.
+- ❌ `publicCloudDatabase` / `sharedCloudDatabase` / `CKSubscription` / `CKAsset` — keine Aufrufe.
+
+### Funktionsschutz (bestätigt)
+- Bestehende Identifier alle erhalten (`options.icloud.statusCard`, `options.icloud.refresh`, `options.icloud.driveExportToggle`, `options.icloud.driveExportFooter`, `options.icloud.footer`, `options.icloud.title`).
+- Bestehende Tab-/Navigation-Struktur unverändert (Tab-Remap auf 5-Tabs Map/History/Record/Stats/More **deferred** in eigenen Train).
+- `AppPreferences.reset()` löscht alle neuen Keys sauber.
+
+### Font-Strategie
+- ❌ Keine Google-Fonts heruntergeladen / gebundelt.
+- ✅ System-Fallbacks dokumentiert (Fraunces → `.serif italic`, Geist → `.default`, Geist Mono → `.monospaced`).
+
+### Liquid-Glass-Strategie
+- ❌ Keine iOS-26-spezifischen `glassEffect`/`GlassEffectContainer`-APIs verwendet.
+- ✅ Fallback auf SwiftUI `Material` (`ultraThinMaterial`/`regularMaterial`/`thickMaterial`) mit spekulärem Top-Highlight + hairline Border + warm-dark Glass-Tint.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../LH2GPXTheme.swift` | **+VariantBPro Tokens + Glass-Card-Modifier** |
+| `Sources/.../AppICloudSyncConflictPolicy.swift` | **NEU** — Enum |
+| `Sources/.../AppPreferences.swift` | **+4 Keys, +4 @Published Properties, init-Loader, reset()-Cleanup** |
+| `Sources/.../AppICloudOptionsView.swift` | **+6 Settings-Karten, +onChange-Hook für AutoRefresh** |
+| `docs/DESIGN_VARIANT_B_PRO_IMPLEMENTATION_2026-05-25.md` | **NEU** — Design-Spec + Mapping |
+| `CHANGELOG.md`, `ROADMAP.md` | Doku-Sync |
+
+### Build-only Validierung
+- `swift build` ✅ (12,38 s nach Phase D, 0 Warnings).
+- `xcodebuild` Sim ✅ `BUILD SUCCEEDED`.
+- `xcodebuild` generic iOS ✅ `BUILD SUCCEEDED`.
+- `plutil -lint` PrivacyInfo ✅ `OK`.
+- CloudKit-Sweep über neue Dateien: **0 Treffer** (keine verbotenen Operationen eingeführt).
+- Claim-Sweep neue Doku: **0 falsche Sync-Claims**.
+
+### Bewusst NICHT umgesetzt (Funktionserhalt vor Optik)
+- **Tab-Remap auf 5 Tabs** Map/History/Record/Stats/More — würde Routing/Bookmarks/Navigation-Tests brechen; eigener Train.
+- **Map-first Hero-Layout** mit Bottom-Sheet — bestehende Map-Views funktional unverändert; graduelle Token-Adoption Follow-up.
+- **Globale Token-Migration** aller bestehenden Screens — Tokens stehen bereit (`LH2GPXTheme.VariantBPro.*`), aber bestehende Screens bleiben auf bestehender LH2GPXTheme-Palette für Identifier-/Layout-Stabilität.
+- **Font-Bundling** Fraunces/Geist/Geist Mono — Lizenz-/Asset-Check separat.
+- **PrivacyInfo-Erweiterung** — keine neuen API-Aufrufe deshalb keine neuen Reasons.
+
+### Anti-Claims (unverändert wahr)
+- ❌ Echter iCloud-Sync · ❌ Records save/fetch · ❌ Historien-Sync · ❌ Public/shared DB · ❌ CKSubscription/CKAsset/CKQuery · ❌ Automatischer Upload · ❌ Cellular-Policy hat Effekt · ❌ Conflict-Policy wird angewendet · ❌ Tab-Remap · ❌ iPad/Light Mode · ❌ Neuer Xcode-Cloud-Build > 190 · ❌ Tests ausgeführt.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud, App Store Submission — Punkt 10 weiter zurückgestellt.
+
+### Nächster Schritt
+- **Option A (build-only):** Design-Follow-up-Trains für graduelle Token-Adoption in einzelnen Screens (DayDetail, Heatmap, Settings) und/oder eigener Tab-Remap-Train.
+- **Option B (User-Entscheidung):** Punkt 10 — vollständige Tests + Xcode Cloud + TestFlight.
+
+---
+
 ## 2026-05-25 — Train 8.15: Final Build-only Consolidation (Branch `main`, HEAD `bd99bf0` → folgt)
 
 > **Finaler Build-only-Sync vor Punkt 10.** Gesamter Stand nach Trains 8.0–8.14 (24 Commits, Range `bf0b6dc..bd99bf0`) konsolidiert in [`docs/BUILD_ONLY_FULL_APP_MODERNIZATION_SYNC_2026-05-25.md`](docs/BUILD_ONLY_FULL_APP_MODERNIZATION_SYNC_2026-05-25.md). Repo-Truth-Abgleich ✅, Privacy-Manifest `plutil -lint OK`, alle Must-be-absent-Sweeps grün. **Keine** Code-Änderung. Tests deferred bis Punkt 10.

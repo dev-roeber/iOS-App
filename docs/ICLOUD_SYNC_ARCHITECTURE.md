@@ -15,6 +15,14 @@
 > Update.** Build-only verifiziert (`swift build`, xcodebuild Sim +
 > generic iOS Build); Tests deferred bis Punkt 10.
 >
+Stand: **2026-05-25 (Train 9.0 Variant B Pro)** · zuletzt erweitert um
+4 neue iCloud-Sync-Preferences (`syncLiveTrackMetadataEnabled`,
+`iCloudStatusAutoRefreshEnabled`, `iCloudSyncAllowCellular`,
+`iCloudSyncConflictPolicy`) mit `AppICloudSyncConflictPolicy`-Enum und
+6 neuen Settings-Karten in `AppICloudOptionsView`. Alle Preferences sind
+**reine Gates** für die spätere Sync-Engine — **keine** CloudKit-Records
+werden geschrieben/gelesen. Details siehe `CHANGELOG.md` Train 9.0.
+
 Stand: **2026-05-22** · zuletzt erweitert auf Branch
 `feature/icloud-capability-f1` (Train F.1 — Capability-Vorbereitung).
 Ursprung: `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §6.

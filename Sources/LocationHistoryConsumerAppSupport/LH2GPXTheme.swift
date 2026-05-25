@@ -250,4 +250,122 @@ public struct LHFilterChip: View {
     }
 }
 
+
+
+// MARK: - Variant B Pro · Topographic Outdoor (Train 2026-05-25)
+
+extension LH2GPXTheme {
+
+    /// Design-token namespace for the *Variant B Pro · Topographic Outdoor* visual
+    /// language. Sourced from `variant-b-pro.html` and documented in
+    /// `docs/DESIGN_VARIANT_B_PRO_IMPLEMENTATION_2026-05-25.md`.
+    ///
+    /// Adoption is additive — existing `LH2GPXTheme` colors stay in place.
+    /// Screens opt in by referencing `LH2GPXTheme.VariantBPro.<token>` directly.
+    public enum VariantBPro {
+
+        // MARK: Surface layers (warm dark outdoor)
+        public static let bgBase  = Color(red: 10/255,  green: 8/255,  blue: 7/255)
+        public static let bgShell = Color(red: 20/255,  green: 16/255, blue: 13/255)
+        public static let bgWarm  = Color(red: 26/255,  green: 22/255, blue: 18/255)
+
+        public static let elev1 = Color(red: 1.0, green: 237/255, blue: 213/255).opacity(0.04)
+        public static let elev2 = Color(red: 1.0, green: 237/255, blue: 213/255).opacity(0.06)
+        public static let elev3 = Color(red: 1.0, green: 237/255, blue: 213/255).opacity(0.09)
+
+        public static let glassThin   = Color(red: 20/255, green: 16/255, blue: 13/255).opacity(0.62)
+        public static let glassDeep   = Color(red: 10/255, green: 8/255,  blue: 7/255).opacity(0.82)
+
+        // MARK: Hairlines
+        public static let hair1 = Color(red: 1.0, green: 237/255, blue: 213/255).opacity(0.06)
+        public static let hair2 = Color(red: 1.0, green: 237/255, blue: 213/255).opacity(0.10)
+        public static let hair3 = Color(red: 1.0, green: 237/255, blue: 213/255).opacity(0.16)
+        public static let hairSpec = Color(red: 1.0, green: 237/255, blue: 213/255).opacity(0.22)
+
+        // MARK: Text hierarchy (cream-based)
+        public static let textPrimary    = Color(red: 251/255, green: 241/255, blue: 224/255)
+        public static let textSecondary  = Color(red: 251/255, green: 241/255, blue: 224/255).opacity(0.66)
+        public static let textTertiary   = Color(red: 251/255, green: 241/255, blue: 224/255).opacity(0.42)
+        public static let textQuaternary = Color(red: 251/255, green: 241/255, blue: 224/255).opacity(0.22)
+
+        // MARK: Brand · Terra
+        public static let terra50  = Color(red: 1.0,  green: 213/255, blue: 189/255)
+        public static let terra100 = Color(red: 1.0,  green: 180/255, blue: 142/255)
+        public static let terra300 = Color(red: 1.0,  green: 153/255, blue: 102/255)
+        public static let terra500 = Color(red: 244/255, green: 123/255, blue: 77/255)
+        public static let terra700 = Color(red: 216/255, green: 95/255,  blue: 55/255)
+
+        // MARK: Semantic accents
+        public static let moss        = Color(red: 199/255, green: 250/255, blue: 96/255)
+        public static let mossDark    = Color(red: 157/255, green: 209/255, blue: 58/255)
+        public static let teal        = Color(red: 94/255,  green: 227/255, blue: 204/255)
+        public static let azure       = Color(red: 102/255, green: 168/255, blue: 1.0)
+        public static let plum        = Color(red: 201/255, green: 119/255, blue: 243/255)
+        public static let recordingRed     = Color(red: 1.0,   green: 59/255,  blue: 92/255)
+        public static let recordingRedDark = Color(red: 224/255, green: 34/255, blue: 62/255)
+        public static let amber       = Color(red: 1.0,  green: 181/255, blue: 71/255)
+
+        // MARK: Radii
+        public static let radiusCardLarge: CGFloat  = 28
+        public static let radiusCardMedium: CGFloat = 22
+        public static let radiusCardSmall: CGFloat  = 16
+        public static let radiusPill: CGFloat       = 999
+    }
+}
+
+// MARK: - Variant B Pro · Glass surface modifier
+
+extension View {
+
+    /// Applies the *Variant B Pro* glass-card chrome: SwiftUI `Material` background,
+    /// hairline border, specular top highlight, soft shadow. Falls back gracefully
+    /// to a solid warm-dark fill on platforms / OS versions where Material is
+    /// unavailable. Liquid-Glass iOS-26-specific APIs are deferred — see
+    /// `docs/DESIGN_VARIANT_B_PRO_IMPLEMENTATION_2026-05-25.md` §4.
+    public func variantBProGlassCard(
+        cornerRadius: CGFloat = LH2GPXTheme.VariantBPro.radiusCardMedium,
+        material: VariantBProGlassMaterial = .regular,
+        padding: CGFloat = 16
+    ) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        return self
+            .padding(padding)
+            .background(material.swiftUIMaterial, in: shape)
+            .background(LH2GPXTheme.VariantBPro.bgWarm.opacity(0.45), in: shape)
+            .overlay(
+                shape.stroke(LH2GPXTheme.VariantBPro.hair2, lineWidth: 0.5)
+            )
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [LH2GPXTheme.VariantBPro.hairSpec, .clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 1)
+                .clipShape(shape)
+                .allowsHitTesting(false)
+            }
+            .clipShape(shape)
+            .shadow(color: .black.opacity(0.45), radius: 24, x: 0, y: 12)
+    }
+}
+
+/// Glass-material level used by `variantBProGlassCard`. Maps to SwiftUI `Material`
+/// thicknesses; the names align with the HTML spec (`glass-thin` / `glass` /
+/// `glass-deep`).
+public enum VariantBProGlassMaterial {
+    case thin
+    case regular
+    case deep
+
+    var swiftUIMaterial: Material {
+        switch self {
+        case .thin:    return .ultraThinMaterial
+        case .regular: return .regularMaterial
+        case .deep:    return .thickMaterial
+        }
+    }
+}
+
+
 #endif

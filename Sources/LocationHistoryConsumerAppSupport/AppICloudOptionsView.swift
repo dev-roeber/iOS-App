@@ -93,6 +93,13 @@ public struct AppICloudOptionsView: View {
 
                 iCloudDriveExportHintCard
 
+                metadataSyncPreparationCard
+                statusAutoRefreshCard
+                networkPolicyCard
+                conflictPolicyCard
+                containerInfoCard
+                deferredCloudActionsCard
+
                 LHXInfoCard(
                     kind: .info,
                     title: t("Privacy"),
@@ -110,6 +117,159 @@ public struct AppICloudOptionsView: View {
         .onChange(of: preferences.iCloudSyncEnabled) { _, newValue in
             Task { await viewModel.setEnabled(newValue) }
         }
+        .onChange(of: preferences.iCloudStatusAutoRefreshEnabled) { _, newValue in
+            guard newValue else { return }
+            Task { await viewModel.refresh() }
+        }
+    }
+
+    // MARK: - Variant B Pro · Extended iCloud Settings (Train 2026-05-25)
+
+    @ViewBuilder
+    private var metadataSyncPreparationCard: some View {
+        LHCard {
+            LHSectionHeader(t("Metadata Sync"))
+            VStack(alignment: .leading, spacing: 10) {
+                Toggle(isOn: $preferences.syncLiveTrackMetadataEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(t("Prepare live-track metadata sync"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(t("Acknowledges the LiveTrackMeta private-database schema. No records are written or read yet — this gate only opts the device in to the future sync engine."))
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityIdentifier("options.icloud.metadataSync.toggle")
+                .accessibilityHint(Text(t("Off until the dedicated sync-engine train ships. Toggling this preference today has no network or CloudKit effect.")))
+            }
+        }
+        .accessibilityIdentifier("options.icloud.metadataSync.card")
+    }
+
+    @ViewBuilder
+    private var statusAutoRefreshCard: some View {
+        LHCard {
+            LHSectionHeader(t("Status Refresh"))
+            VStack(alignment: .leading, spacing: 10) {
+                Toggle(isOn: $preferences.iCloudStatusAutoRefreshEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(t("Refresh iCloud status automatically"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(t("When on, the app re-checks iCloud account availability whenever this screen appears. The manual refresh button keeps working in either case."))
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityIdentifier("options.icloud.autoRefresh.toggle")
+            }
+        }
+        .accessibilityIdentifier("options.icloud.autoRefresh.card")
+    }
+
+    @ViewBuilder
+    private var networkPolicyCard: some View {
+        LHCard {
+            LHSectionHeader(t("Network Policy"))
+            VStack(alignment: .leading, spacing: 10) {
+                Toggle(isOn: $preferences.iCloudSyncAllowCellular) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(t("Allow iCloud sync over cellular"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(t("Reserved for the future sync engine. Off keeps any future record traffic on Wi-Fi only. Has no effect today because no records are written."))
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityIdentifier("options.icloud.cellular.toggle")
+            }
+        }
+        .accessibilityIdentifier("options.icloud.cellular.card")
+    }
+
+    @ViewBuilder
+    private var conflictPolicyCard: some View {
+        LHCard {
+            LHSectionHeader(t("Conflict Policy"))
+            VStack(alignment: .leading, spacing: 10) {
+                Picker(t("Conflict Policy"), selection: $preferences.iCloudSyncConflictPolicy) {
+                    ForEach(AppICloudSyncConflictPolicy.allCases, id: \.self) { policy in
+                        Text(t(policy.titleKey)).tag(policy)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("options.icloud.conflictPolicy.picker")
+                .accessibilityHint(Text(t("Stored only. Will be applied by the future sync engine.")))
+
+                Text(t(preferences.iCloudSyncConflictPolicy.captionKey))
+                    .font(.caption)
+                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("options.icloud.conflictPolicy.caption")
+            }
+        }
+        .accessibilityIdentifier("options.icloud.conflictPolicy.card")
+    }
+
+    @ViewBuilder
+    private var containerInfoCard: some View {
+        LHCard {
+            LHSectionHeader(t("Container"))
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(t("Identifier"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                    Spacer()
+                    Text(CloudKitCloudSyncService.defaultContainerIdentifier)
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(LH2GPXTheme.VariantBPro.terra300)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .accessibilityIdentifier("options.icloud.container.id")
+                }
+                Text(t("Private CloudKit database only. No public or shared database is ever queried. No team identifier is shown."))
+                    .font(.caption2)
+                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityIdentifier("options.icloud.container.card")
+    }
+
+    @ViewBuilder
+    private var deferredCloudActionsCard: some View {
+        LHCard {
+            LHSectionHeader(t("Deferred Cloud Actions"))
+            VStack(alignment: .leading, spacing: 10) {
+                Label {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(t("Delete cloud metadata"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(t("Available after the sync engine ships. No records exist yet, so there is nothing to delete on the server side."))
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } icon: {
+                    Image(systemName: "trash.slash")
+                        .foregroundStyle(LH2GPXTheme.textTertiary)
+                }
+                .opacity(0.55)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("options.icloud.deferred.deleteMetadata")
+                .accessibilityHint(Text(t("Disabled. Will become available once the iCloud sync engine writes records.")))
+
+                Text(t("No imported-history sync. No automatic upload. Metadata schema only until the sync engine is enabled."))
+                    .font(.caption2)
+                    .foregroundStyle(LH2GPXTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("options.icloud.deferred.disclaimer")
+            }
+        }
+        .accessibilityIdentifier("options.icloud.deferred.card")
     }
 
     // MARK: - Mapping helpers

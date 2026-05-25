@@ -269,6 +269,12 @@ public final class AppPreferences: ObservableObject {
         // iCloud — Foundation only, opt-in. Defaults to false.
         static let iCloudSyncEnabled = "app.preferences.iCloudSyncEnabled"
         static let preferCloudDriveExport = "app.preferences.preferCloudDriveExport"
+        // iCloud sync preparation gates (Variant B Pro train). Defaults are
+        // conservative; no setter writes CloudKit records — pure preferences.
+        static let syncLiveTrackMetadataEnabled = "app.preferences.syncLiveTrackMetadataEnabled"
+        static let iCloudStatusAutoRefreshEnabled = "app.preferences.iCloudStatusAutoRefreshEnabled"
+        static let iCloudSyncAllowCellular = "app.preferences.iCloudSyncAllowCellular"
+        static let iCloudSyncConflictPolicy = "app.preferences.iCloudSyncConflictPolicy"
     }
 
     private let userDefaults: UserDefaults
@@ -399,6 +405,36 @@ public final class AppPreferences: ObservableObject {
     /// flow ("Save to iCloud Drive" hint).
     @Published public var preferCloudDriveExport: Bool {
         didSet { userDefaults.set(preferCloudDriveExport, forKey: Keys.preferCloudDriveExport) }
+    }
+
+    /// Preparation gate for the `LiveTrackMeta` private-database schema
+    /// (`Sources/.../CloudKitLiveTrackMetadataSchema.swift`). Default `false`.
+    /// **No** CloudKit records are written/read by toggling this preference —
+    /// it is a UI gate for the eventual sync-engine train. Surfaced in the
+    /// iCloud settings screen so users can see what is prepared vs. active.
+    @Published public var syncLiveTrackMetadataEnabled: Bool {
+        didSet { userDefaults.set(syncLiveTrackMetadataEnabled, forKey: Keys.syncLiveTrackMetadataEnabled) }
+    }
+
+    /// When `true`, the iCloud settings screen refreshes
+    /// `CKContainer.accountStatus()` automatically on every appearance.
+    /// Default `false` — conservative; the bestehende Refresh-Button bleibt.
+    @Published public var iCloudStatusAutoRefreshEnabled: Bool {
+        didSet { userDefaults.set(iCloudStatusAutoRefreshEnabled, forKey: Keys.iCloudStatusAutoRefreshEnabled) }
+    }
+
+    /// Preference gate for the eventual sync engine: when `false`, future
+    /// record operations would refuse to run over cellular networks. Today
+    /// this preference is **only stored and displayed** — it has no runtime
+    /// effect because no records are written/read yet.
+    @Published public var iCloudSyncAllowCellular: Bool {
+        didSet { userDefaults.set(iCloudSyncAllowCellular, forKey: Keys.iCloudSyncAllowCellular) }
+    }
+
+    /// Preference gate for conflict resolution in the eventual sync engine.
+    /// Today this preference is **only stored and displayed**.
+    @Published public var iCloudSyncConflictPolicy: AppICloudSyncConflictPolicy {
+        didSet { userDefaults.set(iCloudSyncConflictPolicy.rawValue, forKey: Keys.iCloudSyncConflictPolicy) }
     }
 
     /// Which value is shown in the Dynamic Island compact-trailing slot during live recording.
@@ -619,6 +655,12 @@ public final class AppPreferences: ObservableObject {
         self.liveBreadcrumbFadeEnabled = userDefaults.object(forKey: Keys.liveBreadcrumbFadeEnabled) as? Bool ?? true
         self.iCloudSyncEnabled = userDefaults.object(forKey: Keys.iCloudSyncEnabled) as? Bool ?? false
         self.preferCloudDriveExport = userDefaults.object(forKey: Keys.preferCloudDriveExport) as? Bool ?? false
+        self.syncLiveTrackMetadataEnabled = userDefaults.object(forKey: Keys.syncLiveTrackMetadataEnabled) as? Bool ?? false
+        self.iCloudStatusAutoRefreshEnabled = userDefaults.object(forKey: Keys.iCloudStatusAutoRefreshEnabled) as? Bool ?? false
+        self.iCloudSyncAllowCellular = userDefaults.object(forKey: Keys.iCloudSyncAllowCellular) as? Bool ?? false
+        self.iCloudSyncConflictPolicy = AppICloudSyncConflictPolicy(
+            rawValue: userDefaults.string(forKey: Keys.iCloudSyncConflictPolicy) ?? ""
+        ) ?? .manual
         syncWidgetLanguagePreference()
         WidgetDataStore.saveDynamicIslandCompactDisplay(loadedDynamicIslandDisplay)
     }
@@ -653,6 +695,10 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.liveBreadcrumbFadeEnabled)
         userDefaults.removeObject(forKey: Keys.iCloudSyncEnabled)
         userDefaults.removeObject(forKey: Keys.preferCloudDriveExport)
+        userDefaults.removeObject(forKey: Keys.syncLiveTrackMetadataEnabled)
+        userDefaults.removeObject(forKey: Keys.iCloudStatusAutoRefreshEnabled)
+        userDefaults.removeObject(forKey: Keys.iCloudSyncAllowCellular)
+        userDefaults.removeObject(forKey: Keys.iCloudSyncConflictPolicy)
 
         distanceUnit = .metric
         startTab = .overview
@@ -682,6 +728,10 @@ public final class AppPreferences: ObservableObject {
         liveBreadcrumbFadeEnabled = true
         iCloudSyncEnabled = false
         preferCloudDriveExport = false
+        syncLiveTrackMetadataEnabled = false
+        iCloudStatusAutoRefreshEnabled = false
+        iCloudSyncAllowCellular = false
+        iCloudSyncConflictPolicy = .manual
     }
 
     private func syncWidgetLanguagePreference() {
