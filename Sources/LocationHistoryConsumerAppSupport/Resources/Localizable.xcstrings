@@ -2796,6 +2796,9 @@
     "Datei herunterladen" : {
 
     },
+    "Datei herunterladen (in Arbeit)" : {
+
+    },
     "Datei hochladen" : {
 
     },
@@ -3787,6 +3790,9 @@
       }
     },
     "Enthält genaue Standortpunkte eines LiveTracks. Diese Option ist standardmäßig deaktiviert." : {
+
+    },
+    "Erneut hochladen" : {
 
     },
     "Erneut in %lld s versuchen" : {
@@ -7002,6 +7008,9 @@
           }
         }
       }
+    },
+    "Meldung verwerfen" : {
+
     },
     "Miles" : {
       "extractionState" : "manual",
@@ -13521,6 +13530,9 @@
         }
       }
     },
+    "Vollständige Wiederherstellung folgt in einer Folgephase." : {
+
+    },
     "Waiting for accurate foreground location updates." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13573,6 +13585,9 @@
       }
     },
     "Wartende Sicherungen: %lld" : {
+
+    },
+    "Wartender Eintrag entfernen" : {
 
     },
     "Waypoints" : {
