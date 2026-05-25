@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## 2026-05-25 — Master · Phase D.1: iCloud-Screen Polish + Default-Hardening (Branch `main`, HEAD `3af17f7` → folgt)
+
+> **UI/UX-Hardening nach Phase-D-Screenshots.** Keine neuen CloudKit-Features, keine neuen RecordTypes, keine Sync-Logik-Änderung. Behebt sichtbare Probleme:
+> 1. Health-Check-Karte Full-Width, deutsche „Schreiben/Lesen/Löschen"-Probe (vorher „Write/Read/Delete"), AccountStatus-spezifisches Icon + Farbe, deutsche Fehlerursache-Mapping (Nicht angemeldet / Netzwerk / Schreib-/Lese-/Löschfehler / Container nicht erreichbar / Unbekannter CloudKit-Fehler).
+> 2. Conflict-Policy-Picker: `.pickerStyle(.segmented)` → `.pickerStyle(.menu)` (Apple-HIG für 3+ Optionen mit Labels > 12 Zeichen). Verhindert Abschneiden langer deutscher Labels.
+> 3. `AppICloudSyncConflictPolicy`: `titleKey`/`captionKey` direkt deutsch; neuer `shortTitleKey` („Manuell" / „Lokal" / „iCloud"). RawValues unverändert — Persistenz erhalten.
+> 4. „Wartende Sicherungen erneut versuchen" → kompakt „Erneut versuchen" + `accessibilityHint` „Versucht wartende iCloud-Sicherungen erneut.". Disabled-State via `.opacity(0.5)` lesbarer.
+> 5. LiveTrack-Routenpunkte-Toggle: `lock.shield` Warning-Icon + Text „Enthält genaue Standortpunkte eines LiveTracks. Diese Option ist standardmäßig deaktiviert." + `accessibilityLabel` „Sensible Standortdaten".
+> 6. Backup-Selection-Card: bei deaktiviertem iCloud-Sync sichtbarer Disabled-Grund via Label „iCloud-Sync ist deaktiviert — bitte oben aktivieren, um Sicherungsoptionen auszuwählen.".
+> 7. Container-Privacy-Text: „Public und Shared Database werden nicht verwendet." → „Öffentliche und geteilte CloudKit-Datenbanken werden nicht verwendet.".
+
+### Default-Hardening (bereits korrekt — verifiziert in `ICloudCloudKitMVPTests.testICloudSettingsDefaultsAreConservative`)
+Alle 6 iCloud-Backup-Preferences default AUS, `iCloudSyncConflictPolicy = .manual`. Verifiziert ✅ 9/0 Tests.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../AppICloudOptionsView.swift` | 6 Polish-Patches (Health-Card Full-Width + DE-Probe + Error-Detail-Mapping + Icon/Color, Retry-Button kompakter, Conflict-Picker → `.menu`, Container-Privacy-Text, Routenpunkte-Warning-Icon, Backup-Selection-Disabled-Hint) |
+| `Sources/.../AppICloudSyncConflictPolicy.swift` | `titleKey`/`captionKey` direkt DE; neuer `shortTitleKey`; RawValues unverändert |
+| `CHANGELOG.md`, `NEXT_STEPS.md`, `docs/ICLOUD_CLOUDKIT_MVP_PHASE_D_2026-05-25.md` | Doku-Sync |
+
+### Verifikation
+- `swift build` ✅ (38,03 s, 0 Warnings)
+- `swift test --filter ICloudCloudKitMVPTests` ✅ **9 Tests / 0 failures** (0,09 s)
+- `xcodebuild` iPhone-Sim build ✅ `BUILD SUCCEEDED`
+- `xcodebuild` generic iOS build ✅ `BUILD SUCCEEDED`
+- `plutil -lint PrivacyInfo.xcprivacy` ✅ OK
+
+### Bewusst NICHT in D.1
+- Keine neuen RecordTypes
+- Keine neue CloudKit-Sync-Logik
+- Keine Favoriten-Phase
+- Keine iPad-Phase
+- Kein Xcode Cloud
+- Kein TestFlight
+
+### Nächster Schritt
+**Phase E** — Favoriten-Modell/FavoriteEntry oder andere User-priorisierte Folgephase.
+
+---
+
 ## 2026-05-25 — Master · Phase D: iCloud-Seite Deutsch + CloudKit-MVP fuer LiveTrack-Backups (Branch `main`, HEAD `734ab8e` → folgt)
 
 > **Tests erlaubt und ausgefuehrt.** Phase D implementiert den iCloud-/CloudKit-MVP: deutsche iCloud-Seite, echter privater CloudKit-Health-Check mit Write/Read/Delete eines nicht-sensiblen `LH2GPXCloudHealthProbe`, opt-in Backup-Auswahl, optionales automatisches Backup neu abgeschlossener LiveTracks, retryfaehige Queue und Cloud-Datenuebersicht mit Counts + **geschaetztem** Speicherverbrauch. Private DB only; kein Public/shared DB, kein CKAsset, keine CKSubscription, keine automatische Google-History- oder Import-/Export-Sicherung.

@@ -14,11 +14,21 @@ public enum AppICloudSyncConflictPolicy: String, CaseIterable, Codable, Hashable
 
     /// User-facing title key. Pass through `AppLanguagePreference.localized`
     /// at the call site to localize.
+    /// Full user-facing title for the menu-picker selection.
     public var titleKey: String {
         switch self {
-        case .manual:      return "Resolve manually"
-        case .preferLocal: return "Prefer local copy"
-        case .preferCloud: return "Prefer iCloud copy"
+        case .manual:      return "Manuell auflösen"
+        case .preferLocal: return "Lokale Kopie bevorzugen"
+        case .preferCloud: return "iCloud-Kopie bevorzugen"
+        }
+    }
+
+    /// Short label for narrow UI surfaces (e.g. compact picker / chips).
+    public var shortTitleKey: String {
+        switch self {
+        case .manual:      return "Manuell"
+        case .preferLocal: return "Lokal"
+        case .preferCloud: return "iCloud"
         }
     }
 
@@ -26,11 +36,11 @@ public enum AppICloudSyncConflictPolicy: String, CaseIterable, Codable, Hashable
     public var captionKey: String {
         switch self {
         case .manual:
-            return "Show a side-by-side comparison whenever local and iCloud metadata disagree."
+            return "Zeigt einen Vergleich, wenn lokale und iCloud-Metadaten voneinander abweichen."
         case .preferLocal:
-            return "Silently keep the local copy when there is a conflict."
+            return "Behält bei einem Konflikt automatisch die lokale Kopie."
         case .preferCloud:
-            return "Silently keep the iCloud copy when there is a conflict."
+            return "Behält bei einem Konflikt automatisch die iCloud-Kopie."
         }
     }
 }

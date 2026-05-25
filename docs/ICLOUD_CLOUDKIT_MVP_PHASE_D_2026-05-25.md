@@ -1,5 +1,21 @@
 # iCloud CloudKit MVP — Phase D (2026-05-25)
 
+## Phase D.1 Polish (2026-05-25, später)
+
+Nach Phase-D-Screenshots wurden in einem Polish-Pass folgende UI-Probleme behoben — **ohne** neue RecordTypes/Sync-Logik:
+
+- Health-Check-Karte: Full-Width-Layout, deutsche „Schreiben/Lesen/Löschen"-Probe, AccountStatus-spezifisches Icon + Farbe, deutsche Fehlerursache-Mapping bei Probe-Fehler (Nicht angemeldet / Netzwerk / Schreib-/Lese-/Löschfehler / Container nicht erreichbar).
+- Conflict-Policy-Picker: `.pickerStyle(.segmented)` → `.pickerStyle(.menu)` (Apple-HIG für 3+ Optionen mit Labels > 12 Zeichen).
+- `AppICloudSyncConflictPolicy.titleKey`/`captionKey` direkt deutsch, neuer `shortTitleKey`. RawValues `manual`/`preferLocal`/`preferCloud` unverändert.
+- Retry-Button-Label kompakt: „Erneut versuchen" + `accessibilityHint`. Disabled `.opacity(0.5)`.
+- LiveTrack-Routenpunkte-Toggle: `lock.shield`-Warning-Icon + Sensible-Markierung im Text.
+- Backup-Selection-Card: bei deaktiviertem iCloud-Sync sichtbarer Disabled-Grund.
+- Container-Privacy: „Öffentliche und geteilte CloudKit-Datenbanken werden nicht verwendet.".
+
+Defaults unverändert konservativ — verifiziert durch `ICloudCloudKitMVPTests.testICloudSettingsDefaultsAreConservative` (9/0).
+
+---
+
 **Start-HEAD:** `734ab8e` · **Phase:** D · **Scope:** iCloud-Seite Deutsch + privater CloudKit-MVP fuer HealthProbe und opt-in LiveTrack-Backups.
 
 ## Status

@@ -197,6 +197,13 @@ public struct AppICloudOptionsView: View {
         LHCard {
             LHSectionHeader("In iCloud sichern")
             VStack(alignment: .leading, spacing: 10) {
+                if !preferences.iCloudSyncEnabled {
+                    Label("iCloud-Sync ist deaktiviert — bitte oben aktivieren, um Sicherungsoptionen auszuwählen.", systemImage: "icloud.slash")
+                        .font(.caption)
+                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("options.icloud.backupSelection.gateHint")
+                }
                 Toggle(isOn: $preferences.syncLiveTrackMetadataEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("LiveTrack-Metadaten")
@@ -213,9 +220,15 @@ public struct AppICloudOptionsView: View {
 
                 Toggle(isOn: $preferences.syncLiveTrackPointBatchesEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("LiveTrack-Routenpunkte")
-                            .font(.subheadline.weight(.semibold))
-                        Text("Koordinatenpunkte eines LiveTracks. Diese Daten sind sensibel.")
+                        HStack(spacing: 6) {
+                            Image(systemName: "lock.shield")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.orange)
+                                .accessibilityHidden(true)
+                            Text("LiveTrack-Routenpunkte")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        Text("Enthält genaue Standortpunkte eines LiveTracks. Diese Option ist standardmäßig deaktiviert.")
                             .font(.caption)
                             .foregroundStyle(LH2GPXTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -223,6 +236,7 @@ public struct AppICloudOptionsView: View {
                 }
                 .disabled(!preferences.iCloudSyncEnabled)
                 .accessibilityIdentifier("options.icloud.pointBatches.toggle")
+                .accessibilityLabel(Text("LiveTrack-Routenpunkte. Sensible Standortdaten."))
 
                 Toggle(isOn: $preferences.syncAppSettingsEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -281,19 +295,91 @@ public struct AppICloudOptionsView: View {
         LHCard {
             LHSectionHeader("CloudKit-Health-Check")
             VStack(alignment: .leading, spacing: 8) {
-                Label(viewModel.healthStatus.userFacingStatusKey, systemImage: "checkmark.seal")
+                Label(viewModel.healthStatus.userFacingStatusKey, systemImage: healthIconName)
                     .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(healthIconColor)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 if let probe = viewModel.healthStatus.lastProbeResult {
                     Text("Letzte Prüfung: \(Self.shortDateFormatter.string(from: probe.checkedAt)) · \(String(format: "%.2f", probe.durationSeconds)) s")
                         .font(.caption)
                         .foregroundStyle(LH2GPXTheme.textSecondary)
-                    Text("Write \(probe.writeSucceeded ? "✓" : "–") · Read \(probe.readSucceeded ? "✓" : "–") · Delete \(probe.deleteSucceeded ? "✓" : "–")")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Schreiben \(probe.writeSucceeded ? "✓" : "–") · Lesen \(probe.readSucceeded ? "✓" : "–") · Löschen \(probe.deleteSucceeded ? "✓" : "–")")
                         .font(.caption2.monospaced())
                         .foregroundStyle(LH2GPXTheme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if let detail = healthErrorDetail(for: probe) {
+                        Text(detail)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("options.icloud.health.errorDetail")
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("options.icloud.health.card")
+    }
+
+    private var healthIconName: String {
+        switch viewModel.healthStatus.accountStatus {
+        case .available where viewModel.healthStatus.privateDatabaseReachability == .reachable:
+            return "checkmark.seal.fill"
+        case .available:
+            return "checkmark.seal"
+        case .signedOut:
+            return "person.crop.circle.badge.exclamationmark"
+        case .restricted:
+            return "lock.shield"
+        case .error, .couldNotDetermine, .temporarilyUnavailable:
+            return "exclamationmark.triangle"
+        case .disabled:
+            return "icloud.slash"
+        }
+    }
+
+    private var healthIconColor: Color {
+        switch viewModel.healthStatus.accountStatus {
+        case .available where viewModel.healthStatus.privateDatabaseReachability == .reachable:
+            return .green
+        case .available:
+            return .primary
+        case .error, .signedOut, .restricted, .couldNotDetermine, .temporarilyUnavailable:
+            return .orange
+        case .disabled:
+            return .secondary
+        }
+    }
+
+    /// Maps a HealthProbe failure to a user-facing German cause without
+    /// leaking sensitive details. Returns `nil` when the probe succeeded.
+    private func healthErrorDetail(for probe: ICloudHealthProbeResult) -> String? {
+        if probe.writeSucceeded, probe.readSucceeded, probe.deleteSucceeded {
+            return nil
+        }
+        switch viewModel.healthStatus.accountStatus {
+        case .signedOut:
+            return "Nicht bei iCloud angemeldet."
+        case .restricted:
+            return "iCloud ist auf diesem Gerät eingeschränkt."
+        case .temporarilyUnavailable:
+            return "Netzwerk nicht verfügbar oder iCloud vorübergehend offline."
+        case .couldNotDetermine:
+            return "CloudKit-Container nicht erreichbar."
+        case .error:
+            if !probe.writeSucceeded {
+                return "Schreiben in privaten CloudKit-Bereich fehlgeschlagen."
+            } else if !probe.readSucceeded {
+                return "Lesen aus privatem CloudKit-Bereich fehlgeschlagen."
+            } else if !probe.deleteSucceeded {
+                return "Löschen aus privatem CloudKit-Bereich fehlgeschlagen."
+            }
+            return "Unbekannter CloudKit-Fehler."
+        case .disabled, .available:
+            return nil
+        }
     }
 
     @ViewBuilder
@@ -324,12 +410,14 @@ public struct AppICloudOptionsView: View {
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier("options.icloud.overview.refresh")
 
-                    Button("Wartende Sicherungen erneut versuchen") {
+                    Button("Erneut versuchen") {
                         Task { await viewModel.retryPendingBackups() }
                     }
                     .buttonStyle(.bordered)
                     .disabled(viewModel.pendingBackupCount == 0)
+                    .opacity(viewModel.pendingBackupCount == 0 ? 0.5 : 1.0)
                     .accessibilityIdentifier("options.icloud.backup.retry")
+                    .accessibilityHint(Text("Versucht wartende iCloud-Sicherungen erneut."))
                 }
                 if viewModel.storageOverview.summaryCount > 0 || viewModel.storageOverview.pointBatchCount > 0 {
                     Button("Cloud-Daten löschen", role: .destructive) {
@@ -392,14 +480,14 @@ public struct AppICloudOptionsView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Picker("Konfliktbehandlung", selection: $preferences.iCloudSyncConflictPolicy) {
                     ForEach(AppICloudSyncConflictPolicy.allCases, id: \.self) { policy in
-                        Text(t(policy.titleKey)).tag(policy)
+                        Text(policy.titleKey).tag(policy)
                     }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
                 .accessibilityIdentifier("options.icloud.conflictPolicy.picker")
                 .accessibilityHint(Text("Wird bei späteren Konflikten konservativ angewendet."))
 
-                Text(t(preferences.iCloudSyncConflictPolicy.captionKey))
+                Text(preferences.iCloudSyncConflictPolicy.captionKey)
                     .font(.caption)
                     .foregroundStyle(LH2GPXTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -426,7 +514,7 @@ public struct AppICloudOptionsView: View {
                         .truncationMode(.middle)
                         .accessibilityIdentifier("options.icloud.container.id")
                 }
-                Text("Nur private CloudKit-Datenbank. Public und Shared Database werden nicht verwendet. Keine Team-ID wird angezeigt.")
+                Text("Nur private CloudKit-Datenbank. Öffentliche und geteilte CloudKit-Datenbanken werden nicht verwendet. Keine Team-ID wird angezeigt.")
                     .font(.caption2)
                     .foregroundStyle(LH2GPXTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)

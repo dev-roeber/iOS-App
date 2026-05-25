@@ -1,5 +1,11 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Master-Train Phase D.1) — iCloud-Screen UI-Polish + Default-Hardening (Branch `main`, HEAD `3af17f7` → folgt)
+
+> **Phase D.1 abgeschlossen.** UI/UX-Polish nach Phase-D-Screenshots: Health-Check Full-Width mit deutscher Schreiben/Lesen/Löschen-Probe + Fehlerursache, Konflikt-Picker auf `.menu` (verhindert Abschneiden), Routenpunkte-Toggle mit `lock.shield` Warning, Backup-Card mit sichtbarem Disabled-Grund, Container-Privacy auf Deutsch. **Keine neuen CloudKit-Features.** Defaults bestätigt konservativ (`ICloudCloudKitMVPTests` 9/0). Build + Sim + Generic ✅.
+
+---
+
 ## Stand 2026-05-25 (Master-Train Phase D) — iCloud-Seite Deutsch + CloudKit-MVP fuer LiveTrack-Backups (Branch `main`, HEAD `734ab8e` → folgt)
 
 > **Phase D abgeschlossen nach finaler Verifikation.** Implementiert: deutsche iCloud-Seite, privater CloudKit-Health-Check (`LH2GPXCloudHealthProbe` write/read/delete), opt-in Sync-Inhalte, optionales automatisches LiveTrack-Backup nach Track-Abschluss, retryfaehige Queue, Cloud-Datenuebersicht mit Counts + geschaetztem Speicherverbrauch. Detail: [`docs/ICLOUD_CLOUDKIT_MVP_PHASE_D_2026-05-25.md`](docs/ICLOUD_CLOUDKIT_MVP_PHASE_D_2026-05-25.md).
