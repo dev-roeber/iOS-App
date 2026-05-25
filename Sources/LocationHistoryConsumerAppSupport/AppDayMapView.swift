@@ -131,7 +131,7 @@ public struct AppDayMapView: View {
                 .tint(MapPalette.visitColor(for: visit.semanticType))
             }
         }
-        .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
+        .mapStyle(AppMapStyleResolver.mapStyle(for: preferences.preferredMapStyle, showsRealisticElevation: preferences.mapShowsRealisticElevation))
     }
 
     private func displayCoords(for path: DayMapRenderData.PathOverlay) -> [CLLocationCoordinate2D] {

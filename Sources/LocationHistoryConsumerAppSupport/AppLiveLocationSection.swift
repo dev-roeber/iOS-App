@@ -148,7 +148,7 @@ public struct AppLiveLocationSection: View {
                 }
             }
         }
-        .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
+        .mapStyle(AppMapStyleResolver.mapStyle(for: preferences.preferredMapStyle, showsRealisticElevation: preferences.mapShowsRealisticElevation))
         .overlay(alignment: .topTrailing) {
             MapLayerMenu(configuration: MapLayerMenu.Configuration(
                 showsLiveOptions: true,

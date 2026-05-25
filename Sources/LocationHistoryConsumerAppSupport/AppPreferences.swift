@@ -275,6 +275,11 @@ public final class AppPreferences: ObservableObject {
         static let iCloudStatusAutoRefreshEnabled = "app.preferences.iCloudStatusAutoRefreshEnabled"
         static let iCloudSyncAllowCellular = "app.preferences.iCloudSyncAllowCellular"
         static let iCloudSyncConflictPolicy = "app.preferences.iCloudSyncConflictPolicy"
+        // Visual MapKit terrain (Train 9.2). Default true: matches current
+        // behavior on Live maps which already pass `.realistic`. Toggle is for
+        // battery-/GPU-conscious users; it does NOT change data flow, no
+        // CoreLocation altitude is collected because of this flag.
+        static let mapShowsRealisticElevation = "app.preferences.mapShowsRealisticElevation"
     }
 
     private let userDefaults: UserDefaults
@@ -435,6 +440,15 @@ public final class AppPreferences: ObservableObject {
     /// Today this preference is **only stored and displayed**.
     @Published public var iCloudSyncConflictPolicy: AppICloudSyncConflictPolicy {
         didSet { userDefaults.set(iCloudSyncConflictPolicy.rawValue, forKey: Keys.iCloudSyncConflictPolicy) }
+    }
+
+    /// Whether MapKit shows realistic 3-D terrain on supported map styles
+    /// (`.standard(elevation: .realistic)` / `.hybrid(elevation: .realistic)`).
+    /// Default `true` — matches the existing Live-map behavior. Setting this
+    /// to `false` falls back to flat 2-D rendering. **Purely visual** — no
+    /// CoreLocation altitude is captured or persisted because of this flag.
+    @Published public var mapShowsRealisticElevation: Bool {
+        didSet { userDefaults.set(mapShowsRealisticElevation, forKey: Keys.mapShowsRealisticElevation) }
     }
 
     /// Which value is shown in the Dynamic Island compact-trailing slot during live recording.
@@ -661,6 +675,7 @@ public final class AppPreferences: ObservableObject {
         self.iCloudSyncConflictPolicy = AppICloudSyncConflictPolicy(
             rawValue: userDefaults.string(forKey: Keys.iCloudSyncConflictPolicy) ?? ""
         ) ?? .manual
+        self.mapShowsRealisticElevation = userDefaults.object(forKey: Keys.mapShowsRealisticElevation) as? Bool ?? true
         syncWidgetLanguagePreference()
         WidgetDataStore.saveDynamicIslandCompactDisplay(loadedDynamicIslandDisplay)
     }
@@ -699,6 +714,7 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.iCloudStatusAutoRefreshEnabled)
         userDefaults.removeObject(forKey: Keys.iCloudSyncAllowCellular)
         userDefaults.removeObject(forKey: Keys.iCloudSyncConflictPolicy)
+        userDefaults.removeObject(forKey: Keys.mapShowsRealisticElevation)
 
         distanceUnit = .metric
         startTab = .overview
@@ -732,6 +748,7 @@ public final class AppPreferences: ObservableObject {
         iCloudStatusAutoRefreshEnabled = false
         iCloudSyncAllowCellular = false
         iCloudSyncConflictPolicy = .manual
+        mapShowsRealisticElevation = true
     }
 
     private func syncWidgetLanguagePreference() {

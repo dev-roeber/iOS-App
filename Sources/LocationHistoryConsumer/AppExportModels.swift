@@ -381,24 +381,52 @@ public struct PathPoint: Codable {
     public let lon: Double
     public let time: String?
     public let accuracyM: Double?
+    /// Elevation in metres above mean sea level (Train 9.2). Only set for
+    /// points that originated from a CoreLocation reading with positive
+    /// `verticalAccuracy`; **never** populated for imported Google
+    /// Timeline data. Backward-compatible: the custom decoder uses
+    /// `decodeIfPresent`, so existing `app_export.json` fixtures continue
+    /// to decode with `elevationM = nil`.
+    public let elevationM: Double?
 
     enum CodingKeys: String, CodingKey {
         case lat
         case lon
         case time
         case accuracyM = "accuracy_m"
+        case elevationM = "elevation_m"
     }
 
     public init(
         lat: Double,
         lon: Double,
         time: String?,
-        accuracyM: Double?
+        accuracyM: Double?,
+        elevationM: Double? = nil
     ) {
         self.lat = lat
         self.lon = lon
         self.time = time
         self.accuracyM = accuracyM
+        self.elevationM = elevationM
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        lat = try container.decode(Double.self, forKey: .lat)
+        lon = try container.decode(Double.self, forKey: .lon)
+        time = try container.decodeIfPresent(String.self, forKey: .time)
+        accuracyM = try container.decodeIfPresent(Double.self, forKey: .accuracyM)
+        elevationM = try container.decodeIfPresent(Double.self, forKey: .elevationM)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(lat, forKey: .lat)
+        try container.encode(lon, forKey: .lon)
+        try container.encodeIfPresent(time, forKey: .time)
+        try container.encodeIfPresent(accuracyM, forKey: .accuracyM)
+        try container.encodeIfPresent(elevationM, forKey: .elevationM)
     }
 }
 

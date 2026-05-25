@@ -82,7 +82,9 @@ public struct LiveTrackRecorder {
             latitude: sample.latitude,
             longitude: sample.longitude,
             timestamp: sample.timestamp,
-            horizontalAccuracyM: sample.horizontalAccuracyM
+            horizontalAccuracyM: sample.horizontalAccuracyM,
+            altitudeM: sample.altitudeM,
+            verticalAccuracyM: sample.verticalAccuracyM
         )
 
         guard let last = points.last else {

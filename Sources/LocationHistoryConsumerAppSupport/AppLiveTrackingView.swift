@@ -475,7 +475,7 @@ public struct AppLiveTrackingView: View {
                 liveTrackContent
                 liveCurrentLocationAnnotation
             }
-            .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
+            .mapStyle(AppMapStyleResolver.mapStyle(for: preferences.preferredMapStyle, showsRealisticElevation: preferences.mapShowsRealisticElevation))
             .frame(maxWidth: .infinity)
             .frame(height: height)
             .onMapCameraChange { _ in
@@ -665,7 +665,7 @@ public struct AppLiveTrackingView: View {
             liveTrackContent
             liveCurrentLocationAnnotation
         }
-        .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard(elevation: .realistic))
+        .mapStyle(AppMapStyleResolver.mapStyle(for: preferences.preferredMapStyle, showsRealisticElevation: preferences.mapShowsRealisticElevation))
         .onMapCameraChange { _ in
             liveLocation.isFollowingLocation = false
         }
@@ -801,6 +801,17 @@ public struct AppLiveTrackingView: View {
                     LHMetricCard(icon: "speedometer", label: t("Current Speed"), value: currentSpeedText, color: .orange)
                     LHMetricCard(icon: "arrow.left.and.right.circle", label: t("Last Segment"), value: lastSegmentText, color: .mint)
                     LHMetricCard(icon: "clock.badge.checkmark", label: t("Update Age"), value: updateAgeText, color: .teal)
+                    // Train 9.2: live elevation. Surfaces altitude only when
+                    // CoreLocation reported a positive vertical accuracy —
+                    // otherwise shows an em-dash, never a stale or invented value.
+                    LHMetricCard(
+                        icon: "mountain.2",
+                        label: t("Elevation"),
+                        value: liveElevationValueText,
+                        color: LH2GPXTheme.VariantBPro.terra300
+                    )
+                    .accessibilityIdentifier("live.metric.elevation")
+                    .accessibilityValue(Text(liveElevationAccessibilityValue))
                 }
             }
         }
@@ -1109,6 +1120,31 @@ public struct AppLiveTrackingView: View {
     private var lastSegmentText: String {
         guard let distance = metricSnapshot.lastSegmentDistanceM else { return "–" }
         return formatDistance(distance, unit: preferences.distanceUnit)
+    }
+
+    // MARK: - Live elevation (Train 9.2)
+
+    /// `Reading` snapshot of the latest sample's altitude/verticalAccuracy.
+    /// Routed through `LocationElevationFormatter` so the rule
+    /// "verticalAccuracy must be > 0" lives in one place.
+    private var liveElevationReading: LocationElevationFormatter.Reading {
+        LocationElevationFormatter.reading(
+            altitudeM: liveLocation.currentLocation?.altitudeM,
+            verticalAccuracyM: liveLocation.currentLocation?.verticalAccuracyM
+        )
+    }
+
+    /// Compact value text for the metric card (em-dash on `.unavailable`).
+    private var liveElevationValueText: String {
+        LocationElevationFormatter.compactAltitudeText(for: liveElevationReading) ?? "–"
+    }
+
+    /// Full VoiceOver value — includes accuracy when available.
+    private var liveElevationAccessibilityValue: String {
+        LocationElevationFormatter.displayText(
+            for: liveElevationReading,
+            german: preferences.appLanguage.isGerman
+        )
     }
 
     private var updateAgeText: String {

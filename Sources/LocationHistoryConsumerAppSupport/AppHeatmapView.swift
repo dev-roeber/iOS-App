@@ -85,8 +85,13 @@ public struct AppHeatmapView: View {
     }
 
     private var densityMapStyle: MapStyle {
-        if preferences.preferredMapStyle.isHybrid { return .hybrid }
-        return .standard()
+        // Train 9.2: route through `AppMapStyleResolver` so the heatmap
+        // surface honours the user's `mapShowsRealisticElevation` preference
+        // alongside the standard/hybrid/muted choice.
+        AppMapStyleResolver.mapStyle(
+            for: preferences.preferredMapStyle,
+            showsRealisticElevation: preferences.mapShowsRealisticElevation
+        )
     }
 
     /// Per-cell radial gradient: full colour at the centre fading to

@@ -1,5 +1,99 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 9.2: Höhen-Unterstützung Phase 1 (Branch `main`, HEAD `3eeb76a` → folgt)
+
+> **Build-only.** Vier zusammengehörige Höhen-Bausteine als Foundation für spätere Phasen: (1) `MapStyle.Elevation.realistic` als zentraler `AppMapStyleResolver` mit User-Toggle `mapShowsRealisticElevation`; (2) `LocationElevationFormatter` als single source of truth für „ist die Höhe vertrauenswürdig?" (verticalAccuracy > 0, finite); (3) `LiveLocationSample`/`RecordedTrackPoint`/`PathPoint` optional `altitudeM`/`verticalAccuracyM`/`elevationM` backward-kompatibel via `decodeIfPresent`; (4) GPX `<ele>`-Tag nur für Punkte mit echter validierter Höhe. Importierte Google-Timeline-Punkte bleiben unverändert ohne `<ele>`. **Keine externe Elevation-API**, **keine** Anreicherung importierter History. Tests bewusst nur als Scaffolding (12 XCTestCases, nicht ausgeführt). Punkt 10 weiter zurückgestellt.
+
+### Geprüfte Apple-Doku
+- MapKit for SwiftUI: `MapStyle.standard(elevation:)` / `.hybrid(elevation:)` / `.imagery(elevation:)` mit `MapStyle.Elevation.flat` (default) und `.realistic`. iOS 17.0+. Quelle: developer.apple.com/documentation/mapkit/mapstyle/elevation
+- SwiftUI `Map { ... }.mapStyle(_:)` Modifier. Quelle: developer.apple.com/documentation/swiftui/view/mapstyle(_:)
+- `CLLocation.altitude` (m über mean sea level) + `CLLocation.verticalAccuracy` (positiver Wert = gültig, `-1.0` typisch = invalid). Quelle: developer.apple.com/documentation/corelocation/cllocation/{altitude,verticalaccuracy}
+- CoreLocation Authorization — keine neue Permission nötig, `altitude`/`verticalAccuracy` Teil jedes `CLLocation`-Updates unter bestehender `whenInUse`. Quelle: developer.apple.com/documentation/corelocation/requesting-authorization-to-use-location-services
+- HIG „Maps" (3-D-Terrain rein visuell) + „Data" (Messwerte mit Genauigkeit anzeigen).
+- GPX 1.1 Konvention (Topografix): `<ele>` ist optional, Meter über mean sea level — passt zu `CLLocation.altitude`.
+
+### Architektur-Entscheidungen (Begründung im Bericht)
+- **3-D Terrain low-risk:** rein MapKit-render, keine Datenfluss-/Permission-Änderung. Pref-Default `true` matched bestehendes Live-Verhalten (`AppLiveTrackingView` setzte `.realistic` bereits hardcoded) → kein Verhaltens-Drift.
+- **Höhe nur bei valid verticalAccuracy:** Apple-Convention `> 0`. Falsche 0-m-/-1-m-Werte werden niemals angezeigt, exportiert oder persistiert.
+- **Keine externen DEM-/Elevation-APIs:** ASR/Open-Meteo/Open-Topo-Data/Mapbox kategorisch ausgeschlossen — würde Koordinaten an Dritte schicken (Privacy-Bruch).
+- **Importierte Google-History unverändert:** wird in `PathPoint(elevationM: nil)` gemappt → erzeugt nie `<ele>`. Keine erfundenen Höhen.
+
+### Neue / geänderte Dateien (10)
+| Datei | Art |
+|---|---|
+| `Sources/.../LocationElevationFormatter.swift` | **NEU** — pure Foundation Helper: `Reading` enum, `reading(...)`, `isValidAltitude(...)`, `displayText(...)`, compact helpers |
+| `Sources/.../AppMapStyleResolver.swift` | **NEU** — `AppMapStyleResolver.mapStyle(for:showsRealisticElevation:)` zentralisiert mapStyle-Auflösung für alle 9 Map-Consumer |
+| `Sources/.../LiveLocationModels.swift` | `LiveLocationSample` + `RecordedTrackPoint` mit optional `altitudeM`/`verticalAccuracyM`; Custom Codable (`decodeIfPresent`) für backward-Compat alter JSON-Tracks |
+| `Sources/.../SystemLiveLocationClient.swift` | Mapped `CLLocation.altitude`/`verticalAccuracy` → Sample (Guard via `LocationElevationFormatter.isValidAltitude`) |
+| `Sources/.../LiveTrackRecorder.swift` | Propagiert Sample-Altitude in `RecordedTrackPoint` |
+| `Sources/LocationHistoryConsumer/AppExportModels.swift` | `PathPoint` optional `elevationM` mit Custom Codable, JSON-Key `elevation_m` |
+| `Sources/.../ExportSelectionContent.swift` | Live-Track → PathPoint propagiert `elevationM` (nur wenn valid) |
+| `Sources/LocationHistoryConsumer/GPXBuilder.swift` | `GPXTrackPoint` optional `elevationM`; `appendTrack` emittiert `<ele>` mit `%.2f` nur wenn vorhanden; 4-Varianten-Switch für trkpt-Form |
+| `Sources/.../AppPreferences.swift` | +Key `mapShowsRealisticElevation` (Bool, default `true`) + Init-Loader + reset() |
+| `Sources/.../AppLiveTrackingView.swift` | +Live-Metric-Card „Elevation" (9. Card im Diagnostics-Grid) + 3 Helper Computed-Props |
+| `Sources/.../AppOptionsView.swift` | +„Terrain"-Section in `AppMapsOptionsView` mit Toggle |
+| `Sources/.../AppHeatmapView.swift` `+AppLiveTrackingView` `+AppLiveLocationSection` `+AppOverviewTracksMapView` `+AppDayMapView` `+AppExportPreviewMapView` | Routen alle mapStyle-Calls durch `AppMapStyleResolver` (8 Stellen) |
+| `Tests/.../LocationElevationFormatterTests.swift` | **NEU** — Scaffolding mit 12 XCTestCases (nicht ausgeführt — deferred bis Punkt 10) |
+| `CHANGELOG.md`, `ROADMAP.md` | Doku-Sync |
+
+### Verbleibende MapLayerMenu-Edge-Case
+- `MapLayerMenu.mapStyleBinding` behält den ternären `isHybrid` get-Pfad, weil es ein `Binding<AppMapStylePreference>` ist (nicht `MapStyle`). Resolver-Bypass dokumentiert inline.
+
+### MapKit-Terrain-Option
+- **Implementiert:** ✅ ja
+- **API:** `MapStyle.standard(elevation:)` / `MapStyle.hybrid(elevation:)` mit `MapStyle.Elevation.flat` / `.realistic`
+- **Fallback:** `.muted` bleibt bewusst `.flat` (Lesbarkeit). iOS 17.0+ Availability via `@available(iOS 17.0, macOS 14.0, *)` am Resolver.
+
+### Live-Höhenanzeige
+- **Implementiert:** ✅ ja, in `AppLiveTrackingView` Diagnostics-Grid als 9. Metric-Card mit Identifier `live.metric.elevation`.
+- **Valid-Regel:** `verticalAccuracy > 0` UND `altitude` finite UND nicht nil. Sonst em-dash `"–"`.
+- **VoiceOver:** voller `displayText` (z.B. „Elevation 42 m ± 8 m" / „Höhe nicht verfügbar") via `accessibilityValue`.
+
+### Modell / Persistenz
+- **Hinzugefügt:** ✅ `altitudeM`/`verticalAccuracyM` an `LiveLocationSample` + `RecordedTrackPoint` + `PathPoint` (`elevationM`).
+- **Backward-Compat:** ✅ alle drei via `decodeIfPresent` — bestehende JSON-Tracks und `app_export.json` Fixtures dekodieren unverändert mit `nil`.
+
+### GPX `<ele>`
+- **Implementiert:** ✅ ja
+- **Nur bei echter Höhe:** ✅ bestätigt — `GPXTrackPoint.elevationM` ist optional; emittiert `<ele>` nur in 2 von 4 trkpt-Switch-Varianten (`(time, ele)`, `(nil, ele)`).
+- **Importierte History bleibt ohne `<ele>`:** ✅ `PathPoint.elevationM = nil` für Google-Timeline-Importpfad → keine `<ele>`-Tags.
+
+### Externe Höhen-APIs
+- ❌ **Nicht genutzt** — Repo-Sweep `open-meteo|opentopodata|mapbox|terrain-rgb|elevation api`: **0 Treffer**.
+
+### Privacy
+- **PrivacyInfo unverändert:** keine neue Required-Reason-API-Nutzung (CoreLocation `altitude`/`verticalAccuracy` sind Teil des bestehenden `CLLocation`-Streams, keine neue Kategorie nötig).
+- `plutil -lint` PrivacyInfo ✅ `OK`.
+
+### Build-only Validierung
+- `swift build` ✅ 0 Warnings.
+- `xcodebuild` Sim ✅ `BUILD SUCCEEDED`.
+- `xcodebuild` generic iOS ✅ `BUILD SUCCEEDED`.
+- Sweeps: external-elevation-api ✅ clean · false-claim ✅ clean · secret ✅ clean · placeholder ✅ clean (1 docstring-Treffer „placeholder" = Fallback-Beschreibung, kein Code-Placeholder).
+
+### Test-Scaffolding
+- ✅ `Tests/LocationHistoryConsumerTests/LocationElevationFormatterTests.swift` mit 12 XCTestCases (reading-Branches, Display-Text DE/EN, compact helpers, isValidAltitude).
+- ❌ **Nicht ausgeführt** — deferred bis Punkt 10 (`swift test`/`xcodebuild test` bewusst nicht aufgerufen).
+
+### Anti-Claims (unverändert wahr)
+- ❌ Echte Höhenanreicherung importierter Google-History.
+- ❌ Externe DEM-/Elevation-APIs.
+- ❌ Koordinaten an Dritte.
+- ❌ Erfundene 0-m-Fallback-Höhen.
+- ❌ Neue CoreLocation-Permission.
+- ❌ Neue PrivacyInfo-Reason.
+- ❌ Tests ausgeführt.
+- ❌ Neuer Xcode-Cloud-Build > 190.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — Punkt 10 weiter zurückgestellt.
+
+### Nächster Schritt
+- **Phase 2 build-only:** Day-Detail Elevation-Profile-View (wenn Path-Points genug `elevationM` haben), KML/GeoJSON `<altitude>`/`coordinates[2]`-Support, Heatmap-Elevation-Tint.
+- **Punkt 10:** vollständige Tests + Xcode Cloud + TestFlight (User-Auftrag).
+
+---
+
 ## 2026-05-25 — Train 9.1: VariantBPro Token-Adoption I (Branch `main`, HEAD `aeb15de` → folgt)
 
 > **Build-only.** Gradueller Token-Rollout auf drei nicht-überlappenden Stellen: (1) Home-Hero bekommt neue Eyebrow-Mark („LH2GPX · TOPOGRAPHIC OUTDOOR") in `VariantBPro.terra300` Mono-Caps; (2) Settings-Root sectionLink „iCloud" wechselt von `LH2GPXTheme.primaryBlue` → `VariantBPro.terra300`; (3) `AppICloudOptionsView` bekommt warm-dark `VariantBPro.bgWarm` page-background mit `scrollContentBackground(.hidden)`. Alle bestehenden Identifier unverändert. Tests deferred, Punkt 10 weiter zurückgestellt.

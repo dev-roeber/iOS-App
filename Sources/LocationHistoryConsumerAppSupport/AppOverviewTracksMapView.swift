@@ -335,7 +335,7 @@ struct AppOverviewTracksMapView: View {
     }
 
     private var mapStyle: MapStyle {
-        preferences.preferredMapStyle.isHybrid ? .hybrid : .standard
+        AppMapStyleResolver.mapStyle(for: preferences.preferredMapStyle, showsRealisticElevation: preferences.mapShowsRealisticElevation)
     }
 
     private var mapAccessibilityLabel: String {
@@ -424,7 +424,7 @@ struct AppOverviewExploreSheet: View {
                     )
             }
         }
-        .mapStyle(preferences.preferredMapStyle.isHybrid ? .hybrid : .standard)
+        .mapStyle(AppMapStyleResolver.mapStyle(for: preferences.preferredMapStyle, showsRealisticElevation: preferences.mapShowsRealisticElevation))
         .onMapCameraChange(frequency: .onEnd) { context in
             model.updateForViewport(context.region)
         }

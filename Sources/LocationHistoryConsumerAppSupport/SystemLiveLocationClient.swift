@@ -81,12 +81,31 @@ extension SystemLiveLocationClient: @MainActor CLLocationManagerDelegate {
     }
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        let samples = locations.map {
-            LiveLocationSample(
-                latitude: $0.coordinate.latitude,
-                longitude: $0.coordinate.longitude,
-                timestamp: $0.timestamp,
-                horizontalAccuracyM: $0.horizontalAccuracy
+        let samples = locations.map { location -> LiveLocationSample in
+            // Train 9.2: forward altitude only when CoreLocation reports a
+            // positive verticalAccuracy. Negative values (typically `-1.0`)
+            // mean the device could not determine altitude reliably — we
+            // drop both fields so downstream consumers never see a stale
+            // or invented elevation.
+            let altitudeM: Double?
+            let verticalAccuracyM: Double?
+            if LocationElevationFormatter.isValidAltitude(
+                altitudeM: location.altitude,
+                verticalAccuracyM: location.verticalAccuracy
+            ) {
+                altitudeM = location.altitude
+                verticalAccuracyM = location.verticalAccuracy
+            } else {
+                altitudeM = nil
+                verticalAccuracyM = nil
+            }
+            return LiveLocationSample(
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude,
+                timestamp: location.timestamp,
+                horizontalAccuracyM: location.horizontalAccuracy,
+                altitudeM: altitudeM,
+                verticalAccuracyM: verticalAccuracyM
             )
         }
         onLocationSamples?(samples)

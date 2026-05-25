@@ -4,11 +4,23 @@ public struct GPXTrackPoint: Equatable {
     public let latitude: Double
     public let longitude: Double
     public let time: String?
+    /// Elevation in metres above mean sea level (Train 9.2). Only emit a
+    /// `<ele>` tag for points where a real, vertically-accurate
+    /// measurement exists — never invent or interpolate. Imported Google
+    /// Timeline history sets this to `nil` and therefore never produces
+    /// `<ele>` output.
+    public let elevationM: Double?
 
-    public init(latitude: Double, longitude: Double, time: String?) {
+    public init(
+        latitude: Double,
+        longitude: Double,
+        time: String?,
+        elevationM: Double? = nil
+    ) {
         self.latitude = latitude
         self.longitude = longitude
         self.time = time
+        self.elevationM = elevationM
     }
 }
 
@@ -131,8 +143,19 @@ public enum GPXBuilder {
                     //      separately and add a sibling array).
                     let trackPoints: [GPXTrackPoint]
                     if !path.points.isEmpty {
+                        // Train 9.2: forward `elevation_m` into GPXTrackPoint so
+                        // `<ele>` is emitted only when the upstream pipeline
+                        // (Live recorder + ExportSelectionContent) decided the
+                        // altitude was trustworthy. Imported Google Timeline
+                        // paths leave `elevationM = nil` and therefore never
+                        // produce `<ele>` output.
                         trackPoints = path.points.map {
-                            GPXTrackPoint(latitude: $0.lat, longitude: $0.lon, time: $0.time)
+                            GPXTrackPoint(
+                                latitude: $0.lat,
+                                longitude: $0.lon,
+                                time: $0.time,
+                                elevationM: $0.elevationM
+                            )
                         }
                     } else if let flat = path.flatCoordinates,
                               flat.count >= 2,
@@ -187,13 +210,33 @@ public enum GPXBuilder {
         for point in track.points {
             let latStr = String(format: "%.8f", point.latitude)
             let lonStr = String(format: "%.8f", point.longitude)
-            if let time = point.time {
+            // Train 9.2: emit <ele> only when the source had a real,
+            // vertically-accurate altitude. `LocationElevationFormatter`
+            // is the upstream guard; here we just trust `elevationM`.
+            let elevationLine: String? = point.elevationM.map { ele in
+                "        <ele>\(String(format: "%.2f", ele))</ele>"
+            }
+            switch (point.time, elevationLine) {
+            case (let t?, let eleLine?):
                 lines.append("""
                         <trkpt lat="\(latStr)" lon="\(lonStr)">
-                          <time>\(ExportUtils.xmlEscape(time))</time>
+                    \(eleLine)
+                          <time>\(ExportUtils.xmlEscape(t))</time>
                         </trkpt>
                     """)
-            } else {
+            case (let t?, nil):
+                lines.append("""
+                        <trkpt lat="\(latStr)" lon="\(lonStr)">
+                          <time>\(ExportUtils.xmlEscape(t))</time>
+                        </trkpt>
+                    """)
+            case (nil, let eleLine?):
+                lines.append("""
+                        <trkpt lat="\(latStr)" lon="\(lonStr)">
+                    \(eleLine)
+                        </trkpt>
+                    """)
+            case (nil, nil):
                 lines.append(#"      <trkpt lat="\#(latStr)" lon="\#(lonStr)"/>"#)
             }
         }

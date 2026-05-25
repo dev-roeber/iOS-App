@@ -203,6 +203,25 @@ struct AppMapsOptionsView: View {
                 }
             } header: { Text(t("Maps")) }
               footer: { Text(t("Applies to the day-detail map and live-location map.")) }
+
+            // Train 9.2: Realistic 3-D terrain toggle. Routes through
+            // AppMapStyleResolver — purely visual, no altitude is captured
+            // or transmitted because of this preference.
+            Section {
+                Toggle(isOn: $preferences.mapShowsRealisticElevation) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(t("Realistic 3D terrain"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(t("Renders mountains and topography with MapKit's `.realistic` elevation. Off falls back to flat 2-D rendering for battery-conscious sessions."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityIdentifier("options.maps.realisticElevation.toggle")
+                .accessibilityHint(Text(t("Visual MapKit terrain only — does not add altitude values to imported history or to GPX exports.")))
+            } header: { Text(t("Terrain")) }
+              footer: { Text(t("3-D terrain is a MapKit rendering feature. No external elevation API is contacted, and no data leaves the device.")) }
         }
         .navigationTitle(t("Maps"))
     }

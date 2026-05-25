@@ -164,12 +164,21 @@ enum ExportSelectionContent {
     }
 
     private static func exportDay(for track: RecordedTrack) -> Day? {
-        let pathPoints = track.points.map { point in
-            PathPoint(
+        let pathPoints = track.points.map { point -> PathPoint in
+            // Train 9.2: forward elevation only when the recorded point has
+            // a real, vertically-accurate altitude. `LocationElevationFormatter`
+            // is the single source of truth for the "is this altitude
+            // trustworthy" decision.
+            let elevation: Double? = LocationElevationFormatter.isValidAltitude(
+                altitudeM: point.altitudeM,
+                verticalAccuracyM: point.verticalAccuracyM
+            ) ? point.altitudeM : nil
+            return PathPoint(
                 lat: point.latitude,
                 lon: point.longitude,
                 time: isoTimestampFormatter.string(from: point.timestamp),
-                accuracyM: point.horizontalAccuracyM
+                accuracyM: point.horizontalAccuracyM,
+                elevationM: elevation
             )
         }
 
