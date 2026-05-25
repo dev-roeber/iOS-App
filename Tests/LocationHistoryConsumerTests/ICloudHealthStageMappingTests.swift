@@ -45,22 +45,29 @@ final class ICloudHealthStageMappingTests: XCTestCase {
         XCTAssertTrue(mapping.germanHint.contains("Schema") || mapping.germanHint.contains("Container"))
     }
 
-    func testCKErrorMappingUnknownItemPointsAtSchemaDeploy() {
+    func testCKErrorMappingUnknownItemIsTreatedAsIdempotent() {
         let mapping = ICloudCKErrorMapping.mapping(forRawCode: 11)
         XCTAssertEqual(mapping.codeName, "unknownItem")
-        XCTAssertTrue(mapping.germanHint.contains("Production-Schema"))
+        // Korrigiert nach Real-Welt-Befund: unknownItem heisst nicht
+        // automatisch „Schema deployen". Der Hint markiert den Pfad
+        // als idempotent/harmlos.
+        XCTAssertTrue(mapping.germanHint.contains("nicht vorhanden")
+                      || mapping.germanHint.contains("idempotent")
+                      || mapping.germanHint.contains("harmlos"))
     }
 
-    /// Phase D.3.1 — the most common TestFlight-Production failure is
-    /// „Cannot create new type X in production schema" which the CloudKit
-    /// server reports as `CKError.invalidArguments` (code 12). The hint
-    /// must point operators straight at the CloudKit Dashboard, not the
-    /// generic „request rejected" message.
-    func testCKErrorMappingInvalidArgumentsPointsAtProductionSchema() {
+    /// Korrigiert: invalidArguments (Code 12) hat viele Ursachen in
+    /// Production, nicht nur fehlendes Schema. Der Hint muss neutral
+    /// bleiben und auf Predicate/Field/Index hinweisen, nicht voreilig
+    /// „Schema deployen" empfehlen wenn das Schema bereits in Production
+    /// ist.
+    func testCKErrorMappingInvalidArgumentsIsNeutralAndNotSchemaDeployOnly() {
         let mapping = ICloudCKErrorMapping.mapping(forRawCode: 12)
         XCTAssertEqual(mapping.codeName, "invalidArguments")
-        XCTAssertTrue(mapping.germanHint.contains("Production"))
-        XCTAssertTrue(mapping.germanHint.contains("CloudKit Dashboard"))
+        let hint = mapping.germanHint
+        XCTAssertTrue(hint.contains("Predicate") || hint.contains("Field") || hint.contains("Argument"))
+        XCTAssertFalse(hint.contains("Schema fehlt"),
+                       "Hint darf nicht pauschal Schema-Deploy fordern")
     }
 
     func testCKErrorMappingUnknownCodeFallsBack() {

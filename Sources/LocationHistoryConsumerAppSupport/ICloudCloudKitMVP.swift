@@ -188,13 +188,14 @@ public struct ICloudCKErrorMapping: Equatable, Sendable {
         case 8:  return .init(codeName: "missingEntitlement",   germanHint: "iCloud-Entitlement fehlt im signierten Build.")
         case 9:  return .init(codeName: "notAuthenticated",     germanHint: "Bitte in den System-Einstellungen bei iCloud anmelden.")
         case 10: return .init(codeName: "permissionFailure",    germanHint: "Entitlement oder Container-Berechtigung prüfen.")
-        case 11: return .init(codeName: "unknownItem",          germanHint: "Production-Schema im CloudKit-Dashboard deployen.")
-        // Phase D.3.1 — sharpened hint. In TestFlight/Production this code
-        // is overwhelmingly „Cannot create new type X in production schema"
-        // (Apple Developer Forums threads #819507, #723721, #729014,
-        // #652903, #700488). Default error message is too generic for the
-        // most common real-world cause.
-        case 12: return .init(codeName: "invalidArguments",     germanHint: "Schema fehlt in der Production-Umgebung — im CloudKit Dashboard deployen.")
+        case 11: return .init(codeName: "unknownItem",          germanHint: "Record oder Record-Typ nicht vorhanden (in Lösch-/Idempotenz-Pfaden harmlos).")
+        // Korrigiert nach falschem Trust: Code 12 ist NICHT nur „Schema
+        // fehlt". Production kann invalidArguments auch werfen für
+        // ungültiges Predicate, fehlende Queryable-Indexe auf abgefragten
+        // Feldern, ungültige Sort-Descriptors oder unbekannte Field-Namen.
+        // Wir zeigen jetzt den Roh-Description, nicht eine geratene
+        // Ursache.
+        case 12: return .init(codeName: "invalidArguments",     germanHint: "Ungültiges CloudKit-Argument. Prüfe Predicate, Field-Namen und Queryable-Indexe — siehe Roh-Fehler unten.")
         case 15: return .init(codeName: "serverRejectedRequest", germanHint: "Schema oder Container-Konfiguration prüfen.")
         case 25: return .init(codeName: "quotaExceeded",        germanHint: "iCloud-Speicher des Nutzers ist voll.")
         case 26: return .init(codeName: "zoneNotFound",         germanHint: "CloudKit-Zone nicht vorhanden.")
@@ -921,7 +922,10 @@ public final class LiveTrackCloudBackupService: LiveTrackCloudBackupCoordinator 
         do {
             overview = try await uploader.fetchOverview()
         } catch {
-            overview.errorMessage = "Cloud-Datenübersicht konnte nicht aktualisiert werden."
+            // Korrigiert: gib den echten CKError-Code + Description weiter,
+            // statt die Wahrheit hinter einem generischen Satz zu verstecken.
+            let ns = error as NSError
+            overview.errorMessage = "Cloud-Datenübersicht fehlgeschlagen — CKError #\(ns.code): \(ns.localizedDescription)"
         }
         return overview
     }
@@ -1261,9 +1265,25 @@ public final class CloudKitICloudHealthCheckService: ICloudHealthChecking {
 
 public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploading {
     private let containerIdentifier: String
+    #if canImport(OSLog)
+    private static let logger = Logger(subsystem: "de.roeber.LH2GPXWrapper", category: "iCloud.LiveTrack")
+    #endif
 
     public init(containerIdentifier: String = CloudKitCloudSyncService.defaultContainerIdentifier) {
         self.containerIdentifier = containerIdentifier
+    }
+
+    /// Korrigiert: dumpt den vollen NSError (Domain/Code/Description +
+    /// userInfo-Keys ServerErrorDescription/NSUnderlyingError) als
+    /// `os.Logger.error`-Eintrag, damit der Nutzer in Console.app die
+    /// echte CloudKit-Ursache sieht statt nur unsere geratene Hint.
+    private static func logCloudKitFailure(_ scope: String, _ error: Error) {
+        #if canImport(OSLog)
+        let ns = error as NSError
+        let server = (ns.userInfo["ServerErrorDescription"] as? String) ?? ""
+        let underlying = (ns.userInfo[NSUnderlyingErrorKey] as? NSError).map { "\($0.domain)#\($0.code) \($0.localizedDescription)" } ?? ""
+        logger.error("CloudKit \(scope, privacy: .public) failed: domain=\(ns.domain, privacy: .public) code=\(ns.code, privacy: .public) desc=\(ns.localizedDescription, privacy: .public) server=\(server, privacy: .public) underlying=\(underlying, privacy: .public)")
+        #endif
     }
 
     public func upload(_ envelope: LiveTrackCloudBackupEnvelope) async throws {
@@ -1291,10 +1311,22 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
 
     public func fetchOverview() async throws -> ICloudStorageOverview {
         let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
-        let summaryQuery = CKQuery(recordType: LiveTrackCloudSchema.summaryRecordType, predicate: NSPredicate(value: true))
-        let batchQuery = CKQuery(recordType: LiveTrackCloudSchema.pointBatchRecordType, predicate: NSPredicate(value: true))
-        let summaries = try await database.records(matching: summaryQuery, resultsLimit: 200).matchResults
-        let batches = try await database.records(matching: batchQuery, resultsLimit: 200).matchResults
+        let summaryQuery = CKQuery(recordType: LiveTrackCloudSchema.summaryRecordType, predicate: NSPredicate(format: "TRUEPREDICATE"))
+        let batchQuery = CKQuery(recordType: LiveTrackCloudSchema.pointBatchRecordType, predicate: NSPredicate(format: "TRUEPREDICATE"))
+        let summaries: [(CKRecord.ID, Result<CKRecord, Error>)]
+        let batches: [(CKRecord.ID, Result<CKRecord, Error>)]
+        do {
+            summaries = try await database.records(matching: summaryQuery, resultsLimit: 200).matchResults
+        } catch {
+            Self.logCloudKitFailure("fetchOverview/summaries", error)
+            throw error
+        }
+        do {
+            batches = try await database.records(matching: batchQuery, resultsLimit: 200).matchResults
+        } catch {
+            Self.logCloudKitFailure("fetchOverview/batches", error)
+            throw error
+        }
         var overview = ICloudStorageOverview()
         overview.summaryCount = summaries.count
         overview.pointBatchCount = batches.count
@@ -1356,7 +1388,7 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
         from database: CKDatabase
     ) async throws -> [CKRecord] {
         var collected: [CKRecord] = []
-        let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
+        let query = CKQuery(recordType: recordType, predicate: NSPredicate(format: "TRUEPREDICATE"))
         do {
             let firstPage = try await database.records(matching: query, resultsLimit: 200)
             collected.append(contentsOf: try records(from: firstPage.matchResults))
@@ -1461,7 +1493,7 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
         // many LiveTrack-PointBatches saw the destructive button silently
         // leave most records behind in CloudKit.
         for recordType in recordTypes {
-            let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
+            let query = CKQuery(recordType: recordType, predicate: NSPredicate(format: "TRUEPREDICATE"))
             var pendingDeleteIDs: [CKRecord.ID] = []
             var cursor: CKQueryOperation.Cursor?
             do {
@@ -1480,6 +1512,7 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
                     cursor = nextPage.queryCursor
                 }
             } catch {
+                Self.logCloudKitFailure("deleteCloudData/query[\(recordType)]", error)
                 // Phase D.4 — `unknownItem` on the *query* path is rare
                 // but legitimate (record-type does not exist in env, e.g.
                 // schema not yet promoted). Treat as „nothing to delete"
@@ -1490,7 +1523,12 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
                 }
                 throw error
             }
-            try await deleteInChunks(pendingDeleteIDs, database: database)
+            do {
+                try await deleteInChunks(pendingDeleteIDs, database: database)
+            } catch {
+                Self.logCloudKitFailure("deleteCloudData/delete[\(recordType)]", error)
+                throw error
+            }
         }
     }
 

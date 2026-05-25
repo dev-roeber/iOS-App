@@ -1,5 +1,19 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Hotfix) — CKError-Hint korrigiert + Roh-Fehler-Diagnose (Branch `main`, HEAD `8cf2f03` → folgt)
+
+> **Wichtige Korrektur.** Production-Schema ist deployed (am Dashboard verifiziert 2026-05-25), aber „Cloud-Daten löschen" wirft trotzdem `CKError.invalidArguments` (Code 12). Die alte App-Meldung „Schema fehlt — deployen" war falsch und hat den Nutzer auf eine falsche Spur geführt. Die Hint-Map ist jetzt neutral; der vollständige NSError (Code + Description + `ServerErrorDescription` + `NSUnderlyingError`) wird sichtbar in der UI gerendert UND als `os.Logger.error` nach Console.app geschrieben.
+>
+> **Wirkliche Ursache von Code 12 (offen, vom Nutzer im nächsten TestFlight-Run zu liefern):** wahrscheinlichste Kandidaten nach Dashboard-Audit sind (a) `NSPredicate(value: true)` → behoben durch Wechsel auf `TRUEPREDICATE`, (b) Queryable-Index auf einem nicht-`recordName`-Feld der Lösch-Logik, (c) Container/Environment-Mismatch im Release-Build (Entitlements vs. CKContainer.identifier).
+>
+> **Diagnose-Workflow nach diesem Push:**
+> 1. TestFlight-Build mit Hotfix installieren.
+> 2. „Cloud-Daten löschen" antippen → sichtbare Meldung enthält jetzt `CKError #<n> <codeName> — ... Roh: <Apples Originaltext>`.
+> 3. In Console.app nach Subsystem `de.roeber.LH2GPXWrapper`, Kategorie `iCloud.LiveTrack` filtern → vollständiger Dump pro fehlgeschlagener Operation.
+> 4. Diesen Text in die ChatGPT-/Forum-Session geben → echte Ursache wird damit auffindbar.
+
+---
+
 ## Stand 2026-05-25 (Prompt 3) — CKAsset GPX/KML/ZIP Cloud-Datei-Sync via `LH2GPXCloudFile` (Branch `main`, HEAD `889a01e` → folgt)
 
 > **Prompt 3 von 3 — Session A abgeschlossen.** Neuer privater CloudKit-RecordType `LH2GPXCloudFile` mit `CKAsset` für GPX/KML/ZIP. SHA-256-Dedupe über streaming-Hash + Predicate-Query. Upload nur durch ausdrückliche Nutzeraktion (fileImporter oder Per-Eintrag-Button im Dateien-Tab). 102 Tests grün.

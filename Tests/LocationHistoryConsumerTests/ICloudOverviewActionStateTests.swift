@@ -107,14 +107,19 @@ final class ICloudOverviewActionStateTests: XCTestCase {
 
     // MARK: - 6. CKErrorMapping bridge from NSError(domain: CKErrorDomain)
 
-    func testActionErrorRenderingMapsCloudKitDomainToGermanHint() {
+    func testActionErrorRenderingIncludesCodeNameAndRawDescription() {
         let error = NSError(
             domain: ICloudActionErrorRendering.cloudKitErrorDomain,
-            code: 12 // invalidArguments
+            code: 12, // invalidArguments
+            userInfo: [NSLocalizedDescriptionKey: "Test raw description"]
         )
         let hint = ICloudActionErrorRendering.hint(for: error)
-        XCTAssertTrue(hint.contains("Production"))
-        XCTAssertTrue(hint.contains("CloudKit Dashboard"))
+        // Korrigiert: rendert jetzt code + codeName + raw description,
+        // nicht mehr nur einen pauschalen Hint.
+        XCTAssertTrue(hint.contains("#12"))
+        XCTAssertTrue(hint.contains("invalidArguments"))
+        XCTAssertTrue(hint.contains("Roh:"))
+        XCTAssertTrue(hint.contains("Test raw description"))
     }
 
     func testActionErrorRenderingFallsBackForNonCloudKitErrors() {

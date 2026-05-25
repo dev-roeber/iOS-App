@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## 2026-05-25 — Hotfix: CKError-Hint-Korrektur + Roh-Fehler-Diagnose (Branch `main`, HEAD `8cf2f03` → folgt)
+
+> **Korrektur einer falschen Annahme aus Phase D.3.1.** Bisher haben `CKError.unknownItem` (Code 11) und `CKError.invalidArguments` (Code 12) in der UI immer „Production-Schema im CloudKit Dashboard deployen" angezeigt. **Verifiziert am 2026-05-25 (User + ChatGPT-Session direkt im CloudKit Dashboard):** das Production-Schema ist deployed, alle vier Record Types (`LH2GPXCloudHealthProbe`, `LH2GPXLiveTrackSummary`, `LH2GPXLiveTrackPointBatch`, `Users`) sind in Production vorhanden, `recordName` ist als Queryable indiziert. Die App-Meldung hat den Nutzer auf eine falsche Spur geführt. Alle früheren Doku-Aussagen, die „Schema-Promotion" als zwingenden TestFlight-Pflichtschritt darstellen, sind hierdurch überholt.
+
+### Code-Fixes
+| Datei | Fix |
+|---|---|
+| `ICloudCloudKitMVP.swift` Line 191 | Code 11 (`unknownItem`) Hint neu: „Record oder Record-Typ nicht vorhanden (in Lösch-/Idempotenz-Pfaden harmlos)." |
+| `ICloudCloudKitMVP.swift` Line 197 | Code 12 (`invalidArguments`) Hint neu: „Ungültiges CloudKit-Argument. Prüfe Predicate, Field-Namen und Queryable-Indexe — siehe Roh-Fehler unten." |
+| `ICloudCloudKitMVP.swift` 4× | `NSPredicate(value: true)` → `NSPredicate(format: "TRUEPREDICATE")` (robuster in Production gegen invalidArguments-Edge-Cases) |
+| `AppCloudFileManagement.swift` 1× | dito |
+| `AppICloudOptionsView.swift` `ICloudActionErrorRendering.hint(for:)` | Rendert jetzt `CKError #<code> <codeName> — <Hint>\n\nRoh: <localizedDescription> · Underlying: ... · Server: ...` — User sieht IMMER den echten Apple-Fehler, nicht nur unsere Interpretation. |
+| `ICloudCloudKitMVP.swift` `CloudKitLiveTrackCloudBackupUploader.logCloudKitFailure` | Neuer Helper dumpt vollen NSError (domain/code/description + `ServerErrorDescription` + `NSUnderlyingError`) via `os.Logger.error` — in Console.app sichtbar pro Operation. |
+| `ICloudCloudKitMVP.swift` `deleteCloudData` / `fetchOverview` | Logging-Hooks an allen catch-Stellen, throw bleibt unverändert. |
+| `LiveTrackCloudBackupService.refreshOverview` | `overview.errorMessage` enthält jetzt `CKError #<code>: <description>` statt generischer „Cloud-Datenübersicht konnte nicht aktualisiert werden." |
+| `ICloudHealthStageMappingTests` / `ICloudOverviewActionStateTests` | Test-Erwartungen angepasst: Code 11 → idempotent/harmlos; Code 12 → neutral, kein „Schema fehlt"; Renderer enthält `#12`, `invalidArguments`, `Roh:`, raw description. |
+
+### Verifikation
+- ✅ `swift build`
+- ✅ `swift test --filter "ICloud|CloudFile"` — 55/0
+- ✅ `xcodebuild` Generic iOS — BUILD SUCCEEDED
+- ✅ `xcodebuild` iPhone 16 Simulator — BUILD SUCCEEDED
+
+### Was der Nutzer im nächsten TestFlight-Build sieht
+Wenn „Cloud-Daten löschen" fehlschlägt, zeigt die Card jetzt z. B.:
+```
+CKError #12 invalidArguments — Ungültiges CloudKit-Argument. Prüfe Predicate, Field-Namen und Queryable-Indexe — siehe Roh-Fehler unten.
+
+Roh: <Apple's eigentliche Beschreibung> · Server: <ServerErrorDescription> · Underlying: <Underlying>
+```
+Parallel in Console.app: ein `os.Logger.error`-Eintrag pro fehlgeschlagener Operation mit vollem Dump. **Das ist der Text, der für die Diagnose ins Forum/an Apple gehört — nicht mehr unsere geratene Interpretation.**
+
+### Überholte Doku-Aussagen
+Alle Stellen in `CHANGELOG.md` / `NEXT_STEPS.md` / `docs/*.md`, die „Schema → Production deployen" als zwingenden Pflichtschritt für LiveTrack-/Probe-/CloudFile-Records darstellen, sind nach Dashboard-Verifikation 2026-05-25 obsolet. Diese werden nicht einzeln nachgepflegt; dieser Hotfix-Eintrag ist die maßgebliche Korrektur.
+
+---
+
 ## 2026-05-25 — Prompt 3: CKAsset GPX/KML/ZIP Cloud-Datei-Sync via `LH2GPXCloudFile` (Branch `main`, HEAD `889a01e` → folgt)
 
 > **Dritter und letzter Prompt der Session.** Neuer privater CloudKit-RecordType `LH2GPXCloudFile` mit `CKAsset`-Feld für GPX/KML/ZIP-Dateien. SHA-256-Dedupe über streaming `FileHandle.read` (Foundation-only, RAM-safe für große ZIPs). Datei-Upload nur durch ausdrückliche Nutzeraktion (`fileImporter` oder „Hochladen"-Button neben lokaler Datei). **Production-Schema-Promotion im CloudKit Dashboard bleibt als manueller Pflichtschritt offen.**

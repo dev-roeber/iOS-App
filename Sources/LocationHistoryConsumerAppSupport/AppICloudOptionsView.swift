@@ -160,7 +160,19 @@ public enum ICloudActionErrorRendering {
     public static func hint(for error: Error) -> String {
         let nsError = error as NSError
         if nsError.domain == cloudKitErrorDomain {
-            return ICloudCKErrorMapping.mapping(forRawCode: nsError.code).germanHint
+            let mapping = ICloudCKErrorMapping.mapping(forRawCode: nsError.code)
+            // Korrigiert: zeige IMMER den Roh-Fehler von Apple mit, nicht
+            // nur unseren Hint. Frühere Versionen haben „Schema deployen"
+            // als alleinigen Text gezeigt, was bei bereits deploytem Schema
+            // den Nutzer auf eine falsche Spur geführt hat.
+            var raw = nsError.localizedDescription
+            if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+                raw += " · Underlying: \(underlying.domain) #\(underlying.code) \(underlying.localizedDescription)"
+            }
+            if let serverMsg = nsError.userInfo["ServerErrorDescription"] as? String, !serverMsg.isEmpty {
+                raw += " · Server: \(serverMsg)"
+            }
+            return "CKError #\(nsError.code) \(mapping.codeName) — \(mapping.germanHint)\n\nRoh: \(raw)"
         }
         return nsError.localizedDescription.isEmpty
             ? "Unbekannter Fehler."

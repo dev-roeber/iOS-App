@@ -440,7 +440,7 @@ public final class CloudKitCloudFileManager: CloudFileManaging, @unchecked Senda
 
     private func fetchAllRecords(database: CKDatabase) async throws -> [CKRecord] {
         var collected: [CKRecord] = []
-        let query = CKQuery(recordType: CloudFileSchema.recordType, predicate: NSPredicate(value: true))
+        let query = CKQuery(recordType: CloudFileSchema.recordType, predicate: NSPredicate(format: "TRUEPREDICATE"))
         do {
             let firstPage = try await database.records(matching: query, resultsLimit: 200)
             collected.append(contentsOf: try records(from: firstPage.matchResults))
