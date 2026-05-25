@@ -96,6 +96,9 @@ public struct RecentFilesView: View {
         .padding(.vertical, 6)
         .buttonStyle(.plain)
         .disabled(!isAvailable)
+        .accessibilityHint(Text(isAvailable
+            ? t("Reopens this previously imported file.")
+            : t("This entry is no longer reachable — the source file was moved, renamed or its security-scoped bookmark expired. Use the trash icon to remove it.")))
         .contentShape(Rectangle())
         .contextMenu {
             if isAvailable {

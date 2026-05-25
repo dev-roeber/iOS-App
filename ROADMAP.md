@@ -29,6 +29,7 @@
 | 9.0 | Variant B Pro Design + iCloud-Sync-Settings (build-only) | ✅ erledigt — Tokens + 4 neue Preferences + Conflict-Policy-Enum |
 | 9.1 | VariantBPro Token-Adoption I (Home-Hero · Settings-iCloud · iCloud-Page-BG) | ✅ erledigt |
 | 9.2 | Höhen-Unterstützung Phase 1 (MapKit terrain + Live-Elevation + GPX `<ele>`) | ✅ erledigt — Helper + Resolver + Model-Erweiterung + Test-Scaffolding |
+| Closure | Open-Items-Audit + 2 A11y-Fixes + lokale Test-Verifikation | ✅ erledigt — `swift test 1714/0`, Sim+Generic build ✅, Sim test cancelled by user-direction |
 
 ### Verbindliche Regel für 8.0–8.15
 **Erlaubt:** `git diff --check`, `swift build`, `xcodebuild ... build`, `xcodebuild ... archive` (ohne Test-Nachaktion), `rg`-Sweeps, statische Codeprüfung, Doku-Sync, Apple-Doku-Abgleich, Commit + Push.

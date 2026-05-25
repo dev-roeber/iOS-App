@@ -106,6 +106,9 @@ public struct HistoryDateRangePickerSheet: View {
                         dismiss()
                     }
                     .disabled(!canApply)
+                    .accessibilityHint(Text(canApply
+                        ? t("Applies the selected date range to the day list.")
+                        : t("Pick a start date that is not after the end date to enable Apply.")))
                 }
                 if filter.isActive {
                     #if os(iOS)

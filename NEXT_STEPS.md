@@ -1,5 +1,26 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Closure-Train) — Open-Items-Audit + lokale Test-Verifikation + 2 A11y-Fixes (Branch `main`, HEAD `e8dbb24` → folgt)
+
+> **Vorbereitend für Master-Train.** Vollständiges Open-Items-Audit (siehe `docs/OPEN_ITEMS_CLOSURE_2026-05-25.md`), 2 echte A11y-Gaps gefixt (`RecentFilesView` disabled-Row, `HistoryDateRangePickerSheet` Apply-Button). Lokale Test-Verifikation:
+> - ✅ `swift test` **1714 / 2 skipped / 0 failures** (614 s)
+> - ✅ `swift build` 0E/0W
+> - ✅ `xcodebuild` Sim build BUILD SUCCEEDED
+> - ✅ `xcodebuild` generic iOS build BUILD SUCCEEDED
+> - ⏸️ `xcodebuild` Sim test cancelled by user during build phase
+> - ⏸️ Device test/Archive/Cloud per User-Direktive übersprungen
+>
+> Detail: [`docs/FULL_APP_FINAL_TEST_VERIFICATION_2026-05-25.md`](docs/FULL_APP_FINAL_TEST_VERIFICATION_2026-05-25.md).
+
+**Nächster Train — Master „Localization + Favorites + iCloud Sync + iPad Support":**
+1. `.xcstrings` String Catalog (Apple-modern, Xcode 15+) — Base `en` + `de`-Mirror, Migration aller hardcoded `Text/Button/Label/navigationTitle`-Strings.
+2. Favoriten-Datenmodell + UI + Persistenz (neu, falls noch nicht vorhanden).
+3. **Echter CloudKit-Favoriten-Sync** über `privateCloudDatabase` — `FavoriteEntry` Record mit `save/fetch/delete/CKQuery`. **Anti-Claim-Reset:** CKQuery/save/fetch/delete sind ab diesem Master-Train für FavoriteEntry erlaubt. History/Tracks/Koordinaten bleiben ausgeschlossen.
+4. iPad-Support: `TARGETED_DEVICE_FAMILY = 1,2` + iPad-Sim build + Layout-Audit.
+5. Build-only — per User-Direktive **keine Tests** am Ende dieses Trains. Test-Verifikation in eigenem Folge-Train.
+
+---
+
 ## Stand 2026-05-25 (Train 8.0) — Repo-Truth-Lock auf `dev-roeber/iOS-App` + Full-App-Modernization-Plan (Branch `main`, HEAD `0276ea2` → folgt)
 
 > **Verbindlich ab sofort:** Einziges aktives Arbeits-Repo ist `https://github.com/dev-roeber/iOS-App`. Alle anderen LH2GPX-/LocationHistory2GPX-Repos sind historisch (siehe `AGENTS.md` §Repo-Truth-Lock). **Keine Feature-Implementierung in diesem Train** — reine Doku/Governance.

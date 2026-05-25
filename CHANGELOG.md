@@ -1,5 +1,51 @@
 # CHANGELOG
 
+## 2026-05-25 — Closure: Open-Items-Audit + lokale Test-Verifikation + 2 A11y-Fixes (Branch `main`, HEAD `e8dbb24` → folgt)
+
+> **Vorbereitend für Master-Train.** Vollständiges Open-Items-Audit aus allen Repo-Truth-Quellen (NEXT_STEPS, ROADMAP, CHANGELOG, README, alle `docs/`), Klassifizierung in fixed/verified/deferred/blocked, 2 echte A11y-Gaps minimal gefixt, lokale Test-Verifikation soweit User-Direktive zulässt. Punkt 10 wird per User-Auftrag teilweise eingelöst: `swift test` ✅ 1714/0/2, Sim+Generic Build ✅, Sim test im Build-Step cancelled (User-Direktive für unmittelbar folgenden Master-Train: „vorerst ohne tests").
+
+### Geprüfte Apple-Doku
+- MapKit `MapStyle/.Elevation`, CoreLocation `altitude/verticalAccuracy`, CloudKit `CKContainer.accountStatus/privateCloudDatabase`, App Store Review 5.1, Privacy Manifest CA92.1 + 0A2A.1, Xcode Cloud Trigger via ASC API. Snapshot in `docs/FULL_APP_FINAL_TEST_VERIFICATION_2026-05-25.md`.
+
+### Test-/Build-Ergebnisse
+| Schritt | Ergebnis |
+|---|---|
+| `git diff --check` | ✅ clean |
+| `plutil -lint PrivacyInfo.xcprivacy` | ✅ OK |
+| `swift build` | ✅ 0E/0W |
+| **`swift test`** | ✅ **1714 / 2 skipped / 0 failures** (614 s) |
+| `xcodebuild` Sim **build** (iPhone 17 Pro Max) | ✅ BUILD SUCCEEDED |
+| `xcodebuild` Sim **test** | ⏸️ cancelled during build-phase (User-Direktive) |
+| `xcodebuild` generic iOS **build** | ✅ BUILD SUCCEEDED |
+| Device build/test, Archive, Cloud, TestFlight | ⏸️ per User-Direktive übersprungen |
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../RecentFilesView.swift` | bedingter `accessibilityHint` an `.disabled(!isAvailable)` Recent-File-Row |
+| `Sources/.../HistoryDateRangePickerSheet.swift` | bedingter `accessibilityHint` an `.disabled(!canApply)` Apply-Button |
+| `docs/OPEN_ITEMS_CLOSURE_2026-05-25.md` | **NEU** — Open-Items-Audit + Klassifizierung (40+ Items) |
+| `docs/FULL_APP_FINAL_TEST_VERIFICATION_2026-05-25.md` | **NEU** — Test-/Build-Ergebnisse + Anti-Claims + Nächster Schritt |
+| `NEXT_STEPS.md`, `ROADMAP.md`, `CHANGELOG.md` | Closure-Eintrag |
+
+### Sweep-Ergebnisse
+- Bearer/Token/Secret ✅ clean (`DEVELOPMENT_TEAM XAGR3K7XDJ` 10× in pbxproj = Xcode-Standard).
+- CloudKit forbidden (`publicCloudDatabase`/`sharedCloudDatabase`/`CKSubscription`/`CKAsset`/`CKQuery`) ✅ 0 Treffer.
+- `.save(`/`.fetch(`/`deleteRecord`/`modifyRecords` in CloudKit*.swift ✅ 0 Treffer.
+- externe Elevation-APIs ✅ 0 Treffer (1 CHANGELOG-Doku „Nicht genutzt").
+- `coming soon`/`placeholder`/`dummy` ✅ clean (1 docstring „placeholder" beschreibt UI-Fallback).
+
+### Anti-Claims (unverändert wahr)
+- ❌ Echter iCloud-Sync · ❌ Records save/fetch · ❌ Historien-Sync · ❌ Public/Shared DB · ❌ CKSubscription/CKAsset/CKQuery
+- ❌ Auto-Upload aus Import/Export · ❌ Sim test vollständig grün durchgelaufen · ❌ Neuer Cloud-Build > 190 · ❌ App Review ≥190
+- ❌ Externe Elevation-APIs · ❌ Höhenanreicherung importierter History · ❌ Bearer-Token Klartext-Logs · ❌ Koordinaten auf glanceable Surfaces
+- ❌ iPad/Light Mode aktiviert.
+
+### Nächster Schritt
+**Master-Train „Localization + Favorites + iCloud Sync + iPad Support"** (build-only per User-Direktive). Anti-Claim-Reset für CloudKit `CKQuery`/`save`/`fetch`/`delete` ausschließlich für `FavoriteEntry`-Records.
+
+---
+
 ## 2026-05-25 — Train 9.2: Höhen-Unterstützung Phase 1 (Branch `main`, HEAD `3eeb76a` → folgt)
 
 > **Build-only.** Vier zusammengehörige Höhen-Bausteine als Foundation für spätere Phasen: (1) `MapStyle.Elevation.realistic` als zentraler `AppMapStyleResolver` mit User-Toggle `mapShowsRealisticElevation`; (2) `LocationElevationFormatter` als single source of truth für „ist die Höhe vertrauenswürdig?" (verticalAccuracy > 0, finite); (3) `LiveLocationSample`/`RecordedTrackPoint`/`PathPoint` optional `altitudeM`/`verticalAccuracyM`/`elevationM` backward-kompatibel via `decodeIfPresent`; (4) GPX `<ele>`-Tag nur für Punkte mit echter validierter Höhe. Importierte Google-Timeline-Punkte bleiben unverändert ohne `<ele>`. **Keine externe Elevation-API**, **keine** Anreicherung importierter History. Tests bewusst nur als Scaffolding (12 XCTestCases, nicht ausgeführt). Punkt 10 weiter zurückgestellt.
