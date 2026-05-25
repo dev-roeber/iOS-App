@@ -289,8 +289,12 @@ public struct AppFilesView: View {
                 Image(systemName: "trash")
             }
             .buttonStyle(.borderless)
-            .disabled(viewModel.actionState != .idle)
+            // Fix B-Neu6: lokaler Delete blockiert auch während Cloud-Aktion,
+            // verhindert parallele Mutationen am selben Eintrag.
+            .disabled(viewModel.actionState != .idle || cloudViewModel.actionState != .idle)
             .accessibilityLabel("Datei löschen")
+            // Fix B-Neu3: fehlender accessibilityIdentifier am lokalen Trash.
+            .accessibilityIdentifier("files.entry.delete")
         }
         .padding(.vertical, 4)
     }
@@ -358,13 +362,17 @@ public struct AppFilesView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            // Fix B-Neu4: Download ist noch Stub. Button bleibt sichtbar,
+            // aber visuell als „in Arbeit" markiert (kein normaler Tap-Effekt).
             Button {
                 Task { await cloudViewModel.downloadPrepared(entry) }
             } label: {
                 Image(systemName: "icloud.and.arrow.down")
+                    .foregroundStyle(.secondary)
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel("Datei herunterladen")
+            .accessibilityLabel("Datei herunterladen (in Arbeit)")
+            .accessibilityHint("Vollständige Wiederherstellung folgt in einer Folgephase.")
             .accessibilityIdentifier(AppAccessibilityID.Files.download)
             Button(role: .destructive) {
                 pendingCloudDelete = entry
@@ -427,8 +435,9 @@ public struct AppFilesView: View {
         case .success(let urls):
             guard let url = urls.first else { return }
             Task { await cloudViewModel.uploadPickedFile(at: url) }
-        case .failure:
-            break
+        case .failure(let error):
+            // Fix B-Neu2: Picker-Fehler werden jetzt sichtbar.
+            cloudViewModel.reportPickerFailure(error)
         }
     }
     #endif

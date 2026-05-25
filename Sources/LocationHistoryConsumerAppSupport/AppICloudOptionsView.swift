@@ -500,7 +500,14 @@ public struct AppICloudOptionsView: View {
                         }
                     }
                     .buttonStyle(.bordered)
-                    .disabled(!preferences.iCloudSyncEnabled || liveTrackCloudActions.actionState != .idle)
+                    // Fix B-Neu5: Gate identisch zum Upload-Button (auch
+                    // syncLiveTrackMetadataEnabled fordern, sonst lädt Restore
+                    // gegen ein vom Nutzer abgeschaltetes Sync-Feature).
+                    .disabled(
+                        !preferences.iCloudSyncEnabled
+                        || !preferences.syncLiveTrackMetadataEnabled
+                        || liveTrackCloudActions.actionState != .idle
+                    )
                     .accessibilityIdentifier(AppAccessibilityID.ICloud.liveTrackActionsLoadCloud)
                 }
 

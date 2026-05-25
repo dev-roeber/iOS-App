@@ -96,7 +96,32 @@ public final class AppCloudFileViewModel: ObservableObject {
     }
 
     public func uploadPickedFile(at url: URL) async {
-        await uploadURL(url, usesSecurityScope: true)
+        // Fix B1: Security-Scope MUSS auf MainActor + auf der gleichen
+        // Task-Hierarchie wie die Datei-Read-Calls aktiv sein.
+        // `Task.detached` verliert den Scope. Wir kopieren die Datei
+        // jetzt SOFORT in das App-eigene tmp-Verzeichnis (Foundation-
+        // copy respektiert den noch aktiven Scope) und hashen +
+        // uploaden danach von der Kopie — dort braucht es keinen
+        // Security-Scope mehr.
+        actionFailed = false
+        actionMessage = nil
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        let tmpDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CloudFileUpload-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+            let copy = tmpDir.appendingPathComponent(url.lastPathComponent)
+            try FileManager.default.copyItem(at: url, to: copy)
+            await uploadCandidate {
+                try CloudFileCandidateFactory.makeCandidate(for: copy)
+            }
+            try? FileManager.default.removeItem(at: tmpDir)
+        } catch {
+            actionFailed = true
+            actionMessage = "Datei konnte nicht eingelesen werden: \(error.localizedDescription)"
+            try? FileManager.default.removeItem(at: tmpDir)
+        }
     }
 
     public func uploadLocalEntry(_ entry: LocalFileEntry) async {
@@ -105,12 +130,18 @@ public final class AppCloudFileViewModel: ObservableObject {
         }
     }
 
+    // Fix B-Neu2: fileImporter-Fehler werden jetzt sichtbar.
+    public func reportPickerFailure(_ error: Error) {
+        actionFailed = true
+        actionMessage = "Datei-Auswahl fehlgeschlagen: \(error.localizedDescription)"
+    }
+
     public func downloadPrepared(_ entry: CloudFileEntry) async {
         guard actionState == .idle else { return }
-        actionState = .downloading
         actionFailed = false
-        actionMessage = "Herunterladen/Wiederherstellen ist vorbereitet. Vollständige Restore-Logik folgt separat."
-        actionState = .idle
+        // Fix B-Neu4: keine fake Success-Message mehr. Stub klar als
+        // „in Arbeit" gekennzeichnet, kein State-Wechsel.
+        actionMessage = "Download/Wiederherstellen folgt in einer Folgephase. Datei bleibt in iCloud erhalten."
     }
 
     public func delete(_ entry: CloudFileEntry) async {
@@ -122,22 +153,14 @@ public final class AppCloudFileViewModel: ObservableObject {
             let manager = self.manager
             try await manager.delete(entry)
             cloudEntries.removeAll { $0.recordName == entry.recordName }
+            // Fix B-Neu7: lastRefreshAt auch nach erfolgreichem Delete.
+            lastRefreshAt = Date()
             actionMessage = "Cloud-Datei gelöscht. Lokale Dateien bleiben erhalten."
         } catch {
             actionFailed = true
             actionMessage = error.localizedDescription
         }
         actionState = .idle
-    }
-
-    private func uploadURL(_ url: URL, usesSecurityScope: Bool) async {
-        await uploadCandidate {
-            let accessed = usesSecurityScope ? url.startAccessingSecurityScopedResource() : false
-            defer {
-                if accessed { url.stopAccessingSecurityScopedResource() }
-            }
-            return try CloudFileCandidateFactory.makeCandidate(for: url)
-        }
     }
 
     private func uploadCandidate(_ makeCandidate: @escaping @Sendable () throws -> CloudFileUploadCandidate) async {
@@ -152,8 +175,12 @@ public final class AppCloudFileViewModel: ObservableObject {
             actionState = .idle
             return
         }
+        // Fix B1: SHA-Berechnung läuft jetzt auf einer Kopie ohne
+        // Security-Scope-Abhängigkeit — Task.detached ist hier sicher.
+        var pendingShaForCleanup: String?
         do {
             let candidate = try await Task.detached { try makeCandidate() }.value
+            pendingShaForCleanup = candidate.sha256Hex
             pendingUploads = [candidate]
             let manager = self.manager
             let entry = try await manager.upload(candidate)
@@ -165,6 +192,10 @@ public final class AppCloudFileViewModel: ObservableObject {
         } catch {
             actionFailed = true
             actionMessage = error.localizedDescription
+            // Fix B2: hängende Pending-Einträge beim Fehler aufräumen.
+            if let sha = pendingShaForCleanup {
+                pendingUploads.removeAll { $0.sha256Hex == sha }
+            }
         }
         actionState = .idle
     }

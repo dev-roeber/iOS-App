@@ -7,6 +7,12 @@
     "·" : {
 
     },
+    "„%@“ wird aus iCloud gelöscht. Lokale Dateien bleiben erhalten." : {
+
+    },
+    "„%@“ wird unwiderruflich entfernt." : {
+
+    },
     "%@ – %@" : {
       "localizations" : {
         "en" : {
@@ -23,6 +29,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %lld Punkte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld Punkte"
           }
         }
       }
@@ -728,6 +744,15 @@
           }
         }
       }
+    },
+    "Aktiviere iCloud-Sync und LiveTrack-Metadaten, bevor du manuell hochlädst." : {
+
+    },
+    "Aktualisiere…" : {
+
+    },
+    "Aktualisieren" : {
+
     },
     "All" : {
       "extractionState" : "manual",
@@ -1854,6 +1879,23 @@
         }
       }
     },
+    "Choose File" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datei auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose File"
+          }
+        }
+      }
+    },
     "Choose Format" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2061,10 +2103,45 @@
         }
       }
     },
+    "Cloud File" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud-Datei"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud File"
+          }
+        }
+      }
+    },
+    "Cloud-Datei löschen?" : {
+
+    },
+    "Cloud-Dateien" : {
+
+    },
+    "Cloud-Dateien werden nur nach Datei-Auswahl oder Upload-Button hochgeladen. Enthält möglicherweise Standortdaten." : {
+
+    },
+    "Cloud-Dateien. Enthält möglicherweise Standortdaten." : {
+
+    },
     "Cloud-Daten löschen" : {
 
     },
     "Cloud-Daten löschen?" : {
+
+    },
+    "Cloud-Einträge: %lld" : {
+
+    },
+    "Cloud-LiveTracks laden" : {
 
     },
     "Collapse controls" : {
@@ -2713,6 +2790,27 @@
         }
       }
     },
+    "Datei auswählen" : {
+
+    },
+    "Datei herunterladen" : {
+
+    },
+    "Datei hochladen" : {
+
+    },
+    "Datei löschen" : {
+
+    },
+    "Datei löschen?" : {
+
+    },
+    "Dateien" : {
+
+    },
+    "Dateien filtern" : {
+
+    },
     "Day" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2916,6 +3014,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete"
+          }
+        }
+      }
+    },
+    "Delete File" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datei löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete File"
           }
         }
       }
@@ -3310,6 +3425,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Double-tap to toggle selection"
+          }
+        }
+      }
+    },
+    "Download completed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download abgeschlossen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download completed"
+          }
+        }
+      }
+    },
+    "Download File" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datei herunterladen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download File"
           }
         }
       }
@@ -4060,6 +4209,23 @@
         }
       }
     },
+    "File already exists in iCloud" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datei bereits in iCloud vorhanden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File already exists in iCloud"
+          }
+        }
+      }
+    },
     "File contains no track points" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4627,6 +4793,9 @@
         }
       }
     },
+    "GPX-, KML- und ZIP-Dateien werden nur nach ausdrücklicher Datei-Auswahl hochgeladen. Enthält möglicherweise Standortdaten." : {
+
+    },
     "Has Distance" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4801,6 +4970,12 @@
       }
     },
     "iCloud Drive im Exportdialog vorschlagen" : {
+
+    },
+    "iCloud erreichbar" : {
+
+    },
+    "iCloud nicht erreichbar" : {
 
     },
     "iCloud wird geprüft. Bitte warte, bis die aktuelle Prüfung abgeschlossen ist." : {
@@ -5274,6 +5449,15 @@
         }
       }
     },
+    "Keine Cloud-Dateien geladen." : {
+
+    },
+    "Keine Dateien in diesem Bereich." : {
+
+    },
+    "Keine wartenden Sicherungen." : {
+
+    },
     "Kennung" : {
 
     },
@@ -5363,6 +5547,12 @@
       }
     },
     "Konfliktbehandlung" : {
+
+    },
+    "Lade hoch…" : {
+
+    },
+    "Lade…" : {
 
     },
     "Language" : {
@@ -5653,6 +5843,9 @@
           }
         }
       }
+    },
+    "Letzte Aktualisierung: %@" : {
+
     },
     "Letzte Prüfung: %@ · %@ s" : {
       "localizations" : {
@@ -6169,6 +6362,23 @@
         }
       }
     },
+    "Local files remain available" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokale Dateien bleiben erhalten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local files remain available"
+          }
+        }
+      }
+    },
     "Local Recording" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6390,6 +6600,12 @@
         }
       }
     },
+    "Lokale Einträge: %lld" : {
+
+    },
+    "Lokale Gesamtgröße: %@" : {
+
+    },
     "Longest Distance" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6423,6 +6639,12 @@
           }
         }
       }
+    },
+    "Lösche…" : {
+
+    },
+    "Löschen" : {
+
     },
     "Low density" : {
       "extractionState" : "manual",
@@ -6760,6 +6982,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Maximum Time Gap is unlimited."
+          }
+        }
+      }
+    },
+    "May contain location data" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enthält möglicherweise Standortdaten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "May contain location data"
           }
         }
       }
@@ -7126,6 +7365,9 @@
           }
         }
       }
+    },
+    "Neueste hochladen" : {
+
     },
     "New Track" : {
       "extractionState" : "manual",
@@ -12814,6 +13056,23 @@
         }
       }
     },
+    "Unsupported file type" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht unterstützter Dateityp"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsupported file type"
+          }
+        }
+      }
+    },
     "Update Age" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12899,6 +13158,40 @@
         }
       }
     },
+    "Upload completed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upload abgeschlossen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upload completed"
+          }
+        }
+      }
+    },
+    "Upload File" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datei hochladen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upload File"
+          }
+        }
+      }
+    },
     "Upload Guidance" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12966,6 +13259,9 @@
           }
         }
       }
+    },
+    "Upload und Wiederherstellung nutzen die bestehenden LiveTrack-Records in deinem privaten iCloud-Bereich. Google-History-Importe und exportierte Dateien werden hier nicht hochgeladen." : {
+
     },
     "Upload URL" : {
       "extractionState" : "manual",
@@ -13276,6 +13572,9 @@
         }
       }
     },
+    "Wartende Sicherungen: %lld" : {
+
+    },
     "Waypoints" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13370,6 +13669,12 @@
         }
       }
     },
+    "Wiederherstellen" : {
+
+    },
+    "Wiederhole…" : {
+
+    },
     "Wird bei späteren Konflikten konservativ angewendet." : {
 
     },
@@ -13390,194 +13695,10 @@
         }
       }
     },
-    "Cloud File" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cloud-Datei"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cloud File"
-          }
-        }
-      }
-    },
-    "Choose File" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Datei auswählen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose File"
-          }
-        }
-      }
-    },
-    "Delete File" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Datei löschen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete File"
-          }
-        }
-      }
-    },
-    "Download File" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Datei herunterladen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Download File"
-          }
-        }
-      }
-    },
-    "Download completed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Download abgeschlossen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Download completed"
-          }
-        }
-      }
-    },
-    "File already exists in iCloud" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Datei bereits in iCloud vorhanden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "File already exists in iCloud"
-          }
-        }
-      }
-    },
-    "Local files remain available" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lokale Dateien bleiben erhalten"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Local files remain available"
-          }
-        }
-      }
-    },
-    "May contain location data" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enthält möglicherweise Standortdaten"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "May contain location data"
-          }
-        }
-      }
-    },
-    "Unsupported file type" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nicht unterstützter Dateityp"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unsupported file type"
-          }
-        }
-      }
-    },
-    "Upload completed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upload abgeschlossen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upload completed"
-          }
-        }
-      }
-    },
-    "Upload File" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Datei hochladen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upload File"
-          }
-        }
-      }
-    },
     "Zeigt einen Hinweis beim Export. Der Systemdialog fragt weiterhin nach dem Zielordner. GPX-Dateien werden nicht automatisch hochgeladen." : {
+
+    },
+    "Zuletzt geprüft: %@" : {
 
     }
   },

@@ -150,7 +150,7 @@ final class CloudFileManagementTests: XCTestCase {
         await vm.downloadPrepared(entry)
 
         XCTAssertFalse(vm.actionFailed)
-        XCTAssertTrue((vm.actionMessage ?? "").contains("vorbereitet"))
+        XCTAssertTrue((vm.actionMessage ?? "").contains("Folgephase"))
         XCTAssertFalse((vm.actionMessage ?? "").contains("Download abgeschlossen"))
     }
     #endif
