@@ -1939,6 +1939,9 @@
         }
       }
     },
+    "CKError.%@" : {
+
+    },
     "Clear" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3637,6 +3640,9 @@
     "Enthält genaue Standortpunkte eines LiveTracks. Diese Option ist standardmäßig deaktiviert." : {
 
     },
+    "Erneut in %lld s versuchen" : {
+
+    },
     "Erneut versuchen" : {
 
     },
@@ -4033,6 +4039,9 @@
           }
         }
       }
+    },
+    "Fehler in Phase: %@" : {
+
     },
     "Fewer stored points, larger movement threshold." : {
       "extractionState" : "manual",
@@ -11159,6 +11168,9 @@
       }
     },
     "Sichert keine Koordinaten. Der Hauptschalter iCloud-Sync muss aktiv sein." : {
+
+    },
+    "Sicherung pausiert — CloudKit-Health-Check ist rot. Neue LiveTracks werden lokal vorgemerkt und automatisch hochgeladen, sobald der private CloudKit-Speicher wieder erreichbar ist." : {
 
     },
     "Simplified" : {
