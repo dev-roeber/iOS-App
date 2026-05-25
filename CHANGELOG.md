@@ -1,5 +1,70 @@
 # CHANGELOG
 
+## 2026-05-25 — Phase D.4: iCloud-Übersicht Action-States + paginated Cloud-Delete + Alert (Branch `main`, HEAD `b707c9e` → folgt)
+
+> **UX-/Robustness-Fix für die iCloud-Übersicht-Buttons.** Vorher wirkten „Übersicht aktualisieren", „Erneut versuchen" und „Cloud-Daten löschen" wie tote Buttons: kein sichtbares Feedback bei Erfolg, Fehler wurden in `storageOverview.errorMessage` geschrieben aber nie gerendert, „Erneut versuchen" war disabled ohne Erklärung, `confirmationDialog` war für eine kritische destructive Aktion zu sanft, und der Cloud-Delete-Pfad las nur die erste Seite (max 200 Records) und ignorierte per-record Delete-Outcomes.
+
+### Code-Fixes
+| Fix | Datei | Zweck |
+|---|---|---|
+| **`ICloudOverviewActionState` enum** (`.idle/.refreshing/.retrying/.deleting`) | `AppICloudOptionsView.swift` | Sichtbarer Action-Lifecycle pro Button, Single-Flight-Gating verhindert parallele Aktionen |
+| **`overviewActionMessage` + `overviewActionFailed`** Published Props | dito | UI rendert Erfolg/Fehler unter den Buttons (Farbe orange bei Fehler) |
+| **`refreshOverview()`** | dito | Setzt State, propagiert `storageOverview.errorMessage` in `actionMessage`, zeigt „Übersicht aktualisiert." bei Erfolg |
+| **`retryPendingBackups()`** | dito | Bei `pendingBackupCount == 0` early-out mit „Keine wartenden Sicherungen." — kein toter Button-Effekt mehr |
+| **`deleteCloudData()`** | dito | try/catch mit sichtbarer Fehler-Diagnose via `ICloudActionErrorRendering.hint(for: error)` |
+| **`storageOverviewCard` Rebuild** | dito | ProgressView in Button-Labels („Aktualisiere…"/„Wiederhole…"/„Lösche…"); „Erneut versuchen" nur sichtbar bei `pendingBackupCount > 0`; `lastCloudKitStatusCheckAt` als Caption; `actionMessage` + separater `errorMessage` werden gerendert; `.animation(.default, value: overviewActionState)` für sanfte Label-Crossfades |
+| **`confirmationDialog` → `.alert`** | dito | HIG-konform für kritische destructive Aktionen; konsistent zwischen iPhone + iPad |
+| **`ICloudActionErrorRendering` Helper** (Foundation-only) | dito | Bridge `NSError(domain: CKErrorDomain)` → `ICloudCKErrorMapping.mapping(forRawCode:)`; Linux-testbar ohne `import CloudKit` |
+| **`deleteCloudData` Pagination** | `ICloudCloudKitMVP.swift:CloudKitLiveTrackCloudBackupUploader` | `queryCursor`-Schleife über alle Seiten (vorher: nur erste 200 Records); `unknownItem` auf Query-Pfad = continue (Schema nicht promoted für diesen Type); per-record `assertDeleted` für jeden Chunk; `unknownItem` auf Delete-Pfad = idempotent success (Record bereits weg) |
+| **`deleteInChunks(_:database:)` Helper** | dito | Batches von 200 IDs, `atomically: false` für Delete-only, per-record Validation |
+
+### Geprüfte Apple-Doku
+- `CKDatabase.records(matching:resultsLimit:)` → `(matchResults, queryCursor)`; Fortsetzen via `records(continuingMatchFrom:resultsLimit:)`. (https://developer.apple.com/documentation/cloudkit/ckdatabase/records(continuingmatchfrom:resultslimit:))
+- `CKError.unknownItem` bei Delete: Apple-Konvention „record already gone" = success — Idempotenz-Pattern (https://developer.apple.com/documentation/cloudkit/ckerror/code/unknownitem)
+- `.alert` vs `.confirmationDialog` (HIG): Alert für rare, kritische, destruktive Aktionen mit klarer Konsequenz; `.confirmationDialog` für kontextuelle Listen-Swipe-Deletes.
+- `savePolicy` ist bei `saving: []` irrelevant.
+
+### Tests (9 neue + 46 bestehende grün)
+| Check | Ergebnis |
+|---|---|
+| `swift build` | ✅ 15,94 s, 0 Warnings |
+| `swift test --filter ICloudOverviewActionStateTests` | ✅ **9 / 0** (0,07 s) |
+| `swift test --filter ICloud` (alle iCloud-Tests) | ✅ **46 / 0** (0,17 s) |
+| `xcodebuild` iPhone-Sim build | ✅ `BUILD SUCCEEDED` |
+| `xcodebuild` generic iOS build | ✅ `BUILD SUCCEEDED` |
+
+### Test-Coverage neue Tests (9 in `ICloudOverviewActionStateTests`)
+1. `testRefreshOverviewSucceedsShowsMessageAndIdleState` — „Übersicht aktualisiert." + state == .idle
+2. `testRefreshOverviewWithErrorShowsFailureText` — `storageOverview.errorMessage` propagiert in `actionMessage`, `actionFailed = true`
+3. `testRetryPendingBackupsWithZeroCountShowsNoPendingMessage` — early-out + Spy.retryCalls == 0 (kein blinder Service-Call)
+4. `testDeleteCloudDataSuccessResetsOverview` — Overview leer + „Cloud-Daten gelöscht."
+5. `testDeleteCloudDataFailureShowsGermanHint` — `NSError(domain: CKErrorDomain, code: 10)` → „Entitlement"-Hint sichtbar
+6. `testActionErrorRenderingMapsCloudKitDomainToGermanHint` — Code 12 → „Production"+„CloudKit Dashboard"
+7. `testActionErrorRenderingFallsBackForNonCloudKitErrors` — Non-CK Domain → `localizedDescription`
+8. `testPaginatedDeleteHonorsPerRecordValidator` — Validator throws bei fehlendem Result
+9. `testActionStateGuardsPreventConcurrentExecution` — parallele Refresh-Calls → 1 Service-Call
+
+### Warum Buttons vorher wie tot wirkten
+| Symptom | Root Cause |
+|---|---|
+| „Übersicht aktualisieren" — kein Feedback bei gleichen Werten | ViewModel hat success/error nie sichtbar gemacht |
+| „Erneut versuchen" — disabled ohne sichtbaren Grund | Button war `.disabled(pendingBackupCount == 0)` — User konnte nicht zwischen „kein Bedarf" und „defekt" unterscheiden |
+| „Cloud-Daten löschen" — Fehler verschluckt | `storageOverview.errorMessage` wurde in der Card nicht gerendert |
+| Cloud-Delete teilweise unwirksam | Nur erste 200 Records gelöscht (`records(matching:resultsLimit: 200)` ohne Cursor), per-record Outcomes ignoriert |
+
+### Bewusst NICHT in D.4
+- Kein echter TestFlight-/Device-Test (User-Action)
+- Keine Production-Schema-Verifikation (User-Action im CloudKit Dashboard, siehe D.3.1)
+- Keine neuen RecordTypes
+
+### Offen — externe User-Action
+- 5 Schritte aus D.3.1 (Schema-Promotion + codesign + Dashboard) unverändert.
+
+### Nächster Schritt
+**Phase F1** — User hat einen großen 3-Phasen-Master-Plan angefragt (Files-Tab + iCloud-Optionen-Verkabelung; dann LiveTrack-Upload/Restore via bestehende CloudKit; dann CKAsset für GPX/KML/ZIP). Wartet auf User-Freigabe nach D.4-Push.
+
+---
+
 ## 2026-05-25 — Phase D.3.1: invalidArguments-Hint präzisiert auf Production-Schema-Diagnose (Branch `main`, HEAD `c44fe7c` → folgt)
 
 > **Diagnose-Schärfung.** Nach Phase D.3 hat die nächste TestFlight-Probe `CKError.invalidArguments` (Code 12) an der Write-Stage gezeigt — exakt wie die User-Analyse bestätigte: in TestFlight (= Production-Environment) wirft der CloudKit-Server bei fehlendem RecordType **invalidArguments** (nicht `unknownItem`), häufig mit Server-Message „Cannot create new type X in production schema" (Apple Developer Forums Threads #819507, #723721, #729014, #652903, #700488).

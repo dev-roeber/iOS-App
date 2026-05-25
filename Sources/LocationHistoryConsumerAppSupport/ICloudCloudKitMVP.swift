@@ -1101,17 +1101,73 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
             LiveTrackCloudSchema.summaryRecordType,
             LiveTrackCloudSchema.pointBatchRecordType,
         ]
+        // Phase D.4 — paginate via `queryCursor` so we drain every page
+        // of records, not just the first 200. Without this, a user with
+        // many LiveTrack-PointBatches saw the destructive button silently
+        // leave most records behind in CloudKit.
         for recordType in recordTypes {
             let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
-            let results = try await database.records(matching: query, resultsLimit: 200).matchResults
-            for (recordID, result) in results {
-                if case .success = result {
-                    _ = try await database.modifyRecords(
-                        saving: [],
-                        deleting: [recordID],
-                        savePolicy: .changedKeys,
-                        atomically: true
+            var pendingDeleteIDs: [CKRecord.ID] = []
+            var cursor: CKQueryOperation.Cursor?
+            do {
+                let firstPage = try await database.records(matching: query, resultsLimit: 200)
+                pendingDeleteIDs.append(contentsOf: firstPage.matchResults.compactMap { _, result in
+                    if case .success(let record) = result { return record.recordID }
+                    return nil
+                })
+                cursor = firstPage.queryCursor
+                while let next = cursor {
+                    let nextPage = try await database.records(continuingMatchFrom: next, resultsLimit: 200)
+                    pendingDeleteIDs.append(contentsOf: nextPage.matchResults.compactMap { _, result in
+                        if case .success(let record) = result { return record.recordID }
+                        return nil
+                    })
+                    cursor = nextPage.queryCursor
+                }
+            } catch {
+                // Phase D.4 — `unknownItem` on the *query* path is rare
+                // but legitimate (record-type does not exist in env, e.g.
+                // schema not yet promoted). Treat as „nothing to delete"
+                // for that type and continue with the next type.
+                if (error as NSError).domain == "CKErrorDomain",
+                   (error as NSError).code == 11 /* unknownItem */ {
+                    continue
+                }
+                throw error
+            }
+            try await deleteInChunks(pendingDeleteIDs, database: database)
+        }
+    }
+
+    /// Phase D.4 — deletes records in batches of 200 and validates each
+    /// per-record outcome via the shared `ICloudCloudKitMVPResultValidator`.
+    /// `CKError.unknownItem` for a record-ID that is „already gone" is
+    /// treated as idempotent success (HIG/Apple convention — record is
+    /// in the desired terminal state).
+    private func deleteInChunks(_ ids: [CKRecord.ID], database: CKDatabase) async throws {
+        guard !ids.isEmpty else { return }
+        let chunkSize = 200
+        for chunkStart in stride(from: 0, to: ids.count, by: chunkSize) {
+            let chunk = Array(ids[chunkStart..<min(chunkStart + chunkSize, ids.count)])
+            let (_, deleteResults) = try await database.modifyRecords(
+                saving: [],
+                deleting: chunk,
+                savePolicy: .changedKeys,
+                atomically: false
+            )
+            for recordID in chunk {
+                do {
+                    try ICloudCloudKitMVPResultValidator.assertDeleted(
+                        recordID: recordID,
+                        in: deleteResults
                     )
+                } catch {
+                    // Idempotent: record was already gone server-side.
+                    if (error as NSError).domain == "CKErrorDomain",
+                       (error as NSError).code == 11 /* unknownItem */ {
+                        continue
+                    }
+                    throw error
                 }
             }
         }

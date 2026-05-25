@@ -15,6 +15,14 @@ final class ICloudSyncViewModel: ObservableObject {
     @Published private(set) var storageOverview: ICloudStorageOverview
     @Published private(set) var pendingBackupCount: Int
 
+    /// Phase D.4 — visible action state for the storage-overview buttons.
+    /// Lets the UI distinguish „button never pressed" / „running" /
+    /// „succeeded but values unchanged" / „CloudKit-Fehler". Without this,
+    /// the buttons looked dead in TestFlight.
+    @Published private(set) var overviewActionState: ICloudOverviewActionState = .idle
+    @Published private(set) var overviewActionMessage: String?
+    @Published private(set) var overviewActionFailed: Bool = false
+
     private let service: CloudSyncService
     private let healthCheckService: ICloudHealthChecking
     private let backupService: LiveTrackCloudBackupCoordinator
@@ -64,24 +72,99 @@ final class ICloudSyncViewModel: ObservableObject {
     }
 
     func refreshOverview() async {
-        storageOverview = await backupService.refreshOverview()
+        guard overviewActionState == .idle else { return }
+        overviewActionState = .refreshing
+        overviewActionMessage = nil
+        overviewActionFailed = false
+        let updated = await backupService.refreshOverview()
+        storageOverview = updated
         pendingBackupCount = backupService.pendingCount
+        if let errorMessage = updated.errorMessage, !errorMessage.isEmpty {
+            overviewActionFailed = true
+            overviewActionMessage = errorMessage
+        } else {
+            overviewActionFailed = false
+            overviewActionMessage = "Übersicht aktualisiert."
+        }
+        overviewActionState = .idle
     }
 
     func retryPendingBackups() async {
+        guard overviewActionState == .idle else { return }
+        // Phase D.4 — don't look dead when there is nothing to retry.
+        guard pendingBackupCount > 0 else {
+            overviewActionFailed = false
+            overviewActionMessage = "Keine wartenden Sicherungen."
+            return
+        }
+        overviewActionState = .retrying
+        overviewActionMessage = nil
+        overviewActionFailed = false
         await backupService.retryPendingBackups()
-        storageOverview = await backupService.refreshOverview()
+        let updated = await backupService.refreshOverview()
+        storageOverview = updated
         pendingBackupCount = backupService.pendingCount
+        if let errorMessage = updated.errorMessage, !errorMessage.isEmpty {
+            overviewActionFailed = true
+            overviewActionMessage = errorMessage
+        } else if pendingBackupCount == 0 {
+            overviewActionFailed = false
+            overviewActionMessage = "Wartende Sicherungen erfolgreich gesendet."
+        } else {
+            overviewActionFailed = false
+            overviewActionMessage = "Erneut versucht — \(pendingBackupCount) Sicherung(en) noch wartend."
+        }
+        overviewActionState = .idle
     }
 
     func deleteCloudData() async {
+        guard overviewActionState == .idle else { return }
+        overviewActionState = .deleting
+        overviewActionMessage = nil
+        overviewActionFailed = false
         do {
             try await backupService.deleteCloudData()
             storageOverview = backupService.overview
             pendingBackupCount = backupService.pendingCount
+            overviewActionFailed = false
+            overviewActionMessage = "Cloud-Daten gelöscht."
         } catch {
-            storageOverview.errorMessage = "Cloud-Daten konnten nicht gelöscht werden."
+            overviewActionFailed = true
+            // Surface the underlying CKError code where possible so the
+            // user/TestFlight tester knows whether it was a permission,
+            // schema, network or quota issue (Phase D.4). CKError bridges
+            // to NSError with domain == CKErrorDomain — we read `.code`
+            // and map it via the Foundation-only `ICloudCKErrorMapping`.
+            let ckHint = ICloudActionErrorRendering.hint(for: error)
+            overviewActionMessage = "Cloud-Daten konnten nicht gelöscht werden: \(ckHint)"
+            storageOverview.errorMessage = overviewActionMessage
         }
+        overviewActionState = .idle
+    }
+}
+
+/// Phase D.4 — visible action state for storage-overview buttons.
+public enum ICloudOverviewActionState: String, Equatable, Sendable {
+    case idle
+    case refreshing
+    case retrying
+    case deleting
+}
+
+/// Phase D.4 — Foundation-only helper that extracts a German hint from
+/// any `Error` that bridges to `NSError(domain: CKErrorDomain)`. Stays
+/// on the value-type side so Linux tests do not need `import CloudKit`.
+public enum ICloudActionErrorRendering {
+    public static let cloudKitErrorDomain = "CKErrorDomain"
+
+    public static func hint(for error: Error) -> String {
+        let nsError = error as NSError
+        if nsError.domain == cloudKitErrorDomain {
+            return ICloudCKErrorMapping.mapping(forRawCode: nsError.code).germanHint
+        }
+        return nsError.localizedDescription.isEmpty
+            ? "Unbekannter Fehler."
+            : nsError.localizedDescription
     }
 }
 
@@ -199,10 +282,13 @@ public struct AppICloudOptionsView: View {
             guard newValue else { return }
             Task { await viewModel.refresh() }
         }
-        .confirmationDialog(
+        // Phase D.4 — `.alert` instead of `.confirmationDialog`. The alert
+        // is the HIG-recommended pattern for rare, critical destructive
+        // actions („alle Cloud-Daten löschen") and renders consistently
+        // across iPhone + iPad without the iPad action-sheet edge cases.
+        .alert(
             "Cloud-Daten löschen?",
-            isPresented: $showsCloudDeleteConfirmation,
-            titleVisibility: .visible
+            isPresented: $showsCloudDeleteConfirmation
         ) {
             Button("Cloud-Daten löschen", role: .destructive) {
                 Task { await viewModel.deleteCloudData() }
@@ -442,7 +528,7 @@ public struct AppICloudOptionsView: View {
     private var storageOverviewCard: some View {
         LHCard {
             LHSectionHeader("In iCloud gesichert")
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 if viewModel.storageOverview.summaryCount == 0,
                    viewModel.storageOverview.pointBatchCount == 0 {
                     Text(viewModel.status.accountStatus == .available
@@ -459,30 +545,94 @@ public struct AppICloudOptionsView: View {
                 if viewModel.pendingBackupCount > 0 {
                     overviewRow("Wartende Sicherungen", value: "\(viewModel.pendingBackupCount)")
                 }
-                HStack {
-                    Button("Übersicht aktualisieren") {
+                // Phase D.4 — visible „last checked" timestamp so the user
+                // can tell whether the overview is fresh.
+                if let lastChecked = viewModel.storageOverview.lastCloudKitStatusCheckAt {
+                    Text("Zuletzt geprüft: \(Self.shortDateFormatter.string(from: lastChecked))")
+                        .font(.caption2)
+                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                        .accessibilityIdentifier("options.icloud.overview.lastChecked")
+                }
+                // Phase D.4 — action HStack with progress-aware labels and
+                // single-flight gating via `overviewActionState`.
+                HStack(spacing: 12) {
+                    Button {
                         Task { await viewModel.refreshOverview() }
+                    } label: {
+                        if viewModel.overviewActionState == .refreshing {
+                            HStack(spacing: 6) {
+                                ProgressView().controlSize(.small)
+                                Text("Aktualisiere…")
+                            }
+                        } else {
+                            Text("Übersicht aktualisieren")
+                        }
                     }
                     .buttonStyle(.bordered)
+                    .disabled(viewModel.overviewActionState != .idle)
                     .accessibilityIdentifier("options.icloud.overview.refresh")
 
-                    Button("Erneut versuchen") {
-                        Task { await viewModel.retryPendingBackups() }
+                    // Phase D.4 — only render retry button when there is
+                    // actually pending work; eliminates the „dead button"
+                    // perception when count is zero.
+                    if viewModel.pendingBackupCount > 0 {
+                        Button {
+                            Task { await viewModel.retryPendingBackups() }
+                        } label: {
+                            if viewModel.overviewActionState == .retrying {
+                                HStack(spacing: 6) {
+                                    ProgressView().controlSize(.small)
+                                    Text("Wiederhole…")
+                                }
+                            } else {
+                                Text("Erneut versuchen")
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(viewModel.overviewActionState != .idle)
+                        .accessibilityIdentifier("options.icloud.backup.retry")
+                        .accessibilityHint(Text("Versucht wartende iCloud-Sicherungen erneut."))
                     }
-                    .buttonStyle(.bordered)
-                    .disabled(viewModel.pendingBackupCount == 0)
-                    .opacity(viewModel.pendingBackupCount == 0 ? 0.5 : 1.0)
-                    .accessibilityIdentifier("options.icloud.backup.retry")
-                    .accessibilityHint(Text("Versucht wartende iCloud-Sicherungen erneut."))
                 }
                 if viewModel.storageOverview.summaryCount > 0 || viewModel.storageOverview.pointBatchCount > 0 {
-                    Button("Cloud-Daten löschen", role: .destructive) {
+                    Divider()
+                    Button(role: .destructive) {
                         showsCloudDeleteConfirmation = true
+                    } label: {
+                        if viewModel.overviewActionState == .deleting {
+                            HStack(spacing: 6) {
+                                ProgressView().controlSize(.small)
+                                Text("Lösche…")
+                            }
+                        } else {
+                            Text("Cloud-Daten löschen")
+                        }
                     }
                     .buttonStyle(.bordered)
+                    .disabled(viewModel.overviewActionState != .idle)
                     .accessibilityIdentifier("options.icloud.cloudData.delete")
                 }
+                // Phase D.4 — visible action feedback. Without this the
+                // buttons looked dead in TestFlight even when CloudKit
+                // was fine and the values just hadn't changed.
+                if let message = viewModel.overviewActionMessage {
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundStyle(viewModel.overviewActionFailed ? .orange : LH2GPXTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("options.icloud.overview.actionMessage")
+                }
+                if let storageError = viewModel.storageOverview.errorMessage,
+                   !storageError.isEmpty,
+                   storageError != viewModel.overviewActionMessage {
+                    Text(storageError)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("options.icloud.overview.errorMessage")
+                }
             }
+            .animation(.default, value: viewModel.overviewActionState)
         }
         .accessibilityIdentifier("options.icloud.storageOverview.card")
     }
