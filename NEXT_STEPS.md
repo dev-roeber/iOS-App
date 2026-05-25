@@ -1,5 +1,13 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Master-Train Phase E) — FavoriteEntry-Modell + lokale Persistenz + Legacy-Migration (Branch `main`, HEAD `1bbf743` → folgt)
+
+> **Phase E abgeschlossen.** Lokales `FavoriteEntry` Codable + `FavoriteIDFactory` (Foundation-only SHA-256, deterministische UUIDs) + `FavoriteEntryStore` mit JSON-Persistenz in `Application Support/LocationHistory2GPX/Favorites/favorite_entries.json` + idempotente Legacy-Migration aus bestehendem `DayFavoritesStore`. 12 Unit-Tests grün, `DayFavoritesStore`-Backward-Compat verifiziert (8/0). **Keine** CloudKit-Operationen. UI bleibt unverändert (parallel-Layer). Detail: [`docs/FAVORITES_LOCAL_MODEL_PHASE_E_2026-05-25.md`](docs/FAVORITES_LOCAL_MODEL_PHASE_E_2026-05-25.md).
+>
+> **Nächste Phase:** **F** — echter CloudKit-Favoriten-Sync für `FavoriteEntry`-Records über `privateCloudDatabase`.
+
+---
+
 ## Stand 2026-05-25 (Master-Train Phase D.1) — iCloud-Screen UI-Polish + Default-Hardening (Branch `main`, HEAD `3af17f7` → folgt)
 
 > **Phase D.1 abgeschlossen.** UI/UX-Polish nach Phase-D-Screenshots: Health-Check Full-Width mit deutscher Schreiben/Lesen/Löschen-Probe + Fehlerursache, Konflikt-Picker auf `.menu` (verhindert Abschneiden), Routenpunkte-Toggle mit `lock.shield` Warning, Backup-Card mit sichtbarem Disabled-Grund, Container-Privacy auf Deutsch. **Keine neuen CloudKit-Features.** Defaults bestätigt konservativ (`ICloudCloudKitMVPTests` 9/0). Build + Sim + Generic ✅.

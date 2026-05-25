@@ -1,5 +1,49 @@
 # CHANGELOG
 
+## 2026-05-25 — Master · Phase E: FavoriteEntry-Modell + lokale Persistenz + Legacy-Migration (Branch `main`, HEAD `1bbf743` → folgt)
+
+> **Build-only Foundation für Phase F (echter CloudKit-Favoriten-Sync).** Lokales `FavoriteEntry` Codable Modell + deterministische UUID-Factory (Foundation-only SHA-256, UUIDv5-Style) + JSON-Persistenz in `Application Support/LocationHistory2GPX/Favorites/favorite_entries.json` mit atomic-Write, Korrupt-Recovery via Quarantäne + idempotente einmalige Migration aus bestehendem `DayFavoritesStore` (UserDefaults `Set<String>` ISO-Day-IDs). **Keine** CloudKit-Operationen in Phase E. `DayFavoritesStore` und alle 13 UI-Call-Sites bleiben unverändert — neuer Layer läuft parallel als Foundation für Phase F.
+
+### Geprüfte Apple-Doku
+- `FileManager.url(for:.applicationSupportDirectory, ..., create: true)`.
+- `Data.write(to:options: [.atomic])` für kleine JSON-Files.
+- `JSONEncoder/Decoder` mit `.iso8601`-Date-Strategy (Repo-Convention).
+- `isExcludedFromBackup` Default für User-Daten.
+- UserDefaults-Marker-Migration-Pattern.
+
+### Geänderte / neue Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../FavoriteEntry.swift` | **NEU** — `FavoriteEntry` Codable + `FavoriteItemKind` enum + `FavoriteIDFactory` (Foundation-only SHA-256) |
+| `Sources/.../FavoriteEntryStore.swift` | **NEU** — JSON-Persistenz + atomic write + Korrupt-Recovery + Legacy-Migration |
+| `Tests/.../FavoriteEntryStoreTests.swift` | **NEU** — 12 Unit-Tests (Codable, Determinismus, Privacy-Sweep, Disk, Migration-Idempotenz, Backward-Compat) |
+| `docs/FAVORITES_LOCAL_MODEL_PHASE_E_2026-05-25.md` | **NEU** — Phase-E-Detail-Audit |
+| `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md` | Doku-Sync |
+
+### Verifikation
+- `swift build` ✅ (12,68 s, 0 Warnings)
+- `swift test --filter FavoriteEntryStoreTests` ✅ **12 Tests / 0 failures** (0,07 s)
+- `swift test --filter DayFavoritesStoreTests` ✅ **8 / 0** (Backward-Compat bestätigt)
+- `xcodebuild` iPhone-Sim build ✅ `BUILD SUCCEEDED`
+- `xcodebuild` generic iOS build ✅ `BUILD SUCCEEDED`
+- `plutil -lint PrivacyInfo.xcprivacy` ✅ OK
+
+### Privacy-Sweep (verbindlich)
+`FavoriteEntry`-JSON enthält **keine**: latitude, longitude, coordinate, polyline, altitude, elevation, verticalAccuracy, placeID, visitedPlace, rawLocation, filePath, Bearer, Authorization, Token. Verifiziert durch `testFavoriteEntryHasNoSensitiveFields`.
+
+### Bewusst NICHT in Phase E
+- ❌ Echter CloudKit-Favoriten-Sync (Phase F)
+- ❌ `CKRecord`/`CKDatabase` für Favoriten (Phase F)
+- ❌ UI-Migration der 13 `DayFavoritesStore`-Call-Sites (bewusst — Phase F bringt UI-Bridge)
+- ❌ `DayFavoritesStore` deprecaten
+- ❌ Xcode Cloud, TestFlight, App Store Submission
+- ❌ iPad-Build-Setting
+
+### Nächster Schritt
+**Phase F** — echter CloudKit-Favoriten-Sync für `FavoriteEntry`-Records über `privateCloudDatabase`.
+
+---
+
 ## 2026-05-25 — Master · Phase D.1: iCloud-Screen Polish + Default-Hardening (Branch `main`, HEAD `3af17f7` → folgt)
 
 > **UI/UX-Hardening nach Phase-D-Screenshots.** Keine neuen CloudKit-Features, keine neuen RecordTypes, keine Sync-Logik-Änderung. Behebt sichtbare Probleme:
