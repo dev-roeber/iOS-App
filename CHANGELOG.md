@@ -1,5 +1,59 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.3: App Intents / Shortcuts Skeleton (Branch `main`, HEAD `9aa4eaf` → folgt)
+
+> **Sicherer, daten-freier App-Intents-Skeleton.** Drei `AppIntent`s + `AppShortcutsProvider` in `wrapper/LH2GPXWrapper/LH2GPXAppIntents.swift` (alle `@available(iOS 17.0, *)`, `#if canImport(AppIntents)`-gated). Jeder Intent öffnet **nur** die App; **keine** Standortauslesung, **keine** Historien-Übergabe, **keine** automatische Import-/Export-/Live-/iCloud-Aktion. Navigation zu konkretem Screen ist **bewusst deferred** (`openAppWhenRun = true` ohne Routing-Hook). Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- App Intents Framework (https://developer.apple.com/documentation/appintents) — `AppIntent`, `perform()`, `openAppWhenRun`
+- `AppShortcutsProvider` + `AppShortcut` (https://developer.apple.com/documentation/appintents/appshortcutsprovider) — `phrases`, `shortTitle`, `systemImageName`
+- AppEntity (https://developer.apple.com/documentation/appintents/appentity) — bewusst **nicht** verwendet (keine Datenexposition)
+- Making app functionality available to Siri (https://developer.apple.com/documentation/appintents/making-app-functionality-available-to-siri)
+- HIG „Privacy" — keine sensiblen Daten in Intent-Output (https://developer.apple.com/design/human-interface-guidelines/privacy)
+
+### Intents-Liste
+| Intent | Title | Effekt | Parameter | Rückgabe |
+|---|---|---|---|---|
+| `OpenLH2GPXAppIntent` | „Open LH2GPX" | öffnet die App (`openAppWhenRun = true`) | keine | `.result()` |
+| `OpenLH2GPXImportIntent` | „Open Import in LH2GPX" | öffnet die App (Import-Auswahl bleibt User-Action im Picker) | keine | `.result()` |
+| `OpenLH2GPXSettingsIntent` | „Open LH2GPX Settings" | öffnet die App | keine | `.result()` |
+
+`LH2GPXAppShortcuts: AppShortcutsProvider` macht alle drei via Siri/Spotlight verfügbar mit kurzen Phrases („Open …", „Start …", „Open import in …", „… settings").
+
+### Datenschutzgrenzen
+- ✅ Kein Parameter mit Standort-/Track-/User-Daten.
+- ✅ Keine `AppEntity` mit realen Tracks/Visits/Routes.
+- ✅ Kein `IntentResult` mit sensiblem Inhalt — alle Intents geben `.result()` ohne Payload zurück.
+- ✅ Kein automatischer Import/Export/Live/iCloud-Trigger.
+- ✅ Keine Marketing-Claims über Funktionalität, die nicht existiert (Phrases sagen „Open …", nicht „Export …" oder „Sync …").
+
+### Navigation wirklich verdrahtet?
+**Nein — bewusst deferred.** `openAppWhenRun = true` öffnet die App; ein Routing-Hook für "öffne Tab X" ist nicht hinzugefügt, damit kein Architektur-Umbau in diesem Train nötig ist. Das bestehende `lh2gpx://`-URL-Scheme + `onOpenURL`-Handler (Live-Tab) bleibt unberührt. Erweiterung auf intent-getriebenes Tab-Routing kann in einem späteren Train ohne API-Bruch nachgeschoben werden, da die Intents bereits public sind.
+
+### Verfügbarkeit
+- `@available(iOS 17.0, *)` — passt zum Package-Minimum `iOS 17`.
+- `#if canImport(AppIntents)` — Linux-Build bleibt unberührt.
+- Datei liegt im `wrapper/LH2GPXWrapper/`-`PBXFileSystemSynchronizedRootGroup` — automatisch im App-Target, keine pbxproj-Änderung nötig.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `wrapper/LH2GPXWrapper/LH2GPXAppIntents.swift` | **NEU** — 3 Intents + AppShortcutsProvider |
+| Doku | CHANGELOG, ROADMAP |
+
+### Build-only Validierung
+- `swift build` ✅ Build complete.
+- `xcodebuild` Sim ✅ BUILD SUCCEEDED.
+- `xcodebuild` generic iOS ✅ BUILD SUCCEEDED.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.4 — Performance & Concurrency Modernisierung** (build-only, kleine Hotspot-Fixes + Swift-6-Warning-Reduktion).
+
+---
+
 ## 2026-05-25 — Train 8.2: Settings Privacy Center (Branch `main`, HEAD `5f6c739` → folgt)
 
 > **Settings bekommt ein klares „Privacy at a glance"-Top-Banner + 2 neue Privacy-Rows.** Minimal-invasiv: `LHXInfoCard` mit `lock.shield` am Anfang von `AppOptionsView` summarisiert die Datenschutz-Posture (lokal, kein Auto-Upload, iCloud nur Status, Exports user-initiiert). `AppPrivacyOptionsView` bekommt 2 zusätzliche Rows („iCloud", „History Sync") und schärferes Footer-Statement. **Keine neuen Netzwerk-Features, keine CloudKit Records save/fetch, kein Historien-Sync, keine destruktive UI ohne Bestätigung, keine iPad-/Light-Mode-Änderung.** Tests deferred bis Punkt 10.
