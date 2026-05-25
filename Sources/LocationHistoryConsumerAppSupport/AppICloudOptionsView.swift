@@ -549,6 +549,12 @@ public struct AppICloudOptionsView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("options.icloud.conflictPolicy.caption")
             }
+            // Phase D.3 layout fix — the `.menu` picker's intrinsic width
+            // is narrow, which made this card visibly shrink-wrap while
+            // the sibling cards (Toggle/HStack-based) auto-expand. Force
+            // the inner VStack to fill the available width so all iCloud
+            // cards look uniform.
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("options.icloud.conflictPolicy.card")
     }

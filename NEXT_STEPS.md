@@ -1,5 +1,15 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Phase D.3 Bug-Fix) — per-record `modifyRecords` validation + Konflikt-Karten-Layout (Branch `main`, HEAD `9c981fc` → folgt)
+
+> **Bug-Fix.** Phase D.2 hatte das äußere `try await modifyRecords(...)` als Erfolgsindikator behandelt — Apple's API gibt aber per-record-Failures im Dictionary zurück, nicht als Wire-Throw (besonders außerhalb Custom-Zones). Phase D.3 prüft jetzt jeden `saveResults[id]` / `deleteResults[id]` explizit via `ICloudCloudKitMVPResultValidator` (Linux-testbar). Health-Check + LiveTrack-Upload sind beide gefixt; UI-Layout der „Konfliktbehandlung"-Karte erhält `.frame(maxWidth: .infinity)`.
+>
+> **Test-Coverage:** 13 neue Tests (`ICloudPerRecordValidationTests`) decken die 5 Scenarios a–e ab. Phase-D + D.2 Tests bleiben grün.
+>
+> **Externe User-Action für TestFlight-Diagnose unverändert offen:** (1) CloudKit Dashboard Production-Schema deployen, (2) `codesign -d --entitlements :-` gegen installierten Build, (3) Apple Developer Portal Container-Zuordnung. Erwartung: TestFlight zeigt nach D.3 den echten CKError-Code an der richtigen Stage statt fälschlich „Lesen".
+
+---
+
 ## Stand 2026-05-25 (Phase D.2 Diagnose-Train) — Stage-genauer CloudKit-Health-Check + CKError-Code-UI + Auto-Backup-Gate (Branch `main`, HEAD `ac7819c` → folgt)
 
 > **Bug-Fix-Train, keine neuen Features.** Adressiert alle 8 Punkte aus der User-Audit-Liste:

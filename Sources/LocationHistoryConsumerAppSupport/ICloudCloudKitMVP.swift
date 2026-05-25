@@ -89,6 +89,80 @@ public struct ICloudHealthProbeResult: Codable, Sendable, Equatable {
     }
 }
 
+/// Phase D.3 — Linux-testable per-record validation for CloudKit
+/// `modifyRecords` / `records(for:)` outcomes. The async APIs return a
+/// `(saveResults: [ID: Result<…>], deleteResults: [ID: Result<…>])` even
+/// when the outer `try await` succeeds — Apple-Doku is explicit that
+/// individual records can fail server-side without the outer call
+/// throwing. The wire-level success of the request is **not** the same
+/// as „my record was actually persisted". Phase D.2 only checked the
+/// outer throw, which is exactly why the health-probe screenshot showed
+/// „Schreiben ✓ · Lesen CKError.unknownItem" — the write was lost
+/// server-side, the subsequent read could never find the record, and we
+/// mis-classified the stage. These helpers map raw per-record outcomes
+/// to a single throwing assertion so the call-site can collapse the
+/// dictionary into a clean do/catch.
+public enum ICloudPerRecordValidationError: Error, Equatable {
+    /// The outcome dictionary contained no entry for the expected record.
+    case missingResult
+    /// The per-record `Result` was `.failure(...)`. The wrapped value
+    /// is the underlying `NSError`-bridgeable error; callers downcast to
+    /// `CKError` for `code.rawValue` mapping.
+    case recordFailed(localizedDescription: String, ckErrorRawCode: Int?)
+}
+
+public enum ICloudCloudKitMVPResultValidator {
+    /// Validates a per-record save outcome from `CKDatabase.modifyRecords`.
+    /// Throws `ICloudPerRecordValidationError` if the record is missing
+    /// or failed; throws the underlying error pass-through so call-sites
+    /// keep CKError-code-name extraction.
+    public static func assertSaved<RecordID: Hashable, Record>(
+        recordID: RecordID,
+        in saveResults: [RecordID: Result<Record, Error>]
+    ) throws {
+        guard let result = saveResults[recordID] else {
+            throw ICloudPerRecordValidationError.missingResult
+        }
+        switch result {
+        case .success:
+            return
+        case .failure(let error):
+            // Re-throw the underlying error so the existing
+            // `makeFailureResult` path keeps mapping `CKError.Code`.
+            throw error
+        }
+    }
+
+    /// Validates a per-record delete outcome.
+    public static func assertDeleted<RecordID: Hashable>(
+        recordID: RecordID,
+        in deleteResults: [RecordID: Result<Void, Error>]
+    ) throws {
+        guard let result = deleteResults[recordID] else {
+            throw ICloudPerRecordValidationError.missingResult
+        }
+        switch result {
+        case .success:
+            return
+        case .failure(let error):
+            throw error
+        }
+    }
+
+    /// Validates that *all* expected records appear successfully in the
+    /// per-record save outcomes. Used by `CloudKitLiveTrackCloudBackupUploader`
+    /// so a partial CloudKit failure cannot silently mark a LiveTrack
+    /// backup as „done".
+    public static func assertAllSaved<RecordID: Hashable, Record>(
+        expectedIDs: [RecordID],
+        in saveResults: [RecordID: Result<Record, Error>]
+    ) throws {
+        for recordID in expectedIDs {
+            try assertSaved(recordID: recordID, in: saveResults)
+        }
+    }
+}
+
 /// Phase D.2 — maps a raw `CKError.Code` to a stable string name (for
 /// logging) and a short German diagnostic hint (for the UI). Pure value
 /// helper — works on any platform; the `CKError`-flavored convenience
@@ -783,12 +857,20 @@ public final class CloudKitICloudHealthCheckService: ICloudHealthChecking {
         record[ICloudCloudHealthProbeSchema.Field.schemaVersion] = ICloudCloudHealthProbeSchema.schemaVersion as CKRecordValue
         record[ICloudCloudHealthProbeSchema.Field.randomProbeID] = UUID().uuidString as CKRecordValue
 
+        // Phase D.3 — capture per-record save outcomes. Apple's async
+        // modifyRecords returns even when the wire request succeeded but
+        // the individual record was rejected server-side; we must inspect
+        // saveResults[recordID] before claiming the write went through.
         do {
-            _ = try await container.privateCloudDatabase.modifyRecords(
+            let (saveResults, _) = try await container.privateCloudDatabase.modifyRecords(
                 saving: [record],
                 deleting: [],
                 savePolicy: .changedKeys,
                 atomically: true
+            )
+            try ICloudCloudKitMVPResultValidator.assertSaved(
+                recordID: recordID,
+                in: saveResults
             )
         } catch {
             status = .init(
@@ -809,10 +891,18 @@ public final class CloudKitICloudHealthCheckService: ICloudHealthChecking {
         // MARK: Stage 3 — Read probe
         do {
             let fetched = try await container.privateCloudDatabase.records(for: [recordID])
-            if case .failure(let readError) = fetched[recordID] {
-                throw readError
-            }
+            // Validate the per-record fetch outcome explicitly: a missing
+            // result or a `.failure(CKError.unknownItem)` here both mean
+            // the read could not see the record we just wrote.
+            try ICloudCloudKitMVPResultValidator.assertSaved(
+                recordID: recordID,
+                in: fetched
+            )
         } catch {
+            // Best-effort cleanup: the write succeeded server-side, so
+            // try to delete the probe record. Ignore cleanup errors so
+            // the original read failure remains the reported cause.
+            await bestEffortDelete(recordID: recordID)
             status = .init(
                 accountStatus: .available,
                 privateDatabaseReachability: .failed,
@@ -831,11 +921,15 @@ public final class CloudKitICloudHealthCheckService: ICloudHealthChecking {
 
         // MARK: Stage 4 — Delete probe
         do {
-            _ = try await container.privateCloudDatabase.modifyRecords(
+            let (_, deleteResults) = try await container.privateCloudDatabase.modifyRecords(
                 saving: [],
                 deleting: [recordID],
                 savePolicy: .changedKeys,
                 atomically: true
+            )
+            try ICloudCloudKitMVPResultValidator.assertDeleted(
+                recordID: recordID,
+                in: deleteResults
             )
         } catch {
             status = .init(
@@ -906,6 +1000,33 @@ public final class CloudKitICloudHealthCheckService: ICloudHealthChecking {
         }
         return "non-ckerror"
     }
+
+    /// Phase D.3 best-effort cleanup: the write probe succeeded, the
+    /// read/delete failed for an unrelated reason — try to remove the
+    /// orphaned probe record so it does not accumulate in the user's
+    /// private database. Any error during cleanup is swallowed so the
+    /// original failure stays the reported cause.
+    private func bestEffortDelete(recordID: CKRecord.ID) async {
+        do {
+            let (_, deleteResults) = try await container.privateCloudDatabase.modifyRecords(
+                saving: [],
+                deleting: [recordID],
+                savePolicy: .changedKeys,
+                atomically: true
+            )
+            try ICloudCloudKitMVPResultValidator.assertDeleted(
+                recordID: recordID,
+                in: deleteResults
+            )
+            #if canImport(OSLog)
+            logger.info("CloudKit probe cleanup succeeded")
+            #endif
+        } catch {
+            #if canImport(OSLog)
+            logger.error("CloudKit probe cleanup failed: code=\(self.probeCodeName(for: error), privacy: .public)")
+            #endif
+        }
+    }
 }
 
 public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploading {
@@ -919,11 +1040,22 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
         let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
         let records = [Self.makeSummaryRecord(envelope.summary)]
             + envelope.pointBatches.map(Self.makePointBatchRecord)
-        _ = try await database.modifyRecords(
+        // Phase D.3 — explicitly assert every expected per-record save
+        // outcome. Without this check, a partial CloudKit failure could
+        // silently mark the LiveTrack backup as successful and lose the
+        // record server-side (same root cause as the Phase-D.2 health
+        // probe regression). Atomic + per-record validation ensures the
+        // outbox keeps the envelope on any individual failure.
+        let expectedIDs = records.map(\.recordID)
+        let (saveResults, _) = try await database.modifyRecords(
             saving: records,
             deleting: [],
             savePolicy: .changedKeys,
             atomically: true
+        )
+        try ICloudCloudKitMVPResultValidator.assertAllSaved(
+            expectedIDs: expectedIDs,
+            in: saveResults
         )
     }
 

@@ -1,5 +1,85 @@
 # CHANGELOG
 
+## 2026-05-25 — Phase D.3 (Bug-Fix): per-record `modifyRecords` validation + Konflikt-Karten-Layout (Branch `main`, HEAD `9c981fc` → folgt)
+
+> **Root-Cause-Fix für die Screenshot-Diagnose „Schreiben ✓ · Lesen CKError.unknownItem".** Apple's `CKDatabase.modifyRecords(saving:deleting:savePolicy:atomically:)` async-API gibt **per-record `Result`-Dictionaries** zurück und kann auch dann erfolgreich returnen, wenn der server-side Save einzelne Records ablehnte (besonders außerhalb von Custom-Zones mit `CKRecordZone.Capabilities.atomic`). Phase-D.2 hat nur den äußeren `try await` ausgewertet → der Probe-Write wurde als erfolgreich gemeldet, der Server hatte den Record aber nicht persistiert, das nachfolgende Read warf logisch passend `CKError.unknownItem`, und die UI klassifizierte fälschlicherweise „Lesen" als Fehlerphase.
+>
+> Phase D.3 löst das mit Linux-testbarem `ICloudCloudKitMVPResultValidator`, der jede `Result.success`/`.failure` pro Record explizit auswertet. Health-Probe (Write/Read/Delete) + LiveTrack-Upload (Summary + alle PointBatches) sind beide gefixt. Plus UI-Layout-Patch für die Konflikt-Karte.
+
+### Geprüfte Apple-Doku (bestätigt Bug-Hypothese)
+- `CKDatabase.modifyRecords(...) async` → `(saveResults: [CKRecord.ID: Result<CKRecord, Error>], deleteResults: [CKRecord.ID: Result<Void, Error>])`. Per-Record-Failures erscheinen im Dictionary, nicht als äußerer Throw.
+- `atomically: true` ist nur in Custom-Zones (`CKRecordZone.Capabilities.atomic`) wirksam — die Default-Zone hat **kein** echtes Atomic. Defense-in-depth durch Per-Record-Auswertung ist Apple-empfohlen.
+- `CKDatabase.records(for:)` async → `[CKRecord.ID: Result<CKRecord, Error>]`. „Record not found" = `Result.failure(CKError.unknownItem)` im Dictionary, nicht äußerer Throw.
+- TestFlight nutzt die **Production**-CloudKit-Umgebung — Schema-Promotion im CloudKit Dashboard ist nötig, sonst `CKError.unknownItem`.
+- Cleanup-Best-Practice (Swift Error Handling Guide): vorheriger Fehler darf vom Cleanup-Fehler nicht überschrieben werden.
+
+### Code-Fixes
+| Fix | Datei | Zweck |
+|---|---|---|
+| **`ICloudCloudKitMVPResultValidator`** (neu, Linux-testbar) | `ICloudCloudKitMVP.swift` | `assertSaved`, `assertDeleted`, `assertAllSaved` — werfen `ICloudPerRecordValidationError.missingResult` oder geben den underlying CKError pass-through |
+| **`ICloudPerRecordValidationError`** enum (neu) | dito | `.missingResult` / `.recordFailed` |
+| **`runHealthCheck` Stage 2 (Write)** | dito | Captured `(saveResults, _)` Tuple + `assertSaved(recordID:, in: saveResults)` |
+| **`runHealthCheck` Stage 3 (Read)** | dito | Captured Dictionary + `assertSaved` (Same Validator funktioniert auch für `records(for:)`-Tuple-Shape) + `bestEffortDelete()` Cleanup |
+| **`runHealthCheck` Stage 4 (Delete)** | dito | Captured `(_, deleteResults)` Tuple + `assertDeleted(recordID:, in: deleteResults)` |
+| **`bestEffortDelete(recordID:)`** (neu) | dito | Cleanup-Helper für orphane Probe-Records nach Read-Fehler; Cleanup-Fehler überschreiben nie den primären Failure |
+| **`CloudKitLiveTrackCloudBackupUploader.upload`** | dito | Captured `(saveResults, _)` + `assertAllSaved(expectedIDs:, in:)` für Summary + alle PointBatches; Upload wirft jetzt bei jedem fehlenden/fehlgeschlagenen Per-Record-Result |
+| **`conflictPolicyCard` Layout** | `AppICloudOptionsView.swift` | innerer VStack `.frame(maxWidth: .infinity, alignment: .leading)` — kompensiert das schmale intrinsic-Width des `.menu`-Picker-Styles |
+
+### Tests (Pflicht)
+| Check | Ergebnis |
+|---|---|
+| `swift build` | ✅ 56,78 s, 0 Warnings |
+| `swift test --filter ICloudPerRecordValidationTests` | ✅ **13 Tests / 0 failures** (0,02 s) |
+| `swift test --filter ICloudHealthStageMappingTests` | ✅ läuft (Phase D.2 regression-frei) |
+| `swift test --filter ICloudCloudKitMVPTests` | ✅ läuft (Phase D regression-frei) |
+| `xcodebuild` iPhone-Sim build | ✅ läuft |
+
+### Test-Coverage neue Tests (13 in `ICloudPerRecordValidationTests`)
+**Result-Validator (8):**
+1. `assertSaved` returns silently on `.success`
+2. `assertSaved` throws `.missingResult` when ID absent
+3. `assertSaved` re-throws underlying `.failure`
+4. `assertDeleted` returns silently on `.success`
+5. `assertDeleted` throws `.missingResult` when absent
+6. `assertDeleted` re-throws `.failure`
+7. `assertAllSaved` succeeds wenn alle Records erfolgreich
+8. `assertAllSaved` re-throws first per-record failure
+
+**LiveTrack-Upload-Validation (1, Scenario e):**
+9. `assertAllSaved` wirft `.missingResult` bei fehlendem Expected-ID — keine silent-success bei partial Failure
+
+**Stage-Klassifikation (4, Scenarios a–d):**
+10. (a) Save-Result fehlt → stage `.write`, alle Flags false
+11. (b) Save ok, Read `CKError.unknownItem` → stage `.read`, writeSucceeded true (Screenshot-Fall)
+12. (c) Save+Read ok, Delete fehlgeschlagen → stage `.delete`, write+read flags true
+13. (d) Alle 3 ok → `.reachable`, alle Flags true, isOperational
+
+### Warum der Screenshot „Schreiben ✓ · Lesen CKError.unknownItem" zeigen konnte
+Phase D.2 hatte `_ = try await container.privateCloudDatabase.modifyRecords(...)` — der äußere `try await` warf nicht, **weil Apple per-record-Failures im Dictionary returniert statt einen Wire-Throw zu machen**. Wir behandelten den Aufruf deshalb als erfolgreich (`writeSucceeded: true`). Die Stage-3-Read-Probe rief dann `records(for: [recordID])` für einen nicht-existierenden Server-Record auf → `CKError.unknownItem` als per-record Failure. Da das **Read-Dictionary** korrekt ausgewertet wurde, klassifizierten wir als Read-Fehler.
+
+Phase D.3 wertet das **Write-Save-Result** jetzt explizit aus. Beim nächsten TestFlight-Build wird der echte Fehler an der richtigen Stelle (Write-Stage) sichtbar — vermutlich mit einem aussagekräftigeren CKError-Code-Name (`unknownItem` für fehlende Production-Schema-Deployment, `permissionFailure` für Entitlement-Issues, `badContainer` für Container-ID-Mismatch, …).
+
+### Externe User-Action weiterhin offen (kann diese Phase nicht selbst lösen)
+1. **CloudKit Production Schema deployen** im Dashboard: `LH2GPXCloudHealthProbe`, `LH2GPXLiveTrackSummary`, `LH2GPXLiveTrackPointBatch` Record-Types von Development → Production promoten
+2. `codesign -d --entitlements :- LH2GPXWrapper.app` lokal gegen installierten TestFlight-Build verifizieren
+3. Apple Developer Portal — App-ID + Container-Zuordnung prüfen
+
+### Bewusst NICHT in D.3
+- Keine Verifikation des Production-Schemas (User-Action im CloudKit Dashboard)
+- Keine Bestätigung des TestFlight-Binary-Entitlements (User-Action via codesign)
+- Keine neuen RecordTypes
+- Keine neue Sync-Logik
+
+### Anti-Claims (unverändert wahr)
+- ❌ TestFlight Production-Schema verifiziert/deployed
+- ❌ `codesign` gegen installierten Build durchgeführt
+- ❌ Xcode Cloud / TestFlight / App Store Submission
+
+### Nächster Schritt
+**3 externe User-Actions oben durchführen**. Dann nächste TestFlight-Build (>190) zeigt vermutlich den echten CKError-Code in der Health-Card — vorher war der echte Fehler hinter „Lesen CKError.unknownItem" versteckt.
+
+---
+
 ## 2026-05-25 — Phase D.2 (Diagnose-Train): Stage-genauer CloudKit-Health-Check + CKError-Code-UI + Auto-Backup-Gate (Branch `main`, HEAD `ac7819c` → folgt)
 
 > **Bug-Fix / Diagnose-Train ohne neue Features.** Behebt die in den Phase-D-Screenshots sichtbaren echten Diagnose-Probleme:
