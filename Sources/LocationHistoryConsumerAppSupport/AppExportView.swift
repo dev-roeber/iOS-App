@@ -1394,6 +1394,7 @@ public struct AppExportView: View {
                 set: { if !$0 { exportError = nil } }
             )) {
                 Button(t("OK"), role: .cancel) { exportError = nil }
+                    .accessibilityIdentifier("export.exportFailed.ok")
             } message: {
                 Text(exportError ?? t("An unexpected error occurred. Please check your selection and try again."))
             }

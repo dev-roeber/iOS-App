@@ -298,6 +298,7 @@ struct AppInsightsContentView: View {
             Button(t("OK"), role: .cancel) {
                 shareError = nil
             }
+            .accessibilityIdentifier("insights.shareFailed.ok")
         } message: {
             Text(shareError ?? "")
         }

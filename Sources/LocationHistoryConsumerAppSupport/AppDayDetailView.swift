@@ -107,9 +107,11 @@ public struct AppDayDetailView: View {
                 }
                 confirmRemovePathIndex = nil
             }
+            .accessibilityIdentifier("dayDetail.removeRoute.confirm")
             Button(t("Cancel"), role: .cancel) {
                 confirmRemovePathIndex = nil
             }
+            .accessibilityIdentifier("dayDetail.removeRoute.cancel")
         } message: {
             Text(t("This route will be hidden from this day. The original data is not modified."))
         }

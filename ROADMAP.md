@@ -16,7 +16,7 @@
 | 8.4 | Performance & Concurrency Modernisierung | ✅ erledigt — 138 → 0 Build-Warnings |
 | 8.5 | Accessibility / Dynamic Type / Localization Polish | ✅ erledigt — Settings-Clamp + Hero-Icon hidden |
 | 8.6 | Map Layer & Route Interaction Upgrade | ✅ erledigt — MapLayerMenu Identifier + Hints |
-| 8.7 | Error Handling / Diagnostics / User Feedback | offen |
+| 8.7 | Error Handling / Diagnostics / User Feedback | ✅ erledigt — Alert-Button-Identifier + Log-Privacy-Review |
 | 8.8 | Import-Pipeline UX + Robustness Polish | offen |
 | 8.9 | Export-Pipeline UX + Files/iCloud Drive Polish | offen |
 | 8.10 | Live Tracking / Upload Control Center | offen |

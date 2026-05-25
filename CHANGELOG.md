@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.7: Error Alert Identifier + Diagnostics-Review (Branch `main`, HEAD `6de5a9c` → folgt)
+
+> **Minimal-invasive Error-UX-Polish.** Drei System-Alerts bekommen Identifier auf ihren `Button(role:)`-Aktionen, damit UI-Tests sie deterministisch dismissen können. Keine neuen Recovery-Aktionen ohne echten Pfad, keine sensiblen Daten in Logs, keine Telemetrie. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- OSLog / `Logger` mit Privacy-Annotation (https://developer.apple.com/documentation/os/logger)
+- Swift Error Handling (https://developer.apple.com/documentation/swift/error)
+- SwiftUI `.alert(_:isPresented:actions:message:)` (https://developer.apple.com/documentation/swiftui/view/alert(_:ispresented:presenting:actions:message:))
+- SwiftUI `.confirmationDialog(_:isPresented:titleVisibility:presenting:actions:)` (https://developer.apple.com/documentation/swiftui/view/confirmationdialog)
+- HIG „Feedback" / „Alerts" — User-Sprache, keine Error-Codes, Recovery-Aktion (https://developer.apple.com/design/human-interface-guidelines/alerts)
+- App Privacy guidance (https://developer.apple.com/design/human-interface-guidelines/privacy)
+
+### Error-/Diagnostics-Änderungen
+1. **`AppInsightsContentView` „Share Failed"-Alert** — OK-Button bekommt `insights.shareFailed.ok`-Identifier.
+2. **`AppExportView` „Export Failed"-Alert** — OK-Button bekommt `export.exportFailed.ok`-Identifier.
+3. **`AppDayDetailView` „Remove Route"-Confirm-Alert** — destructive-Confirm bekommt `dayDetail.removeRoute.confirm`, Cancel bekommt `dayDetail.removeRoute.cancel`.
+
+### Sensitive-Log-Sweep
+- `Sources/.../ImportMemoryProbe.swift:89/121` — `print(...)`-Aufrufe geprüft und als **sicher** bestätigt: nur Memory-Footprint-MB-Werte + Build-Identity (Marketing-Version, Build-Nummer, Git-SHA, Memory-Flag). **Keine** Koordinaten, **keine** Tokens, **keine** Bearer-Header, **keine** Dateipfade. Bewusst `print` statt `os.Logger`, damit der Probe auch im SwiftPM-Test-Harness auf Linux/macOS funktioniert (Kommentar bereits inline).
+- 0 weitere `print`/`debugPrint`-Treffer in `Sources/` und `wrapper/`.
+- Bearer/Token-Sweep: nur Bestands-`liveLocationServerUploadBearerToken`-Bindings (SecureField, Keychain, never printed).
+
+### Bewusst NICHT verändert
+- Keine neuen Recovery-Aktionen ohne echte Funktion (z.B. „Retry Import"-Button, wenn der zugrundeliegende Service nicht idempotent ist).
+- Kein Wechsel von `print` → `os.Logger` für `ImportMemoryProbe` (würde Linux-Test-Harness brechen — explizit dokumentiert).
+- Keine neue Telemetrie / kein Analytics-Endpoint.
+- Keine neuen Netzwerkcalls.
+- Keine CloudKit Record-Operationen.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../AppInsightsContentView.swift` | OK-Button-Identifier am Share-Failed-Alert |
+| `Sources/.../AppExportView.swift` | OK-Button-Identifier am Export-Failed-Alert |
+| `Sources/.../AppDayDetailView.swift` | Confirm + Cancel Identifier am Remove-Route-Alert |
+| Doku | CHANGELOG, ROADMAP |
+
+### Build-only Validierung
+- `swift build` ✅ (30,5 s, 0 Warnings).
+- `xcodebuild` Sim ✅.
+- `xcodebuild` generic iOS ✅.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.8 — Import-Pipeline UX + Robustness Polish** (build-only).
+
+---
+
 ## 2026-05-25 — Train 8.6: Map Layer Menu Identifier + Hints (Branch `main`, HEAD `a8f41e2` → folgt)
 
 > **Minimal-invasive Map-Layer-Polish.** Drei MapLayerMenu-Actions („Fit to data", „Center on current location", „Open/Close fullscreen map") bekommen UI-Test-Identifier + Recovery-/Erläuterungs-Hints. Kein Performance-Risiko, keine Algorithmus-Änderung, keine neuen Karten-/Höhendaten, keine Permission-Änderung. Tests deferred bis Punkt 10.
