@@ -1,6 +1,9 @@
 #if canImport(SwiftUI)
 import SwiftUI
 import LocationHistoryConsumer
+#if canImport(UniformTypeIdentifiers)
+import UniformTypeIdentifiers
+#endif
 
 // MARK: - Main Content View (Adaptive Layout)
 
@@ -30,6 +33,20 @@ public struct AppContentSplitView: View {
     )
     @State private var presentedSheet: PresentedSheet?
     @StateObject private var pathMutationStore = AppImportedPathMutationStore()
+    // Files-Tab Picker: am Root-Container montiert, damit der iOS
+    // fileImporter stabil präsentiert wird. Verschachtelte fileImporter
+    // tief in Tab-Subviews führten in iOS 17/18 zu sofortigem Crash
+    // beim ersten Tap (App springt zum Homescreen).
+    @State private var isChoosingCloudFile = false
+    @StateObject private var filesCloudViewModel: AppCloudFileViewModel = {
+        let mgr: CloudFileManaging
+        #if canImport(CloudKit)
+        mgr = CloudKitCloudFileManager()
+        #else
+        mgr = NoopCloudFileManager()
+        #endif
+        return AppCloudFileViewModel(manager: mgr)
+    }()
 
     private let onOpen: () -> Void
     private let onLoadDemo: () -> Void
@@ -364,10 +381,10 @@ public struct AppContentSplitView: View {
             // ausreichend Breite werden alle sechs Tabs in der Tab-Leiste
             // angezeigt.
             NavigationStack {
-                AppFilesView()
-                    // Fix: AppFilesView nutzt @EnvironmentObject preferences.
-                    // Ohne diesen Inject crasht der Tab beim ersten Öffnen
-                    // mit „No ObservableObject of type AppPreferences found".
+                AppFilesView(
+                    cloudViewModel: filesCloudViewModel,
+                    onChooseCloudFile: { isChoosingCloudFile = true }
+                )
                     .environmentObject(preferences)
                     .navigationTitle("")
                     #if os(iOS)
@@ -411,7 +428,78 @@ public struct AppContentSplitView: View {
         .onChange(of: preferences.startTab) { _, newValue in
             selectedTab = newValue.tabIndex
         }
+        #if canImport(UniformTypeIdentifiers)
+        // Stabile UTType-Liste — keine dynamischen `UTType(filenameExtension:)`-
+        // Aufrufe mehr im Picker. Endung-Validierung passiert nach der Auswahl
+        // in `handleStableCloudFilePick`.
+        .fileImporter(
+            isPresented: $isChoosingCloudFile,
+            allowedContentTypes: [.json, .zip, .xml],
+            allowsMultipleSelection: false,
+            onCompletion: handleStableCloudFilePick
+        )
+        #endif
     }
+
+    #if canImport(UniformTypeIdentifiers)
+    private static let allowedCloudFileExtensions: Set<String> = ["json", "zip", "gpx", "kml"]
+
+    private func handleStableCloudFilePick(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            let ext = (url.lastPathComponent as NSString).pathExtension.lowercased()
+            guard Self.allowedCloudFileExtensions.contains(ext) else {
+                filesCloudViewModel.reportPickerFailure(
+                    NSError(domain: "AppFiles", code: 1,
+                            userInfo: [NSLocalizedDescriptionKey:
+                                "Dateityp .\(ext) wird nicht unterstützt. Erlaubt sind: GPX, KML, JSON, ZIP."])
+                )
+                return
+            }
+            // Security-Scope SYNCHRON im Callback aktivieren + Kopie mit
+            // NSFileCoordinator für File-Provider-URLs erzeugen.
+            let accessed = url.startAccessingSecurityScopedResource()
+            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+            do {
+                let copy = try copyForUpload(from: url)
+                Task {
+                    await filesCloudViewModel.uploadCopiedFile(at: copy)
+                    try? FileManager.default.removeItem(at: copy.deletingLastPathComponent())
+                }
+            } catch {
+                filesCloudViewModel.reportPickerFailure(error)
+            }
+        case .failure(let error):
+            filesCloudViewModel.reportPickerFailure(error)
+        }
+    }
+
+    private func copyForUpload(from sourceURL: URL) throws -> URL {
+        let tmpDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CloudFileUpload-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+        let destination = tmpDir.appendingPathComponent(sourceURL.lastPathComponent)
+        var coordError: NSError?
+        var copyError: Error?
+        let coordinator = NSFileCoordinator(filePresenter: nil)
+        coordinator.coordinate(readingItemAt: sourceURL,
+                               options: [.forUploading, .withoutChanges],
+                               error: &coordError) { readableURL in
+            do { try FileManager.default.copyItem(at: readableURL, to: destination) }
+            catch { copyError = error }
+        }
+        if let coordError {
+            try? FileManager.default.removeItem(at: tmpDir)
+            throw coordError
+        }
+        if let copyError {
+            try? FileManager.default.removeItem(at: tmpDir)
+            throw copyError
+        }
+        return destination
+    }
+    #endif
 
     private var compactDayList: some View {
         let summaries = filteredDaySummaries

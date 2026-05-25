@@ -23,34 +23,41 @@ private enum AppFilesSegment: String, CaseIterable, Identifiable {
 public struct AppFilesView: View {
     @EnvironmentObject private var preferences: AppPreferences
     @StateObject private var viewModel: AppFilesViewModel
-    @StateObject private var cloudViewModel: AppCloudFileViewModel
+    @ObservedObject private var cloudViewModel: AppCloudFileViewModel
     @State private var pendingDelete: LocalFileEntry?
     @State private var pendingCloudDelete: CloudFileEntry?
     @State private var selectedSegment: AppFilesSegment = .local
-    @State private var isChoosingCloudFile = false
 
-    public init(viewModel: AppFilesViewModel, cloudViewModel: AppCloudFileViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
-        _cloudViewModel = StateObject(wrappedValue: cloudViewModel)
-    }
+    /// Picker-Trigger-Closure. Parent (`AppContentSplitView`) hostet den
+    /// `.fileImporter` selbst — verschachtelte fileImporter in
+    /// Tab-Subviews crashen sofort beim Tap (iOS 17/18 Bug).
+    private let onChooseCloudFile: () -> Void
 
-    /// Convenience-Init für den Compact-Tab, der den Produktions-Scanner
-    /// erst lazy beim ersten Tab-Aufruf erstellt.
-    public init() {
+    public init(
+        cloudViewModel: AppCloudFileViewModel,
+        onChooseCloudFile: @escaping () -> Void = {}
+    ) {
+        // Local-File-Scanner wird hier lazy gebaut.
         let scanner: LocalFileScanning
         if let roots = try? LocalFileBucketRoots.production() {
             scanner = DiskLocalFileScanner(roots: roots)
         } else {
             scanner = InMemoryLocalFileScanner(snapshots: [])
         }
-        let cloudManager: CloudFileManaging
-        #if canImport(CloudKit)
-        cloudManager = CloudKitCloudFileManager()
-        #else
-        cloudManager = NoopCloudFileManager()
-        #endif
         _viewModel = StateObject(wrappedValue: AppFilesViewModel(scanner: scanner))
-        _cloudViewModel = StateObject(wrappedValue: AppCloudFileViewModel(manager: cloudManager))
+        _cloudViewModel = ObservedObject(initialValue: cloudViewModel)
+        self.onChooseCloudFile = onChooseCloudFile
+    }
+
+    /// Explizit für Tests: nimmt beide ViewModels.
+    public init(
+        viewModel: AppFilesViewModel,
+        cloudViewModel: AppCloudFileViewModel,
+        onChooseCloudFile: @escaping () -> Void = {}
+    ) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+        _cloudViewModel = ObservedObject(initialValue: cloudViewModel)
+        self.onChooseCloudFile = onChooseCloudFile
     }
 
     public var body: some View {
@@ -83,14 +90,9 @@ public struct AppFilesView: View {
                 await viewModel.refresh()
             }
         }
-        #if canImport(UniformTypeIdentifiers)
-        .fileImporter(
-            isPresented: $isChoosingCloudFile,
-            allowedContentTypes: cloudFileImporterTypes,
-            allowsMultipleSelection: false,
-            onCompletion: handleCloudFileImport
-        )
-        #endif
+        // fileImporter wurde aus dieser View entfernt — siehe
+        // AppContentSplitView. Verschachtelte fileImporter in Tab-
+        // Subviews crashen auf iOS 17/18 sofort beim Tap.
         .alert("Datei löschen?", isPresented: deleteAlertBinding, presenting: pendingDelete) { entry in
             Button("Abbrechen", role: .cancel) {
                 pendingDelete = nil
@@ -184,7 +186,7 @@ public struct AppFilesView: View {
             .disabled(viewModel.actionState != .idle || cloudViewModel.actionState != .idle)
             .accessibilityIdentifier(AppAccessibilityID.Files.refresh)
             Button {
-                isChoosingCloudFile = true
+                onChooseCloudFile()
             } label: {
                 Label("Datei auswählen", systemImage: "doc.badge.plus")
             }
@@ -468,82 +470,7 @@ public struct AppFilesView: View {
         cloudViewModel.actionMessage != nil ? cloudViewModel.actionFailed : viewModel.actionFailed
     }
 
-    #if canImport(UniformTypeIdentifiers)
-    private var cloudFileImporterTypes: [UTType] {
-        var types: [UTType] = [.zip, .json]
-        // GPX/KML existieren nicht als Apple-Konstanten — über Datei-
-        // Endung registrieren. Fallback auf .xml falls iOS-Version sie
-        // nicht kennt.
-        if let gpx = UTType(filenameExtension: "gpx") { types.append(gpx) } else { types.append(.xml) }
-        if let kml = UTType(filenameExtension: "kml") { types.append(kml) } else { types.append(.xml) }
-        return types
-    }
-
-    private func handleCloudFileImport(_ result: Result<[URL], Error>) {
-        switch result {
-        case .success(let urls):
-            guard let url = urls.first else { return }
-            // Robust-Fix: iCloud-Drive-URLs sind File-Provider-URLs.
-            // Direkter copyItem schlägt fehl ("permission to view"),
-            // weil der File Provider die Datei erst materialisieren
-            // muss. NSFileCoordinator forciert das. .forUploading
-            // erstellt eine read-only Kopie, die wir gefahrlos
-            // verwenden können — Security-Scope bleibt nur für die
-            // Dauer dieses Callbacks aktiv.
-            let accessed = url.startAccessingSecurityScopedResource()
-            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
-            do {
-                let copy = try copyForUpload(from: url)
-                Task {
-                    await cloudViewModel.uploadCopiedFile(at: copy)
-                    try? FileManager.default.removeItem(at: copy.deletingLastPathComponent())
-                }
-            } catch {
-                cloudViewModel.reportPickerFailure(error)
-            }
-        case .failure(let error):
-            cloudViewModel.reportPickerFailure(error)
-        }
-    }
-
-    /// Holt eine lokal lesbare Kopie der ausgewählten Datei via
-    /// `NSFileCoordinator(.forUploading)`. Funktioniert auch für
-    /// iCloud-Drive-/Files-App-URLs, bei denen direkter
-    /// `FileManager.copyItem` „permission to view" wirft.
-    private func copyForUpload(from sourceURL: URL) throws -> URL {
-        let tmpDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("CloudFileUpload-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
-        let destination = tmpDir.appendingPathComponent(sourceURL.lastPathComponent)
-
-        var coordError: NSError?
-        var copyError: Error?
-        let coordinator = NSFileCoordinator(filePresenter: nil)
-        coordinator.coordinate(readingItemAt: sourceURL,
-                               options: [.forUploading, .withoutChanges],
-                               error: &coordError) { readableURL in
-            do {
-                // Bei .forUploading liefert iOS bereits eine temporäre
-                // Snapshot-URL. Wir kopieren noch einmal in unser eigenes
-                // tmp, damit die Datei dort bleibt bis der async Upload
-                // sie verarbeitet hat — der iOS-Snapshot wird sonst
-                // nach Callback-Ende u. U. gelöscht.
-                try FileManager.default.copyItem(at: readableURL, to: destination)
-            } catch {
-                copyError = error
-            }
-        }
-        if let coordError {
-            try? FileManager.default.removeItem(at: tmpDir)
-            throw coordError
-        }
-        if let copyError {
-            try? FileManager.default.removeItem(at: tmpDir)
-            throw copyError
-        }
-        return destination
-    }
-    #endif
+    // Picker-Logik komplett nach AppContentSplitView ausgelagert.
 
     private func iconName(for kind: LocalFileKind) -> String {
         switch kind {
