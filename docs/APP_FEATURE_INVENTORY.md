@@ -1,7 +1,16 @@
 # APP Feature Inventory
 
-Last analysis: **2026-05-25** (Insights Refactor I build-only auf
-`main` HEAD `21edb68` + Insights-Refactor-I-Diff). Neue Datei
+Last analysis: **2026-05-25** (Build-only Implementation Sync auf
+`main` HEAD `7009a0b`). 8 build-only Trains abgeschlossen
+(F.4/F.2/F.3/UI-Adoption I/Export UX I/Import UX I/Map UX I/Insights
+Refactor I). Repo-Truth-Audit: 10/10 Claims TRUE, 7/7 Must-be-absent-
+Patterns ABSENT, Privacy-Manifest konsistent zur Code-Realität.
+**Punkt 10 (vollständige Tests + Cloud-Verifikation) ist der einzige
+verbleibende Schritt.** Detail-Bericht:
+`docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md`.
+
+Voriger Stand: Insights Refactor I build-only auf
+`main` HEAD `21edb68` + Insights-Refactor-I-Diff. Neue Datei
 `Sources/.../InsightsStreakCardView.swift` (`struct InsightsStreakCardView:
 View`, 49 LOC) extrahiert aus `AppInsightsContentView.streakCard(...)`;
 Dead-Code `pageEmptyState` (17 LOC, 0 Aufrufer) entfernt;

@@ -1,5 +1,16 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `7009a0b` + Build-only Implementation Sync → folgt — Punkt-10-Vorbereitung)
+
+- **Build-only-Phase abgeschlossen.** Acht Trains gemerged (F.4 → F.2 → F.3 → UI-Adoption I → Export UX I → Import UX I → Map/Timeline/Heatmap UX I → Insights Refactor I).
+- **Repo-Truth-Abgleich** ✅ — alle 10 Claim-Verifikationen TRUE, alle 7 Must-be-absent-Patterns (`publicCloudDatabase`/`sharedCloudDatabase`/`CKSubscription`/`CKAsset`/`CKQuery`/`.save(`/`.fetch(` in `CloudKit*.swift`/positive Sync-Claims) ABSENT.
+- **Privacy-Manifest** ✅ konsistent zu Code (`UserDefaults` `CA92.1` + neu `FileTimestamp` `0A2A.1` aus F.2 + bestehender `PreciseLocation` für optionalen Live-Upload).
+- **iCloud-Doku-Trennung** ✅ sauber (F.1/F.2/F.3/F.4 jeweils mit „Was wird/wird-nicht behauptet"-Tabelle).
+- **Drei Builds grün:** `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), `xcodebuild` Sim ✅, `xcodebuild` generic iOS ✅.
+- **Detail-Bericht:** [`docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md`](docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md).
+- **Extern unverändert:** letzter extern grüner Xcode-Cloud-Build bleibt **190** auf `b25c27d`.
+- **Weiter offen (Punkt 10):** `swift test`, `xcodebuild test`, UITests Sim+Device, manueller iPhone-Smoke, Xcode Cloud Workflow, TestFlight-Smoke voll, Hardware-Smoke gegen echten iCloud-Login.
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `21edb68` + Insights Refactor I → folgt — `InsightsStreakCardView` extrahiert + Dead-Code entfernt)
 
 - **Insights Refactor I umgesetzt (build-only):** Neue Datei `Sources/.../InsightsStreakCardView.swift` (`struct InsightsStreakCardView: View`, 49 LOC, pure Presentation, kein `@State`/`@EnvironmentObject`) extrahiert aus `AppInsightsContentView.streakCard(...)`. Dead-Code `pageEmptyState` (17 LOC, 0 Aufrufer per `rg`) entfernt. `streakSection`-Call-Sites bekommen `insights.streak.recent`/`insights.streak.best`-Identifier.

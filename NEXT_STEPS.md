@@ -1,5 +1,20 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Build-only Implementation Sync) — Repo-Truth abgeschlossen, Punkt 10 vorbereitet (Branch `main`, HEAD `7009a0b` → folgt)
+
+> **Build-only-Phase abgeschlossen.** Acht Trains (F.4 / F.2 / F.3 / UI-Adoption I / Export UX I / Import UX I / Map UX I / Insights Refactor I) sind gemerged. Vollständiger Repo-Truth-Abgleich: 10/10 Claims TRUE, 7/7 Must-be-absent-Patterns ABSENT, Privacy-Manifest konsistent zur Code-Realität. Drei Builds grün (`swift build`, `xcodebuild` Sim, `xcodebuild` generic iOS). Detail-Bericht: [`docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md`](docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md).
+
+**Nächster Train — Punkt 10 (vollständige Tests & Cloud-Verifikation):**
+1. `swift test` Mac-Host und Linux-Host.
+2. `xcodebuild test -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' -testPlan CI`.
+3. UITests Simulator + Device (iPhone 15 Pro Max iOS 26.4), inkl. der neuen Identifier aus den letzten 8 Trains (`export.emptyState`, `export.selection.privacyHint`, `export.selection.filenamePreview`, `export.preview.emptySelection`, `home.title`/`home.subtitle`/`home.subtitle.formats`/`home.openFile`/`home.loadDemo`/`home.clearError`, `overview.empty.body`/`overview.empty.privacyHint`, `heatmap.layerMenu`/`heatmap.computing`/`heatmap.statsBadge`, `dayDetail.routeDisplay`, `insights.streak.recent`/`insights.streak.best`, `options.icloud.driveExportToggle`/`options.icloud.driveExportFooter`, `export.target.iCloudDriveHint`).
+4. Manueller iPhone-Smoke aller Hauptbereiche.
+5. Xcode Cloud Workflow `Release – Archive & TestFlight` triggern → Build > 190 erwartet.
+6. TestFlight-Smoke voll (alle Tabs, Settings → iCloud-Block-Sichtprüfung).
+7. Hardware-Smoke gegen echten iCloud-Login.
+
+---
+
 ## Stand 2026-05-25 (Insights Refactor I) — `InsightsStreakCardView` extrahiert + Dead-Code `pageEmptyState` entfernt (Branch `main`, HEAD `21edb68` → folgt)
 
 > **Minimal-Refactor.** Neue Datei `Sources/.../InsightsStreakCardView.swift` (`struct InsightsStreakCardView: View`, 49 LOC) — extrahiert aus `AppInsightsContentView.streakCard(...)`. Dead-Code-Funktion `pageEmptyState` (17 LOC, 0 Aufrufer) entfernt. Neue Identifier `insights.streak.recent`/`insights.streak.best`. **Keine Berechnungslogik geändert** — alle `Insights*Presentation.swift`-Aggregations-Pfade unverändert. Tests deferred bis Punkt 10.

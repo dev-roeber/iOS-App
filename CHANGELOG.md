@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## 2026-05-25 — Build-only Implementation Sync (Branch `main`, HEAD `7009a0b` → folgt)
+
+> **Finaler Doku-Sync nach 8 build-only Trains** (F.4 → F.2 → F.3 → UI-Adoption I → Export UX I → Import UX I → Map/Timeline/Heatmap UX I → Insights Refactor I). Vollständiger Repo-Truth-Abgleich: alle 10 Train-Claims direkt per `rg` gegen Code verifiziert (✅ TRUE); alle 7 Must-be-absent-Patterns (`publicCloudDatabase`, `sharedCloudDatabase`, `CKSubscription`, `CKAsset`, `CKQuery`, `.save(`/`.fetch(` in `CloudKit*.swift`, positive Sync-Claims) ✅ ABSENT. Privacy-Manifest gegen Code-Realität ✅ konsistent. **Punkt 10 (vollständige Tests) ist der einzige verbleibende Schritt.** Details und Train-Übersicht: [`docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md`](docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md).
+
+### Geprüfte Apple-Doku (final, gruppiert)
+- **CloudKit**: `CKContainer`/`privateCloudDatabase`/`publicCloudDatabase`/`sharedCloudDatabase`/`CKRecord`/`CKRecord.RecordType`/`CKAccountStatus`/Encrypting User Data
+- **File I/O**: SwiftUI `fileImporter`/`fileExporter`/`FileDocument`/`ReferenceFileDocument`; `UIDocumentPickerViewController`/`UIDocumentPickerDelegate`; `UniformTypeIdentifiers.UTType`; `NSFileCoordinator`; `URL.startAccessingSecurityScopedResource()`
+- **Privacy**: Privacy Manifest Files, Describing data use in privacy manifests, Describing use of required reason API, App Privacy Details, User Privacy and Data Use
+- **HIG**: Layout · Buttons · Settings · Maps · Feedback · Accessibility · Privacy · Lists and Tables · SF Symbols · Loading · File Management
+- **App Store Review Guidelines**: Privacy (§5.1), Data Collection and Storage (§5.1.1), Data Use and Sharing (§5.1.2)
+
+URLs siehe Sync-Doku §9.
+
+### Repo-Truth-Abgleich (✅ alle 10 Claims TRUE)
+F.1-Entitlements · F.2-Schema + Privacy-Manifest · F.3-Export-Drive-Hint · F.4-Settings-Card · UI-Adoption-I LHX*-Verdrahtung · Export-UX-I Privacy-Hinweis · Import-UX-I Home-Identifier · Map-UX-I Heatmap-Overlay-Identifier · Insights-Refactor-I `InsightsStreakCardView`-Extraktion & Dead-Code-Entfernung. Direkt-Beweise per `rg` in §2 der Sync-Doku.
+
+### Privacy-Manifest-Audit
+✅ Konsistent — `NSPrivacyAccessedAPICategoryUserDefaults` Reason `CA92.1` deckt `AppPreferences`/`WidgetDataStore`/`LocalTimelineTechnicalTestSettings`; `NSPrivacyAccessedAPICategoryFileTimestamp` Reason `0A2A.1` (F.2-Erweiterung) deckt `FileManager.attributesOfItem`-Reads gegen User-File-Picker-Dateien in `AppContentLoader.swift:433/721/752` + `GoogleTimelineStoreImporter.swift:61-62`; `NSPrivacyCollectedDataTypePreciseLocation` (Linked=false, Tracking=false) deckt optionalen Live-Upload (Default `false`); F.2-Schema-Definition ohne `save`/`fetch` ist laut Apples App-Privacy-Doku keine Datensammlung → kein neuer `NSPrivacyCollectedDataType` nötig.
+
+### iCloud-Doku-Trennung (✅ sauber)
+F.1 (Capability) · F.2 (Schema) · F.3 (Files/iCloud-Drive Export-Hint) · F.4 (Status-UI) — alle vier Train-Blöcke sind in `docs/ICLOUD_SYNC_ARCHITECTURE.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md`, `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md` mit klarer „Was wird/wird-nicht behauptet"-Tabelle dokumentiert. Tabelle siehe Sync-Doku §5.
+
+### Build-only Validierung (in diesem Sync)
+- `swift build` ✅ Build complete (Cache-Hit, da seit `7009a0b` unverändert).
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+- Statische Sweeps ✅: 0 verbotene CK-Ops außer expliziten Negativ-Kommentaren; 0 positive Sync-Claims; 0 Secret-Treffer; 0 placeholder/coming-soon/fatalError-Treffer.
+
+### Geänderte Dateien (in diesem Sync)
+| Datei | Art |
+|---|---|
+| `docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md` | **NEU** — kanonischer Train-Sync-Bericht (10 Abschnitte) |
+| `CHANGELOG.md`, `NEXT_STEPS.md`, `ROADMAP.md`, `docs/APPLE_VERIFICATION_CHECKLIST.md`, `docs/APP_FEATURE_INVENTORY.md` | kurze Verweis-Blöcke auf die Sync-Doku |
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — Punkt 10 ist der eigene nächste Train.
+
+### Nächster Schritt
+**Punkt 10 — vollständige automatisierte Tests & Cloud-Verifikation**: `swift test` (Mac+Linux), `xcodebuild test`, UITests Sim+Device (iPhone 15 Pro Max iOS 26.4, inkl. aller neuen Identifier aus diesen Trains), manueller iPhone-Smoke, Xcode Cloud Workflow `Release – Archive & TestFlight` (Build > 190 erwartet), TestFlight-Smoke voll, Hardware-Smoke gegen echten iCloud-Login.
+
+---
+
 ## 2026-05-25 — Insights Refactor I: `InsightsStreakCardView` extrahiert + Dead-Code `pageEmptyState` entfernt (Branch `main`, HEAD `21edb68` → folgt)
 
 > **Minimal-invasive Refactor in `AppInsightsContentView` (1951 LOC).** Eine selbstständige reine Presentation-Helper-Funktion (`streakCard(...)`) wird in eine eigene `private struct InsightsStreakCardView: View` (neue Datei `Sources/.../InsightsStreakCardView.swift`) extrahiert, damit das Tile separat testbar/identifizierbar ist und der Parent-Body schrumpft. Eine ungenutzte Dead-Code-Funktion (`pageEmptyState`, 17 LOC, **0 Aufrufer** per `rg -n "pageEmptyState\("`) wird entfernt. Beide `streakCard`-Call-Sites in `streakSection` bekommen zusätzlich `insights.streak.recent`/`insights.streak.best`-Identifier. **Keine Berechnungslogik geändert** — `InsightsStreakPresentation`, `InsightsDerivedModel.streak`, `InsightsChartSupport`, alle Statistik-Aggregations-Pfade unverändert. Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.

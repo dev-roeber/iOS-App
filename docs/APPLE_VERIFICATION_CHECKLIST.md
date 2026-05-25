@@ -1,5 +1,33 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Build-only Implementation Sync) — Punkt-10-Vorbereitung
+
+**HEAD:** `7009a0b` — nach 8 build-only Trains (F.4/F.2/F.3/UI-Adoption I/Export UX I/Import UX I/Map UX I/Insights Refactor I).
+
+### ✅ In diesem Pass verifiziert
+- **Repo-Truth-Audit** — 10/10 Train-Claims TRUE (direkt per `rg` gegen Code verifiziert).
+- **Must-be-absent-Sweep** — 7/7 Patterns ABSENT (`publicCloudDatabase`, `sharedCloudDatabase`, `CKSubscription`, `CKAsset`, `CKQuery`, `.save(`/`.fetch(` in `CloudKit*.swift`, positive Sync-Claims ohne Negation).
+- **Privacy-Manifest-Audit** — konsistent zur Code-Realität.
+- **iCloud-Doku-Trennung** — F.1/F.2/F.3/F.4 sauber dokumentiert mit Antiklaims-Tabelle.
+- **swift build** ✅ Build complete (Cache-Hit).
+- **xcodebuild Sim Build** ✅ BUILD SUCCEEDED.
+- **xcodebuild generic iOS Build** ✅ BUILD SUCCEEDED.
+- **Detail-Bericht:** [`docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md`](BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md).
+
+### ⏸️ In diesem Pass bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller iPhone-Smoke, TestFlight-Smoke, Xcode Cloud — sind genau das Programm des nächsten Trains (Punkt 10).
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ Automatischer Upload aus Import oder Export.
+- ❌ CloudKit Records werden tatsächlich geschrieben/gelesen.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ iPad / Light Mode unterstützt.
+- ❌ Neuer Xcode-Cloud-Build / TestFlight-Build verfügbar — letzter extern grüner Stand bleibt **190** auf `b25c27d`.
+
+---
+
 ## Aktualisierung 2026-05-25 (Insights Refactor I) — `InsightsStreakCardView` extrahiert + Dead-Code `pageEmptyState` entfernt
 
 **HEAD:** `21edb68` + Insights-Refactor-I-Diff (`AppInsightsContentView.swift`, `InsightsStreakCardView.swift` neu).
