@@ -73,6 +73,9 @@ public final class AppCloudFileViewModel: ObservableObject {
     public func refreshCloudFiles() async {
         guard actionState == .idle else { return }
         actionState = .refreshing
+        // Beim manuellen Refresh wird der sichtbare Fehler-Banner
+        // immer geleert — verhindert dass alte Permission-/Hash-Fehler
+        // aus einer alten App-Session ewig stehenbleiben.
         actionFailed = false
         actionMessage = nil
         isCloudAvailable = isCloudAvailableProvider()

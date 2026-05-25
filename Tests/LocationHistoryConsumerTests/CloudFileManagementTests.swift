@@ -3,16 +3,56 @@ import XCTest
 
 final class CloudFileManagementTests: XCTestCase {
 
-    func testCloudFileKindAcceptsOnlyGPXKMLZIPCaseInsensitive() {
+    func testCloudFileKindAcceptsGPXKMLZIPJSONCaseInsensitive() {
         XCTAssertEqual(CloudFileKind.from(filename: "track.gpx"), .gpx)
         XCTAssertEqual(CloudFileKind.from(filename: "TRACK.GPX"), .gpx)
         XCTAssertEqual(CloudFileKind.from(filename: "route.kml"), .kml)
         XCTAssertEqual(CloudFileKind.from(filename: "export.zip"), .zip)
-        XCTAssertNil(CloudFileKind.from(filename: "history.json"))
+        XCTAssertEqual(CloudFileKind.from(filename: "history.json"), .json)
+        XCTAssertEqual(CloudFileKind.from(filename: "HISTORY.JSON"), .json)
         XCTAssertNil(CloudFileKind.from(filename: "table.csv"))
         XCTAssertNil(CloudFileKind.from(filename: "store.sqlite"))
         XCTAssertNil(CloudFileKind.from(filename: "activity.tcx"))
         XCTAssertNil(CloudFileKind.from(filename: "map.kmz"))
+    }
+
+    // Content-Validator: erste Bytes müssen zum erklärten Format passen.
+    func testContentValidatorAcceptsValidHeaders() throws {
+        let tmp = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let gpx = tmp.appendingPathComponent("a.gpx")
+        try Data("<gpx version=\"1.1\"></gpx>".utf8).write(to: gpx)
+        let kml = tmp.appendingPathComponent("a.kml")
+        try Data("<?xml?><kml></kml>".utf8).write(to: kml)
+        let json = tmp.appendingPathComponent("a.json")
+        try Data("  {\"k\":1}".utf8).write(to: json)
+        let zip = tmp.appendingPathComponent("a.zip")
+        try Data([0x50, 0x4B, 0x03, 0x04, 0xAA, 0xBB]).write(to: zip)
+
+        XCTAssertNoThrow(try CloudFileContentValidator.validate(url: gpx, expected: .gpx))
+        XCTAssertNoThrow(try CloudFileContentValidator.validate(url: kml, expected: .kml))
+        XCTAssertNoThrow(try CloudFileContentValidator.validate(url: json, expected: .json))
+        XCTAssertNoThrow(try CloudFileContentValidator.validate(url: zip, expected: .zip))
+    }
+
+    func testContentValidatorRejectsMismatchedHeader() throws {
+        let tmp = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let fakeGpx = tmp.appendingPathComponent("fake.gpx")
+        try Data("hello world".utf8).write(to: fakeGpx)
+        XCTAssertThrowsError(try CloudFileContentValidator.validate(url: fakeGpx, expected: .gpx))
+
+        let fakeZip = tmp.appendingPathComponent("fake.zip")
+        try Data("not a zip".utf8).write(to: fakeZip)
+        XCTAssertThrowsError(try CloudFileContentValidator.validate(url: fakeZip, expected: .zip))
+    }
+
+    func testContentValidatorRejectsEmptyFile() throws {
+        let tmp = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let empty = tmp.appendingPathComponent("empty.gpx")
+        try Data().write(to: empty)
+        XCTAssertThrowsError(try CloudFileContentValidator.validate(url: empty, expected: .gpx))
     }
 
     func testCloudFileRecordTypeAndFieldsAreStable() {
@@ -26,7 +66,7 @@ final class CloudFileManagementTests: XCTestCase {
     func testStreamingSHA256HexIsStableLowercaseAnd64Characters() throws {
         let tmp = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: tmp) }
-        let file = tmp.appendingPathComponent("hello.gpx")
+        let file = tmp.appendingPathComponent("hello.bin")
         try Data("hello".utf8).write(to: file)
 
         let digest = try StreamingSHA256.hexDigest(ofFileAt: file, chunkSize: 2)
@@ -39,12 +79,20 @@ final class CloudFileManagementTests: XCTestCase {
     func testCandidateFactoryRejectsUnsupportedTypeBeforeCloudCall() throws {
         let tmp = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: tmp) }
-        let file = tmp.appendingPathComponent("history.json")
-        try Data("{}".utf8).write(to: file)
+        let file = tmp.appendingPathComponent("data.csv")
+        try Data("a,b,c".utf8).write(to: file)
 
         XCTAssertThrowsError(try CloudFileCandidateFactory.makeCandidate(for: file)) { error in
-            XCTAssertEqual(error as? CloudFileError, .unsupportedFileType("history.json"))
+            XCTAssertEqual(error as? CloudFileError, .unsupportedFileType("data.csv"))
         }
+    }
+
+    func testCandidateFactoryRejectsMalformedContent() throws {
+        let tmp = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let file = tmp.appendingPathComponent("fake.gpx")
+        try Data("not gpx".utf8).write(to: file)
+        XCTAssertThrowsError(try CloudFileCandidateFactory.makeCandidate(for: file))
     }
 
     func testCandidateFactoryCreatesSupportedCandidateWithHash() throws {
@@ -103,7 +151,7 @@ final class CloudFileManagementTests: XCTestCase {
         let tmp = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: tmp) }
         let file = tmp.appendingPathComponent("track.gpx")
-        try Data("hello".utf8).write(to: file)
+        try Data("<gpx version=\"1.1\"></gpx>".utf8).write(to: file)
 
         await vm.uploadCopiedFile(at: file)
 
@@ -120,7 +168,7 @@ final class CloudFileManagementTests: XCTestCase {
         let tmp = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: tmp) }
         let file = tmp.appendingPathComponent("track.gpx")
-        try Data("hello".utf8).write(to: file)
+        try Data("<gpx version=\"1.1\"></gpx>".utf8).write(to: file)
 
         await vm.uploadCopiedFile(at: file)
         XCTAssertFalse(vm.actionFailed)

@@ -4,12 +4,14 @@ public enum CloudFileKind: String, Codable, CaseIterable, Sendable {
     case gpx
     case kml
     case zip
+    case json
 
     public static func from(filename: String) -> CloudFileKind? {
         switch (filename as NSString).pathExtension.lowercased() {
         case "gpx": return .gpx
         case "kml": return .kml
         case "zip": return .zip
+        case "json": return .json
         default: return nil
         }
     }
@@ -19,6 +21,62 @@ public enum CloudFileKind: String, Codable, CaseIterable, Sendable {
         case .gpx: return "GPX-Datei"
         case .kml: return "KML-Datei"
         case .zip: return "ZIP-Archiv"
+        case .json: return "JSON-Datei"
+        }
+    }
+}
+
+/// Validiert die ersten Bytes einer Datei gegen das erwartete Format.
+/// Verhindert dass eine als .gpx benannte Binärdatei oder eine kaputte
+/// ZIP hochgeladen wird — Apple-Empfehlung für CKAsset-Uploads.
+public enum CloudFileContentValidator {
+    public enum ValidationError: LocalizedError, Equatable {
+        case fileNotReadable(String)
+        case formatMismatch(expected: CloudFileKind, head: String)
+        case empty
+
+        public var errorDescription: String? {
+            switch self {
+            case .fileNotReadable(let path): return "Datei nicht lesbar: \(path)"
+            case .formatMismatch(let expected, _):
+                return "Datei entspricht nicht dem Format \(expected.germanLabel)."
+            case .empty: return "Datei ist leer."
+            }
+        }
+    }
+
+    public static func validate(url: URL, expected: CloudFileKind) throws {
+        guard let handle = try? FileHandle(forReadingFrom: url) else {
+            throw ValidationError.fileNotReadable(url.lastPathComponent)
+        }
+        defer { try? handle.close() }
+        let head = (try? handle.read(upToCount: 512)) ?? Data()
+        guard !head.isEmpty else { throw ValidationError.empty }
+        let asString = String(data: head, encoding: .utf8) ?? ""
+        switch expected {
+        case .gpx:
+            guard asString.contains("<gpx") else {
+                throw ValidationError.formatMismatch(expected: .gpx, head: String(asString.prefix(40)))
+            }
+        case .kml:
+            guard asString.contains("<kml") else {
+                throw ValidationError.formatMismatch(expected: .kml, head: String(asString.prefix(40)))
+            }
+        case .zip:
+            // PKZip Local File Header Signature: 50 4B 03 04
+            let prefix = Array(head.prefix(4))
+            guard prefix == [0x50, 0x4B, 0x03, 0x04]
+                  || prefix == [0x50, 0x4B, 0x05, 0x06] // empty archive
+                  || prefix == [0x50, 0x4B, 0x07, 0x08] // spanned
+            else {
+                throw ValidationError.formatMismatch(expected: .zip, head: head.map { String(format: "%02X", $0) }.prefix(8).joined())
+            }
+        case .json:
+            // erstes Non-Whitespace muss { oder [ sein
+            let trimmed = asString.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let first = trimmed.first, first == "{" || first == "[" else {
+                throw ValidationError.formatMismatch(expected: .json, head: String(asString.prefix(40)))
+            }
         }
     }
 }
@@ -196,6 +254,9 @@ public enum CloudFileCandidateFactory {
         guard let kind = CloudFileKind.from(filename: fileName) else {
             throw CloudFileError.unsupportedFileType(fileName)
         }
+        // Header-Validierung verhindert dass eine fälschlich als .gpx
+        // benannte Datei oder eine kaputte ZIP hochgeladen wird.
+        try CloudFileContentValidator.validate(url: url, expected: kind)
         let values = try url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
         return CloudFileUploadCandidate(
             url: url,

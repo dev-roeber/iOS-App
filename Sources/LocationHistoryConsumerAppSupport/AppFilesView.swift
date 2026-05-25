@@ -86,7 +86,7 @@ public struct AppFilesView: View {
         #if canImport(UniformTypeIdentifiers)
         .fileImporter(
             isPresented: $isChoosingCloudFile,
-            allowedContentTypes: [.gpx, .kml, .zip],
+            allowedContentTypes: cloudFileImporterTypes,
             allowsMultipleSelection: false,
             onCompletion: handleCloudFileImport
         )
@@ -469,34 +469,79 @@ public struct AppFilesView: View {
     }
 
     #if canImport(UniformTypeIdentifiers)
+    private var cloudFileImporterTypes: [UTType] {
+        var types: [UTType] = [.zip, .json]
+        // GPX/KML existieren nicht als Apple-Konstanten — über Datei-
+        // Endung registrieren. Fallback auf .xml falls iOS-Version sie
+        // nicht kennt.
+        if let gpx = UTType(filenameExtension: "gpx") { types.append(gpx) } else { types.append(.xml) }
+        if let kml = UTType(filenameExtension: "kml") { types.append(kml) } else { types.append(.xml) }
+        return types
+    }
+
     private func handleCloudFileImport(_ result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
             guard let url = urls.first else { return }
-            // Fix B1 final: Security-Scope ist nur SYNCHRON im Callback
-            // gültig. Wir müssen jetzt sofort kopieren, NICHT in einem
-            // async Task. Erst nach erfolgreicher Kopie ist die Datei
-            // unter App-Sandbox-Kontrolle und kann beliebig gehasht
-            // /hochgeladen werden.
+            // Robust-Fix: iCloud-Drive-URLs sind File-Provider-URLs.
+            // Direkter copyItem schlägt fehl ("permission to view"),
+            // weil der File Provider die Datei erst materialisieren
+            // muss. NSFileCoordinator forciert das. .forUploading
+            // erstellt eine read-only Kopie, die wir gefahrlos
+            // verwenden können — Security-Scope bleibt nur für die
+            // Dauer dieses Callbacks aktiv.
             let accessed = url.startAccessingSecurityScopedResource()
             defer { if accessed { url.stopAccessingSecurityScopedResource() } }
-            let tmpDir = FileManager.default.temporaryDirectory
-                .appendingPathComponent("CloudFileUpload-\(UUID().uuidString)", isDirectory: true)
             do {
-                try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
-                let copy = tmpDir.appendingPathComponent(url.lastPathComponent)
-                try FileManager.default.copyItem(at: url, to: copy)
+                let copy = try copyForUpload(from: url)
                 Task {
                     await cloudViewModel.uploadCopiedFile(at: copy)
-                    try? FileManager.default.removeItem(at: tmpDir)
+                    try? FileManager.default.removeItem(at: copy.deletingLastPathComponent())
                 }
             } catch {
-                try? FileManager.default.removeItem(at: tmpDir)
                 cloudViewModel.reportPickerFailure(error)
             }
         case .failure(let error):
             cloudViewModel.reportPickerFailure(error)
         }
+    }
+
+    /// Holt eine lokal lesbare Kopie der ausgewählten Datei via
+    /// `NSFileCoordinator(.forUploading)`. Funktioniert auch für
+    /// iCloud-Drive-/Files-App-URLs, bei denen direkter
+    /// `FileManager.copyItem` „permission to view" wirft.
+    private func copyForUpload(from sourceURL: URL) throws -> URL {
+        let tmpDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CloudFileUpload-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+        let destination = tmpDir.appendingPathComponent(sourceURL.lastPathComponent)
+
+        var coordError: NSError?
+        var copyError: Error?
+        let coordinator = NSFileCoordinator(filePresenter: nil)
+        coordinator.coordinate(readingItemAt: sourceURL,
+                               options: [.forUploading, .withoutChanges],
+                               error: &coordError) { readableURL in
+            do {
+                // Bei .forUploading liefert iOS bereits eine temporäre
+                // Snapshot-URL. Wir kopieren noch einmal in unser eigenes
+                // tmp, damit die Datei dort bleibt bis der async Upload
+                // sie verarbeitet hat — der iOS-Snapshot wird sonst
+                // nach Callback-Ende u. U. gelöscht.
+                try FileManager.default.copyItem(at: readableURL, to: destination)
+            } catch {
+                copyError = error
+            }
+        }
+        if let coordError {
+            try? FileManager.default.removeItem(at: tmpDir)
+            throw coordError
+        }
+        if let copyError {
+            try? FileManager.default.removeItem(at: tmpDir)
+            throw copyError
+        }
+        return destination
     }
     #endif
 
