@@ -851,6 +851,8 @@ public struct AppExportView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("export.format.pill.\(format.fileExtension)")
+        .accessibilityHint(Text(t("Switches the export format. The selected format decides the file extension and what data is included.")))
     }
 
     // MARK: - Content Card
@@ -926,6 +928,8 @@ public struct AppExportView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Label(t("Save or Share"), systemImage: "square.and.arrow.up")
                     .font(.subheadline.weight(.semibold))
+                    .accessibilityIdentifier("export.target.saveOrShare.title")
+                    .accessibilityHint(Text(t("You choose the destination in the system save sheet. The app never uploads exported files automatically.")))
                 Text(exportTargetDescription)
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.9: Export-Pipeline UX + Files/iCloud Drive Polish (Branch `main`, HEAD `07e8473` → folgt)
+
+> **Minimal-additive Export-UX-Polish.** Per-Format-`accessibilityIdentifier` an `formatPill` (`export.format.pill.<gpx/kmz/kml/geojson/csv>`) für deterministische UITest-Adressierung, plus `accessibilityHint` „Switches the export format…". Im `exportTargetCard` bekommt das „Save or Share"-Label einen eigenen Identifier `export.target.saveOrShare.title` und einen klaren Nutzerkontrolle-Hint („You choose the destination in the system save sheet. The app never uploads exported files automatically."). **Keine** neuen Formate, **keine** neuen Exporter, **kein** automatischer Upload, **keine** Entitlement-Erweiterung, **keine** CloudKit-Operation. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- SwiftUI `fileExporter(isPresented:document:contentType:defaultFilename:onCompletion:)` (iOS 16+, Overload für Collections ab iOS 16.1).
+- SwiftUI `ShareLink` + `Transferable` (iOS 16+) — bewusst nicht migriert; `fileExporter` bleibt korrekt, weil der User explizit Speicherort wählen soll (HIG File Management).
+- `UIDocumentPickerViewController(forExporting:asCopy:)` — nicht deprecated, aber für SwiftUI-First-App nicht eingeführt.
+- `UniformTypeIdentifiers.UTType` — bestehende `UTType(filenameExtension:)`-Fallbacks in `GPXDocument.swift`/`CSVDocument.swift` unverändert.
+- HIG „File Management" / „Sharing" / „Feedback" — User-initiierter Export, klarer Cancel-Pfad, kein Auto-Save.
+- App Privacy: nutzerinitiierte Exporte mit Standortdaten — bereits durch `PreciseLocation` (Linked=false, AppFunctionality, optional Live-Upload-Pfad) abgedeckt; Export selbst zählt als nutzergewählte Datenverarbeitung.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../AppExportView.swift` | `formatPill` per-Format Identifier + Hint; `exportTargetCard` „Save or Share"-Label Identifier + Hint |
+| `CHANGELOG.md`, `ROADMAP.md` | Doku-Sync |
+
+### Build-only Validierung
+- `swift build` ✅ (14,55 s, 0 Warnings).
+- `xcodebuild` Sim ✅ `BUILD SUCCEEDED`.
+- `xcodebuild` generic iOS ✅ `BUILD SUCCEEDED`.
+
+### Bewusst NICHT verändert
+- Keine neuen Exportformate (`ExportFormat` bleibt 5-elementig).
+- Kein Wechsel von `fileExporter` → `ShareLink` (HIG: User soll Speicherort wählen).
+- Keine iCloud-Documents-Entitlement-Erweiterung — Apple-Doku belegt, dass die System-Save-Sheet iCloud Drive automatisch anbietet, sobald User in iCloud Drive eingeloggt ist.
+- Keine `UIDocumentPickerViewController(url:)`-Migration (deprecated init wird im Repo nicht genutzt).
+- Keine automatische iCloud-Synchronisation, kein automatischer Upload.
+
+### Anti-Claims (unverändert wahr)
+- ❌ Echter iCloud-Sync · ❌ Automatischer Upload · ❌ CloudKit Records save/fetch · ❌ Historien-Sync · ❌ Public/shared DB · ❌ iPad/Light-Mode aktiviert · ❌ Neuer Xcode-Cloud-Build > 190 · ❌ App Review für 1.0.x.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.10 — Live Tracking / Upload Control Center** (build-only).
+
+---
+
 ## 2026-05-25 — Train 8.8: Import-Pipeline Robustness Confirm (Branch `main`, HEAD `b45d86d` → folgt)
 
 > **Doku-Confirm-Train.** Vollständige Re-Validierung der Import-Pipeline (`fileImporter` → `handleImportResult` → `LH2GPXAppFlow.loadImportedFileEnvelope` → `AppContentLoader.loadImportedContentEnvelope` → Stream-Parser) gegen die Apple-Doku — alles bereits korrekt verdrahtet, keine Code-Änderung nötig. **Keine** Parser-Großänderung, **keine** Persistenz-Migration, **keine** automatische iCloud-Synchronisation nach Import, **kein** automatischer Upload. Tests deferred bis Punkt 10.
