@@ -1,5 +1,65 @@
 # CHANGELOG
 
+## 2026-05-25 — Insights Refactor I: `InsightsStreakCardView` extrahiert + Dead-Code `pageEmptyState` entfernt (Branch `main`, HEAD `21edb68` → folgt)
+
+> **Minimal-invasive Refactor in `AppInsightsContentView` (1951 LOC).** Eine selbstständige reine Presentation-Helper-Funktion (`streakCard(...)`) wird in eine eigene `private struct InsightsStreakCardView: View` (neue Datei `Sources/.../InsightsStreakCardView.swift`) extrahiert, damit das Tile separat testbar/identifizierbar ist und der Parent-Body schrumpft. Eine ungenutzte Dead-Code-Funktion (`pageEmptyState`, 17 LOC, **0 Aufrufer** per `rg -n "pageEmptyState\("`) wird entfernt. Beide `streakCard`-Call-Sites in `streakSection` bekommen zusätzlich `insights.streak.recent`/`insights.streak.best`-Identifier. **Keine Berechnungslogik geändert** — `InsightsStreakPresentation`, `InsightsDerivedModel.streak`, `InsightsChartSupport`, alle Statistik-Aggregations-Pfade unverändert. Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku (vor Implementation)
+- SwiftUI View composition: `@ViewBuilder` Best Practices + „expression too complex"-Trap; WWDC „Demystify SwiftUI" empfiehlt eigene `struct: View` für klare Identity/Lifetime (https://developer.apple.com/documentation/swiftui/view/body-swift.property, https://developer.apple.com/videos/play/wwdc2021/10022/)
+- `@ViewBuilder` (https://developer.apple.com/documentation/swiftui/viewbuilder)
+- `LazyVStack` vs `VStack` vs `List` vs `Form` Performance/Memory-Charakteristik (https://developer.apple.com/documentation/swiftui/lazyvstack, https://developer.apple.com/documentation/swiftui/list)
+- Swift Charts (`Chart`, `BarMark`, `LineMark`, `PointMark`, `AreaMark`, `RuleMark`); Performance: vorab aggregieren, stabile `id:`, Marks-Anzahl begrenzen (https://developer.apple.com/documentation/charts/chart, https://developer.apple.com/videos/play/wwdc2022/10136/)
+- Chart-Accessibility: `accessibilityChartDescriptor` + `AXChartDescriptor` (https://developer.apple.com/documentation/swiftui/view/accessibilitychartdescriptor(_:))
+- HIG „Charts and Data Visualization" — Bar=Vergleich, Line=Trend, semantische Farben (https://developer.apple.com/design/human-interface-guidelines/charts)
+- HIG „Layout" — System-Margins/Padding, Dynamic Type (https://developer.apple.com/design/human-interface-guidelines/layout)
+- HIG „Feedback" — Empty-States (Titel + Subtext + ggf. Action), „No data yet" statt leerem Screen (https://developer.apple.com/design/human-interface-guidelines/feedback)
+- Performance-Fallen: `map`/`reduce`/`sorted` im `body` → in Model cachen; `@StateObject` für Owner / `@ObservedObject` für übergeben; `Equatable` + `EquatableView` für Diff-Skip (https://developer.apple.com/documentation/swiftui/stateobject, https://developer.apple.com/documentation/swiftui/equatableview, https://developer.apple.com/videos/play/wwdc2023/10160/)
+
+### Extrahierte Subviews/Struktur
+**Neu**: `Sources/LocationHistoryConsumerAppSupport/InsightsStreakCardView.swift` — `struct InsightsStreakCardView: View`. Pure Presentation: `value`/`unit`/`label`/`icon`/`color`/`detail`-Parameter. Kein `@State`, kein `@EnvironmentObject`, keine Calculation. Inkludiert `accessibilityElement(children: .combine)` + `accessibilityLabel("\(label), \(value) \(unit)")` für sauberes VoiceOver-Reading (vorher las VoiceOver Label, Wert und Einheit als drei einzelne Elemente).
+
+**Geändert**: `Sources/LocationHistoryConsumerAppSupport/AppInsightsContentView.swift`:
+- `streakCard(value:unit:label:icon:color:detail:)`-Helper-Funktion (Zeile 1145-1167) **entfernt** — Logik komplett in `InsightsStreakCardView` umgezogen.
+- `streakSection` (Zeile 996) Call-Sites `streakCard(...)` → `InsightsStreakCardView(...)` + neue `.accessibilityIdentifier("insights.streak.recent")` / `("insights.streak.best")`.
+- `pageEmptyState(title:message:systemImage:)`-Funktion (Zeile 1271-1287) **entfernt** — Dead Code, 0 Aufrufer.
+
+**LOC-Diff**: `AppInsightsContentView.swift` schrumpft um ~40 Zeilen (17 `pageEmptyState` + ~23 `streakCard`); neue Datei `InsightsStreakCardView.swift` ist ~49 LOC. Netto-Wachstum minimal, aber Verantwortung klarer getrennt.
+
+### Berechnungslogik geändert?
+✅ **Nein.** `InsightsStreakPresentation` (108 LOC), `InsightsDerivedModel.streak`, `InsightsChartSupport`, `InsightsCardPresentation`, `InsightsMonthlyTrendPresentation`, `InsightsPeriodComparisonPresentation`, `InsightsTopDaysPresentation`, `InsightsDrilldown`, `InsightsDrilldownBridge` — alle unverändert. Die `streakStat.recentStreakDays`/`longestStreakDays`/`recentStreakStart`/`longestStreakStart`/`longestStreakEnd`-Lese-Pfade in `streakSection` zeigen 1:1 auf dieselben Properties wie vorher; `streakDateRangeLabel(...)`-Helper bleibt intakt.
+
+### Performance
+- ✅ Reines View-Refactoring, keine neuen `map`/`reduce`/`sorted`-Aufrufe in `body`.
+- ✅ Kein neuer `@StateObject`/`@ObservedObject`; `InsightsStreakCardView` ist value-type-Parameter-getrieben.
+- ✅ Kein `AnyView`.
+- ✅ `LazyVGrid`-Wrapper in `streakSection` unverändert; nur die zwei Kind-Views wurden umbenannt.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../InsightsStreakCardView.swift` | **NEU** (49 LOC, `struct InsightsStreakCardView: View`) |
+| `Sources/.../AppInsightsContentView.swift` | `streakSection` Call-Sites + `streakCard`-Helper entfernt + `pageEmptyState`-Dead-Code entfernt |
+| Doku | CHANGELOG, NEXT_STEPS, ROADMAP, APPLE_VERIFICATION_CHECKLIST, APP_FEATURE_INVENTORY |
+
+### Neue UI-Test-Identifier
+`insights.streak.recent`, `insights.streak.best`. Alle bestehenden Insights-Identifier (`insights.emptyState`, `insights.empty.resetFilter`, `insights.map.header`, `insights.range`, `insights.surface.picker`, `insights.kpi.*`, `insights.title`, `insights.hero.summary`, `insights.hero.range.reset`, `insights.share.*`) **erhalten**.
+
+### Build-only Validierung (in diesem Train)
+- `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), 36,55 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+- Statische Sweeps ✅: 0 placeholder/dummy/coming-soon/fatalError/preconditionFailure-Treffer in den geänderten Files; 0 Secret-Treffer.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+- Keine Änderung an Berechnungs-/Aggregations-Logik in `Insights*Presentation.swift`.
+- Keine iCloud-/Export-/Import-Änderungen.
+
+### Nächster Schritt
+**Finaler Build-/Doku-Sync vor Testphase** — Repo-Truth-Abgleich aller F.4/F.2/F.3/UI/Export/Import/Map/Insights-Trains, Punkt-10-Vorbereitung.
+
+---
+
 ## 2026-05-25 — Map/Timeline/Heatmap UX I: Layer-Menu-/Stats-/Calculating-Overlay-Identifier + Route-Display-Picker-Identifier (Branch `main`, HEAD `574d347` → folgt)
 
 > **Reiner UX-Polish im bestehenden Map-/Heatmap-/Day-Detail-Flow.** Vier zusätzliche `accessibilityIdentifier`s + zwei VoiceOver-Label-Verbesserungen für die Heatmap-Overlays und den Day-Detail-Route-Picker. **Keine Performance-riskante Heatmap-Neuberechnung, keine Renderer-/Algorithmus-Änderung, keine MapKit-API-Migration, keine neue Capability/Permission.** Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.

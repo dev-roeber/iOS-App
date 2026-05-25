@@ -1,5 +1,15 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `21edb68` + Insights Refactor I → folgt — `InsightsStreakCardView` extrahiert + Dead-Code entfernt)
+
+- **Insights Refactor I umgesetzt (build-only):** Neue Datei `Sources/.../InsightsStreakCardView.swift` (`struct InsightsStreakCardView: View`, 49 LOC, pure Presentation, kein `@State`/`@EnvironmentObject`) extrahiert aus `AppInsightsContentView.streakCard(...)`. Dead-Code `pageEmptyState` (17 LOC, 0 Aufrufer per `rg`) entfernt. `streakSection`-Call-Sites bekommen `insights.streak.recent`/`insights.streak.best`-Identifier.
+- **Keine Berechnungslogik geändert:** `InsightsStreakPresentation`, `InsightsDerivedModel.streak`, `InsightsChartSupport`, `InsightsCardPresentation`, `InsightsMonthlyTrendPresentation`, `InsightsPeriodComparisonPresentation`, `InsightsTopDaysPresentation`, `InsightsDrilldown`, `InsightsDrilldownBridge` — alle unverändert.
+- **Performance:** Reines View-Refactoring, keine neuen `map`/`reduce`/`sorted` in `body`, kein neuer `@StateObject`/`@ObservedObject`, kein `AnyView`. Bestehende `LazyVGrid`-Struktur in `streakSection` unverändert.
+- **VoiceOver verbessert:** `InsightsStreakCardView` bündelt Label+Wert+Einheit via `accessibilityElement(children: .combine)` + kombiniertem `accessibilityLabel`, statt drei einzelner Texte.
+- **Build-only verifiziert (in diesem Train):** `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅. **Tests bewusst nicht ausgeführt** — deferred bis Punkt 10.
+- **Extern unverändert:** letzter extern grüner Xcode-Cloud-Build bleibt **190** auf `b25c27d`.
+- **Weiter offen:** finaler Build-/Doku-Sync vor Testphase, vollständige Tests (Punkt 10).
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `574d347` + Map/Timeline/Heatmap UX I → folgt — Layer/Stats/Computing/Route-Display Identifier)
 
 - **Map/Timeline/Heatmap UX I umgesetzt (build-only):** `AppHeatmapView` Overlays bekommen `heatmap.layerMenu`/`heatmap.computing`/`heatmap.statsBadge`-Identifier + VoiceOver-Labels (`accessibilityLabel(t("Computing heatmap"))`, neuer `statsAccessibilityLabel`-Computed); `AppDayDetailView.dayHeroFilterPanel` Route-Display-Picker bekommt `dayDetail.routeDisplay`.

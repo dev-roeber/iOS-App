@@ -1,5 +1,37 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Insights Refactor I) — `InsightsStreakCardView` extrahiert + Dead-Code `pageEmptyState` entfernt
+
+**HEAD:** `21edb68` + Insights-Refactor-I-Diff (`AppInsightsContentView.swift`, `InsightsStreakCardView.swift` neu).
+
+### ✅ In diesem Pass build-only verifiziert
+- Neue Datei `Sources/.../InsightsStreakCardView.swift` (`struct InsightsStreakCardView: View`, 49 LOC, pure Presentation).
+- `AppInsightsContentView.streakCard(...)`-Helper-Funktion entfernt; `streakSection`-Call-Sites nutzen `InsightsStreakCardView(...)` + neue `insights.streak.recent`/`insights.streak.best`-Identifier.
+- Dead-Code `pageEmptyState` (17 LOC, 0 Aufrufer) entfernt.
+- Keine Änderung an `Insights*Presentation.swift`, `InsightsDerivedModel`, `InsightsChartSupport`, `InsightsDrilldown*` — Berechnungslogik unverändert.
+- Bestehende Insights-Identifier (`insights.emptyState`, `insights.empty.resetFilter`, `insights.map.header`, `insights.range`, `insights.surface.picker`, `insights.kpi.*`, `insights.title`, `insights.hero.summary`, `insights.share.*`) **alle erhalten**.
+- `swift build` ✅ 0E/1W (pre-existing F.1 Swift-6-Concurrency-Warning in `CloudKitCloudSyncService.swift:48`), 36,55 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+
+### Geprüfte Apple-Doku (vor Implementation)
+SwiftUI View composition (eigene `struct: View` bei klarem Identity-Bedarf, sonst Computed Property); `@ViewBuilder` + „expression too complex"-Trap; `LazyVStack`/`VStack`/`List`/`Form` Performance-Charakteristik; Swift Charts (`Chart`, `BarMark`, `LineMark`, `PointMark`, `AreaMark`, `RuleMark`); Chart-Accessibility (`accessibilityChartDescriptor` + `AXChartDescriptor`); HIG „Charts and Data Visualization"; HIG „Layout" + „Feedback" (Empty-States); Performance-Fallen (`map`/`reduce`/`sorted` im body → in Model cachen; `@StateObject` für Owner, `@ObservedObject` für übergeben; `Equatable`/`EquatableView` für Diff-Skip). URLs siehe CHANGELOG-Block.
+
+### ⏸️ In diesem Pass bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller iPhone-Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+- Keine Änderung an Berechnungs-/Aggregations-Pfaden.
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ Automatischer Upload aus Import oder Export.
+- ❌ CloudKit Records aktiv.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ iPad / Light Mode unterstützt.
+- ❌ Neuer Xcode-Cloud-Build / TestFlight-Build verfügbar — letzter extern grüner Stand bleibt **190** auf `b25c27d`.
+
+---
+
 ## Aktualisierung 2026-05-25 (Map/Timeline/Heatmap UX I) — Layer/Stats/Computing/Route-Display Identifier
 
 **HEAD:** `574d347` + Map-UX-I-Diff (`AppHeatmapView.swift`, `AppDayDetailView.swift`).

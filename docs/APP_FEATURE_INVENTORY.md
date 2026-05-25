@@ -1,6 +1,17 @@
 # APP Feature Inventory
 
-Last analysis: **2026-05-25** (Map/Timeline/Heatmap UX I build-only auf
+Last analysis: **2026-05-25** (Insights Refactor I build-only auf
+`main` HEAD `21edb68` + Insights-Refactor-I-Diff). Neue Datei
+`Sources/.../InsightsStreakCardView.swift` (`struct InsightsStreakCardView:
+View`, 49 LOC) extrahiert aus `AppInsightsContentView.streakCard(...)`;
+Dead-Code `pageEmptyState` (17 LOC, 0 Aufrufer) entfernt;
+`streakSection`-Call-Sites bekommen neue Identifier
+`insights.streak.recent`/`insights.streak.best`. **Berechnungslogik
+unverändert** — alle `Insights*Presentation.swift`-Aggregations-Pfade,
+`InsightsDerivedModel.streak`, `InsightsChartSupport`,
+`InsightsDrilldown*` bleiben gleich. Tests deferred bis Punkt 10.
+
+Voriger Stand: Map/Timeline/Heatmap UX I build-only auf
 `main` HEAD `574d347` + Map-UX-I-Diff). `AppHeatmapView` Overlays
 bekommen Identifier + VoiceOver-Labels (`heatmap.layerMenu`,
 `heatmap.computing`, `heatmap.statsBadge`); `AppDayDetailView`

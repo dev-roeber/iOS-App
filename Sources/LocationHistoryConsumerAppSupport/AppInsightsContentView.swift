@@ -1009,7 +1009,7 @@ struct AppInsightsContentView: View {
                 )
             } else {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-                    streakCard(
+                    InsightsStreakCardView(
                         value: "\(streakStat.recentStreakDays)",
                         unit: t(streakStat.recentStreakDays == 1 ? "day" : "days"),
                         label: t("Recent Streak"),
@@ -1017,7 +1017,8 @@ struct AppInsightsContentView: View {
                         color: .orange,
                         detail: streakStat.recentStreakStart.map { AppDateDisplay.mediumDate($0) }
                     )
-                    streakCard(
+                    .accessibilityIdentifier("insights.streak.recent")
+                    InsightsStreakCardView(
                         value: "\(streakStat.longestStreakDays)",
                         unit: t(streakStat.longestStreakDays == 1 ? "day" : "days"),
                         label: t("Best Streak"),
@@ -1025,6 +1026,7 @@ struct AppInsightsContentView: View {
                         color: .yellow,
                         detail: streakDateRangeLabel(start: streakStat.longestStreakStart, end: streakStat.longestStreakEnd)
                     )
+                    .accessibilityIdentifier("insights.streak.best")
                 }
                 sectionHint(t("Consecutive days with tracked activity in the visible range."))
             }
@@ -1142,30 +1144,6 @@ struct AppInsightsContentView: View {
         .padding(.vertical, 8)
     }
 
-    private func streakCard(value: String, unit: String, label: String, icon: String, color: Color, detail: String?) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label(label, systemImage: icon)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(color)
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(value)
-                    .font(.title2.weight(.semibold).monospacedDigit())
-                Text(unit)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            if let detail {
-                Text(detail)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(color.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-
     private func streakDateRangeLabel(start: String?, end: String?) -> String? {
         guard let start else { return nil }
         guard let end, end != start else { return AppDateDisplay.mediumDate(start) }
@@ -1267,23 +1245,6 @@ struct AppInsightsContentView: View {
         .shadow(color: LH2GPXTheme.cardShadow, radius: 10, y: 3)
     }
 
-
-    private func pageEmptyState(title: String, message: String, systemImage: String) -> some View {
-        VStack(spacing: 14) {
-            Image(systemName: systemImage)
-                .font(.system(size: 36))
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            Text(title)
-                .font(.headline)
-            Text(message)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, minHeight: 240)
-        .padding(24)
-    }
 
     private func insightsEmptyCard(title: String, message: String, systemImage: String) -> some View {
         HStack(alignment: .top, spacing: 10) {

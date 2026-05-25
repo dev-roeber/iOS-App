@@ -1,5 +1,21 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Insights Refactor I) — `InsightsStreakCardView` extrahiert + Dead-Code `pageEmptyState` entfernt (Branch `main`, HEAD `21edb68` → folgt)
+
+> **Minimal-Refactor.** Neue Datei `Sources/.../InsightsStreakCardView.swift` (`struct InsightsStreakCardView: View`, 49 LOC) — extrahiert aus `AppInsightsContentView.streakCard(...)`. Dead-Code-Funktion `pageEmptyState` (17 LOC, 0 Aufrufer) entfernt. Neue Identifier `insights.streak.recent`/`insights.streak.best`. **Keine Berechnungslogik geändert** — alle `Insights*Presentation.swift`-Aggregations-Pfade unverändert. Tests deferred bis Punkt 10.
+
+**Neue/geänderte Dateien:**
+- `Sources/LocationHistoryConsumerAppSupport/InsightsStreakCardView.swift` (neu)
+- `Sources/LocationHistoryConsumerAppSupport/AppInsightsContentView.swift`
+
+**Build-only verifiziert:** `swift build` ✅ 0E/1W (pre-existing F.1-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅.
+
+**Nächste Trains (build-only bis Punkt 10):**
+1. **Finaler Build-/Doku-Sync vor Testphase** — Repo-Truth-Abgleich, Punkt-10-Vorbereitung.
+2. **Vollständige Tests (Punkt 10):** `swift test`, `xcodebuild test`, UITests Sim+Device, TestFlight-Smoke, Xcode Cloud Workflow.
+
+---
+
 ## Stand 2026-05-25 (Map/Timeline/Heatmap UX I) — Layer/Stats/Computing/Route-Display Identifier (Branch `main`, HEAD `574d347` → folgt)
 
 > **Reiner UX-Polish.** `AppHeatmapView` Overlays bekommen Identifier (`heatmap.layerMenu`, `heatmap.computing`, `heatmap.statsBadge`) + VoiceOver-Labels; `AppDayDetailView.dayHeroFilterPanel` Route-Display-Picker bekommt `dayDetail.routeDisplay`-Identifier. **Keine Heatmap-Neuberechnung, keine Renderer-/Algorithmus-Änderung, keine MapKit-API-Migration, keine Permission-Änderung.** Tests deferred bis Punkt 10.
