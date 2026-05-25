@@ -102,7 +102,7 @@ public struct AppOptionsView: View {
                     icon: "icloud",
                     title: t("iCloud"),
                     description: t("Account status only — no data is uploaded"),
-                    color: LH2GPXTheme.primaryBlue,
+                    color: LH2GPXTheme.VariantBPro.terra300,
                     identifier: "options.icloud"
                 ) {
                     AppICloudOptionsView(preferences: preferences)

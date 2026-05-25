@@ -111,6 +111,8 @@ public struct AppICloudOptionsView: View {
         }
         .navigationTitle(t("iCloud"))
         .accessibilityIdentifier("options.icloud.title")
+        .scrollContentBackground(.hidden)
+        .background(LH2GPXTheme.VariantBPro.bgWarm.ignoresSafeArea())
         .task {
             await viewModel.refresh()
         }

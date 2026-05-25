@@ -27,6 +27,7 @@
 | 8.15 | Final Build-only Consolidation | ✅ erledigt — `docs/BUILD_ONLY_FULL_APP_MODERNIZATION_SYNC_2026-05-25.md` |
 | **10** | **Vollständige Tests / Xcode Cloud / TestFlight** | weiter zurückgestellt (User-Stop) |
 | 9.0 | Variant B Pro Design + iCloud-Sync-Settings (build-only) | ✅ erledigt — Tokens + 4 neue Preferences + Conflict-Policy-Enum |
+| 9.1 | VariantBPro Token-Adoption I (Home-Hero · Settings-iCloud · iCloud-Page-BG) | ✅ erledigt |
 
 ### Verbindliche Regel für 8.0–8.15
 **Erlaubt:** `git diff --check`, `swift build`, `xcodebuild ... build`, `xcodebuild ... archive` (ohne Test-Nachaktion), `rg`-Sweeps, statische Codeprüfung, Doku-Sync, Apple-Doku-Abgleich, Commit + Push.

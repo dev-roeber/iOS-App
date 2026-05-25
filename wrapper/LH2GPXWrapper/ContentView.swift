@@ -246,6 +246,28 @@ struct ContentView: View {
         VStack(spacing: 20) {
             Spacer()
 
+            // Variant B Pro · Topographic Outdoor — eyebrow mark (Train 9.1).
+            // Mono-caps terra accent, ornamental only. Hidden from VoiceOver
+            // because the title below already says what the screen is for.
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(LH2GPXTheme.VariantBPro.terra300)
+                    .frame(width: 4, height: 4)
+                Text(t("LH2GPX · TOPOGRAPHIC OUTDOOR"))
+                    .font(.caption2.weight(.semibold).monospaced())
+                    .tracking(2.5)
+                    .foregroundStyle(LH2GPXTheme.VariantBPro.terra300)
+                Rectangle()
+                    .fill(LinearGradient(
+                        colors: [LH2GPXTheme.VariantBPro.terra300.opacity(0.6), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ))
+                    .frame(width: 36, height: 1)
+            }
+            .accessibilityHidden(true)
+            .accessibilityIdentifier("home.heroMark")
+
             Image(systemName: "map.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(.white)

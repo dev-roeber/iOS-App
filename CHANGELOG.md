@@ -1,5 +1,53 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 9.1: VariantBPro Token-Adoption I (Branch `main`, HEAD `aeb15de` → folgt)
+
+> **Build-only.** Gradueller Token-Rollout auf drei nicht-überlappenden Stellen: (1) Home-Hero bekommt neue Eyebrow-Mark („LH2GPX · TOPOGRAPHIC OUTDOOR") in `VariantBPro.terra300` Mono-Caps; (2) Settings-Root sectionLink „iCloud" wechselt von `LH2GPXTheme.primaryBlue` → `VariantBPro.terra300`; (3) `AppICloudOptionsView` bekommt warm-dark `VariantBPro.bgWarm` page-background mit `scrollContentBackground(.hidden)`. Alle bestehenden Identifier unverändert. Tests deferred, Punkt 10 weiter zurückgestellt.
+
+### Geprüfte Apple-Doku
+- HIG „Settings" / „Layout" — Gruppierte Sections mit Großbuchstaben-Headern, 44 pt Tap-Targets, Disclosure-Indicator nur bei Push-Navigation.
+- SwiftUI `scrollContentBackground(.hidden)` + `.background(Color.ignoresSafeArea())` als empfohlener Weg für warm-dark Hintergrund hinter `LHPageScaffold`.
+- iOS 26 SwiftUI `Material` — `.regularMaterial` für statische Settings-Cards Default; `.thickMaterial` nur für Overlays/Sheets.
+- HIG „Color" — eine dominante Akzentfarbe für Index-Screens; multi-color Iconset nur bei semantischer Differenzierung.
+
+### Geänderte Dateien (3 Code + 2 Doku)
+| Datei | Art |
+|---|---|
+| `wrapper/LH2GPXWrapper/ContentView.swift` | +Hero-Mark („LH2GPX · TOPOGRAPHIC OUTDOOR") mit Terra-Punkt + Gradient-Linie, `home.heroMark`-Identifier, VoiceOver hidden (Titel sagt schon was) |
+| `Sources/.../AppOptionsView.swift` | sectionLink „iCloud" Farbe: `LH2GPXTheme.primaryBlue` → `LH2GPXTheme.VariantBPro.terra300` |
+| `Sources/.../AppICloudOptionsView.swift` | `scrollContentBackground(.hidden)` + `.background(LH2GPXTheme.VariantBPro.bgWarm.ignoresSafeArea())` |
+| `CHANGELOG.md`, `ROADMAP.md` | Doku-Sync |
+
+### Funktionsschutz (bestätigt)
+- ✅ Alle bestehenden Identifier erhalten (`home.title`, `home.subtitle`, `home.subtitle.formats`, `home.openFile`, `home.loadDemo`, `home.clearError`, `home.localNotice`, `options.icloud`, `options.icloud.title`, +sämtliche Train-9.0-Identifier).
+- ✅ Neue Identifier ausschließlich additiv: `home.heroMark`.
+- ✅ Layout-Mathematik unverändert (Hero-Mark sitzt oberhalb des bestehenden Icons als zusätzlicher Block; Spacer/Padding identisch).
+- ✅ Navigation, Routing, Tab-Struktur unverändert.
+
+### Build-only Validierung
+- `swift build` ✅ (10,23 s, 0 Warnings).
+- `xcodebuild` Sim ✅ `BUILD SUCCEEDED`.
+- `xcodebuild` generic iOS ✅ `BUILD SUCCEEDED`.
+
+### Bewusst NICHT verändert
+- Bestehende Section-Card-Farben (General/Maps/Import/Live/Upload/Widget/Privacy/Technical) — nur iCloud bekommt Terra-Akzent, weil iCloud die einzige Cloud-bezogene Sektion ist (HIG-konforme Differenzierung).
+- ScrollView-Background in anderen Pages (AppOptionsView, AppLiveRecording, AppUpload, AppWidgetLiveActivity) — gradueller Rollout, eigene Trains.
+- Token-Migration in DayDetail/Heatmap/Insights — Follow-up-Trains.
+- Layout-Mathematik im Home-Hero — Mark ist zusätzlicher Block, kein Eingriff in bestehende Spacing-Werte.
+
+### Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync · ❌ Records save/fetch · ❌ Tab-Remap · ❌ Tests ausgeführt · ❌ Neuer Cloud-Build > 190.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — Punkt 10 weiter zurückgestellt.
+
+### Nächster Schritt
+**Option A**: weitere Token-Adoption (AppOptionsView ScrollView-Background, DayDetail, Heatmap, Stats).
+**Option B**: dedizierter Tab-Remap-Train (Map/History/Record/Stats/More).
+**Option C**: Punkt 10 — vollständige Tests (User-Auftrag erforderlich).
+
+---
+
 ## 2026-05-25 — Train 9.0: Variant B Pro Design + erweiterte iCloud-Sync-Settings (Branch `main`, HEAD `81a78c4` → folgt)
 
 > **Build-only.** Adoption der Design-Sprache *Variant B Pro · Topographic Outdoor* (`variant-b-pro.html`) als additive Token-Schicht in `LH2GPXTheme` + Glass-Card-Modifier, plus 4 neue iCloud-Sync-Preferences mit dediziertem `AppICloudSyncConflictPolicy`-Enum und sechs neuen Settings-Karten in `AppICloudOptionsView`. **Funktionserhalt vor Optik** — keine bestehende Identifier entfernt, keine Tab-Struktur umgebaut, keine Navigation gebrochen. **Punkt 10 weiter zurückgestellt.** Tests deferred.
