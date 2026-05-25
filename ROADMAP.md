@@ -1,5 +1,39 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `0276ea2` + Train 8.0 Repo-Truth-Lock → folgt — Full-App-Modernization-Plan)
+
+- **Repo-Truth-Lock verbindlich:** `https://github.com/dev-roeber/iOS-App` ist ab sofort das **einzige aktive Arbeits-Repo**. Alle anderen LH2GPX-/LocationHistory2GPX-Repos (`LocationHistory2GPX-iOS`, `LH2GPXWrapper`, `LocationHistory2GPX-Monorepo`) sind historisch (siehe `AGENTS.md` §Repo-Truth-Lock).
+- **Externe Repos (bleiben separat):** `dev-roeber/LocationHistory2GPX` (Python Producer-Pipeline, Fixture-Quelle), `dev-roeber/lh2gpx-live-receiver` (optionale Beispiel-Implementierung eines user-eigenen Live-Endpoints, kein zentraler Dienst).
+- **Full-App-Modernization-Plan 8.0–8.15 + Punkt 10:** alle 8.x sind **build-only** (Tests deferred bis Punkt 10).
+
+### Train-Liste 8.0–8.15 + Punkt 10
+| # | Train | Status |
+|---|---|---|
+| 8.0 | Repo-Truth-Lock auf `dev-roeber/iOS-App` | *(dieser Commit)* |
+| 8.1 | Full Wiring Audit + Dead-Control-Fix | offen |
+| 8.2 | Settings & Privacy Center Modernisierung | offen |
+| 8.3 | App Shortcuts / App Intents Skeleton | offen |
+| 8.4 | Performance & Concurrency Modernisierung | offen |
+| 8.5 | Accessibility / Dynamic Type / Localization Polish | offen |
+| 8.6 | Map Layer & Route Interaction Upgrade | offen |
+| 8.7 | Error Handling / Diagnostics / User Feedback | offen |
+| 8.8 | Import-Pipeline UX + Robustness Polish | offen |
+| 8.9 | Export-Pipeline UX + Files/iCloud Drive Polish | offen |
+| 8.10 | Live Tracking / Upload Control Center | offen |
+| 8.11 | Timeline / Days / Day Detail Modernisierung | offen |
+| 8.12 | Heatmap / Insights / Statistik Modernisierung | offen |
+| 8.13 | Widget / Dynamic-Island / Live-Status Konsistenz | offen |
+| 8.14 | App Store / Privacy / Review Readiness | offen |
+| 8.15 | Final Build-only Consolidation | offen |
+| **10** | **Vollständige Tests / Xcode Cloud / TestFlight** | offen |
+
+### Verbindliche Regel für 8.0–8.15
+**Erlaubt:** `git diff --check`, `swift build`, `xcodebuild ... build`, `xcodebuild ... archive` (ohne Test-Nachaktion), `rg`-Sweeps, statische Codeprüfung, Doku-Sync, Apple-Doku-Abgleich, Commit + Push.
+**Nicht erlaubt bis Punkt 10:** `swift test`, `xcodebuild test`, UITests, manuelle Smokes, TestFlight-Smoke, Xcode Cloud Workflow mit Test-Nachaktion.
+
+- **Build-only verifiziert (in diesem Train):** `swift build` ✅, `xcodebuild` Sim ✅, `xcodebuild` generic iOS ✅.
+- **Extern unverändert:** letzter extern grüner Xcode-Cloud-Build bleibt **190** auf `b25c27d`.
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `7009a0b` + Build-only Implementation Sync → folgt — Punkt-10-Vorbereitung)
 
 - **Build-only-Phase abgeschlossen.** Acht Trains gemerged (F.4 → F.2 → F.3 → UI-Adoption I → Export UX I → Import UX I → Map/Timeline/Heatmap UX I → Insights Refactor I).

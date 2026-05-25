@@ -1,5 +1,66 @@
 # CHANGELOG
 
+## 2026-05-25 — Repo-Truth-Lock auf `dev-roeber/iOS-App` + Full-App-Modernization-Plan 8.0–8.15 (Branch `main`, HEAD `0276ea2` → folgt)
+
+> **Verbindlicher Repo-Truth-Lock.** `https://github.com/dev-roeber/iOS-App` ist ab sofort das **einzige aktive Arbeits-Repo** für die LH2GPX iOS-App. Alle anderen LH2GPX-/LocationHistory2GPX-Repos sind rein historisch und dürfen nicht mehr als aktive Repo-Truth verwendet werden. **Keine Feature-Implementierung in diesem Train** — reine Doku-/Governance-Aktualisierung.
+
+### Repo-Truth-Lock — neue Regel
+- **Aktiv:** `dev-roeber/iOS-App` (Branch `main`).
+- **Historisch (nicht mehr aktiv):** `dev-roeber/LocationHistory2GPX-iOS`, `dev-roeber/LH2GPXWrapper`, `dev-roeber/LocationHistory2GPX-Monorepo`.
+- **Extern, weiterhin separat:**
+  - `dev-roeber/LocationHistory2GPX` — Python Producer-Pipeline (Fixture-Quelle, kein Arbeitsrepo).
+  - `dev-roeber/lh2gpx-live-receiver` — optionale Beispiel-Implementierung eines user-eigenen Live-Endpoints (kein zentraler Dienst, kein Pflichtendpunkt der App).
+- Wenn historische Doku auf andere Repos verweist: nicht als aktive Wahrheit behandeln, ggf. als historisch markieren, **keine** Änderungen außerhalb `dev-roeber/iOS-App`.
+
+### Neuer Full-App-Modernization-Plan (alle 8.x build-only, Tests in Punkt 10)
+| # | Train |
+|---|---|
+| 8.0 | Repo-Truth-Lock auf `dev-roeber/iOS-App` *(dieser Commit)* |
+| 8.1 | Full Wiring Audit + Dead-Control-Fix |
+| 8.2 | Settings & Privacy Center Modernisierung |
+| 8.3 | App Shortcuts / App Intents Skeleton |
+| 8.4 | Performance & Concurrency Modernisierung |
+| 8.5 | Accessibility / Dynamic Type / Localization Polish |
+| 8.6 | Map Layer & Route Interaction Upgrade |
+| 8.7 | Error Handling / Diagnostics / User Feedback |
+| 8.8 | Import-Pipeline UX + Robustness Polish |
+| 8.9 | Export-Pipeline UX + Files/iCloud Drive Polish |
+| 8.10 | Live Tracking / Upload Control Center |
+| 8.11 | Timeline / Days / Day Detail Modernisierung |
+| 8.12 | Heatmap / Insights / Statistik Modernisierung |
+| 8.13 | Widget / Dynamic-Island / Live-Status Konsistenz |
+| 8.14 | App Store / Privacy / Review Readiness |
+| 8.15 | Final Build-only Consolidation |
+| 10 | **Vollständige Tests / Xcode Cloud / TestFlight** |
+
+### Verbindliche Regel für 8.0–8.15 (build-only)
+**Erlaubt:** `git diff --check`, `swift build`, `xcodebuild ... build`, `xcodebuild ... archive` (ohne Test-Nachaktion), `rg`-Sweeps, statische Codeprüfung, Doku-Sync, Apple-Doku-Abgleich, Commit + Push.
+**Nicht erlaubt bis Punkt 10:** `swift test`, `xcodebuild test`, UITests, manuelle Smokes, TestFlight-Smoke, Xcode Cloud Workflow mit Test-Nachaktion.
+
+### Geänderte Dateien (in diesem Train)
+| Datei | Art |
+|---|---|
+| `AGENTS.md` | neuer Repo-Truth-Lock-Abschnitt; „historische Split-Repos bestehen weiter"-Formulierung gegen „historisch, nicht mehr aktiv" ersetzt |
+| `README.md` | Repo-Truth-Lock-Patch-Block am Anfang ergänzt |
+| `CHANGELOG.md` | dieser Block |
+| `NEXT_STEPS.md` | Repo-Truth-Lock + 8.0–8.15-Plan-Block am Anfang |
+| `ROADMAP.md` | Repo-Truth-Lock + Full-App-Modernization-Plan-Block am Anfang |
+| `docs/APP_FEATURE_INVENTORY.md` | kurzer Verweis-Block |
+| `docs/APPLE_VERIFICATION_CHECKLIST.md` | kurzer Verweis-Block |
+
+### Build-only Validierung (in diesem Train)
+- `swift build` ✅ Build complete.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — gehören in Punkt 10.
+
+### Nächster Schritt
+**Train 8.1 — Full Wiring Audit + Dead-Control-Fix** (build-only).
+
+---
+
 ## 2026-05-25 — Build-only Implementation Sync (Branch `main`, HEAD `7009a0b` → folgt)
 
 > **Finaler Doku-Sync nach 8 build-only Trains** (F.4 → F.2 → F.3 → UI-Adoption I → Export UX I → Import UX I → Map/Timeline/Heatmap UX I → Insights Refactor I). Vollständiger Repo-Truth-Abgleich: alle 10 Train-Claims direkt per `rg` gegen Code verifiziert (✅ TRUE); alle 7 Must-be-absent-Patterns (`publicCloudDatabase`, `sharedCloudDatabase`, `CKSubscription`, `CKAsset`, `CKQuery`, `.save(`/`.fetch(` in `CloudKit*.swift`, positive Sync-Claims) ✅ ABSENT. Privacy-Manifest gegen Code-Realität ✅ konsistent. **Punkt 10 (vollständige Tests) ist der einzige verbleibende Schritt.** Details und Train-Übersicht: [`docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md`](docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md).

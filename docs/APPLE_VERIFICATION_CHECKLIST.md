@@ -1,5 +1,34 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Train 8.0) — Repo-Truth-Lock auf `dev-roeber/iOS-App`
+
+**HEAD:** `0276ea2` — verbindlicher Lock auf einziges aktives Arbeits-Repo.
+
+### Repo-Truth-Lock
+- **Aktiv:** `https://github.com/dev-roeber/iOS-App`.
+- **Historisch:** `dev-roeber/LocationHistory2GPX-iOS`, `dev-roeber/LH2GPXWrapper`, `dev-roeber/LocationHistory2GPX-Monorepo`.
+- **Extern weiterhin separat:** `dev-roeber/LocationHistory2GPX` (Producer), `dev-roeber/lh2gpx-live-receiver` (optionale Beispiel-Receiver-Implementierung).
+- Details in `AGENTS.md` §Repo-Truth-Lock.
+
+### Full-App-Modernization-Plan 8.0–8.15 + Punkt 10
+Alle 8.x sind **build-only** (`swift build` + `xcodebuild build` + `xcodebuild archive` ohne Test-Nachaktion). `swift test`, `xcodebuild test`, UITests, manuelle Smokes, TestFlight-Smoke, Xcode Cloud Workflow mit Test-Nachaktion sind bis Punkt 10 ausgeschlossen.
+
+### ✅ In diesem Pass verifiziert
+- Remote: `origin → https://github.com/dev-roeber/iOS-App.git` ✅.
+- `swift build` ✅, `xcodebuild` Sim ✅, `xcodebuild` generic iOS ✅.
+- AGENTS.md / README.md / CHANGELOG.md / NEXT_STEPS.md / ROADMAP.md / docs/APP_FEATURE_INVENTORY.md / docs/APPLE_VERIFICATION_CHECKLIST.md aktualisiert.
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ Automatischer Upload aus Import oder Export.
+- ❌ CloudKit Records aktiv.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ iPad / Light Mode unterstützt.
+- ❌ Neuer Xcode-Cloud-Build / TestFlight-Build verfügbar — letzter extern grüner Stand bleibt **190** auf `b25c27d`.
+
+---
+
 ## Aktualisierung 2026-05-25 (Build-only Implementation Sync) — Punkt-10-Vorbereitung
 
 **HEAD:** `7009a0b` — nach 8 build-only Trains (F.4/F.2/F.3/UI-Adoption I/Export UX I/Import UX I/Map UX I/Insights Refactor I).

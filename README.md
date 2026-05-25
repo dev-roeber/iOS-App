@@ -2,6 +2,8 @@
 
 **Dieses Repo (`dev-roeber/iOS-App`) ist das zentrale aktive Repository fuer die vollstaendige LH2GPX iOS-App.**
 
+> **Repo-Truth-Lock 2026-05-25 (verbindlich):** `https://github.com/dev-roeber/iOS-App` ist ab sofort das **einzige aktive Arbeits-Repo** für die LH2GPX iOS-App. Alle anderen LH2GPX-/LocationHistory2GPX-Repos (`LocationHistory2GPX-iOS`, `LH2GPXWrapper`, `LocationHistory2GPX-Monorepo`) sind **rein historisch** und werden nicht mehr als aktive Repo-Truth verwendet. `dev-roeber/LocationHistory2GPX` bleibt **externe Producer-Pipeline** (Fixture-Quelle, nicht Arbeitsrepo); `dev-roeber/lh2gpx-live-receiver` bleibt **externe optionale Beispiel-Implementierung** eines user-eigenen Live-Endpoints (kein zentraler Dienst). Details siehe `AGENTS.md` §Repo-Truth-Lock.
+
 > **Repo-Truth-Patch 2026-05-25 (Xcode Cloud Build 190 extern grün + TestFlight 1.0.2 (190) verfügbar, `main` HEAD `b25c27d`):**
 > - Xcode Cloud Workflow `Release – Archive & TestFlight` auf `b25c27d` durchgelaufen (Cloud-Umgebung Xcode 26.5 / macOS Tahoe 26.4): Archive – iOS ✅, TestFlight-interne Tests – iOS ✅. TestFlight zeigt `LH2GPX 1.0.2 (190)`, 90 Tage verfügbar, App öffnet sich, Startscreen lädt ohne Crash. Build 179 → 190.
 > - **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` extern bestätigt** (Cloud-Distribution-Signing + TestFlight-Aufnahme akzeptieren das Provisioning Profile mit beiden iCloud-Entitlement-Keys).

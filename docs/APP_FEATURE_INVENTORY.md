@@ -1,7 +1,18 @@
 # APP Feature Inventory
 
-Last analysis: **2026-05-25** (Build-only Implementation Sync auf
-`main` HEAD `7009a0b`). 8 build-only Trains abgeschlossen
+> **Repo-Truth-Lock 2026-05-25 (verbindlich):** Einziges aktives
+> Arbeits-Repo für die LH2GPX iOS-App ist `https://github.com/dev-roeber/iOS-App`.
+> Alle anderen LH2GPX-/LocationHistory2GPX-Repos sind historisch
+> (`LocationHistory2GPX-iOS`, `LH2GPXWrapper`, `LocationHistory2GPX-Monorepo`)
+> und dürfen nicht mehr als aktive Repo-Truth verwendet werden. Details
+> in `AGENTS.md` §Repo-Truth-Lock. Full-App-Modernization-Plan 8.0–8.15
+> + Punkt 10 in `ROADMAP.md` / `NEXT_STEPS.md`. Wenn ältere Abschnitte
+> dieses Inventars andere Repos erwähnen: ausschließlich als
+> historisch/externer Kontext lesen.
+
+Last analysis: **2026-05-25** (Train 8.0 Repo-Truth-Lock auf
+`main` HEAD `0276ea2`; voriger Inventory-Stand: Build-only Implementation
+Sync auf HEAD `7009a0b`). 8 build-only Trains abgeschlossen
 (F.4/F.2/F.3/UI-Adoption I/Export UX I/Import UX I/Map UX I/Insights
 Refactor I). Repo-Truth-Audit: 10/10 Claims TRUE, 7/7 Must-be-absent-
 Patterns ABSENT, Privacy-Manifest konsistent zur Code-Realität.

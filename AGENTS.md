@@ -40,13 +40,32 @@
 - unbekannte additive JSON-Felder tolerieren, aber unbekannte `schema_version` weiter ablehnen
 - Breaking Changes nur mit dokumentierter Contract-Version
 
+## Repo-Truth-Lock (verbindlich ab 2026-05-25)
+
+**Einziges aktives Arbeits-Repo:** `https://github.com/dev-roeber/iOS-App`.
+
+Alle anderen LH2GPX-/LocationHistory2GPX-Repos sind ab sofort
+**ausschließlich historisch** und dürfen nicht mehr als aktive
+Repo-Truth verwendet werden — weder zum Lesen aktiver Spezifikation
+noch zum Schreiben:
+
+- `dev-roeber/LocationHistory2GPX-iOS` — historisch
+- `dev-roeber/LH2GPXWrapper` — historisch
+- `dev-roeber/LocationHistory2GPX-Monorepo` — historisch / mirror
+- `dev-roeber/LocationHistory2GPX` — **externe** Python-Producer-Pipeline (Fixture-Quelle, nicht Arbeitsrepo)
+- `dev-roeber/lh2gpx-live-receiver` — **externe** Beispiel-/Referenz-Implementierung eines optional vom User selbst betriebenen Live-Location-Empfängers (kein zentraler Dienst, kein Pflichtendpunkt)
+
+Wenn historische Doku auf andere Repos verweist: nicht als aktive
+Wahrheit behandeln, ggf. als historisch markieren, **keine** Änderungen
+außerhalb `dev-roeber/iOS-App`.
+
 ## Repo-Architektur
 
-- Dieses Repo (`iOS-App`) ist das primaere integrierte Repo fuer Core Swift Package und Wrapper.
+- Dieses Repo (`iOS-App`) ist das **einzige aktive** integrierte Repo fuer Core Swift Package und Wrapper.
 - Der Core Swift Package (Decoder, Queries, AppSupport, DemoSupport) liegt im Monorepo-Root (`Package.swift`).
 - Der Xcode-Wrapper liegt unter `wrapper/` im Monorepo-Root.
 - Das Xcode-Projekt referenziert den Core als lokales Swift Package per `relativePath = "../.."` (Monorepo-Root).
-- Die historischen Split-Repos `LocationHistory2GPX-iOS` und `LH2GPXWrapper` bestehen weiter, aber die primaere integrierte Weiterentwicklung findet im Monorepo statt.
+- Die Split-Repos `LocationHistory2GPX-iOS` und `LH2GPXWrapper` sind historisch (siehe Repo-Truth-Lock oben). Alle Weiterentwicklung passiert hier.
 - Keine Business-Logik oder neue Fachtypen in den `wrapper/`-Bereich schieben.
 - Keine Xcode-Projektdateien oder Bundle-Config in den Core-Root schieben.
 

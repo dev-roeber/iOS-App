@@ -1,5 +1,40 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Train 8.0) — Repo-Truth-Lock auf `dev-roeber/iOS-App` + Full-App-Modernization-Plan (Branch `main`, HEAD `0276ea2` → folgt)
+
+> **Verbindlich ab sofort:** Einziges aktives Arbeits-Repo ist `https://github.com/dev-roeber/iOS-App`. Alle anderen LH2GPX-/LocationHistory2GPX-Repos sind historisch (siehe `AGENTS.md` §Repo-Truth-Lock). **Keine Feature-Implementierung in diesem Train** — reine Doku/Governance.
+
+### Full-App-Modernization-Plan (8.0–8.15 build-only, Punkt 10 vollständige Tests)
+1. **8.0** Repo-Truth-Lock — *(dieser Train, erledigt nach Push)*
+2. **8.1** Full Wiring Audit + Dead-Control-Fix
+3. **8.2** Settings & Privacy Center Modernisierung
+4. **8.3** App Shortcuts / App Intents Skeleton
+5. **8.4** Performance & Concurrency Modernisierung
+6. **8.5** Accessibility / Dynamic Type / Localization Polish
+7. **8.6** Map Layer & Route Interaction Upgrade
+8. **8.7** Error Handling / Diagnostics / User Feedback
+9. **8.8** Import-Pipeline UX + Robustness Polish
+10. **8.9** Export-Pipeline UX + Files/iCloud Drive Polish
+11. **8.10** Live Tracking / Upload Control Center
+12. **8.11** Timeline / Days / Day Detail Modernisierung
+13. **8.12** Heatmap / Insights / Statistik Modernisierung
+14. **8.13** Widget / Dynamic-Island / Live-Status Konsistenz
+15. **8.14** App Store / Privacy / Review Readiness
+16. **8.15** Final Build-only Consolidation
+17. **10** Vollständige Tests / Xcode Cloud / TestFlight — `swift test`, `xcodebuild test`, UITests Sim+Device, manueller iPhone-Smoke, Xcode Cloud Workflow, TestFlight-Smoke voll, Hardware-Smoke
+
+### Verbindliche Regel für 8.0–8.15
+**Erlaubt:** `git diff --check`, `swift build`, `xcodebuild ... build`, `xcodebuild ... archive` (ohne Test-Nachaktion), `rg`-Sweeps, statische Codeprüfung, Doku-Sync, Apple-Doku-Abgleich, Commit + Push.
+**Nicht erlaubt bis Punkt 10:** `swift test`, `xcodebuild test`, UITests, manuelle Smokes, TestFlight-Smoke, Xcode Cloud Workflow mit Test-Nachaktion.
+
+### Build-only Validierung (in diesem Train)
+- `swift build` ✅ · `xcodebuild` Sim ✅ · `xcodebuild` generic iOS ✅.
+
+### Nächster Train
+**Train 8.1 — Full Wiring Audit + Dead-Control-Fix** (build-only).
+
+---
+
 ## Stand 2026-05-25 (Build-only Implementation Sync) — Repo-Truth abgeschlossen, Punkt 10 vorbereitet (Branch `main`, HEAD `7009a0b` → folgt)
 
 > **Build-only-Phase abgeschlossen.** Acht Trains (F.4 / F.2 / F.3 / UI-Adoption I / Export UX I / Import UX I / Map UX I / Insights Refactor I) sind gemerged. Vollständiger Repo-Truth-Abgleich: 10/10 Claims TRUE, 7/7 Must-be-absent-Patterns ABSENT, Privacy-Manifest konsistent zur Code-Realität. Drei Builds grün (`swift build`, `xcodebuild` Sim, `xcodebuild` generic iOS). Detail-Bericht: [`docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md`](docs/BUILD_ONLY_IMPLEMENTATION_SYNC_2026-05-25.md).
