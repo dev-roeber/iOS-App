@@ -369,13 +369,14 @@ Testplan für späteren Folge-Train:
 | Phase | Inhalt | Status |
 |---|---|---|
 | **A** | Diese Spec-Doku | **abgeschlossen** mit diesem Commit |
-| **B** | `Package.swift` `defaultLocalization` + `Localizable.xcstrings` in beiden Targets + 37 hardcoded Strings migrieren | **offen** |
-| **C** | `FavoriteEntry` Codable + Migration aus `DayFavoritesStore` (lokal) | **offen** |
-| **D** | `CloudKitFavoriteEntrySchema` + `FavoritesCloudSyncService` + UI-Toggle + Anti-Claim-Reset im Code | **offen** |
-| **E** | `TARGETED_DEVICE_FAMILY = 1,2` + iPad-Sim Layout-Verify | **offen** |
-| **F** | Doku-Sync (CHANGELOG/ROADMAP/NEXT_STEPS/ICLOUD_SYNC_ARCHITECTURE/APP_FEATURE_INVENTORY/UI_WIRING_MATRIX/APP_REVIEW_READINESS) | **offen** |
-| **G** | `swift build` + `xcodebuild` Sim/iPad/Generic builds — **keine Tests** per User-Direktive | **offen** |
-| **H** | Commit + Push direkt auf main | **offen** |
+| **B** | `Package.swift` `defaultLocalization` + AppSupport `Localizable.xcstrings` + LocalTimeline String-Catalog-Basis | **abgeschlossen** |
+| **C** | Globales Map-Options-Menü + verstellbare Kartenhöhe compact/expanded | **abgeschlossen** |
+| **D** | `FavoriteEntry` Codable + Migration aus `DayFavoritesStore` (lokal) | **offen** |
+| **E** | `CloudKitFavoriteEntrySchema` + `FavoritesCloudSyncService` + UI-Toggle + Anti-Claim-Reset im Code | **offen** |
+| **F** | `TARGETED_DEVICE_FAMILY = 1,2` + iPad-Sim Layout-Verify | **offen** |
+| **G** | Doku-Sync (CHANGELOG/ROADMAP/NEXT_STEPS/ICLOUD_SYNC_ARCHITECTURE/APP_FEATURE_INVENTORY/UI_WIRING_MATRIX/APP_REVIEW_READINESS) | **offen** |
+| **H** | `swift build` + `xcodebuild` Sim/iPad/Generic builds — **keine Tests** per User-Direktive | **offen** |
+| **I** | Commit + Push direkt auf main | **offen** |
 
 **Freigabe pro Phase einzeln durch User.**
 
@@ -383,10 +384,10 @@ Testplan für späteren Folge-Train:
 
 ## 12. Was diese Spec NICHT behauptet
 
-- ❌ `.xcstrings` ist bereits angelegt — **NEIN** (Phase B).
-- ❌ FavoriteEntry-Code existiert — **NEIN** (Phase C/D).
-- ❌ CloudKit-Records werden bereits geschrieben — **NEIN** (Phase D).
-- ❌ iPad-Support ist aktiviert — **NEIN** (Phase E).
+- ✅ `.xcstrings` ist angelegt — **JA**, AppSupport `Localizable.xcstrings` seit Phase B.
+- ❌ FavoriteEntry-Code existiert — **NEIN** (Phase D/E).
+- ❌ CloudKit-Records werden bereits geschrieben — **NEIN** (Phase E).
+- ❌ iPad-Support ist aktiviert — **NEIN** (Phase F).
 - ❌ Tests sind durchgelaufen — **NEIN, per User-Direktive für diesen Master-Train deferred**.
 - ❌ App Review für ≥190 ist eingereicht — **NEIN, weiterhin User-Action**.
 - ❌ Neuer Cloud-Build > 190 verfügbar — **NEIN, letzter Stand bleibt 190 auf `b25c27d`**.

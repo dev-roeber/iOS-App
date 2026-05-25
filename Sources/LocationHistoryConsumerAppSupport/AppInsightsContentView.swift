@@ -314,6 +314,7 @@ struct AppInsightsContentView: View {
             state: $insightsMapHeaderState,
             language: preferences.appLanguage,
             overlayControls: true,
+            persistenceKey: LHMapHeightPersistenceKey.insights,
             safeAreaTopInset: lhDeviceTopSafeInset()
         ) {
             if #available(iOS 17.0, macOS 14.0, *) {

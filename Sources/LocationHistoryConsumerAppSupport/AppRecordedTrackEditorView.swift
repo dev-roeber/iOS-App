@@ -89,43 +89,12 @@ struct AppRecordedTrackEditorView: View {
     @ViewBuilder
     private var landscapeMapPanel: some View {
         GeometryReader { geo in
-            Map(position: $mapPosition) {
-                if let first = draft.points.first {
-                    Marker(
-                        t("Start"),
-                        coordinate: CLLocationCoordinate2D(
-                            latitude: first.latitude,
-                            longitude: first.longitude
-                        )
-                    )
-                    .tint(.green)
-                }
-
-                if let last = draft.points.last {
-                    Marker(
-                        t("End"),
-                        coordinate: CLLocationCoordinate2D(
-                            latitude: last.latitude,
-                            longitude: last.longitude
-                        )
-                    )
-                    .tint(.red)
-                }
-
-                if draft.points.count >= 2 {
-                    let editorCoords = draft.points.map {
-                        CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-                    }
-                    MapPolyline(coordinates: editorCoords)
-                        .stroke(
-                            Color.white.opacity(MapTrackStyle.haloOpacity),
-                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.editor * MapTrackStyle.haloMultiplier)
-                        )
-                    MapPolyline(coordinates: editorCoords)
-                        .stroke(.blue, style: MapTrackStyle.stroke(width: MapTrackStyle.Width.editor))
-                }
-            }
+            editorMap
             .frame(width: geo.size.width, height: geo.size.height)
+            .overlay(alignment: .topTrailing) {
+                editorMapLayerMenu
+                    .padding(8)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -156,45 +125,65 @@ struct AppRecordedTrackEditorView: View {
     @ViewBuilder
     private var mapSection: some View {
         Section(t("Map Preview")) {
-            Map(position: $mapPosition) {
-                if let first = draft.points.first {
-                    Marker(
-                        t("Start"),
-                        coordinate: CLLocationCoordinate2D(
-                            latitude: first.latitude,
-                            longitude: first.longitude
-                        )
-                    )
-                    .tint(.green)
-                }
-
-                if let last = draft.points.last {
-                    Marker(
-                        t("End"),
-                        coordinate: CLLocationCoordinate2D(
-                            latitude: last.latitude,
-                            longitude: last.longitude
-                        )
-                    )
-                    .tint(.red)
-                }
-
-                if draft.points.count >= 2 {
-                    let editorCoords = draft.points.map {
-                        CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-                    }
-                    MapPolyline(coordinates: editorCoords)
-                        .stroke(
-                            Color.white.opacity(MapTrackStyle.haloOpacity),
-                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.editor * MapTrackStyle.haloMultiplier)
-                        )
-                    MapPolyline(coordinates: editorCoords)
-                        .stroke(.blue, style: MapTrackStyle.stroke(width: MapTrackStyle.Width.editor))
-                }
-            }
+            editorMap
             .frame(height: 220)
+            .overlay(alignment: .topTrailing) {
+                editorMapLayerMenu
+                    .padding(8)
+            }
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
+    }
+
+    private var editorMap: some View {
+        Map(position: $mapPosition) {
+            if let first = draft.points.first {
+                Marker(
+                    t("Start"),
+                    coordinate: CLLocationCoordinate2D(
+                        latitude: first.latitude,
+                        longitude: first.longitude
+                    )
+                )
+                .tint(.green)
+            }
+
+            if let last = draft.points.last {
+                Marker(
+                    t("End"),
+                    coordinate: CLLocationCoordinate2D(
+                        latitude: last.latitude,
+                        longitude: last.longitude
+                    )
+                )
+                .tint(.red)
+            }
+
+            if draft.points.count >= 2 {
+                let editorCoords = draft.points.map {
+                    CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+                }
+                MapPolyline(coordinates: editorCoords)
+                    .stroke(
+                        Color.white.opacity(MapTrackStyle.haloOpacity),
+                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.editor * MapTrackStyle.haloMultiplier)
+                    )
+                MapPolyline(coordinates: editorCoords)
+                    .stroke(.blue, style: MapTrackStyle.stroke(width: MapTrackStyle.Width.editor))
+            }
+        }
+        .mapStyle(AppMapStyleResolver.mapStyle(
+            for: preferences.preferredMapStyle,
+            showsRealisticElevation: preferences.mapShowsRealisticElevation
+        ))
+    }
+
+    private var editorMapLayerMenu: some View {
+        MapLayerMenu(configuration: MapLayerMenu.Configuration(
+            showsTrackColor: false,
+            fitToData: draft.points.count >= 2 ? centerMapOnTrack : nil
+        ))
+        .accessibilityIdentifier("recordedTrackEditor.map.layerMenu")
     }
 
     private var pointsSection: some View {

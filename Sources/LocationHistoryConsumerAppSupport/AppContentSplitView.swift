@@ -748,6 +748,7 @@ public struct AppContentSplitView: View {
             state: $overviewMapHeaderState,
             language: preferences.appLanguage,
             overlayControls: true,
+            persistenceKey: LHMapHeightPersistenceKey.overview,
             safeAreaTopInset: lhDeviceTopSafeInset()
         ) {
             if #available(iOS 17.0, macOS 14.0, *) {
@@ -1183,6 +1184,7 @@ public struct AppContentSplitView: View {
             state: $daysMapHeaderState,
             language: preferences.appLanguage,
             overlayControls: true,
+            persistenceKey: LHMapHeightPersistenceKey.days,
             safeAreaTopInset: deviceTopSafeInset
         ) {
             if #available(iOS 17.0, macOS 14.0, *) {

@@ -319,6 +319,8 @@ Present:
 - visit-marker tinting by semantic type
 - route color coding by activity type
 - **Unified `MapLayerMenu` dropdown (2026-05-06, commit `70254ff`):** alle Map-Layer-Controls auf jeder Map-Surface laufen über ein einziges Right-Side-Dropdown (SF Symbol `slider.horizontal.3`, oben rechts mit `.padding(8)`). Ersetzt: standalone `LHMapStyleToggleButton` (deprecated), Heatmap-Bottom-Sheet, Capsule-Chip-Cluster (Palette/Scale/Radius), Follow-Pill, Fullscreen-Close-X-Button, Fit-to-Data-Button. Configuration-driven über `MapLayerMenu.Configuration` (showsTrackColor / showsLiveOptions / showsHeatmapControls / fitToData / centerOnLocation / toggleFullscreen / isFullscreenActive).
+- **Phase C 2026-05-25:** `MapLayerMenu` enthält zusätzlich den globalen `3D Terrain`/realistic-elevation Toggle und wird jetzt auch im Saved-Track-Editor (Portrait + Landscape) angezeigt. Live-Tracking zeigt keinen Activity/Speed-Layer-Picker mehr, weil die Live-Polyline feste Live-Farben nutzt.
+- **Resizable Hero Maps (Phase C 2026-05-25):** `LHCollapsibleMapHeader` besitzt einen unteren Resize-Handle mit Tap, Drag und VoiceOver-Adjustable-Action. Compact/expanded wird pro Screen gespeichert für Overview, Days, DayDetail, Insights, Export und Live.
 - Heatmap-Opacity in `MapLayerMenu` als 4-Stufen-Picker `25 % / 50 % / 75 % / 100 %` (Slider war im SwiftUI-`Menu` nicht möglich); Snap-to-nearest-Preset auf Read.
 - live-location map with current-position marker and live polyline while recording
 - center-on-location action for the live-location map (verfügbar wenn `currentLocation != nil`); aktiviert Follow-Mode als Seiteneffekt

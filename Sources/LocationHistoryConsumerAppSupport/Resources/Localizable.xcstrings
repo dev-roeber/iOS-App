@@ -1,6 +1,23 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "3D Terrain": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D-Gelaende"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D Terrain"
+          }
+        }
+      }
+    },
     "A live session is running. The map follows the latest accepted points and current foreground fix.": {
       "extractionState": "manual",
       "localizations": {
@@ -1871,6 +1888,23 @@
         }
       }
     },
+    "Compact map": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kompakte Karte"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compact map"
+          }
+        }
+      }
+    },
     "Close fullscreen map": {
       "extractionState": "manual",
       "localizations": {
@@ -2942,6 +2976,23 @@
         }
       }
     },
+    "Drag up to expand the map or drag down to make it compact. Double tap to switch size.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach oben ziehen, um die Karte zu erweitern, oder nach unten ziehen, um sie kompakt zu machen. Doppeltippen wechselt die Groesse."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag up to expand the map or drag down to make it compact. Double tap to switch size."
+          }
+        }
+      }
+    },
     "Dismiss help": {
       "extractionState": "manual",
       "localizations": {
@@ -3448,6 +3499,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Expand Map"
+          }
+        }
+      }
+    },
+    "Expanded map": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erweiterte Karte"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expanded map"
           }
         }
       }
@@ -6185,6 +6253,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Map Preview"
+          }
+        }
+      }
+    },
+    "Map height": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kartenhoehe"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Map height"
+          }
+        }
+      }
+    },
+    "Map options": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kartenoptionen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Map options"
           }
         }
       }

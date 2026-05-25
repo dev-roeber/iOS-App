@@ -244,6 +244,7 @@ public struct AppDayDetailView: View {
             state: $dayMapHeaderState,
             language: preferences.appLanguage,
             overlayControls: true,
+            persistenceKey: LHMapHeightPersistenceKey.dayDetail,
             safeAreaTopInset: lhDeviceTopSafeInset()
         ) {
             AppDayMapView(

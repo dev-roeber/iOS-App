@@ -151,6 +151,7 @@ public struct AppLiveTrackingView: View {
             state: $liveMapHeaderState,
             language: preferences.appLanguage,
             overlayControls: true,
+            persistenceKey: LHMapHeightPersistenceKey.live,
             safeAreaTopInset: lhDeviceTopSafeInset()
         ) {
             if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
@@ -451,7 +452,7 @@ public struct AppLiveTrackingView: View {
                 .ignoresSafeArea()
                 .overlay(alignment: .topTrailing) {
                     MapLayerMenu(configuration: MapLayerMenu.Configuration(
-                        showsTrackColor: true,
+                        showsTrackColor: false,
                         showsLiveOptions: true,
                         centerOnLocation: liveLocation.currentLocation == nil ? nil : {
                             liveLocation.isFollowingLocation = true
@@ -673,7 +674,7 @@ public struct AppLiveTrackingView: View {
 
     private var liveMapLayerMenu: MapLayerMenu {
         MapLayerMenu(configuration: MapLayerMenu.Configuration(
-            showsTrackColor: true,
+            showsTrackColor: false,
             showsLiveOptions: true,
             centerOnLocation: liveLocation.currentLocation == nil ? nil : {
                 liveLocation.isFollowingLocation = true

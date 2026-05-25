@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## 2026-05-25 — Master · Phase C: Global Map Options + Resizable Map Cards (Branch `main`, HEAD `70961ad` → folgt)
+
+> **Build-only.** Neues globales Karten-Resize-Verhalten auf den bestehenden Hero-Map-Surfaces und einheitliche Map-Optionen weiter konsolidiert. `LHCollapsibleMapHeader` bekommt einen unteren, barrierearmen Resize-Handle mit Tap, Drag und VoiceOver-Adjustable-Action; compact/expanded wird pro Screen als diskreter UserDefaults-Zustand gespeichert. `MapLayerMenu` enthält jetzt den vorhandenen 3D-Terrain-/realistic-elevation-Toggle. Saved-Track-Editor-Karten nutzen ebenfalls das globale Map-Menü. Kein CloudKit, keine Favoriten-Modelländerung, kein iPad-Build-Setting.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/LocationHistoryConsumerAppSupport/LHCollapsibleMapHeader.swift` | Resize-Handle, Drag/Tap/Adjustable-Action, optionaler Persistenz-Key |
+| `Sources/LocationHistoryConsumerAppSupport/LHHeroMapWorkspace.swift` | zentrale `LHMapHeightPersistenceKey`-Konstanten |
+| `Sources/LocationHistoryConsumerAppSupport/MapLayerMenu.swift` | Map-Options-Section + `3D Terrain` Toggle |
+| `AppContentSplitView`, `AppDayDetailView`, `AppInsightsContentView`, `AppExportView`, `AppLiveTrackingView` | per-Screen Persistenz-Key für Overview/Days/DayDetail/Insights/Export/Live Hero Maps |
+| `AppRecordedTrackEditorView.swift` | gemeinsame `editorMap`-Implementierung + `MapLayerMenu` in Portrait und Landscape |
+| `AppLanguageSupport.swift`, `Localizable.xcstrings` | neue DE/EN-Strings für Map-Resize und Terrain |
+| `docs/MAP_CONTROLS_RESIZE_AUDIT_2026-05-25.md` | **NEU** — Apple-Doku-Abgleich + Scope-/Validation-Audit |
+
+### Map-Coverage
+- Resize/compact/expanded: Overview, Days, DayDetail, Insights, Export, Live Hero Maps.
+- Global `MapLayerMenu`: Overview/Days/Explore, DayDetail, Export, Live, Live fullscreen, embedded LiveLocationSection, Heatmap, Saved Track Editor.
+- Toter Live-Track-Color-Menüeintrag entfernt: Live nutzt feste Live-Farben und zeigt daher keinen inert wirkenden Activity/Speed-Picker mehr.
+
+### Geprüfte Apple-Doku
+- SwiftUI `DragGesture`
+- SwiftUI `Menu`
+- MapKit SwiftUI `Map`
+- SwiftUI `accessibilityAdjustableAction(_:)`
+- HIG Gestures / touch target expectations
+
+### Bewusst NICHT in Phase C
+- Keine Localization-Phase-B-Nacharbeit außer neuen Phase-C-Strings.
+- Keine Favoriten-Modelländerung.
+- Kein CloudKit/iCloud-Sync.
+- Keine iPad-Build-Setting-Änderung.
+- Keine Tests, kein Xcode Cloud, kein TestFlight.
+
+### Nächster Schritt
+**Phase D** — `FavoriteEntry` Modell + lokale Persistenz/Migration. Wartet auf User-Freigabe.
+
+---
+
 ## 2026-05-25 — Master · Phase B: DE/EN Localization-Basis + `Localizable.xcstrings` (Branch `main`, HEAD `4d4cbcb` → folgt)
 
 > **Build-only.** Apple-modernes String Catalog (`Localizable.xcstrings`, 765 Keys) als parallel-laufender Mirror der bestehenden `AppGermanTranslations`-Tabelle (750 Pairs). `Package.swift` bekommt `defaultLocalization: "en"` und Resource-Rule `.process("Resources")` für `LocationHistoryConsumerAppSupport`-Target. **Kein Breaking Change** am bestehenden `t(_:)`-Helper-System — bleibt single source of truth für App-Preference-Override (User kann in Settings deutsch wählen auch auf englischem iOS). xcstrings ergänzt für Apple-modernen Translation-Workflow (XLIFF-Export, Xcode-UI) und automatische Übersetzung der 37 hardcoded `LocalTimeline*`-View-Strings auf deutschen iOS-Geräten (implizit via `LocalizedStringKey`-Lookup über `Bundle.module`).

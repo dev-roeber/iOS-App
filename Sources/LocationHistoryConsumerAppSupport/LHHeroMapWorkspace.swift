@@ -51,4 +51,13 @@ public enum LHHeroMapLayout {
     /// `+130` clears it on every iPhone size.
     public static let mapControlTopOffset: CGFloat = 130
 }
+
+public enum LHMapHeightPersistenceKey {
+    public static let overview = "app.mapHeight.overview"
+    public static let days = "app.mapHeight.days"
+    public static let dayDetail = "app.mapHeight.dayDetail"
+    public static let insights = "app.mapHeight.insights"
+    public static let export = "app.mapHeight.export"
+    public static let live = "app.mapHeight.live"
+}
 #endif

@@ -140,6 +140,10 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
     /// on top of the map instead of as a separate header strip above it.
     /// Use this for full-width hero map layouts where the card chrome is absent.
     var overlayControls: Bool = false
+    /// Optional per-screen persistence key for the compact/expanded map size.
+    /// The value intentionally stores only the discrete visibility state, not
+    /// coordinates or map content.
+    var persistenceKey: String?
     /// Explicit top safe-area inset for overlay control placement.
     /// Must be supplied from OUTSIDE any ignoresSafeArea context —
     /// geometry.safeAreaInsets.top returns 0 inside .safeAreaInset/.ignoresSafeArea
@@ -152,12 +156,14 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
         state: Binding<LHMapHeaderState>,
         language: AppLanguagePreference = .english,
         overlayControls: Bool = false,
+        persistenceKey: String? = nil,
         safeAreaTopInset: CGFloat = 59,
         @ViewBuilder mapContent: @escaping () -> MapContent
     ) {
         self._state    = state
         self.language  = language
         self.overlayControls = overlayControls
+        self.persistenceKey = persistenceKey
         self.safeAreaTopInset = safeAreaTopInset
         self.mapContent = mapContent
     }
@@ -196,6 +202,10 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: state.visibility)
+        .onAppear(perform: restorePersistedVisibility)
+        .onChange(of: state.visibility) { _, newValue in
+            persistVisibility(newValue)
+        }
 #if os(iOS)
         .fullScreenCover(isPresented: Binding(
             get: { state.isFullscreen },
@@ -275,6 +285,48 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
         .accessibilityLabel(label)
     }
 
+    private var resizeHandle: some View {
+        Button(action: toggleMapHeight) {
+            VStack(spacing: 4) {
+                Capsule()
+                    .fill(.secondary.opacity(0.65))
+                    .frame(width: 44, height: 5)
+                Text(t(state.isExpanded ? "Expanded map" : "Compact map"))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(.thinMaterial, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("map.resize.handle")
+        .accessibilityLabel(t("Map height"))
+        .accessibilityValue(t(state.isExpanded ? "Expanded map" : "Compact map"))
+        .accessibilityHint(t("Drag up to expand the map or drag down to make it compact. Double tap to switch size."))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                state.expand()
+            case .decrement:
+                state.collapse()
+            @unknown default:
+                break
+            }
+        }
+        .gesture(
+            DragGesture(minimumDistance: 12)
+                .onEnded { value in
+                    if value.translation.height < -28 {
+                        state.expand()
+                    } else if value.translation.height > 28 {
+                        state.collapse()
+                    }
+                }
+        )
+    }
+
     // MARK: Map container
 
     @ViewBuilder
@@ -283,9 +335,37 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
             mapContent()
                 .frame(height: height)
                 .clipped()
+                .overlay(alignment: .bottom) {
+                    if state.isCompact || state.isExpanded {
+                        resizeHandle
+                            .padding(.bottom, 10)
+                    }
+                }
                 .accessibilityLabel(t(state.mapPreviewLabel))
                 .transition(.move(edge: .top).combined(with: .opacity))
         }
+    }
+
+    private func toggleMapHeight() {
+        if state.isExpanded {
+            state.collapse()
+        } else if state.isCompact {
+            state.expand()
+        }
+    }
+
+    private func restorePersistedVisibility() {
+        guard let persistenceKey,
+              let rawValue = UserDefaults.standard.string(forKey: persistenceKey),
+              let visibility = LHMapHeaderVisibility(rawValue: rawValue),
+              visibility == .compact || visibility == .expanded
+        else { return }
+        state.visibility = visibility
+    }
+
+    private func persistVisibility(_ visibility: LHMapHeaderVisibility) {
+        guard let persistenceKey, visibility == .compact || visibility == .expanded else { return }
+        UserDefaults.standard.set(visibility.rawValue, forKey: persistenceKey)
     }
 
     // MARK: Fullscreen cover

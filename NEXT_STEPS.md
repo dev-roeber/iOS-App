@@ -1,5 +1,15 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Master-Train Phase C) — Global Map Options + verstellbare Kartenhöhe (Branch `main`, HEAD `70961ad` → folgt)
+
+> **Phase C abgeschlossen.** Bestehende Map-Architektur wurde erweitert, nicht ersetzt: `MapLayerMenu` bleibt die einheitliche Karten-Optionsquelle; `LHCollapsibleMapHeader` bekommt compact/expanded-Resize über unteren Handle mit Tap, Drag und VoiceOver-Adjustable-Action. Per-Screen Persistenz ist für Overview, Days, DayDetail, Insights, Export und Live aktiviert. Saved-Track-Editor zeigt jetzt ebenfalls das globale Kartenmenü. Detail: [`docs/MAP_CONTROLS_RESIZE_AUDIT_2026-05-25.md`](docs/MAP_CONTROLS_RESIZE_AUDIT_2026-05-25.md).
+>
+> **Nicht Teil von Phase C:** keine CloudKit-/iCloud-/Favoriten-Änderung, kein iPad-Build-Setting, keine Tests, kein Xcode Cloud, kein TestFlight.
+>
+> **Nächste Phase:** **D** — `FavoriteEntry` Modell + lokale Persistenz/Migration. Wartet auf User-Freigabe.
+
+---
+
 ## Stand 2026-05-25 (Master-Train Phase B) — DE/EN Localization-Basis + `Localizable.xcstrings` (Branch `main`, HEAD `4d4cbcb` → folgt)
 
 > **Phase B abgeschlossen.** `Package.swift` mit `defaultLocalization: "en"` + `Localizable.xcstrings` für AppSupport-Target angelegt (765 Keys aus bestehender `AppGermanTranslations` + 37 LocalTimeline-Strings, 17 Case/Reserved-Konflikte aus xcstrings entfernt aber in `AppGermanTranslations` behalten). Bestehender `t()`-Helper-Mechanik unverändert. Detail: [`docs/LOCALIZATION_DE_EN_AUDIT_2026-05-25.md`](docs/LOCALIZATION_DE_EN_AUDIT_2026-05-25.md).

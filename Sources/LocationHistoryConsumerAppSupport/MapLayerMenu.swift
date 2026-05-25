@@ -86,13 +86,21 @@ public struct MapLayerMenu: View {
 
     @ViewBuilder
     private var mapStyleSection: some View {
-        Picker(selection: mapStyleBinding) {
-            Label(t("Standard"), systemImage: "map").tag(AppMapStylePreference.standard)
-            Label(t("Satellite"), systemImage: "globe.europe.africa.fill").tag(AppMapStylePreference.hybrid)
-        } label: {
-            Label(t("Map style"), systemImage: "square.stack.3d.up")
+        Section {
+            Picker(selection: mapStyleBinding) {
+                Label(t("Standard"), systemImage: "map").tag(AppMapStylePreference.standard)
+                Label(t("Satellite"), systemImage: "globe.europe.africa.fill").tag(AppMapStylePreference.hybrid)
+            } label: {
+                Label(t("Map style"), systemImage: "square.stack.3d.up")
+            }
+            .pickerStyle(.menu)
+
+            Toggle(isOn: $preferences.mapShowsRealisticElevation) {
+                Label(t("3D Terrain"), systemImage: "mountain.2")
+            }
+        } header: {
+            Text(t("Map options"))
         }
-        .pickerStyle(.menu)
     }
 
     @ViewBuilder

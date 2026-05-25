@@ -259,6 +259,7 @@ public struct AppExportView: View {
             state: $exportMapHeaderState,
             language: preferences.appLanguage,
             overlayControls: true,
+            persistenceKey: LHMapHeightPersistenceKey.export,
             safeAreaTopInset: lhDeviceTopSafeInset()
         ) {
             if previewData.hasMapContent {

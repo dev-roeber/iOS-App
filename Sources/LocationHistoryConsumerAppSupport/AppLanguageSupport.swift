@@ -716,6 +716,12 @@ enum AppGermanTranslations {
         "Show Map": "Karte anzeigen",
         "Collapse Map": "Karte einklappen",
         "Expand Map": "Karte erweitern",
+        "Map height": "Kartenhöhe",
+        "Compact map": "Kompakte Karte",
+        "Expanded map": "Erweiterte Karte",
+        "Drag up to expand the map or drag down to make it compact. Double tap to switch size.": "Nach oben ziehen, um die Karte zu erweitern, oder nach unten ziehen, um sie kompakt zu machen. Doppeltippen wechselt die Größe.",
+        "Map options": "Kartenoptionen",
+        "3D Terrain": "3D-Gelände",
         "Close Map": "Karte schließen",
         "Dismiss": "Schließen",
         // Insights Dashboard Redesign
