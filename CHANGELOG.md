@@ -1,5 +1,58 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.5: Accessibility / Dynamic Type Polish (Branch `main`, HEAD `c99f90c` → folgt)
+
+> **Minimal-invasive A11y-Polish.** Settings-Root und Home-Screen-Empty-State bekommen sichere Dynamic-Type-/Decorative-Image-Polishes. Localization-Architektur (custom `t(_:)`-Layer) bleibt unverändert — Migration auf String Catalog ist als separater Train dokumentiert. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- HIG Accessibility (https://developer.apple.com/design/human-interface-guidelines/accessibility) — Mindest-44pt-Tap-Targets, Labels für sinngebende Icons
+- SwiftUI `accessibilityLabel`/`accessibilityValue`/`accessibilityHint`/`accessibilityHidden(true)` (https://developer.apple.com/documentation/swiftui/view-accessibility)
+- Dynamic Type (https://developer.apple.com/design/human-interface-guidelines/typography) — semantische Fonts (`.title`, `.headline`, `.body`, `.caption`) skalieren automatisch; `.font(.system(size:))` skaliert nicht
+- `.dynamicTypeSize(...)` Range-Clamp (https://developer.apple.com/documentation/swiftui/view/dynamictypesize(_:))
+- SF Symbols (https://developer.apple.com/design/human-interface-guidelines/sf-symbols)
+- Localization (https://developer.apple.com/documentation/swift/preparing-your-app-for-localization-and-internationalization)
+
+### Accessibility-Verbesserungen
+1. **`wrapper/.../ContentView.swift:249`** — Heading-Hero-Icon `map.fill` (56 pt) bekommt `.accessibilityHidden(true)`. Vorher las VoiceOver „Map fill image, Import your location history, …"; jetzt nur die echten Texte.
+
+### Dynamic-Type-Verbesserungen
+2. **`Sources/.../AppOptionsView.swift:124`** — Settings-Root `AppOptionsView.body` bekommt `.dynamicTypeSize(.xSmall ... .xxxLarge)` als Clamp. Vorher konnte die `sectionLink`-Grid bei AX5 die vertikale Sicht überlaufen und Subviews unzugänglich machen; Clamp hält das Layout scrollbar und legible. Sub-Views (`AppGeneralOptionsView`/`AppMapsOptionsView`/…) sind **nicht** geclamped — sie können nach individueller Validierung bis `.accessibility5` öffnen.
+
+### Bewusst NICHT verändert
+- `.font(.system(size: …))`-Hotspots in Hero-Counter-Anzeigen (`AppContentSplitView`, `AppDayListView`, `AppExportView`, `AppLiveTrackingView`, `LHXEmptyState`/`LHXErrorState`-Icons) — Risiko-Bewertung pro Surface ist Map/Insights-Layout-Thema (Trains 8.6/8.11/8.12).
+- Custom Localization-Layer (`AppLanguagePreference.localized(_:)` via `t(_:)`-Helper). Migration auf String Catalog (`Localizable.xcstrings`) ist Train **8.14** (App Store / Privacy / Review Readiness).
+- Farben (alle aus `LH2GPXTheme.*`).
+- SF-Symbol-Auswahl überall passend; keine Änderung in diesem Train.
+
+### Localization-Status
+- **Heute (Stand 8.5):** Custom Runtime-Localization via `AppLanguagePreference.localized(_:)` (`AppLanguageSupport.swift`, deutsche Phrasen pro englischer Source). Keine `Localizable.strings`, kein `Localizable.xcstrings` (verifiziert per `find . -iname "*.xcstrings" -o -iname "*.strings"`).
+- **Vorteil:** Sprachwechsel zur Laufzeit (Settings → General → Sprache) ohne App-Neustart, eigene `AppPreferences.appLanguage`.
+- **Nachteil:** Apple String-Catalog-Tooling (Localization Pull/Push) nicht direkt nutzbar; Xcode Cloud automatische Übersetzung greift nicht.
+- **Train-8.14-Plan:** Migration auf Apple String Catalog evaluieren, mit Backwards-Compat-Adapter zum bestehenden `t(_:)`-Helper.
+
+### Manuelle VoiceOver-Prüfung
+- **Nicht** durchgeführt — Build-only-Train.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../AppOptionsView.swift` | `.dynamicTypeSize(.xSmall ... .xxxLarge)`-Clamp am Settings-Root |
+| `wrapper/.../ContentView.swift` | `.accessibilityHidden(true)` am dekorativen Map-Hero-Icon |
+| Doku | CHANGELOG, ROADMAP |
+
+### Build-only Validierung
+- `swift build` ✅ Build complete (9,70 s), 0 Warnings.
+- `xcodebuild` Sim ✅ BUILD SUCCEEDED.
+- `xcodebuild` generic iOS ✅ BUILD SUCCEEDED.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller iPhone-Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.6 — Map Layer & Route Interaction Upgrade** (build-only).
+
+---
+
 ## 2026-05-25 — Train 8.4: Performance/Concurrency — 138 → 0 Build-Warnings (Branch `main`, HEAD `edf017a` → folgt)
 
 > **Swift-6-Concurrency-Warnings vollständig eliminiert + ZIPFoundation-Deprecation behoben.** Zwei lokal eindeutige, additive Fixes — keine Architektur-/Parser-/Algorithmus-Änderung, keine neue Dependency. Tests deferred bis Punkt 10.

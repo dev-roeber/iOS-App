@@ -121,6 +121,12 @@ public struct AppOptionsView: View {
         }
         .navigationTitle(t("Options"))
         .accessibilityIdentifier("options.title")
+        // Train 8.5: Clamp Dynamic Type to ≤ .xxxLarge so the Settings
+        // root stays scrollable and legible even at AX5. Each Sub-View
+        // is free to relax further (.accessibility5) once its layout
+        // has been individually validated; the root cap protects the
+        // sectionLink grid from running out of vertical room.
+        .dynamicTypeSize(.xSmall ... .xxxLarge)
     }
 
     @ViewBuilder

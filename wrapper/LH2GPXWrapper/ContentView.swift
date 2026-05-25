@@ -251,6 +251,7 @@ struct ContentView: View {
                 .foregroundStyle(.white)
                 .shadow(color: Color.black.opacity(0.45), radius: 8, y: 2)
                 .accessibilityHidden(true)
+                .accessibilityHidden(true)
 
             VStack(spacing: 8) {
                 Text(t("Import your location history"))

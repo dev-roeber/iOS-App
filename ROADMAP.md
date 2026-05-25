@@ -14,7 +14,7 @@
 | 8.2 | Settings & Privacy Center Modernisierung | ✅ erledigt — Top-Banner + Privacy-Rows |
 | 8.3 | App Shortcuts / App Intents Skeleton | ✅ erledigt — 3 Intents + Shortcuts, Navigation deferred |
 | 8.4 | Performance & Concurrency Modernisierung | ✅ erledigt — 138 → 0 Build-Warnings |
-| 8.5 | Accessibility / Dynamic Type / Localization Polish | offen |
+| 8.5 | Accessibility / Dynamic Type / Localization Polish | ✅ erledigt — Settings-Clamp + Hero-Icon hidden |
 | 8.6 | Map Layer & Route Interaction Upgrade | offen |
 | 8.7 | Error Handling / Diagnostics / User Feedback | offen |
 | 8.8 | Import-Pipeline UX + Robustness Polish | offen |
