@@ -1,5 +1,23 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Export UX I) — Privacy-Hinweis + Filename-Accessibility + Empty-Preview-Identifier (Branch `main`, HEAD `ba41234` → folgt)
+
+> **Reiner UX-Polish im bestehenden Export-Flow.** Drei additive Stellen in `AppExportView`: Privacy-Hinweis im Selection-Summary, Filename-Vorschau mit `doc.text`-Icon + VoiceOver-Label „Suggested filename: <name>", neuer `accessibilityIdentifier` für den Empty-Preview-Label. **Keine** neuen Formate, **keine** Parser-/Format-Logik-Änderung, **keine** automatische iCloud-Synchronisation, **kein** neuer Datenpfad, **keine** Entitlement-/Privacy-Manifest-Änderung. Tests deferred bis Punkt 10.
+
+**Geänderte Dateien:**
+- `Sources/LocationHistoryConsumerAppSupport/AppExportView.swift`
+
+**Build-only verifiziert:** `swift build` ✅ 0E/1W (pre-existing F.1-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅.
+
+**Nächste Trains (build-only bis Punkt 10):**
+1. **Import UX** — Format-Klarheit, Validierungszusammenfassung, Fehlertexte, Fortschritts-Sichtbarkeit ohne Parser-Risiko.
+2. **Map/Timeline/Heatmap Interaktion** — UX-Polish.
+3. **Insights refactor** — UX-Polish.
+4. **Finaler Build-/Doku-Sync vor Testphase.**
+5. **Vollständige Tests:** `swift test`, `xcodebuild test`, UITests Sim+Device, TestFlight-Smoke, Xcode Cloud Workflow.
+
+---
+
 ## Stand 2026-05-25 (UI-Adoption I) — LHX* in drei Kern-Screens (Branch `main`, HEAD `31c75c0` → folgt)
 
 > **Erste schrittweise LHX*-Adoption nach F.4.** Drei sichere Inline-Implementierungen ersetzt: `AppExportView.emptyState` → `LHXEmptyState`, `AppInsightsContentView.insightsFullEmptyState` → `LHXEmptyState` (mit erhaltenem `insights.empty.resetFilter`-Identifier über neuen Parameter), `AppICloudOptionsView` Privacy-Footer → `LHXInfoCard`. **Keine Funktionalitäts-, Layout- oder Accessibility-Änderung.** Bestehende Identifier erhalten. `LHXEmptyState` zusätzlich additiv um `primaryActionAccessibilityIdentifier` erweitert (Default `nil`, kein API-Bruch).

@@ -453,6 +453,7 @@ public struct AppExportView: View {
                 )
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier("export.preview.emptySelection")
             } else if previewData.hasMapContent {
                 // When heroEnabled the map is already rendered full-bleed via
                 // safeAreaInset(.top); only show stats/legend here to avoid a
@@ -578,9 +579,33 @@ public struct AppExportView: View {
                     }
                 }
 
-                Text(exportFilenamePreview(selection: selection, summaries: summaries))
-                    .font(.caption2.monospaced())
-                    .foregroundStyle(.secondary)
+                let filenamePreview = exportFilenamePreview(selection: selection, summaries: summaries)
+                Label {
+                    Text(filenamePreview)
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("export.selection.filenamePreview")
+                } icon: {
+                    Image(systemName: "doc.text")
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(t("Suggested filename"))
+                .accessibilityValue(filenamePreview)
+
+                Label {
+                    Text(t("These export files contain precise location data. You decide where to save them — nothing is uploaded automatically."))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "lock.shield")
+                        .foregroundStyle(LH2GPXTheme.primaryBlue)
+                        .accessibilityHidden(true)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("export.selection.privacyHint")
 
                 if let readinessMessage = invalidSelectionMessage(review: review) {
                     LHContextBar(

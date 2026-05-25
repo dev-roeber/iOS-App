@@ -1,5 +1,50 @@
 # CHANGELOG
 
+## 2026-05-25 — Export UX I: Privacy-Hinweis + Filename-Accessibility + Empty-Preview-Identifier (Branch `main`, HEAD `ba41234` → folgt)
+
+> **Reine UX-Polish im bestehenden Export-Flow.** `AppExportView` bekommt drei kleine, additive Verbesserungen rund um die `selectionSummaryCard` / `previewCard`: (1) sichtbarer Privacy-Hinweis direkt unter dem Filename-Vorschlag („These export files contain precise location data. You decide where to save them — nothing is uploaded automatically."), (2) Filename-Vorschau bekommt ein `doc.text`-Icon und eine kombinierte VoiceOver-Beschriftung „Suggested filename: <name>" statt nur monospaced-Text, (3) der „Select at least one day…"-Hinweis im leeren Preview-Zustand bekommt einen `accessibilityIdentifier`. **Keine neuen Exportformate, keine Parser-/Format-Logik-Änderung, keine automatische iCloud-Synchronisation, kein neuer Datenpfad, keine entitlement- oder privacy-manifest-Änderung.** Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku (vor Implementation)
+- SwiftUI `fileExporter` UX (Dateiname + System-Sheet wählt Ziele automatisch) (https://developer.apple.com/documentation/swiftui/view/fileexporter(ispresented:document:contenttype:defaultfilename:oncompletion:))
+- `UIDocumentPickerViewController.init(forExporting:asCopy:)` — `asCopy: true` korrekt für generierte Dateien (https://developer.apple.com/documentation/uikit/uidocumentpickerviewcontroller/init(forexporting:ascopy:))
+- `ShareLink` vs `fileExporter` — HIG empfiehlt **eine** kanonische Aktion pro Ziel; aktueller `fileExporter`-Pfad bleibt (https://developer.apple.com/documentation/swiftui/sharelink)
+- HIG „Sharing and Actions" / „Buttons" — Ellipsis bei Folge-Sheet, „Export" vs „Save"-Semantik (https://developer.apple.com/design/human-interface-guidelines/buttons)
+- HIG „Feedback" — Erfolg dezent inline, Fehler-Alerts nur für blockierende Fehler mit Recovery (https://developer.apple.com/design/human-interface-guidelines/feedback)
+- HIG „File Management" — Nutzer transparent informieren, wenn Datei sensible Standortdaten enthält, bevor Sandbox verlassen wird (https://developer.apple.com/design/human-interface-guidelines/file-management)
+- App Privacy — rein nutzerinitiierter Export der eigenen Daten in eigene Files/iCloud-Drive zählt **nicht** als Data Collection/Sharing → keine Privacy-Manifest-Erweiterung nötig (https://developer.apple.com/app-store/app-privacy-details/)
+- `defaultFilename` Parameter — Basis-Name ohne Extension; Extension kommt aus `contentType` (https://developer.apple.com/documentation/swiftui/view/fileexporter(...))
+
+### Export-UX-Änderungen (geänderte Datei: `Sources/.../AppExportView.swift`)
+1. **`previewCard` Leerzustand** (Zeile 449-456): bestehender „Select at least one day…"-Label bekommt `.accessibilityIdentifier("export.preview.emptySelection")` — vorher kein Identifier. UI-Test-fähig, keine Layout-Änderung.
+2. **`selectionSummaryCard` Filename-Vorschau** (Zeile 581-595): vorher Plain `Text(filename).font(.caption2.monospaced())`, jetzt `Label`-Komposition mit `doc.text` SF-Symbol + kombiniertem VoiceOver-Label „Suggested filename" + AccessibilityValue `<filename>`. `accessibilityIdentifier("export.selection.filenamePreview")` für den Text. Funktional identisch — derselbe `exportFilenamePreview(selection:summaries:)`-Aufruf, derselbe Default-Filename für den `fileExporter`.
+3. **`selectionSummaryCard` Privacy-Hinweis** (Zeile 597-609, **neu**): zwischen Filename-Vorschau und `invalidSelectionMessage`-Warnung. `Label` mit `lock.shield` (LH2GPXTheme.primaryBlue) + Caption2-Text in englisch/deutsch-äquivalentem Wortlaut (via `t(_:)`): „These export files contain precise location data. You decide where to save them — nothing is uploaded automatically." `accessibilityIdentifier("export.selection.privacyHint")`. Erscheint nur bei nicht-leerer Selection (innerhalb `if review.selectedSourceCount > 0`-Branch), passt zum F.3-`exportTargetCard`-Hinweis ohne Duplikation.
+
+### Keine neuen falschen Claims
+- ✅ **Keine** neuen Exportformate behauptet — `ExportFormat.allCases` (GPX/KMZ/KML/GeoJSON/CSV) unverändert.
+- ✅ **Kein** automatischer Upload behauptet — neuer Privacy-Hinweis sagt explizit „nothing is uploaded automatically".
+- ✅ **Keine** iCloud-Sync-Aussage — F.3-Hinweis bleibt der einzige Ort, der iCloud Drive erwähnt, und nur als optionales User-Picker-Ziel.
+- ✅ **Keine** toten Buttons — keine neuen Buttons hinzugefügt.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../AppExportView.swift` | drei additive UX-Polish-Stellen (`previewCard` Identifier, Filename-Label-Komposition, Privacy-Hinweis-Label) |
+| Doku | CHANGELOG, NEXT_STEPS, ROADMAP, APPLE_VERIFICATION_CHECKLIST, APP_FEATURE_INVENTORY |
+
+### Build-only Validierung (in diesem Train)
+- `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), 14,94 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+- Statische Sweeps ✅: 0 neue TODO/FIXME/placeholder/coming-soon in `AppExportView.swift` (1 Treffer ist Bestandskommentar „hero placeholder is the canonical empty surface", nicht aus diesem Train); 0 `UIDocumentPickerViewController(url:`/`UIDocumentPickerMode`; 0 Secret-Treffer.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Import UX build-only** — Format-Klarheit, Validierungszusammenfassung, Fehlertexte, Fortschritts-Sichtbarkeit, ohne Parser-Risiko.
+
+---
+
 ## 2026-05-25 — UI-Adoption I: LHX* in drei Kern-Screens (Branch `main`, HEAD `31c75c0` → folgt)
 
 > **Erste schrittweise LHX*-Adoption nach F.4 (`LHXSyncStatusCard` in Settings → iCloud). Drei sichere Inline-Implementierungen werden durch ihre LHX*-Pendants ersetzt, ohne Funktionalitäts-, Layout-, oder Accessibility-Änderung.** Bestehende `accessibilityIdentifier` bleiben erhalten; LHX-Komponenten bringen 44 pt Tap-Targets, `accessibilityElement(children: .contain)`-Gruppierung und Theme-Tokens mit. **Keine** neuen Features, **keine** Placeholder/„coming soon", **keine** Map-/Heatmap-/Timeline-Layouts berührt. Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.

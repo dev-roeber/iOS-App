@@ -1,6 +1,18 @@
 # APP Feature Inventory
 
-Last analysis: **2026-05-25** (UI-Adoption I build-only auf `main` HEAD
+Last analysis: **2026-05-25** (Export UX I build-only auf `main` HEAD
+`ba41234` + Export-UX-I-Diff). Drei additive UX-Polish-Stellen in
+`AppExportView.selectionSummaryCard`/`previewCard`: sichtbarer Privacy-
+Hinweis („These export files contain precise location data. You decide
+where to save them — nothing is uploaded automatically."), Filename-
+Vorschau mit `doc.text`-Icon + VoiceOver-Label „Suggested filename:
+<name>", `accessibilityIdentifier("export.preview.emptySelection")` für
+den Empty-Preview-Label. **Keine** neuen Formate, **keine** Parser-/
+Format-Logik-Änderung, **keine** automatische iCloud-Synchronisation,
+**kein** neuer Datenpfad, **keine** Entitlement-/Privacy-Manifest-
+Änderung. Tests deferred bis Punkt 10.
+
+Voriger Stand: UI-Adoption I build-only auf `main` HEAD
 `31c75c0` + UI-Adoption-I-Diff). Drei sichere LHX*-Adoptionen:
 `AppExportView.emptyState` → `LHXEmptyState` (neuer Identifier
 `export.emptyState`), `AppInsightsContentView.insightsFullEmptyState`

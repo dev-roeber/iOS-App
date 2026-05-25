@@ -1,5 +1,36 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Export UX I) — Privacy-Hinweis + Filename-Accessibility + Empty-Preview-Identifier
+
+**HEAD:** `ba41234` + Export-UX-I-Diff (`AppExportView.swift`).
+
+### ✅ In diesem Pass build-only verifiziert
+- Drei additive UX-Polish-Stellen in `AppExportView`: Empty-Preview-Identifier, Filename-Vorschau-Label-Komposition mit VoiceOver-Label „Suggested filename: <name>", Privacy-Hinweis-Label in `selectionSummaryCard`.
+- Bestehender `fileExporter`-Flow unverändert.
+- Keine Entitlement-Änderung; `PrivacyInfo.xcprivacy` unverändert (rein nutzerinitiierter Export ist laut Apple keine Datenerhebung).
+- Neue UI-Test-Identifier: `export.preview.emptySelection`, `export.selection.filenamePreview`, `export.selection.privacyHint`. Alle bestehenden Identifier (`export.target.card`, `export.target.iCloudDriveHint`, `export.selection.edit`, `export.emptyState` etc.) **erhalten**.
+- `swift build` ✅ 0E/1W (pre-existing F.1 Swift-6-Concurrency-Warning in `CloudKitCloudSyncService.swift:48`), 14,94 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+- Statische Sweeps ✅ clean.
+
+### Geprüfte Apple-Doku (vor Implementation)
+SwiftUI `fileExporter` UX · `UIDocumentPickerViewController.init(forExporting:asCopy:)` (`asCopy: true` korrekt) · `ShareLink` vs `fileExporter` (HIG: eine kanonische Aktion pro Ziel) · HIG „Sharing and Actions" / „Buttons" (Ellipsis-Regel, Export-vs-Save-Semantik) · HIG „Feedback" (Erfolg dezent inline, Fehler-Alerts nur bei blockierenden Fehlern) · HIG „File Management" (Privacy-Hinweis bei sensiblen Standortdaten) · App Privacy (nutzerinitiierter Export ist keine Data Collection) · `defaultFilename`-Konventionen. URLs siehe CHANGELOG-Block.
+
+### ⏸️ In diesem Pass bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller iPhone-Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ Automatischer Upload aus Export.
+- ❌ CloudKit Records aktiv.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ iPad / Light Mode unterstützt.
+- ❌ Neuer Xcode-Cloud-Build / TestFlight-Build verfügbar — letzter extern grüner Stand bleibt **190** auf `b25c27d`.
+
+---
+
 ## Aktualisierung 2026-05-25 (UI-Adoption I) — LHX* in drei Kern-Screens
 
 **HEAD:** `31c75c0` + UI-Adoption-I-Diff (`AppExportView.swift`, `AppInsightsContentView.swift`, `AppICloudOptionsView.swift`, `Sources/.../UI/LHXStateViews.swift`).

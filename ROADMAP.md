@@ -1,5 +1,14 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `ba41234` + Export UX I → folgt — Privacy-Hinweis + Filename-Accessibility + Empty-Preview-Identifier)
+
+- **Export UX I umgesetzt (build-only):** `AppExportView.selectionSummaryCard` bekommt sichtbaren Privacy-Hinweis („These export files contain precise location data. You decide where to save them — nothing is uploaded automatically.") + Filename-Vorschau mit `doc.text` SF-Symbol und kombiniertem VoiceOver-Label „Suggested filename: <name>". `previewCard` Leerzustand bekommt `accessibilityIdentifier("export.preview.emptySelection")`. Neue Identifier: `export.selection.privacyHint`, `export.selection.filenamePreview`, `export.preview.emptySelection`.
+- **Bestehender `fileExporter`-Flow unverändert:** Derselbe Aufruf-Pfad (`AppExportView:1337-1352`-Bereich), dieselben `ExportFormat.allCases` (GPX/KMZ/KML/GeoJSON/CSV), derselbe `defaultFilename`/`contentType`-Mechanismus. Keine neuen Formate. Kein Parser-Wechsel.
+- **Privacy-Linie verstärkt sichtbar:** F.3 hat den iCloud-Drive-Hinweis im `exportTargetCard` adressiert; Export UX I ergänzt einen kontextnahen Privacy-Hinweis direkt am Selection-Summary, **ohne** den iCloud-Drive-Hinweis zu duplizieren. **Kein** automatischer Upload, **kein** CloudKit-Sync, **keine** Privacy-Manifest-Änderung.
+- **Build-only verifiziert (in diesem Train):** `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅. **Tests bewusst nicht ausgeführt** — deferred bis Punkt 10.
+- **Extern unverändert:** letzter extern grüner Xcode-Cloud-Build bleibt **190** auf `b25c27d`.
+- **Weiter offen:** Import UX, Map/Timeline/Heatmap-Polish, Insights-Refactor, finaler Sync vor Testphase, vollständige Tests.
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `31c75c0` + UI-Adoption I → folgt — LHX* in drei Kern-Screens)
 
 - **UI-Adoption I umgesetzt (build-only):** `AppExportView.emptyState` → `LHXEmptyState`; `AppInsightsContentView.insightsFullEmptyState` → `LHXEmptyState` mit erhaltenem `insights.empty.resetFilter`-Identifier über neuen `primaryActionAccessibilityIdentifier`-Parameter; `AppICloudOptionsView` Privacy-Footer (vorher Plain `Text`) → `LHXInfoCard(kind: .info)` mit erhaltenem `options.icloud.footer`-Identifier.
