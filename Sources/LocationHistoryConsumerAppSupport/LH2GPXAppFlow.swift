@@ -43,6 +43,29 @@ public enum LH2GPXAppFlow {
         return false
     }
 
+    // MARK: - Auto-Upload-Handoff
+
+    /// Übergibt eine frisch importierte Datei sicher an den
+    /// `AppImportCloudUploadBridge`-Handler. Wir kopieren die Quelle
+    /// synchron — noch innerhalb des security-scoped Zugriffs — in einen
+    /// app-eigenen Staging-Ordner. Erst die gestagete URL geht in die
+    /// Bridge; der Handler-Closure entscheidet dann asynchron, ob
+    /// hochgeladen wird, und ruft am Ende `AppImportCloudUploadStaging.cleanup(...)`.
+    ///
+    /// Fehler beim Stagen werden geloggt, aber nicht propagiert — der
+    /// eigentliche Import war erfolgreich, der Auto-Upload ist
+    /// best-effort.
+    static func handoffToAutoUpload(sourceURL: URL) {
+        // Wenn niemand registriert ist, brauchen wir gar nicht zu kopieren.
+        guard AppImportCloudUploadBridge.handler != nil else { return }
+        do {
+            let staged = try AppImportCloudUploadStaging.stage(sourceURL: sourceURL)
+            AppImportCloudUploadBridge.handle(importedFile: staged)
+        } catch {
+            AppImportCloudUploadLogger.log(error: error, url: sourceURL)
+        }
+    }
+
     // MARK: - Import / Restore
 
     /// Where an import attempt originated. Drives both the user-facing
@@ -98,7 +121,13 @@ public enum LH2GPXAppFlow {
             // registrierten Cloud-Upload-Handler aus. Handler ist nil
             // wenn die App ihn nicht installiert hat (Tests/Linux) oder
             // wenn der Nutzer den Toggle in den Import-Optionen aus hat.
-            AppImportCloudUploadBridge.handle(importedFile: url)
+            //
+            // Wichtig: wir stagen synchron HIER, solange der
+            // security-scoped Resource-Zugriff noch aktiv ist. Die
+            // app-owned Staging-URL wird an die Bridge übergeben — der
+            // Handler-Closure läuft asynchron (`Task { @MainActor in }`)
+            // und hätte sonst keinen Scope mehr auf das Original.
+            handoffToAutoUpload(sourceURL: url)
             return .success(content)
         } catch {
             // Auto-restore skipped a large Google Timeline file — keep
@@ -303,11 +332,9 @@ public enum LH2GPXAppFlow {
                 importCancellation: importCancellation
             )
             AppImportStateBridge.rememberImportedFile(url)
-            // Auto-Upload-Hook: löst nach erfolgreichem Import den
-            // registrierten Cloud-Upload-Handler aus. Handler ist nil
-            // wenn die App ihn nicht installiert hat (Tests/Linux) oder
-            // wenn der Nutzer den Toggle in den Import-Optionen aus hat.
-            AppImportCloudUploadBridge.handle(importedFile: url)
+            // Auto-Upload-Hook: siehe Kommentar in `loadImportedFile`.
+            // Staging muss synchron, vor Scope-Release passieren.
+            handoffToAutoUpload(sourceURL: url)
             switch envelope {
             case let .inMemory(content):
                 return .legacy(content)

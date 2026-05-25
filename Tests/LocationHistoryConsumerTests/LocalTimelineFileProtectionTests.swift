@@ -59,4 +59,45 @@ final class LocalTimelineFileProtectionTests: XCTestCase {
             try LocalTimelineFileProtection.applyDefaultProtectionIfPresent(urls: [existing, missing])
         )
     }
+
+    /// Darwin: setAttributes must actually flip the protection class
+    /// to `completeUnlessOpen` on a real file.
+    func testApplyDefaultProtectionSetsAttributeOnDarwin() throws {
+        let fileURL = tempDir.appendingPathComponent("protected.bin")
+        try Data([0x01, 0x02]).write(to: fileURL)
+
+        XCTAssertNoThrow(try LocalTimelineFileProtection.applyDefaultProtection(to: fileURL))
+
+        #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+        let current = LocalTimelineFileProtection.currentProtection(of: fileURL)
+        XCTAssertEqual(current, FileProtectionType.completeUnlessOpen.rawValue)
+        #elseif canImport(Darwin)
+        // macOS reports the system default (CompleteUntilFirstUserAuthentication
+        // or none) — setAttributes(.protectionKey) is iOS-family only.
+        XCTAssertNotNil(LocalTimelineFileProtection.currentProtection(of: fileURL))
+        #else
+        XCTAssertNil(LocalTimelineFileProtection.currentProtection(of: fileURL))
+        #endif
+    }
+
+    func testFavoriteEntryStoreWritesWithProtectionOnDarwin() throws {
+        let fileURL = tempDir.appendingPathComponent("fav.json")
+        let suiteName = "LTSFavTest-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        let store = FavoriteEntryStore(
+            fileURL: fileURL,
+            userDefaults: defaults,
+            legacySource: { [] }
+        )
+
+        _ = store.setDayFavorite("2026-05-25", isFavorite: true)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path))
+        #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+        let current = LocalTimelineFileProtection.currentProtection(of: fileURL)
+        XCTAssertEqual(current, FileProtectionType.completeUnlessOpen.rawValue)
+        #endif
+        defaults.removePersistentDomain(forName: suiteName)
+    }
 }

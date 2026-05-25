@@ -95,6 +95,7 @@ public final class FavoriteEntryStore {
                 withIntermediateDirectories: true
             )
         }
+        try? LocalTimelineFileProtection.applyDefaultProtection(to: folder)
         return folder.appendingPathComponent("favorite_entries.json", isDirectory: false)
     }
 
@@ -210,6 +211,7 @@ public final class FavoriteEntryStore {
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let data = try encoder.encode(envelope)
             try data.write(to: fileURL, options: [.atomic])
+            try? LocalTimelineFileProtection.applyDefaultProtection(to: fileURL)
         } catch {
             #if canImport(OSLog)
             FavoriteEntryStore.logger.error("Failed to persist favorite_entries.json (count=\(envelope.entries.count, privacy: .public))")

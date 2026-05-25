@@ -30,6 +30,17 @@ public enum CloudKitFavoriteEntrySchema {
     }
 }
 
+/// Fehler-Typ für den FavoriteEntry-CloudKit-Sync. Wird geworfen,
+/// wenn ein Pull zwar einzelne Records erfolgreich liefert, aber
+/// mindestens ein per-record Fehler auftrat (anders als beim
+/// idempotenten Top-Level-Skip). Sync gilt dann als nicht erfolgreich.
+public enum FavoriteEntryCloudSyncError: Error {
+    /// Mindestens ein Record konnte nicht gelesen werden. Enthält die
+    /// Anzahl der harten per-record-Fehler sowie den ersten Fehler als
+    /// `NSError` (CloudKit-Domain bleibt erhalten).
+    case partialFetchFailure(failedRecordCount: Int, firstError: NSError)
+}
+
 /// Foundation-only Protokoll für den Favoriten-CloudKit-Sync. Erlaubt
 /// Linux-Tests gegen Mock-Implementierung ohne `import CloudKit`.
 public protocol FavoriteEntryCloudSyncing: Sendable {
@@ -122,17 +133,28 @@ public struct CloudKitFavoriteEntryCloudSync: FavoriteEntryCloudSyncing {
         let query = CKQuery(recordType: CloudKitFavoriteEntrySchema.recordType,
                             predicate: NSPredicate(format: "TRUEPREDICATE"))
         var collected: [CKRecord] = []
+        var perRecordErrors: [NSError] = []
+        func ingest(_ matchResults: [(CKRecord.ID, Result<CKRecord, Error>)]) {
+            for (_, result) in matchResults {
+                switch result {
+                case .success(let record):
+                    collected.append(record)
+                case .failure(let err):
+                    let ns = err as NSError
+                    // Per-record `unknownItem` (code 11) ist idempotent —
+                    // Record wurde während Iteration gelöscht. Skippen.
+                    if ns.domain == "CKErrorDomain", ns.code == 11 { continue }
+                    perRecordErrors.append(ns)
+                }
+            }
+        }
         do {
             let firstPage = try await database.records(matching: query, resultsLimit: 200)
-            collected.append(contentsOf: firstPage.matchResults.compactMap { _, result in
-                try? result.get()
-            })
+            ingest(firstPage.matchResults)
             var cursor = firstPage.queryCursor
             while let next = cursor {
                 let nextPage = try await database.records(continuingMatchFrom: next, resultsLimit: 200)
-                collected.append(contentsOf: nextPage.matchResults.compactMap { _, result in
-                    try? result.get()
-                })
+                ingest(nextPage.matchResults)
                 cursor = nextPage.queryCursor
             }
         } catch {
@@ -150,6 +172,12 @@ public struct CloudKitFavoriteEntryCloudSync: FavoriteEntryCloudSyncing {
                 }
             }
             throw error
+        }
+        if let firstError = perRecordErrors.first {
+            throw FavoriteEntryCloudSyncError.partialFetchFailure(
+                failedRecordCount: perRecordErrors.count,
+                firstError: firstError
+            )
         }
         return collected.compactMap(Self.decode)
     }

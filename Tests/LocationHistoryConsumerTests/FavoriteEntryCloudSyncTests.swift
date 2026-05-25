@@ -95,6 +95,61 @@ final class FavoriteEntryCloudSyncTests: XCTestCase {
         XCTAssertEqual(afterDelete.count, 0)
     }
 
+    // MARK: - Per-record failure handling
+
+    /// Mock, der beim N-ten Pull-Eintrag einen harten Fehler simuliert,
+    /// indem `pull()` direkt `FavoriteEntryCloudSyncError.partialFetchFailure`
+    /// wirft. Erlaubt Coordinator-Tests ohne CloudKit-Pfad.
+    final class MockFailingFavoriteEntryCloudSync: FavoriteEntryCloudSyncing, @unchecked Sendable {
+        let pullError: Error
+        init(pullError: Error) { self.pullError = pullError }
+        func push(_ entries: [FavoriteEntry]) async throws {}
+        func pull() async throws -> [FavoriteEntry] { throw pullError }
+        func delete(_ entry: FavoriteEntry) async throws {}
+        func deleteAll() async throws {}
+    }
+
+    func testPartialFetchFailureErrorCarriesCountAndFirstError() {
+        let underlying = NSError(domain: "CKErrorDomain", code: 2,
+                                 userInfo: [NSLocalizedDescriptionKey: "boom"])
+        let err = FavoriteEntryCloudSyncError.partialFetchFailure(
+            failedRecordCount: 3, firstError: underlying
+        )
+        switch err {
+        case .partialFetchFailure(let count, let first):
+            XCTAssertEqual(count, 3)
+            XCTAssertEqual(first.domain, "CKErrorDomain")
+            XCTAssertEqual(first.code, 2)
+        }
+    }
+
+    #if canImport(Combine)
+    @MainActor
+    func testCoordinatorReportsFailureWhenPullThrowsPartialFetchFailure() async throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("fav-store-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let defaults = UserDefaults(suiteName: "fav-cloud-test-\(UUID().uuidString)")!
+        let store = FavoriteEntryStore(
+            fileURL: tmp,
+            userDefaults: defaults,
+            legacySource: { [] }
+        )
+        let underlying = NSError(domain: "CKErrorDomain", code: 2,
+                                 userInfo: [NSLocalizedDescriptionKey: "boom"])
+        let cloud = MockFailingFavoriteEntryCloudSync(
+            pullError: FavoriteEntryCloudSyncError.partialFetchFailure(
+                failedRecordCount: 1, firstError: underlying
+            )
+        )
+        let coordinator = FavoriteEntryCloudSyncCoordinator(store: store, cloud: cloud)
+        await coordinator.sync()
+        XCTAssertTrue(coordinator.actionFailed)
+        XCTAssertNil(coordinator.lastSyncAt)
+        XCTAssertNotNil(coordinator.actionMessage)
+    }
+    #endif
+
     func testInMemoryCloudDeleteAllClearsStorage() async throws {
         let cloud = InMemoryFavoriteEntryCloudSync()
         let entries = (0..<3).map { i in

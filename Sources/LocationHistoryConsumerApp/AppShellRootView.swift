@@ -238,17 +238,15 @@ struct AppShellRootView: View {
                 }
                 #endif
                 #if canImport(CloudKit)
+                // `url` ist bereits eine app-owned Staging-URL (siehe
+                // `LH2GPXAppFlow.handoffToAutoUpload`) — kein erneutes
+                // `copyItem`-Wrapping nötig. Wir räumen den Staging-
+                // Ordner erst NACH dem Upload-Abschluss auf, damit ein
+                // laufender Upload nicht zerstört wird.
                 let manager = CloudKitCloudFileManager()
+                defer { AppImportCloudUploadStaging.cleanup(stagedURL: url) }
                 do {
-                    // Datei in app-tmp kopieren, damit der Upload nicht
-                    // vom Original-URL-Lebenszyklus abhängt.
-                    let tmp = FileManager.default.temporaryDirectory
-                        .appendingPathComponent("ImportAutoUpload-\(UUID().uuidString)", isDirectory: true)
-                    try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
-                    let copy = tmp.appendingPathComponent(url.lastPathComponent)
-                    try FileManager.default.copyItem(at: url, to: copy)
-                    defer { try? FileManager.default.removeItem(at: tmp) }
-                    let candidate = try CloudFileCandidateFactory.makeCandidate(for: copy)
+                    let candidate = try CloudFileCandidateFactory.makeCandidate(for: url)
                     _ = try await manager.upload(candidate)
                 } catch {
                     // SHA-Dedupe gibt CloudFileError.duplicate — harmlos.
@@ -258,6 +256,8 @@ struct AppShellRootView: View {
                     AppImportCloudUploadLogger.log(error: error, url: url)
                     #endif
                 }
+                #else
+                AppImportCloudUploadStaging.cleanup(stagedURL: url)
                 #endif
             }
         }

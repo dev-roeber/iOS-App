@@ -850,7 +850,7 @@ public final class LiveTrackCloudBackupService: LiveTrackCloudBackupCoordinator 
 
     public init(
         settingsProvider: @escaping () -> LiveTrackCloudBackupSettings,
-        queueStore: LiveTrackCloudBackupQueueStoring = UserDefaultsLiveTrackCloudBackupQueueStore(),
+        queueStore: LiveTrackCloudBackupQueueStoring = LiveTrackCloudBackupFileQueueStore(),
         uploader: LiveTrackCloudBackupUploading = NoopLiveTrackCloudBackupUploader(),
         networkInterfaceProvider: @escaping () -> LiveTrackCloudNetworkInterface = { .unknown },
         healthGate: @escaping () -> Bool = { true },
@@ -1311,18 +1311,22 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
 
     public func fetchOverview() async throws -> ICloudStorageOverview {
         let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
-        let summaryQuery = CKQuery(recordType: LiveTrackCloudSchema.summaryRecordType, predicate: NSPredicate(format: "TRUEPREDICATE"))
-        let batchQuery = CKQuery(recordType: LiveTrackCloudSchema.pointBatchRecordType, predicate: NSPredicate(format: "TRUEPREDICATE"))
-        let summaries: [(CKRecord.ID, Result<CKRecord, Error>)]
-        let batches: [(CKRecord.ID, Result<CKRecord, Error>)]
+        let summaries: [CKRecord]
+        let batches: [CKRecord]
         do {
-            summaries = try await database.records(matching: summaryQuery, resultsLimit: 200).matchResults
+            summaries = try await Self.fetchAllRecords(
+                ofType: LiveTrackCloudSchema.summaryRecordType,
+                from: database
+            )
         } catch {
             Self.logCloudKitFailure("fetchOverview/summaries", error)
             throw error
         }
         do {
-            batches = try await database.records(matching: batchQuery, resultsLimit: 200).matchResults
+            batches = try await Self.fetchAllRecords(
+                ofType: LiveTrackCloudSchema.pointBatchRecordType,
+                from: database
+            )
         } catch {
             Self.logCloudKitFailure("fetchOverview/batches", error)
             throw error
@@ -1331,22 +1335,18 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
         overview.summaryCount = summaries.count
         overview.pointBatchCount = batches.count
         overview.lastCloudKitStatusCheckAt = Date()
-        for result in summaries {
-            if case .success(let record) = result.1 {
-                overview.estimatedPointCount += (record[LiveTrackCloudSchema.SummaryField.pointCount] as? Int)
-                    ?? (record[LiveTrackCloudSchema.SummaryField.pointCount] as? NSNumber)?.intValue
-                    ?? 0
-                overview.estimatedStorageBytes += (record[LiveTrackCloudSchema.SummaryField.estimatedPayloadBytes] as? Int)
-                    ?? (record[LiveTrackCloudSchema.SummaryField.estimatedPayloadBytes] as? NSNumber)?.intValue
-                    ?? 0
-            }
+        for record in summaries {
+            overview.estimatedPointCount += (record[LiveTrackCloudSchema.SummaryField.pointCount] as? Int)
+                ?? (record[LiveTrackCloudSchema.SummaryField.pointCount] as? NSNumber)?.intValue
+                ?? 0
+            overview.estimatedStorageBytes += (record[LiveTrackCloudSchema.SummaryField.estimatedPayloadBytes] as? Int)
+                ?? (record[LiveTrackCloudSchema.SummaryField.estimatedPayloadBytes] as? NSNumber)?.intValue
+                ?? 0
         }
-        for result in batches {
-            if case .success(let record) = result.1 {
-                overview.estimatedStorageBytes += (record[LiveTrackCloudSchema.PointBatchField.estimatedPayloadBytes] as? Int)
-                    ?? (record[LiveTrackCloudSchema.PointBatchField.estimatedPayloadBytes] as? NSNumber)?.intValue
-                    ?? 0
-            }
+        for record in batches {
+            overview.estimatedStorageBytes += (record[LiveTrackCloudSchema.PointBatchField.estimatedPayloadBytes] as? Int)
+                ?? (record[LiveTrackCloudSchema.PointBatchField.estimatedPayloadBytes] as? NSNumber)?.intValue
+                ?? 0
         }
         return overview
     }

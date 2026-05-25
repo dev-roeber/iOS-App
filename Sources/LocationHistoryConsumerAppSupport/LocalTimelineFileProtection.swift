@@ -40,9 +40,31 @@ public enum LocalTimelineFileProtection {
     /// gegen einen stabilen Wert prüfen kann.
     public static var defaultProtectionDescription: String {
         #if canImport(Darwin)
-        return "completeUnlessOpen (Darwin target — actual flag application deferred to iOS rollout)"
+        return "completeUnlessOpen"
         #else
         return "noop-linux"
+        #endif
+    }
+
+    /// Reads the currently set protection class for `url`, if any.
+    /// Darwin: returns the `FileProtectionType.rawValue` (e.g.
+    /// `NSFileProtectionCompleteUnlessOpen`). Linux: always `nil`.
+    public static func currentProtection(of url: URL) -> String? {
+        #if canImport(Darwin)
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path) else {
+            return nil
+        }
+        if let raw = attrs[.protectionKey] as? FileProtectionType {
+            return raw.rawValue
+        }
+        if let str = attrs[.protectionKey] as? String {
+            return str
+        }
+        return nil
+        #else
+        _ = url
+        return nil
         #endif
     }
 
@@ -61,19 +83,13 @@ public enum LocalTimelineFileProtection {
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw ProtectionError.fileNotFound(path: url.path)
         }
-        #if canImport(Darwin)
-        // iOS-Rollout-Pflicht — Hook bleibt absichtlich passiv:
-        //
-        //     try FileManager.default.setAttributes(
-        //         [.protectionKey: FileProtectionType.completeUnlessOpen],
-        //         ofItemAtPath: url.path
-        //     )
-        //
-        // Wird im Darwin-/iOS-Schritt aktiviert, sobald die App-Session
-        // den Store wirklich öffnet. Bis dahin: Stelle dokumentiert,
-        // Linux-Build grün, kein Hardware-Anspruch erhoben.
-        _ = url
+        #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+        try FileManager.default.setAttributes(
+            [.protectionKey: FileProtectionType.completeUnlessOpen],
+            ofItemAtPath: url.path
+        )
         #else
+        // macOS / Linux: Data Protection is iOS-family only.
         _ = url
         #endif
     }

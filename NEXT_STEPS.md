@@ -1,5 +1,18 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 — Audit-Punkte 4–8 umgesetzt (Branch `main`, HEAD folgt)
+
+Umsetzung der fünf High-Impact-Findings aus `APPLE_DOC_SYNC_FULL_APP_AUDIT_2026-05-25` (Data Protection, File-Outbox, Security-Scoped-Handoff, Overview-Pagination, per-record-Fehlerbehandlung). 1833 Tests grün. Details: siehe `CHANGELOG.md` (gleiches Datum).
+
+**Offen / nicht in dieser Session:**
+- Hardware-Verifikation des `completeUnlessOpen`-Bits in iOS-Simulator/Device (assertion-fähig via `FileManager.attributesOfItem(atPath:)[.protectionKey]`).
+- End-to-End-Verifikation der Cursor-Pagination in `fetchOverview` mit >200 Cloud-Records (LiveTrack-Summary/PointBatch in Production-Schema).
+- End-to-End-Test Phase F (Favoriten Cross-Device-Sync iPhone↔iPad — Schema entsteht beim ersten Push; danach `LH2GPXFavoriteEntry.recordName` als QUERYABLE markieren + Production-Deploy).
+- Migration legacy `UserDefaults[app.icloud.liveTrackBackup.queue]` → File-Outbox auf echtem User-Gerät verifizieren (Reinstall-Pfad).
+- Doppelter Disk-Footprint im Auto-Upload-Staging-Pfad bei sehr großen Imports (>>100 MB) erträglich, aber nicht gemessen.
+
+---
+
 ## Stand 2026-05-25 (Hotfix) — CKError-Hint korrigiert + Roh-Fehler-Diagnose (Branch `main`, HEAD `8cf2f03` → folgt)
 
 > **Wichtige Korrektur.** Production-Schema ist deployed (am Dashboard verifiziert 2026-05-25), aber „Cloud-Daten löschen" wirft trotzdem `CKError.invalidArguments` (Code 12). Die alte App-Meldung „Schema fehlt — deployen" war falsch und hat den Nutzer auf eine falsche Spur geführt. Die Hint-Map ist jetzt neutral; der vollständige NSError (Code + Description + `ServerErrorDescription` + `NSUnderlyingError`) wird sichtbar in der UI gerendert UND als `os.Logger.error` nach Console.app geschrieben.

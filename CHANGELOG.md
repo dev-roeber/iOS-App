@@ -1,5 +1,51 @@
 # CHANGELOG
 
+## 2026-05-25 — High-Impact Performance/Stability-Fixes (Audit 2026-05-25, Punkte 4–8) (Branch `main`, HEAD folgt)
+
+> Umsetzung der fünf High-Impact-Findings aus dem `APPLE_DOC_SYNC_FULL_APP_AUDIT_2026-05-25`. Alle Änderungen rein additiv/härtend, keine Public-API-Brüche. **1833 Tests grün** (`swift test`, 2 skipped, 0 failures).
+
+### Audit-Punkt 4 — Echte iOS Data Protection (vorher: nur Hook-Stub)
+- `LocalTimelineFileProtection.applyDefaultProtection(to:)` setzt jetzt auf iOS/tvOS/watchOS/visionOS real `FileManager.setAttributes([.protectionKey: .completeUnlessOpen])`. macOS + Linux bleiben No-Op (macOS-FS akzeptiert das Attribut nicht; Data Protection ist iOS-family-only).
+- Neue API `LocalTimelineFileProtection.currentProtection(of:) -> String?` für Verifikation.
+- `FavoriteEntryStore.writeEnvelope` + `defaultFileURL()` rufen Protection.
+- `AppCloudFileManagement` setzt Protection auf Upload-Staging-tmp und Download-Ziel **vor** `CKAsset(fileURL:)`-Übergabe.
+- Tests: `LocalTimelineFileProtectionTests` +2 Tests (Attribut-Assertion auf Darwin-iOS-family vs. Linux/macOS).
+
+### Audit-Punkt 5 — LiveTrack-CloudKit-Outbox: UserDefaults → Application Support (file-basiert)
+- Neue Klasse `LiveTrackCloudBackupFileQueueStore: LiveTrackCloudBackupQueueStoring` unter `Application Support/LocationHistory2GPX/CloudOutbox/livetrack_queue.json`.
+- Atomic Write (`Data.write([.atomic])`), `NSLock`-Serialisierung, `.completeUnlessOpen` + `isExcludedFromBackup` auf Datei + Verzeichnis, tmp-Fallback bei Pfad-Resolver-Fehler.
+- **Migration** aus `UserDefaults[app.icloud.liveTrackBackup.queue]` (alte Outbox) idempotent durch Marker `app.icloud.liveTrackBackup.fileMigration.v1`. Legacy-Key wird nach Migration entfernt.
+- `LiveTrackCloudBackupService.init`-Default wechselt von `UserDefaultsLiveTrackCloudBackupQueueStore()` auf `LiveTrackCloudBackupFileQueueStore()`. Legacy-Klasse bleibt für Backwards-Compat + Tests bestehen.
+- Tests: `LiveTrackCloudBackupFileQueueStoreTests.swift` neu (7 Tests: Roundtrip, atomic-single-JSON, empty-save löscht File, Migration, Idempotenz, Marker-ohne-Legacy, Backup-Exclusion auf Darwin).
+
+### Audit-Punkt 6 — Security-scoped Auto-Upload-Handoff stabilisiert
+- Neu: `AppImportCloudUploadStaging.stage(sourceURL:) throws -> URL` und `cleanup(stagedURL:)` in `AppImportCloudUploadBridge.swift`. Auf UIKit-Targets: `NSFileCoordinator.coordinate(readingItemAt:options:[.forUploading, .withoutChanges])` + `startAccessingSecurityScopedResource`/`stop` defer. Linux: direkter `copyItem`-Fallback.
+- `LH2GPXAppFlow.handoffToAutoUpload(sourceURL:)` ruft `stage(...)` **synchron noch innerhalb des aktiven Security-Scope** auf und übergibt nur die app-owned URL an die Bridge.
+- `AppShellRootView.installImportCloudUploadHandler` + `wrapper/.../ContentView.swift`: entfernt das alte ad-hoc `ImportAutoUpload-<UUID>` tmp-Kopie-Pattern; `defer { AppImportCloudUploadStaging.cleanup(stagedURL: url) }` läuft erst nach `await manager.upload(...)`-Completion (zerstört laufende Uploads nicht).
+- Tests: `AppImportCloudUploadStagingTests.swift` neu (3 Tests: stage erzeugt app-owned Kopie unter tmp, cleanup entfernt Dir, cleanup auf nicht-existentem Pfad silent).
+
+### Audit-Punkt 7 — `CloudKitLiveTrackUploader.fetchOverview` vollständige Pagination
+- `fetchOverview()` nutzt jetzt den existierenden Helper `fetchAllRecords(ofType:from:)` (paginiert via `queryCursor` mit Page-Size 200) für Summary + PointBatch — vorher hart auf erste 200 Records limitiert.
+- `summaryCount` / `pointBatchCount` und Per-Field-Aggregation (`estimatedPointCount`, `estimatedStorageBytes`) sind jetzt vollständig (statt: silent-truncated nach 200). Keine doppelte Query-Implementierung.
+- Bestehende idempotente Skip-Patterns (CKError #11) im Helper bleiben.
+
+### Audit-Punkt 8 — FavoriteEntry CloudKit Pull: per-record-Fehler korrekt behandeln
+- `try? result.get()` im Pull-Pfad entfernt. Per-record Fehler werden gesammelt; per-record-`unknownItem` (CKError #11) bleibt idempotent skip (Race mit Delete), alle anderen per-record-Fehler sind hart.
+- Neuer Error-Typ `public enum FavoriteEntryCloudSyncError { case partialFetchFailure(failedRecordCount: Int, firstError: NSError) }` (Foundation-only, ohne `import CloudKit`).
+- `FavoriteEntryCloudSyncCoordinator.sync()` reportet jetzt korrekt `failure`, wenn der Pull-Pfad wirft (vorher: stillschweigend success).
+- Tests: `FavoriteEntryCloudSyncTests.swift` +2 Tests (`partialFetchFailure`-Payload + Coordinator-failure-State via `MockFailingFavoriteEntryCloudSync`).
+
+### Verifikation
+- ✅ `swift build`
+- ✅ `swift test` — **1833 Tests, 0 failures, 2 skipped** (212.5 s, macOS 14)
+
+### Offene Risiken / Nicht-getestet auf Hardware
+- Echte `completeUnlessOpen`-Bit-Verifikation passiert erst auf iOS-Hardware / Simulator. macOS-Tests assertieren nur, dass `currentProtection` einen Wert liefert; Linux assertet `nil`.
+- Cursor-Pagination ist nur am Gerät mit promotiertem Schema (>200 Records) end-to-end verifizierbar.
+- Neue File-Outbox: prozessintern via `NSLock` synchronisiert; Mehrfach-Prozess-Zugriff (Widget + App) wäre nicht koordiniert — aktuell kein Use-Case.
+
+---
+
 ## 2026-05-25 — Hotfix: CKError-Hint-Korrektur + Roh-Fehler-Diagnose (Branch `main`, HEAD `8cf2f03` → folgt)
 
 > **Korrektur einer falschen Annahme aus Phase D.3.1.** Bisher haben `CKError.unknownItem` (Code 11) und `CKError.invalidArguments` (Code 12) in der UI immer „Production-Schema im CloudKit Dashboard deployen" angezeigt. **Verifiziert am 2026-05-25 (User + ChatGPT-Session direkt im CloudKit Dashboard):** das Production-Schema ist deployed, alle vier Record Types (`LH2GPXCloudHealthProbe`, `LH2GPXLiveTrackSummary`, `LH2GPXLiveTrackPointBatch`, `Users`) sind in Production vorhanden, `recordName` ist als Queryable indiziert. Die App-Meldung hat den Nutzer auf eine falsche Spur geführt. Alle früheren Doku-Aussagen, die „Schema-Promotion" als zwingenden TestFlight-Pflichtschritt darstellen, sind hierdurch überholt.

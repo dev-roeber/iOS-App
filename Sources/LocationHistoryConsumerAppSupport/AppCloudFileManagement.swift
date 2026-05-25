@@ -409,11 +409,13 @@ public final class CloudKitCloudFileManager: CloudFileManaging, @unchecked Senda
             throw CloudFileError.duplicate(sha256Hex: candidate.sha256Hex)
         }
         try fileManager.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+        try? LocalTimelineFileProtection.applyDefaultProtection(to: tempDirectory)
         let assetURL = tempDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension(candidate.url.pathExtension)
         try? fileManager.removeItem(at: assetURL)
         try fileManager.copyItem(at: candidate.url, to: assetURL)
+        try? LocalTimelineFileProtection.applyDefaultProtection(to: assetURL)
         defer { try? fileManager.removeItem(at: assetURL) }
 
         let now = Date()
@@ -475,9 +477,11 @@ public final class CloudKitCloudFileManager: CloudFileManaging, @unchecked Senda
             throw CloudFileError.missingAsset
         }
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        try? LocalTimelineFileProtection.applyDefaultProtection(to: directory)
         let destination = directory.appendingPathComponent(entry.fileName)
         try? fileManager.removeItem(at: destination)
         try fileManager.copyItem(at: source, to: destination)
+        try? LocalTimelineFileProtection.applyDefaultProtection(to: destination)
         return destination
     }
 
