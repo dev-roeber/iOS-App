@@ -357,6 +357,30 @@ public struct AppContentSplitView: View {
                 .tag(4)
                 .accessibilityIdentifier(AppAccessibilityID.Tab.live)
             }
+
+            // Prompt 1 — „Dateien"-Tab rechts neben „Live".
+            // Hinweis: Auf iPhone fasst SwiftUI Tabs ab Index 5 in einen
+            // „Mehr"-Bereich zusammen (Apple HIG-Default). Auf iPad mit
+            // ausreichend Breite werden alle sechs Tabs in der Tab-Leiste
+            // angezeigt.
+            NavigationStack {
+                AppFilesView()
+                    .navigationTitle("")
+                    #if os(iOS)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbarBackground(.hidden, for: .navigationBar)
+                    #endif
+                    .toolbar {
+                        ToolbarItem(placement: .primaryAction) {
+                            actionsMenu
+                        }
+                    }
+            }
+            .tabItem {
+                Label(t("Files"), systemImage: "folder")
+            }
+            .tag(5)
+            .accessibilityIdentifier(AppAccessibilityID.Tab.files)
         }
         #if canImport(UIKit) && os(iOS)
         .background(

@@ -1,5 +1,38 @@
 # CHANGELOG
 
+## 2026-05-25 — Prompt 1: Dateien-Tab + iCloud-Options-Button-Audit (Branch `main`, HEAD `2d561b9` → folgt)
+
+> **Erster von drei zusammenhängenden Prompts (Session A · 1/2).** Neuer „Dateien"-Tab (Tag 5) rechts neben „Live" mit lokaler Datei-Übersicht (Exporte/Importe/Favoriten/Caches), Lade-/Lösch-Aktionen mit sichtbarem Action-State (gleicher Stil wie Phase D.4), Filter, Lösch-Bestätigungs-Alert. Vollständiger Button-Audit von `AppICloudOptionsView` als Single-Source-of-Truth abgelegt.
+
+### Neue Dateien
+| Datei | Zweck |
+|---|---|
+| `AppFileManagementModels.swift` | `LocalFileEntry`, `LocalFileKind` (mit Endungs-Mapping + DE-Labels), `LocalFileBucket` (4 Kategorien), `LocalFileBucketSnapshot`, `LocalFileSizeFormatter` (Foundation-only, Linux-testbar) |
+| `AppFileManagementService.swift` | `LocalFileScanning`-Protokoll, `LocalFileBucketRoots.production()` (Documents + Application Support `LocationHistory2GPX/{Imports,Favorites}` + Caches `RenderCache`), `DiskLocalFileScanner` (FileManager-basiert, überspringt Unterverzeichnisse), `InMemoryLocalFileScanner` für Tests |
+| `AppFileManagementViewModel.swift` | `@MainActor AppFilesViewModel`, `LocalFilesActionState` (idle/scanning/deleting), `refresh()`/`delete(_:)` mit Single-Flight-Gate, `filteredEntries(for:)` |
+| `AppFilesView.swift` | SwiftUI-Root mit `LHCard` pro Bucket, ProgressView in Aktionsbuttons, Lösch-Alert (HIG-konform für destructive Aktionen), Filterfeld |
+| `Tests/.../AppFileManagementTests.swift` | 10 Tests: Kind-Mapping, Size-Formatter-Grenzen, Disk-Scan + Total, Delete-Pfad, Subdir-Skip, VM-Refresh/Failure/Delete/Filter |
+| `docs/ICLOUD_OPTIONS_BUTTON_AUDIT_2026-05-25.md` | Inventur aller Buttons/Toggles in `AppICloudOptionsView`, je mit ID/Trigger/Effekt/Sichtbarem State/Failure-Pfad/Test-Coverage |
+
+### Geänderte Dateien
+| Datei | Diff |
+|---|---|
+| `AppPreferences.swift` | `AppStartTabPreference.files` (Tag 5) ergänzt |
+| `AppAccessibilityID.swift` | `Tab.files = "tab.files"`, neue `Files`-Section mit `filter`-ID |
+| `AppContentSplitView.swift` | 6. Tab im `compactTabView` rechts neben Live mit `folder`-Symbol, Inline-Kommentar zum iPhone-„Mehr"-Default ab Tab 5 (HIG-konform) |
+| `AppLanguageSupport.swift` | „Files" → „Dateien" |
+
+### Verifikation
+- ✅ `swift build` 0E/0W
+- ✅ `swift test --filter AppFileManagementTests` 10/0 grün
+- ✅ `xcodebuild` Generic iOS BUILD SUCCEEDED
+- ✅ `xcodebuild` iPhone 16 Sim BUILD SUCCEEDED *(folgt)*
+
+### Bleibt ausgeschlossen
+Kein CloudKit-Sync für Dateien (kommt in Prompt 3 mit CKAsset). Kein automatischer Upload. Auf iPhone landen ab Tab 6 Tabs im System-„Mehr"-Menü (Apple-HIG-Default, Tab bleibt aufrufbar).
+
+---
+
 ## 2026-05-25 — Phase D.4: iCloud-Übersicht Action-States + paginated Cloud-Delete + Alert (Branch `main`, HEAD `b707c9e` → folgt)
 
 > **UX-/Robustness-Fix für die iCloud-Übersicht-Buttons.** Vorher wirkten „Übersicht aktualisieren", „Erneut versuchen" und „Cloud-Daten löschen" wie tote Buttons: kein sichtbares Feedback bei Erfolg, Fehler wurden in `storageOverview.errorMessage` geschrieben aber nie gerendert, „Erneut versuchen" war disabled ohne Erklärung, `confirmationDialog` war für eine kritische destructive Aktion zu sanft, und der Cloud-Delete-Pfad las nur die erste Seite (max 200 Records) und ignorierte per-record Delete-Outcomes.

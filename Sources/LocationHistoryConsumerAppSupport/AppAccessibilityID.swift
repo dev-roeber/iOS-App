@@ -35,6 +35,13 @@ public enum AppAccessibilityID {
         public static let insights = "tab.insights"
         public static let export   = "tab.export"
         public static let live     = "tab.live"
+        public static let files    = "tab.files"
+    }
+
+    // MARK: - Files tab (Prompt 1)
+
+    public enum Files {
+        public static let filter = "files.filter"
     }
 
     // MARK: - Map surfaces (root views, not individual annotations)

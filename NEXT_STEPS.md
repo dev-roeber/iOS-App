@@ -1,5 +1,13 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Prompt 1) — Dateien-Tab + iCloud-Options-Audit (Branch `main`, HEAD `2d561b9` → folgt)
+
+> **Prompt 1 von 3 (Session A).** Neuer „Dateien"-Tab Tag 5 rechts neben Live, vier Buckets (Exporte/Importe/Favoriten/Caches), Foundation-only Models/Service/ViewModel + 10 Tests grün. iCloud-Buttons komplett auditiert in [`docs/ICLOUD_OPTIONS_BUTTON_AUDIT_2026-05-25.md`](docs/ICLOUD_OPTIONS_BUTTON_AUDIT_2026-05-25.md). Kein CloudKit-Sync für Dateien — kommt in Prompt 3 (CKAsset + `LH2GPXCloudFile`).
+>
+> **Nächste Phase: Prompt 2 — LiveTrack Upload/Restore via bestehende CloudKit-Records.** Startet nach Push/Merge dieses Stands.
+
+---
+
 ## Stand 2026-05-25 (Phase D.3 Bug-Fix) — per-record `modifyRecords` validation + Konflikt-Karten-Layout (Branch `main`, HEAD `9c981fc` → folgt)
 
 > **Bug-Fix.** Phase D.2 hatte das äußere `try await modifyRecords(...)` als Erfolgsindikator behandelt — Apple's API gibt aber per-record-Failures im Dictionary zurück, nicht als Wire-Throw (besonders außerhalb Custom-Zones). Phase D.3 prüft jetzt jeden `saveResults[id]` / `deleteResults[id]` explizit via `ICloudCloudKitMVPResultValidator` (Linux-testbar). Health-Check + LiveTrack-Upload sind beide gefixt; UI-Layout der „Konfliktbehandlung"-Karte erhält `.frame(maxWidth: .infinity)`.

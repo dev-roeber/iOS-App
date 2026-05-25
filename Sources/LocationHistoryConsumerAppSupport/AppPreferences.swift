@@ -30,6 +30,7 @@ public enum AppStartTabPreference: String, CaseIterable, Identifiable {
     case insights
     case export
     case live
+    case files
 
     public var id: String { rawValue }
 
@@ -40,6 +41,7 @@ public enum AppStartTabPreference: String, CaseIterable, Identifiable {
         case .insights: return "Insights"
         case .export: return "Export"
         case .live: return "Live"
+        case .files: return "Files"
         }
     }
 
@@ -50,6 +52,7 @@ public enum AppStartTabPreference: String, CaseIterable, Identifiable {
         case .insights: return 2
         case .export: return 3
         case .live: return 4
+        case .files: return 5
         }
     }
 }

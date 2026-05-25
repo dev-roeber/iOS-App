@@ -523,6 +523,7 @@ enum AppGermanTranslations {
         "Saved live tracks live in a separate local library. Record a short track on any day, then open it from here.": "Gespeicherte Live-Tracks liegen in einer separaten lokalen Bibliothek. Nimm einen kurzen Track an einem beliebigen Tag auf und öffne ihn von hier aus.",
         "Open the local track library directly from Overview to edit points, insert midpoints or delete a saved live track.": "Öffne die lokale Track-Bibliothek direkt aus der Übersicht, um Punkte zu bearbeiten, Mittelpunkte einzufügen oder einen gespeicherten Live-Track zu löschen.",
         "Live": "Live",
+        "Files": "Dateien",
         "Live Tracking": "Live-Tracking",
         "Live Map": "Live-Karte",
         "Live route display optimized for performance. Full tracking data remains unchanged.": "Live-Routenanzeige für Performance optimiert. Vollständige Trackingdaten bleiben unverändert.",
