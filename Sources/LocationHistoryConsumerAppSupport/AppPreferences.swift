@@ -257,6 +257,9 @@ public final class AppPreferences: ObservableObject {
         static let liveTrackingUploadBatch = "app.preferences.liveTrackingUploadBatch"
         static let recordingInterval = "app.preferences.recordingInterval"
         static let autoRestoreLastImport = "app.preferences.autoRestoreLastImport"
+        static let autoUploadImportToICloud = "app.preferences.autoUploadImportToICloud"
+        static let autoUploadImportWifiOnly = "app.preferences.autoUploadImportWifiOnly"
+        static let autoUploadImportSourceTypes = "app.preferences.autoUploadImportSourceTypes"
         static let dayPathDisplayMode = "app.preferences.dayPathDisplayMode"
         static let widgetAutoUpdate = "app.preferences.widgetAutoUpdate"
         static let dynamicIslandCompactDisplay = "app.preferences.dynamicIslandCompactDisplay"
@@ -391,6 +394,21 @@ public final class AppPreferences: ObservableObject {
     /// Defaults to `false` (opt-in behaviour).
     @Published public var autoRestoreLastImport: Bool {
         didSet { userDefaults.set(autoRestoreLastImport, forKey: Keys.autoRestoreLastImport) }
+    }
+
+    /// Lädt jede importierte Datei (Original-Datei vor App-interner
+    /// Verarbeitung) nach erfolgreichem Import automatisch nach iCloud
+    /// hoch. Gated durch `iCloudSyncEnabled` + `syncCloudFilesEnabled`.
+    /// Default `false`. Enthält möglicherweise Standortdaten.
+    @Published public var autoUploadImportToICloud: Bool {
+        didSet { userDefaults.set(autoUploadImportToICloud, forKey: Keys.autoUploadImportToICloud) }
+    }
+
+    /// Begrenzt den Auto-Upload auf WLAN. Default `true` (schont
+    /// Mobilfunk-Daten). Wird beim Upload als pre-flight check geprüft;
+    /// auf Cellular wird der Upload skipped und nicht gespeichert.
+    @Published public var autoUploadImportWifiOnly: Bool {
+        didSet { userDefaults.set(autoUploadImportWifiOnly, forKey: Keys.autoUploadImportWifiOnly) }
     }
 
     /// Controls whether the day-detail map shows the original path or a Douglas-Peucker simplified version.
@@ -679,6 +697,8 @@ public final class AppPreferences: ObservableObject {
             self.recordingInterval = .default
         }
         self.autoRestoreLastImport = userDefaults.object(forKey: Keys.autoRestoreLastImport) as? Bool ?? false
+        self.autoUploadImportToICloud = userDefaults.object(forKey: Keys.autoUploadImportToICloud) as? Bool ?? false
+        self.autoUploadImportWifiOnly = userDefaults.object(forKey: Keys.autoUploadImportWifiOnly) as? Bool ?? true
         self.dayPathDisplayMode = Self.loadEnum(
             AppDayPathDisplayMode.self,
             key: Keys.dayPathDisplayMode,
@@ -753,6 +773,8 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.liveTrackingUploadBatch)
         userDefaults.removeObject(forKey: Keys.recordingInterval)
         userDefaults.removeObject(forKey: Keys.autoRestoreLastImport)
+        userDefaults.removeObject(forKey: Keys.autoUploadImportToICloud)
+        userDefaults.removeObject(forKey: Keys.autoUploadImportWifiOnly)
         userDefaults.removeObject(forKey: Keys.dayPathDisplayMode)
         userDefaults.removeObject(forKey: Keys.widgetAutoUpdate)
         userDefaults.removeObject(forKey: Keys.dynamicIslandCompactDisplay)
@@ -792,6 +814,8 @@ public final class AppPreferences: ObservableObject {
         liveTrackingUploadBatch = .small
         recordingInterval = .default
         autoRestoreLastImport = false
+        autoUploadImportToICloud = false
+        autoUploadImportWifiOnly = true
         dayPathDisplayMode = .original
         widgetAutoUpdate = true
         dynamicIslandCompactDisplay = .distance

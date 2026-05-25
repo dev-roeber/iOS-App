@@ -128,6 +128,7 @@ struct AppShellRootView: View {
             // Same call site as the wrapper-target ContentView so both
             // app entry points stay in lock-step (LH2GPXAppFlow rule).
             LH2GPXAppFlow.logAppStart()
+            installImportCloudUploadHandler()
         }
         .task {
             await attemptAutoRestoreIfNeeded()
@@ -214,6 +215,52 @@ struct AppShellRootView: View {
 
     private func refreshRecentFiles() {
         recentFiles = RecentFilesStore.load()
+    }
+
+    /// Verdrahtet den `AppImportCloudUploadBridge`-Handler so, dass eine
+    /// importierte Datei nach erfolgreichem Import automatisch via
+    /// `CloudKitCloudFileManager` in den privaten iCloud-Bereich
+    /// hochgeladen wird — sofern der Nutzer den Toggle aktiviert hat
+    /// und der Container/Sync-Gate offen ist.
+    private func installImportCloudUploadHandler() {
+        AppImportCloudUploadBridge.handler = { url in
+            // Gate-Check auf MainActor, weil AppPreferences MainActor-isoliert ist.
+            Task { @MainActor in
+                guard preferences.iCloudSyncEnabled,
+                      preferences.syncCloudFilesEnabled,
+                      preferences.autoUploadImportToICloud
+                else { return }
+                // Wi-Fi-Gate (Best-Effort; auf Linux/Tests trivial true).
+                #if canImport(UIKit)
+                if preferences.autoUploadImportWifiOnly,
+                   LiveTrackCloudNetworkInterfaceProbe.current() != .wifiOrWired {
+                    return
+                }
+                #endif
+                #if canImport(CloudKit)
+                let manager = CloudKitCloudFileManager()
+                do {
+                    // Datei in app-tmp kopieren, damit der Upload nicht
+                    // vom Original-URL-Lebenszyklus abhängt.
+                    let tmp = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("ImportAutoUpload-\(UUID().uuidString)", isDirectory: true)
+                    try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+                    let copy = tmp.appendingPathComponent(url.lastPathComponent)
+                    try FileManager.default.copyItem(at: url, to: copy)
+                    defer { try? FileManager.default.removeItem(at: tmp) }
+                    let candidate = try CloudFileCandidateFactory.makeCandidate(for: copy)
+                    _ = try await manager.upload(candidate)
+                } catch {
+                    // SHA-Dedupe gibt CloudFileError.duplicate — harmlos.
+                    // Unsupported Type / Validierungsfehler werden geloggt
+                    // aber nicht im UI gerendert (Auto-Pfad, kein Banner).
+                    #if canImport(OSLog)
+                    AppImportCloudUploadLogger.log(error: error, url: url)
+                    #endif
+                }
+                #endif
+            }
+        }
     }
 
     private func removeRecentFile(_ entry: RecentFileEntry) {

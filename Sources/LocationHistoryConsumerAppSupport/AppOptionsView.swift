@@ -240,6 +240,41 @@ struct AppImportOptionsView: View {
                 Toggle(t("Restore Last Import on Launch"), isOn: $preferences.autoRestoreLastImport)
             } header: { Text(t("Import")) }
               footer: { Text(t("When enabled, the app tries to reopen the last imported file on startup. Missing or stale files are skipped automatically.")) }
+
+            // iCloud-Sync für Import-Dateien. Lädt nach erfolgreichem
+            // Import die Original-Datei (ZIP/JSON/GPX/KML) als CKAsset
+            // in die private CloudKit-Datenbank. Default AUS — enthält
+            // typischerweise Standortdaten.
+            Section {
+                Toggle(isOn: $preferences.autoUploadImportToICloud) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(t("Upload imported file to iCloud after import"))
+                        Text(t("Default off · May contain location data"))
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(!preferences.iCloudSyncEnabled || !preferences.syncCloudFilesEnabled)
+                .accessibilityIdentifier("import.icloud.autoUpload.toggle")
+
+                Toggle(isOn: $preferences.autoUploadImportWifiOnly) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(t("Wi-Fi only for auto-upload"))
+                        Text(t("Skip upload on cellular networks"))
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(!preferences.autoUploadImportToICloud)
+                .accessibilityIdentifier("import.icloud.autoUpload.wifiOnly")
+
+                if !preferences.iCloudSyncEnabled || !preferences.syncCloudFilesEnabled {
+                    Label(t("Enable iCloud sync and the Cloud Files toggle in iCloud options first."),
+                          systemImage: "icloud.slash")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } header: { Text(t("iCloud Sync")) }
+              footer: { Text(t("Uploads the original imported file as a CKAsset to your private iCloud database after the import completes. Deduplicated via SHA-256, so re-importing the same file does not upload again. Files imported from iCloud Drive are never uploaded back automatically.")) }
         }
         .navigationTitle(t("Import"))
     }

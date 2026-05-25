@@ -170,6 +170,7 @@ struct ContentView: View {
             // probe itself short-circuits when already disabled and
             // logAppStart is harmless to call repeatedly.
             LH2GPXAppFlow.logAppStart()
+            installImportCloudUploadHandler()
         }
         .onReceive(NotificationCenter.default.publisher(
             for: UIApplication.didReceiveMemoryWarningNotification
@@ -581,6 +582,40 @@ struct ContentView: View {
     private func launchArgumentValue(prefix: String) -> String? {
         ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix(prefix) }).map {
             String($0.dropFirst(prefix.count))
+        }
+    }
+
+    /// Spiegelt den Auto-Upload-Handler aus AppShellRootView, damit der
+    /// Wrapper-Entry-Point dasselbe Verhalten hat (LH2GPXAppFlow rule).
+    private func installImportCloudUploadHandler() {
+        AppImportCloudUploadBridge.handler = { url in
+            Task { @MainActor in
+                guard preferences.iCloudSyncEnabled,
+                      preferences.syncCloudFilesEnabled,
+                      preferences.autoUploadImportToICloud
+                else { return }
+                #if canImport(UIKit)
+                if preferences.autoUploadImportWifiOnly,
+                   LiveTrackCloudNetworkInterfaceProbe.current() != .wifiOrWired {
+                    return
+                }
+                #endif
+                #if canImport(CloudKit)
+                let manager = CloudKitCloudFileManager()
+                do {
+                    let tmp = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("ImportAutoUpload-\(UUID().uuidString)", isDirectory: true)
+                    try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+                    let copy = tmp.appendingPathComponent(url.lastPathComponent)
+                    try FileManager.default.copyItem(at: url, to: copy)
+                    defer { try? FileManager.default.removeItem(at: tmp) }
+                    let candidate = try CloudFileCandidateFactory.makeCandidate(for: copy)
+                    _ = try await manager.upload(candidate)
+                } catch {
+                    AppImportCloudUploadLogger.log(error: error, url: url)
+                }
+                #endif
+            }
         }
     }
 }

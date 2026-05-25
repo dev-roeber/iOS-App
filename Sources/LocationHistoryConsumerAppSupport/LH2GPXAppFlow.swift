@@ -94,6 +94,11 @@ public enum LH2GPXAppFlow {
                 onPhase: onPhase
             )
             AppImportStateBridge.rememberImportedFile(url)
+            // Auto-Upload-Hook: löst nach erfolgreichem Import den
+            // registrierten Cloud-Upload-Handler aus. Handler ist nil
+            // wenn die App ihn nicht installiert hat (Tests/Linux) oder
+            // wenn der Nutzer den Toggle in den Import-Optionen aus hat.
+            AppImportCloudUploadBridge.handle(importedFile: url)
             return .success(content)
         } catch {
             // Auto-restore skipped a large Google Timeline file — keep
@@ -298,6 +303,11 @@ public enum LH2GPXAppFlow {
                 importCancellation: importCancellation
             )
             AppImportStateBridge.rememberImportedFile(url)
+            // Auto-Upload-Hook: löst nach erfolgreichem Import den
+            // registrierten Cloud-Upload-Handler aus. Handler ist nil
+            // wenn die App ihn nicht installiert hat (Tests/Linux) oder
+            // wenn der Nutzer den Toggle in den Import-Optionen aus hat.
+            AppImportCloudUploadBridge.handle(importedFile: url)
             switch envelope {
             case let .inMemory(content):
                 return .legacy(content)
