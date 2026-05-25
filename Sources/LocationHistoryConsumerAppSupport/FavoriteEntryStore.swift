@@ -64,6 +64,19 @@ public final class FavoriteEntryStore {
         self.legacySource = legacySource
     }
 
+    /// Phase F — Fallback wenn `defaultFileURL()` fehlschlägt (z. B.
+    /// Application-Support nicht zugreifbar). Schreibt in `tmp/`, damit
+    /// die App nicht crasht.
+    public static func makeInMemoryFallback() -> FavoriteEntryStore {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FavoriteEntryStore-fallback-\(UUID().uuidString).json")
+        return FavoriteEntryStore(
+            fileURL: tmp,
+            userDefaults: .standard,
+            legacySource: { [] }
+        )
+    }
+
     /// Resolves the canonical disk path under Application Support.
     /// `Application Support/LocationHistory2GPX/Favorites/favorite_entries.json`.
     public static func defaultFileURL() throws -> URL {

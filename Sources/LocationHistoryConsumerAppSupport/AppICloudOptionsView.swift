@@ -193,6 +193,7 @@ public struct AppICloudOptionsView: View {
     @ObservedObject private var preferences: AppPreferences
     @StateObject private var viewModel: ICloudSyncViewModel
     @StateObject private var liveTrackCloudActions: LiveTrackCloudRestoreService
+    @StateObject private var favoriteCloudSync: FavoriteEntryCloudSyncCoordinator
     @State private var showsCloudDeleteConfirmation = false
 
     public init(preferences: AppPreferences) {
@@ -225,6 +226,20 @@ public struct AppICloudOptionsView: View {
             wrappedValue: LiveTrackCloudRestoreService(
                 coordinator: backupService,
                 trackStore: RecordedTrackFileStore()
+            )
+        )
+        // Phase F — Coordinator für FavoriteEntry-CloudKit-Sync.
+        let favoriteStore = (try? FavoriteEntryStore()) ?? FavoriteEntryStore.makeInMemoryFallback()
+        let favoriteCloud: FavoriteEntryCloudSyncing
+        #if canImport(CloudKit)
+        favoriteCloud = CloudKitFavoriteEntryCloudSync()
+        #else
+        favoriteCloud = NoopFavoriteEntryCloudSync()
+        #endif
+        self._favoriteCloudSync = StateObject(
+            wrappedValue: FavoriteEntryCloudSyncCoordinator(
+                store: favoriteStore,
+                cloud: favoriteCloud
             )
         )
     }
@@ -406,6 +421,44 @@ public struct AppICloudOptionsView: View {
                 }
                 .disabled(!preferences.iCloudSyncEnabled)
                 .accessibilityIdentifier("options.icloud.favorites.toggle")
+                .onChange(of: preferences.syncFavoritesEnabled) { _, newValue in
+                    // Phase F — beim Aktivieren sofort einen Sync triggern.
+                    // Das legt den LH2GPXFavoriteEntry-RecordType im
+                    // CloudKit-Schema automatisch an (Apple's first-save-
+                    // defines-schema-Mechanik).
+                    if newValue && preferences.iCloudSyncEnabled {
+                        Task { await favoriteCloudSync.sync() }
+                    }
+                }
+
+                if preferences.syncFavoritesEnabled && preferences.iCloudSyncEnabled {
+                    HStack(spacing: 8) {
+                        Button {
+                            Task { await favoriteCloudSync.sync() }
+                        } label: {
+                            if favoriteCloudSync.actionState == .syncing {
+                                HStack(spacing: 6) {
+                                    ProgressView().controlSize(.small)
+                                    Text("Synchronisiere…")
+                                }
+                            } else {
+                                Label("Favoriten jetzt synchronisieren",
+                                      systemImage: "arrow.triangle.2.circlepath")
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(favoriteCloudSync.actionState != .idle)
+                        .accessibilityIdentifier("options.icloud.favorites.syncNow")
+                        Spacer()
+                    }
+                    if let message = favoriteCloudSync.actionMessage {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(favoriteCloudSync.actionFailed ? .orange : LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("options.icloud.favorites.message")
+                    }
+                }
 
                 Toggle(isOn: $preferences.syncAppSettingsEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
