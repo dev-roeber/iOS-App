@@ -11,7 +11,7 @@
 |---|---|---|
 | 8.0 | Repo-Truth-Lock auf `dev-roeber/iOS-App` | *(dieser Commit)* |
 | 8.1 | Full Wiring Audit + Dead-Control-Fix | ✅ erledigt — `docs/UI_WIRING_MATRIX_2026-05-25.md` |
-| 8.2 | Settings & Privacy Center Modernisierung | offen |
+| 8.2 | Settings & Privacy Center Modernisierung | ✅ erledigt — Top-Banner + Privacy-Rows |
 | 8.3 | App Shortcuts / App Intents Skeleton | offen |
 | 8.4 | Performance & Concurrency Modernisierung | offen |
 | 8.5 | Accessibility / Dynamic Type / Localization Polish | offen |

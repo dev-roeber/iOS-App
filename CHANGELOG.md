@@ -1,5 +1,65 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.2: Settings Privacy Center (Branch `main`, HEAD `5f6c739` → folgt)
+
+> **Settings bekommt ein klares „Privacy at a glance"-Top-Banner + 2 neue Privacy-Rows.** Minimal-invasiv: `LHXInfoCard` mit `lock.shield` am Anfang von `AppOptionsView` summarisiert die Datenschutz-Posture (lokal, kein Auto-Upload, iCloud nur Status, Exports user-initiiert). `AppPrivacyOptionsView` bekommt 2 zusätzliche Rows („iCloud", „History Sync") und schärferes Footer-Statement. **Keine neuen Netzwerk-Features, keine CloudKit Records save/fetch, kein Historien-Sync, keine destruktive UI ohne Bestätigung, keine iPad-/Light-Mode-Änderung.** Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- Privacy Manifest Files + App Privacy Details (https://developer.apple.com/documentation/bundleresources/privacy_manifest_files, https://developer.apple.com/app-store/app-privacy-details/)
+- HIG „Settings" (https://developer.apple.com/design/human-interface-guidelines/settings) — Einstellung nur sichtbar wenn sie wirkt
+- HIG „Privacy" (https://developer.apple.com/design/human-interface-guidelines/privacy)
+- HIG „Buttons" / Destructive Actions (https://developer.apple.com/design/human-interface-guidelines/buttons)
+- SwiftUI `Form` / `List` / `Section` (https://developer.apple.com/documentation/swiftui/form)
+- SwiftUI `confirmationDialog` / `alert` (Pattern für Destructive Actions)
+
+### Settings-Struktur (Reihenfolge unverändert; Top-Banner neu)
+| Position | Element | Quelle | Status |
+|---|---|---|---|
+| **NEU** | `LHXInfoCard` „Privacy at a glance" mit `lock.shield` | statisch | wired, `options.privacyCenter.summary` |
+| 1 | General | `AppGeneralOptionsView` | bestehend |
+| 2 | Maps | `AppMapsOptionsView` | bestehend |
+| 3 | Import | `AppImportOptionsView` | bestehend |
+| 4 | Live Recording | `AppLiveRecordingOptionsView` | bestehend |
+| 5 | Upload | `AppUploadOptionsView` | bestehend (SecureField für Bearer-Token bereits live; `LiveLocationServerUploadConfiguration` mit URL-Validation seit P1-Hardening) |
+| 6 | Widget & Live Activity | `AppWidgetLiveActivityOptionsView` | bestehend |
+| 7 | Privacy | `AppPrivacyOptionsView` | **erweitert** um „iCloud"- und „History Sync"-Rows |
+| 8 | iCloud | `AppICloudOptionsView` | bestehend (F.4 + F.3-Drive-Hint-Toggle) |
+| 9 | Technical | `AppTechnicalOptionsView` | bestehend (Reset-Button, LocalTimelineStore-Delete-Button mit bestehender Bestätigung) |
+
+### Datenschutz-/Live-/iCloud-Aussagen (Wortlaut)
+- **Top-Banner:** „Your imported location history stays on this device. iCloud sync is off by default and only checks Apple's account status — no records are uploaded. Live recording stays local unless you explicitly configure your own upload endpoint. Exports leave the app only when you actively save or share a file."
+- **Privacy → iCloud Row:** „Status check on demand — no data is uploaded" (wenn aktiviert) bzw. „Off"
+- **Privacy → History Sync Row:** „Never — imported histories stay on this device"
+- **Privacy Footer (erweitert):** „… iCloud sync, when enabled, only reads Apple's account status — no records are written, no history is uploaded."
+
+### Live-Upload-Sicherheit (bestehend, in diesem Train nicht angefasst, aber bestätigt)
+- Bearer-Token ausschließlich als `SecureField` in `LHUploadSettingsCard` (im UI nie im Klartext).
+- Token in Keychain (`KeychainHelper`), nicht in UserDefaults.
+- `LiveLocationServerUploadConfiguration.endpointURL`-Validierung lehnt http remote ab (nur https oder localhost/127.0.0.1/[::1]).
+- Token-Maskierung: „Token set" / „No token".
+
+### Destructive Actions (bestehend, in diesem Train nicht verändert)
+- `AppTechnicalOptionsView` Reset/Delete: bestehende `alert`-Bestätigungen + Loading-States (`LocalTimelineDeleteState`).
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../AppOptionsView.swift` | `AppOptionsView.body`: neuer `LHXInfoCard`-Top-Banner; `AppPrivacyOptionsView.body`: 2 neue `privacyRow`s + erweiterter Footer + `options.privacy.form`-Identifier |
+| Doku | CHANGELOG, NEXT_STEPS, ROADMAP, APP_FEATURE_INVENTORY, APPLE_VERIFICATION_CHECKLIST |
+
+### Build-only Validierung
+- `swift build` ✅ 8,65 s.
+- `xcodebuild` Sim ✅ BUILD SUCCEEDED.
+- `xcodebuild` generic iOS ✅ BUILD SUCCEEDED.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.3 — App Shortcuts / App Intents Skeleton** (build-only, datenschutzkonform).
+
+---
+
 ## 2026-05-25 — Train 8.1: Full Wiring Audit + Dead-Hint-Fix (Branch `main`, HEAD `66de66a` → folgt)
 
 > **Wiring-Audit + minimal-invasive Accessibility-Hint-Fixes.** Vollständige UI-Action-Matrix neu unter `docs/UI_WIRING_MATRIX_2026-05-25.md`. Vier `.disabled(...)`-Stellen, die vorher keinen Grund für VoiceOver lieferten, bekommen bedingte Hints. Vier Home-Actions-Menüpunkte bekommen Identifier + Hint. **Keine** großen Refactors, **keine** neuen CloudKit Records, **keine** Historien-Sync-Aussage, **keine** iPad-/Light-Mode-Änderung. Tests deferred bis Punkt 10.

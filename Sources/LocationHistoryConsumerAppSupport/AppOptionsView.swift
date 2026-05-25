@@ -17,6 +17,14 @@ public struct AppOptionsView: View {
     public var body: some View {
         ScrollView {
             LHPageScaffold {
+                LHXInfoCard(
+                    kind: .info,
+                    title: t("Privacy at a glance"),
+                    message: t("Your imported location history stays on this device. iCloud sync is off by default and only checks Apple's account status — no records are uploaded. Live recording stays local unless you explicitly configure your own upload endpoint. Exports leave the app only when you actively save or share a file."),
+                    systemImage: "lock.shield",
+                    accessibilityIdentifier: "options.privacyCenter.summary"
+                )
+
                 sectionLink(
                     icon: "gearshape",
                     title: t("General"),
@@ -600,10 +608,21 @@ struct AppPrivacyOptionsView: View {
                         ? t("Foreground + optional background")
                         : t("Foreground only")
                 )
+                privacyRow(
+                    label: t("iCloud"),
+                    value: preferences.iCloudSyncEnabled
+                        ? t("Status check on demand — no data is uploaded")
+                        : t("Off")
+                )
+                privacyRow(
+                    label: t("History Sync"),
+                    value: t("Never — imported histories stay on this device")
+                )
             } header: { Text(t("Privacy")) }
-              footer: { Text(t("This app keeps imports and live tracks local by default. Server upload is optional, user-controlled and only sends accepted live-recording points to the configured endpoint.")) }
+              footer: { Text(t("This app keeps imports and live tracks local by default. Server upload is optional, user-controlled and only sends accepted live-recording points to the configured endpoint. iCloud sync, when enabled, only reads Apple's account status — no records are written, no history is uploaded.")) }
         }
         .navigationTitle(t("Privacy"))
+        .accessibilityIdentifier("options.privacy.form")
     }
 
     private func privacyRow(label: String, value: String) -> some View {
