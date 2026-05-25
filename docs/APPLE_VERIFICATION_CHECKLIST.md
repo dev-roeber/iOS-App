@@ -1,5 +1,33 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Prompt 2) — LiveTrack Upload/Restore via bestehende CloudKit-Records
+
+**HEAD:** `ccd4ef4` → Prompt-2-Commit folgt.
+
+### ✅ In diesem Pass verifiziert
+- `swift build` ✅
+- `swift test --filter LiveTrackCloudRestoreTests` ✅ 16/0
+- `swift test --filter ICloud` ✅ 46/0
+- `swift test --filter UIWiring` ✅ 63/0
+- `xcodebuild` iPhone 17 Pro Max Simulator ✅ BUILD SUCCEEDED
+- `xcodebuild` generic iOS (`CODE_SIGNING_ALLOWED=NO`) ✅ BUILD SUCCEEDED
+- CloudKit-Pfad bleibt private DB only und nutzt bestehende RecordTypes `LH2GPXLiveTrackSummary` / `LH2GPXLiveTrackPointBatch`.
+- Manueller Upload ist user-triggered; automatische Google-History-/Import-/Exportdatei-Sicherung bleibt ausgeschlossen.
+
+### ⏸️ Nicht durchgeführt
+- Kein echter Gerätetest.
+- Kein TestFlight-Smoke.
+- Keine CloudKit-Dashboard-/Production-Schema-Verifikation.
+- Kein Xcode-Cloud-Lauf.
+
+### Pflicht-Anti-Claims
+- ❌ `LH2GPXCloudFile` implementiert.
+- ❌ `CKAsset` implementiert.
+- ❌ GPX/KML/ZIP-Datei-Sync implementiert.
+- ❌ Vollständiger Multi-Device-Sync verifiziert.
+
+---
+
 ## Aktualisierung 2026-05-25 (Master Phase D) — iCloud-/CloudKit-MVP
 
 **HEAD:** `734ab8e` → Phase-D-Commit folgt.

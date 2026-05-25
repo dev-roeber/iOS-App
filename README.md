@@ -10,6 +10,11 @@
 > - CloudKit-RecordTypes: `LH2GPXCloudHealthProbe`, `LH2GPXLiveTrackSummary`, optional `LH2GPXLiveTrackPointBatch`. Kein Public/shared DB, kein CKAsset, keine CKSubscription.
 > - Speicherverbrauch wird nur **geschaetzt** angezeigt; keine exakte iCloud-Quota-Behauptung. Details: `docs/ICLOUD_CLOUDKIT_MVP_PHASE_D_2026-05-25.md`.
 
+> **Repo-Truth-Patch 2026-05-25 (Prompt 2 LiveTrack Upload/Restore, `main` HEAD `ccd4ef4` → folgt):**
+> - Der bestehende LiveTrack-CloudKit-MVP kann Cloud-LiveTracks aus `LH2GPXLiveTrackSummary` + `LH2GPXLiveTrackPointBatch` paginiert laden und lokal als gespeicherte LiveTracks wiederherstellen.
+> - Die iCloud-Optionen enthalten eine user-ausgeloeste Karte „LiveTracks manuell sichern" fuer neuesten lokalen LiveTrack hochladen, Cloud-LiveTracks laden und einzelne Wiederherstellung.
+> - iCloud bleibt opt-in/default AUS. Keine automatische Google-History-/Import-/Exportdatei-Sicherung, kein `LH2GPXCloudFile`, kein CKAsset, kein GPX/KML/ZIP-Datei-Sync und kein vollstaendig verifizierter Multi-Device-Sync.
+
 > **Repo-Truth-Patch 2026-05-25 (Xcode Cloud Build 190 extern grün + TestFlight 1.0.2 (190) verfügbar, `main` HEAD `b25c27d`):**
 > - Xcode Cloud Workflow `Release – Archive & TestFlight` auf `b25c27d` durchgelaufen (Cloud-Umgebung Xcode 26.5 / macOS Tahoe 26.4): Archive – iOS ✅, TestFlight-interne Tests – iOS ✅. TestFlight zeigt `LH2GPX 1.0.2 (190)`, 90 Tage verfügbar, App öffnet sich, Startscreen lädt ohne Crash. Build 179 → 190.
 > - **Apple Developer Portal Container `iCloud.de.roeber.LH2GPXWrapper` extern bestätigt** (Cloud-Distribution-Signing + TestFlight-Aufnahme akzeptieren das Provisioning Profile mit beiden iCloud-Entitlement-Keys).

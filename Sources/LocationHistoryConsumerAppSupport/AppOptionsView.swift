@@ -20,7 +20,7 @@ public struct AppOptionsView: View {
                 LHXInfoCard(
                     kind: .info,
                     title: t("Privacy at a glance"),
-                    message: t("Your imported location history stays on this device. iCloud sync is off by default and only checks Apple's account status — no records are uploaded. Live recording stays local unless you explicitly configure your own upload endpoint. Exports leave the app only when you actively save or share a file."),
+                    message: t("Your imported location history stays on this device. iCloud sync is off by default. LiveTracks can be backed up to your private iCloud only when you explicitly enable the iCloud LiveTrack options. Exports leave the app only when you actively save or share a file."),
                     systemImage: "lock.shield",
                     accessibilityIdentifier: "options.privacyCenter.summary"
                 )
@@ -101,7 +101,7 @@ public struct AppOptionsView: View {
                 sectionLink(
                     icon: "icloud",
                     title: t("iCloud"),
-                    description: t("Account status only — no data is uploaded"),
+                    description: t("Optional private LiveTrack backup"),
                     color: LH2GPXTheme.VariantBPro.terra300,
                     identifier: "options.icloud"
                 ) {
@@ -636,7 +636,7 @@ struct AppPrivacyOptionsView: View {
                 privacyRow(
                     label: t("iCloud"),
                     value: preferences.iCloudSyncEnabled
-                        ? t("Status check on demand — no data is uploaded")
+                        ? t("Optional private LiveTrack backup")
                         : t("Off")
                 )
                 privacyRow(
@@ -644,7 +644,7 @@ struct AppPrivacyOptionsView: View {
                     value: t("Never — imported histories stay on this device")
                 )
             } header: { Text(t("Privacy")) }
-              footer: { Text(t("This app keeps imports and live tracks local by default. Server upload is optional, user-controlled and only sends accepted live-recording points to the configured endpoint. iCloud sync, when enabled, only reads Apple's account status — no records are written, no history is uploaded.")) }
+              footer: { Text(t("This app keeps imports and live tracks local by default. Server upload is optional, user-controlled and only sends accepted live-recording points to the configured endpoint. iCloud LiveTrack backup is opt-in and uses the private CloudKit database only; imported histories and export files are not uploaded automatically.")) }
         }
         .navigationTitle(t("Privacy"))
         .accessibilityIdentifier("options.privacy.form")

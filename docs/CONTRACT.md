@@ -43,6 +43,12 @@
   opt-in CloudKit-MVP-Daten und erweitern den Producer-Contract nicht.
   Google-History-/Importdaten werden nicht automatisch in CloudKit
   gesichert.
+- Prompt-2-LiveTrack-Upload/Restore bleibt App-intern: manuelle
+  LiveTrack-Sicherung und Restore nutzen nur den privaten CloudKit-
+  Container und die bestehenden LiveTrack-RecordTypes. Restore ist
+  best-effort und dedupliziert lokal ueber `localTrackIDHash`; allgemeine
+  Dateien, GPX/KML/ZIP-Exports und Google-History-Importe gehoeren nicht
+  zum Contract und werden nicht automatisch synchronisiert.
 
 ## Update-Policy
 

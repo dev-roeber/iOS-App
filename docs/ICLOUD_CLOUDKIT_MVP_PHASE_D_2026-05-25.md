@@ -1,5 +1,32 @@
 # iCloud CloudKit MVP — Phase D (2026-05-25)
 
+## Prompt 2 Appendix — LiveTrack Upload/Restore (2026-05-25)
+
+Prompt 2 erweitert den Phase-D-MVP um einen Restore-Lesepfad und einen
+manuellen Upload-Pfad fuer gespeicherte LiveTracks. Es werden weiterhin
+nur die bestehenden RecordTypes `LH2GPXLiveTrackSummary` und
+`LH2GPXLiveTrackPointBatch` genutzt.
+
+`LiveTrackCloudBackupUploading.fetchAllEnvelopes()` liest Summary- und
+PointBatch-Records paginiert via `queryCursor` aus der privaten
+CloudKit-Datenbank, gruppiert Batches per `localTrackIDHash` und sortiert
+sie nach `batchIndex`. `LiveTrackCloudRestoreService.restore(_:)`
+rekonstruiert daraus einen lokalen `RecordedTrack`.
+
+Einschraenkungen bleiben bewusst sichtbar: Restore erzeugt eine neue
+lokale UUID, weil die urspruengliche UUID nicht im CloudKit-Schema liegt;
+`dayKey` wird aus `startedAt` (UTC) abgeleitet; `captureMode` faellt auf
+`.foregroundWhileInUse` zurueck. Kein `LH2GPXCloudFile`, kein `CKAsset`,
+kein GPX/KML/ZIP-Datei-Sync, keine automatische Google-History-Sicherung.
+
+Verifiziert in Prompt 2: `swift build`, `swift test --filter
+LiveTrackCloudRestoreTests` (16/0), `swift test --filter ICloud` (46/0),
+`swift test --filter UIWiring` (63/0), `xcodebuild` iPhone 17 Pro Max
+Simulator (BUILD SUCCEEDED), `xcodebuild` generic iOS mit
+`CODE_SIGNING_ALLOWED=NO` (BUILD SUCCEEDED). Kein TestFlight-/Gerätetest
+und keine Production-Schema-Verifikation wurden in diesem Prompt
+durchgefuehrt.
+
 ## Phase D.1 Polish (2026-05-25, später)
 
 Nach Phase-D-Screenshots wurden in einem Polish-Pass folgende UI-Probleme behoben — **ohne** neue RecordTypes/Sync-Logik:

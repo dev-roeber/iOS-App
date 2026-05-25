@@ -401,6 +401,59 @@ public struct LiveTrackCloudSummary: Codable, Sendable, Equatable, Identifiable 
         self.updatedAt = now
         self.estimatedPayloadBytes = LiveTrackCloudSchema.estimatedSummaryBytes(pointCount: track.points.count)
     }
+
+    /// Prompt 2 — Builder für Restore-Decode aus `CKRecord`.
+    public static func empty() -> LiveTrackCloudSummary {
+        var s = LiveTrackCloudSummary.fromZero
+        s.id = UUID()
+        return s
+    }
+
+    private static let fromZero = LiveTrackCloudSummary(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!,
+        schemaVersion: LiveTrackCloudSchema.schemaVersion,
+        localTrackIDHash: "",
+        title: "",
+        startedAt: Date(timeIntervalSince1970: 0),
+        endedAt: Date(timeIntervalSince1970: 0),
+        durationSeconds: 0,
+        distanceM: 0,
+        pointCount: 0,
+        hasPointBatches: false,
+        createdAt: Date(timeIntervalSince1970: 0),
+        updatedAt: Date(timeIntervalSince1970: 0),
+        estimatedPayloadBytes: 0
+    )
+
+    private init(
+        id: UUID,
+        schemaVersion: Int,
+        localTrackIDHash: String,
+        title: String,
+        startedAt: Date,
+        endedAt: Date,
+        durationSeconds: TimeInterval,
+        distanceM: Double,
+        pointCount: Int,
+        hasPointBatches: Bool,
+        createdAt: Date,
+        updatedAt: Date,
+        estimatedPayloadBytes: Int
+    ) {
+        self.id = id
+        self.schemaVersion = schemaVersion
+        self.localTrackIDHash = localTrackIDHash
+        self.title = title
+        self.startedAt = startedAt
+        self.endedAt = endedAt
+        self.durationSeconds = durationSeconds
+        self.distanceM = distanceM
+        self.pointCount = pointCount
+        self.hasPointBatches = hasPointBatches
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.estimatedPayloadBytes = estimatedPayloadBytes
+    }
 }
 
 public struct LiveTrackCloudPointPayload: Codable, Sendable, Equatable {
@@ -455,6 +508,44 @@ public struct LiveTrackCloudPointBatch: Codable, Sendable, Equatable, Identifiab
         self.estimatedPayloadBytes = data.count
         self.createdAt = now
         self.updatedAt = now
+    }
+
+    /// Prompt 2 — Builder für Restore-Decode (alle Properties bereits
+    /// im Record vorhanden, kein erneutes Hashen/Encoden nötig).
+    public static func empty() -> LiveTrackCloudPointBatch {
+        LiveTrackCloudPointBatch(
+            schemaVersion: LiveTrackCloudSchema.schemaVersion,
+            localTrackIDHash: "",
+            batchIndex: 0,
+            batchCount: 0,
+            pointCount: 0,
+            encodedPointsPayload: "",
+            estimatedPayloadBytes: 0,
+            createdAt: Date(timeIntervalSince1970: 0),
+            updatedAt: Date(timeIntervalSince1970: 0)
+        )
+    }
+
+    private init(
+        schemaVersion: Int,
+        localTrackIDHash: String,
+        batchIndex: Int,
+        batchCount: Int,
+        pointCount: Int,
+        encodedPointsPayload: String,
+        estimatedPayloadBytes: Int,
+        createdAt: Date,
+        updatedAt: Date
+    ) {
+        self.schemaVersion = schemaVersion
+        self.localTrackIDHash = localTrackIDHash
+        self.batchIndex = batchIndex
+        self.batchCount = batchCount
+        self.pointCount = pointCount
+        self.encodedPointsPayload = encodedPointsPayload
+        self.estimatedPayloadBytes = estimatedPayloadBytes
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
 }
 
@@ -512,8 +603,89 @@ public enum LiveTrackCloudSchema {
         String(id.uuidString.replacingOccurrences(of: "-", with: "").prefix(16))
     }
 
+    public static func stableSummaryID(fromLocalTrackIDHash hash: String) -> UUID {
+        let hex = (hash + String(repeating: "0", count: 32)).prefix(32)
+        let uuidString = "\(hex.prefix(8))-\(hex.dropFirst(8).prefix(4))-\(hex.dropFirst(12).prefix(4))-\(hex.dropFirst(16).prefix(4))-\(hex.dropFirst(20).prefix(12))"
+        return UUID(uuidString: String(uuidString)) ?? UUID()
+    }
+
     public static func estimatedSummaryBytes(pointCount: Int) -> Int {
         256 + max(0, pointCount) / 10
+    }
+
+    /// Prompt 2 — Reverse-Mapping für Restore. Setzt aus einem Envelope
+    /// (Summary + sortierte PointBatches) wieder einen `RecordedTrack`
+    /// zusammen.
+    ///
+    /// Wichtige Verluste/Annahmen:
+    /// - Die ursprüngliche `track.id` (UUID) ist **nicht** im CloudKit-
+    ///   Schema gespeichert (nur als 16-Hex `localTrackIDHash`). Beim
+    ///   Restore wird eine neue UUID erzeugt (über `freshID`-Closure
+    ///   injectable für Tests).
+    /// - `dayKey` wird aus `summary.startedAt` (`yyyy-MM-dd`, UTC)
+    ///   abgeleitet — das ist dieselbe Konvention, die der Recorder
+    ///   beim Anlegen verwendet.
+    /// - `captureMode` ist im Schema nicht persistiert; Default
+    ///   `.foregroundWhileInUse`.
+    public static func decodeRecordedTrack(
+        from envelope: LiveTrackCloudBackupEnvelope,
+        freshID: () -> UUID = { UUID() }
+    ) throws -> RecordedTrack {
+        let summary = envelope.summary
+        let sortedBatches = envelope.pointBatches.sorted { $0.batchIndex < $1.batchIndex }
+        if summary.hasPointBatches {
+            let expectedCount = sortedBatches.first?.batchCount ?? 0
+            let expectedIndices = Array(0..<expectedCount)
+            guard !sortedBatches.isEmpty,
+                  sortedBatches.allSatisfy({ $0.batchCount == expectedCount }),
+                  sortedBatches.map(\.batchIndex) == expectedIndices
+            else {
+                throw LiveTrackCloudRestoreError.incompletePointBatches(
+                    localTrackIDHash: summary.localTrackIDHash
+                )
+            }
+        }
+        var points: [RecordedTrackPoint] = []
+        for batch in sortedBatches {
+            guard let data = Data(base64Encoded: batch.encodedPointsPayload) else {
+                throw LiveTrackCloudRestoreError.corruptPointPayload(batchIndex: batch.batchIndex)
+            }
+            let payload = try JSONDecoder.liveTrackCloud.decode([LiveTrackCloudPointPayload].self, from: data)
+            points.append(contentsOf: payload.map { p in
+                RecordedTrackPoint(
+                    latitude: p.latitude,
+                    longitude: p.longitude,
+                    timestamp: p.timestamp,
+                    horizontalAccuracyM: p.horizontalAccuracyM,
+                    altitudeM: p.altitudeM,
+                    verticalAccuracyM: p.verticalAccuracyM
+                )
+            })
+        }
+        if !sortedBatches.isEmpty, points.count != summary.pointCount {
+            throw LiveTrackCloudRestoreError.pointCountMismatch(
+                expected: summary.pointCount,
+                actual: points.count
+            )
+        }
+        let dayKey = LiveTrackCloudSchema.dayKey(from: summary.startedAt)
+        return RecordedTrack(
+            id: freshID(),
+            startedAt: summary.startedAt,
+            endedAt: summary.endedAt,
+            dayKey: dayKey,
+            distanceM: summary.distanceM,
+            captureMode: .foregroundWhileInUse,
+            points: points
+        )
+    }
+
+    public static func dayKey(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
 
     public static func makeEnvelope(
@@ -577,6 +749,13 @@ public struct ICloudStorageOverview: Codable, Sendable, Equatable {
     }
 }
 
+public enum LiveTrackCloudRestoreError: Error, Equatable {
+    case corruptPointPayload(batchIndex: Int)
+    case missingSummaryForBatch(localTrackIDHash: String)
+    case incompletePointBatches(localTrackIDHash: String)
+    case pointCountMismatch(expected: Int, actual: Int)
+}
+
 public protocol LiveTrackCloudBackupQueueStoring: AnyObject {
     func loadEnvelopes() -> [LiveTrackCloudBackupEnvelope]
     func saveEnvelopes(_ envelopes: [LiveTrackCloudBackupEnvelope])
@@ -638,6 +817,18 @@ public protocol LiveTrackCloudBackupCoordinator: AnyObject {
     func retryPendingBackups() async
     func refreshOverview() async -> ICloudStorageOverview
     func deleteCloudData() async throws
+    /// Prompt 2 — expliziter, vom Nutzer ausgelöster Upload eines
+    /// einzelnen bereits gespeicherten LiveTracks. Anders als
+    /// `handleCompletedLiveTrack` ignoriert dies das Auto-Backup-Setting,
+    /// respektiert aber weiterhin den Health-Gate.
+    func uploadManually(_ track: RecordedTrack, includePointBatches: Bool) async throws
+    /// Prompt 2 — Restore-Pfad: lädt alle Cloud-Envelopes über den Uploader.
+    func fetchRestorableEnvelopes() async throws -> [LiveTrackCloudBackupEnvelope]
+}
+
+public extension LiveTrackCloudBackupCoordinator {
+    func uploadManually(_ track: RecordedTrack, includePointBatches: Bool) async throws {}
+    func fetchRestorableEnvelopes() async throws -> [LiveTrackCloudBackupEnvelope] { [] }
 }
 
 @MainActor
@@ -739,12 +930,45 @@ public final class LiveTrackCloudBackupService: LiveTrackCloudBackupCoordinator 
         try await uploader.deleteCloudData()
         overview = .init()
     }
+
+    /// Prompt 2 — manueller Upload. Health-Gate respektiert, Auto-Backup-
+    /// Setting wird absichtlich ignoriert (Trigger ist Nutzeraktion).
+    public func uploadManually(_ track: RecordedTrack, includePointBatches: Bool) async throws {
+        guard healthGate() else {
+            throw LiveTrackManualUploadError.healthGateClosed
+        }
+        let envelope = try LiveTrackCloudSchema.makeEnvelope(
+            for: track,
+            includePointBatches: includePointBatches
+        )
+        try await uploader.upload(envelope)
+        uploadedTrackIDs.insert(track.id)
+        overview.lastSuccessfulBackupAt = Date()
+    }
+
+    public func fetchRestorableEnvelopes() async throws -> [LiveTrackCloudBackupEnvelope] {
+        try await uploader.fetchAllEnvelopes()
+    }
+}
+
+public enum LiveTrackManualUploadError: Error, Equatable {
+    case healthGateClosed
 }
 
 public protocol LiveTrackCloudBackupUploading: Sendable {
     func upload(_ envelope: LiveTrackCloudBackupEnvelope) async throws
     func fetchOverview() async throws -> ICloudStorageOverview
     func deleteCloudData() async throws
+    /// Prompt 2 — Restore-Pfad: lädt alle Summary-Records + zugehörige
+    /// PointBatch-Records aus dem privaten CloudKit-Bereich und gruppiert
+    /// sie zu vollständigen Envelopes. Pagination via `queryCursor`.
+    func fetchAllEnvelopes() async throws -> [LiveTrackCloudBackupEnvelope]
+}
+
+public extension LiveTrackCloudBackupUploading {
+    /// Default-Impl, damit bestehende Mock-Uploader (Tests) ohne Anpassung
+    /// weiterhin compilen.
+    func fetchAllEnvelopes() async throws -> [LiveTrackCloudBackupEnvelope] { [] }
 }
 
 public struct NoopLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploading {
@@ -752,6 +976,7 @@ public struct NoopLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploading {
     public func upload(_ envelope: LiveTrackCloudBackupEnvelope) async throws {}
     public func fetchOverview() async throws -> ICloudStorageOverview { .init() }
     public func deleteCloudData() async throws {}
+    public func fetchAllEnvelopes() async throws -> [LiveTrackCloudBackupEnvelope] { [] }
 }
 
 @MainActor
@@ -1092,6 +1317,136 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
             }
         }
         return overview
+    }
+
+    /// Prompt 2 — Restore-Pfad. Lädt alle Summary- und PointBatch-Records
+    /// paginiert via `queryCursor` und gruppiert sie nach
+    /// `localTrackIDHash` zu vollständigen Envelopes. PointBatches ohne
+    /// passende Summary werden ignoriert (vermeidet inkonsistente
+    /// Restore-Items aus partiellem Upload).
+    public func fetchAllEnvelopes() async throws -> [LiveTrackCloudBackupEnvelope] {
+        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let summaries = try await Self.fetchAllRecords(
+            ofType: LiveTrackCloudSchema.summaryRecordType,
+            from: database
+        )
+        let batches = try await Self.fetchAllRecords(
+            ofType: LiveTrackCloudSchema.pointBatchRecordType,
+            from: database
+        )
+
+        let summaryStructs: [LiveTrackCloudSummary] = summaries.compactMap { Self.decodeSummary($0) }
+        let batchStructs: [LiveTrackCloudPointBatch] = batches.compactMap { Self.decodePointBatch($0) }
+        let batchesByHash = Dictionary(grouping: batchStructs, by: { $0.localTrackIDHash })
+
+        return summaryStructs.map { summary in
+            let envelopeBatches = (batchesByHash[summary.localTrackIDHash] ?? [])
+                .sorted { $0.batchIndex < $1.batchIndex }
+            return LiveTrackCloudBackupEnvelope(
+                summary: summary,
+                pointBatches: envelopeBatches,
+                queuedAt: summary.createdAt
+            )
+        }
+        .sorted { $0.summary.startedAt > $1.summary.startedAt }
+    }
+
+    private static func fetchAllRecords(
+        ofType recordType: String,
+        from database: CKDatabase
+    ) async throws -> [CKRecord] {
+        var collected: [CKRecord] = []
+        let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
+        do {
+            let firstPage = try await database.records(matching: query, resultsLimit: 200)
+            collected.append(contentsOf: try records(from: firstPage.matchResults))
+            var cursor = firstPage.queryCursor
+            while let next = cursor {
+                let nextPage = try await database.records(continuingMatchFrom: next, resultsLimit: 200)
+                collected.append(contentsOf: try records(from: nextPage.matchResults))
+                cursor = nextPage.queryCursor
+            }
+        } catch {
+            // `unknownItem` auf Query-Pfad = RecordType existiert noch
+            // nicht in dieser Umgebung (Schema nicht promoted). Restore
+            // liefert dann leeren Bucket statt zu werfen.
+            if (error as NSError).domain == "CKErrorDomain",
+               (error as NSError).code == 11 {
+                return []
+            }
+            throw error
+        }
+        return collected
+    }
+
+    private static func records(
+        from matchResults: [(CKRecord.ID, Result<CKRecord, Error>)]
+    ) throws -> [CKRecord] {
+        try matchResults.map { _, result in
+            try result.get()
+        }
+    }
+
+    private static func decodeSummary(_ record: CKRecord) -> LiveTrackCloudSummary? {
+        guard let localHash = record[LiveTrackCloudSchema.SummaryField.localTrackIDHash] as? String,
+              let title = record[LiveTrackCloudSchema.SummaryField.title] as? String,
+              let startedAt = record[LiveTrackCloudSchema.SummaryField.startedAt] as? Date,
+              let endedAt = record[LiveTrackCloudSchema.SummaryField.endedAt] as? Date
+        else { return nil }
+        let schemaVersion = (record[LiveTrackCloudSchema.SummaryField.schemaVersion] as? Int)
+            ?? (record[LiveTrackCloudSchema.SummaryField.schemaVersion] as? NSNumber)?.intValue
+            ?? LiveTrackCloudSchema.schemaVersion
+        let durationSeconds = (record[LiveTrackCloudSchema.SummaryField.durationSeconds] as? Double)
+            ?? endedAt.timeIntervalSince(startedAt)
+        let distanceM = (record[LiveTrackCloudSchema.SummaryField.distanceM] as? Double) ?? 0
+        let pointCount = (record[LiveTrackCloudSchema.SummaryField.pointCount] as? Int)
+            ?? (record[LiveTrackCloudSchema.SummaryField.pointCount] as? NSNumber)?.intValue ?? 0
+        let hasPointBatches = (record[LiveTrackCloudSchema.SummaryField.hasPointBatches] as? Bool) ?? false
+        let createdAt = (record[LiveTrackCloudSchema.SummaryField.createdAt] as? Date) ?? startedAt
+        let updatedAt = (record[LiveTrackCloudSchema.SummaryField.updatedAt] as? Date) ?? createdAt
+        let estimated = (record[LiveTrackCloudSchema.SummaryField.estimatedPayloadBytes] as? Int)
+            ?? (record[LiveTrackCloudSchema.SummaryField.estimatedPayloadBytes] as? NSNumber)?.intValue ?? 0
+
+        var summary = LiveTrackCloudSummary.empty()
+        summary.id = LiveTrackCloudSchema.stableSummaryID(fromLocalTrackIDHash: localHash)
+        summary.schemaVersion = schemaVersion
+        summary.localTrackIDHash = localHash
+        summary.title = title
+        summary.startedAt = startedAt
+        summary.endedAt = endedAt
+        summary.durationSeconds = durationSeconds
+        summary.distanceM = distanceM
+        summary.pointCount = pointCount
+        summary.hasPointBatches = hasPointBatches
+        summary.createdAt = createdAt
+        summary.updatedAt = updatedAt
+        summary.estimatedPayloadBytes = estimated
+        return summary
+    }
+
+    private static func decodePointBatch(_ record: CKRecord) -> LiveTrackCloudPointBatch? {
+        guard let localHash = record[LiveTrackCloudSchema.PointBatchField.localTrackIDHash] as? String,
+              let batchIndex = (record[LiveTrackCloudSchema.PointBatchField.batchIndex] as? Int)
+                ?? (record[LiveTrackCloudSchema.PointBatchField.batchIndex] as? NSNumber)?.intValue,
+              let batchCount = (record[LiveTrackCloudSchema.PointBatchField.batchCount] as? Int)
+                ?? (record[LiveTrackCloudSchema.PointBatchField.batchCount] as? NSNumber)?.intValue,
+              let encodedPayload = record[LiveTrackCloudSchema.PointBatchField.encodedPointsPayload] as? String
+        else { return nil }
+        var batch = LiveTrackCloudPointBatch.empty()
+        batch.schemaVersion = (record[LiveTrackCloudSchema.PointBatchField.schemaVersion] as? Int)
+            ?? (record[LiveTrackCloudSchema.PointBatchField.schemaVersion] as? NSNumber)?.intValue
+            ?? LiveTrackCloudSchema.schemaVersion
+        batch.localTrackIDHash = localHash
+        batch.batchIndex = batchIndex
+        batch.batchCount = batchCount
+        batch.pointCount = (record[LiveTrackCloudSchema.PointBatchField.pointCount] as? Int)
+            ?? (record[LiveTrackCloudSchema.PointBatchField.pointCount] as? NSNumber)?.intValue ?? 0
+        batch.encodedPointsPayload = encodedPayload
+        batch.estimatedPayloadBytes = (record[LiveTrackCloudSchema.PointBatchField.estimatedPayloadBytes] as? Int)
+            ?? (record[LiveTrackCloudSchema.PointBatchField.estimatedPayloadBytes] as? NSNumber)?.intValue ?? 0
+        batch.createdAt = (record[LiveTrackCloudSchema.PointBatchField.createdAt] as? Date) ?? Date()
+        batch.updatedAt = (record[LiveTrackCloudSchema.PointBatchField.updatedAt] as? Date) ?? batch.createdAt
+        return batch
     }
 
     public func deleteCloudData() async throws {

@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## 2026-05-25 — Prompt 2: LiveTrack Upload/Restore via bestehende CloudKit-Records (Branch `main`, HEAD `ccd4ef4` → folgt)
+
+> **Zweiter von drei Prompts.** Bestehender CloudKit-MVP wurde um user-ausgeloesten LiveTrack-Upload und einen Restore-Lesepfad erweitert. Es werden ausschliesslich die vorhandenen RecordTypes `LH2GPXLiveTrackSummary` und `LH2GPXLiveTrackPointBatch` genutzt. **Kein neuer RecordType, kein CKAsset, kein GPX/KML/ZIP-Datei-Sync.**
+
+### Code-Fixes
+| Datei | Zweck |
+|---|---|
+| `ICloudCloudKitMVP.swift` | `LiveTrackCloudBackupUploading.fetchAllEnvelopes()`, `LiveTrackCloudBackupCoordinator.uploadManually(...)`/`fetchRestorableEnvelopes()`, paginierter Restore-Query-Pfad fuer Summary + PointBatch, Decode zurueck in `RecordedTrack` |
+| `LiveTrackCloudRestoreService.swift` | UI-naher Service mit `loadAvailable()`, `uploadLatestLocalTrack(...)`, `restore(_:)`, sichtbarem Action-State und persistentem Dedupe fuer wiederhergestellte Cloud-Hashes |
+| `AppICloudOptionsView.swift` | Neue Karte „LiveTracks manuell sichern" zwischen Auto-Backup und Storage-Overview; Buttons fuer „Neueste hochladen", „Cloud-LiveTracks laden" und „Wiederherstellen" |
+| `AppAccessibilityID.swift` | Statische IDs fuer die neue iCloud-LiveTrack-Actions-Karte |
+| `AppOptionsView.swift` / `AppLanguageSupport.swift` | Privacy-Texte korrigiert: iCloud ist weiter opt-in/default AUS, kann aber LiveTracks sichern; Google-History/Importe/Exportdateien bleiben ohne Auto-Upload |
+| `LiveTrackCloudRestoreTests.swift` | 16 Tests fuer Reverse-Mapping, corrupt payload, UTC-dayKey, manuellen Upload, Restore-Dedupe, Load-/Failure-State |
+
+### Verhalten
+- Manueller Upload ignoriert bewusst das Auto-Backup-Setting, respektiert aber den Health-Gate.
+- `includePointBatches` kommt aus `syncLiveTrackPointBatchesEnabled`; genaue Routenpunkte bleiben separat opt-in.
+- Restore erzeugt eine neue lokale UUID, weil die urspruengliche UUID nicht im CloudKit-Schema gespeichert ist. `dayKey` wird aus `startedAt` (UTC) rekonstruiert, `captureMode` faellt auf `.foregroundWhileInUse` zurueck.
+- `unknownItem` beim Query-Pfad wird als „RecordType in dieser Umgebung nicht vorhanden / Schema nicht promoted" zu leerem Ergebnis behandelt.
+
+### Verifikation
+- ✅ `swift build`
+- ✅ `swift test --filter LiveTrackCloudRestoreTests` — 16/0
+- ✅ `swift test --filter ICloud` — 46/0
+- ✅ `swift test --filter UIWiring` — 63/0
+- ✅ `xcodebuild` iPhone 17 Pro Max Simulator — BUILD SUCCEEDED
+- ✅ `xcodebuild` generic iOS (`CODE_SIGNING_ALLOWED=NO`) — BUILD SUCCEEDED
+
+### Bewusst NICHT in Prompt 2
+- Kein `LH2GPXCloudFile`.
+- Kein `CKAsset`.
+- Kein GPX/KML/ZIP-Cloud-Datei-Sync.
+- Keine automatische Google-History-, Import- oder Exportdatei-Sicherung.
+- Kein vollstaendiger Multi-Device-Sync behauptet.
+- Kein TestFlight-/Gerätetest und keine Production-Schema-Verifikation in diesem Lauf.
+
+---
+
 ## 2026-05-25 — Prompt 1: Dateien-Tab + iCloud-Options-Button-Audit (Branch `main`, HEAD `2d561b9` → folgt)
 
 > **Erster von drei zusammenhängenden Prompts (Session A · 1/2).** Neuer „Dateien"-Tab (Tag 5) rechts neben „Live" mit lokaler Datei-Übersicht (Exporte/Importe/Favoriten/Caches), Lade-/Lösch-Aktionen mit sichtbarem Action-State (gleicher Stil wie Phase D.4), Filter, Lösch-Bestätigungs-Alert. Vollständiger Button-Audit von `AppICloudOptionsView` als Single-Source-of-Truth abgelegt.

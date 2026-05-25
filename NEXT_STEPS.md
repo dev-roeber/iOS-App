@@ -1,5 +1,13 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Prompt 2) — LiveTrack Upload/Restore via bestehende CloudKit-Records (Branch `main`, HEAD `ccd4ef4` → folgt)
+
+> **Prompt 2 von 3.** Bestehender LiveTrack-CloudKit-MVP kann jetzt manuell den neuesten lokalen LiveTrack hochladen und Cloud-LiveTracks aus `LH2GPXLiveTrackSummary` + `LH2GPXLiveTrackPointBatch` paginiert laden/wiederherstellen. Keine neuen CloudKit-RecordTypes, kein CKAsset, kein allgemeiner Datei-Sync.
+>
+> **Nächste Phase: Prompt 3 — `LH2GPXCloudFile` + CKAsset fuer GPX/KML/ZIP.** Dabei Production-Schema-Deploy/Index fuer `sha256Hex` als externe CloudKit-Dashboard-Aktion einplanen. Echter TestFlight-/Gerätetest bleibt offen, bis er tatsaechlich durchgefuehrt wurde.
+
+---
+
 ## Stand 2026-05-25 (Prompt 1) — Dateien-Tab + iCloud-Options-Audit (Branch `main`, HEAD `2d561b9` → folgt)
 
 > **Prompt 1 von 3 (Session A).** Neuer „Dateien"-Tab Tag 5 rechts neben Live, vier Buckets (Exporte/Importe/Favoriten/Caches), Foundation-only Models/Service/ViewModel + 10 Tests grün. iCloud-Buttons komplett auditiert in [`docs/ICLOUD_OPTIONS_BUTTON_AUDIT_2026-05-25.md`](docs/ICLOUD_OPTIONS_BUTTON_AUDIT_2026-05-25.md). Kein CloudKit-Sync für Dateien — kommt in Prompt 3 (CKAsset + `LH2GPXCloudFile`).

@@ -28,6 +28,19 @@
 > Update.** Build-only verifiziert (`swift build`, xcodebuild Sim +
 > generic iOS Build); Tests deferred bis Punkt 10.
 >
+> **Prompt 2 Status (2026-05-25):** **LiveTrack Upload/Restore ueber
+> bestehende CloudKit-Records.** `LiveTrackCloudBackupCoordinator` bietet
+> jetzt `uploadManually(_:includePointBatches:)` und
+> `fetchRestorableEnvelopes()`. `LiveTrackCloudBackupUploading` liest
+> `LH2GPXLiveTrackSummary` und `LH2GPXLiveTrackPointBatch` paginiert via
+> `queryCursor` aus `privateCloudDatabase`, gruppiert PointBatches per
+> `localTrackIDHash` und gibt `LiveTrackCloudBackupEnvelope` zurueck.
+> `LiveTrackCloudRestoreService` stellt daraus lokale `RecordedTrack`s
+> wieder her und kann den neuesten lokalen LiveTrack explizit hochladen.
+> **Kein neuer RecordType, kein `CKAsset`, kein Public/shared DB, keine
+> Subscription, kein GPX/KML/ZIP-Datei-Sync.** `unknownItem` beim Query-
+> Pfad wird als „Schema/RecordType nicht vorhanden" zu leerem Ergebnis.
+>
 Stand: **2026-05-25 (Train 9.0 Variant B Pro)** · zuletzt erweitert um
 4 neue iCloud-Sync-Preferences (`syncLiveTrackMetadataEnabled`,
 `iCloudStatusAutoRefreshEnabled`, `iCloudSyncAllowCellular`,

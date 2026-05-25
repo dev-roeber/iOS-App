@@ -44,6 +44,16 @@ public enum AppAccessibilityID {
         public static let filter = "files.filter"
     }
 
+    // MARK: - iCloud options
+
+    public enum ICloud {
+        public static let liveTrackActionsCard = "options.icloud.liveTrackActions.card"
+        public static let liveTrackActionsUpload = "options.icloud.liveTrackActions.upload"
+        public static let liveTrackActionsLoadCloud = "options.icloud.liveTrackActions.loadCloud"
+        public static let liveTrackActionsRestore = "options.icloud.liveTrackActions.restore"
+        public static let liveTrackActionsMessage = "options.icloud.liveTrackActions.message"
+    }
+
     // MARK: - Map surfaces (root views, not individual annotations)
 
     public enum Map {

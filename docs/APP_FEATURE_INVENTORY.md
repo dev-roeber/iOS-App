@@ -97,6 +97,19 @@ Keine automatische Google-History-/Import-/Export-Sicherung, kein
 Public/shared DB, kein CKAsset, keine CKSubscription. Speicherverbrauch
 wird nur geschaetzt.
 
+Aktueller Stand: Prompt 2 auf `main` HEAD `ccd4ef4` → folgt.
+Der bestehende LiveTrack-CloudKit-MVP hat jetzt einen manuellen
+Upload-/Restore-Pfad: `AppICloudOptionsView` zeigt „LiveTracks manuell
+sichern", `LiveTrackCloudRestoreService` lädt restorable Envelopes aus
+`LH2GPXLiveTrackSummary` + `LH2GPXLiveTrackPointBatch`, stellt sie in
+`RecordedTrackFileStore` wieder her und kann den neuesten lokalen
+LiveTrack explizit hochladen. Restore ist best-effort: ursprüngliche
+UUID wird nicht im CloudKit-Schema gespeichert, daher erzeugt Restore
+eine neue UUID; `dayKey` kommt aus `startedAt` (UTC), `captureMode`
+fällt auf `.foregroundWhileInUse` zurück. Weiterhin kein `CKAsset`,
+kein `LH2GPXCloudFile`, kein Datei-Sync und keine automatische
+Google-History-/Import-/Export-Sicherung.
+
 Voriger Stand: Train F.2 build-only auf `main` HEAD
 `627ca41` + Train-F.2-Diff). Neue Foundation+CloudKit-Schema-Schicht
 `LiveTrackMetadataSchema` (`recordType = "LiveTrackMeta"`,

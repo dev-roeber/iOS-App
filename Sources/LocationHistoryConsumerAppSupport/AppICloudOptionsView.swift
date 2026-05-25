@@ -180,6 +180,7 @@ public enum ICloudActionErrorRendering {
 public struct AppICloudOptionsView: View {
     @ObservedObject private var preferences: AppPreferences
     @StateObject private var viewModel: ICloudSyncViewModel
+    @StateObject private var liveTrackCloudActions: LiveTrackCloudRestoreService
     @State private var showsCloudDeleteConfirmation = false
 
     public init(preferences: AppPreferences) {
@@ -193,12 +194,12 @@ public struct AppICloudOptionsView: View {
         let healthCheckService: ICloudHealthChecking = InMemoryICloudHealthCheckService()
         #endif
         let backupService: LiveTrackCloudBackupService = {
-            // Phase D.2 — pluggable health-gate. The closure is captured
-            // before the StateObject exists, so we read the live health
-            // status off the StateObject via a sentinel set right after
-            // init via `viewModel.installHealthGate`.
+            // Phase D.2 / Prompt 2 — pluggable health-gate. Reads the
+            // latest health-check service status, so manual upload does
+            // not bypass a red private-database probe.
             return LiveTrackCloudBackupFactory.makeProductionService(
-                settingsProvider: { preferences.liveTrackCloudBackupSettings }
+                settingsProvider: { preferences.liveTrackCloudBackupSettings },
+                healthGate: { healthCheckService.status.isOperational }
             )
         }()
         self._viewModel = StateObject(
@@ -206,6 +207,12 @@ public struct AppICloudOptionsView: View {
                 service: service,
                 healthCheckService: healthCheckService,
                 backupService: backupService
+            )
+        )
+        self._liveTrackCloudActions = StateObject(
+            wrappedValue: LiveTrackCloudRestoreService(
+                coordinator: backupService,
+                trackStore: RecordedTrackFileStore()
             )
         )
     }
@@ -247,6 +254,7 @@ public struct AppICloudOptionsView: View {
                 healthCheckCard
                 iCloudBackupSelectionCard
                 automaticLiveTrackBackupCard
+                manualLiveTrackCloudActionsCard
                 storageOverviewCard
                 statusAutoRefreshCard
                 networkPolicyCard
@@ -409,6 +417,107 @@ public struct AppICloudOptionsView: View {
             }
         }
         .accessibilityIdentifier("options.icloud.automaticLiveTrackBackup.card")
+    }
+
+    @ViewBuilder
+    private var manualLiveTrackCloudActionsCard: some View {
+        LHCard {
+            LHSectionHeader("LiveTracks manuell sichern")
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Upload und Wiederherstellung nutzen die bestehenden LiveTrack-Records in deinem privaten iCloud-Bereich. Google-History-Importe und exportierte Dateien werden hier nicht hochgeladen.")
+                    .font(.caption)
+                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 12) {
+                    Button {
+                        Task {
+                            await liveTrackCloudActions.uploadLatestLocalTrack(
+                                includePointBatches: preferences.syncLiveTrackPointBatchesEnabled
+                            )
+                            await viewModel.refreshOverview()
+                        }
+                    } label: {
+                        if liveTrackCloudActions.actionState == .uploading {
+                            HStack(spacing: 6) {
+                                ProgressView().controlSize(.small)
+                                Text("Lade hoch…")
+                            }
+                        } else {
+                            Text("Neueste hochladen")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(
+                        !preferences.iCloudSyncEnabled
+                        || !preferences.syncLiveTrackMetadataEnabled
+                        || liveTrackCloudActions.actionState != .idle
+                    )
+                    .accessibilityIdentifier(AppAccessibilityID.ICloud.liveTrackActionsUpload)
+
+                    Button {
+                        Task { await liveTrackCloudActions.loadAvailable() }
+                    } label: {
+                        if liveTrackCloudActions.actionState == .loading {
+                            HStack(spacing: 6) {
+                                ProgressView().controlSize(.small)
+                                Text("Lade…")
+                            }
+                        } else {
+                            Text("Cloud-LiveTracks laden")
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!preferences.iCloudSyncEnabled || liveTrackCloudActions.actionState != .idle)
+                    .accessibilityIdentifier(AppAccessibilityID.ICloud.liveTrackActionsLoadCloud)
+                }
+
+                if !preferences.iCloudSyncEnabled || !preferences.syncLiveTrackMetadataEnabled {
+                    Label("Aktiviere iCloud-Sync und LiveTrack-Metadaten, bevor du manuell hochlädst.", systemImage: "icloud.slash")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if !liveTrackCloudActions.availableEnvelopes.isEmpty {
+                    Divider()
+                    ForEach(liveTrackCloudActions.availableEnvelopes) { envelope in
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(envelope.summary.title)
+                                    .font(.caption.weight(.semibold))
+                                Text("\(Self.shortDateFormatter.string(from: envelope.summary.startedAt)) · \(envelope.summary.pointCount) Punkte")
+                                    .font(.caption2)
+                                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                            }
+                            Spacer()
+                            Button {
+                                Task { _ = await liveTrackCloudActions.restore(envelope) }
+                            } label: {
+                                if liveTrackCloudActions.actionState == .restoring {
+                                    ProgressView().controlSize(.small)
+                                } else {
+                                    Text("Wiederherstellen")
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(liveTrackCloudActions.actionState != .idle)
+                            .accessibilityIdentifier(AppAccessibilityID.ICloud.liveTrackActionsRestore)
+                        }
+                    }
+                }
+
+                if let message = liveTrackCloudActions.actionMessage {
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundStyle(liveTrackCloudActions.actionFailed ? .orange : LH2GPXTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier(AppAccessibilityID.ICloud.liveTrackActionsMessage)
+                }
+            }
+            .animation(.default, value: liveTrackCloudActions.actionState)
+        }
+        .accessibilityIdentifier(AppAccessibilityID.ICloud.liveTrackActionsCard)
     }
 
     @ViewBuilder
