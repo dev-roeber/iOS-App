@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.11: Timeline / Days / Day Detail Modernisierung (Branch `main`, HEAD `e8bc835` → folgt)
+
+> **Minimal-additive Timeline/DayDetail-Polish.** Beide `Route Display`-Segmented-Picker im `AppDayDetailView` bekommen `accessibilityHint` (Header-Picker schon mit Identifier `dayDetail.routeDisplay`; 2. Picker im `mapControlRow` bekommt **neuen** Identifier `dayDetail.routeDisplay.control`). Day-Timeline-Card bekommt zusätzlichen `accessibilityHint`. **Keine** Berechnungs-/Persistenz-Änderung, **keine** neuen Sub-Views, **keine** Layout-Verschiebung. Bestehende 33 Days/DayDetail-Identifier unverändert. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- SwiftUI `List` vs `ScrollView+LazyVStack` — `List` für Selektion/Swipe/Edit-Mode; `ScrollView+LazyVStack` für volle Layout-Kontrolle. App nutzt bewusst `ScrollView+LazyVStack` (Hero-Map + Sticky-Header).
+- SwiftUI `Picker(.segmented)` — max 2–5 kurze gleichlange Labels; sinnvoller `accessibilityLabel` am Picker (Segmente erben).
+- SwiftUI Accessibility: `accessibilityElement(children: .combine)`, `Label/Value/Hint` (Reihenfolge: was es ist → aktueller Zustand → was passiert beim Tap).
+- HIG Lists: konsistente Row-Struktur, Disclosure-Indicator nur bei Drill-down; HIG Selection: sofortiges visuelles Feedback.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../AppDayDetailView.swift` | 2 Picker-Hints + 1 Picker-Identifier (`dayDetail.routeDisplay.control`) + 1 Timeline-Hint |
+| `CHANGELOG.md`, `ROADMAP.md` | Doku-Sync |
+
+### Erhaltene Identifier (33 total, alle unverändert)
+- **Days** (12): `days.row.*`, `days.filter.*`, `days.month.*`, `days.title`, `days.map.header`, `days.range`, `days.search`, `days.stickyHeader`, `days.searchField`, `days.exportBar`.
+- **DayDetail** (21): `dayDetail.map` (2×), `dayDetail.stickyHeader`, `dayDetail.title`, `dayDetail.routeDisplay` (bereits da) + **neu** `dayDetail.routeDisplay.control`, `dayDetail.metric.*` (4×), `dayDetail.segment.*` (4×), `dayDetail.timeline`, `dayDetail.routeSelection`, `dayDetail.removeRoute*` (3×).
+
+### Build-only Validierung
+- `swift build` ✅ (10,57 s, 0 Warnings).
+- `xcodebuild` Sim ✅ `BUILD SUCCEEDED`.
+- `xcodebuild` generic iOS ✅ `BUILD SUCCEEDED`.
+
+### Bewusst NICHT verändert
+- `AppDayListView` (bereits in Train 8.1 mit Day-Row-Hint versorgt).
+- Berechnungslogik in `DayDetailPresentation` unverändert.
+- Persistenz-/Store-Pfad unverändert.
+- Keine neue Map-Algorithmen.
+- Keine iCloud-/Live-/Export-Änderung.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.12 — Heatmap / Insights / Statistik Modernisierung** (build-only).
+
+---
+
 ## 2026-05-25 — Train 8.10: Live Tracking / Upload Control Center (Branch `main`, HEAD `95c43ee` → folgt)
 
 > **Minimal-additive Live-Upload-Polish.** Vier additive `accessibilityHint`s + 1 Status-Identifier am `LHUploadSettingsCard`: Toggle-Hint klärt Opt-in + „kein zentraler Server", URL-Field-Hint sagt „HTTPS Endpoint of your self-hosted receiver", SecureField-Token-Hint bestätigt Keychain-Speicherung + „never written to logs", `uploadStatusRow` bekommt eigenen Identifier `options.upload.statusRow` + kombiniertes accessibility-Element. **Keine** neue Netzwerk-API, **keine** Server-Endpoint-Änderung, **keine** Background-Permission-Erweiterung, **keine** neue LiveActivity. Tests deferred bis Punkt 10.

@@ -276,6 +276,7 @@ public struct AppDayDetailView: View {
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("dayDetail.routeDisplay")
+                .accessibilityHint(Text(t("Switches between simplified and full route rendering on the day map. Affects only how routes are drawn, not what is exported.")))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -303,6 +304,8 @@ public struct AppDayDetailView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .accessibilityIdentifier("dayDetail.routeDisplay.control")
+                    .accessibilityHint(Text(t("Switches between simplified and full route rendering on the day map.")))
                 }
                 .padding(.horizontal, fillHeight ? 12 : 0)
                 .padding(.top, fillHeight ? 12 : 0)
@@ -456,6 +459,7 @@ public struct AppDayDetailView: View {
             }
         }
         .accessibilityIdentifier("dayDetail.timeline")
+        .accessibilityHint(Text(t("Chronological list of visits and activities for this day. Tap a row to reveal more details.")))
     }
 
     @ViewBuilder

@@ -20,7 +20,7 @@
 | 8.8 | Import-Pipeline UX + Robustness Polish | ✅ erledigt — Doku-Confirm-Train (Pipeline bereits robust) |
 | 8.9 | Export-Pipeline UX + Files/iCloud Drive Polish | ✅ erledigt — per-Format Identifier + Destination-Hint |
 | 8.10 | Live Tracking / Upload Control Center | ✅ erledigt — Upload-Card Hints + Status-Identifier |
-| 8.11 | Timeline / Days / Day Detail Modernisierung | offen |
+| 8.11 | Timeline / Days / Day Detail Modernisierung | ✅ erledigt — routeDisplay+timeline Hints + 2. Picker Identifier |
 | 8.12 | Heatmap / Insights / Statistik Modernisierung | offen |
 | 8.13 | Widget / Dynamic-Island / Live-Status Konsistenz | offen |
 | 8.14 | App Store / Privacy / Review Readiness | offen |
