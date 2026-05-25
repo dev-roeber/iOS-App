@@ -1,5 +1,22 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Master-Train Phase B) — DE/EN Localization-Basis + `Localizable.xcstrings` (Branch `main`, HEAD `4d4cbcb` → folgt)
+
+> **Phase B abgeschlossen.** `Package.swift` mit `defaultLocalization: "en"` + `Localizable.xcstrings` für AppSupport-Target angelegt (765 Keys aus bestehender `AppGermanTranslations` + 37 LocalTimeline-Strings, 17 Case/Reserved-Konflikte aus xcstrings entfernt aber in `AppGermanTranslations` behalten). Bestehender `t()`-Helper-Mechanik unverändert. Detail: [`docs/LOCALIZATION_DE_EN_AUDIT_2026-05-25.md`](docs/LOCALIZATION_DE_EN_AUDIT_2026-05-25.md).
+>
+> **Build-Verifikation:** `swift build` ✅ · iPhone-Sim build ✅ · Generic iOS build ✅. Tests per User-Direktive nicht ausgeführt.
+>
+> **User-Update zu Phasen-Reihenfolge:** Phase C ist jetzt **„Globales Karten-Optionsmenü + verstellbare Kartenhöhe"** (neu eingeschoben). Bisherige Phasen C–H werden zu D–I:
+> - **C** (neu): Globales Map-Options-Menü auf allen Karten + Kartenhöhe compact/expanded
+> - **D** (war C): `FavoriteEntry` Modell + lokale Persistenz
+> - **E** (war D): echter CloudKit Favoriten-Sync
+> - **F** (war E): iPad TARGETED_DEVICE_FAMILY = 1,2 + Layout-Audit
+> - **G** (war F): Doku-Sync
+> - **H** (war G): Build-Verifikation
+> - **I** (war H): Commit + Push (gilt nicht separat — wird pro Phase gemacht)
+
+---
+
 ## Stand 2026-05-25 (Master-Train Phase A) — Spec-Doku für L10n + Favorites-iCloud-Sync + iPad (Branch `main`, HEAD `48722f5` → folgt)
 
 > **Phase A abgeschlossen** — `docs/LOCALIZATION_ICLOUD_FAVORITES_IPAD_IMPLEMENTATION_2026-05-25.md` mit Master-Spec angelegt. Phasen B–H stehen aus und werden einzeln auf User-Freigabe ausgeführt:

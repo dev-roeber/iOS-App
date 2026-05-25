@@ -31,6 +31,7 @@
 | 9.2 | Höhen-Unterstützung Phase 1 (MapKit terrain + Live-Elevation + GPX `<ele>`) | ✅ erledigt — Helper + Resolver + Model-Erweiterung + Test-Scaffolding |
 | Closure | Open-Items-Audit + 2 A11y-Fixes + lokale Test-Verifikation | ✅ erledigt — `swift test 1714/0`, Sim+Generic build ✅, Sim test cancelled by user-direction |
 | Master · Phase A | L10n + Favorites-iCloud-Sync + iPad Master-Spec-Doku | ✅ erledigt — `docs/LOCALIZATION_ICLOUD_FAVORITES_IPAD_IMPLEMENTATION_2026-05-25.md` (Phasen B–H offen) |
+| Master · Phase B | DE/EN Localization-Basis: `defaultLocalization: en` + `Localizable.xcstrings` (765 Keys) + Resource-Rule | ✅ erledigt — `Package.swift` + `Sources/.../Resources/Localizable.xcstrings`; bestehender `t()`-Helper unverändert; Sim+Generic build ✅ |
 
 ### Verbindliche Regel für 8.0–8.15
 **Erlaubt:** `git diff --check`, `swift build`, `xcodebuild ... build`, `xcodebuild ... archive` (ohne Test-Nachaktion), `rg`-Sweeps, statische Codeprüfung, Doku-Sync, Apple-Doku-Abgleich, Commit + Push.

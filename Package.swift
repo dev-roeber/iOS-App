@@ -4,6 +4,13 @@ import PackageDescription
 
 let package = Package(
     name: "LocationHistoryConsumer",
+    // Master-Train Phase B: Apple-modern String Catalogs require declaring the
+    // base/source language at the package level. English is the base; German
+    // is the only additional fully-translated locale (see
+    // `Sources/LocationHistoryConsumerAppSupport/Resources/Localizable.xcstrings`
+    // and the existing `AppGermanTranslations` dictionary which remains the
+    // single source of truth for the runtime `t(_:)` lookup).
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v17),
         .macOS(.v14),
@@ -65,7 +72,16 @@ let package = Package(
                 .target(name: "CSQLite", condition: .when(platforms: [.linux])),
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
             ],
-            exclude: ["UI/README.md"]
+            exclude: ["UI/README.md"],
+            resources: [
+                // Master-Train Phase B: Apple-modern String Catalog. Mirrors
+                // the German translations from `AppGermanTranslations` plus
+                // the LocalTimeline tech-view strings. On German iOS devices
+                // this enables automatic translation of `Text("…")` literals
+                // (LocalizedStringKey lookup) without changing the existing
+                // app-preference-driven `t(_:)` lookup mechanism.
+                .process("Resources"),
+            ]
         ),
         .target(
             name: "LocationHistoryConsumerDemoSupport",

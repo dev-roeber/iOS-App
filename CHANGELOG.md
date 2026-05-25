@@ -1,5 +1,57 @@
 # CHANGELOG
 
+## 2026-05-25 — Master · Phase B: DE/EN Localization-Basis + `Localizable.xcstrings` (Branch `main`, HEAD `4d4cbcb` → folgt)
+
+> **Build-only.** Apple-modernes String Catalog (`Localizable.xcstrings`, 765 Keys) als parallel-laufender Mirror der bestehenden `AppGermanTranslations`-Tabelle (750 Pairs). `Package.swift` bekommt `defaultLocalization: "en"` und Resource-Rule `.process("Resources")` für `LocationHistoryConsumerAppSupport`-Target. **Kein Breaking Change** am bestehenden `t(_:)`-Helper-System — bleibt single source of truth für App-Preference-Override (User kann in Settings deutsch wählen auch auf englischem iOS). xcstrings ergänzt für Apple-modernen Translation-Workflow (XLIFF-Export, Xcode-UI) und automatische Übersetzung der 37 hardcoded `LocalTimeline*`-View-Strings auf deutschen iOS-Geräten (implizit via `LocalizedStringKey`-Lookup über `Bundle.module`).
+
+### Geprüfte Apple-Doku
+- *Localizing and varying text with a string catalog* — `.xcstrings` ist 2025/2026-empfohlen.
+- *Swift Package Manager `defaultLocalization`* — Pflicht sobald Resources lokalisiert sind.
+- *LocalizedStringKey* — `Text("…")` ist implizit `LocalizedStringKey`, nutzt Bundle-Lookup automatisch.
+- HIG Localization (deutsche Strings ~25–40 % länger; keine harten lineLimits ohne Grund).
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Package.swift` | +`defaultLocalization: "en"` (Master-Train-Phase-B-Erklärung als inline-Kommentar) + Resource-Rule `.process("Resources")` für AppSupport-Target |
+| `Sources/LocationHistoryConsumerAppSupport/Resources/Localizable.xcstrings` | **NEU** — 765 Keys, JSON-Format, base `en` + `de` voll übersetzt |
+| `docs/LOCALIZATION_DE_EN_AUDIT_2026-05-25.md` | **NEU** — Detail-Audit + Coverage + Verifikationsplan |
+| `CHANGELOG.md`, `ROADMAP.md`, `NEXT_STEPS.md` | Doku-Sync |
+
+### xcstrings-Stand
+- **Quelle:** `AppGermanTranslations.values` (750 Pairs) + 37 hardcoded `Text("…")`-Strings aus 5 LocalTimeline-Views (5 Duplikate)
+- **Bereinigt:** 17 Konflikt-Keys aus xcstrings entfernt (16 Case-insensitive-Duplikate + 1 Swift-Reserved-Keyword `Type`) wegen Xcode-26-Symbol-Generation-Kollision; bleiben in `AppGermanTranslations` für `t()`-Fallback
+- **Final:** 765 Keys, base `en`, `de` voll übersetzt
+
+### Bewusst NICHT in Phase B
+- ❌ Keine Migration der 668 bestehenden `t("…")`-Call-Sites auf `LocalizedStringResource` (Pattern bleibt)
+- ❌ Keine `Localizable.xcstrings` für Wrapper-Xcode-Target (pbxproj-Surgery; bestehende `t()`-Mechanik liest weiter über AppSupport-Bundle)
+- ❌ Keine `Localizable.xcstrings` für Widget-Target (eigenes `WidgetLocalizedStrings.swift`-System)
+- ❌ Keine `InfoPlist.xcstrings`
+- ❌ Kein Code-Change in den 37 LocalTimeline-View-Strings — bereits implizit `LocalizedStringKey` via `Text("…")`-Syntax
+- ❌ Keine Tests ausgeführt (User-Direktive build-only)
+- ❌ Keine CloudKit-/Favoriten-/iPad-Arbeit (Phasen D/E/F gemäß neuem User-Update; Phase C ist jetzt Map-Optionen + Kartenhöhe)
+
+### Build-only Validierung
+- `swift build` ✅ (53,9 s, 0 Warnings)
+- `xcodebuild` iPhone-Sim build ✅ `BUILD SUCCEEDED`
+- `xcodebuild` generic iOS build ✅ `BUILD SUCCEEDED`
+- JSON-Validität xcstrings ✅
+- `git diff --check` ✅ clean
+- AppIntents SSU-Notice ist harmlos (kein Build-Failure)
+
+### Sweep-Ergebnisse
+- Secret-Sweep ✅ clean (false-positive `authorization` ist CoreLocation-Property)
+- False-Claim-Sweep ✅ clean
+
+### Anti-Claims (unverändert wahr)
+- ❌ Tests gelaufen · ❌ FavoriteEntry-Code · ❌ CloudKit-Sync · ❌ iPad-Build aktiviert · ❌ Neuer Cloud-Build > 190 · ❌ App Review ≥190.
+
+### Nächster Schritt
+**Phase C** (per User-Update neu eingeschoben): **Globales Karten-Optionsmenü auf allen Karten + verstellbare Kartenhöhe** (compact/expanded). Wartet auf User-Freigabe.
+
+---
+
 ## 2026-05-25 — Master · Phase A: Localization + Favorites-iCloud-Sync + iPad Master-Spec (Branch `main`, HEAD `48722f5` → folgt)
 
 > **Doku-only.** Phase A des Master-Trains: Spezifikation für **vollständige DE/EN-Lokalisierung** (`.xcstrings` Apple-modern + Koexistenz mit bestehendem `AppGermanTranslations`-Dictionary), **echter CloudKit-Favoriten-Sync** (`FavoriteEntry` über `privateCloudDatabase.save/fetch/delete` + `records(matching:)`, keine History/Tracks/Koordinaten), **iPad-Universal-Support** (`TARGETED_DEVICE_FAMILY = 1,2` + bereits vorbereitetes `NavigationSplitView`-Layout). Anti-Claim-Reset definiert: CKQuery/save/fetch/delete für `FavoriteEntry` ab Phase D erlaubt. **Keine Code-Implementierung in dieser Phase.** Phasen B–H ausstehend.
