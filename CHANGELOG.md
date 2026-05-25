@@ -1,5 +1,73 @@
 # CHANGELOG
 
+## 2026-05-25 — Phase D.2 (Diagnose-Train): Stage-genauer CloudKit-Health-Check + CKError-Code-UI + Auto-Backup-Gate (Branch `main`, HEAD `ac7819c` → folgt)
+
+> **Bug-Fix / Diagnose-Train ohne neue Features.** Behebt die in den Phase-D-Screenshots sichtbaren echten Diagnose-Probleme:
+> - **Stage-genauer HealthProbe:** vier separate do-catch (accountStatus → write → read → delete). Jeder Stage setzt seinen eigenen Success-Flag + `errorStage`. Frühere catch-all-Pattern setzte alle drei Bools auf false und behauptete fälschlicherweise „Schreiben fehlgeschlagen", auch wenn Read oder Delete die echte Ursache war.
+> - **CKError-Code sichtbar in UI:** neuer `ICloudCKErrorMapping` (Foundation-only) mappt 16 `CKError.Code` raw values auf stabile Code-Namen + deutsche Diagnose-Hints. Health-Card zeigt jetzt `Fehler in Phase: Schreiben`, `CKError.permissionFailure`, deutsche Hint („Entitlement oder Container-Berechtigung prüfen"), und `Erneut in X s versuchen` bei `CKErrorRetryAfterKey`.
+> - **Top-Status-Card vs Health-Card-Konflikt behoben:** neuer `cardKind(for:healthStatus:)`-Overload markiert die Top-Card als `.error`, wenn iCloud-Konto verfügbar ist, aber `privateDatabaseReachability == .failed`. Neuer `topStatusDetailText()` zeigt kombiniert „iCloud-Konto verfügbar · privater CloudKit-Speicher NICHT schreibbar (siehe Health-Check)". Kein irreführendes Grün mehr.
+> - **Auto-Backup-Health-Gate:** `LiveTrackCloudBackupService` bekommt neuen `healthGate: () -> Bool` Provider. `retryPendingBackups()` ist no-op bei rotem Health — Outbox bleibt erhalten, automatischer Resume nach nächstem grünen Probe. UI zeigt sichtbares „Sicherung pausiert"-Label in der Auto-Backup-Karte wenn `healthStatus.isOperational == false`.
+> - **Auto-Refresh-Toggle respektiert:** `.task`-Hook ruft jetzt `viewModel.refresh()` nur wenn `iCloudStatusAutoRefreshEnabled == true`; sonst nur leichten `refreshAccountStatusOnly()` (kein CloudKit-Record-Traffic). Manuelle „Status aktualisieren"-Button bleibt unverändert verfügbar.
+> - **Backward-compatible Codable** für `ICloudHealthProbeResult` — neue Felder (`errorStage`, `ckErrorCodeName`, `retryAfterSeconds`) via `decodeIfPresent`; pre-D.2 JSON dekodiert mit `nil` für die neuen Felder.
+
+### Geprüfte Apple-Doku
+- `CKError.Code` Liste — 16 Codes mit Bedeutung (https://developer.apple.com/documentation/cloudkit/ckerror/code).
+- `CKError.userInfo` Keys — `CKErrorRetryAfterKey` ist `.public`-safe (NSNumber); `errorDescription` und Record-Payloads müssen `.private` bleiben.
+- TestFlight nutzt PRODUCTION Environment — Dev-Schema-Records erzeugen `CKError.unknownItem` (Code 11). Klare Diagnose-Hilfe.
+- `os.Logger` Privacy: `codeName` + `retryAfter` `.public`; `errorDescription` `.private`.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../ICloudCloudKitMVP.swift` | +`ICloudHealthProbeStage` enum, +`ICloudCKErrorMapping`, erweitertes `ICloudHealthProbeResult` (3 neue Felder), stage-genauer `runHealthCheck` (4 separate do-catch), +`accountSummary`/`privateDatabaseSummary`/`isOperational` Convenience-Accessors, `LiveTrackCloudBackupService` mit `healthGate`-Param, `Factory.makeProductionService` mit `healthGate`-Param |
+| `Sources/.../AppICloudOptionsView.swift` | Top-Status-Card nutzt neuen `cardKind(for:healthStatus:)` + `topStatusDetailText()`, Health-Card zeigt errorStage/CKError-Code/Retry-After, Auto-Backup-Card zeigt Pause-Hinweis bei rotem Health, `.task` respektiert `iCloudStatusAutoRefreshEnabled`, neuer `refreshAccountStatusOnly()` |
+| `Tests/.../ICloudHealthStageMappingTests.swift` | **NEU** — 14 Tests (CKError-Mapping × 8, Codable backward-compat × 2, ICloudHealthStatus accessors × 2, Health-Gate × 2) |
+| `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` | Kommentar aktualisiert: nicht mehr „No CloudKit data is read or written" — beschreibt jetzt korrekt Phase-D/D.1/D.2-Stand mit HealthProbe + LiveTrack-Records |
+| `CHANGELOG.md`, `NEXT_STEPS.md` | Doku-Sync |
+
+### Verifikation
+- `swift build` ✅ (13,33 s, 0 Warnings)
+- `swift test --filter ICloudHealthStageMappingTests` ✅ **14 / 0** (0,01 s)
+- `swift test --filter ICloudCloudKitMVPTests` ✅ **9 / 0** (Phase D regressions clean) (0,10 s)
+- `xcodebuild` iPhone-Sim build ✅ `BUILD SUCCEEDED`
+- `xcodebuild` generic iOS build ✅ `BUILD SUCCEEDED`
+
+### Root-Cause-Analyse (User-Audit, jetzt adressiert)
+| Audit-Punkt | Status |
+|---|---|
+| 1. Health-Check meldet falschen Schritt (catch-all) | ✅ **gefixt** — Stage-Trennung, `errorStage` enum |
+| 2. Exakter CKError nicht sichtbar genug | ✅ **gefixt** — Health-Card zeigt CKError-Code-Name + deutsche Hint |
+| 3. TestFlight-Binary embedded entitlements | ⚠️ **User-Action** — `codesign -d --entitlements :- <.app>` muss extern ausgeführt werden |
+| 4. UI grün oben, Health-Check rot | ✅ **gefixt** — `cardKind(for:healthStatus:)`-Overload + `topStatusDetailText` |
+| 5. Automatische Sicherung bleibt aktiv bei kaputt | ✅ **gefixt** — `healthGate`-Provider, sichtbare „Sicherung pausiert"-Hint |
+| 6. Routenpunkte sensible Daten aktiv | ✅ **verifiziert** — Defaults sind konservativ false (`testICloudSettingsDefaultsAreConservative`) — Screenshot zeigte gespeicherten Testzustand |
+| 7. Auto-Refresh-Toggle inkonsistent | ✅ **gefixt** — `.task` respektiert Preference, neuer leichter `refreshAccountStatusOnly()` |
+| 8. Doku-Kommentare widersprüchlich | ✅ **gefixt** — Entitlements-Kommentar aktuell; `ICLOUD_SYNC_ARCHITECTURE.md` hat bereits Phase-D-Header (von Codex eingefügt) |
+
+### Bewusst NICHT in D.2
+- Keine neuen CloudKit-RecordTypes
+- Keine neue Sync-Logik
+- Keine externe TestFlight/codesign-Verifikation (User-Action)
+- Keine UI-Restrukturierung
+- Keine vollständige Codable-Migration (Felder bleiben optional)
+
+### Anti-Claims (unverändert wahr)
+- ❌ TestFlight-embedded-entitlements verifiziert (User-Action via `codesign -d --entitlements`)
+- ❌ Production-Schema-Promotion durchgeführt (User-Action im CloudKit Dashboard)
+- ❌ Echter Multi-Device-Smoke
+- ❌ Xcode Cloud, TestFlight, App Store Submission
+
+### Nächster Schritt
+**Externe User-Action erforderlich:**
+1. `codesign -d --entitlements :- /pfad/zum/installierten/LH2GPXWrapper.app` lokal vom installierten TestFlight-Build ausführen → prüfen ob `com.apple.developer.icloud-container-identifiers` + `com.apple.developer.icloud-services = CloudKit` korrekt embedded sind.
+2. Apple Developer Portal: App-ID `de.roeber.LH2GPXWrapper` → iCloud Capability + CloudKit Service + Container `iCloud.de.roeber.LH2GPXWrapper` zugeordnet?
+3. CloudKit Dashboard: Schema (`LH2GPXCloudHealthProbe`, `LH2GPXLiveTrackSummary`, `LH2GPXLiveTrackPointBatch`) in Production-Environment deployt?
+4. Erst nach Bestätigung dieser drei Punkte: nächste TestFlight-Smoke gegen Build > 190.
+
+**Dann:** Phase F (CloudKit-Favoriten-Sync).
+
+---
+
 ## 2026-05-25 — Master · Phase E: FavoriteEntry-Modell + lokale Persistenz + Legacy-Migration (Branch `main`, HEAD `1bbf743` → folgt)
 
 > **Build-only Foundation für Phase F (echter CloudKit-Favoriten-Sync).** Lokales `FavoriteEntry` Codable Modell + deterministische UUID-Factory (Foundation-only SHA-256, UUIDv5-Style) + JSON-Persistenz in `Application Support/LocationHistory2GPX/Favorites/favorite_entries.json` mit atomic-Write, Korrupt-Recovery via Quarantäne + idempotente einmalige Migration aus bestehendem `DayFavoritesStore` (UserDefaults `Set<String>` ISO-Day-IDs). **Keine** CloudKit-Operationen in Phase E. `DayFavoritesStore` und alle 13 UI-Call-Sites bleiben unverändert — neuer Layer läuft parallel als Foundation für Phase F.

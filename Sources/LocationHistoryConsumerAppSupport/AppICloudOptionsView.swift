@@ -53,6 +53,16 @@ final class ICloudSyncViewModel: ObservableObject {
         pendingBackupCount = backupService.pendingCount
     }
 
+    /// Phase D.2 — used by the `.task` hook when the user has opted out
+    /// of automatic CloudKit health checks. We still want to surface a
+    /// fresh AccountStatus on screen appear (no network record traffic),
+    /// but skip the heavier write/read/delete probe.
+    func refreshAccountStatusOnly() async {
+        await service.refresh()
+        status = service.status
+        isEnabled = service.isEnabled
+    }
+
     func refreshOverview() async {
         storageOverview = await backupService.refreshOverview()
         pendingBackupCount = backupService.pendingCount
@@ -99,9 +109,15 @@ public struct AppICloudOptionsView: View {
         #else
         let healthCheckService: ICloudHealthChecking = InMemoryICloudHealthCheckService()
         #endif
-        let backupService = LiveTrackCloudBackupFactory.makeProductionService {
-            preferences.liveTrackCloudBackupSettings
-        }
+        let backupService: LiveTrackCloudBackupService = {
+            // Phase D.2 — pluggable health-gate. The closure is captured
+            // before the StateObject exists, so we read the live health
+            // status off the StateObject via a sentinel set right after
+            // init via `viewModel.installHealthGate`.
+            return LiveTrackCloudBackupFactory.makeProductionService(
+                settingsProvider: { preferences.liveTrackCloudBackupSettings }
+            )
+        }()
         self._viewModel = StateObject(
             wrappedValue: ICloudSyncViewModel(
                 service: service,
@@ -115,9 +131,10 @@ public struct AppICloudOptionsView: View {
         ScrollView {
             LHPageScaffold {
                 LHXSyncStatusCard(
-                    kind: Self.cardKind(for: viewModel.status.accountStatus),
+                    kind: Self.cardKind(for: viewModel.status.accountStatus,
+                                        healthStatus: viewModel.healthStatus),
                     title: "iCloud-Sync",
-                    detail: detailText(for: viewModel.status.accountStatus),
+                    detail: topStatusDetailText(),
                     lastSyncText: nil,
                     toggleActionTitle: viewModel.isEnabled
                         ? "iCloud-Sync deaktivieren"
@@ -167,7 +184,13 @@ public struct AppICloudOptionsView: View {
         .scrollContentBackground(.hidden)
         .background(LH2GPXTheme.VariantBPro.bgWarm.ignoresSafeArea())
         .task {
-            await viewModel.refresh()
+            // Phase D.2 — respect the user preference. The dedicated
+            // „Status aktualisieren" button stays available regardless.
+            if preferences.iCloudStatusAutoRefreshEnabled {
+                await viewModel.refresh()
+            } else {
+                await viewModel.refreshAccountStatusOnly()
+            }
         }
         .onChange(of: preferences.iCloudSyncEnabled) { _, newValue in
             Task { await viewModel.setEnabled(newValue) }
@@ -285,6 +308,18 @@ public struct AppICloudOptionsView: View {
                 }
                 .disabled(!preferences.iCloudSyncEnabled || !preferences.syncLiveTrackMetadataEnabled)
                 .accessibilityIdentifier("options.icloud.automaticLiveTrackBackup.toggle")
+
+                if preferences.iCloudSyncEnabled
+                    && preferences.syncLiveTrackMetadataEnabled
+                    && preferences.automaticLiveTrackICloudBackupEnabled
+                    && !viewModel.healthStatus.isOperational {
+                    Label("Sicherung pausiert — CloudKit-Health-Check ist rot. Neue LiveTracks werden lokal vorgemerkt und automatisch hochgeladen, sobald der private CloudKit-Speicher wieder erreichbar ist.",
+                          systemImage: "pause.circle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("options.icloud.automaticLiveTrackBackup.pauseHint")
+                }
             }
         }
         .accessibilityIdentifier("options.icloud.automaticLiveTrackBackup.card")
@@ -308,6 +343,30 @@ public struct AppICloudOptionsView: View {
                         .font(.caption2.monospaced())
                         .foregroundStyle(LH2GPXTheme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                    // Phase D.2 — surface the exact failure stage + CKError code so
+                    // TestFlight diagnostics no longer hide the root cause behind
+                    // a generic „Schreiben fehlgeschlagen".
+                    if let stage = probe.errorStage {
+                        Text("Fehler in Phase: \(Self.germanStageLabel(stage))")
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(.orange)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("options.icloud.health.errorStage")
+                    }
+                    if let ckName = probe.ckErrorCodeName {
+                        Text("CKError.\(ckName)")
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(.orange)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("options.icloud.health.ckErrorCode")
+                    }
+                    if let retry = probe.retryAfterSeconds {
+                        Text("Erneut in \(Int(retry.rounded())) s versuchen")
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(.orange)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("options.icloud.health.retryAfter")
+                    }
                     if let detail = healthErrorDetail(for: probe) {
                         Text(detail)
                             .font(.caption)
@@ -359,26 +418,23 @@ public struct AppICloudOptionsView: View {
         if probe.writeSucceeded, probe.readSucceeded, probe.deleteSucceeded {
             return nil
         }
-        switch viewModel.healthStatus.accountStatus {
-        case .signedOut:
-            return "Nicht bei iCloud angemeldet."
-        case .restricted:
-            return "iCloud ist auf diesem Gerät eingeschränkt."
-        case .temporarilyUnavailable:
-            return "Netzwerk nicht verfügbar oder iCloud vorübergehend offline."
-        case .couldNotDetermine:
-            return "CloudKit-Container nicht erreichbar."
-        case .error:
-            if !probe.writeSucceeded {
-                return "Schreiben in privaten CloudKit-Bereich fehlgeschlagen."
-            } else if !probe.readSucceeded {
-                return "Lesen aus privatem CloudKit-Bereich fehlgeschlagen."
-            } else if !probe.deleteSucceeded {
-                return "Löschen aus privatem CloudKit-Bereich fehlgeschlagen."
-            }
-            return "Unbekannter CloudKit-Fehler."
-        case .disabled, .available:
-            return nil
+        // Phase D.2 — prefer the precise mapping hint from the CKError-code
+        // table when available; fall back to a generic per-stage message.
+        if let message = probe.errorMessage, !message.isEmpty {
+            return message
+        }
+        switch probe.errorStage {
+        case .accountStatus:
+            return "iCloud-Kontostatus konnte nicht gelesen werden."
+        case .write:
+            return "Schreiben in privaten CloudKit-Bereich fehlgeschlagen."
+        case .read:
+            return "Lesen aus privatem CloudKit-Bereich fehlgeschlagen."
+        case .delete:
+            return "Löschen aus privatem CloudKit-Bereich fehlgeschlagen."
+        case nil:
+            // No CK error but flags say not-all-three; treat as generic.
+            return "CloudKit-Test unvollständig."
         }
     }
 
@@ -537,6 +593,52 @@ public struct AppICloudOptionsView: View {
             return .unavailable
         case .error:
             return .error
+        }
+    }
+
+    /// Phase D.2 — the top status card must NOT look green when iCloud
+    /// account is available but the private CloudKit database probe is
+    /// red. Downgrade the visual badge in that combined case.
+    static func cardKind(
+        for status: CloudSyncAccountStatus,
+        healthStatus: ICloudHealthStatus
+    ) -> LHXSyncStatusCard.StatusKind {
+        let raw = cardKind(for: status)
+        if raw == .available && healthStatus.privateDatabaseReachability == .failed {
+            return .error
+        }
+        return raw
+    }
+
+    /// Phase D.2 — combined detail text: account status + private DB summary,
+    /// so the top card never claims everything is fine when the health
+    /// probe failed.
+    private func topStatusDetailText() -> String {
+        switch viewModel.healthStatus.accountStatus {
+        case .available:
+            switch viewModel.healthStatus.privateDatabaseReachability {
+            case .reachable:
+                return "iCloud-Konto verfügbar · privater CloudKit-Speicher erreichbar."
+            case .failed:
+                return "iCloud-Konto verfügbar · privater CloudKit-Speicher NICHT schreibbar (siehe Health-Check)."
+            case .unavailable:
+                return "iCloud-Konto verfügbar · CloudKit-Speicher derzeit nicht erreichbar."
+            case .notChecked:
+                return "iCloud-Konto verfügbar · CloudKit-Speicher noch nicht geprüft."
+            }
+        default:
+            return detailText(for: viewModel.healthStatus.accountStatus)
+        }
+    }
+
+    /// Phase D.2 — German label for `ICloudHealthProbeStage` shown in the
+    /// Health-Check card so the user understands which stage failed.
+    static func germanStageLabel(_ stage: ICloudHealthProbeStage) -> String {
+        switch stage {
+        case .accountStatus: return "Kontostatus"
+        case .write:         return "Schreiben"
+        case .read:          return "Lesen"
+        case .delete:        return "Löschen"
         }
     }
 

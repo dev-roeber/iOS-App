@@ -1,5 +1,22 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Phase D.2 Diagnose-Train) — Stage-genauer CloudKit-Health-Check + CKError-Code-UI + Auto-Backup-Gate (Branch `main`, HEAD `ac7819c` → folgt)
+
+> **Bug-Fix-Train, keine neuen Features.** Adressiert alle 8 Punkte aus der User-Audit-Liste:
+> - HealthProbe ist jetzt stage-genau (4 separate do-catch), `errorStage` enum macht klar welche Operation fehlschlug.
+> - `ICloudCKErrorMapping` zeigt CKError-Code-Name + deutsche Hint in der UI (z.B. „CKError.permissionFailure · Entitlement oder Container-Berechtigung prüfen").
+> - Top-Status-Card ist nicht mehr grün wenn HealthCheck rot ist (`cardKind(for:healthStatus:)`-Overload).
+> - Auto-Backup ist gegated durch HealthStatus — `LiveTrackCloudBackupService.healthGate`-Provider, Outbox bleibt erhalten.
+> - `.task` respektiert `iCloudStatusAutoRefreshEnabled`-Toggle.
+> - Entitlements-Kommentar reflektiert Phase-D-Realität.
+> - Backward-compatible Codable für `ICloudHealthProbeResult` (decodeIfPresent für 3 neue Felder).
+>
+> **Tests:** `ICloudHealthStageMappingTests` 14/0, `ICloudCloudKitMVPTests` 9/0. Sim + Generic Builds grün.
+>
+> **Externe User-Action für TestFlight-Diagnose:** (1) `codesign -d --entitlements :- LH2GPXWrapper.app` gegen installierten Build verifizieren; (2) Apple Developer Portal Container-Zuordnung prüfen; (3) CloudKit Dashboard Schema → Production deployen.
+
+---
+
 ## Stand 2026-05-25 (Master-Train Phase E) — FavoriteEntry-Modell + lokale Persistenz + Legacy-Migration (Branch `main`, HEAD `1bbf743` → folgt)
 
 > **Phase E abgeschlossen.** Lokales `FavoriteEntry` Codable + `FavoriteIDFactory` (Foundation-only SHA-256, deterministische UUIDs) + `FavoriteEntryStore` mit JSON-Persistenz in `Application Support/LocationHistory2GPX/Favorites/favorite_entries.json` + idempotente Legacy-Migration aus bestehendem `DayFavoritesStore`. 12 Unit-Tests grün, `DayFavoritesStore`-Backward-Compat verifiziert (8/0). **Keine** CloudKit-Operationen. UI bleibt unverändert (parallel-Layer). Detail: [`docs/FAVORITES_LOCAL_MODEL_PHASE_E_2026-05-25.md`](docs/FAVORITES_LOCAL_MODEL_PHASE_E_2026-05-25.md).

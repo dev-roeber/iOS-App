@@ -13,6 +13,17 @@ public enum ICloudPrivateDatabaseReachability: String, Codable, Sendable, Equata
     case failed
 }
 
+/// Which stage of the CloudKit health probe failed first. Lets the UI
+/// pinpoint whether the AccountStatus check, the `modifyRecords(saving:)`
+/// write, the `records(for:)` read or the deleting write was the actual
+/// failure rather than blanketing everything as „all three failed".
+public enum ICloudHealthProbeStage: String, Codable, Sendable, Equatable {
+    case accountStatus
+    case write
+    case read
+    case delete
+}
+
 public struct ICloudHealthProbeResult: Codable, Sendable, Equatable {
     public var checkedAt: Date
     public var writeSucceeded: Bool
@@ -21,6 +32,15 @@ public struct ICloudHealthProbeResult: Codable, Sendable, Equatable {
     public var durationSeconds: TimeInterval
     public var errorCode: String?
     public var errorMessage: String?
+    /// Phase D.2: stage at which the probe stopped (nil = all stages
+    /// completed successfully).
+    public var errorStage: ICloudHealthProbeStage?
+    /// Apple `CKError.Code` symbol name (e.g. „permissionFailure") when
+    /// the failure was a CloudKit error. Always safe for `.public` logging.
+    public var ckErrorCodeName: String?
+    /// Honors `CKErrorRetryAfterKey` for rate-limited / service-unavailable
+    /// failures so the UI can show a sensible „try again in X s" hint.
+    public var retryAfterSeconds: Double?
 
     public init(
         checkedAt: Date = Date(),
@@ -29,7 +49,10 @@ public struct ICloudHealthProbeResult: Codable, Sendable, Equatable {
         deleteSucceeded: Bool = false,
         durationSeconds: TimeInterval = 0,
         errorCode: String? = nil,
-        errorMessage: String? = nil
+        errorMessage: String? = nil,
+        errorStage: ICloudHealthProbeStage? = nil,
+        ckErrorCodeName: String? = nil,
+        retryAfterSeconds: Double? = nil
     ) {
         self.checkedAt = checkedAt
         self.writeSucceeded = writeSucceeded
@@ -38,6 +61,67 @@ public struct ICloudHealthProbeResult: Codable, Sendable, Equatable {
         self.durationSeconds = durationSeconds
         self.errorCode = errorCode
         self.errorMessage = errorMessage
+        self.errorStage = errorStage
+        self.ckErrorCodeName = ckErrorCodeName
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    // MARK: - Codable (backward-compatible with pre-D.2 JSON)
+
+    private enum CodingKeys: String, CodingKey {
+        case checkedAt, writeSucceeded, readSucceeded, deleteSucceeded
+        case durationSeconds, errorCode, errorMessage
+        case errorStage, ckErrorCodeName, retryAfterSeconds
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        checkedAt = try c.decode(Date.self, forKey: .checkedAt)
+        writeSucceeded = try c.decode(Bool.self, forKey: .writeSucceeded)
+        readSucceeded = try c.decode(Bool.self, forKey: .readSucceeded)
+        deleteSucceeded = try c.decode(Bool.self, forKey: .deleteSucceeded)
+        durationSeconds = try c.decode(TimeInterval.self, forKey: .durationSeconds)
+        errorCode = try c.decodeIfPresent(String.self, forKey: .errorCode)
+        errorMessage = try c.decodeIfPresent(String.self, forKey: .errorMessage)
+        errorStage = try c.decodeIfPresent(ICloudHealthProbeStage.self, forKey: .errorStage)
+        ckErrorCodeName = try c.decodeIfPresent(String.self, forKey: .ckErrorCodeName)
+        retryAfterSeconds = try c.decodeIfPresent(Double.self, forKey: .retryAfterSeconds)
+    }
+}
+
+/// Phase D.2 — maps a raw `CKError.Code` to a stable string name (for
+/// logging) and a short German diagnostic hint (for the UI). Pure value
+/// helper — works on any platform; the `CKError`-flavored convenience
+/// initializer is gated by `#if canImport(CloudKit)` below.
+public struct ICloudCKErrorMapping: Equatable, Sendable {
+    public let codeName: String
+    public let germanHint: String
+
+    public init(codeName: String, germanHint: String) {
+        self.codeName = codeName
+        self.germanHint = germanHint
+    }
+
+    public static func mapping(forRawCode raw: Int) -> ICloudCKErrorMapping {
+        switch raw {
+        case 1:  return .init(codeName: "internalError",        germanHint: "Interner CloudKit-Fehler. Bitte später erneut versuchen.")
+        case 2:  return .init(codeName: "partialFailure",       germanHint: "Teilweiser CloudKit-Fehler. Einzelne Records nicht verarbeitet.")
+        case 3:  return .init(codeName: "networkUnavailable",   germanHint: "Netzwerk nicht verfügbar.")
+        case 4:  return .init(codeName: "networkFailure",       germanHint: "Netzwerkfehler — Verbindung prüfen.")
+        case 5:  return .init(codeName: "badContainer",         germanHint: "Container-ID stimmt nicht mit dem Entitlement überein.")
+        case 6:  return .init(codeName: "serviceUnavailable",   germanHint: "CloudKit-Dienst vorübergehend nicht verfügbar.")
+        case 7:  return .init(codeName: "requestRateLimited",   germanHint: "Rate-Limit aktiv — später erneut versuchen.")
+        case 8:  return .init(codeName: "missingEntitlement",   germanHint: "iCloud-Entitlement fehlt im signierten Build.")
+        case 9:  return .init(codeName: "notAuthenticated",     germanHint: "Bitte in den System-Einstellungen bei iCloud anmelden.")
+        case 10: return .init(codeName: "permissionFailure",    germanHint: "Entitlement oder Container-Berechtigung prüfen.")
+        case 11: return .init(codeName: "unknownItem",          germanHint: "Production-Schema im CloudKit-Dashboard deployen.")
+        case 12: return .init(codeName: "invalidArguments",     germanHint: "CloudKit hat die Anfrage abgelehnt.")
+        case 15: return .init(codeName: "serverRejectedRequest", germanHint: "Schema oder Container-Konfiguration prüfen.")
+        case 25: return .init(codeName: "quotaExceeded",        germanHint: "iCloud-Speicher des Nutzers ist voll.")
+        case 26: return .init(codeName: "zoneNotFound",         germanHint: "CloudKit-Zone nicht vorhanden.")
+        case 27: return .init(codeName: "limitExceeded",        germanHint: "CloudKit-Limit überschritten.")
+        default: return .init(codeName: "ckError\(raw)",        germanHint: "Unbekannter CloudKit-Fehler.")
+        }
     }
 }
 
@@ -80,6 +164,38 @@ public struct ICloudHealthStatus: Sendable, Equatable {
         case .error:
             return "CloudKit-Test fehlgeschlagen"
         }
+    }
+
+    /// Phase D.2 — separates the iCloud account check from the
+    /// private-database reachability so the top status card no longer
+    /// looks green while the Health-Check section is red.
+    public var accountSummary: String {
+        switch accountStatus {
+        case .disabled:           return "iCloud-Sync ist deaktiviert"
+        case .available:          return "iCloud-Konto verfügbar"
+        case .signedOut:          return "Nicht bei iCloud angemeldet"
+        case .restricted:         return "iCloud ist auf diesem Gerät eingeschränkt"
+        case .couldNotDetermine:  return "iCloud-Kontostatus unbekannt"
+        case .temporarilyUnavailable: return "iCloud vorübergehend nicht erreichbar"
+        case .error:              return "iCloud-Konto-Status: Fehler"
+        }
+    }
+
+    public var privateDatabaseSummary: String {
+        switch privateDatabaseReachability {
+        case .reachable:    return "Privater CloudKit-Speicher erreichbar"
+        case .notChecked:   return "CloudKit-Speicher noch nicht geprüft"
+        case .unavailable:  return "CloudKit-Speicher nicht erreichbar"
+        case .failed:       return "CloudKit-Speicher nicht schreibbar"
+        }
+    }
+
+    /// `true` while the user-visible state is „green enough" for queueing
+    /// new LiveTrack backups against CloudKit. The auto-backup pipeline
+    /// uses this gate (in addition to the user preferences) so the UI
+    /// cannot promise something the cloud cannot deliver.
+    public var isOperational: Bool {
+        accountStatus == .available && privateDatabaseReachability == .reachable
     }
 }
 
@@ -454,6 +570,11 @@ public final class LiveTrackCloudBackupService: LiveTrackCloudBackupCoordinator 
     private let queueStore: LiveTrackCloudBackupQueueStoring
     private let uploader: LiveTrackCloudBackupUploading
     private let networkInterfaceProvider: () -> LiveTrackCloudNetworkInterface
+    /// Phase D.2 — pluggable Health-Gate. Returns `true` while CloudKit is
+    /// known to be operational; queued uploads pause when the gate is shut.
+    /// Default returns `true` so legacy call-sites without a health probe
+    /// continue to behave as before.
+    private let healthGate: () -> Bool
     private var uploadedTrackIDs: Set<UUID>
 
     public init(
@@ -461,12 +582,14 @@ public final class LiveTrackCloudBackupService: LiveTrackCloudBackupCoordinator 
         queueStore: LiveTrackCloudBackupQueueStoring = UserDefaultsLiveTrackCloudBackupQueueStore(),
         uploader: LiveTrackCloudBackupUploading = NoopLiveTrackCloudBackupUploader(),
         networkInterfaceProvider: @escaping () -> LiveTrackCloudNetworkInterface = { .unknown },
+        healthGate: @escaping () -> Bool = { true },
         overview: ICloudStorageOverview = .init()
     ) {
         self.settingsProvider = settingsProvider
         self.queueStore = queueStore
         self.uploader = uploader
         self.networkInterfaceProvider = networkInterfaceProvider
+        self.healthGate = healthGate
         self.overview = overview
         self.uploadedTrackIDs = Set(queueStore.loadEnvelopes().map(\.summary.id))
     }
@@ -499,6 +622,12 @@ public final class LiveTrackCloudBackupService: LiveTrackCloudBackupCoordinator 
             settings: settings,
             networkInterface: networkInterfaceProvider()
         ) else {
+            return
+        }
+        // Phase D.2 — health-gate: do not retry against a known-broken
+        // CloudKit endpoint. Pending envelopes stay in the outbox so they
+        // automatically resume after the next successful health probe.
+        guard healthGate() else {
             return
         }
 
@@ -549,15 +678,20 @@ public struct NoopLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploading {
 @MainActor
 public enum LiveTrackCloudBackupFactory {
     public static func makeProductionService(
-        settingsProvider: @escaping () -> LiveTrackCloudBackupSettings
+        settingsProvider: @escaping () -> LiveTrackCloudBackupSettings,
+        healthGate: @escaping () -> Bool = { true }
     ) -> LiveTrackCloudBackupService {
         #if canImport(CloudKit)
         return LiveTrackCloudBackupService(
             settingsProvider: settingsProvider,
-            uploader: CloudKitLiveTrackCloudBackupUploader()
+            uploader: CloudKitLiveTrackCloudBackupUploader(),
+            healthGate: healthGate
         )
         #else
-        return LiveTrackCloudBackupService(settingsProvider: settingsProvider)
+        return LiveTrackCloudBackupService(
+            settingsProvider: settingsProvider,
+            healthGate: healthGate
+        )
         #endif
     }
 }
@@ -615,69 +749,162 @@ public final class CloudKitICloudHealthCheckService: ICloudHealthChecking {
             return status
         }
         let start = Date()
+
+        // MARK: Stage 1 — Account status
+        let mapped: CloudSyncAccountStatus
         do {
             let account = try await container.accountStatus()
-            let mapped = CloudKitCloudSyncService.map(account)
-            guard mapped == .available else {
-                status = .init(accountStatus: mapped, privateDatabaseReachability: .notChecked)
-                return status
-            }
-            let recordID = CKRecord.ID(recordName: "probe-\(UUID().uuidString)")
-            let record = CKRecord(recordType: ICloudCloudHealthProbeSchema.recordType, recordID: recordID)
-            record[ICloudCloudHealthProbeSchema.Field.createdAt] = Date() as CKRecordValue
-            record[ICloudCloudHealthProbeSchema.Field.appBuild] = appBuildProvider() as CKRecordValue
-            record[ICloudCloudHealthProbeSchema.Field.schemaVersion] = ICloudCloudHealthProbeSchema.schemaVersion as CKRecordValue
-            record[ICloudCloudHealthProbeSchema.Field.randomProbeID] = UUID().uuidString as CKRecordValue
+            mapped = CloudKitCloudSyncService.map(account)
+        } catch {
+            status = .init(
+                accountStatus: .couldNotDetermine,
+                privateDatabaseReachability: .notChecked,
+                lastProbeResult: Self.makeFailureResult(
+                    stage: .accountStatus,
+                    error: error,
+                    durationSeconds: Date().timeIntervalSince(start)
+                )
+            )
+            #if canImport(OSLog)
+            logger.error("CloudKit accountStatus failed: code=\(self.probeCodeName(for: error), privacy: .public)")
+            #endif
+            return status
+        }
+        guard mapped == .available else {
+            status = .init(accountStatus: mapped, privateDatabaseReachability: .notChecked)
+            return status
+        }
 
+        // MARK: Stage 2 — Write probe
+        let recordID = CKRecord.ID(recordName: "probe-\(UUID().uuidString)")
+        let record = CKRecord(recordType: ICloudCloudHealthProbeSchema.recordType, recordID: recordID)
+        record[ICloudCloudHealthProbeSchema.Field.createdAt] = Date() as CKRecordValue
+        record[ICloudCloudHealthProbeSchema.Field.appBuild] = appBuildProvider() as CKRecordValue
+        record[ICloudCloudHealthProbeSchema.Field.schemaVersion] = ICloudCloudHealthProbeSchema.schemaVersion as CKRecordValue
+        record[ICloudCloudHealthProbeSchema.Field.randomProbeID] = UUID().uuidString as CKRecordValue
+
+        do {
             _ = try await container.privateCloudDatabase.modifyRecords(
                 saving: [record],
                 deleting: [],
                 savePolicy: .changedKeys,
                 atomically: true
             )
+        } catch {
+            status = .init(
+                accountStatus: .available,
+                privateDatabaseReachability: .failed,
+                lastProbeResult: Self.makeFailureResult(
+                    stage: .write,
+                    error: error,
+                    durationSeconds: Date().timeIntervalSince(start)
+                )
+            )
+            #if canImport(OSLog)
+            logger.error("CloudKit write probe failed: code=\(self.probeCodeName(for: error), privacy: .public)")
+            #endif
+            return status
+        }
+
+        // MARK: Stage 3 — Read probe
+        do {
             let fetched = try await container.privateCloudDatabase.records(for: [recordID])
-            guard case .success = fetched[recordID] else {
-                throw CKError(.internalError)
+            if case .failure(let readError) = fetched[recordID] {
+                throw readError
             }
+        } catch {
+            status = .init(
+                accountStatus: .available,
+                privateDatabaseReachability: .failed,
+                lastProbeResult: Self.makeFailureResult(
+                    stage: .read,
+                    error: error,
+                    durationSeconds: Date().timeIntervalSince(start),
+                    writeSucceeded: true
+                )
+            )
+            #if canImport(OSLog)
+            logger.error("CloudKit read probe failed: code=\(self.probeCodeName(for: error), privacy: .public)")
+            #endif
+            return status
+        }
+
+        // MARK: Stage 4 — Delete probe
+        do {
             _ = try await container.privateCloudDatabase.modifyRecords(
                 saving: [],
                 deleting: [recordID],
                 savePolicy: .changedKeys,
                 atomically: true
             )
-            let probe = ICloudHealthProbeResult(
-                checkedAt: Date(),
-                writeSucceeded: true,
-                readSucceeded: true,
-                deleteSucceeded: true,
-                durationSeconds: Date().timeIntervalSince(start)
-            )
+        } catch {
             status = .init(
                 accountStatus: .available,
-                privateDatabaseReachability: .reachable,
-                lastProbeResult: probe
-            )
-            #if canImport(OSLog)
-            logger.info("CloudKit health probe succeeded in \(probe.durationSeconds, privacy: .public) seconds")
-            #endif
-            return status
-        } catch {
-            let probe = ICloudHealthProbeResult(
-                checkedAt: Date(),
-                durationSeconds: Date().timeIntervalSince(start),
-                errorCode: (error as? CKError).map { "\($0.code.rawValue)" },
-                errorMessage: error.localizedDescription
-            )
-            status = .init(
-                accountStatus: .error(localizedMessage: "CloudKit-Test fehlgeschlagen."),
                 privateDatabaseReachability: .failed,
-                lastProbeResult: probe
+                lastProbeResult: Self.makeFailureResult(
+                    stage: .delete,
+                    error: error,
+                    durationSeconds: Date().timeIntervalSince(start),
+                    writeSucceeded: true,
+                    readSucceeded: true
+                )
             )
             #if canImport(OSLog)
-            logger.error("CloudKit health probe failed with code \(probe.errorCode ?? "unknown", privacy: .public)")
+            logger.error("CloudKit delete probe failed: code=\(self.probeCodeName(for: error), privacy: .public)")
             #endif
             return status
         }
+
+        let probe = ICloudHealthProbeResult(
+            checkedAt: Date(),
+            writeSucceeded: true,
+            readSucceeded: true,
+            deleteSucceeded: true,
+            durationSeconds: Date().timeIntervalSince(start)
+        )
+        status = .init(
+            accountStatus: .available,
+            privateDatabaseReachability: .reachable,
+            lastProbeResult: probe
+        )
+        #if canImport(OSLog)
+        logger.info("CloudKit health probe succeeded in \(probe.durationSeconds, privacy: .public) seconds")
+        #endif
+        return status
+    }
+
+    private static func makeFailureResult(
+        stage: ICloudHealthProbeStage,
+        error: Error,
+        durationSeconds: TimeInterval,
+        writeSucceeded: Bool = false,
+        readSucceeded: Bool = false
+    ) -> ICloudHealthProbeResult {
+        let ckError = error as? CKError
+        let mapping = ckError.map { ICloudCKErrorMapping.mapping(forRawCode: $0.code.rawValue) }
+        let retryAfter: Double? = {
+            guard let info = (error as NSError?)?.userInfo else { return nil }
+            return (info["CKErrorRetryAfterKey"] as? NSNumber)?.doubleValue
+        }()
+        return ICloudHealthProbeResult(
+            checkedAt: Date(),
+            writeSucceeded: writeSucceeded,
+            readSucceeded: readSucceeded,
+            deleteSucceeded: false,
+            durationSeconds: durationSeconds,
+            errorCode: ckError.map { "\($0.code.rawValue)" },
+            errorMessage: mapping?.germanHint ?? "Unbekannter Fehler.",
+            errorStage: stage,
+            ckErrorCodeName: mapping?.codeName,
+            retryAfterSeconds: retryAfter
+        )
+    }
+
+    private func probeCodeName(for error: Error) -> String {
+        if let ck = error as? CKError {
+            return ICloudCKErrorMapping.mapping(forRawCode: ck.code.rawValue).codeName
+        }
+        return "non-ckerror"
     }
 }
 

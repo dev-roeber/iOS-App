@@ -7,7 +7,7 @@
 		<string>group.de.roeber.LH2GPXWrapper</string>
 	</array>
 	<!--
-	  iCloud capability prepared for Train F.1.
+	  iCloud capability for the LH2GPX-Wrapper iOS app.
 
 	  Container `iCloud.de.roeber.LH2GPXWrapper` must additionally be
 	  registered in the Apple Developer Portal (App-ID "de.roeber.LH2GPXWrapper"
@@ -15,11 +15,17 @@
 	  entitlement file declares the container the app uses; the Portal
 	  declares the container exists. Without the Portal step, signing on a
 	  development team will fail. See docs/ICLOUD_SYNC_ARCHITECTURE.md §5
-	  (Train F.1) for the exact Apple-host workflow.
+	  (Train F.1) for the Apple-host workflow.
 
-	  No CloudKit data is read or written in this commit. The
-	  CloudSyncService default implementation only reads `CKAccountStatus`
-	  when the user opts in; no records, no subscriptions, no assets.
+	  Current CloudKit usage (Phase D + D.1 + D.2, 2026-05-25):
+	  - `CloudKitICloudHealthCheckService` writes/reads/deletes a
+	    non-sensitive `LH2GPXCloudHealthProbe` record in
+	    `privateCloudDatabase` (stage-granular health probe).
+	  - `LiveTrackCloudBackupService` opt-in only: stores
+	    `LH2GPXLiveTrackSummary` and (when the user enables it)
+	    `LH2GPXLiveTrackPointBatch` in `privateCloudDatabase` for newly
+	    completed LiveTracks. Imported Google-history is never auto-synced.
+	  - No public/shared CloudKit database, no CKAsset, no CKSubscription.
 	-->
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
