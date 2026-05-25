@@ -95,38 +95,42 @@ public final class AppCloudFileViewModel: ObservableObject {
         actionState = .idle
     }
 
-    public func uploadPickedFile(at url: URL) async {
-        // Fix B1: Security-Scope MUSS auf MainActor + auf der gleichen
-        // Task-Hierarchie wie die Datei-Read-Calls aktiv sein.
-        // `Task.detached` verliert den Scope. Wir kopieren die Datei
-        // jetzt SOFORT in das App-eigene tmp-Verzeichnis (Foundation-
-        // copy respektiert den noch aktiven Scope) und hashen +
-        // uploaden danach von der Kopie — dort braucht es keinen
-        // Security-Scope mehr.
-        actionFailed = false
-        actionMessage = nil
-        let accessed = url.startAccessingSecurityScopedResource()
-        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
-        let tmpDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("CloudFileUpload-\(UUID().uuidString)", isDirectory: true)
-        do {
-            try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
-            let copy = tmpDir.appendingPathComponent(url.lastPathComponent)
-            try FileManager.default.copyItem(at: url, to: copy)
-            await uploadCandidate {
-                try CloudFileCandidateFactory.makeCandidate(for: copy)
-            }
-            try? FileManager.default.removeItem(at: tmpDir)
-        } catch {
-            actionFailed = true
-            actionMessage = "Datei konnte nicht eingelesen werden: \(error.localizedDescription)"
-            try? FileManager.default.removeItem(at: tmpDir)
+    /// **Wichtig:** Der Aufrufer muss bereits eine Kopie der Datei
+    /// erstellt haben — Security-Scope ist nur synchron im
+    /// `fileImporter`-Callback gültig. Diese Methode bekommt eine
+    /// app-eigene URL ohne Sandbox-Restriktion.
+    public func uploadCopiedFile(at copyURL: URL) async {
+        await uploadCandidate {
+            try CloudFileCandidateFactory.makeCandidate(for: copyURL)
         }
     }
 
     public func uploadLocalEntry(_ entry: LocalFileEntry) async {
         await uploadCandidate {
             try CloudFileCandidateFactory.makeCandidate(for: entry)
+        }
+    }
+
+    public func clearActionMessage() {
+        actionMessage = nil
+        actionFailed = false
+    }
+
+    public func discardPendingUpload(sha256Hex: String) {
+        pendingUploads.removeAll { $0.sha256Hex == sha256Hex }
+        if pendingUploads.isEmpty {
+            actionFailed = false
+            actionMessage = "Wartender Upload entfernt."
+        }
+    }
+
+    public func retryPendingUpload(_ candidate: CloudFileUploadCandidate) async {
+        guard actionState == .idle else { return }
+        // Datei existiert noch in app-tmp, falls Kopie noch da ist.
+        // Sonst meldet `makeCandidate` einen FileNotFound.
+        let url = candidate.url
+        await uploadCandidate {
+            try CloudFileCandidateFactory.makeCandidate(for: url)
         }
     }
 

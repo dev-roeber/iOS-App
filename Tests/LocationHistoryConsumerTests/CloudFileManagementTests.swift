@@ -105,7 +105,7 @@ final class CloudFileManagementTests: XCTestCase {
         let file = tmp.appendingPathComponent("track.gpx")
         try Data("hello".utf8).write(to: file)
 
-        await vm.uploadPickedFile(at: file)
+        await vm.uploadCopiedFile(at: file)
 
         XCTAssertTrue(vm.actionFailed)
         XCTAssertTrue((vm.actionMessage ?? "").contains("deaktiviert"))
@@ -122,12 +122,12 @@ final class CloudFileManagementTests: XCTestCase {
         let file = tmp.appendingPathComponent("track.gpx")
         try Data("hello".utf8).write(to: file)
 
-        await vm.uploadPickedFile(at: file)
+        await vm.uploadCopiedFile(at: file)
         XCTAssertFalse(vm.actionFailed)
         XCTAssertEqual(vm.actionMessage, "Upload abgeschlossen.")
         XCTAssertEqual(vm.cloudEntries.count, 1)
 
-        await vm.uploadPickedFile(at: file)
+        await vm.uploadCopiedFile(at: file)
         XCTAssertTrue(vm.actionFailed)
         XCTAssertEqual(vm.actionMessage, "Datei bereits in iCloud vorhanden")
         XCTAssertEqual(vm.cloudEntries.count, 1)

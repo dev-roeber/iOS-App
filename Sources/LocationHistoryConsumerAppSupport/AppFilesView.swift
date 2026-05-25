@@ -202,7 +202,20 @@ public struct AppFilesView: View {
             Text(message)
                 .font(.footnote)
                 .foregroundStyle(failed ? .red : .primary)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer()
+            // „X" zum Verwerfen — verhindert dass alte Fehler-Meldungen
+            // (z. B. Permission-Fehler aus vorherigem Build) ewig
+            // stehenbleiben.
+            Button {
+                cloudViewModel.clearActionMessage()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Meldung verwerfen")
+            .accessibilityIdentifier("files.actionMessage.dismiss")
         }
         .padding(10)
         .background(
@@ -330,21 +343,47 @@ public struct AppFilesView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(cloudViewModel.pendingUploads, id: \.sha256Hex) { candidate in
-                        HStack {
-                            Image(systemName: "clock.arrow.circlepath")
-                            VStack(alignment: .leading) {
-                                Text(candidate.fileName)
-                                    .font(.subheadline)
-                                Text("\(candidate.kind.germanLabel) · \(LocalFileSizeFormatter.germanString(forBytes: candidate.sizeBytes))")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                        }
+                        pendingRow(candidate)
+                        Divider()
                     }
                 }
             }
         }
+    }
+
+    private func pendingRow(_ candidate: CloudFileUploadCandidate) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "clock.arrow.circlepath")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(candidate.fileName)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text("\(candidate.kind.germanLabel) · \(LocalFileSizeFormatter.germanString(forBytes: candidate.sizeBytes))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                Task { await cloudViewModel.retryPendingUpload(candidate) }
+            } label: {
+                Image(systemName: "arrow.clockwise.icloud")
+            }
+            .buttonStyle(.borderless)
+            .disabled(!canUseCloudFiles || cloudViewModel.actionState != .idle)
+            .accessibilityLabel("Erneut hochladen")
+            .accessibilityIdentifier("files.pending.retry")
+            Button(role: .destructive) {
+                cloudViewModel.discardPendingUpload(sha256Hex: candidate.sha256Hex)
+            } label: {
+                Image(systemName: "xmark.circle")
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Wartender Eintrag entfernen")
+            .accessibilityIdentifier("files.pending.discard")
+        }
+        .padding(.vertical, 4)
     }
 
     private func cloudEntryRow(_ entry: CloudFileEntry) -> some View {
@@ -434,9 +473,28 @@ public struct AppFilesView: View {
         switch result {
         case .success(let urls):
             guard let url = urls.first else { return }
-            Task { await cloudViewModel.uploadPickedFile(at: url) }
+            // Fix B1 final: Security-Scope ist nur SYNCHRON im Callback
+            // gültig. Wir müssen jetzt sofort kopieren, NICHT in einem
+            // async Task. Erst nach erfolgreicher Kopie ist die Datei
+            // unter App-Sandbox-Kontrolle und kann beliebig gehasht
+            // /hochgeladen werden.
+            let accessed = url.startAccessingSecurityScopedResource()
+            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+            let tmpDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("CloudFileUpload-\(UUID().uuidString)", isDirectory: true)
+            do {
+                try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+                let copy = tmpDir.appendingPathComponent(url.lastPathComponent)
+                try FileManager.default.copyItem(at: url, to: copy)
+                Task {
+                    await cloudViewModel.uploadCopiedFile(at: copy)
+                    try? FileManager.default.removeItem(at: tmpDir)
+                }
+            } catch {
+                try? FileManager.default.removeItem(at: tmpDir)
+                cloudViewModel.reportPickerFailure(error)
+            }
         case .failure(let error):
-            // Fix B-Neu2: Picker-Fehler werden jetzt sichtbar.
             cloudViewModel.reportPickerFailure(error)
         }
     }
