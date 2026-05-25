@@ -512,9 +512,24 @@ public final class CloudKitCloudFileManager: CloudFileManaging, @unchecked Senda
                 cursor = page.queryCursor
             }
         } catch {
-            if (error as NSError).domain == "CKErrorDomain",
-               (error as NSError).code == 11 {
+            let ns = error as NSError
+            // Idempotente Skip-Pattern (analog LiveTrack/FavoriteEntry):
+            // - Code 11 unknownItem = RecordType existiert nicht
+            // - Code 12 invalidArguments mit Server-Text „not marked
+            //   queryable" oder „not marked indexable" = Index fehlt.
+            //   User muss recordName im CloudKit Dashboard als QUERYABLE
+            //   markieren. App returnt leere Liste statt zu crashen.
+            if ns.domain == "CKErrorDomain", ns.code == 11 {
                 return []
+            }
+            if ns.domain == "CKErrorDomain", ns.code == 12 {
+                let server = (ns.userInfo["ServerErrorDescription"] as? String) ?? ""
+                let underlying = (ns.userInfo[NSUnderlyingErrorKey] as? NSError)?.localizedDescription ?? ""
+                let combined = server + " " + underlying
+                if combined.contains("not marked queryable")
+                    || combined.contains("not marked indexable") {
+                    return []
+                }
             }
             throw error
         }

@@ -142,7 +142,12 @@ public struct CloudKitFavoriteEntryCloudSync: FavoriteEntryCloudSyncing {
             if ns.domain == "CKErrorDomain", ns.code == 11 { return [] }
             if ns.domain == "CKErrorDomain", ns.code == 12 {
                 let server = (ns.userInfo["ServerErrorDescription"] as? String) ?? ""
-                if server.contains("not marked indexable") { return [] }
+                let underlying = (ns.userInfo[NSUnderlyingErrorKey] as? NSError)?.localizedDescription ?? ""
+                let combined = server + " " + underlying
+                if combined.contains("not marked indexable")
+                    || combined.contains("not marked queryable") {
+                    return []
+                }
             }
             throw error
         }
