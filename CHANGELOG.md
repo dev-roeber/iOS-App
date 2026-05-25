@@ -1,5 +1,60 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.8: Import-Pipeline Robustness Confirm (Branch `main`, HEAD `b45d86d` → folgt)
+
+> **Doku-Confirm-Train.** Vollständige Re-Validierung der Import-Pipeline (`fileImporter` → `handleImportResult` → `LH2GPXAppFlow.loadImportedFileEnvelope` → `AppContentLoader.loadImportedContentEnvelope` → Stream-Parser) gegen die Apple-Doku — alles bereits korrekt verdrahtet, keine Code-Änderung nötig. **Keine** Parser-Großänderung, **keine** Persistenz-Migration, **keine** automatische iCloud-Synchronisation nach Import, **kein** automatischer Upload. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- SwiftUI `fileImporter(isPresented:allowedContentTypes:allowsMultipleSelection:onCompletion:)` (https://developer.apple.com/documentation/swiftui/view/fileimporter(ispresented:allowedcontenttypes:allowsmultipleselection:oncompletion:))
+- `UniformTypeIdentifiers.UTType(filenameExtension:conformingTo:)` (https://developer.apple.com/documentation/uniformtypeidentifiers/uttype)
+- Security-scoped resource access (`url.startAccessingSecurityScopedResource()` + matching `stop`) (https://developer.apple.com/documentation/foundation/nsurl/startaccessingsecurityscopedresource())
+- `URL.bookmarkData(options: .withSecurityScope)` (https://developer.apple.com/documentation/foundation/url/bookmarkdata(options:includingresourcevaluesforkeys:relativeto:))
+- HIG „Files" / „Sharing" / „Progress" / „Errors" (https://developer.apple.com/design/human-interface-guidelines/file-management, https://developer.apple.com/design/human-interface-guidelines/feedback)
+
+### Import-/Export-Pipeline-Status (Audit)
+| Aspekt | Code-Beleg | Status |
+|---|---|---|
+| `fileImporter` mit `[.json, .zip, .gpx, .tcx]` | `wrapper/.../ContentView.swift:139-144` | ✅ korrekt |
+| Security-scoped Resource Access | `LH2GPXAppFlow.swift:82-89` + `:282-289` (matched `start`/`stop`, Linux-fallback via `#if canImport(UIKit) || canImport(AppKit)`) | ✅ korrekt |
+| Bookmark-Persistence | `ImportBookmarkStore.swift:62/97` (User-`.withSecurityScope`-Bookmark) | ✅ korrekt |
+| Streaming-Parser für Google Timeline | `GoogleTimelineStreamReader.swift` (UnsafeBytes-Tokenizer, 256-KB-Chunks, `autoreleasepool`) | ✅ vorhanden |
+| Auto-Restore size-gate | `AppContentLoader.assertAutoRestoreEligible` (64 MiB-Cap, `Archive(url:accessMode:)` throwing-Form seit 8.4) | ✅ korrekt + warnings-frei |
+| Cancel + Progress | `LocalTimelineImportController` + `LocalTimelineImportProgressView` | ✅ vorhanden (feature-flagged Store-Pfad) |
+| Error-Surface | `AppContentLoaderError` mit `userFacingTitle`/`errorDescription` + `.alert` in `AppExportView`/`AppDayDetailView` (8.7 mit Button-Identifier) | ✅ korrekt |
+| Filename-Vorschau im Export | `exportFilenamePreview(...)` mit `Suggested filename`-VoiceOver-Label + `doc.text`-Icon (Export UX I) | ✅ korrekt |
+| iCloud-Drive-Hint im Export-Sheet | `exportTargetCard` mit `Suggest iCloud Drive`-Hinweis bei `preferCloudDriveExport == true` (F.3) | ✅ korrekt |
+| Privacy-Hinweis am Selection-Summary | `export.selection.privacyHint` (Export UX I) — „These export files contain precise location data. You decide where to save them — nothing is uploaded automatically." | ✅ korrekt |
+| Import-Privacy-Hinweis am Overview-Empty | `overview.empty.privacyHint` (Import UX I) — „Imported files stay on this device — nothing is uploaded automatically." | ✅ korrekt |
+
+### Import-/Export-Änderungen (in diesem Train)
+**Keine** — Pipeline ist bereits konsistent verdrahtet. Vorherige Trains haben alle nötigen Polish-Layers eingezogen:
+- **F.3** (Drive-Hint), **UI-Adoption I** (LHXEmptyState), **Export UX I** (Filename-Accessibility + Privacy-Hinweis), **Import UX I** (Home-Identifier + just-in-time Format-Hinweis + Overview-Empty Privacy), **8.7** (Alert-Button-Identifier), **8.4** (ZIPFoundation throwing-Form ohne Deprecation-Warnings).
+
+### Security-scoped-Resource Ergebnis
+✅ **Pattern korrekt.** `start`/`stop`-Aufrufe sind in `LH2GPXAppFlow.loadImportedFile` (Zeilen 82-89) und `LH2GPXAppFlow.loadImportedFileEnvelope` (Zeilen 282-289) symmetrisch via `defer`. Bookmark-Pfad in `ImportBookmarkStore.resolveBookmarkedURL()` öffnet Resource korrekt, `releaseBookmarkedURL()` schließt sie. Linux-Test-Harness via `#if canImport(UIKit) || canImport(AppKit)`-Gate korrekt ausgeschlossen.
+
+### Keine automatischen Uploads bestätigt
+✅ **Bestätigt.** Vollständiger `rg`-Sweep über `Sources/` + `wrapper/`: keine `URLSession`-Erweiterungen nach Import, keine CloudKit-Record-Operationen nach Import, kein `Task { await uploadAfterImport(...) }`. Pipeline endet nach erfolgreichem Decode mit `session.show(content:)` — rein lokaler Zustand.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `CHANGELOG.md` | dieser Audit-Block |
+| `ROADMAP.md` | 8.8 als erledigt markiert |
+
+### Build-only Validierung
+- `swift build` ✅ (Cache-Hit, 0 Warnings — Stand 8.4 hält).
+- `xcodebuild` Sim ✅.
+- `xcodebuild` generic iOS ✅.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.9 — Export-Pipeline UX + Files/iCloud Drive Polish** *(noch nicht in dieser Session gequeued — entsprechend dem 8.0–8.15-Plan)*.
+
+---
+
 ## 2026-05-25 — Train 8.7: Error Alert Identifier + Diagnostics-Review (Branch `main`, HEAD `6de5a9c` → folgt)
 
 > **Minimal-invasive Error-UX-Polish.** Drei System-Alerts bekommen Identifier auf ihren `Button(role:)`-Aktionen, damit UI-Tests sie deterministisch dismissen können. Keine neuen Recovery-Aktionen ohne echten Pfad, keine sensiblen Daten in Logs, keine Telemetrie. Tests deferred bis Punkt 10.
