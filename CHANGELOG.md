@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## 2026-05-25 — Phase D.3.1: invalidArguments-Hint präzisiert auf Production-Schema-Diagnose (Branch `main`, HEAD `c44fe7c` → folgt)
+
+> **Diagnose-Schärfung.** Nach Phase D.3 hat die nächste TestFlight-Probe `CKError.invalidArguments` (Code 12) an der Write-Stage gezeigt — exakt wie die User-Analyse bestätigte: in TestFlight (= Production-Environment) wirft der CloudKit-Server bei fehlendem RecordType **invalidArguments** (nicht `unknownItem`), häufig mit Server-Message „Cannot create new type X in production schema" (Apple Developer Forums Threads #819507, #723721, #729014, #652903, #700488).
+>
+> Der D.3-Diagnose-Pfad hat exakt funktioniert wie spezifiziert — die Stage-Klassifikation war korrekt (`.write`-Stage), und der per-record Validator hat den echten Fehler aus dem `saveResults`-Dictionary extrahiert statt ihn hinter „Lesen" zu verstecken.
+>
+> Was D.3.1 ändert: der deutsche Hint für `CKError.invalidArguments` zeigt jetzt direkt auf den Production-Schema-Deploy-Pfad statt einer generischen „CloudKit hat die Anfrage abgelehnt"-Meldung.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../ICloudCloudKitMVP.swift` | `ICloudCKErrorMapping` Code 12 Hint: „Schema fehlt in der Production-Umgebung — im CloudKit Dashboard deployen." (vorher: generisch „CloudKit hat die Anfrage abgelehnt.") + Inline-Doku zu Apple-Forum-Thread-Referenzen |
+| `Tests/.../ICloudHealthStageMappingTests.swift` | +1 Test `testCKErrorMappingInvalidArgumentsPointsAtProductionSchema` lockt die neue Hint-Sprache (enthält „Production" + „CloudKit Dashboard") |
+| `CHANGELOG.md` | dieser Eintrag |
+
+### Tests
+- `swift build` ✅ 1,60 s (Cache-Hit), 0 Warnings
+- `swift test --filter ICloudHealthStageMappingTests` ✅ **15 Tests / 0 failures** (vorher 14 + neuer Test)
+
+### Was die User-Diagnose bestätigt hat
+| User-Punkt | Status |
+|---|---|
+| Root-Cause = fehlendes Production-Schema (nicht Code-Bug) | ✅ bestätigt |
+| Phase D.3 hat den Diagnose-Pfad freigelegt | ✅ bestätigt — Screenshot zeigt jetzt erstmals den echten Fehler an der korrekten Stage |
+| Apple-Server wirft `invalidArguments` (12) statt `unknownItem` (11) bei Production-Schema-Lücken | ✅ Doku-Sweep + Hint korrigiert |
+| Hint-Sprache zu generisch für häufigsten Fall | ✅ gefixt |
+
+### Externe User-Action (von User dokumentiert, repo-extern)
+1. **Schema in Development sicherstellen** via lokalem Debug-Build → iCloud-Sync aktivieren → Health-Probe + LiveTrack-Aufzeichnung lokal triggern (legt RecordTypes auto an).
+2. **CloudKit Console** öffnen (https://icloud.developer.apple.com/dashboard/) → Container `iCloud.de.roeber.LH2GPXWrapper` → Environment Development → 3 RecordTypes verifizieren: `LH2GPXCloudHealthProbe`, `LH2GPXLiveTrackSummary`, `LH2GPXLiveTrackPointBatch`.
+3. **„Deploy Schema Changes…"** → Production-Schema enthält die 3 RecordTypes.
+4. **Queryable-Index** auf System-Field `recordName` bei `LH2GPXLiveTrackSummary` + `LH2GPXLiveTrackPointBatch` setzen (für `fetchOverview` mit `NSPredicate(value: true)`).
+5. **TestFlight-Smoke** mit bestehendem Build — Server-Schema-Change reicht, kein Re-Upload nötig.
+
+### Bewusst NICHT in D.3.1
+- ❌ Kein Code-Refactor — nur 1-Line-Hint-Schärfung + 1 neuer Test
+- ❌ Keine Production-Schema-Verifikation (User-Action im Dashboard)
+- ❌ Keine neuen RecordTypes / Sync-Logik
+
+### Anti-Claims (unverändert wahr — User-Action steht aus)
+- ❌ Production-Schema deployed
+- ❌ Queryable-Index auf recordName gesetzt
+- ❌ TestFlight-Smoke nach Deploy durchgeführt
+- ❌ App Store Submission
+
+### Nächster Schritt
+**5 User-Aktionen oben durchführen.** Nach erfolgreichem Production-Schema-Deploy + TestFlight-Smoke: D.3.1 Anti-Claim „❌ Production-Schema deployed" → ✅ umstellen in eigenem Doku-Sync-Commit.
+
+---
+
 ## 2026-05-25 — Phase D.3 (Bug-Fix): per-record `modifyRecords` validation + Konflikt-Karten-Layout (Branch `main`, HEAD `9c981fc` → folgt)
 
 > **Root-Cause-Fix für die Screenshot-Diagnose „Schreiben ✓ · Lesen CKError.unknownItem".** Apple's `CKDatabase.modifyRecords(saving:deleting:savePolicy:atomically:)` async-API gibt **per-record `Result`-Dictionaries** zurück und kann auch dann erfolgreich returnen, wenn der server-side Save einzelne Records ablehnte (besonders außerhalb von Custom-Zones mit `CKRecordZone.Capabilities.atomic`). Phase-D.2 hat nur den äußeren `try await` ausgewertet → der Probe-Write wurde als erfolgreich gemeldet, der Server hatte den Record aber nicht persistiert, das nachfolgende Read warf logisch passend `CKError.unknownItem`, und die UI klassifizierte fälschlicherweise „Lesen" als Fehlerphase.

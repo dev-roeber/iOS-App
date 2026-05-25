@@ -51,6 +51,18 @@ final class ICloudHealthStageMappingTests: XCTestCase {
         XCTAssertTrue(mapping.germanHint.contains("Production-Schema"))
     }
 
+    /// Phase D.3.1 — the most common TestFlight-Production failure is
+    /// „Cannot create new type X in production schema" which the CloudKit
+    /// server reports as `CKError.invalidArguments` (code 12). The hint
+    /// must point operators straight at the CloudKit Dashboard, not the
+    /// generic „request rejected" message.
+    func testCKErrorMappingInvalidArgumentsPointsAtProductionSchema() {
+        let mapping = ICloudCKErrorMapping.mapping(forRawCode: 12)
+        XCTAssertEqual(mapping.codeName, "invalidArguments")
+        XCTAssertTrue(mapping.germanHint.contains("Production"))
+        XCTAssertTrue(mapping.germanHint.contains("CloudKit Dashboard"))
+    }
+
     func testCKErrorMappingUnknownCodeFallsBack() {
         let mapping = ICloudCKErrorMapping.mapping(forRawCode: 9999)
         XCTAssertEqual(mapping.codeName, "ckError9999")

@@ -189,7 +189,12 @@ public struct ICloudCKErrorMapping: Equatable, Sendable {
         case 9:  return .init(codeName: "notAuthenticated",     germanHint: "Bitte in den System-Einstellungen bei iCloud anmelden.")
         case 10: return .init(codeName: "permissionFailure",    germanHint: "Entitlement oder Container-Berechtigung prüfen.")
         case 11: return .init(codeName: "unknownItem",          germanHint: "Production-Schema im CloudKit-Dashboard deployen.")
-        case 12: return .init(codeName: "invalidArguments",     germanHint: "CloudKit hat die Anfrage abgelehnt.")
+        // Phase D.3.1 — sharpened hint. In TestFlight/Production this code
+        // is overwhelmingly „Cannot create new type X in production schema"
+        // (Apple Developer Forums threads #819507, #723721, #729014,
+        // #652903, #700488). Default error message is too generic for the
+        // most common real-world cause.
+        case 12: return .init(codeName: "invalidArguments",     germanHint: "Schema fehlt in der Production-Umgebung — im CloudKit Dashboard deployen.")
         case 15: return .init(codeName: "serverRejectedRequest", germanHint: "Schema oder Container-Konfiguration prüfen.")
         case 25: return .init(codeName: "quotaExceeded",        germanHint: "iCloud-Speicher des Nutzers ist voll.")
         case 26: return .init(codeName: "zoneNotFound",         germanHint: "CloudKit-Zone nicht vorhanden.")
