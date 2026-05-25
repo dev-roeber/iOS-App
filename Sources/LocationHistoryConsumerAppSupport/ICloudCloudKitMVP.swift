@@ -1483,8 +1483,16 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
 
     public func deleteCloudData() async throws {
         let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        // Korrigiert nach Live-Diagnose 2026-05-25: `LH2GPXCloudHealthProbe`
+        // ist im Production-Schema NICHT als „indexable" markiert
+        // (recordName-QUERYABLE fehlt). Apple meldet das als
+        // CKError.invalidArguments / CKInternalErrorDomain #2015
+        // „Type is not marked indexable: LH2GPXCloudHealthProbe".
+        // Probe-Records sind ohnehin ephemeral und werden vom
+        // HealthCheckService selbst per `bestEffortDelete` aufgeräumt —
+        // sie hier zu iterieren bringt nichts und brach den ganzen
+        // Lösch-Pfad. Liste enthält jetzt nur noch persistente Types.
         let recordTypes = [
-            ICloudCloudHealthProbeSchema.recordType,
             LiveTrackCloudSchema.summaryRecordType,
             LiveTrackCloudSchema.pointBatchRecordType,
         ]
@@ -1513,13 +1521,24 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
                 }
             } catch {
                 Self.logCloudKitFailure("deleteCloudData/query[\(recordType)]", error)
-                // Phase D.4 — `unknownItem` on the *query* path is rare
-                // but legitimate (record-type does not exist in env, e.g.
-                // schema not yet promoted). Treat as „nothing to delete"
-                // for that type and continue with the next type.
-                if (error as NSError).domain == "CKErrorDomain",
-                   (error as NSError).code == 11 /* unknownItem */ {
+                let nsError = error as NSError
+                // Phase D.4 — `unknownItem` auf Query-Pfad = RecordType
+                // existiert nicht in dieser Env. Skip.
+                if nsError.domain == "CKErrorDomain", nsError.code == 11 {
                     continue
+                }
+                // Korrigiert nach Live-Diagnose 2026-05-25: Apple meldet
+                // fehlenden recordName-Queryable-Index als invalidArguments
+                // (Code 12) mit Server-Text „Type is not marked indexable".
+                // Wir behandeln das wie unknownItem — der Type ist in dieser
+                // Env nicht abfragbar, also gibt es aus App-Sicht „nichts zu
+                // löschen". User-Hinweis: Index im Dashboard nachziehen.
+                if nsError.domain == "CKErrorDomain", nsError.code == 12 {
+                    let server = (nsError.userInfo["ServerErrorDescription"] as? String) ?? ""
+                    let underlying = (nsError.userInfo[NSUnderlyingErrorKey] as? NSError)?.localizedDescription ?? ""
+                    if server.contains("not marked indexable") || underlying.contains("not marked indexable") {
+                        continue
+                    }
                 }
                 throw error
             }
