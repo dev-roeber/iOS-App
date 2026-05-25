@@ -365,6 +365,10 @@ public struct AppContentSplitView: View {
             // angezeigt.
             NavigationStack {
                 AppFilesView()
+                    // Fix: AppFilesView nutzt @EnvironmentObject preferences.
+                    // Ohne diesen Inject crasht der Tab beim ersten Öffnen
+                    // mit „No ObservableObject of type AppPreferences found".
+                    .environmentObject(preferences)
                     .navigationTitle("")
                     #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
