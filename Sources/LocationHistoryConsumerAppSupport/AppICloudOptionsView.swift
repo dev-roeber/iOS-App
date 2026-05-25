@@ -87,6 +87,9 @@ public struct AppICloudOptionsView: View {
                 .disabled(viewModel.status.isWorking)
                 .accessibilityIdentifier("options.icloud.refresh")
                 .accessibilityLabel(t("Refresh iCloud account status"))
+                .accessibilityHint(viewModel.status.isWorking
+                    ? t("Checking iCloud — please wait until the current check finishes.")
+                    : t("Re-checks whether iCloud is available on this device. No data is uploaded."))
 
                 iCloudDriveExportHintCard
 

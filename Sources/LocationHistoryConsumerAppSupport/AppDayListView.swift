@@ -373,6 +373,9 @@ public struct AppDayListView: View {
         .tag(summary.date)
         .disabled(!summary.hasContent)
         .accessibilityIdentifier("days.row.\(summary.date)")
+        .accessibilityHint(summary.hasContent
+            ? ""
+            : t("This day has no exportable routes or visits."))
         .contextMenu {
             if let onToggleFavorite {
                 Button {

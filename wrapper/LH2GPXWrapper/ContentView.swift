@@ -186,24 +186,33 @@ struct ContentView: View {
             } label: {
                 Label(t(openButtonTitle), systemImage: "doc.badge.plus")
             }
+            .accessibilityIdentifier("appshell.menu.openFile")
+            .accessibilityHint(t("Opens the system file picker to choose a location history file from your device or iCloud Drive."))
             Button(action: loadBundledDemo) {
                 Label(t(demoButtonTitle), systemImage: "testtube.2")
             }
+            .accessibilityIdentifier("appshell.menu.loadDemo")
+            .accessibilityHint(t("Loads a small bundled sample so you can explore the app without importing your own data."))
             Divider()
             Button {
                 isShowingOptions = true
             } label: {
                 Label(t("Options"), systemImage: "slider.horizontal.3")
             }
+            .accessibilityIdentifier("appshell.menu.options")
+            .accessibilityHint(t("Opens app settings — language, units, live recording, upload, iCloud and privacy options."))
             if session.hasLoadedContent || session.message?.kind == .error {
                 Divider()
                 Button(role: .destructive, action: clearCurrentContent) {
                     Label(t("Clear"), systemImage: "xmark.circle")
                 }
+                .accessibilityIdentifier("appshell.menu.clear")
+                .accessibilityHint(t("Removes the currently loaded location history from this session. Files on your device are not deleted."))
             }
         } label: {
             Label(t("Actions"), systemImage: "ellipsis.circle")
         }
+        .accessibilityIdentifier("appshell.actionsMenu")
     }
 
     private var homeBackground: some View {

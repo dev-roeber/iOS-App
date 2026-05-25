@@ -1,5 +1,52 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.1: Full Wiring Audit + Dead-Hint-Fix (Branch `main`, HEAD `66de66a` → folgt)
+
+> **Wiring-Audit + minimal-invasive Accessibility-Hint-Fixes.** Vollständige UI-Action-Matrix neu unter `docs/UI_WIRING_MATRIX_2026-05-25.md`. Vier `.disabled(...)`-Stellen, die vorher keinen Grund für VoiceOver lieferten, bekommen bedingte Hints. Vier Home-Actions-Menüpunkte bekommen Identifier + Hint. **Keine** großen Refactors, **keine** neuen CloudKit Records, **keine** Historien-Sync-Aussage, **keine** iPad-/Light-Mode-Änderung. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- `NavigationStack` + `NavigationLink(value:)` + `.navigationDestination(for:)` (https://developer.apple.com/documentation/swiftui/navigationstack)
+- `Button` + Rollen + `.disabled(true)` mit `accessibilityHint` für Grund (https://developer.apple.com/documentation/swiftui/button, https://developer.apple.com/design/human-interface-guidelines/buttons)
+- `Menu` / `Picker` (https://developer.apple.com/documentation/swiftui/menu, HIG „Menus")
+- `Toggle` (HIG „Toggles" — sofortiger sichtbarer Effekt)
+- `.sheet` / `.alert` / `.confirmationDialog` (https://developer.apple.com/documentation/swiftui/view/sheet(ispresented:ondismiss:content:), https://developer.apple.com/documentation/swiftui/view/confirmationdialog)
+- Accessibility-Modifier (https://developer.apple.com/documentation/swiftui/view-accessibility)
+- HIG „Navigation"/„Controls"/„Feedback"/„Settings"
+- Schlüssel-Schluss: Disabled-Buttons bleiben für VoiceOver erreichbar; Begründung gehört in `accessibilityHint` (nicht in `accessibilityLabel`).
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `wrapper/LH2GPXWrapper/ContentView.swift` | Home-Actions-Menu: 4 Menüpunkte bekommen `appshell.menu.<openFile/loadDemo/options/clear>`-Identifier + `accessibilityHint`; Menü-Root bekommt `appshell.actionsMenu` |
+| `Sources/.../AppLiveTrackingView.swift` | Pause/Resume-Uploads + Flush-Queue: bedingte Hints (Erklärung wann verfügbar); neuer Identifier `live.cta.flushQueue` |
+| `Sources/.../AppICloudOptionsView.swift` | Refresh-Status-Button: bedingter Hint („Checking iCloud — please wait…" vs „Re-checks…") |
+| `Sources/.../AppDayListView.swift` | Day-Row: bedingter Hint bei `!summary.hasContent` („This day has no exportable routes or visits.") |
+| `docs/UI_WIRING_MATRIX_2026-05-25.md` | **NEU** — kanonische Wiring-Matrix (alle Hauptscreens, Status `wired`/`deferred`) |
+
+### Dead-Controls behoben
+4 `.disabled(...)`-Stellen bekommen jetzt `accessibilityHint`s (siehe Matrix-Tabelle §„Train 8.1 — behobene Dead-Hint-Stellen"). 4 Home-Menu-Items bekommen UI-Test-Identifier (vorher gar keine).
+
+### Dead-Controls deferred
+| Stelle | Verschoben auf |
+|---|---|
+| `AppExportView.openDaysReview()` Split-View-Routing | Train 8.6 (Map Layer & Route Interaction) |
+| `AppLiveTrackingView` „Open Library"-Bedingungsrender | Train 8.10 (Live Tracking / Upload Control Center) |
+| `preferCloudDriveExport` „rein kosmetisch"-Doku | bereits in F.3 dokumentiert, kein Eingriff nötig |
+
+### Build-only Validierung (in diesem Train)
+- `swift build` ✅ Build complete.
+- `xcodebuild` Sim ✅ BUILD SUCCEEDED.
+- `xcodebuild` generic iOS ✅ BUILD SUCCEEDED.
+- Sweep: 0 verbotene CK-Ops, 0 `coming soon`/`dummy`/`fatalError` neu, 0 `disabled(true)` ohne Grund neu, 0 Secret-/False-Claim-Treffer.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10 (Train-Plan 8.0–8.15).
+
+### Nächster Schritt
+**Train 8.2 — Settings & Privacy Center Modernisierung** (build-only).
+
+---
+
 ## 2026-05-25 — Repo-Truth-Lock auf `dev-roeber/iOS-App` + Full-App-Modernization-Plan 8.0–8.15 (Branch `main`, HEAD `0276ea2` → folgt)
 
 > **Verbindlicher Repo-Truth-Lock.** `https://github.com/dev-roeber/iOS-App` ist ab sofort das **einzige aktive Arbeits-Repo** für die LH2GPX iOS-App. Alle anderen LH2GPX-/LocationHistory2GPX-Repos sind rein historisch und dürfen nicht mehr als aktive Repo-Truth verwendet werden. **Keine Feature-Implementierung in diesem Train** — reine Doku-/Governance-Aktualisierung.

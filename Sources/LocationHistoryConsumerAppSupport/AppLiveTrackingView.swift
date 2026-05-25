@@ -886,6 +886,9 @@ public struct AppLiveTrackingView: View {
         .buttonStyle(.bordered)
         .disabled(!liveLocation.canPauseUploads)
         .accessibilityIdentifier("live.cta.pause")
+        .accessibilityHint(liveLocation.canPauseUploads
+            ? t("Stops sending live points to your server without ending the local recording.")
+            : t("Available while a live recording is running and uploads are enabled in Settings."))
 
         if liveLocation.pendingUploadPointCount > 0 {
             Button(action: { liveLocation.flushPendingUploads() }) {
@@ -894,6 +897,10 @@ public struct AppLiveTrackingView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(!liveLocation.canFlushPendingUploads)
+            .accessibilityIdentifier("live.cta.flushQueue")
+            .accessibilityHint(liveLocation.canFlushPendingUploads
+                ? t("Immediately sends all queued points to your upload server.")
+                : t("Available when there are queued points and the upload configuration is valid."))
         }
     }
 

@@ -6,8 +6,8 @@
 
 ### Full-App-Modernization-Plan (8.0–8.15 build-only, Punkt 10 vollständige Tests)
 1. **8.0** Repo-Truth-Lock — *(dieser Train, erledigt nach Push)*
-2. **8.1** Full Wiring Audit + Dead-Control-Fix
-3. **8.2** Settings & Privacy Center Modernisierung
+2. **8.1** Full Wiring Audit + Dead-Control-Fix *(erledigt — siehe `docs/UI_WIRING_MATRIX_2026-05-25.md`)*
+3. **8.2** Settings & Privacy Center Modernisierung *(als nächstes)*
 4. **8.3** App Shortcuts / App Intents Skeleton
 5. **8.4** Performance & Concurrency Modernisierung
 6. **8.5** Accessibility / Dynamic Type / Localization Polish
