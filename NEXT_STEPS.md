@@ -1,5 +1,19 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Master-Train Phase A) — Spec-Doku für L10n + Favorites-iCloud-Sync + iPad (Branch `main`, HEAD `48722f5` → folgt)
+
+> **Phase A abgeschlossen** — `docs/LOCALIZATION_ICLOUD_FAVORITES_IPAD_IMPLEMENTATION_2026-05-25.md` mit Master-Spec angelegt. Phasen B–H stehen aus und werden einzeln auf User-Freigabe ausgeführt:
+>
+> - **B:** `Package.swift` `defaultLocalization: "en"` + `Localizable.xcstrings` in beiden Targets + 37 hardcoded `Text("…")` migrieren.
+> - **C:** `FavoriteEntry` Codable + lokale Migration aus `DayFavoritesStore`.
+> - **D:** `CloudKitFavoriteEntrySchema` + `FavoritesCloudSyncService` (echter `save/fetch/delete/records(matching:)` für `FavoriteEntry` only) + UI-Toggle. **Anti-Claim-Reset** für CKQuery/save/fetch/delete (nur FavoriteEntry; History/Tracks/Koordinaten bleiben verboten).
+> - **E:** `TARGETED_DEVICE_FAMILY = 1,2` + iPad-Sim Layout-Audit.
+> - **F:** Doku-Sync.
+> - **G:** `swift build` + xcodebuild Sim/iPad/Generic builds (**keine Tests** per User-Direktive).
+> - **H:** Commit + Push.
+
+---
+
 ## Stand 2026-05-25 (Closure-Train) — Open-Items-Audit + lokale Test-Verifikation + 2 A11y-Fixes (Branch `main`, HEAD `e8dbb24` → folgt)
 
 > **Vorbereitend für Master-Train.** Vollständiges Open-Items-Audit (siehe `docs/OPEN_ITEMS_CLOSURE_2026-05-25.md`), 2 echte A11y-Gaps gefixt (`RecentFilesView` disabled-Row, `HistoryDateRangePickerSheet` Apply-Button). Lokale Test-Verifikation:

@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## 2026-05-25 — Master · Phase A: Localization + Favorites-iCloud-Sync + iPad Master-Spec (Branch `main`, HEAD `48722f5` → folgt)
+
+> **Doku-only.** Phase A des Master-Trains: Spezifikation für **vollständige DE/EN-Lokalisierung** (`.xcstrings` Apple-modern + Koexistenz mit bestehendem `AppGermanTranslations`-Dictionary), **echter CloudKit-Favoriten-Sync** (`FavoriteEntry` über `privateCloudDatabase.save/fetch/delete` + `records(matching:)`, keine History/Tracks/Koordinaten), **iPad-Universal-Support** (`TARGETED_DEVICE_FAMILY = 1,2` + bereits vorbereitetes `NavigationSplitView`-Layout). Anti-Claim-Reset definiert: CKQuery/save/fetch/delete für `FavoriteEntry` ab Phase D erlaubt. **Keine Code-Implementierung in dieser Phase.** Phasen B–H ausstehend.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `docs/LOCALIZATION_ICLOUD_FAVORITES_IPAD_IMPLEMENTATION_2026-05-25.md` | **NEU** — Master-Spec mit 12 Sektionen (Scope, Apple-Doku-Abgleich mit Quellen, Architektur-Entscheidungen L10n/iCloud/iPad, Anti-Claim-Reset, Migration, Privacy/App-Store-Grenzen, Testplan, Rollback, Deferred-Liste, Phasen-Reihenfolge) |
+| `CHANGELOG.md`, `ROADMAP.md`, `NEXT_STEPS.md` | Doku-Sync |
+
+### Bewusst NICHT in Phase A
+- Keine Code-Änderung
+- Keine `.xcstrings`-Anlage (Phase B)
+- Kein `FavoriteEntry`-Code (Phase C/D)
+- Kein CloudKit-Sync-Code (Phase D)
+- Kein iPad-Build-Setting-Change (Phase E)
+- Keine Tests
+- Kein Xcode Cloud
+- Kein TestFlight
+
+### Anti-Claims (unverändert wahr nach Phase A)
+- ❌ Echter iCloud-Favoriten-Sync implementiert (Spec only) · ❌ `.xcstrings`-Files vorhanden · ❌ FavoriteEntry-Code · ❌ iPad-Build aktiviert · ❌ Tests gelaufen · ❌ Neuer Cloud-Build > 190 · ❌ App Review ≥190.
+
+### Nächster Schritt
+**Phase B** — `Package.swift` `defaultLocalization: "en"` + `Localizable.xcstrings` in beiden Targets + 37 hardcoded `Text("…")` in `LocalTimeline*`-Views auf `t()` migrieren. **Wartet auf User-Freigabe.**
+
+---
+
 ## 2026-05-25 — Closure: Open-Items-Audit + lokale Test-Verifikation + 2 A11y-Fixes (Branch `main`, HEAD `e8dbb24` → folgt)
 
 > **Vorbereitend für Master-Train.** Vollständiges Open-Items-Audit aus allen Repo-Truth-Quellen (NEXT_STEPS, ROADMAP, CHANGELOG, README, alle `docs/`), Klassifizierung in fixed/verified/deferred/blocked, 2 echte A11y-Gaps minimal gefixt, lokale Test-Verifikation soweit User-Direktive zulässt. Punkt 10 wird per User-Auftrag teilweise eingelöst: `swift test` ✅ 1714/0/2, Sim+Generic Build ✅, Sim test im Build-Step cancelled (User-Direktive für unmittelbar folgenden Master-Train: „vorerst ohne tests").
