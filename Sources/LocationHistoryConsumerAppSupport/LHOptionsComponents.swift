@@ -113,6 +113,7 @@ public struct LHUploadSettingsCard: View {
         VStack(alignment: .leading, spacing: 14) {
             Toggle(t("Upload to Your Own Server"), isOn: $preferences.sendsLiveLocationToServer)
                 .accessibilityIdentifier("options.upload.enabled")
+                .accessibilityHint(Text(t("Off by default. When enabled, live coordinates are sent only to the HTTPS endpoint you configure below — never automatically and never to a central server.")))
 
             if preferences.sendsLiveLocationToServer {
                 Divider().foregroundStyle(LH2GPXTheme.separator)
@@ -137,6 +138,7 @@ public struct LHUploadSettingsCard: View {
                 .autocorrectionDisabled()
                 .font(.subheadline)
                 .accessibilityIdentifier("options.upload.url")
+                .accessibilityHint(Text(t("HTTPS endpoint of your self-hosted receiver. The app never contacts a central LH2GPX server.")))
         }
     }
 
@@ -156,6 +158,7 @@ public struct LHUploadSettingsCard: View {
             .autocorrectionDisabled()
             .font(.subheadline)
             .accessibilityIdentifier("options.upload.token")
+            .accessibilityHint(Text(t("Stored in the iOS keychain on this device. Never shown in plain text and never written to logs.")))
         }
     }
 
@@ -190,6 +193,8 @@ public struct LHUploadSettingsCard: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("options.upload.statusRow")
     }
 }
 

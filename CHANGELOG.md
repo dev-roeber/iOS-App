@@ -1,5 +1,51 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.10: Live Tracking / Upload Control Center (Branch `main`, HEAD `95c43ee` → folgt)
+
+> **Minimal-additive Live-Upload-Polish.** Vier additive `accessibilityHint`s + 1 Status-Identifier am `LHUploadSettingsCard`: Toggle-Hint klärt Opt-in + „kein zentraler Server", URL-Field-Hint sagt „HTTPS Endpoint of your self-hosted receiver", SecureField-Token-Hint bestätigt Keychain-Speicherung + „never written to logs", `uploadStatusRow` bekommt eigenen Identifier `options.upload.statusRow` + kombiniertes accessibility-Element. **Keine** neue Netzwerk-API, **keine** Server-Endpoint-Änderung, **keine** Background-Permission-Erweiterung, **keine** neue LiveActivity. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- Core Location: `requestWhenInUseAuthorization` / `requestAlwaysAuthorization`, `CLAuthorizationStatus` (`.notDetermined`, `.restricted`, `.denied`, `.authorizedWhenInUse`, `.authorizedAlways`), Info.plist `NSLocationWhenInUseUsageDescription` / `NSLocationAlwaysAndWhenInUseUsageDescription`.
+- Background Location: `UIBackgroundModes = [location]`, `allowsBackgroundLocationUpdates`, `pausesLocationUpdatesAutomatically = false` für kontinuierliches Live-Tracking.
+- Keychain Services: `kSecClassGenericPassword` + `kSecAttrAccessibleAfterFirstUnlock` — bereits korrekt in `KeychainHelper.swift` (`AppPreferences:353-357` schreibt Token, `:556-566` lädt Token mit Legacy-Migration, `:637-638` löscht bei `reset()`).
+- URLSession: `URLSessionConfiguration.allowsCellularAccess` (Default true).
+- HIG: Purpose Strings + Just-in-Time-Prompt; destruktive Aktionen via `Button(role: .destructive)` + `confirmationDialog`; `SecureField` für Credentials.
+
+### Recon-Bestätigung (Repo-Wahrheit)
+- **Token in Keychain** ✅ `AppPreferences.liveLocationServerUploadBearerToken.didSet` ruft `KeychainHelper.save(...)` (AppPreferences.swift:355); init lädt aus Keychain mit UserDefaults-Migration (`:556-566`); `reset()` löscht in Keychain (`:638`).
+- **Opt-in** ✅ `sendsLiveLocationToServer = false` Default (AppPreferences).
+- **Info.plist** ✅ `NSLocationWhenInUseUsageDescription` + `NSLocationAlwaysAndWhenInUseUsageDescription` + `UIBackgroundModes = [location]` bereits korrekt (Info.plist:23-26, 36-39).
+- **Pause/Resume/Flush** ✅ wired (`LiveLocationFeatureModel.setUploadPaused(_:)`, `flushPendingUploads()` — bereits aus Train 8.1).
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../LHOptionsComponents.swift` | 4 `accessibilityHint`s + `options.upload.statusRow` Identifier am `LHUploadSettingsCard` |
+| `CHANGELOG.md`, `ROADMAP.md` | Doku-Sync |
+
+### Build-only Validierung
+- `swift build` ✅ (9,03 s, 0 Warnings).
+- `xcodebuild` Sim ✅ `BUILD SUCCEEDED`.
+- `xcodebuild` generic iOS ✅ `BUILD SUCCEEDED`.
+
+### Bewusst NICHT verändert
+- Kein neuer Netzwerk-Endpoint, keine Änderung an `LiveLocationServerUploader`.
+- Keine neue Background-Capability — `UIBackgroundModes = [location]` unverändert.
+- Kein Token-Reset-`confirmationDialog` — bestehender `AppPreferences.reset()`-Pfad (löscht via `KeychainHelper.delete`) ist bereits an einer Stelle (`Settings → Reset all options`) gebündelt; ein zusätzlicher Token-only-Reset würde Settings-IA brechen.
+- Keine neuen Widget-/Dynamic-Island-Funktionen (Thema 8.13).
+- Keine Token-Logs, keine Koordinaten-Logs.
+
+### Anti-Claims (unverändert wahr)
+- ❌ Echter iCloud-Sync · ❌ Automatischer Upload (Opt-in only) · ❌ Auto-Start Live · ❌ CloudKit Records save/fetch · ❌ Historien-Sync · ❌ Public/shared DB · ❌ Token-Logs · ❌ Koordinaten-Logs.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.11 — Timeline / Days / Day Detail Modernisierung** (build-only).
+
+---
+
 ## 2026-05-25 — Train 8.9: Export-Pipeline UX + Files/iCloud Drive Polish (Branch `main`, HEAD `07e8473` → folgt)
 
 > **Minimal-additive Export-UX-Polish.** Per-Format-`accessibilityIdentifier` an `formatPill` (`export.format.pill.<gpx/kmz/kml/geojson/csv>`) für deterministische UITest-Adressierung, plus `accessibilityHint` „Switches the export format…". Im `exportTargetCard` bekommt das „Save or Share"-Label einen eigenen Identifier `export.target.saveOrShare.title` und einen klaren Nutzerkontrolle-Hint („You choose the destination in the system save sheet. The app never uploads exported files automatically."). **Keine** neuen Formate, **keine** neuen Exporter, **kein** automatischer Upload, **keine** Entitlement-Erweiterung, **keine** CloudKit-Operation. Tests deferred bis Punkt 10.
