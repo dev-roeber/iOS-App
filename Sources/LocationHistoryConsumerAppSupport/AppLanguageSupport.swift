@@ -456,6 +456,8 @@ enum AppGermanTranslations {
         "Wi-Fi only for auto-upload": "Auto-Upload nur per WLAN",
         "Skip upload on cellular networks": "Upload bei Mobilfunk überspringen",
         "iCloud Sync": "iCloud-Sync",
+        "Favoriten": "Favoriten",
+        "Synchronisiert deine lokalen Favoriten (Tage) bidirektional mit der privaten iCloud-Datenbank. Keine Standortdaten.": "Synchronisiert deine lokalen Favoriten (Tage) bidirektional mit der privaten iCloud-Datenbank. Keine Standortdaten.",
         "Enable iCloud sync and the Cloud Files toggle in iCloud options first.": "Aktiviere iCloud-Sync und „Cloud-Dateien“ in den iCloud-Optionen zuerst.",
         "Uploads the original imported file as a CKAsset to your private iCloud database after the import completes. Deduplicated via SHA-256, so re-importing the same file does not upload again. Files imported from iCloud Drive are never uploaded back automatically.": "Lädt die importierte Originaldatei nach Abschluss als CKAsset in deine private iCloud-Datenbank. Dedupliziert per SHA-256, derselbe Re-Import lädt also kein zweites Mal hoch. Dateien, die aus iCloud Drive importiert wurden, werden nie automatisch wieder hochgeladen.",
         "Imports": "Importe",

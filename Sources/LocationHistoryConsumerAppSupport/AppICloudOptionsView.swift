@@ -387,6 +387,26 @@ public struct AppICloudOptionsView: View {
                 .accessibilityIdentifier("options.icloud.cloudFiles.toggle")
                 .accessibilityLabel(Text("Cloud-Dateien. Enthält möglicherweise Standortdaten."))
 
+                // Phase F — echter CloudKit-Sync für lokale Favoriten.
+                Toggle(isOn: $preferences.syncFavoritesEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "star.fill")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.yellow)
+                                .accessibilityHidden(true)
+                            Text("Favoriten")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        Text("Synchronisiert deine lokalen Favoriten (Tage) bidirektional mit der privaten iCloud-Datenbank. Keine Standortdaten.")
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .disabled(!preferences.iCloudSyncEnabled)
+                .accessibilityIdentifier("options.icloud.favorites.toggle")
+
                 Toggle(isOn: $preferences.syncAppSettingsEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("App-Einstellungen")

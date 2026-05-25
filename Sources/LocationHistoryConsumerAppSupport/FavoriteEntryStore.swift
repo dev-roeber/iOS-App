@@ -168,6 +168,13 @@ public final class FavoriteEntryStore {
         return next
     }
 
+    /// Phase F — überschreibt den vollständigen On-Disk-Stand. Wird vom
+    /// CloudKit-Merge-Pfad (`FavoriteEntryCloudSyncCoordinator`)
+    /// aufgerufen, nachdem lokale + Cloud-Einträge merged wurden.
+    public func replaceAll(with entries: [FavoriteEntry]) throws {
+        writeEnvelope(.init(schemaVersion: FavoriteEntry.currentSchemaVersion, entries: entries))
+    }
+
     // MARK: - Internal helpers
 
     private func readEnvelopeFromDisk() -> Envelope? {
