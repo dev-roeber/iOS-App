@@ -71,4 +71,51 @@ final class AppImportCloudUploadStagingTests: XCTestCase {
         // Darf nicht werfen / crashen.
         AppImportCloudUploadStaging.cleanup(stagedURL: bogus)
     }
+
+    #if canImport(Combine)
+    /// End-to-End-Spiegelbild des AppContentSplitView-Picker-Flows:
+    /// `stage(...)` → `uploadCopiedFile(at:)` → `cleanup(...)`. Stellt
+    /// sicher, dass die gestagete Datei beim Upload sichtbar ist UND
+    /// dass das Staging-Verzeichnis am Ende verschwindet (kein Race).
+    @MainActor
+    func testStagingPatternUploadSuccessThenCleanup() async throws {
+        let payload = Data("<gpx version=\"1.1\"></gpx>".utf8)
+        let source = fixturesRoot.appendingPathComponent("Picker.gpx")
+        try payload.write(to: source)
+
+        let staged = try AppImportCloudUploadStaging.stage(sourceURL: source)
+        let stagingDir = staged.deletingLastPathComponent()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: staged.path))
+
+        let manager = InMemoryCloudFileManager()
+        let vm = AppCloudFileViewModel(manager: manager)
+
+        await vm.uploadCopiedFile(at: staged)
+        AppImportCloudUploadStaging.cleanup(stagedURL: staged)
+
+        XCTAssertFalse(vm.actionFailed)
+        XCTAssertEqual(vm.cloudEntries.count, 1)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: stagingDir.path),
+                       "Cleanup muss das Staging-Verzeichnis nach Upload entfernen")
+    }
+
+    /// Negativ-Fall: existiert die Quelle nicht, wirft `stage(...)` synchron
+    /// und der Upload wird gar nicht erst angestoßen — Picker-Pfad meldet
+    /// den Fehler über `reportPickerFailure`.
+    @MainActor
+    func testStagingFailurePropagatesAndSkipsUpload() async {
+        let missing = fixturesRoot.appendingPathComponent("does-not-exist.gpx")
+        XCTAssertThrowsError(try AppImportCloudUploadStaging.stage(sourceURL: missing))
+
+        let manager = InMemoryCloudFileManager()
+        let vm = AppCloudFileViewModel(manager: manager)
+        // Simulation des Catch-Branches in AppContentSplitView.
+        vm.reportPickerFailure(NSError(domain: "stage", code: 1,
+                                       userInfo: [NSLocalizedDescriptionKey: "stage failed"]))
+
+        XCTAssertTrue(vm.actionFailed)
+        let entries = try? await manager.listCloudFiles()
+        XCTAssertEqual(entries ?? [], [])
+    }
+    #endif
 }

@@ -457,15 +457,19 @@ public struct AppContentSplitView: View {
                 )
                 return
             }
-            // Security-Scope SYNCHRON im Callback aktivieren + Kopie mit
-            // NSFileCoordinator für File-Provider-URLs erzeugen.
+            // Security-Scope SYNCHRON aktivieren + zentralen Staging-
+            // Helper aufrufen, solange der Scope noch offen ist. Identisches
+            // Muster wie AppShellRootView (Import-Auto-Upload). Damit
+            // verschwindet der frühere Cleanup-Race: das Staging-
+            // Verzeichnis wurde noch während des Uploads gelöscht.
             let accessed = url.startAccessingSecurityScopedResource()
             defer { if accessed { url.stopAccessingSecurityScopedResource() } }
             do {
-                let copy = try copyForUpload(from: url)
+                let staged = try AppImportCloudUploadStaging.stage(sourceURL: url)
                 Task {
-                    await filesCloudViewModel.uploadCopiedFile(at: copy)
-                    try? FileManager.default.removeItem(at: copy.deletingLastPathComponent())
+                    await filesCloudViewModel.uploadCopiedFile(at: staged)
+                    // Cleanup garantiert NACH Upload-Abschluss — kein Race.
+                    AppImportCloudUploadStaging.cleanup(stagedURL: staged)
                 }
             } catch {
                 filesCloudViewModel.reportPickerFailure(error)
@@ -473,31 +477,6 @@ public struct AppContentSplitView: View {
         case .failure(let error):
             filesCloudViewModel.reportPickerFailure(error)
         }
-    }
-
-    private func copyForUpload(from sourceURL: URL) throws -> URL {
-        let tmpDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("CloudFileUpload-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
-        let destination = tmpDir.appendingPathComponent(sourceURL.lastPathComponent)
-        var coordError: NSError?
-        var copyError: Error?
-        let coordinator = NSFileCoordinator(filePresenter: nil)
-        coordinator.coordinate(readingItemAt: sourceURL,
-                               options: [.forUploading, .withoutChanges],
-                               error: &coordError) { readableURL in
-            do { try FileManager.default.copyItem(at: readableURL, to: destination) }
-            catch { copyError = error }
-        }
-        if let coordError {
-            try? FileManager.default.removeItem(at: tmpDir)
-            throw coordError
-        }
-        if let copyError {
-            try? FileManager.default.removeItem(at: tmpDir)
-            throw copyError
-        }
-        return destination
     }
     #endif
 

@@ -120,6 +120,9 @@ public final class InMemoryLocalFileScanner: LocalFileScanning, @unchecked Senda
     public var scriptedScanError: Error?
     public var scriptedDeleteError: Error?
     public private(set) var deletedIDs: [String] = []
+    /// Anzahl der `scanAllBuckets()`-Aufrufe — Tests prüfen damit,
+    /// dass `delete()` keinen zusätzlichen Disk-Walk auslöst.
+    public private(set) var scanCallCount: Int = 0
     private let lock = NSLock()
 
     public init(snapshots: [LocalFileBucketSnapshot] = []) {
@@ -127,6 +130,7 @@ public final class InMemoryLocalFileScanner: LocalFileScanning, @unchecked Senda
     }
 
     public func scanAllBuckets() throws -> [LocalFileBucketSnapshot] {
+        lock.lock(); scanCallCount += 1; lock.unlock()
         if let error = scriptedScanError { throw error }
         return scriptedSnapshots
     }

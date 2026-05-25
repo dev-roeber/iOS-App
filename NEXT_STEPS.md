@@ -1,5 +1,16 @@
 # NEXT_STEPS
 
+## Stand 2026-05-26 — More-Tab Audit + Backend-Hardening Files-Tab (Branch `main`, HEAD folgt)
+
+Audit "More"/"Mehr"-Tab + alle Unterseiten + alle `fileImporter`-Trigger. UI-Verdrahtung 100% sauber. Drei Backend-Hotspots im Files-Tab behoben: zentraler `CKContainer`-Cache (14 Call-Sites), zentraler Staging-Pattern im Cloud-File-Picker, Task-Cancellation + lokale Snapshot-Mutation nach Delete, CloudKit-Retry/Backoff für transiente Fehler, robustere FileHandle-Fehlerbehandlung. **1848 Tests grün.** Details: `CHANGELOG.md` (2026-05-26).
+
+**Offen / nicht in dieser Session:**
+- Hardware-Test des Cloud-File-Picker-Pfads (Files-Tab → iCloud-Upload mit großer Datei aus iCloud Drive) am echten Gerät.
+- Verifikation Retry-Backoff am echten Netzwerkstop (Flugmodus während Upload, dann re-online).
+- Loading-States/Progress-Anzeige bei großen CloudKit-Listings (UX, P3) — bewusst nicht in diesem Train.
+
+---
+
 ## Stand 2026-05-25 — Audit-Punkte 4–8 umgesetzt (Branch `main`, HEAD folgt)
 
 Umsetzung der fünf High-Impact-Findings aus `APPLE_DOC_SYNC_FULL_APP_AUDIT_2026-05-25` (Data Protection, File-Outbox, Security-Scoped-Handoff, Overview-Pagination, per-record-Fehlerbehandlung). 1833 Tests grün. Details: siehe `CHANGELOG.md` (gleiches Datum).

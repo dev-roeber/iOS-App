@@ -142,6 +142,70 @@ final class AppFileManagementTests: XCTestCase {
         XCTAssertTrue((vm.actionMessage ?? "").contains("gelöscht"))
     }
 
+    /// Regressionsschutz: nach `delete()` darf KEIN zweiter
+    /// `scanAllBuckets()` laufen — Snapshot wird lokal mutiert. Ein voller
+    /// Re-Scan bleibt dem expliziten Refresh-Button vorbehalten.
+    @MainActor
+    func testViewModelDeleteMutatesSnapshotLocallyWithoutReScan() async {
+        let kept = makeEntry(name: "keep.gpx", bucket: .exports, size: 40)
+        let doomed = makeEntry(name: "doomed.gpx", bucket: .exports, size: 60)
+        let scanner = InMemoryLocalFileScanner(snapshots: [
+            LocalFileBucketSnapshot(bucket: .exports, entries: [kept, doomed], totalSizeBytes: 100)
+        ])
+        let vm = AppFilesViewModel(scanner: scanner)
+        await vm.refresh()
+        XCTAssertEqual(scanner.scanCallCount, 1)
+
+        await vm.delete(doomed)
+
+        // Genau EIN Scan insgesamt — keine zusätzlichen Disk-Walks.
+        XCTAssertEqual(scanner.scanCallCount, 1, "delete() darf keinen Re-Scan triggern")
+        XCTAssertEqual(scanner.deletedIDs, [doomed.id])
+        XCTAssertEqual(vm.filteredEntries(for: .exports).map(\.fileName), ["keep.gpx"])
+        XCTAssertEqual(vm.totalSizeBytes, 40, "Bucket-Total nach Mutation = 40")
+    }
+
+    /// Pure Mutation ohne MainActor — schnelle Verifikation der
+    /// Bucket-/Total-Bookkeeping-Logik.
+    func testRemovingEntryHelperUpdatesBucketTotal() {
+        let a = makeEntry(name: "a.gpx", bucket: .exports, size: 10)
+        let b = makeEntry(name: "b.gpx", bucket: .exports, size: 30)
+        let c = makeEntry(name: "c.gpx", bucket: .imports, size: 5)
+        let snapshots = [
+            LocalFileBucketSnapshot(bucket: .exports, entries: [a, b], totalSizeBytes: 40),
+            LocalFileBucketSnapshot(bucket: .imports, entries: [c], totalSizeBytes: 5),
+        ]
+        let mutated = AppFilesViewModel.removingEntry(b, from: snapshots)
+        let exports = mutated.first(where: { $0.bucket == .exports })
+        XCTAssertEqual(exports?.entries.map(\.fileName), ["a.gpx"])
+        XCTAssertEqual(exports?.totalSizeBytes, 10)
+        let imports = mutated.first(where: { $0.bucket == .imports })
+        XCTAssertEqual(imports?.entries.map(\.fileName), ["c.gpx"])
+        XCTAssertEqual(imports?.totalSizeBytes, 5)
+    }
+
+    /// Cancellation: ein vor `await` abgebrochener Refresh setzt KEINEN
+    /// Fehler-Banner und stellt `actionState` sauber zurück. Spiegelt das
+    /// Verhalten beim Tab-Wechsel in `AppFilesView.onDisappear`.
+    @MainActor
+    func testViewModelRefreshHonoursTaskCancellationWithoutErrorBanner() async {
+        let scanner = InMemoryLocalFileScanner(snapshots: [
+            LocalFileBucketSnapshot(bucket: .exports, entries: [], totalSizeBytes: 0)
+        ])
+        let vm = AppFilesViewModel(scanner: scanner)
+
+        let task = Task { @MainActor in
+            await vm.refresh()
+        }
+        task.cancel()
+        await task.value
+
+        XCTAssertEqual(vm.actionState, .idle)
+        XCTAssertFalse(vm.actionFailed)
+        XCTAssertNil(vm.actionMessage,
+                     "Cancellation darf keinen Erfolgs-/Fehler-Banner setzen")
+    }
+
     @MainActor
     func testViewModelFilterReducesEntries() async {
         let scanner = InMemoryLocalFileScanner(snapshots: [

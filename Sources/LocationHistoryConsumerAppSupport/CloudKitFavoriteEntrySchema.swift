@@ -113,7 +113,7 @@ public struct CloudKitFavoriteEntryCloudSync: FavoriteEntryCloudSyncing {
 
     public func push(_ entries: [FavoriteEntry]) async throws {
         guard !entries.isEmpty else { return }
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         let records = entries.map(Self.makeRecord)
         let expectedIDs = records.map(\.recordID)
         let (saveResults, _) = try await database.modifyRecords(
@@ -129,7 +129,7 @@ public struct CloudKitFavoriteEntryCloudSync: FavoriteEntryCloudSyncing {
     }
 
     public func pull() async throws -> [FavoriteEntry] {
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         let query = CKQuery(recordType: CloudKitFavoriteEntrySchema.recordType,
                             predicate: NSPredicate(format: "TRUEPREDICATE"))
         var collected: [CKRecord] = []
@@ -183,7 +183,7 @@ public struct CloudKitFavoriteEntryCloudSync: FavoriteEntryCloudSyncing {
     }
 
     public func delete(_ entry: FavoriteEntry) async throws {
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         let recordID = CKRecord.ID(recordName: CloudKitFavoriteEntrySchema.recordName(for: entry))
         let (_, deleteResults) = try await database.modifyRecords(
             saving: [],
@@ -203,7 +203,7 @@ public struct CloudKitFavoriteEntryCloudSync: FavoriteEntryCloudSyncing {
     public func deleteAll() async throws {
         let entries = try await pull()
         guard !entries.isEmpty else { return }
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         let ids = entries.map { CKRecord.ID(recordName: CloudKitFavoriteEntrySchema.recordName(for: $0)) }
         let chunkSize = 200
         for chunkStart in stride(from: 0, to: ids.count, by: chunkSize) {

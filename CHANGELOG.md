@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## 2026-05-26 — More-Tab Audit + Backend-Hardening (Files-Tab) (Branch `main`, HEAD folgt)
+
+> Audit des "More"/"Mehr"-Tabs (iOS-System-More, Tab 5 = Files) inkl. aller Unterseiten (Options-Sheet mit 10 Sektionen, 40+ Settings) und aller `fileImporter`-Trigger. UI-Verdrahtung: 100% sauber, keine Stubs/toten Branches. Drei Backend-Hotspots im Files-Tab behoben. **1848 Tests grün** (`swift test`, 2 skipped, 0 failures, exit 0).
+
+### Konsolidierte CKContainer-Instanziierung
+- Neu `CloudKitContainerProvider.shared(identifier:)` — `NSLock`-geschützter Cache, ein `CKContainer` pro Identifier prozessweit.
+- 14 direkte `CKContainer(identifier:)`-Aufrufe in `AppCloudFileManagement`, `ICloudCloudKitMVP`, `CloudKitFavoriteEntrySchema`, `CloudKitCloudSyncService` ersetzt.
+- Keine Public-DB, keine `sharedCloudDatabase`. Verhalten unverändert.
+
+### Cloud-File-Picker auf zentralen Staging-Pattern umgestellt
+- `AppContentSplitView` `.fileImporter` (Files-Tab Cloud-Upload) nutzt jetzt `AppImportCloudUploadStaging.stage()` statt eigener `copyForUpload()`-Kopie.
+- Cleanup via `defer { AppImportCloudUploadStaging.cleanup(stagedURL:) }` strikt nach `await upload`. Race-frei.
+- Toter Helper `copyForUpload()` entfernt.
+
+### Files-Tab: Task-Cancellation + lokale Snapshot-Mutation
+- `AppFilesView`: `.task` durch `.onAppear`/`.onDisappear` mit `@State`-Task-Handle ersetzt; Refresh wird bei View-Disappear gecancelt → keine Race-Conditions beim schnellen Tab-Wechsel.
+- `AppFileManagementViewModel.refresh()` honoriert `Task.checkCancellation()`; `CancellationError` setzt State sauber zurück (kein Fehler-Banner).
+- `delete()` mutiert Snapshot lokal über neuen `nonisolated static removingEntry(_:from:)`-Helfer — kein Full-Re-Scan mehr (4 Buckets gespart pro Delete). Full-Re-Scan nur bei explizitem User-Pull-To-Refresh.
+
+### CloudKit Retry/Backoff für transiente Fehler
+- Neu `CloudKitRetryPolicy.retry(maxAttempts:operation:)` — exponential backoff 1s/2s/4s, respektiert `CKErrorRetryAfterKey`.
+- Retry NUR bei: `networkFailure`, `networkUnavailable`, `requestRateLimited`, `serverResponseLost`, `zoneBusy`, `serviceUnavailable`. NICHT bei: `unknownItem` (11), `invalidArguments` (12), `permissionFailure`, `quotaExceeded`, `notAuthenticated`.
+- Respektiert `Task.checkCancellation` zwischen Versuchen.
+- 6 Top-Level-DB-Calls in `AppCloudFileManagement` umschlossen: `records(matching:)`, Cursor-Pagination, `modifyRecords(saving:)`, `modifyRecords(deleting:)`, `record(for:)`, Dedupe-Query.
+
+### Robusteres File-IO
+- `CloudFileContentValidator`: neuer Case `readFailed(String, reason: String)`. `FileHandle.read(upToCount:)`-Fehler werden propagiert statt zu leerem `Data()` zu kollabieren. Leere Datei bleibt `.empty`.
+
+### Tests
+- Neu: `CloudKitRetryPolicyTests` (7), `CloudFileValidatorReadErrorTests` (3).
+- Erweitert: `AppFileManagementTests` +3 (lokale Snapshot-Mutation nach Delete, Removing-Helper, Cancellation), `AppImportCloudUploadStagingTests` +2 (Staging-Pattern-Upload-Erfolg + Fehler).
+- Gesamt: 1848 (+15 vs. Vorgänger).
+
+### Audit-Ergebnis (More-Tab UI)
+- Tab-Navigation 6 Tabs (Overview/Days/Insights/Export/Live/Files), Files-Tab landet auf iPhone im System-More. Alle Tabs verdrahtet.
+- Options-Sheet 10 Sektionen (General/Maps/Import/Live Recording/Upload/Widget+LiveActivity/Privacy/iCloud/Technical), 40+ Toggles/Pickers/Buttons. **Alle echte Funktionen, keine Stubs.**
+- 5 `fileImporter`-Fundorte: 4× zentraler Staging-Pattern, 1× (jetzt 0×) Inkonsistenz behoben.
+
+---
+
 ## 2026-05-25 — High-Impact Performance/Stability-Fixes (Audit 2026-05-25, Punkte 4–8) (Branch `main`, HEAD folgt)
 
 > Umsetzung der fünf High-Impact-Findings aus dem `APPLE_DOC_SYNC_FULL_APP_AUDIT_2026-05-25`. Alle Änderungen rein additiv/härtend, keine Public-API-Brüche. **1833 Tests grün** (`swift test`, 2 skipped, 0 failures).

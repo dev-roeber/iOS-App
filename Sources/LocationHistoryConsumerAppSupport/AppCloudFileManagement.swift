@@ -32,12 +32,15 @@ public enum CloudFileKind: String, Codable, CaseIterable, Sendable {
 public enum CloudFileContentValidator {
     public enum ValidationError: LocalizedError, Equatable {
         case fileNotReadable(String)
+        case readFailed(String, reason: String)
         case formatMismatch(expected: CloudFileKind, head: String)
         case empty
 
         public var errorDescription: String? {
             switch self {
             case .fileNotReadable(let path): return "Datei nicht lesbar: \(path)"
+            case .readFailed(let path, let reason):
+                return "Lesefehler bei Datei \(path): \(reason)"
             case .formatMismatch(let expected, _):
                 return "Datei entspricht nicht dem Format \(expected.germanLabel)."
             case .empty: return "Datei ist leer."
@@ -50,7 +53,20 @@ public enum CloudFileContentValidator {
             throw ValidationError.fileNotReadable(url.lastPathComponent)
         }
         defer { try? handle.close() }
-        let head = (try? handle.read(upToCount: 512)) ?? Data()
+        // Read-Fehler dürfen NICHT geschluckt werden — eine leere Rückgabe
+        // ist nur valide wenn die Datei tatsächlich leer ist. Tritt beim
+        // Lesen ein I/O-Fehler auf (Berechtigung, Hardware, defekter
+        // Bookmark) propagieren wir den Fehler mit Kontext, damit der
+        // Aufrufer ihn dem Nutzer melden kann.
+        let head: Data
+        do {
+            head = try handle.read(upToCount: 512) ?? Data()
+        } catch {
+            throw ValidationError.readFailed(
+                url.lastPathComponent,
+                reason: (error as NSError).localizedDescription
+            )
+        }
         guard !head.isEmpty else { throw ValidationError.empty }
         let asString = String(data: head, encoding: .utf8) ?? ""
         switch expected {
@@ -398,13 +414,13 @@ public final class CloudKitCloudFileManager: CloudFileManaging, @unchecked Senda
     }
 
     public func listCloudFiles() async throws -> [CloudFileEntry] {
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         let records = try await fetchAllRecords(database: database)
         return records.compactMap(Self.decode).sorted { $0.updatedAt > $1.updatedAt }
     }
 
     public func upload(_ candidate: CloudFileUploadCandidate) async throws -> CloudFileEntry {
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         if try await duplicateExists(sha256Hex: candidate.sha256Hex, database: database) {
             throw CloudFileError.duplicate(sha256Hex: candidate.sha256Hex)
         }
@@ -436,12 +452,14 @@ public final class CloudKitCloudFileManager: CloudFileManaging, @unchecked Senda
         record[CloudFileSchema.Field.asset] = CKAsset(fileURL: assetURL)
 
         let expectedID = record.recordID
-        let (saveResults, _) = try await database.modifyRecords(
-            saving: [record],
-            deleting: [],
-            savePolicy: .changedKeys,
-            atomically: true
-        )
+        let (saveResults, _) = try await CloudKitRetryPolicy.retry {
+            try await database.modifyRecords(
+                saving: [record],
+                deleting: [],
+                savePolicy: .changedKeys,
+                atomically: true
+            )
+        }
         try ICloudCloudKitMVPResultValidator.assertSaved(recordID: expectedID, in: saveResults)
         guard let entry = Self.decode(record) else {
             throw CloudFileError.unsupportedFileType(candidate.fileName)
@@ -450,14 +468,16 @@ public final class CloudKitCloudFileManager: CloudFileManaging, @unchecked Senda
     }
 
     public func delete(_ entry: CloudFileEntry) async throws {
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         let recordID = CKRecord.ID(recordName: entry.recordName)
-        let (_, deleteResults) = try await database.modifyRecords(
-            saving: [],
-            deleting: [recordID],
-            savePolicy: .changedKeys,
-            atomically: true
-        )
+        let (_, deleteResults) = try await CloudKitRetryPolicy.retry {
+            try await database.modifyRecords(
+                saving: [],
+                deleting: [recordID],
+                savePolicy: .changedKeys,
+                atomically: true
+            )
+        }
         do {
             try ICloudCloudKitMVPResultValidator.assertDeleted(recordID: recordID, in: deleteResults)
         } catch {
@@ -470,8 +490,10 @@ public final class CloudKitCloudFileManager: CloudFileManaging, @unchecked Senda
     }
 
     public func download(_ entry: CloudFileEntry, to directory: URL) async throws -> URL {
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
-        let record = try await database.record(for: CKRecord.ID(recordName: entry.recordName))
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
+        let record = try await CloudKitRetryPolicy.retry {
+            try await database.record(for: CKRecord.ID(recordName: entry.recordName))
+        }
         guard let asset = record[CloudFileSchema.Field.asset] as? CKAsset,
               let source = asset.fileURL else {
             throw CloudFileError.missingAsset
@@ -489,7 +511,9 @@ public final class CloudKitCloudFileManager: CloudFileManaging, @unchecked Senda
         let predicate = NSPredicate(format: "%K == %@", CloudFileSchema.Field.sha256Hex, sha256Hex)
         let query = CKQuery(recordType: CloudFileSchema.recordType, predicate: predicate)
         do {
-            let page = try await database.records(matching: query, resultsLimit: 1)
+            let page = try await CloudKitRetryPolicy.retry {
+                try await database.records(matching: query, resultsLimit: 1)
+            }
             return page.matchResults.contains { _, result in
                 if case .success = result { return true }
                 return false
@@ -507,11 +531,18 @@ public final class CloudKitCloudFileManager: CloudFileManaging, @unchecked Senda
         var collected: [CKRecord] = []
         let query = CKQuery(recordType: CloudFileSchema.recordType, predicate: NSPredicate(format: "TRUEPREDICATE"))
         do {
-            let firstPage = try await database.records(matching: query, resultsLimit: 200)
+            let firstPage = try await CloudKitRetryPolicy.retry {
+                try await database.records(matching: query, resultsLimit: 200)
+            }
             collected.append(contentsOf: try records(from: firstPage.matchResults))
             var cursor = firstPage.queryCursor
             while let next = cursor {
-                let page = try await database.records(continuingMatchFrom: next, resultsLimit: 200)
+                // Cursor-Pagination ist read-only (kein Side-Effect am
+                // Server, kein doppeltes Append da jeder Retry den
+                // fehlgeschlagenen Call ersetzt) → Retry zulässig.
+                let page = try await CloudKitRetryPolicy.retry {
+                    try await database.records(continuingMatchFrom: next, resultsLimit: 200)
+                }
                 collected.append(contentsOf: try records(from: page.matchResults))
                 cursor = page.queryCursor
             }

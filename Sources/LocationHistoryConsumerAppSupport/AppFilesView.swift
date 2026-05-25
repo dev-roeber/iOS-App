@@ -27,6 +27,11 @@ public struct AppFilesView: View {
     @State private var pendingDelete: LocalFileEntry?
     @State private var pendingCloudDelete: CloudFileEntry?
     @State private var selectedSegment: AppFilesSegment = .local
+    /// Handle für den initialen Refresh-Task. Beim Disappear cancellt,
+    /// damit das ViewModel keinen Disk-Scan mehr fortführt, wenn der User
+    /// den Tab bereits verlassen hat (vermeidet überflüssige I/O und
+    /// Race-Conditions auf den State).
+    @State private var initialRefreshTask: Task<Void, Never>?
 
     /// Picker-Trigger-Closure. Parent (`AppContentSplitView`) hostet den
     /// `.fileImporter` selbst — verschachtelte fileImporter in
@@ -85,10 +90,19 @@ public struct AppFilesView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
         }
-        .task {
-            if viewModel.snapshots.isEmpty {
+        .onAppear {
+            // Disk-Scan nur, wenn noch keine Daten vorliegen. Task-Handle
+            // hängt am @State, damit ein Tab-Wechsel den Scan abbrechen
+            // kann (siehe `.onDisappear`). Ersatz für das vorherige
+            // `.task { ... }`, das beim Disappear NICHT propagiert wurde.
+            guard initialRefreshTask == nil, viewModel.snapshots.isEmpty else { return }
+            initialRefreshTask = Task { @MainActor in
                 await viewModel.refresh()
             }
+        }
+        .onDisappear {
+            initialRefreshTask?.cancel()
+            initialRefreshTask = nil
         }
         // fileImporter wurde aus dieser View entfernt — siehe
         // AppContentSplitView. Verschachtelte fileImporter in Tab-

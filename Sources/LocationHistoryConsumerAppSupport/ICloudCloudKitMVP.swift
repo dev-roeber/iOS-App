@@ -1046,7 +1046,7 @@ public final class CloudKitICloudHealthCheckService: ICloudHealthChecking {
             Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
         }
     ) {
-        self.container = CKContainer(identifier: containerIdentifier)
+        self.container = CloudKitContainerProvider.shared(identifier: containerIdentifier)
         self.appBuildProvider = appBuildProvider
         self.status = .init()
     }
@@ -1287,7 +1287,7 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
     }
 
     public func upload(_ envelope: LiveTrackCloudBackupEnvelope) async throws {
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         let records = [Self.makeSummaryRecord(envelope.summary)]
             + envelope.pointBatches.map(Self.makePointBatchRecord)
         // Phase D.3 — explicitly assert every expected per-record save
@@ -1310,7 +1310,7 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
     }
 
     public func fetchOverview() async throws -> ICloudStorageOverview {
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         let summaries: [CKRecord]
         let batches: [CKRecord]
         do {
@@ -1357,7 +1357,7 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
     /// passende Summary werden ignoriert (vermeidet inkonsistente
     /// Restore-Items aus partiellem Upload).
     public func fetchAllEnvelopes() async throws -> [LiveTrackCloudBackupEnvelope] {
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         let summaries = try await Self.fetchAllRecords(
             ofType: LiveTrackCloudSchema.summaryRecordType,
             from: database
@@ -1482,7 +1482,7 @@ public struct CloudKitLiveTrackCloudBackupUploader: LiveTrackCloudBackupUploadin
     }
 
     public func deleteCloudData() async throws {
-        let database = CKContainer(identifier: containerIdentifier).privateCloudDatabase
+        let database = CloudKitContainerProvider.shared(identifier: containerIdentifier).privateCloudDatabase
         // Korrigiert nach Live-Diagnose 2026-05-25: `LH2GPXCloudHealthProbe`
         // ist im Production-Schema NICHT als „indexable" markiert
         // (recordName-QUERYABLE fehlt). Apple meldet das als

@@ -49,7 +49,7 @@ public final class CloudKitCloudSyncService: CloudSyncService {
         isEnabled: Bool = false
     ) {
         self.containerIdentifier = containerIdentifier
-        self.container = CKContainer(identifier: containerIdentifier)
+        self.container = CloudKitContainerProvider.shared(identifier: containerIdentifier)
         self.isEnabled = isEnabled
         self.status = CloudSyncStatus(
             accountStatus: isEnabled ? .couldNotDetermine : .disabled
