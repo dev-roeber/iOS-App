@@ -1,19 +1,37 @@
 #if canImport(SwiftUI)
 import SwiftUI
+#if canImport(UniformTypeIdentifiers)
+import UniformTypeIdentifiers
+#endif
 
-/// Prompt 1 — Datei-Tab UI.
-///
-/// Zeigt vier Buckets (Exporte/Importe/Favoriten/Caches) als
-/// einklappbare `LHCard`-Sektionen mit Dateigröße, Änderungsdatum und
-/// Lösch-Aktion. Filterleiste oben filtert über alle Buckets. Sichtbarer
-/// Action-State + Fehlermeldung verhindern das „Button-tot"-Problem,
-/// das Phase D.4 für die iCloud-Seite gelöst hat.
+private enum AppFilesSegment: String, CaseIterable, Identifiable {
+    case local
+    case cloud
+    case pending
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .local: return "Lokal"
+        case .cloud: return "iCloud"
+        case .pending: return "Wartend"
+        }
+    }
+}
+
 public struct AppFilesView: View {
+    @EnvironmentObject private var preferences: AppPreferences
     @StateObject private var viewModel: AppFilesViewModel
+    @StateObject private var cloudViewModel: AppCloudFileViewModel
     @State private var pendingDelete: LocalFileEntry?
+    @State private var pendingCloudDelete: CloudFileEntry?
+    @State private var selectedSegment: AppFilesSegment = .local
+    @State private var isChoosingCloudFile = false
 
-    public init(viewModel: AppFilesViewModel) {
+    public init(viewModel: AppFilesViewModel, cloudViewModel: AppCloudFileViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _cloudViewModel = StateObject(wrappedValue: cloudViewModel)
     }
 
     /// Convenience-Init für den Compact-Tab, der den Produktions-Scanner
@@ -25,20 +43,36 @@ public struct AppFilesView: View {
         } else {
             scanner = InMemoryLocalFileScanner(snapshots: [])
         }
+        let cloudManager: CloudFileManaging
+        #if canImport(CloudKit)
+        cloudManager = CloudKitCloudFileManager()
+        #else
+        cloudManager = NoopCloudFileManager()
+        #endif
         _viewModel = StateObject(wrappedValue: AppFilesViewModel(scanner: scanner))
+        _cloudViewModel = StateObject(wrappedValue: AppCloudFileViewModel(manager: cloudManager))
     }
 
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 titleHeader
+                statusCard
+                segmentPicker
                 actionBar
-                if let message = viewModel.actionMessage {
-                    actionMessageBanner(message, failed: viewModel.actionFailed)
+                if let message = mergedActionMessage {
+                    actionMessageBanner(message, failed: mergedActionFailed)
                 }
-                filterField
-                ForEach(LocalFileBucket.allCases, id: \.self) { bucket in
-                    bucketCard(bucket)
+                switch selectedSegment {
+                case .local:
+                    filterField
+                    ForEach(LocalFileBucket.allCases, id: \.self) { bucket in
+                        bucketCard(bucket)
+                    }
+                case .cloud:
+                    cloudCard
+                case .pending:
+                    pendingCard
                 }
             }
             .padding(.horizontal, 16)
@@ -49,6 +83,14 @@ public struct AppFilesView: View {
                 await viewModel.refresh()
             }
         }
+        #if canImport(UniformTypeIdentifiers)
+        .fileImporter(
+            isPresented: $isChoosingCloudFile,
+            allowedContentTypes: [.gpx, .kml, .zip],
+            allowsMultipleSelection: false,
+            onCompletion: handleCloudFileImport
+        )
+        #endif
         .alert("Datei löschen?", isPresented: deleteAlertBinding, presenting: pendingDelete) { entry in
             Button("Abbrechen", role: .cancel) {
                 pendingDelete = nil
@@ -61,6 +103,18 @@ public struct AppFilesView: View {
         } message: { entry in
             Text("„\(entry.fileName)“ wird unwiderruflich entfernt.")
         }
+        .alert("Cloud-Datei löschen?", isPresented: cloudDeleteAlertBinding, presenting: pendingCloudDelete) { entry in
+            Button("Abbrechen", role: .cancel) {
+                pendingCloudDelete = nil
+            }
+            Button("Datei löschen", role: .destructive) {
+                let target = entry
+                pendingCloudDelete = nil
+                Task { await cloudViewModel.delete(target) }
+            }
+        } message: { entry in
+            Text("„\(entry.fileName)“ wird aus iCloud gelöscht. Lokale Dateien bleiben erhalten.")
+        }
     }
 
     // MARK: - Sections
@@ -69,28 +123,74 @@ public struct AppFilesView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Dateien")
                 .font(.largeTitle).bold()
-            Text("Gesamtgröße: \(viewModel.totalSizeGerman)")
+            Text("Lokale Gesamtgröße: \(viewModel.totalSizeGerman)")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
 
+    private var statusCard: some View {
+        let summary = cloudViewModel.statusSummary(localCount: localCloudUploadableEntries.count)
+        return LHCard {
+            VStack(alignment: .leading, spacing: 10) {
+                LHSectionHeader("Status")
+                HStack {
+                    Label(summary.isCloudAvailable ? "iCloud erreichbar" : "iCloud nicht erreichbar",
+                          systemImage: summary.isCloudAvailable ? "icloud.fill" : "icloud.slash")
+                    .foregroundStyle(summary.isCloudAvailable ? .green : .orange)
+                    Spacer()
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Letzte Aktualisierung: \(summary.lastRefreshAt.map(modifiedString) ?? "Nie")")
+                    Text("Lokale Einträge: \(summary.localCount)")
+                    Text("Cloud-Einträge: \(summary.cloudCount)")
+                    Text("Wartende Sicherungen: \(summary.pendingCount)")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityIdentifier(AppAccessibilityID.Files.statusCard)
+    }
+
+    private var segmentPicker: some View {
+        Picker("Dateien", selection: $selectedSegment) {
+            ForEach(AppFilesSegment.allCases) { segment in
+                Text(segment.title).tag(segment)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier(AppAccessibilityID.Files.segmentedControl)
+    }
+
     private var actionBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             Button {
-                Task { await viewModel.refresh() }
+                Task {
+                    await viewModel.refresh()
+                    await cloudViewModel.refreshCloudFiles()
+                }
             } label: {
                 HStack(spacing: 6) {
-                    if viewModel.actionState == .scanning {
+                    if viewModel.actionState == .scanning || cloudViewModel.actionState == .refreshing {
                         ProgressView().controlSize(.small)
                     } else {
                         Image(systemName: "arrow.clockwise")
                     }
-                    Text(viewModel.actionState == .scanning ? "Aktualisiere…" : "Aktualisieren")
+                    Text(isRefreshing ? "Aktualisiere…" : "Aktualisieren")
                 }
             }
             .buttonStyle(.borderedProminent)
-            .disabled(viewModel.actionState != .idle)
+            .disabled(viewModel.actionState != .idle || cloudViewModel.actionState != .idle)
+            .accessibilityIdentifier(AppAccessibilityID.Files.refresh)
+            Button {
+                isChoosingCloudFile = true
+            } label: {
+                Label("Datei auswählen", systemImage: "doc.badge.plus")
+            }
+            .buttonStyle(.bordered)
+            .disabled(!canUseCloudFiles)
+            .accessibilityIdentifier(AppAccessibilityID.Files.chooseFile)
             Spacer()
         }
     }
@@ -172,6 +272,17 @@ public struct AppFilesView: View {
                 .foregroundStyle(.secondary)
             }
             Spacer()
+            if CloudFileKind.from(filename: entry.fileName) != nil {
+                Button {
+                    Task { await cloudViewModel.uploadLocalEntry(entry) }
+                } label: {
+                    Image(systemName: "icloud.and.arrow.up")
+                }
+                .buttonStyle(.borderless)
+                .disabled(!canUseCloudFiles || cloudViewModel.actionState != .idle)
+                .accessibilityLabel("Datei hochladen")
+                .accessibilityIdentifier(AppAccessibilityID.Files.upload)
+            }
             Button(role: .destructive) {
                 pendingDelete = entry
             } label: {
@@ -180,6 +291,89 @@ public struct AppFilesView: View {
             .buttonStyle(.borderless)
             .disabled(viewModel.actionState != .idle)
             .accessibilityLabel("Datei löschen")
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var cloudCard: some View {
+        LHCard {
+            VStack(alignment: .leading, spacing: 10) {
+                LHSectionHeader("iCloud")
+                Text("Cloud-Dateien werden nur nach Datei-Auswahl oder Upload-Button hochgeladen. Enthält möglicherweise Standortdaten.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Divider()
+                if cloudViewModel.cloudEntries.isEmpty {
+                    Text("Keine Cloud-Dateien geladen.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(cloudViewModel.cloudEntries) { entry in
+                        cloudEntryRow(entry)
+                    }
+                }
+            }
+        }
+    }
+
+    private var pendingCard: some View {
+        LHCard {
+            VStack(alignment: .leading, spacing: 10) {
+                LHSectionHeader("Wartend")
+                if cloudViewModel.pendingUploads.isEmpty {
+                    Text("Keine wartenden Sicherungen.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(cloudViewModel.pendingUploads, id: \.sha256Hex) { candidate in
+                        HStack {
+                            Image(systemName: "clock.arrow.circlepath")
+                            VStack(alignment: .leading) {
+                                Text(candidate.fileName)
+                                    .font(.subheadline)
+                                Text("\(candidate.kind.germanLabel) · \(LocalFileSizeFormatter.germanString(forBytes: candidate.sizeBytes))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func cloudEntryRow(_ entry: CloudFileEntry) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "doc.badge.ellipsis")
+                .frame(width: 24)
+                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.fileName)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text("\(entry.kind.germanLabel) · \(LocalFileSizeFormatter.germanString(forBytes: entry.sizeBytes))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                Task { await cloudViewModel.downloadPrepared(entry) }
+            } label: {
+                Image(systemName: "icloud.and.arrow.down")
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Datei herunterladen")
+            .accessibilityIdentifier(AppAccessibilityID.Files.download)
+            Button(role: .destructive) {
+                pendingCloudDelete = entry
+            } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Datei löschen")
+            .accessibilityIdentifier(AppAccessibilityID.Files.delete)
         }
         .padding(.vertical, 4)
     }
@@ -194,6 +388,50 @@ public struct AppFilesView: View {
             }
         )
     }
+
+    private var cloudDeleteAlertBinding: Binding<Bool> {
+        Binding(
+            get: { pendingCloudDelete != nil },
+            set: { isPresented in
+                if !isPresented { pendingCloudDelete = nil }
+            }
+        )
+    }
+
+    private var localCloudUploadableEntries: [LocalFileEntry] {
+        LocalFileBucket.allCases.flatMap { bucket in
+            viewModel.filteredEntries(for: bucket).filter { CloudFileKind.from(filename: $0.fileName) != nil }
+        }
+    }
+
+    private var canUseCloudFiles: Bool {
+        preferences.iCloudSyncEnabled && preferences.syncCloudFilesEnabled
+            && cloudViewModel.isCloudAvailable && cloudViewModel.actionState == .idle
+    }
+
+    private var isRefreshing: Bool {
+        viewModel.actionState == .scanning || cloudViewModel.actionState == .refreshing
+    }
+
+    private var mergedActionMessage: String? {
+        cloudViewModel.actionMessage ?? viewModel.actionMessage
+    }
+
+    private var mergedActionFailed: Bool {
+        cloudViewModel.actionMessage != nil ? cloudViewModel.actionFailed : viewModel.actionFailed
+    }
+
+    #if canImport(UniformTypeIdentifiers)
+    private func handleCloudFileImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            Task { await cloudViewModel.uploadPickedFile(at: url) }
+        case .failure:
+            break
+        }
+    }
+    #endif
 
     private func iconName(for kind: LocalFileKind) -> String {
         switch kind {

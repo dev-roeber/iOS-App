@@ -355,6 +355,26 @@ public struct AppICloudOptionsView: View {
                 .accessibilityIdentifier("options.icloud.pointBatches.toggle")
                 .accessibilityLabel(Text("LiveTrack-Routenpunkte. Sensible Standortdaten."))
 
+                Toggle(isOn: $preferences.syncCloudFilesEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "folder.badge.plus")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.orange)
+                                .accessibilityHidden(true)
+                            Text("Cloud-Dateien")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        Text("GPX-, KML- und ZIP-Dateien werden nur nach ausdrücklicher Datei-Auswahl hochgeladen. Enthält möglicherweise Standortdaten.")
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .disabled(!preferences.iCloudSyncEnabled)
+                .accessibilityIdentifier("options.icloud.cloudFiles.toggle")
+                .accessibilityLabel(Text("Cloud-Dateien. Enthält möglicherweise Standortdaten."))
+
                 Toggle(isOn: $preferences.syncAppSettingsEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("App-Einstellungen")

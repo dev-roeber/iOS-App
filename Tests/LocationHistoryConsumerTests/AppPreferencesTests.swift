@@ -58,6 +58,7 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.dynamicIslandCompactDisplay, .distance)
             XCTAssertTrue(preferences.widgetAutoUpdate)
             XCTAssertEqual(preferences.maximumRecordingGapSeconds, 300)
+            XCTAssertFalse(preferences.syncCloudFilesEnabled)
         }
     }
 

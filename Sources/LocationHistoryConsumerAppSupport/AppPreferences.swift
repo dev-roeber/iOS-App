@@ -276,6 +276,7 @@ public final class AppPreferences: ObservableObject {
         // conservative; no setter writes CloudKit records — pure preferences.
         static let syncLiveTrackMetadataEnabled = "app.preferences.syncLiveTrackMetadataEnabled"
         static let syncLiveTrackPointBatchesEnabled = "app.preferences.syncLiveTrackPointBatchesEnabled"
+        static let syncCloudFilesEnabled = "app.preferences.syncCloudFilesEnabled"
         static let syncAppSettingsEnabled = "app.preferences.syncAppSettingsEnabled"
         static let syncExportHintsEnabled = "app.preferences.syncExportHintsEnabled"
         static let automaticLiveTrackICloudBackupEnabled = "app.preferences.automaticLiveTrackICloudBackupEnabled"
@@ -430,6 +431,10 @@ public final class AppPreferences: ObservableObject {
 
     @Published public var syncLiveTrackPointBatchesEnabled: Bool {
         didSet { userDefaults.set(syncLiveTrackPointBatchesEnabled, forKey: Keys.syncLiveTrackPointBatchesEnabled) }
+    }
+
+    @Published public var syncCloudFilesEnabled: Bool {
+        didSet { userDefaults.set(syncCloudFilesEnabled, forKey: Keys.syncCloudFilesEnabled) }
     }
 
     @Published public var syncAppSettingsEnabled: Bool {
@@ -718,6 +723,7 @@ public final class AppPreferences: ObservableObject {
         self.preferCloudDriveExport = userDefaults.object(forKey: Keys.preferCloudDriveExport) as? Bool ?? false
         self.syncLiveTrackMetadataEnabled = userDefaults.object(forKey: Keys.syncLiveTrackMetadataEnabled) as? Bool ?? false
         self.syncLiveTrackPointBatchesEnabled = userDefaults.object(forKey: Keys.syncLiveTrackPointBatchesEnabled) as? Bool ?? false
+        self.syncCloudFilesEnabled = userDefaults.object(forKey: Keys.syncCloudFilesEnabled) as? Bool ?? false
         self.syncAppSettingsEnabled = userDefaults.object(forKey: Keys.syncAppSettingsEnabled) as? Bool ?? false
         self.syncExportHintsEnabled = userDefaults.object(forKey: Keys.syncExportHintsEnabled) as? Bool ?? false
         self.automaticLiveTrackICloudBackupEnabled = userDefaults.object(forKey: Keys.automaticLiveTrackICloudBackupEnabled) as? Bool ?? false
@@ -763,6 +769,7 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.preferCloudDriveExport)
         userDefaults.removeObject(forKey: Keys.syncLiveTrackMetadataEnabled)
         userDefaults.removeObject(forKey: Keys.syncLiveTrackPointBatchesEnabled)
+        userDefaults.removeObject(forKey: Keys.syncCloudFilesEnabled)
         userDefaults.removeObject(forKey: Keys.syncAppSettingsEnabled)
         userDefaults.removeObject(forKey: Keys.syncExportHintsEnabled)
         userDefaults.removeObject(forKey: Keys.automaticLiveTrackICloudBackupEnabled)
@@ -801,6 +808,7 @@ public final class AppPreferences: ObservableObject {
         preferCloudDriveExport = false
         syncLiveTrackMetadataEnabled = false
         syncLiveTrackPointBatchesEnabled = false
+        syncCloudFilesEnabled = false
         syncAppSettingsEnabled = false
         syncExportHintsEnabled = false
         automaticLiveTrackICloudBackupEnabled = false

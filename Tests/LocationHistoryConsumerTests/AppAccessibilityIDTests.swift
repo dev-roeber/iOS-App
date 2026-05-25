@@ -16,6 +16,7 @@ final class AppAccessibilityIDTests: XCTestCase {
         XCTAssertEqual(AppAccessibilityID.Tab.insights, "tab.insights")
         XCTAssertEqual(AppAccessibilityID.Tab.export,   "tab.export")
         XCTAssertEqual(AppAccessibilityID.Tab.live,     "tab.live")
+        XCTAssertEqual(AppAccessibilityID.Tab.files,    "tab.files")
     }
 
     func testTabIdentifiersAreUnique() {
@@ -25,6 +26,7 @@ final class AppAccessibilityIDTests: XCTestCase {
             AppAccessibilityID.Tab.insights,
             AppAccessibilityID.Tab.export,
             AppAccessibilityID.Tab.live,
+            AppAccessibilityID.Tab.files,
         ]
         XCTAssertEqual(Set(all).count, all.count, "Tab identifiers must be unique.")
     }
@@ -34,6 +36,30 @@ final class AppAccessibilityIDTests: XCTestCase {
         XCTAssertEqual(AppAccessibilityID.Map.heatmapRoot,       "map.heatmap.root")
         XCTAssertEqual(AppAccessibilityID.Map.exportPreviewRoot, "map.exportPreview.root")
         XCTAssertEqual(AppAccessibilityID.Map.dayDetailRoot,     "map.dayDetail.root")
+    }
+
+    func testFilesIdentifiersAreCanonicalAndUnique() {
+        let all = [
+            AppAccessibilityID.Files.filter,
+            AppAccessibilityID.Files.segmentedControl,
+            AppAccessibilityID.Files.refresh,
+            AppAccessibilityID.Files.chooseFile,
+            AppAccessibilityID.Files.upload,
+            AppAccessibilityID.Files.download,
+            AppAccessibilityID.Files.delete,
+            AppAccessibilityID.Files.statusCard,
+            AppAccessibilityID.Files.actionMessage,
+        ]
+        XCTAssertEqual(AppAccessibilityID.Files.filter, "files.filter")
+        XCTAssertEqual(AppAccessibilityID.Files.segmentedControl, "files.segmentedControl")
+        XCTAssertEqual(AppAccessibilityID.Files.refresh, "files.refresh")
+        XCTAssertEqual(AppAccessibilityID.Files.chooseFile, "files.chooseFile")
+        XCTAssertEqual(AppAccessibilityID.Files.upload, "files.upload")
+        XCTAssertEqual(AppAccessibilityID.Files.download, "files.download")
+        XCTAssertEqual(AppAccessibilityID.Files.delete, "files.delete")
+        XCTAssertEqual(AppAccessibilityID.Files.statusCard, "files.statusCard")
+        XCTAssertEqual(AppAccessibilityID.Files.actionMessage, "files.actionMessage")
+        XCTAssertEqual(Set(all).count, all.count)
     }
 
     func testMapIdentifiersAreUnique() {

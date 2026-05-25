@@ -42,6 +42,14 @@ public enum AppAccessibilityID {
 
     public enum Files {
         public static let filter = "files.filter"
+        public static let segmentedControl = "files.segmentedControl"
+        public static let refresh = "files.refresh"
+        public static let chooseFile = "files.chooseFile"
+        public static let upload = "files.upload"
+        public static let download = "files.download"
+        public static let delete = "files.delete"
+        public static let statusCard = "files.statusCard"
+        public static let actionMessage = "files.actionMessage"
     }
 
     // MARK: - iCloud options

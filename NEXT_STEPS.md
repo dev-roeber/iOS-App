@@ -1,5 +1,18 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Prompt 3) — CKAsset GPX/KML/ZIP Cloud-Datei-Sync via `LH2GPXCloudFile` (Branch `main`, HEAD `889a01e` → folgt)
+
+> **Prompt 3 von 3 — Session A abgeschlossen.** Neuer privater CloudKit-RecordType `LH2GPXCloudFile` mit `CKAsset` für GPX/KML/ZIP. SHA-256-Dedupe über streaming-Hash + Predicate-Query. Upload nur durch ausdrückliche Nutzeraktion (fileImporter oder Per-Eintrag-Button im Dateien-Tab). 102 Tests grün.
+>
+> **Externe Pflichtschritte vor TestFlight-Test:**
+> 1. CloudKit Dashboard: `LH2GPXCloudFile`-Schema in Development entstehen lassen (ersten Upload triggern), dann Schema → Production deployen.
+> 2. `sha256Hex` als `QUERYABLE` markieren (sonst Dedupe-Query schlägt fehl).
+> 3. `codesign -d --entitlements :- LH2GPXWrapper.app` gegen installierten Build verifizieren.
+>
+> **Nächste sinnvolle Phase:** vollständiger Restore-Pfad für Cloud-Dateien (Download → lokaler Documents-Ordner oder direkter Re-Import). Aktuell ist `downloadPrepared(_:)` ein UI-Stub mit klarer Meldung.
+
+---
+
 ## Stand 2026-05-25 (Prompt 2) — LiveTrack Upload/Restore via bestehende CloudKit-Records (Branch `main`, HEAD `ccd4ef4` → folgt)
 
 > **Prompt 2 von 3.** Bestehender LiveTrack-CloudKit-MVP kann jetzt manuell den neuesten lokalen LiveTrack hochladen und Cloud-LiveTracks aus `LH2GPXLiveTrackSummary` + `LH2GPXLiveTrackPointBatch` paginiert laden/wiederherstellen. Keine neuen CloudKit-RecordTypes, kein CKAsset, kein allgemeiner Datei-Sync.

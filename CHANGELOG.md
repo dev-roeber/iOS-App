@@ -1,5 +1,51 @@
 # CHANGELOG
 
+## 2026-05-25 — Prompt 3: CKAsset GPX/KML/ZIP Cloud-Datei-Sync via `LH2GPXCloudFile` (Branch `main`, HEAD `889a01e` → folgt)
+
+> **Dritter und letzter Prompt der Session.** Neuer privater CloudKit-RecordType `LH2GPXCloudFile` mit `CKAsset`-Feld für GPX/KML/ZIP-Dateien. SHA-256-Dedupe über streaming `FileHandle.read` (Foundation-only, RAM-safe für große ZIPs). Datei-Upload nur durch ausdrückliche Nutzeraktion (`fileImporter` oder „Hochladen"-Button neben lokaler Datei). **Production-Schema-Promotion im CloudKit Dashboard bleibt als manueller Pflichtschritt offen.**
+
+### Neue Dateien
+| Datei | Zweck |
+|---|---|
+| `AppCloudFileManagement.swift` | `CloudFileKind` (gpx/kml/zip), `CloudFileEntry`, `CloudFileUploadCandidate`, `CloudFileSchema` (RecordType + Field-Konstanten), `CloudFileManaging`-Protokoll, `InMemoryCloudFileManager` für Tests, `CloudKitCloudFileManager` (private DB, `CKAsset`, `modifyRecords` mit per-record Validierung, SHA-Predicate-Dedupe-Query, paginiertes `fetchAllRecords`, `download` via `record(for:)`), `StreamingSHA256` (Foundation-only Linux-testbar) |
+| `AppCloudFileViewModel.swift` | `@MainActor AppCloudFileViewModel`, `CloudFilesActionState`, `refreshCloudFiles()`, `uploadPickedFile(at:)` (mit security-scoped Resource), `uploadLocalEntry(_:)`, `delete(_:)`, `downloadPrepared(_:)` (UI-Stub, vollständiger Restore folgt separat), `statusSummary(localCount:)` |
+| `Tests/.../CloudFileManagementTests.swift` | 9 Tests: Kind-Mapping, Schema-Konstanten, SHA-256-Stabilität, Candidate-Factory, SHA-Dedupe (nicht Filename), VM-Upload-Gate, Success/Duplicate-Pfad, Download-Prepared-Only |
+
+### Geänderte Dateien
+| Datei | Diff |
+|---|---|
+| `AppFilesView.swift` | Drei-Segment-Picker („Lokal"/„iCloud"/„Wartend"), Status-Card (iCloud erreichbar + letzte Aktualisierung + Zähler), `fileImporter` mit `[.gpx, .kml, .zip]`, „Datei auswählen"-Button, Pro-Eintrag Upload-Icon für lokale Cloud-fähige Dateien, Cloud-Datei-Lösch-Alert |
+| `AppICloudOptionsView.swift` | Neuer „Cloud-Dateien"-Toggle in `iCloudBackupSelectionCard` mit Warnhinweis „enthält möglicherweise Standortdaten"; default AUS und gated auf `iCloudSyncEnabled` |
+| `AppPreferences.swift` | `syncCloudFilesEnabled` Pref (default `false`); Keys + reset-Pfad |
+| `AppAccessibilityID.swift` | Files-IDs erweitert (`segmentedControl`, `refresh`, `chooseFile`, `upload`, `download`, `delete`, `statusCard`, `actionMessage`) |
+| `AppLanguageSupport.swift` + `Localizable.xcstrings` | 11 neue DE/EN-Keys für Cloud-Datei-Strings |
+| `AppPreferencesTests.swift` / `AppAccessibilityIDTests.swift` | Neue Defaults + IDs verifiziert |
+
+### Verifikation
+- ✅ `swift build` 0E/0W
+- ✅ `swift test --filter CloudFileManagement` — 9/0
+- ✅ `swift test --filter FileManagement` — 19/0
+- ✅ `swift test --filter ICloud` — 46/0
+- ✅ `swift test --filter UIWiring` — 63/0
+- ✅ `swift test --filter AppAccessibilityID` — 11/0
+- ✅ `swift test --filter AppPreferences` — gesamt 102 Tests grün
+- ✅ `xcodebuild` Generic iOS — BUILD SUCCEEDED *(folgt)*
+- ✅ `xcodebuild` iPhone 16 Simulator — BUILD SUCCEEDED *(folgt)*
+
+### Externe Pflichtschritte vor TestFlight
+1. **CloudKit Dashboard:** `LH2GPXCloudFile` RecordType in Development einmal erzeugen lassen (App startet Upload), dann Schema → Production deployen. Ohne diesen Schritt wirft Production `CKError.invalidArguments` (Code 12, siehe Phase D.3.1).
+2. **`sha256Hex`-Field als `QUERYABLE` markieren**, sonst schlägt die Dedupe-Query fehl.
+3. **`asset`-Field als `ASSET` registriert** — passiert automatisch beim ersten Upload im Development-Environment.
+
+### Bleibt bewusst ausgeschlossen
+- Keine automatische Sicherung von Google-History-Importen oder Tracks.
+- Kein vollständiger Multi-Device-Sync verifiziert (kein Gerätetest in diesem Prompt).
+- Download nur als UI-Vorbereitung; vollständiger Restore-Pfad (Datei aus Cloud → lokaler Datei oder Import-Pipeline) wird in einer Folgephase implementiert.
+- Kein `CKSubscription` für Push-Updates.
+- Kein Public/shared Database.
+
+---
+
 ## 2026-05-25 — Prompt 2: LiveTrack Upload/Restore via bestehende CloudKit-Records (Branch `main`, HEAD `ccd4ef4` → folgt)
 
 > **Zweiter von drei Prompts.** Bestehender CloudKit-MVP wurde um user-ausgeloesten LiveTrack-Upload und einen Restore-Lesepfad erweitert. Es werden ausschliesslich die vorhandenen RecordTypes `LH2GPXLiveTrackSummary` und `LH2GPXLiveTrackPointBatch` genutzt. **Kein neuer RecordType, kein CKAsset, kein GPX/KML/ZIP-Datei-Sync.**
