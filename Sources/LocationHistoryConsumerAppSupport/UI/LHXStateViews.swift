@@ -16,6 +16,7 @@ public struct LHXEmptyState: View {
     public let message: String?
     public let primaryActionTitle: String?
     public let primaryAction: (() -> Void)?
+    public let primaryActionAccessibilityIdentifier: String?
     public let accessibilityIdentifier: String?
 
     public init(
@@ -24,6 +25,7 @@ public struct LHXEmptyState: View {
         message: String? = nil,
         primaryActionTitle: String? = nil,
         primaryAction: (() -> Void)? = nil,
+        primaryActionAccessibilityIdentifier: String? = nil,
         accessibilityIdentifier: String? = nil
     ) {
         self.systemImage = systemImage
@@ -31,6 +33,7 @@ public struct LHXEmptyState: View {
         self.message = message
         self.primaryActionTitle = primaryActionTitle
         self.primaryAction = primaryAction
+        self.primaryActionAccessibilityIdentifier = primaryActionAccessibilityIdentifier
         self.accessibilityIdentifier = accessibilityIdentifier
     }
 
@@ -60,6 +63,7 @@ public struct LHXEmptyState: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(LH2GPXTheme.primaryBlue)
+                .modifier(OptionalAccessibilityIdentifierModifier(identifier: primaryActionAccessibilityIdentifier))
             }
         }
         .padding(24)

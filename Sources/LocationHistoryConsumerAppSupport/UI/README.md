@@ -1,6 +1,22 @@
 # LHX* — additive UI-Foundation
 
-Stand: 2026-05-22 · Branch `chore/full-app-redesign-foundation`.
+Stand: 2026-05-25 · `main`. Adoption-Trains laufen.
+
+## Aktive Adoption (Stand 2026-05-25, HEAD `31c75c0` + UI-Adoption I)
+
+| Komponente | Adoptiert in | Identifier |
+|---|---|---|
+| `LHXSyncStatusCard` | `AppICloudOptionsView` (F.4) | `options.icloud.statusCard` |
+| `LHXEmptyState` | `AppExportView.emptyState` (UI-Adoption I) | `export.emptyState` |
+| `LHXEmptyState` | `AppInsightsContentView.insightsFullEmptyState` (UI-Adoption I) | `insights.emptyState` + `insights.empty.resetFilter` |
+| `LHXInfoCard` | `AppICloudOptionsView` Privacy-Footer (UI-Adoption I) | `options.icloud.footer` |
+
+`LHXEmptyState` hat in UI-Adoption I einen optionalen
+`primaryActionAccessibilityIdentifier`-Parameter bekommen, damit
+adoptierende Views den inneren Primary-Action-Button mit einem eigenen
+UI-Test-Identifier versehen können (Default `nil`, kein API-Bruch).
+
+## Historischer Stand: 2026-05-22 · Branch `chore/full-app-redesign-foundation`.
 
 Dieses Verzeichnis enthält die **additive** Komponentenbasis aus
 `docs/APP_REDESIGN_INTERACTION_SPEC_2026-05-22.md` §4. Komponenten sind

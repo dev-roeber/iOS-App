@@ -1,5 +1,66 @@
 # CHANGELOG
 
+## 2026-05-25 — UI-Adoption I: LHX* in drei Kern-Screens (Branch `main`, HEAD `31c75c0` → folgt)
+
+> **Erste schrittweise LHX*-Adoption nach F.4 (`LHXSyncStatusCard` in Settings → iCloud). Drei sichere Inline-Implementierungen werden durch ihre LHX*-Pendants ersetzt, ohne Funktionalitäts-, Layout-, oder Accessibility-Änderung.** Bestehende `accessibilityIdentifier` bleiben erhalten; LHX-Komponenten bringen 44 pt Tap-Targets, `accessibilityElement(children: .contain)`-Gruppierung und Theme-Tokens mit. **Keine** neuen Features, **keine** Placeholder/„coming soon", **keine** Map-/Heatmap-/Timeline-Layouts berührt. Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku (vor Implementation)
+- SwiftUI `ViewBuilder` Limit 10 direkter Kinder, „expression too complex"-Falle bei tiefen Modifier-Chains → in benannte `@ViewBuilder var`-Subviews zerlegen (https://developer.apple.com/documentation/swiftui/viewbuilder)
+- `NavigationStack` + value-based `NavigationLink(value:)` + `.navigationDestination(for:)` als Best Practice (https://developer.apple.com/documentation/swiftui/navigationstack)
+- `accessibilityElement(children: .contain)` lässt Kinder einzeln fokussierbar — `.combine` bricht VoiceOver, wenn ein Kind interaktiv ist. `accessibilityIdentifier` ist UI-Test-only, nicht VoiceOver (https://developer.apple.com/documentation/swiftui/view-accessibility, https://developer.apple.com/documentation/swiftui/view/accessibilityelement(children:))
+- Dynamic Type: semantische Fonts skalieren automatisch; `.fixedSize(horizontal: false, vertical: true)` für Body-Text in HStacks (https://developer.apple.com/design/human-interface-guidelines/typography)
+- HIG Buttons: 44×44 pt min. Hit-Target, ein primary pro Screen-Kontext (https://developer.apple.com/design/human-interface-guidelines/buttons)
+- HIG Lists: Form für Settings, List für homogene Reihen, Custom VStack/Cards für heterogene Dashboard-Inhalte (https://developer.apple.com/design/human-interface-guidelines/lists-and-tables)
+- HIG Layout: `safeAreaInset`, `scrollContentBackground` (https://developer.apple.com/design/human-interface-guidelines/layout)
+- HIG Status Communication: Empty/Error/Loading-States — Titel + 1-Satz-Beschreibung + optional 1 primary CTA + SF Symbol; `ContentUnavailableView` (iOS 17) als System-Standard. Loading > 1 s → `ProgressView` (https://developer.apple.com/design/human-interface-guidelines/loading)
+
+### Adoptierte Screens/Abschnitte
+| Screen | Abschnitt | Vorher | Nachher | Identifier-Status |
+|---|---|---|---|---|
+| `AppExportView` | `emptyState` (nichts zu exportieren) | Inline `VStack` mit `Image(.system(size: 48))` + 2 `Text` + `selectionFallbackActions` | `LHXEmptyState(systemImage: …, title: …, message: …, accessibilityIdentifier: "export.emptyState")` + erhaltener `selectionFallbackActions` HStack | **Neu** `export.emptyState` (vorher kein Identifier), interne CTAs `export.days.selectAll.cta` / `export.liveTracks.selectAll.cta` unverändert |
+| `AppInsightsContentView` | `insightsFullEmptyState` (keine Insights / Filter aktiv) | Inline `VStack` mit `Image(.system(size: 36))` + 2 `Text` + bedingter `Button` „Reset Filter" | `LHXEmptyState(primaryActionTitle: t("Reset Filter") if active, primaryAction: reset, primaryActionAccessibilityIdentifier: "insights.empty.resetFilter", accessibilityIdentifier: "insights.emptyState")` | **Erhalten**: `insights.emptyState` + `insights.empty.resetFilter` (via neuem `primaryActionAccessibilityIdentifier`-Parameter) |
+| `AppICloudOptionsView` | `privacyFooterText` (Datenschutz-Hinweis am Card-Ende) | Plain `Text(…).font(.caption)` mit `lock`-freier Optik | `LHXInfoCard(kind: .info, title: t("Privacy"), message: privacyFooterText, systemImage: "lock.shield", accessibilityIdentifier: "options.icloud.footer")` | **Erhalten**: `options.icloud.footer` |
+
+### Additive Komponenten-Erweiterung
+- `LHXEmptyState` bekommt einen optionalen `primaryActionAccessibilityIdentifier`-Parameter (Default `nil`), damit der innere Primary-Action-Button einen eigenen UI-Test-Identifier tragen kann. **Kein** API-Bruch — bestehende Aufrufer ohne den Parameter funktionieren weiter (Default-Argument).
+
+### Keine toten UI-Aktionen
+- ✅ Alle Buttons feuern denselben Closure wie vorher (`selectAll(from:)`, `rangeFilter = .default`, `preferences.iCloudSyncEnabled.toggle()` — alle unverändert).
+- ✅ Keine neuen „Coming soon"/„Not implemented"-Labels.
+- ✅ Keine entfernten Features.
+
+### Erhaltene Accessibility-Identifier
+- `export.days.selectAll.cta`, `export.liveTracks.selectAll.cta` (in `selectionFallbackActions`/`selectionStartActions`, unverändert)
+- `insights.emptyState`, `insights.empty.resetFilter` (via neuen `primaryActionAccessibilityIdentifier`)
+- `options.icloud.footer`, `options.icloud.statusCard`, `options.icloud.refresh`, `options.icloud.title`, `options.icloud.driveExportToggle`, `options.icloud.driveExportFooter`
+- `export.target.card`, `export.target.iCloudDriveHint`, `export.target.iCloudDriveHint.off` (aus F.3, unverändert)
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../AppExportView.swift` | `emptyState` auf `LHXEmptyState` umgestellt |
+| `Sources/.../AppInsightsContentView.swift` | `insightsFullEmptyState` auf `LHXEmptyState` umgestellt |
+| `Sources/.../AppICloudOptionsView.swift` | Privacy-Footer auf `LHXInfoCard` umgestellt |
+| `Sources/.../UI/LHXStateViews.swift` | `LHXEmptyState` um `primaryActionAccessibilityIdentifier` erweitert (additiv, defaulted) |
+| Doku | CHANGELOG, NEXT_STEPS, ROADMAP, APPLE_VERIFICATION_CHECKLIST, APP_FEATURE_INVENTORY, UI/README |
+
+### Build-only Validierung (in diesem Train)
+- `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), 13,56 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+- Statische Sweeps ✅: 0 neue TODO/FIXME/placeholder/coming-soon/not-implemented in den geänderten Files (1 Treffer in `AppExportView:443` ist Bestandskommentar „hero placeholder is the canonical empty surface", nicht aus diesem Train).
+- Secret-Sweep ✅: 0 Treffer in den geänderten Files.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+- Keine `LHXErrorState`/`LHXLoadingState`/`LHXStatCard`/`LHXActionCard`-Adoption in diesem Train (Folge-Trains).
+- Keine Map-/Heatmap-/Timeline-Layout-Änderungen (Risiko-Vermeidung).
+
+### Nächster Schritt
+**Export UX build-only** — gezielte UX-Polish im Export-Flow (Format-Hinweise, Filter-Feedback, Selection-Summary-Klarheit) ohne neuen Datenpfad.
+
+---
+
 ## 2026-05-25 — Train F.3: user-initiierter iCloud-Drive-/Files-Export-Hint (Branch `main`, HEAD `fe2809b` → folgt)
 
 > **Reiner UX-Hint, kein neuer Datenpfad.** Der bestehende `fileExporter`-Flow bleibt unverändert; die System-Save-Sheet zeigt iCloud Drive bereits automatisch, sobald der User in iCloud Drive eingeloggt ist (Apple-Verhalten, keine App-Capability nötig). Train F.3 macht das im UI sichtbar: neuer Toggle in Settings → iCloud bindet an `AppPreferences.preferCloudDriveExport`, der Export-Screen zeigt bei aktiver Preference einen expliziten „Suggest iCloud Drive"-Hinweis im `exportTargetCard`. **Kein automatischer Upload, kein CloudKit-Sync, keine neue Entitlement, keine Historien-Synchronisation, kein Code-Pfad-Wechsel am `fileExporter`.**

@@ -428,29 +428,18 @@ struct AppInsightsContentView: View {
         let message = rangeFilter.isActive
             ? t("No days match the current filter. Adjust the range or reset it to see insights.")
             : t("This import contains no day entries, so there is nothing meaningful to analyze yet.")
-        VStack(spacing: 14) {
-            Image(systemName: "chart.line.text.clipboard")
-                .font(.system(size: 36))
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            Text(t("No Insights Yet"))
-                .font(.headline)
-            Text(message)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            if rangeFilter.isActive {
-                Button(t("Reset Filter")) {
-                    rangeFilter = HistoryDateRangeFilter.default
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(LH2GPXTheme.primaryBlue)
-                .accessibilityIdentifier("insights.empty.resetFilter")
-            }
-        }
+        LHXEmptyState(
+            systemImage: "chart.line.text.clipboard",
+            title: t("No Insights Yet"),
+            message: message,
+            primaryActionTitle: rangeFilter.isActive ? t("Reset Filter") : nil,
+            primaryAction: rangeFilter.isActive
+                ? { rangeFilter = HistoryDateRangeFilter.default }
+                : nil,
+            primaryActionAccessibilityIdentifier: rangeFilter.isActive ? "insights.empty.resetFilter" : nil,
+            accessibilityIdentifier: "insights.emptyState"
+        )
         .frame(maxWidth: .infinity, minHeight: 240)
-        .padding(24)
-        .accessibilityIdentifier("insights.emptyState")
     }
 
     @ViewBuilder

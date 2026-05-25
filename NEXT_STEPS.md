@@ -1,5 +1,26 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (UI-Adoption I) — LHX* in drei Kern-Screens (Branch `main`, HEAD `31c75c0` → folgt)
+
+> **Erste schrittweise LHX*-Adoption nach F.4.** Drei sichere Inline-Implementierungen ersetzt: `AppExportView.emptyState` → `LHXEmptyState`, `AppInsightsContentView.insightsFullEmptyState` → `LHXEmptyState` (mit erhaltenem `insights.empty.resetFilter`-Identifier über neuen Parameter), `AppICloudOptionsView` Privacy-Footer → `LHXInfoCard`. **Keine Funktionalitäts-, Layout- oder Accessibility-Änderung.** Bestehende Identifier erhalten. `LHXEmptyState` zusätzlich additiv um `primaryActionAccessibilityIdentifier` erweitert (Default `nil`, kein API-Bruch).
+
+**Geänderte Dateien:**
+- `Sources/LocationHistoryConsumerAppSupport/AppExportView.swift`
+- `Sources/LocationHistoryConsumerAppSupport/AppInsightsContentView.swift`
+- `Sources/LocationHistoryConsumerAppSupport/AppICloudOptionsView.swift`
+- `Sources/LocationHistoryConsumerAppSupport/UI/LHXStateViews.swift`
+
+**Build-only verifiziert:** `swift build` ✅ 0E/1W (pre-existing F.1-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅.
+
+**Nächste Trains (build-only bis Punkt 10):**
+1. **Export UX build-only** — Format-Hinweise, Filter-Feedback, Selection-Summary-Klarheit ohne neuen Datenpfad.
+2. **Weitere LHX*-Adoption** — `LHXErrorState`/`LHXLoadingState`/`LHXStatCard`/`LHXActionCard` schrittweise.
+3. **Import/Map-/Timeline-/Heatmap-/Insights-Polish-Trains** — UX-only.
+4. **Finaler Build-/Doku-Sync vor Testphase.**
+5. **Vollständige Tests:** `swift test`, `xcodebuild test`, UITests Sim+Device, TestFlight-Smoke, Xcode Cloud Workflow.
+
+---
+
 ## Stand 2026-05-25 (Train F.3) — user-initiierter iCloud-Drive-/Files-Export-Hint (Branch `main`, HEAD `fe2809b` → folgt)
 
 > **Reiner UX-Hint.** Bestehender `fileExporter`-Flow unverändert; System-Save-Sheet bietet iCloud Drive automatisch (Apple-Verhalten, keine App-Capability nötig). Neuer Toggle in Settings → iCloud bindet `AppPreferences.preferCloudDriveExport`; Export-Screen zeigt bei aktiver Preference einen sichtbaren „Suggest iCloud Drive"-Hinweis im `exportTargetCard`. **Kein automatischer Upload, kein CloudKit-Sync, keine neue Entitlement, kein Historien-Sync, kein `fileExporter`-Code-Pfad-Wechsel.** Default `false` — opt-in.

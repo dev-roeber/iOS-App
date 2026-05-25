@@ -1,6 +1,18 @@
 # APP Feature Inventory
 
-Last analysis: **2026-05-25** (Train F.3 build-only auf `main` HEAD
+Last analysis: **2026-05-25** (UI-Adoption I build-only auf `main` HEAD
+`31c75c0` + UI-Adoption-I-Diff). Drei sichere LHX*-Adoptionen:
+`AppExportView.emptyState` → `LHXEmptyState` (neuer Identifier
+`export.emptyState`), `AppInsightsContentView.insightsFullEmptyState`
+→ `LHXEmptyState` mit erhaltenem `insights.empty.resetFilter`-Identifier
+(über neuen `LHXEmptyState.primaryActionAccessibilityIdentifier`-Parameter),
+`AppICloudOptionsView` Privacy-Footer → `LHXInfoCard(kind: .info)` mit
+erhaltenem `options.icloud.footer`. **Keine Funktionalitäts-, Layout-,
+Accessibility-Änderung.** `LHXEmptyState` additiv um optionalen
+Parameter erweitert (Default `nil`, kein API-Bruch). Tests deferred bis
+Punkt 10.
+
+Voriger Stand: Train F.3 build-only auf `main` HEAD
 `fe2809b` + Train-F.3-Diff). User-initiierter iCloud-Drive-/Files-
 Export-Hint: neuer Toggle in `AppICloudOptionsView.iCloudDriveExportHintCard`
 bindet `AppPreferences.preferCloudDriveExport`; `AppExportView.exportTargetCard`

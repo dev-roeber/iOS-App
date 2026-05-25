@@ -1,5 +1,14 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `31c75c0` + UI-Adoption I → folgt — LHX* in drei Kern-Screens)
+
+- **UI-Adoption I umgesetzt (build-only):** `AppExportView.emptyState` → `LHXEmptyState`; `AppInsightsContentView.insightsFullEmptyState` → `LHXEmptyState` mit erhaltenem `insights.empty.resetFilter`-Identifier über neuen `primaryActionAccessibilityIdentifier`-Parameter; `AppICloudOptionsView` Privacy-Footer (vorher Plain `Text`) → `LHXInfoCard(kind: .info)` mit erhaltenem `options.icloud.footer`-Identifier.
+- **Additive Komponenten-Erweiterung:** `LHXEmptyState` bekommt optionalen `primaryActionAccessibilityIdentifier`-Parameter (Default `nil`, kein API-Bruch).
+- **Keine Funktionalitätsänderung:** Alle Buttons feuern denselben Closure wie vorher; keine entfernten Identifier; keine neuen Placeholder/„coming soon"; keine Map-/Heatmap-/Timeline-Layouts berührt.
+- **Build-only verifiziert (in diesem Train):** `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅. **Tests bewusst nicht ausgeführt** — deferred bis Punkt 10.
+- **Extern unverändert:** letzter extern grüner Xcode-Cloud-Build bleibt **190** auf `b25c27d`.
+- **Weiter offen:** Export-UX-Polish, weitere LHX*-Adoption (`LHXErrorState`/`LHXLoadingState`/`LHXStatCard`/`LHXActionCard`), Import/Map/Insights-Polish, finaler Sync vor Testphase, vollständige Tests.
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `fe2809b` + Train F.3 → folgt — user-initiierter iCloud-Drive-/Files-Export-Hint)
 
 - **Train F.3 umgesetzt (build-only):** Neue `iCloudDriveExportHintCard` in `AppICloudOptionsView` mit `Toggle($preferences.preferCloudDriveExport)`; `exportTargetCard` in `AppExportView` zeigt bei aktiver Preference einen `icloud.and.arrow.up`-Hinweis, sonst „Tip: enable Suggest iCloud Drive in Settings". `exportTargetDescription` ergänzt iCloud Drive als sichtbares Ziel im System-Sheet.

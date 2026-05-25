@@ -90,12 +90,13 @@ public struct AppICloudOptionsView: View {
 
                 iCloudDriveExportHintCard
 
-                Text(privacyFooterText)
-                    .font(.caption)
-                    .foregroundStyle(LH2GPXTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 4)
-                    .accessibilityIdentifier("options.icloud.footer")
+                LHXInfoCard(
+                    kind: .info,
+                    title: t("Privacy"),
+                    message: privacyFooterText,
+                    systemImage: "lock.shield",
+                    accessibilityIdentifier: "options.icloud.footer"
+                )
             }
         }
         .navigationTitle(t("iCloud"))

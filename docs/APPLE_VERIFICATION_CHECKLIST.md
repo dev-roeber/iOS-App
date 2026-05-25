@@ -1,5 +1,37 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (UI-Adoption I) — LHX* in drei Kern-Screens
+
+**HEAD:** `31c75c0` + UI-Adoption-I-Diff (`AppExportView.swift`, `AppInsightsContentView.swift`, `AppICloudOptionsView.swift`, `Sources/.../UI/LHXStateViews.swift`).
+
+### ✅ In diesem Pass build-only verifiziert
+- `AppExportView.emptyState`, `AppInsightsContentView.insightsFullEmptyState`, `AppICloudOptionsView` Privacy-Footer auf `LHXEmptyState` / `LHXInfoCard` umgestellt.
+- `LHXEmptyState` additiv um `primaryActionAccessibilityIdentifier`-Parameter erweitert (Default `nil`, kein API-Bruch).
+- Bestehende UI-Test-Identifier erhalten: `insights.emptyState`, `insights.empty.resetFilter`, `options.icloud.footer`, `export.days.selectAll.cta`, `export.liveTracks.selectAll.cta` etc.
+- **Neuer** Identifier `export.emptyState` (vorher kein Identifier vorhanden).
+- 44 pt Tap-Targets, `accessibilityElement(children: .contain)`-Gruppierung, Theme-Tokens kommen aus den LHX-Komponenten.
+- `swift build` ✅ 0E/1W (pre-existing F.1 Swift-6-Concurrency-Warning aus `CloudKitCloudSyncService.swift:48`), 13,56 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+
+### Geprüfte Apple-Doku (vor Implementation)
+SwiftUI `ViewBuilder` Best Practices („expression too complex"-Trap) · `NavigationStack` + value-based `NavigationLink` · `accessibilityElement(children: .contain)` vs. `.combine` (Combine bricht VoiceOver bei interaktiven Kindern) · Dynamic Type semantische Fonts + `.fixedSize(horizontal: false, vertical: true)` · HIG Buttons (44 pt, 1 primary pro Kontext) · HIG Lists (Form/List/Cards) · HIG Layout (`safeAreaInset`, `scrollContentBackground`) · HIG Status Communication (Empty/Error/Loading, `ContentUnavailableView` iOS 17). URLs siehe CHANGELOG-Block.
+
+### ⏸️ In diesem Pass bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller iPhone-Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+- Keine `LHXErrorState`/`LHXLoadingState`/`LHXStatCard`/`LHXActionCard`-Adoption.
+- Keine Map-/Heatmap-/Timeline-Layout-Änderungen.
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ CloudKit Records aktiv.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ iPad / Light Mode unterstützt.
+- ❌ Neuer Xcode-Cloud-Build / TestFlight-Build verfügbar — letzter extern grüner Stand bleibt **190** auf `b25c27d`.
+
+---
+
 ## Aktualisierung 2026-05-25 (Train F.3) — user-initiierter iCloud-Drive-/Files-Export-Hint
 
 **HEAD:** `fe2809b` + Train-F.3-Diff (`AppExportView.swift` + `AppICloudOptionsView.swift`).

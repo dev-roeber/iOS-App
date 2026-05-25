@@ -1320,20 +1320,16 @@ public struct AppExportView: View {
 
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "square.and.arrow.up.trianglebadge.exclamationmark")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            Text(t("Nothing to Export"))
-                .font(.headline)
-            Text(t("Import a location history file or save a live track first to enable export."))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+            LHXEmptyState(
+                systemImage: "square.and.arrow.up.trianglebadge.exclamationmark",
+                title: t("Nothing to Export"),
+                message: t("Import a location history file or save a live track first to enable export."),
+                accessibilityIdentifier: "export.emptyState"
+            )
             selectionFallbackActions
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(32)
+        .padding(.horizontal, 8)
     }
 
     // MARK: - Observers (file exporters, onChange, alerts)
