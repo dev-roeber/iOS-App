@@ -1,6 +1,15 @@
 # APP Feature Inventory
 
-Last analysis: **2026-05-25** (Import UX I build-only auf `main` HEAD
+Last analysis: **2026-05-25** (Map/Timeline/Heatmap UX I build-only auf
+`main` HEAD `574d347` + Map-UX-I-Diff). `AppHeatmapView` Overlays
+bekommen Identifier + VoiceOver-Labels (`heatmap.layerMenu`,
+`heatmap.computing`, `heatmap.statsBadge`); `AppDayDetailView`
+Route-Display-Picker bekommt `dayDetail.routeDisplay`. **Keine**
+Heatmap-Neuberechnung, **keine** Renderer-/Algorithmus-Änderung,
+**keine** MapKit-API-Migration, **keine** Permission-Änderung. Tests
+deferred bis Punkt 10.
+
+Voriger Stand: Import UX I build-only auf `main` HEAD
 `627a2df` + Import-UX-I-Diff). Home-Screen `emptyStateView` und
 Overview-Empty-Card bekommen additive UI-Test-Identifier, eine
 just-in-time Format-Zusatzzeile („GPX 1.1 and TCX 2.0 are also accepted

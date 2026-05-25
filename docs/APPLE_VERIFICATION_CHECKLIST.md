@@ -1,5 +1,37 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Map/Timeline/Heatmap UX I) — Layer/Stats/Computing/Route-Display Identifier
+
+**HEAD:** `574d347` + Map-UX-I-Diff (`AppHeatmapView.swift`, `AppDayDetailView.swift`).
+
+### ✅ In diesem Pass build-only verifiziert
+- `AppHeatmapView` Overlays: `MapLayerMenu`-Overlay bekommt `heatmap.layerMenu`-Identifier; `calculatingOverlay` bekommt `heatmap.computing` + `accessibilityLabel("Computing heatmap")`; `statsBadge` bekommt `heatmap.statsBadge` + neuer `statsAccessibilityLabel`-Computed-Property mit konsistenter VoiceOver-Phrase „<n> points, <n> day(s)".
+- `AppDayDetailView.dayHeroFilterPanel` Route-Display-Picker bekommt `dayDetail.routeDisplay`-Identifier.
+- Keine Renderer-/Algorithmus-Änderung: `AppHeatmapModel`/`HeatmapGridBuilder`/`HeatmapLOD`/`HeatmapPalette`/`HeatmapVisualStyle`/`AppHeatmapPathSampler` unverändert.
+- Bestehender `.onMapCameraChange(frequency: .onEnd)`-Pfad und `model.startPrecomputation(scale:)` in `.onAppear` unverändert.
+- Bestehende Identifier (`map.heatmap.root`, `dayDetail.map`, `dayDetail.stickyHeader`, `dayDetail.title`, `dayDetail.metric.*`, `localTimeline.dayDetail.map.*`, `overview.map.header`, `live.map.preview`, `insights.map.header`) **alle erhalten**.
+- `swift build` ✅ 0E/1W (pre-existing F.1 Swift-6-Concurrency-Warning in `CloudKitCloudSyncService.swift:48`), 17,74 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+
+### Geprüfte Apple-Doku (vor Implementation)
+MapKit for SwiftUI (iOS 17+) `Map` + `MapCameraPosition`; `MapCameraUpdateFrequency.onEnd` vs `.continuous`; `Annotation`/`Marker`/`MapPolyline`/`MapPolygon`/`MapCircle` Rebuild-Triggers; SwiftUI Gesten + `Map(selection:)`-Binding-Best-Practice; HIG „Maps" (Layer-Status sichtbar), „Controls" (Segmented 2–5, Menu >5, 44 pt Hit-Target), „Layout" (`safeAreaInset` vs `overlay(alignment:)`), „Feedback" (Selection klar markieren, `sensoryFeedback`); SwiftUI `@State`/`@Binding` Redraw-Semantik (Map-View und Layer-Toggles in separate Subviews). URLs siehe CHANGELOG-Block.
+
+### ⏸️ In diesem Pass bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller iPhone-Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+- Keine Änderung an Map-Selection/Map-Camera-Position-Binding-Pfaden, an Performance-Schutzschicht in `AppOverviewTracksMapView`, an `LHCollapsibleMapHeader`-State-Machine.
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ Automatischer Upload aus Import oder Export.
+- ❌ CloudKit Records aktiv.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ iPad / Light Mode unterstützt.
+- ❌ Neuer Xcode-Cloud-Build / TestFlight-Build verfügbar — letzter extern grüner Stand bleibt **190** auf `b25c27d`.
+
+---
+
 ## Aktualisierung 2026-05-25 (Import UX I) — Home-Screen-Accessibility + Format-Hinweis + Overview-Empty Privacy
 
 **HEAD:** `627a2df` + Import-UX-I-Diff (`wrapper/LH2GPXWrapper/ContentView.swift`, `Sources/.../AppContentSplitView.swift`).

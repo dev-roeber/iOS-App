@@ -273,6 +273,7 @@ public struct AppDayDetailView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .accessibilityIdentifier("dayDetail.routeDisplay")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

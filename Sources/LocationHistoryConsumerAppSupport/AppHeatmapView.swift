@@ -33,6 +33,7 @@ public struct AppHeatmapView: View {
                         fitToData: model.dataRegion == nil ? nil : fitToData
                     ))
                     .padding(12)
+                    .accessibilityIdentifier("heatmap.layerMenu")
                 }
             }
             .overlay(alignment: .bottom) {
@@ -125,6 +126,9 @@ public struct AppHeatmapView: View {
         .background(.thinMaterial, in: Capsule())
         .padding()
         .transition(.move(edge: .bottom).combined(with: .opacity))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("heatmap.computing")
+        .accessibilityLabel(t("Computing heatmap"))
     }
 
     // MARK: - Stats badge (bottom-leading info chip)
@@ -141,7 +145,17 @@ public struct AppHeatmapView: View {
                 .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .padding(.horizontal, 12)
                 .padding(.bottom, 12)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("heatmap.statsBadge")
+                .accessibilityLabel(statsAccessibilityLabel)
         }
+    }
+
+    private var statsAccessibilityLabel: String {
+        let s = model.stats
+        let pointsLabel = "\(formatCount(s.totalPoints)) \(t("points"))"
+        let daysLabel = "\(s.dayCount) " + (s.dayCount == 1 ? t("day") : t("days"))
+        return "\(pointsLabel), \(daysLabel)"
     }
 
     private var statsDescription: String {

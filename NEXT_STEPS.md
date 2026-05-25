@@ -1,5 +1,22 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Map/Timeline/Heatmap UX I) — Layer/Stats/Computing/Route-Display Identifier (Branch `main`, HEAD `574d347` → folgt)
+
+> **Reiner UX-Polish.** `AppHeatmapView` Overlays bekommen Identifier (`heatmap.layerMenu`, `heatmap.computing`, `heatmap.statsBadge`) + VoiceOver-Labels; `AppDayDetailView.dayHeroFilterPanel` Route-Display-Picker bekommt `dayDetail.routeDisplay`-Identifier. **Keine Heatmap-Neuberechnung, keine Renderer-/Algorithmus-Änderung, keine MapKit-API-Migration, keine Permission-Änderung.** Tests deferred bis Punkt 10.
+
+**Geänderte Dateien:**
+- `Sources/LocationHistoryConsumerAppSupport/AppHeatmapView.swift`
+- `Sources/LocationHistoryConsumerAppSupport/AppDayDetailView.swift`
+
+**Build-only verifiziert:** `swift build` ✅ 0E/1W (pre-existing F.1-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅.
+
+**Nächste Trains (build-only bis Punkt 10):**
+1. **Insights refactor** — `AppInsightsContentView` verkleinern, Subviews extrahieren, ohne Berechnungslogik-Änderung.
+2. **Finaler Build-/Doku-Sync vor Testphase.**
+3. **Vollständige Tests:** `swift test`, `xcodebuild test`, UITests Sim+Device, TestFlight-Smoke, Xcode Cloud Workflow.
+
+---
+
 ## Stand 2026-05-25 (Import UX I) — Home-Screen-Accessibility + Format-Hinweis + Overview-Empty Privacy (Branch `main`, HEAD `627a2df` → folgt)
 
 > **Reiner UX-Polish im Import-Flow.** Home-Screen (`wrapper/LH2GPXWrapper/ContentView.swift` `emptyStateView`) bekommt Identifier (`home.title`/`home.subtitle`/`home.subtitle.formats`/`home.openFile`/`home.loadDemo`/`home.clearError`), zusätzliche just-in-time Format-Footnote „GPX 1.1 and TCX 2.0 are also accepted (including inside .zip archives)." und Accessibility-Hints + 44 pt Hit-Targets auf CTA-Buttons. Overview-Empty-Card (`AppContentSplitView.overviewEmptyCallToAction`) bekommt `overview.empty.body`-Identifier und einen Privacy-Hinweis „Imported files stay on this device — nothing is uploaded automatically." (Identifier `overview.empty.privacyHint`). **Kein Parser-/Loader-Wechsel, keine neue `fileImporter`-Konfiguration, kein automatischer Upload, kein iCloud-Sync nach Import, keine Entitlement-/Privacy-Manifest-Änderung.** Tests deferred bis Punkt 10.

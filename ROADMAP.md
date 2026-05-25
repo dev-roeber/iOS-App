@@ -1,5 +1,14 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `574d347` + Map/Timeline/Heatmap UX I → folgt — Layer/Stats/Computing/Route-Display Identifier)
+
+- **Map/Timeline/Heatmap UX I umgesetzt (build-only):** `AppHeatmapView` Overlays bekommen `heatmap.layerMenu`/`heatmap.computing`/`heatmap.statsBadge`-Identifier + VoiceOver-Labels (`accessibilityLabel(t("Computing heatmap"))`, neuer `statsAccessibilityLabel`-Computed); `AppDayDetailView.dayHeroFilterPanel` Route-Display-Picker bekommt `dayDetail.routeDisplay`.
+- **Performance-Risiko Null:** Keine Änderung an `AppHeatmapModel`/`HeatmapGridBuilder`/`HeatmapLOD`/`HeatmapPalette`/`HeatmapVisualStyle`/`AppHeatmapPathSampler`; bestehender `.onMapCameraChange(frequency: .onEnd)`-Pfad unverändert; keine neuen `Task.detached`/MainActor-Hops.
+- **Keine neuen MapKit-/Permission-/iCloud-/Upload-Claims.** Alle vier neuen Identifier hängen an bereits funktionalen Overlays/Pickern — keine toten Controls.
+- **Build-only verifiziert (in diesem Train):** `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅. **Tests bewusst nicht ausgeführt** — deferred bis Punkt 10.
+- **Extern unverändert:** letzter extern grüner Xcode-Cloud-Build bleibt **190** auf `b25c27d`.
+- **Weiter offen:** Insights-Refactor, finaler Build-/Doku-Sync vor Testphase, vollständige Tests.
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `627a2df` + Import UX I → folgt — Home-Screen-Accessibility + Format-Hinweis + Overview-Empty Privacy)
 
 - **Import UX I umgesetzt (build-only):** Home-Screen (`wrapper/LH2GPXWrapper/ContentView.swift` `emptyStateView`) bekommt Identifier (`home.title`, `home.subtitle`, `home.subtitle.formats`, `home.openFile`, `home.loadDemo`, `home.clearError`), neue just-in-time Footnote „GPX 1.1 and TCX 2.0 are also accepted (including inside .zip archives)." und `accessibilityHint`+44 pt Hit-Targets auf CTA-Buttons. Overview-Empty-Card (`AppContentSplitView.overviewEmptyCallToAction`) bekommt `overview.empty.body`-Identifier + Privacy-Hinweis „Imported files stay on this device — nothing is uploaded automatically." (Identifier `overview.empty.privacyHint`, konsistent zu `export.selection.privacyHint` aus Export UX I).

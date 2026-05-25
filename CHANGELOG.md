@@ -1,5 +1,67 @@
 # CHANGELOG
 
+## 2026-05-25 — Map/Timeline/Heatmap UX I: Layer-Menu-/Stats-/Calculating-Overlay-Identifier + Route-Display-Picker-Identifier (Branch `main`, HEAD `574d347` → folgt)
+
+> **Reiner UX-Polish im bestehenden Map-/Heatmap-/Day-Detail-Flow.** Vier zusätzliche `accessibilityIdentifier`s + zwei VoiceOver-Label-Verbesserungen für die Heatmap-Overlays und den Day-Detail-Route-Picker. **Keine Performance-riskante Heatmap-Neuberechnung, keine Renderer-/Algorithmus-Änderung, keine MapKit-API-Migration, keine neue Capability/Permission.** Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku (vor Implementation)
+- MapKit for SwiftUI (iOS 17+) `Map(position:bounds:interactionModes:selection:scope:content:)` + `MapCameraPosition` (https://developer.apple.com/documentation/mapkit/map, https://developer.apple.com/documentation/mapkit/mapcameraposition)
+- `MapCameraUpdateFrequency.onEnd` vs `.continuous` — bestehender `.onEnd`-Pfad in `AppHeatmapView.onMapCameraChange` ist korrekt (https://developer.apple.com/documentation/mapkit/mapcameraupdatefrequency)
+- `Annotation`/`Marker`/`MapPolyline`/`MapPolygon`/`MapCircle` Rebuild-Triggers (stabile `id:`/`ForEach(id:)`) (https://developer.apple.com/documentation/mapkit/mapcontentbuilder)
+- SwiftUI `gesture(_:including:)`/`simultaneousGesture`/`highPriorityGesture`; bei Map-Selection besser `Map(selection:)`-Binding statt eigener `.onTapGesture` (https://developer.apple.com/documentation/swiftui/view/gesture(_:including:))
+- HIG „Maps" — Layer-Status sichtbar machen, Legende (https://developer.apple.com/design/human-interface-guidelines/maps)
+- HIG „Controls" — Segmented Picker 2–5 Segmente, Menu für >5 Optionen, 44×44 pt Hit-Target (https://developer.apple.com/design/human-interface-guidelines/segmented-controls)
+- HIG „Layout" — `safeAreaInset(edge:)` für persistente Bars, `overlay(alignment:)` für FAB-artige Buttons (bestehender `.overlay(alignment: .topTrailing)` in `AppHeatmapView` für `MapLayerMenu` ist HIG-konform) (https://developer.apple.com/documentation/swiftui/view/overlay(alignment:content:))
+- HIG „Feedback" — Selection klar markieren, Sofortaktionen mit `sensoryFeedback` statt Modal (https://developer.apple.com/design/human-interface-guidelines/feedback)
+- SwiftUI `@State`/`@Binding` Redraw-Semantik — Map-View und Layer-Toggles in separate Subviews, damit Toggle-Change nicht den Map-Content-Builder neu durchläuft (bestehende Architektur erfüllt das) (https://developer.apple.com/documentation/swiftui/state)
+
+### Map/Timeline/Heatmap-UX-Änderungen
+
+**`Sources/.../AppHeatmapView.swift`**
+1. **`MapLayerMenu` Overlay** (topTrailing): `accessibilityIdentifier("heatmap.layerMenu")` ergänzt — UI-Tests können das Menü gezielt ansprechen, ohne sich auf den `MapLayerMenu`-internen Label-String („Map layers") zu verlassen.
+2. **`calculatingOverlay`** (Bottom): `accessibilityElement(children: .combine)` + `accessibilityIdentifier("heatmap.computing")` + `accessibilityLabel(t("Computing heatmap"))`. VoiceOver liest jetzt eine konsistente Status-Phrase, statt nur das Caption-Symbol des ProgressViews zu beschreiben.
+3. **`statsBadge`** (BottomLeading): `accessibilityElement(children: .combine)` + `accessibilityIdentifier("heatmap.statsBadge")` + neuer `statsAccessibilityLabel`-Computed-Property, der die Punkt-/Tageszahlen in einer VoiceOver-freundlichen Phrase liefert („1234 points, 7 days") statt des datumsschweren Anzeige-Strings.
+
+**`Sources/.../AppDayDetailView.swift`**
+4. **`dayHeroFilterPanel` Route-Display-Picker**: `accessibilityIdentifier("dayDetail.routeDisplay")` ergänzt. Segmented Picker für `AppDayPathDisplayMode` (`original` vs `mapMatched/Simplified`) ist damit UI-Test-fähig.
+
+### Performance-Risiko-Einschätzung
+- ✅ **Null.** Keine algorithmische Änderung an `AppHeatmapModel`/`HeatmapGridBuilder`/`HeatmapLOD`/`HeatmapPalette`/`HeatmapVisualStyle`/`AppHeatmapPathSampler`.
+- ✅ Bestehender `model.startPrecomputation(scale:)`-Aufruf in `.onAppear` unverändert; bestehender `.onMapCameraChange(frequency: .onEnd)` unverändert.
+- ✅ Keine neuen `Task.detached`, keine neuen MainActor-Hops, keine neuen Overlay-Subviews. Nur Modifier-Stapel-Erweiterungen.
+- ✅ `accessibilityElement(children: .combine)` ist read-only — beeinflusst nicht den View-Diff.
+- ✅ Bestehender `AppHeatmapModel.visibleCells.count`-`animation(.easeInOut(duration: 0.25))`-Trigger unverändert.
+- ✅ Day-Detail-Map: `LHCollapsibleMapHeader`-State-Machine, `AppDayMapView`-Layer-Menu, Performance-Schutzschicht in `AppOverviewTracksMapView` alle unberührt.
+
+### Keine neuen Claims
+- ✅ Keine neue Location-Permission, keine neue MapKit-Capability.
+- ✅ Keine iCloud-/Live-Upload-Aussage.
+- ✅ Keine toten Controls — alle drei neuen Identifier hängen an bereits funktionalen Overlays/Pickern.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../AppHeatmapView.swift` | 3 Accessibility-Erweiterungen (LayerMenu/Computing/Stats) + 1 neuer Computed-Property `statsAccessibilityLabel` |
+| `Sources/.../AppDayDetailView.swift` | 1 Picker-Identifier |
+| Doku | CHANGELOG, NEXT_STEPS, ROADMAP, APPLE_VERIFICATION_CHECKLIST, APP_FEATURE_INVENTORY |
+
+### Neue UI-Test-Identifier
+`heatmap.layerMenu`, `heatmap.computing`, `heatmap.statsBadge`, `dayDetail.routeDisplay`. Alle bestehenden Identifier (`map.heatmap.root`, `dayDetail.map`, `dayDetail.stickyHeader`, `dayDetail.title`, `dayDetail.metric.*`, `localTimeline.dayDetail.map.*`, `overview.map.header`, `live.map.preview`, `insights.map.header`) **erhalten**.
+
+### Build-only Validierung (in diesem Train)
+- `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), 17,74 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+- Statische Sweeps ✅: 0 neue `Task.detached`/`onAppear.*rebuild`-Treffer in den geänderten Files (1 Treffer auf `HeatmapGridBuilder.polygonCoordinates` ist Bestands-Helper-Aufruf, kein Rebuild-Trigger aus diesem Train); 0 Secret-/Placeholder-Treffer.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Insights refactor build-only** — `AppInsightsContentView` verkleinern + Subviews extrahieren ohne Berechnungslogik-Änderung.
+
+---
+
 ## 2026-05-25 — Import UX I: Home-Screen-Accessibility + Format-Just-in-Time-Hinweis + Overview-Empty Privacy-Hinweis (Branch `main`, HEAD `627a2df` → folgt)
 
 > **Reiner UX-Polish im bestehenden Import-Flow.** Zwei Files (`wrapper/LH2GPXWrapper/ContentView.swift` Home-Screen + `Sources/.../AppContentSplitView.swift` Overview-Empty-Card) bekommen additive Accessibility-Identifier, eine just-in-time-Zusatzzeile zu unterstützten Formaten und einen Privacy-Hinweis in derselben Sprache wie F.3 + Export UX I. **Kein Parser-/Loader-Wechsel, keine neue `fileImporter`-Konfiguration, keine automatische iCloud-Synchronisation nach Import, kein neuer Datenpfad, keine Entitlement- oder Privacy-Manifest-Änderung.** Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.
