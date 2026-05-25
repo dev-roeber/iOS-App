@@ -1,5 +1,60 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.14: App Store / Privacy / Review Readiness (Branch `main`, HEAD `c9f06b2` → folgt)
+
+> **Build-only Review-Readiness-Audit.** Vollständiger Abgleich PrivacyInfo.xcprivacy ↔ Code-Realität, iCloud-Capability-Status (F.1–F.4), Info.plist Purpose Strings, Reviewer-Notes-Vorschlag, DSA/Encryption-Disclosure-Hinweis, offene Risiken. Neuer Detail-Bericht: [`docs/APP_REVIEW_READINESS_2026-05-25.md`](docs/APP_REVIEW_READINESS_2026-05-25.md). **Keine** Code-Änderung, **keine** Submission, **keine** ASC-Mutation. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- App Store Review Guidelines (Privacy §5.1, Data Collection §5.1.1, Data Use §5.1.2, Location).
+- App Privacy Details.
+- Privacy Manifest Files + Required Reason APIs (`CA92.1`, `0A2A.1`).
+- CloudKit/iCloud privacy (Private Database, kein Public/Shared für Standortdaten).
+
+### Privacy-Manifest-Ergebnis
+- `plutil -lint wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` ✅ `OK`.
+- Alle 5 deklarierten Einträge (Tracking false, TrackingDomains leer, PreciseLocation Linked=false/Tracking=false/AppFunctionality, UserDefaults `CA92.1`, FileTimestamp `0A2A.1`) ↔ Code 1:1 konsistent.
+- Keine fehlende Reason-Kategorie; keine zusätzlich nötigen Reasons (DiskSpace/SystemBootTime/ActiveKeyboards alle nicht genutzt).
+
+### Review-Readiness-Ergebnis
+- iCloud-Capability-Status (F.1–F.4): Entitlements + Container registriert, AccountStatus-Adapter aktiv; **kein** echter Sync, **keine** Records, **keine** History-Sync, **keine** Public/Shared DB.
+- Info.plist Purpose Strings konkret + just-in-time.
+- Reviewer-Notes-Vorschlag in §5 des neuen Reports — bewahrt vorherige Guideline-3.2-Resolution.
+
+### Offene App-Store-Risiken
+| Risiko | Bewertung |
+|---|---|
+| Vollständige Tests (Punkt 10) stehen aus | mittel |
+| iPad-Layout nicht freigegeben (bewusst, `TARGETED_DEVICE_FAMILY = 1`) | gering |
+| Light Mode nicht freigegeben (bewusst) | gering |
+| Kein neuer Cloud-/TestFlight-Build > 190 | mittel (Punkt 10 erzeugt nächsten) |
+| App Review für 1.0.x ≥190 noch nicht durchlaufen | mittel |
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `docs/APP_REVIEW_READINESS_2026-05-25.md` | **NEU** — Privacy-Manifest-Audit + Review-Readiness + Reviewer-Notes-Vorschlag |
+| `CHANGELOG.md`, `ROADMAP.md` | Doku-Sync |
+
+### Build-only Validierung
+- `swift build` ✅ (0,53 s Cache-Hit, 0 Warnings).
+- `xcodebuild` Sim ✅ `BUILD SUCCEEDED`.
+- `xcodebuild` generic iOS ✅ `BUILD SUCCEEDED`.
+- `plutil -lint` PrivacyInfo ✅.
+
+### Bewusst NICHT verändert
+- Keine Code-Änderung.
+- Keine ASC-Mutation, keine Submission.
+- Keine Capability-/Entitlement-Erweiterung.
+- Keine Purpose-String-Änderung (bestehende sind konkret und just-in-time).
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud, App Store Submission — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.15 — Final Build-only Consolidation** (build-only Repo-Truth-Abgleich + finaler Sync-Report).
+
+---
+
 ## 2026-05-25 — Train 8.13: Widget / Dynamic-Island / Live-Status Konsistenz (Branch `main`, HEAD `9580ec9` → folgt)
 
 > **Doc-Confirm-Train.** Vollständiges Audit der glanceable Surfaces: Status-Terminologie ist bereits konsistent zwischen App, Widget und Live-Activity (`disabled`/`active`/`pending`/`failed`/`paused` in `LiveActivityUploadState`; `Paused` ↔ `Pausiert` in `WidgetStr`). Sensitive-Daten-Sweep: **keine** Koordinaten/Adressen/PlaceIDs/Bearer-Token in `wrapper/LH2GPXWidget/`, `LiveActivityPresentation.swift`, `TrackingAttributes.swift`. `TrackingStatus` enthält nur aggregierte Werte (Distance, Points, QueueCount, isPaused, uploadState) — privacy-safe by design. **Keine Code-Änderung nötig.** Tests deferred bis Punkt 10.
