@@ -272,6 +272,10 @@ public final class AppPreferences: ObservableObject {
         // iCloud sync preparation gates (Variant B Pro train). Defaults are
         // conservative; no setter writes CloudKit records — pure preferences.
         static let syncLiveTrackMetadataEnabled = "app.preferences.syncLiveTrackMetadataEnabled"
+        static let syncLiveTrackPointBatchesEnabled = "app.preferences.syncLiveTrackPointBatchesEnabled"
+        static let syncAppSettingsEnabled = "app.preferences.syncAppSettingsEnabled"
+        static let syncExportHintsEnabled = "app.preferences.syncExportHintsEnabled"
+        static let automaticLiveTrackICloudBackupEnabled = "app.preferences.automaticLiveTrackICloudBackupEnabled"
         static let iCloudStatusAutoRefreshEnabled = "app.preferences.iCloudStatusAutoRefreshEnabled"
         static let iCloudSyncAllowCellular = "app.preferences.iCloudSyncAllowCellular"
         static let iCloudSyncConflictPolicy = "app.preferences.iCloudSyncConflictPolicy"
@@ -421,6 +425,22 @@ public final class AppPreferences: ObservableObject {
         didSet { userDefaults.set(syncLiveTrackMetadataEnabled, forKey: Keys.syncLiveTrackMetadataEnabled) }
     }
 
+    @Published public var syncLiveTrackPointBatchesEnabled: Bool {
+        didSet { userDefaults.set(syncLiveTrackPointBatchesEnabled, forKey: Keys.syncLiveTrackPointBatchesEnabled) }
+    }
+
+    @Published public var syncAppSettingsEnabled: Bool {
+        didSet { userDefaults.set(syncAppSettingsEnabled, forKey: Keys.syncAppSettingsEnabled) }
+    }
+
+    @Published public var syncExportHintsEnabled: Bool {
+        didSet { userDefaults.set(syncExportHintsEnabled, forKey: Keys.syncExportHintsEnabled) }
+    }
+
+    @Published public var automaticLiveTrackICloudBackupEnabled: Bool {
+        didSet { userDefaults.set(automaticLiveTrackICloudBackupEnabled, forKey: Keys.automaticLiveTrackICloudBackupEnabled) }
+    }
+
     /// When `true`, the iCloud settings screen refreshes
     /// `CKContainer.accountStatus()` automatically on every appearance.
     /// Default `false` — conservative; the bestehende Refresh-Button bleibt.
@@ -553,6 +573,30 @@ public final class AppPreferences: ObservableObject {
         )
     }
 
+    public var liveTrackCloudBackupSettings: LiveTrackCloudBackupSettings {
+        LiveTrackCloudBackupSettings(
+            iCloudSyncEnabled: iCloudSyncEnabled,
+            liveTrackMetadataEnabled: syncLiveTrackMetadataEnabled,
+            liveTrackPointBatchesEnabled: syncLiveTrackPointBatchesEnabled,
+            appSettingsEnabled: syncAppSettingsEnabled,
+            exportHintsEnabled: syncExportHintsEnabled,
+            automaticLiveTrackBackupEnabled: automaticLiveTrackICloudBackupEnabled,
+            allowCellular: iCloudSyncAllowCellular
+        )
+    }
+
+    public static func cloudBackupSettings(userDefaults: UserDefaults = .standard) -> LiveTrackCloudBackupSettings {
+        LiveTrackCloudBackupSettings(
+            iCloudSyncEnabled: userDefaults.object(forKey: Keys.iCloudSyncEnabled) as? Bool ?? false,
+            liveTrackMetadataEnabled: userDefaults.object(forKey: Keys.syncLiveTrackMetadataEnabled) as? Bool ?? false,
+            liveTrackPointBatchesEnabled: userDefaults.object(forKey: Keys.syncLiveTrackPointBatchesEnabled) as? Bool ?? false,
+            appSettingsEnabled: userDefaults.object(forKey: Keys.syncAppSettingsEnabled) as? Bool ?? false,
+            exportHintsEnabled: userDefaults.object(forKey: Keys.syncExportHintsEnabled) as? Bool ?? false,
+            automaticLiveTrackBackupEnabled: userDefaults.object(forKey: Keys.automaticLiveTrackICloudBackupEnabled) as? Bool ?? false,
+            allowCellular: userDefaults.object(forKey: Keys.iCloudSyncAllowCellular) as? Bool ?? false
+        )
+    }
+
     public var appLocale: Locale {
         appLanguage.locale
     }
@@ -670,6 +714,10 @@ public final class AppPreferences: ObservableObject {
         self.iCloudSyncEnabled = userDefaults.object(forKey: Keys.iCloudSyncEnabled) as? Bool ?? false
         self.preferCloudDriveExport = userDefaults.object(forKey: Keys.preferCloudDriveExport) as? Bool ?? false
         self.syncLiveTrackMetadataEnabled = userDefaults.object(forKey: Keys.syncLiveTrackMetadataEnabled) as? Bool ?? false
+        self.syncLiveTrackPointBatchesEnabled = userDefaults.object(forKey: Keys.syncLiveTrackPointBatchesEnabled) as? Bool ?? false
+        self.syncAppSettingsEnabled = userDefaults.object(forKey: Keys.syncAppSettingsEnabled) as? Bool ?? false
+        self.syncExportHintsEnabled = userDefaults.object(forKey: Keys.syncExportHintsEnabled) as? Bool ?? false
+        self.automaticLiveTrackICloudBackupEnabled = userDefaults.object(forKey: Keys.automaticLiveTrackICloudBackupEnabled) as? Bool ?? false
         self.iCloudStatusAutoRefreshEnabled = userDefaults.object(forKey: Keys.iCloudStatusAutoRefreshEnabled) as? Bool ?? false
         self.iCloudSyncAllowCellular = userDefaults.object(forKey: Keys.iCloudSyncAllowCellular) as? Bool ?? false
         self.iCloudSyncConflictPolicy = AppICloudSyncConflictPolicy(
@@ -711,6 +759,10 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.iCloudSyncEnabled)
         userDefaults.removeObject(forKey: Keys.preferCloudDriveExport)
         userDefaults.removeObject(forKey: Keys.syncLiveTrackMetadataEnabled)
+        userDefaults.removeObject(forKey: Keys.syncLiveTrackPointBatchesEnabled)
+        userDefaults.removeObject(forKey: Keys.syncAppSettingsEnabled)
+        userDefaults.removeObject(forKey: Keys.syncExportHintsEnabled)
+        userDefaults.removeObject(forKey: Keys.automaticLiveTrackICloudBackupEnabled)
         userDefaults.removeObject(forKey: Keys.iCloudStatusAutoRefreshEnabled)
         userDefaults.removeObject(forKey: Keys.iCloudSyncAllowCellular)
         userDefaults.removeObject(forKey: Keys.iCloudSyncConflictPolicy)
@@ -745,6 +797,10 @@ public final class AppPreferences: ObservableObject {
         iCloudSyncEnabled = false
         preferCloudDriveExport = false
         syncLiveTrackMetadataEnabled = false
+        syncLiveTrackPointBatchesEnabled = false
+        syncAppSettingsEnabled = false
+        syncExportHintsEnabled = false
+        automaticLiveTrackICloudBackupEnabled = false
         iCloudStatusAutoRefreshEnabled = false
         iCloudSyncAllowCellular = false
         iCloudSyncConflictPolicy = .manual

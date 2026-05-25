@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## 2026-05-25 — Master · Phase D: iCloud-Seite Deutsch + CloudKit-MVP fuer LiveTrack-Backups (Branch `main`, HEAD `734ab8e` → folgt)
+
+> **Tests erlaubt und ausgefuehrt.** Phase D implementiert den iCloud-/CloudKit-MVP: deutsche iCloud-Seite, echter privater CloudKit-Health-Check mit Write/Read/Delete eines nicht-sensiblen `LH2GPXCloudHealthProbe`, opt-in Backup-Auswahl, optionales automatisches Backup neu abgeschlossener LiveTracks, retryfaehige Queue und Cloud-Datenuebersicht mit Counts + **geschaetztem** Speicherverbrauch. Private DB only; kein Public/shared DB, kein CKAsset, keine CKSubscription, keine automatische Google-History- oder Import-/Export-Sicherung.
+
+### Geaenderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/LocationHistoryConsumerAppSupport/ICloudCloudKitMVP.swift` | **NEU** — HealthCheck-Service, LiveTrack-Backup-Schema, Queue, Overview, CloudKit-Uploader |
+| `Sources/LocationHistoryConsumerAppSupport/AppICloudOptionsView.swift` | deutsche iCloud-Seite + Health/Backup/Overview/Delete-UI |
+| `Sources/LocationHistoryConsumerAppSupport/AppPreferences.swift` | neue konservative iCloud-Backup-Preferences |
+| `Sources/LocationHistoryConsumerAppSupport/LiveLocationFeatureModel.swift` | completion-only Hook nach erfolgreicher LiveTrack-Persistenz |
+| `Sources/LocationHistoryConsumerAppSupport/AppLanguageSupport.swift` | DE-Keys fuer Konfliktbehandlung |
+| `Tests/LocationHistoryConsumerTests/ICloudCloudKitMVPTests.swift` | **NEU** — 9 Tests fuer Health, Preferences, Queue, Mapping, LiveTrack-Hook |
+| `docs/ICLOUD_CLOUDKIT_MVP_PHASE_D_2026-05-25.md` | **NEU** — Phase-D-Audit |
+| README/ROADMAP/NEXT_STEPS/docs | Doku-Sync |
+
+### RecordTypes
+- `LH2GPXCloudHealthProbe` — temporaerer HealthProbe: `createdAt`, `appBuild`, `schemaVersion`, `randomProbeID`; wird nach erfolgreichem Test geloescht.
+- `LH2GPXLiveTrackSummary` — reduzierte Summary ohne Koordinaten.
+- `LH2GPXLiveTrackPointBatch` — Routenpunkte nur bei explizitem Opt-in, batched, kein CKAsset.
+
+### Verifikation
+- `swift build` ✅
+- `swift test --filter ICloudCloudKitMVPTests` ✅ 9/0
+- Vollstaendiger `swift test`, xcodebuild iPhone-Sim Build und generic iOS Build folgen in der finalen Phase-D-Verifikation.
+
+### Bewusst NICHT in Phase D
+- Kein FavoriteEntry-/Favoriten-Sync.
+- Kein History-/Google-Timeline-Sync.
+- Kein Public/shared DB, kein CKAsset, keine CKSubscription.
+- Kein iPad-Build-Setting, kein Xcode Cloud, kein TestFlight, keine App-Store-Submission.
+
+### Naechster Schritt
+**Phase E** — bisherige Favoriten-Modell-/FavoriteEntry-Phase (oder neu abgestimmte Folgephase). Wartet auf User-Freigabe.
+
+---
+
 ## 2026-05-25 — Master · Phase C: Global Map Options + Resizable Map Cards (Branch `main`, HEAD `70961ad` → folgt)
 
 > **Build-only.** Neues globales Karten-Resize-Verhalten auf den bestehenden Hero-Map-Surfaces und einheitliche Map-Optionen weiter konsolidiert. `LHCollapsibleMapHeader` bekommt einen unteren, barrierearmen Resize-Handle mit Tap, Drag und VoiceOver-Adjustable-Action; compact/expanded wird pro Screen als diskreter UserDefaults-Zustand gespeichert. `MapLayerMenu` enthält jetzt den vorhandenen 3D-Terrain-/realistic-elevation-Toggle. Saved-Track-Editor-Karten nutzen ebenfalls das globale Map-Menü. Kein CloudKit, keine Favoriten-Modelländerung, kein iPad-Build-Setting.

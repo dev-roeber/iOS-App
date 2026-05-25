@@ -11,13 +11,27 @@ import SwiftUI
 final class ICloudSyncViewModel: ObservableObject {
     @Published private(set) var status: CloudSyncStatus
     @Published private(set) var isEnabled: Bool
+    @Published private(set) var healthStatus: ICloudHealthStatus
+    @Published private(set) var storageOverview: ICloudStorageOverview
+    @Published private(set) var pendingBackupCount: Int
 
     private let service: CloudSyncService
+    private let healthCheckService: ICloudHealthChecking
+    private let backupService: LiveTrackCloudBackupCoordinator
 
-    init(service: CloudSyncService) {
+    init(
+        service: CloudSyncService,
+        healthCheckService: ICloudHealthChecking,
+        backupService: LiveTrackCloudBackupCoordinator
+    ) {
         self.service = service
+        self.healthCheckService = healthCheckService
+        self.backupService = backupService
         self.status = service.status
         self.isEnabled = service.isEnabled
+        self.healthStatus = healthCheckService.status
+        self.storageOverview = backupService.overview
+        self.pendingBackupCount = backupService.pendingCount
     }
 
     func setEnabled(_ enabled: Bool) async {
@@ -34,6 +48,30 @@ final class ICloudSyncViewModel: ObservableObject {
         await service.refresh()
         status = service.status
         isEnabled = service.isEnabled
+        healthStatus = await healthCheckService.runHealthCheck(isEnabled: isEnabled)
+        storageOverview = await backupService.refreshOverview()
+        pendingBackupCount = backupService.pendingCount
+    }
+
+    func refreshOverview() async {
+        storageOverview = await backupService.refreshOverview()
+        pendingBackupCount = backupService.pendingCount
+    }
+
+    func retryPendingBackups() async {
+        await backupService.retryPendingBackups()
+        storageOverview = await backupService.refreshOverview()
+        pendingBackupCount = backupService.pendingCount
+    }
+
+    func deleteCloudData() async {
+        do {
+            try await backupService.deleteCloudData()
+            storageOverview = backupService.overview
+            pendingBackupCount = backupService.pendingCount
+        } catch {
+            storageOverview.errorMessage = "Cloud-Daten konnten nicht gelöscht werden."
+        }
     }
 }
 
@@ -49,14 +87,27 @@ final class ICloudSyncViewModel: ObservableObject {
 public struct AppICloudOptionsView: View {
     @ObservedObject private var preferences: AppPreferences
     @StateObject private var viewModel: ICloudSyncViewModel
+    @State private var showsCloudDeleteConfirmation = false
 
     public init(preferences: AppPreferences) {
         self._preferences = ObservedObject(wrappedValue: preferences)
         let service = CloudSyncServiceFactory.makeProductionService(
             isEnabled: preferences.iCloudSyncEnabled
         )
+        #if canImport(CloudKit)
+        let healthCheckService: ICloudHealthChecking = CloudKitICloudHealthCheckService()
+        #else
+        let healthCheckService: ICloudHealthChecking = InMemoryICloudHealthCheckService()
+        #endif
+        let backupService = LiveTrackCloudBackupFactory.makeProductionService {
+            preferences.liveTrackCloudBackupSettings
+        }
         self._viewModel = StateObject(
-            wrappedValue: ICloudSyncViewModel(service: service)
+            wrappedValue: ICloudSyncViewModel(
+                service: service,
+                healthCheckService: healthCheckService,
+                backupService: backupService
+            )
         )
     }
 
@@ -65,12 +116,12 @@ public struct AppICloudOptionsView: View {
             LHPageScaffold {
                 LHXSyncStatusCard(
                     kind: Self.cardKind(for: viewModel.status.accountStatus),
-                    title: t("iCloud Sync"),
+                    title: "iCloud-Sync",
                     detail: detailText(for: viewModel.status.accountStatus),
                     lastSyncText: nil,
                     toggleActionTitle: viewModel.isEnabled
-                        ? t("Disable iCloud Sync")
-                        : t("Enable iCloud Sync"),
+                        ? "iCloud-Sync deaktivieren"
+                        : "iCloud-Sync aktivieren",
                     toggleAction: {
                         preferences.iCloudSyncEnabled.toggle()
                     },
@@ -80,29 +131,31 @@ public struct AppICloudOptionsView: View {
                 Button {
                     Task { await viewModel.refresh() }
                 } label: {
-                    Label(t("Refresh status"), systemImage: "arrow.clockwise")
+                    Label("Status aktualisieren", systemImage: "arrow.clockwise")
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.bordered)
                 .disabled(viewModel.status.isWorking)
                 .accessibilityIdentifier("options.icloud.refresh")
-                .accessibilityLabel(t("Refresh iCloud account status"))
+                .accessibilityLabel("iCloud-Status aktualisieren")
                 .accessibilityHint(viewModel.status.isWorking
-                    ? t("Checking iCloud — please wait until the current check finishes.")
-                    : t("Re-checks whether iCloud is available on this device. No data is uploaded."))
+                    ? "iCloud wird geprüft. Bitte warte, bis die aktuelle Prüfung abgeschlossen ist."
+                    : "Prüft iCloud-Konto und privaten CloudKit-Bereich mit einem nicht-sensiblen Testrecord.")
 
                 iCloudDriveExportHintCard
 
-                metadataSyncPreparationCard
+                healthCheckCard
+                iCloudBackupSelectionCard
+                automaticLiveTrackBackupCard
+                storageOverviewCard
                 statusAutoRefreshCard
                 networkPolicyCard
                 conflictPolicyCard
                 containerInfoCard
-                deferredCloudActionsCard
 
                 LHXInfoCard(
                     kind: .info,
-                    title: t("Privacy"),
+                    title: "Datenschutz",
                     message: privacyFooterText,
                     systemImage: "lock.shield",
                     accessibilityIdentifier: "options.icloud.footer"
@@ -123,42 +176,183 @@ public struct AppICloudOptionsView: View {
             guard newValue else { return }
             Task { await viewModel.refresh() }
         }
+        .confirmationDialog(
+            "Cloud-Daten löschen?",
+            isPresented: $showsCloudDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Cloud-Daten löschen", role: .destructive) {
+                Task { await viewModel.deleteCloudData() }
+            }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Dies löscht die von dieser App gespeicherten iCloud-Daten im privaten iCloud-Bereich. Lokale Daten bleiben erhalten.")
+        }
     }
 
     // MARK: - Variant B Pro · Extended iCloud Settings (Train 2026-05-25)
 
     @ViewBuilder
-    private var metadataSyncPreparationCard: some View {
+    private var iCloudBackupSelectionCard: some View {
         LHCard {
-            LHSectionHeader(t("Metadata Sync"))
+            LHSectionHeader("In iCloud sichern")
             VStack(alignment: .leading, spacing: 10) {
                 Toggle(isOn: $preferences.syncLiveTrackMetadataEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(t("Prepare live-track metadata sync"))
+                        Text("LiveTrack-Metadaten")
                             .font(.subheadline.weight(.semibold))
-                        Text(t("Acknowledges the LiveTrackMeta private-database schema. No records are written or read yet — this gate only opts the device in to the future sync engine."))
+                        Text("Name, Zeitraum, Distanz und technische Zusammenfassung eines LiveTracks.")
                             .font(.caption)
                             .foregroundStyle(LH2GPXTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                .disabled(!preferences.iCloudSyncEnabled)
                 .accessibilityIdentifier("options.icloud.metadataSync.toggle")
-                .accessibilityHint(Text(t("Off until the dedicated sync-engine train ships. Toggling this preference today has no network or CloudKit effect.")))
+                .accessibilityHint(Text("Sichert keine Koordinaten. Der Hauptschalter iCloud-Sync muss aktiv sein."))
+
+                Toggle(isOn: $preferences.syncLiveTrackPointBatchesEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("LiveTrack-Routenpunkte")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Koordinatenpunkte eines LiveTracks. Diese Daten sind sensibel.")
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .disabled(!preferences.iCloudSyncEnabled)
+                .accessibilityIdentifier("options.icloud.pointBatches.toggle")
+
+                Toggle(isOn: $preferences.syncAppSettingsEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("App-Einstellungen")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Nur iCloud-bezogene Einstellungen und Anzeigeoptionen.")
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .disabled(!preferences.iCloudSyncEnabled)
+                .accessibilityIdentifier("options.icloud.appSettings.toggle")
+
+                Toggle(isOn: $preferences.syncExportHintsEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Export-Hinweise")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Nur lokale Exportziel-Hinweise, keine automatisch hochgeladenen GPX-Dateien.")
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .disabled(!preferences.iCloudSyncEnabled)
+                .accessibilityIdentifier("options.icloud.exportHints.toggle")
             }
         }
         .accessibilityIdentifier("options.icloud.metadataSync.card")
     }
 
     @ViewBuilder
+    private var automaticLiveTrackBackupCard: some View {
+        LHCard {
+            LHSectionHeader("Automatische Sicherung")
+            VStack(alignment: .leading, spacing: 10) {
+                Toggle(isOn: $preferences.automaticLiveTrackICloudBackupEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("LiveTracks automatisch in iCloud sichern")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Wenn aktiviert, werden neu abgeschlossene LiveTracks nach dem Speichern zusätzlich in deinem privaten iCloud-Bereich gesichert. Importierte Google-History-Daten werden nicht automatisch hochgeladen.")
+                            .font(.caption)
+                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .disabled(!preferences.iCloudSyncEnabled || !preferences.syncLiveTrackMetadataEnabled)
+                .accessibilityIdentifier("options.icloud.automaticLiveTrackBackup.toggle")
+            }
+        }
+        .accessibilityIdentifier("options.icloud.automaticLiveTrackBackup.card")
+    }
+
+    @ViewBuilder
+    private var healthCheckCard: some View {
+        LHCard {
+            LHSectionHeader("CloudKit-Health-Check")
+            VStack(alignment: .leading, spacing: 8) {
+                Label(viewModel.healthStatus.userFacingStatusKey, systemImage: "checkmark.seal")
+                    .font(.subheadline.weight(.semibold))
+                if let probe = viewModel.healthStatus.lastProbeResult {
+                    Text("Letzte Prüfung: \(Self.shortDateFormatter.string(from: probe.checkedAt)) · \(String(format: "%.2f", probe.durationSeconds)) s")
+                        .font(.caption)
+                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                    Text("Write \(probe.writeSucceeded ? "✓" : "–") · Read \(probe.readSucceeded ? "✓" : "–") · Delete \(probe.deleteSucceeded ? "✓" : "–")")
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                }
+            }
+        }
+        .accessibilityIdentifier("options.icloud.health.card")
+    }
+
+    @ViewBuilder
+    private var storageOverviewCard: some View {
+        LHCard {
+            LHSectionHeader("In iCloud gesichert")
+            VStack(alignment: .leading, spacing: 10) {
+                if viewModel.storageOverview.summaryCount == 0,
+                   viewModel.storageOverview.pointBatchCount == 0 {
+                    Text(viewModel.status.accountStatus == .available
+                        ? "Noch keine Daten in iCloud gesichert."
+                        : "Übersicht verfügbar, sobald iCloud erreichbar ist.")
+                        .font(.caption)
+                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                } else {
+                    overviewRow("LiveTrack-Metadaten", value: "\(viewModel.storageOverview.summaryCount)")
+                    overviewRow("Routenpunkt-Batches", value: "\(viewModel.storageOverview.pointBatchCount)")
+                    overviewRow("Geschätzte Routenpunkte", value: "\(viewModel.storageOverview.estimatedPointCount)")
+                    overviewRow("Geschätzter Speicherverbrauch", value: ByteCountFormatter.string(fromByteCount: Int64(viewModel.storageOverview.estimatedStorageBytes), countStyle: .file))
+                }
+                if viewModel.pendingBackupCount > 0 {
+                    overviewRow("Wartende Sicherungen", value: "\(viewModel.pendingBackupCount)")
+                }
+                HStack {
+                    Button("Übersicht aktualisieren") {
+                        Task { await viewModel.refreshOverview() }
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("options.icloud.overview.refresh")
+
+                    Button("Wartende Sicherungen erneut versuchen") {
+                        Task { await viewModel.retryPendingBackups() }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(viewModel.pendingBackupCount == 0)
+                    .accessibilityIdentifier("options.icloud.backup.retry")
+                }
+                if viewModel.storageOverview.summaryCount > 0 || viewModel.storageOverview.pointBatchCount > 0 {
+                    Button("Cloud-Daten löschen", role: .destructive) {
+                        showsCloudDeleteConfirmation = true
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("options.icloud.cloudData.delete")
+                }
+            }
+        }
+        .accessibilityIdentifier("options.icloud.storageOverview.card")
+    }
+
+    @ViewBuilder
     private var statusAutoRefreshCard: some View {
         LHCard {
-            LHSectionHeader(t("Status Refresh"))
+            LHSectionHeader("Statusaktualisierung")
             VStack(alignment: .leading, spacing: 10) {
                 Toggle(isOn: $preferences.iCloudStatusAutoRefreshEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(t("Refresh iCloud status automatically"))
+                        Text("iCloud-Status automatisch aktualisieren")
                             .font(.subheadline.weight(.semibold))
-                        Text(t("When on, the app re-checks iCloud account availability whenever this screen appears. The manual refresh button keeps working in either case."))
+                        Text("Wenn aktiv, prüft die App die iCloud-Verfügbarkeit erneut, sobald diese Seite erscheint. Die manuelle Aktualisierung bleibt immer verfügbar.")
                             .font(.caption)
                             .foregroundStyle(LH2GPXTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -173,13 +367,13 @@ public struct AppICloudOptionsView: View {
     @ViewBuilder
     private var networkPolicyCard: some View {
         LHCard {
-            LHSectionHeader(t("Network Policy"))
+            LHSectionHeader("Netzwerkrichtlinie")
             VStack(alignment: .leading, spacing: 10) {
                 Toggle(isOn: $preferences.iCloudSyncAllowCellular) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(t("Allow iCloud sync over cellular"))
+                        Text("Mobilfunk für iCloud-Sync erlauben")
                             .font(.subheadline.weight(.semibold))
-                        Text(t("Reserved for the future sync engine. Off keeps any future record traffic on Wi-Fi only. Has no effect today because no records are written."))
+                        Text("Wenn aus, werden CloudKit-Sicherungen nicht über Mobilfunk gestartet.")
                             .font(.caption)
                             .foregroundStyle(LH2GPXTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -194,16 +388,16 @@ public struct AppICloudOptionsView: View {
     @ViewBuilder
     private var conflictPolicyCard: some View {
         LHCard {
-            LHSectionHeader(t("Conflict Policy"))
+            LHSectionHeader("Konfliktbehandlung")
             VStack(alignment: .leading, spacing: 10) {
-                Picker(t("Conflict Policy"), selection: $preferences.iCloudSyncConflictPolicy) {
+                Picker("Konfliktbehandlung", selection: $preferences.iCloudSyncConflictPolicy) {
                     ForEach(AppICloudSyncConflictPolicy.allCases, id: \.self) { policy in
                         Text(t(policy.titleKey)).tag(policy)
                     }
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("options.icloud.conflictPolicy.picker")
-                .accessibilityHint(Text(t("Stored only. Will be applied by the future sync engine.")))
+                .accessibilityHint(Text("Wird bei späteren Konflikten konservativ angewendet."))
 
                 Text(t(preferences.iCloudSyncConflictPolicy.captionKey))
                     .font(.caption)
@@ -218,10 +412,10 @@ public struct AppICloudOptionsView: View {
     @ViewBuilder
     private var containerInfoCard: some View {
         LHCard {
-            LHSectionHeader(t("Container"))
+            LHSectionHeader("CloudKit-Container")
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(t("Identifier"))
+                    Text("Kennung")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(LH2GPXTheme.textSecondary)
                     Spacer()
@@ -232,46 +426,13 @@ public struct AppICloudOptionsView: View {
                         .truncationMode(.middle)
                         .accessibilityIdentifier("options.icloud.container.id")
                 }
-                Text(t("Private CloudKit database only. No public or shared database is ever queried. No team identifier is shown."))
+                Text("Nur private CloudKit-Datenbank. Public und Shared Database werden nicht verwendet. Keine Team-ID wird angezeigt.")
                     .font(.caption2)
                     .foregroundStyle(LH2GPXTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .accessibilityIdentifier("options.icloud.container.card")
-    }
-
-    @ViewBuilder
-    private var deferredCloudActionsCard: some View {
-        LHCard {
-            LHSectionHeader(t("Deferred Cloud Actions"))
-            VStack(alignment: .leading, spacing: 10) {
-                Label {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(t("Delete cloud metadata"))
-                            .font(.subheadline.weight(.semibold))
-                        Text(t("Available after the sync engine ships. No records exist yet, so there is nothing to delete on the server side."))
-                            .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                } icon: {
-                    Image(systemName: "trash.slash")
-                        .foregroundStyle(LH2GPXTheme.textTertiary)
-                }
-                .opacity(0.55)
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("options.icloud.deferred.deleteMetadata")
-                .accessibilityHint(Text(t("Disabled. Will become available once the iCloud sync engine writes records.")))
-
-                Text(t("No imported-history sync. No automatic upload. Metadata schema only until the sync engine is enabled."))
-                    .font(.caption2)
-                    .foregroundStyle(LH2GPXTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("options.icloud.deferred.disclaimer")
-            }
-        }
-        .accessibilityIdentifier("options.icloud.deferred.card")
     }
 
     // MARK: - Mapping helpers
@@ -294,24 +455,24 @@ public struct AppICloudOptionsView: View {
     private func detailText(for status: CloudSyncAccountStatus) -> String {
         switch status {
         case .disabled:
-            return t("iCloud sync is turned off. All your data stays on this device.")
+            return "iCloud-Sync ist ausgeschaltet. Deine Daten bleiben auf diesem Gerät."
         case .available:
-            return t("Signed in to iCloud. Status is checked on demand — no data is uploaded automatically.")
+            return "Bei iCloud angemeldet. Der Status wird nur bei Bedarf geprüft."
         case .signedOut:
-            return t("Sign in to iCloud in System Settings to use this feature.")
+            return "Melde dich in den Systemeinstellungen bei iCloud an, um diese Funktion zu nutzen."
         case .restricted:
-            return t("iCloud is restricted on this device (parental controls or device management).")
+            return "iCloud ist auf diesem Gerät eingeschränkt."
         case .couldNotDetermine:
-            return t("Checking iCloud account status…")
+            return "iCloud-Kontostatus wird geprüft…"
         case .temporarilyUnavailable:
-            return t("iCloud is temporarily unavailable. Please retry in a moment.")
+            return "iCloud ist vorübergehend nicht verfügbar. Bitte versuche es gleich erneut."
         case .error(let message):
             return message
         }
     }
 
     private var privacyFooterText: String {
-        t("Your imported location history is never uploaded. This screen only checks Apple's iCloud account availability — no records are written, no automatic sync happens, no data leaves the device in this version.")
+        "Importierte Standortverläufe und Google-History-Daten werden nicht automatisch gesichert. LiveTrack-Backups sind Opt-in, nutzen ausschließlich deinen privaten CloudKit-Bereich und zeigen den Speicherverbrauch nur geschätzt an."
     }
 
     // MARK: - iCloud Drive export hint (Train F.3)
@@ -327,13 +488,13 @@ public struct AppICloudOptionsView: View {
     @ViewBuilder
     private var iCloudDriveExportHintCard: some View {
         LHCard {
-            LHSectionHeader(t("Export Destination"))
+            LHSectionHeader("Exportziel")
             VStack(alignment: .leading, spacing: 10) {
                 Toggle(isOn: $preferences.preferCloudDriveExport) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(t("Suggest iCloud Drive in export sheet"))
+                        Text("iCloud Drive im Exportdialog vorschlagen")
                             .font(.subheadline.weight(.semibold))
-                        Text(t("Adds a visible hint next to the Export Destination card. The system save sheet still asks you which folder to use — nothing is uploaded automatically."))
+                        Text("Zeigt einen Hinweis beim Export. Der Systemdialog fragt weiterhin nach dem Zielordner. GPX-Dateien werden nicht automatisch hochgeladen.")
                             .font(.caption)
                             .foregroundStyle(LH2GPXTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -351,10 +512,29 @@ public struct AppICloudOptionsView: View {
     }
 
     private var iCloudDriveHintFooter: String {
-        t("This hint is purely cosmetic. The app does not require iCloud Drive — local export keeps working, and the system picker controls the final destination.")
+        "Dieser Hinweis ist rein lokal. Die App benötigt iCloud Drive nicht; lokale Exporte funktionieren weiter."
     }
 
     private func t(_ english: String) -> String { preferences.localized(english) }
+
+    @ViewBuilder
+    private func overviewRow(_ title: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(LH2GPXTheme.textSecondary)
+            Spacer()
+            Text(value)
+                .font(.caption.weight(.semibold))
+        }
+    }
+
+    private static let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter
+    }()
 }
 
 #endif

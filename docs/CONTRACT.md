@@ -38,6 +38,11 @@
 - `trips_index.json`
 - Python-CLI/TUI/Shell-Flows
 - Producer-interne Model- oder Exportpfade
+- iCloud-/CloudKit-Records. Phase-D-Records (`LH2GPXCloudHealthProbe`,
+  `LH2GPXLiveTrackSummary`, `LH2GPXLiveTrackPointBatch`) sind App-interne
+  opt-in CloudKit-MVP-Daten und erweitern den Producer-Contract nicht.
+  Google-History-/Importdaten werden nicht automatisch in CloudKit
+  gesichert.
 
 ## Update-Policy
 

@@ -87,6 +87,16 @@ automatischer Upload**, **kein CloudKit-Sync**, **keine Entitlement-/
 Privacy-Manifest-Änderung**. Default `false`, opt-in. Tests deferred
 bis Punkt 10.
 
+Aktueller Stand: Master Phase D auf `main` HEAD `734ab8e` → folgt.
+Die App hat jetzt einen echten, begrenzten CloudKit-MVP:
+`LH2GPXCloudHealthProbe` prueft den privaten CloudKit-Bereich per
+write/read/delete; optionales LiveTrack-iCloud-Backup sichert nur neu
+abgeschlossene LiveTracks nach explizitem Opt-in als
+`LH2GPXLiveTrackSummary` und optional `LH2GPXLiveTrackPointBatch`.
+Keine automatische Google-History-/Import-/Export-Sicherung, kein
+Public/shared DB, kein CKAsset, keine CKSubscription. Speicherverbrauch
+wird nur geschaetzt.
+
 Voriger Stand: Train F.2 build-only auf `main` HEAD
 `627ca41` + Train-F.2-Diff). Neue Foundation+CloudKit-Schema-Schicht
 `LiveTrackMetadataSchema` (`recordType = "LiveTrackMeta"`,

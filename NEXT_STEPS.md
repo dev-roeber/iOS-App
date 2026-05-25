@@ -1,12 +1,22 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Master-Train Phase D) — iCloud-Seite Deutsch + CloudKit-MVP fuer LiveTrack-Backups (Branch `main`, HEAD `734ab8e` → folgt)
+
+> **Phase D abgeschlossen nach finaler Verifikation.** Implementiert: deutsche iCloud-Seite, privater CloudKit-Health-Check (`LH2GPXCloudHealthProbe` write/read/delete), opt-in Sync-Inhalte, optionales automatisches LiveTrack-Backup nach Track-Abschluss, retryfaehige Queue, Cloud-Datenuebersicht mit Counts + geschaetztem Speicherverbrauch. Detail: [`docs/ICLOUD_CLOUDKIT_MVP_PHASE_D_2026-05-25.md`](docs/ICLOUD_CLOUDKIT_MVP_PHASE_D_2026-05-25.md).
+>
+> **Bleibt ausgeschlossen:** FavoriteEntry-/Favoriten-Sync, History-/Google-Timeline-Sync, Public/shared DB, CKAsset, CKSubscription, automatische Import-/Export-Uploads, iPad-Build-Setting, Xcode Cloud, TestFlight.
+>
+> **Naechste Phase:** **E** — bisherige Favoriten-Modell-/FavoriteEntry-Phase oder neu abgestimmte Folgephase. Wartet auf User-Freigabe.
+
+---
+
 ## Stand 2026-05-25 (Master-Train Phase C) — Global Map Options + verstellbare Kartenhöhe (Branch `main`, HEAD `70961ad` → folgt)
 
 > **Phase C abgeschlossen.** Bestehende Map-Architektur wurde erweitert, nicht ersetzt: `MapLayerMenu` bleibt die einheitliche Karten-Optionsquelle; `LHCollapsibleMapHeader` bekommt compact/expanded-Resize über unteren Handle mit Tap, Drag und VoiceOver-Adjustable-Action. Per-Screen Persistenz ist für Overview, Days, DayDetail, Insights, Export und Live aktiviert. Saved-Track-Editor zeigt jetzt ebenfalls das globale Kartenmenü. Detail: [`docs/MAP_CONTROLS_RESIZE_AUDIT_2026-05-25.md`](docs/MAP_CONTROLS_RESIZE_AUDIT_2026-05-25.md).
 >
 > **Nicht Teil von Phase C:** keine CloudKit-/iCloud-/Favoriten-Änderung, kein iPad-Build-Setting, keine Tests, kein Xcode Cloud, kein TestFlight.
 >
-> **Nächste Phase:** **D** — `FavoriteEntry` Modell + lokale Persistenz/Migration. Wartet auf User-Freigabe.
+> **Nächste Phase wurde durch User neu eingeschoben:** Phase D ist jetzt iCloud-/CloudKit-MVP; `FavoriteEntry` Modell + lokale Persistenz/Migration rutscht auf Phase E oder spaeter.
 
 ---
 

@@ -1,5 +1,27 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Master Phase D) — iCloud-/CloudKit-MVP
+
+**HEAD:** `734ab8e` → Phase-D-Commit folgt.
+
+### ✅ In diesem Pass verifiziert
+- Offizielle Apple-Doku geprueft: CloudKit `CKContainer(identifier:)`, `accountStatus`, `privateCloudDatabase`, `CKRecord`, `CKRecord.ID`, `CKDatabase` save/fetch/delete/records(matching:), `CKQuery`, `CKError.serverRecordChanged`; OSLog/Logger Privacy; Core Location/App Privacy; Privacy Manifest Files; SwiftUI Form/Section/Toggle/Button/confirmationDialog.
+- `privateCloudDatabase` ist die einzige CloudKit-Datenbank fuer Phase-D-Records.
+- HealthProbe ist nicht-sensibel: keine Standortdaten, keine User-ID, keine Team-ID, keine Token, keine Pfade, keine Device-ID; erfolgreicher Probe-Record wird geloescht.
+- LiveTrack-Backup ist opt-in/default AUS und nur completion-only fuer neue LiveTracks.
+- Google-History/Importdaten werden nicht automatisch gesichert.
+- Speicherverbrauch wird nur als geschaetzt angezeigt.
+
+### Pflicht-Anti-Claims nach Phase D
+- ✅ CloudKit Records fuer Phase-D-MVP aktiv: `LH2GPXCloudHealthProbe`, `LH2GPXLiveTrackSummary`, optional `LH2GPXLiveTrackPointBatch`.
+- ❌ FavoriteEntry-/Favoriten-Sync implementiert.
+- ❌ History-/Google-Timeline-Sync aktiv.
+- ❌ Public/shared Database genutzt.
+- ❌ CKAsset/CKSubscription genutzt.
+- ❌ Xcode Cloud/TestFlight/App Review ausgefuehrt.
+
+---
+
 ## Aktualisierung 2026-05-25 (Train 8.0) — Repo-Truth-Lock auf `dev-roeber/iOS-App`
 
 **HEAD:** `0276ea2` — verbindlicher Lock auf einziges aktives Arbeits-Repo.

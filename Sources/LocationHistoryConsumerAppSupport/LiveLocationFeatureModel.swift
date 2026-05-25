@@ -48,6 +48,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
     private let client: LiveLocationClient?
     private let store: RecordedTrackStoring
     private let uploader: LiveLocationServerUploading
+    private let cloudBackup: LiveTrackCloudBackupCoordinator?
     private let defaults: UserDefaults
     private var recorder: LiveTrackRecorder
     private var serverUploadConfiguration = LiveLocationServerUploadConfiguration()
@@ -60,6 +61,9 @@ public final class LiveLocationFeatureModel: ObservableObject {
         self.client = makeDefaultLiveLocationClient()
         self.store = RecordedTrackFileStore()
         self.uploader = HTTPSLiveLocationServerUploader()
+        self.cloudBackup = LiveTrackCloudBackupFactory.makeProductionService {
+            AppPreferences.cloudBackupSettings()
+        }
         self.recorder = LiveTrackRecorder()
         self.defaults = .standard
         self.authorization = client?.authorization ?? .restricted
@@ -86,11 +90,13 @@ public final class LiveLocationFeatureModel: ObservableObject {
         store: RecordedTrackStoring,
         recorder: LiveTrackRecorder = LiveTrackRecorder(),
         uploader: LiveLocationServerUploading = HTTPSLiveLocationServerUploader(),
+        cloudBackup: LiveTrackCloudBackupCoordinator? = nil,
         userDefaults: UserDefaults = .standard
     ) {
         self.client = client
         self.store = store
         self.uploader = uploader
+        self.cloudBackup = cloudBackup
         self.recorder = recorder
         self.defaults = userDefaults
         self.authorization = client?.authorization ?? .restricted
@@ -477,8 +483,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
 
         var updatedTracks = recordedTracks
         updatedTracks.insert(persistedTrack, at: 0)
-        persistRecordedTracks(updatedTracks)
-        updateWidgetData(newTrack: persistedTrack, allTracks: updatedTracks)
+        persistCompletedTrack(persistedTrack, updatedTracks: updatedTracks)
     }
 
     private func handleAuthorizationChange(_ authorization: LiveLocationAuthorization) {
@@ -592,8 +597,7 @@ public final class LiveLocationFeatureModel: ObservableObject {
             )
             var updated = recordedTracks
             updated.insert(corrected, at: 0)
-            persistRecordedTracks(updated)
-            updateWidgetData(newTrack: corrected, allTracks: updated)
+            persistCompletedTrack(corrected, updatedTracks: updated)
             currentRecordingSessionID = UUID()
             liveTrackPoints = self.recorder.points
         }
@@ -620,6 +624,13 @@ public final class LiveLocationFeatureModel: ObservableObject {
         } catch {
             persistenceErrorMessage = "Live track changes could not be saved."
         }
+    }
+
+    private func persistCompletedTrack(_ track: RecordedTrack, updatedTracks: [RecordedTrack]) {
+        persistRecordedTracks(updatedTracks)
+        guard persistenceErrorMessage == nil else { return }
+        updateWidgetData(newTrack: track, allTracks: updatedTracks)
+        cloudBackup?.handleCompletedLiveTrack(track)
     }
 
     private func applyBackgroundTrackingConfiguration() {

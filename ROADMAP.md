@@ -33,6 +33,8 @@
 | Master · Phase A | L10n + Favorites-iCloud-Sync + iPad Master-Spec-Doku | ✅ erledigt — `docs/LOCALIZATION_ICLOUD_FAVORITES_IPAD_IMPLEMENTATION_2026-05-25.md` (Phasen B–H offen) |
 | Master · Phase B | DE/EN Localization-Basis: `defaultLocalization: en` + `Localizable.xcstrings` (765 Keys) + Resource-Rule | ✅ erledigt — `Package.swift` + `Sources/.../Resources/Localizable.xcstrings`; bestehender `t()`-Helper unverändert; Sim+Generic build ✅ |
 | Master · Phase C | Global Map Options + verstellbare Kartenhöhe | ✅ erledigt — `LHCollapsibleMapHeader` Resize-Handle + per-Screen Persistenz; `MapLayerMenu` 3D-Terrain Toggle; Saved-Track-Editor-Menü |
+| Master · Phase D | iCloud-Seite Deutsch + privater CloudKit-MVP fuer HealthProbe und opt-in LiveTrack-Backups | ✅ erledigt — `LH2GPXCloudHealthProbe` write/read/delete, `LH2GPXLiveTrackSummary`, optional `LH2GPXLiveTrackPointBatch`, Queue + Overview + Tests |
+| Master · Phase E | FavoriteEntry Modell + lokale Persistenz/Migration | ⏳ verschoben aus bisheriger Phase D — wartet auf Freigabe |
 
 ### Verbindliche Regel für 8.0–8.15
 **Erlaubt:** `git diff --check`, `swift build`, `xcodebuild ... build`, `xcodebuild ... archive` (ohne Test-Nachaktion), `rg`-Sweeps, statische Codeprüfung, Doku-Sync, Apple-Doku-Abgleich, Commit + Push.

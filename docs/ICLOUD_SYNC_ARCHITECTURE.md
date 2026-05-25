@@ -1,5 +1,18 @@
 # iCloud Sync Architecture
 
+> **Master Phase D Status (2026-05-25):** **Echter privater CloudKit-MVP implementiert.**
+> Die iCloud-Seite ist deutsch, `CloudKitICloudHealthCheckService` fuehrt
+> einen HealthProbe gegen `privateCloudDatabase` aus
+> (`LH2GPXCloudHealthProbe` write/read/delete, keine sensiblen Felder,
+> Probe wird geloescht). `LiveTrackCloudBackupService` sichert nach
+> explizitem Opt-in neu abgeschlossene LiveTracks als
+> `LH2GPXLiveTrackSummary` und optional `LH2GPXLiveTrackPointBatch`.
+> Private DB only; kein `publicCloudDatabase`, kein `sharedCloudDatabase`,
+> kein CKAsset, keine CKSubscription, keine automatische Import-/Export-
+> oder Google-History-Sicherung. Speicherverbrauch wird nur geschaetzt.
+> Tests: `ICloudCloudKitMVPTests` deckt Health, Preferences, Queue,
+> Mapping und LiveTrack-Hook ab.
+>
 > **Train F.3 Status (2026-05-25, später):** **User-initiierter
 > iCloud-Drive-/Files-Export-Hint adoptiert.** `AppPreferences.preferCloudDriveExport`
 > (seit F.0 als Toggle existent, Default `false`) ist ab F.3 UI-gebunden:
