@@ -1,6 +1,19 @@
 # APP Feature Inventory
 
-Last analysis: **2026-05-25** (Export UX I build-only auf `main` HEAD
+Last analysis: **2026-05-25** (Import UX I build-only auf `main` HEAD
+`627a2df` + Import-UX-I-Diff). Home-Screen `emptyStateView` und
+Overview-Empty-Card bekommen additive UI-Test-Identifier, eine
+just-in-time Format-Zusatzzeile („GPX 1.1 and TCX 2.0 are also accepted
+(including inside .zip archives).") und einen Privacy-Hinweis
+konsistent zu Export UX I (lock.shield-Icon + „Imported files stay on
+this device — nothing is uploaded automatically."). Bestehender Import-
+Pfad (`fileImporter([.json, .zip, .gpx, .tcx])`, `AppContentLoader`,
+`LH2GPXAppFlow`, Stream-Parser, `LocalTimelineImportController`)
+**vollständig unverändert**. **Kein** automatischer Upload, **keine**
+iCloud-Sync-nach-Import, **keine** Entitlement-/Privacy-Manifest-
+Änderung. Tests deferred bis Punkt 10.
+
+Voriger Stand: Export UX I build-only auf `main` HEAD
 `ba41234` + Export-UX-I-Diff). Drei additive UX-Polish-Stellen in
 `AppExportView.selectionSummaryCard`/`previewCard`: sichtbarer Privacy-
 Hinweis („These export files contain precise location data. You decide

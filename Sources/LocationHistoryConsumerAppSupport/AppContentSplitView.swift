@@ -812,10 +812,23 @@ public struct AppContentSplitView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("overview.empty.body")
+                Label {
+                    Text(t("Imported files stay on this device — nothing is uploaded automatically."))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "lock.shield")
+                        .foregroundStyle(LH2GPXTheme.primaryBlue)
+                        .accessibilityHidden(true)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("overview.empty.privacyHint")
                 Button(action: onOpen) {
                     Label(t("Import File"), systemImage: "doc.badge.plus")
                         .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, minHeight: 44)
                         .padding(.vertical, 12)
                 }
                 .buttonStyle(.borderedProminent)

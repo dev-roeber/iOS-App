@@ -1,5 +1,65 @@
 # CHANGELOG
 
+## 2026-05-25 — Import UX I: Home-Screen-Accessibility + Format-Just-in-Time-Hinweis + Overview-Empty Privacy-Hinweis (Branch `main`, HEAD `627a2df` → folgt)
+
+> **Reiner UX-Polish im bestehenden Import-Flow.** Zwei Files (`wrapper/LH2GPXWrapper/ContentView.swift` Home-Screen + `Sources/.../AppContentSplitView.swift` Overview-Empty-Card) bekommen additive Accessibility-Identifier, eine just-in-time-Zusatzzeile zu unterstützten Formaten und einen Privacy-Hinweis in derselben Sprache wie F.3 + Export UX I. **Kein Parser-/Loader-Wechsel, keine neue `fileImporter`-Konfiguration, keine automatische iCloud-Synchronisation nach Import, kein neuer Datenpfad, keine Entitlement- oder Privacy-Manifest-Änderung.** Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku (vor Implementation)
+- SwiftUI `fileImporter(isPresented:allowedContentTypes:allowsMultipleSelection:onCompletion:)` — Security-scoped URLs; bestehender Wrapper-Aufruf nutzt bereits `[.json, .zip, .gpx, .tcx]` (https://developer.apple.com/documentation/swiftui/view/fileimporter(ispresented:allowedcontenttypes:allowsmultipleselection:oncompletion:))
+- Security-scoped resource access (`url.startAccessingSecurityScopedResource()` + matching `stop`; Bookmark-Pattern `URL.bookmarkData(options: .withSecurityScope)`) (https://developer.apple.com/documentation/foundation/nsurl/startaccessingsecurityscopedresource())
+- `UniformTypeIdentifiers` (UTType filenameExtension/conformingTo, Konformanz-Prüfung statt Extension allein) (https://developer.apple.com/documentation/uniformtypeidentifiers/uttype)
+- `UIDocumentPickerViewController` Open- vs. Import-Semantik (SwiftUI `fileImporter` mappt auf Open-Semantik) (https://developer.apple.com/documentation/uikit/uidocumentpickerviewcontroller)
+- HIG „Feedback"/„Progress" — determinate Progress bei messbarer Restdauer, indeterminate Spinner für kurze/unvorhersehbare Wartezeiten (https://developer.apple.com/design/human-interface-guidelines/progress-indicators)
+- HIG „Alerts"/„Errors" — User-Sprache, keine Codes, konkrete Recovery-Aktion (https://developer.apple.com/design/human-interface-guidelines/alerts)
+- HIG „Onboarding" — minimal, just-in-time Hinweise statt vorgeschalteter Slideshow (https://developer.apple.com/design/human-interface-guidelines/onboarding)
+- App Privacy „Files and Folders" — klar kommunizieren: importierte Datei bleibt lokal, kein Upload ohne explizites Opt-in (https://developer.apple.com/design/human-interface-guidelines/privacy)
+
+### Import-UX-Änderungen
+
+**`wrapper/LH2GPXWrapper/ContentView.swift` (`emptyStateView`)**
+1. **Title-Identifier**: `Text("Import your location history")` bekommt `accessibilityIdentifier("home.title")`.
+2. **Subtitle-Identifier + Wrap**: bestehender Subtitle-`Text` mit `app_export.json/.zip` + Google-Takeout-Hinweis bekommt `.fixedSize(horizontal: false, vertical: true)` (Dynamic-Type-resilient) + `accessibilityIdentifier("home.subtitle")`.
+3. **Just-in-time Format-Hinweis (neu)**: zusätzliche `Text("GPX 1.1 and TCX 2.0 are also accepted (including inside .zip archives).")` in `.footnote` mit `accessibilityIdentifier("home.subtitle.formats")`. Macht GPX/TCX-Support explizit, ohne den primären Subtitle zu überladen — HIG-Onboarding-konform (just-in-time statt Tutorial).
+4. **CTA-Buttons**: „Open location history file"/„Load Demo Data"/„Clear" bekommen `accessibilityIdentifier("home.openFile")`/`("home.loadDemo")`/`("home.clearError")` + `accessibilityHint` mit Recovery-/Erläuterungs-Copy + `frame(minHeight: 44)` für Dynamic-Type-resilientes 44-pt-Hit-Target.
+
+**`Sources/.../AppContentSplitView.swift` (`overviewEmptyCallToAction`)**
+1. **Body-Identifier**: bestehender Body-`Text` bekommt `accessibilityIdentifier("overview.empty.body")`.
+2. **Privacy-Hinweis (neu)**: `Label` mit `lock.shield`-Icon (LH2GPXTheme.primaryBlue) + Caption2-Text „Imported files stay on this device — nothing is uploaded automatically." Identifier `overview.empty.privacyHint`. Spiegelt den `export.selection.privacyHint`-Wortlaut für konsistente Datenschutz-Sprache.
+3. **Button Hit-Target**: bestehender „Import File"-Button bekommt `minHeight: 44`.
+
+### Keine automatischen Uploads
+- ✅ **Kein** neuer Netzwerk-Call, keine `URLSession`-Erweiterung, keine CloudKit-Operation.
+- ✅ **Kein** automatischer iCloud-Sync nach Import — `AppContentLoader`/`LH2GPXAppFlow` unverändert.
+- ✅ Bestehende `fileImporter`-Konfiguration (`[.json, .zip, .gpx, .tcx]`) unverändert; kein neuer UTType registriert.
+- ✅ Bestehende `handleImportResult`/`runImport`-Pipeline unverändert.
+- ✅ Privacy-Hinweis sagt explizit „nothing is uploaded automatically".
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `wrapper/LH2GPXWrapper/ContentView.swift` | Home-Screen `emptyStateView`-Polish |
+| `Sources/.../AppContentSplitView.swift` | Overview-Empty-Card `overviewEmptyCallToAction`-Polish |
+| Doku | CHANGELOG, NEXT_STEPS, ROADMAP, APPLE_VERIFICATION_CHECKLIST, APP_FEATURE_INVENTORY |
+
+### Neue UI-Test-Identifier
+`home.title`, `home.subtitle`, `home.subtitle.formats`, `home.openFile`, `home.loadDemo`, `home.clearError`, `overview.empty.body`, `overview.empty.privacyHint`. **Bestehende** Identifier (`home.localNotice`, `overview.empty`, `overview.empty.import`) erhalten.
+
+### Build-only Validierung (in diesem Train)
+- `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), 13,82 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+- Statische Sweeps ✅: 0 false-claims / 0 security-scope-Änderungen / 0 Secret-Treffer in den geänderten Files (1 Bearer-Treffer ist Bestands-`liveLocationServerUploadBearerToken`-Binding-Beobachtung in `AppContentSplitView`, nicht aus diesem Train).
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+- Keine Parser-/Loader-Änderung in `AppContentLoader`/`LH2GPXAppFlow`/`GoogleTimelineStreamReader`/`GPXImportParser`/`TCXImportParser`.
+- Keine Änderung an `LocalTimelineImportProgressView`/`LocalTimelineImportController`/Cancel-Pfad.
+
+### Nächster Schritt
+**Map/Timeline/Heatmap Interaktion build-only** — UX-Polish ohne Renderer-/Store-Risiko.
+
+---
+
 ## 2026-05-25 — Export UX I: Privacy-Hinweis + Filename-Accessibility + Empty-Preview-Identifier (Branch `main`, HEAD `ba41234` → folgt)
 
 > **Reine UX-Polish im bestehenden Export-Flow.** `AppExportView` bekommt drei kleine, additive Verbesserungen rund um die `selectionSummaryCard` / `previewCard`: (1) sichtbarer Privacy-Hinweis direkt unter dem Filename-Vorschlag („These export files contain precise location data. You decide where to save them — nothing is uploaded automatically."), (2) Filename-Vorschau bekommt ein `doc.text`-Icon und eine kombinierte VoiceOver-Beschriftung „Suggested filename: <name>" statt nur monospaced-Text, (3) der „Select at least one day…"-Hinweis im leeren Preview-Zustand bekommt einen `accessibilityIdentifier`. **Keine neuen Exportformate, keine Parser-/Format-Logik-Änderung, keine automatische iCloud-Synchronisation, kein neuer Datenpfad, keine entitlement- oder privacy-manifest-Änderung.** Tests in diesem Train **bewusst nicht** ausgeführt — deferred bis Punkt 10.

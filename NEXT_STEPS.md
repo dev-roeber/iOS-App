@@ -1,5 +1,23 @@
 # NEXT_STEPS
 
+## Stand 2026-05-25 (Import UX I) — Home-Screen-Accessibility + Format-Hinweis + Overview-Empty Privacy (Branch `main`, HEAD `627a2df` → folgt)
+
+> **Reiner UX-Polish im Import-Flow.** Home-Screen (`wrapper/LH2GPXWrapper/ContentView.swift` `emptyStateView`) bekommt Identifier (`home.title`/`home.subtitle`/`home.subtitle.formats`/`home.openFile`/`home.loadDemo`/`home.clearError`), zusätzliche just-in-time Format-Footnote „GPX 1.1 and TCX 2.0 are also accepted (including inside .zip archives)." und Accessibility-Hints + 44 pt Hit-Targets auf CTA-Buttons. Overview-Empty-Card (`AppContentSplitView.overviewEmptyCallToAction`) bekommt `overview.empty.body`-Identifier und einen Privacy-Hinweis „Imported files stay on this device — nothing is uploaded automatically." (Identifier `overview.empty.privacyHint`). **Kein Parser-/Loader-Wechsel, keine neue `fileImporter`-Konfiguration, kein automatischer Upload, kein iCloud-Sync nach Import, keine Entitlement-/Privacy-Manifest-Änderung.** Tests deferred bis Punkt 10.
+
+**Geänderte Dateien:**
+- `wrapper/LH2GPXWrapper/ContentView.swift`
+- `Sources/LocationHistoryConsumerAppSupport/AppContentSplitView.swift`
+
+**Build-only verifiziert:** `swift build` ✅ 0E/1W (pre-existing F.1-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅.
+
+**Nächste Trains (build-only bis Punkt 10):**
+1. **Map/Timeline/Heatmap Interaktion** — UX-Polish ohne Renderer-/Store-Risiko.
+2. **Insights refactor** — UX-Polish.
+3. **Finaler Build-/Doku-Sync vor Testphase.**
+4. **Vollständige Tests:** `swift test`, `xcodebuild test`, UITests Sim+Device, TestFlight-Smoke, Xcode Cloud Workflow.
+
+---
+
 ## Stand 2026-05-25 (Export UX I) — Privacy-Hinweis + Filename-Accessibility + Empty-Preview-Identifier (Branch `main`, HEAD `ba41234` → folgt)
 
 > **Reiner UX-Polish im bestehenden Export-Flow.** Drei additive Stellen in `AppExportView`: Privacy-Hinweis im Selection-Summary, Filename-Vorschau mit `doc.text`-Icon + VoiceOver-Label „Suggested filename: <name>", neuer `accessibilityIdentifier` für den Empty-Preview-Label. **Keine** neuen Formate, **keine** Parser-/Format-Logik-Änderung, **keine** automatische iCloud-Synchronisation, **kein** neuer Datenpfad, **keine** Entitlement-/Privacy-Manifest-Änderung. Tests deferred bis Punkt 10.

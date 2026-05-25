@@ -1,5 +1,39 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-25 (Import UX I) — Home-Screen-Accessibility + Format-Hinweis + Overview-Empty Privacy
+
+**HEAD:** `627a2df` + Import-UX-I-Diff (`wrapper/LH2GPXWrapper/ContentView.swift`, `Sources/.../AppContentSplitView.swift`).
+
+### ✅ In diesem Pass build-only verifiziert
+- Home-Screen `emptyStateView` bekommt 6 neue UI-Test-Identifier (`home.title`, `home.subtitle`, `home.subtitle.formats`, `home.openFile`, `home.loadDemo`, `home.clearError`), eine just-in-time Format-Zusatzzeile, `accessibilityHint`s und 44 pt Hit-Targets auf den drei CTA-Buttons.
+- Overview-Empty-Card bekommt `overview.empty.body`-Identifier + Privacy-Hinweis-Label (`overview.empty.privacyHint`) mit `lock.shield`-Icon + 44 pt Hit-Target auf dem „Import File"-Button.
+- Bestehender Import-Pfad (`fileImporter([.json, .zip, .gpx, .tcx])`, `handleImportResult`/`runImport`/`AppContentLoader`/`LH2GPXAppFlow`/Stream-Parser/`LocalTimelineImportController`) **vollständig unverändert**.
+- Keine Entitlement-Änderung, kein neues UTType, keine Security-Scope-Änderung, kein Privacy-Manifest-Update.
+- Bestehende Identifier (`home.localNotice`, `overview.empty`, `overview.empty.import`, `app.actionsMenu`, `localTimeline.session.landing`, `localTimeline.progress.*`, `productInfo.importSummary.*`) **alle erhalten**.
+- `swift build` ✅ 0E/1W (pre-existing F.1 Swift-6-Concurrency-Warning in `CloudKitCloudSyncService.swift:48`), 13,82 s.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build` ✅ BUILD SUCCEEDED.
+- `xcodebuild -scheme LH2GPXWrapper -destination 'generic/platform=iOS' build` ✅ BUILD SUCCEEDED.
+
+### Geprüfte Apple-Doku (vor Implementation)
+SwiftUI `fileImporter(isPresented:allowedContentTypes:allowsMultipleSelection:onCompletion:)` · Security-scoped resource access (`startAccessingSecurityScopedResource()`/`stop`, Bookmark-Pattern) · `UniformTypeIdentifiers` Konformanz-Prüfung statt Extension allein · `UIDocumentPickerViewController` Open-vs-Import-Semantik · HIG „Feedback"/„Progress" (determinate vs indeterminate) · HIG „Alerts"/„Errors" (User-Sprache, Recovery-Aktion) · HIG „Onboarding" (just-in-time statt Tutorial) · App Privacy „Files and Folders" (Datei bleibt lokal, kein Upload ohne Opt-in). URLs siehe CHANGELOG-Block.
+
+### ⏸️ In diesem Pass bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller iPhone-Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+- Keine Änderung an Parser-/Loader-/Stream-Pipeline.
+- Keine Änderung an `LocalTimelineImportProgressView`/Cancel-Pfad.
+
+### Pflicht-Anti-Claims (unverändert)
+- ❌ Echter iCloud-Sync implementiert.
+- ❌ Automatische iCloud-Synchronisation nach Import.
+- ❌ Automatischer Upload aus Import oder Export.
+- ❌ CloudKit Records aktiv.
+- ❌ Historien-Synchronisation aktiv.
+- ❌ Public / shared Database genutzt.
+- ❌ iPad / Light Mode unterstützt.
+- ❌ Neuer Xcode-Cloud-Build / TestFlight-Build verfügbar — letzter extern grüner Stand bleibt **190** auf `b25c27d`.
+
+---
+
 ## Aktualisierung 2026-05-25 (Export UX I) — Privacy-Hinweis + Filename-Accessibility + Empty-Preview-Identifier
 
 **HEAD:** `ba41234` + Export-UX-I-Diff (`AppExportView.swift`).

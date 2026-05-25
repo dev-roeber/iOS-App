@@ -247,10 +247,19 @@ struct ContentView: View {
                 Text(t("Import your location history"))
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.white)
+                    .accessibilityIdentifier("home.title")
                 Text(t("Open an app_export.json or .zip from the LocationHistory2GPX tool — or a Google Timeline location-history.json or .zip from Google Takeout."))
                     .font(.body)
                     .foregroundStyle(Color.white.opacity(0.78))
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("home.subtitle")
+                Text(t("GPX 1.1 and TCX 2.0 are also accepted (including inside .zip archives)."))
+                    .font(.footnote)
+                    .foregroundStyle(Color.white.opacity(0.68))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("home.subtitle.formats")
             }
             .shadow(color: Color.black.opacity(0.45), radius: 8, y: 2)
 
@@ -265,17 +274,25 @@ struct ContentView: View {
                     isImportingFile = true
                 } label: {
                     Label(t("Open location history file"), systemImage: "doc.badge.plus")
+                        .frame(minHeight: 44)
                 }
                 .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("home.openFile")
+                .accessibilityHint(t("Opens the system file picker to choose a location history file from your device or iCloud Drive."))
                 Button(action: loadBundledDemo) {
                     Label(t("Load Demo Data"), systemImage: "testtube.2")
+                        .frame(minHeight: 44)
                 }
                 .buttonStyle(.bordered)
+                .accessibilityIdentifier("home.loadDemo")
+                .accessibilityHint(t("Loads a small bundled sample so you can explore the app without importing your own data."))
                 if session.message?.kind == .error {
                     Button(action: clearCurrentContent) {
                         Label(t("Clear"), systemImage: "xmark.circle")
+                            .frame(minHeight: 44)
                     }
                     .buttonStyle(.bordered)
+                    .accessibilityIdentifier("home.clearError")
                 }
             }
 

@@ -1,5 +1,14 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-25, Branch `main`, HEAD `627a2df` + Import UX I → folgt — Home-Screen-Accessibility + Format-Hinweis + Overview-Empty Privacy)
+
+- **Import UX I umgesetzt (build-only):** Home-Screen (`wrapper/LH2GPXWrapper/ContentView.swift` `emptyStateView`) bekommt Identifier (`home.title`, `home.subtitle`, `home.subtitle.formats`, `home.openFile`, `home.loadDemo`, `home.clearError`), neue just-in-time Footnote „GPX 1.1 and TCX 2.0 are also accepted (including inside .zip archives)." und `accessibilityHint`+44 pt Hit-Targets auf CTA-Buttons. Overview-Empty-Card (`AppContentSplitView.overviewEmptyCallToAction`) bekommt `overview.empty.body`-Identifier + Privacy-Hinweis „Imported files stay on this device — nothing is uploaded automatically." (Identifier `overview.empty.privacyHint`, konsistent zu `export.selection.privacyHint` aus Export UX I).
+- **Bestehender Import-Pfad unverändert:** `fileImporter([.json, .zip, .gpx, .tcx])`-Konfiguration, `handleImportResult`/`runImport`/`AppContentLoader.loadImportedContentEnvelope`/`LH2GPXAppFlow`/Stream-Parser/`LocalTimelineImportController`/Cancel-Pfad alle unverändert. Kein neues UTType, keine Security-Scope-Änderung.
+- **Privacy-Linie konsistent:** F.3 (Export-Target-Card) + Export UX I (Selection-Privacy) + Import UX I (Overview-Empty-Privacy) sprechen jetzt mit derselben Stimme — „You decide where to save them — nothing is uploaded automatically" beim Export, „Imported files stay on this device — nothing is uploaded automatically" beim Import. **Kein** automatischer Upload, **kein** iCloud-Sync, **keine** Privacy-Manifest-Änderung.
+- **Build-only verifiziert (in diesem Train):** `swift build` ✅ 0E/1W (pre-existing F.1-Concurrency-Warning), `xcodebuild` Sim Build ✅, `xcodebuild` generic iOS Build ✅. **Tests bewusst nicht ausgeführt** — deferred bis Punkt 10.
+- **Extern unverändert:** letzter extern grüner Xcode-Cloud-Build bleibt **190** auf `b25c27d`.
+- **Weiter offen:** Map/Timeline/Heatmap-Polish, Insights-Refactor, finaler Sync vor Testphase, vollständige Tests.
+
 ## Aktiver Stand (2026-05-25, Branch `main`, HEAD `ba41234` + Export UX I → folgt — Privacy-Hinweis + Filename-Accessibility + Empty-Preview-Identifier)
 
 - **Export UX I umgesetzt (build-only):** `AppExportView.selectionSummaryCard` bekommt sichtbaren Privacy-Hinweis („These export files contain precise location data. You decide where to save them — nothing is uploaded automatically.") + Filename-Vorschau mit `doc.text` SF-Symbol und kombiniertem VoiceOver-Label „Suggested filename: <name>". `previewCard` Leerzustand bekommt `accessibilityIdentifier("export.preview.emptySelection")`. Neue Identifier: `export.selection.privacyHint`, `export.selection.filenamePreview`, `export.preview.emptySelection`.
