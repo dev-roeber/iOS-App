@@ -1,5 +1,54 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.13: Widget / Dynamic-Island / Live-Status Konsistenz (Branch `main`, HEAD `9580ec9` → folgt)
+
+> **Doc-Confirm-Train.** Vollständiges Audit der glanceable Surfaces: Status-Terminologie ist bereits konsistent zwischen App, Widget und Live-Activity (`disabled`/`active`/`pending`/`failed`/`paused` in `LiveActivityUploadState`; `Paused` ↔ `Pausiert` in `WidgetStr`). Sensitive-Daten-Sweep: **keine** Koordinaten/Adressen/PlaceIDs/Bearer-Token in `wrapper/LH2GPXWidget/`, `LiveActivityPresentation.swift`, `TrackingAttributes.swift`. `TrackingStatus` enthält nur aggregierte Werte (Distance, Points, QueueCount, isPaused, uploadState) — privacy-safe by design. **Keine Code-Änderung nötig.** Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- WidgetKit (`Widget`, `TimelineProvider`, `WidgetConfiguration`).
+- ActivityKit / Live Activities / Dynamic Island (`ActivityAttributes`, `ContentState`, `DynamicIsland`-Builder).
+- App Groups (`UserDefaults(suiteName:)`, `WidgetDataStore`).
+- HIG „Widgets" + „Live Activities" — glanceable, kein sensibler Inhalt, klare Statussymbole.
+- Privacy Guidance für glanceable Surfaces — keine PII auf Lock Screen.
+
+### Konsistenz-Audit
+| Aspekt | Code-Beleg | Status |
+|---|---|---|
+| Statusbegriffe einheitlich | `LiveActivityUploadState.localizedName`/`compactLabel`/`systemImageName` (5 Cases: disabled/active/pending/failed/paused) | ✅ konsistent |
+| Widget-Lokalisierung | `WidgetStr` mit `Paused`/`Pausiert`, `noRecording`, `liveTrack` etc. via App-Group UserDefaults gemirrored | ✅ konsistent |
+| Dynamic-Island-Compact-Display | `DynamicIslandCompactDisplay.distance/points/elapsed/uploadStatus` mit `localizedName` | ✅ konsistent |
+| LiveActivity-Verfügbarkeit | `LiveActivityFeatureAvailability.Status: available/disabled/unsupported` mit `statusLabel` + `detailMessage` | ✅ konsistent |
+| Privacy auf glanceable Surfaces | `TrackingAttributes`: nur `trackName` + `startTime`; `TrackingStatus`: nur aggregierte Werte (Distance, Points, QueueCount, isPaused, uploadState); **keine** Koordinaten, **keine** Place-IDs, **keine** Adressen, **keine** Tokens | ✅ konform |
+
+### Sensitive-Daten-Sweep
+- `rg -n "latitude\|longitude\|coordinate\|placeID\|address\|Bearer" wrapper/LH2GPXWidget/ Sources/.../LiveActivityPresentation.swift Sources/.../TrackingAttributes.swift` → **0 Treffer**.
+- `TrackingStatus.Codable`-Decoder ist defensiv (`decodeIfPresent`) — alte Payloads ohne neue Felder dekodieren graceful.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `CHANGELOG.md`, `ROADMAP.md` | Doku-Sync (Doc-Confirm) |
+
+### Bewusst NICHT verändert
+- Keine neue LiveActivity-Funktion.
+- Keine neue Background-Location-Funktion.
+- Keine neuen Entitlements.
+- Keine iCloud-/Push-/Remote-Update-Funktion.
+- Kein WidgetKit-/ActivityKit-API-Migrationspfad (alle bisherigen APIs aktuell).
+
+### Build-only Validierung
+- `swift build` ✅ (Cache-Hit, 0,53 s, 0 Warnings).
+- `xcodebuild` Sim ✅ `BUILD SUCCEEDED`.
+- `xcodebuild` generic iOS ✅ `BUILD SUCCEEDED`.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.14 — App Store / Privacy / Review Readiness** (build-only).
+
+---
+
 ## 2026-05-25 — Train 8.12: Heatmap / Insights / Statistik Modernisierung (Branch `main`, HEAD `3770f8c` → folgt)
 
 > **Minimal-additive Heatmap/Insights-Polish.** `heatmap.statsBadge` bekommt `accessibilityHint` („Total points and active day count for the current heatmap view…"); `heatmap.computing` bekommt `accessibilityValue(t("In progress"))` für VoiceOver; `insights.kpi.grid` bekommt `accessibilityHint` („Summary KPIs for the currently selected range…"). **Keine** algorithmische Heatmap-Änderung (`HeatmapGridBuilder`, `HeatmapLOD`, `AppHeatmapPathSampler` unverändert); **keine** neue Berechnung in `InsightsDerivedModel`/`Insights*Presentation`; **keine** neuen Charts. Tests deferred bis Punkt 10.

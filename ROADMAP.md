@@ -22,7 +22,7 @@
 | 8.10 | Live Tracking / Upload Control Center | ✅ erledigt — Upload-Card Hints + Status-Identifier |
 | 8.11 | Timeline / Days / Day Detail Modernisierung | ✅ erledigt — routeDisplay+timeline Hints + 2. Picker Identifier |
 | 8.12 | Heatmap / Insights / Statistik Modernisierung | ✅ erledigt — Heatmap-Hints + KPI-Grid-Hint |
-| 8.13 | Widget / Dynamic-Island / Live-Status Konsistenz | offen |
+| 8.13 | Widget / Dynamic-Island / Live-Status Konsistenz | ✅ erledigt — Doc-Confirm-Train (bereits konsistent + privacy-safe) |
 | 8.14 | App Store / Privacy / Review Readiness | offen |
 | 8.15 | Final Build-only Consolidation | offen |
 | **10** | **Vollständige Tests / Xcode Cloud / TestFlight** | offen |
