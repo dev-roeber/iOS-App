@@ -184,6 +184,8 @@ public struct MapLayerMenu: View {
                     } label: {
                         Label(t("Fit to data"), systemImage: "arrow.up.left.and.arrow.down.right")
                     }
+                    .accessibilityIdentifier("map.layerMenu.fitToData")
+                    .accessibilityHint(t("Re-centers the map so all current routes or heatmap cells fit on screen."))
                 }
                 if let center = configuration.centerOnLocation {
                     Button {
@@ -191,6 +193,8 @@ public struct MapLayerMenu: View {
                     } label: {
                         Label(t("Center on current location"), systemImage: "location.fill")
                     }
+                    .accessibilityIdentifier("map.layerMenu.centerOnLocation")
+                    .accessibilityHint(t("Pans the map to your current GPS location and enables follow mode."))
                 }
                 if let fullscreen = configuration.toggleFullscreen {
                     Button {
@@ -203,6 +207,7 @@ public struct MapLayerMenu: View {
                                 : "arrow.up.left.and.arrow.down.right"
                         )
                     }
+                    .accessibilityIdentifier("map.layerMenu.fullscreen")
                 }
             }
         }

@@ -1,5 +1,49 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.6: Map Layer Menu Identifier + Hints (Branch `main`, HEAD `a8f41e2` → folgt)
+
+> **Minimal-invasive Map-Layer-Polish.** Drei MapLayerMenu-Actions („Fit to data", „Center on current location", „Open/Close fullscreen map") bekommen UI-Test-Identifier + Recovery-/Erläuterungs-Hints. Kein Performance-Risiko, keine Algorithmus-Änderung, keine neuen Karten-/Höhendaten, keine Permission-Änderung. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- MapKit for SwiftUI (https://developer.apple.com/documentation/mapkit/map) — `Map`, `MapCameraPosition`, `MapInteractionModes`
+- HIG „Maps" (https://developer.apple.com/design/human-interface-guidelines/maps) — Layer/Content-Status sichtbar machen, Legende
+- HIG „Controls" — 44 pt Hit-Target, `accessibilityHint` für Folge-Aktionen
+- HIG „Feedback" — `sensoryFeedback` für sofortige Confirmation
+
+### Map/Layer/Route-Änderungen
+1. **`MapLayerMenu.actionsSection`** (3 Buttons): jeweils `accessibilityIdentifier("map.layerMenu.<fitToData/centerOnLocation/fullscreen>")` + `accessibilityHint` mit klarer Erläuterung („Re-centers the map so all current routes or heatmap cells fit on screen.", „Pans the map to your current GPS location and enables follow mode."). Fullscreen-Button bekommt Identifier ohne Hint (Label ist bereits selbsterklärend).
+
+### Bewusst NICHT verändert
+- `AppHeatmapView`-Renderer, `AppHeatmapModel.startPrecomputation(scale:)`, `HeatmapGridBuilder`, `HeatmapLOD`, `HeatmapVisualStyle`, `HeatmapPalette`, `AppHeatmapPathSampler` — Algorithmen unverändert.
+- `LHCollapsibleMapHeader`-State-Machine unverändert.
+- `AppOverviewTracksMapView`-Performance-Schutzschicht unverändert.
+- Keine neuen externen Karten-/Höhendaten.
+- Keine Standortberechtigungs-Änderung.
+- Map-Selection/Map-Camera-Position-Binding-Pfade unverändert (bestehender `.onMapCameraChange(frequency: .onEnd)`-Pfad bleibt).
+- Keine neue Heatmap-Legende (separater Polish-Train; nur Status-Badge `heatmap.statsBadge` aus Map UX I bleibt).
+
+### Performance-Risiko
+✅ **Null.** Nur 3 zusätzliche `accessibilityIdentifier`/`accessibilityHint`-Modifier-Stack-Erweiterungen — keine neuen `Task.detached`/MainActor-Hops, keine Overlay-Rebuilds.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../MapLayerMenu.swift` | 3 Identifier + 2 Hints im `actionsSection` |
+| Doku | CHANGELOG, ROADMAP |
+
+### Build-only Validierung
+- `swift build` ✅ (8,83 s, 0 Warnings).
+- `xcodebuild` Sim ✅.
+- `xcodebuild` generic iOS ✅.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.7 — Error Handling / Diagnostics / User Feedback** (build-only).
+
+---
+
 ## 2026-05-25 — Train 8.5: Accessibility / Dynamic Type Polish (Branch `main`, HEAD `c99f90c` → folgt)
 
 > **Minimal-invasive A11y-Polish.** Settings-Root und Home-Screen-Empty-State bekommen sichere Dynamic-Type-/Decorative-Image-Polishes. Localization-Architektur (custom `t(_:)`-Layer) bleibt unverändert — Migration auf String Catalog ist als separater Train dokumentiert. Tests deferred bis Punkt 10.
