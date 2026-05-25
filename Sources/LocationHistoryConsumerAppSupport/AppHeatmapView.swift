@@ -129,6 +129,7 @@ public struct AppHeatmapView: View {
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("heatmap.computing")
         .accessibilityLabel(t("Computing heatmap"))
+        .accessibilityValue(Text(t("In progress")))
     }
 
     // MARK: - Stats badge (bottom-leading info chip)
@@ -148,6 +149,7 @@ public struct AppHeatmapView: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("heatmap.statsBadge")
                 .accessibilityLabel(statsAccessibilityLabel)
+                .accessibilityHint(Text(t("Total points and active day count for the current heatmap view. Adjust the date range or filters to recompute.")))
         }
     }
 

@@ -774,6 +774,7 @@ struct AppInsightsContentView: View {
             .accessibilityIdentifier("insights.kpi.places")
         }
         .accessibilityIdentifier("insights.kpi.grid")
+        .accessibilityHint(Text(t("Summary KPIs for the currently selected range. Change the range or surface above to recompute.")))
     }
 
     @ViewBuilder

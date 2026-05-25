@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## 2026-05-25 — Train 8.12: Heatmap / Insights / Statistik Modernisierung (Branch `main`, HEAD `3770f8c` → folgt)
+
+> **Minimal-additive Heatmap/Insights-Polish.** `heatmap.statsBadge` bekommt `accessibilityHint` („Total points and active day count for the current heatmap view…"); `heatmap.computing` bekommt `accessibilityValue(t("In progress"))` für VoiceOver; `insights.kpi.grid` bekommt `accessibilityHint` („Summary KPIs for the currently selected range…"). **Keine** algorithmische Heatmap-Änderung (`HeatmapGridBuilder`, `HeatmapLOD`, `AppHeatmapPathSampler` unverändert); **keine** neue Berechnung in `InsightsDerivedModel`/`Insights*Presentation`; **keine** neuen Charts. Tests deferred bis Punkt 10.
+
+### Geprüfte Apple-Doku
+- Swift Charts (`Chart`, `BarMark`, `LineMark`, `chartXAxis`, `accessibilityChartDescriptor` über `AXChartDescriptorRepresentable`).
+- SwiftUI Composition / LazyVStack-Performance (Subviews extrahieren, Equatable-Conformance, `.task(id:)`).
+- A11y für Daten: `accessibilityElement(children: .combine)` + `Label/Value/Hint`-Reihenfolge; `accessibilityAddTraits(.isSummaryElement)` für KPI-Headline.
+- HIG Charts / Data Viz / Maps: Legende sichtbar, Farbskala mit Kontrast (WCAG), Einheiten, Empty-State mit Call-to-Action, Heatmap-Overlay mit klaren Intensitätsstufen.
+
+### Geänderte Dateien
+| Datei | Art |
+|---|---|
+| `Sources/.../AppHeatmapView.swift` | `statsBadge`-Hint + `computing`-Value |
+| `Sources/.../AppInsightsContentView.swift` | `insights.kpi.grid`-Hint |
+| `CHANGELOG.md`, `ROADMAP.md` | Doku-Sync |
+
+### Berechnungslogik geändert
+❌ **Nein.** Keine Aggregation, kein Renderer, kein Cache geändert. Reine Accessibility-Modifier-Additionen.
+
+### Build-only Validierung
+- `swift build` ✅ (27,00 s, 0 Warnings).
+- `xcodebuild` Sim ✅ `BUILD SUCCEEDED`.
+- `xcodebuild` generic iOS ✅ `BUILD SUCCEEDED`.
+
+### Bewusst NICHT verändert
+- Keine Heatmap-Legende (separater Polish-Train).
+- Keine neuen Charts (würden Swift-Charts-Migration verlangen → Risiko).
+- Keine Berechnungslogik (siehe oben).
+- Keine neue Datenquelle.
+
+### Bewusst NICHT ausgeführt
+- `swift test`, `xcodebuild test`, UITests, manueller Smoke, TestFlight-Smoke, Xcode Cloud — deferred bis Punkt 10.
+
+### Nächster Schritt
+**Train 8.13 — Widget / Dynamic-Island / Live-Status Konsistenz** (build-only).
+
+---
+
 ## 2026-05-25 — Train 8.11: Timeline / Days / Day Detail Modernisierung (Branch `main`, HEAD `e8bc835` → folgt)
 
 > **Minimal-additive Timeline/DayDetail-Polish.** Beide `Route Display`-Segmented-Picker im `AppDayDetailView` bekommen `accessibilityHint` (Header-Picker schon mit Identifier `dayDetail.routeDisplay`; 2. Picker im `mapControlRow` bekommt **neuen** Identifier `dayDetail.routeDisplay.control`). Day-Timeline-Card bekommt zusätzlichen `accessibilityHint`. **Keine** Berechnungs-/Persistenz-Änderung, **keine** neuen Sub-Views, **keine** Layout-Verschiebung. Bestehende 33 Days/DayDetail-Identifier unverändert. Tests deferred bis Punkt 10.
