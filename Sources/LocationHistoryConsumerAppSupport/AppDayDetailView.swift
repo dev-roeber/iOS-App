@@ -346,8 +346,10 @@ public struct AppDayDetailView: View {
                         .foregroundStyle(selectedSegment == segment ? AnyShapeStyle(.primary) : AnyShapeStyle(LH2GPXTheme.textSecondary))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
+                        .frame(minHeight: 44)
                         .background(selectedSegment == segment ? LH2GPXTheme.liveMint : LH2GPXTheme.elevatedCard)
                         .clipShape(Capsule())
+                        .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier(segmentIdentifier(segment))

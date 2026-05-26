@@ -37,7 +37,8 @@ public struct LGLayerToggleBar: View {
                 Label(layer.glassLayerTitle, systemImage: layer.glassLayerIcon)
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 12)
-                    .frame(minHeight: 42)
+                    .frame(minHeight: 44)
+                    .contentShape(Capsule())
             }
             .buttonStyle(.glassProminent)
             .buttonBorderShape(.capsule)
@@ -49,7 +50,8 @@ public struct LGLayerToggleBar: View {
             } label: {
                 Image(systemName: layer.glassLayerIcon)
                     .font(.subheadline.weight(.semibold))
-                    .frame(width: 42, height: 42)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
             }
             .buttonStyle(.glass)
             .buttonBorderShape(.circle)
@@ -85,8 +87,9 @@ public struct LGLayerToggleBar: View {
             .font(.caption.weight(.semibold))
             .foregroundStyle(isActive ? Color.white : layer.glassLayerTint)
             .padding(.horizontal, isActive ? 10 : 8)
-            .frame(height: 34)
+            .frame(minHeight: 44)
             .background(isActive ? layer.glassLayerTint : Color.clear, in: Capsule())
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(layer.glassLayerTitle)

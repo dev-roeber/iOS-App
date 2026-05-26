@@ -6,6 +6,7 @@ import LocationHistoryConsumer
 
 public struct AppOverviewSection: View {
     @EnvironmentObject private var preferences: AppPreferences
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     let overview: ExportOverview
     let daySummaries: [DaySummary]
     var onDaysTap: (() -> Void)? = nil
@@ -27,6 +28,15 @@ public struct AppOverviewSection: View {
         GridItem(.adaptive(minimum: 100, maximum: 160), spacing: 12)
     ]
 
+    // Landscape (compact-vertical) on iPhone: fewer KPIs visible in portrait
+    // because the .adaptive(minimum: 100) lets each card balloon to fill width.
+    // Pin to a 2-column layout in landscape so all KPI tiles stay legible and
+    // values aren't squeezed. See Prompt 06 LANDSCAPE §A2.
+    private let landscapeColumns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+
     public var body: some View {
         let presentation = OverviewPresentation.section(
             overview: overview,
@@ -43,7 +53,10 @@ public struct AppOverviewSection: View {
                     .foregroundStyle(.secondary)
             }
 
-            LazyVGrid(columns: columns, spacing: 12) {
+            LazyVGrid(
+                columns: verticalSizeClass == .compact ? landscapeColumns : columns,
+                spacing: 12
+            ) {
                 ForEach(presentation.stats) { stat in
                     statCard(
                         stat,

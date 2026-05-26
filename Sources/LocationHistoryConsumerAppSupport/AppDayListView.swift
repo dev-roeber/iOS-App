@@ -171,8 +171,10 @@ struct AppDayFilterChipsView: View {
                 .foregroundStyle(isActive ? AnyShapeStyle(.primary) : AnyShapeStyle(LH2GPXTheme.textSecondary))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
+                .frame(minHeight: 44)
                 .background(isActive ? LH2GPXTheme.liveMint : LH2GPXTheme.elevatedCard)
                 .clipShape(Capsule())
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
@@ -187,6 +189,7 @@ struct AppDayFilterChipsView: View {
 
 public struct AppDayListView: View {
     @EnvironmentObject private var preferences: AppPreferences
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     let summaries: [DaySummary]
     let selectedForExportDates: Set<String>
     let favoriteDayIDs: Set<String>
@@ -271,15 +274,31 @@ public struct AppDayListView: View {
                 if !selectedForExportDates.isEmpty {
                     exportStatusSection
                 }
+                // Prompt 06 LANDSCAPE §A3: in iPhone landscape (compact-vertical)
+                // pair days two-per-row so at least two cards stay visible
+                // simultaneously. Portrait keeps the single-column List flow.
+                let isLandscape = verticalSizeClass == .compact
                 if groups.count == 1 {
-                    ForEach(filteredSummaries, id: \.date) { summary in
-                        interactiveRow(for: summary)
+                    if isLandscape {
+                        ForEach(Array(pairs(of: filteredSummaries).enumerated()), id: \.offset) { pair in
+                            landscapeRowPair(pair.element)
+                        }
+                    } else {
+                        ForEach(filteredSummaries, id: \.date) { summary in
+                            interactiveRow(for: summary)
+                        }
                     }
                 } else {
                     ForEach(groups) { group in
                         Section(group.title) {
-                            ForEach(group.summaries, id: \.date) { summary in
-                                interactiveRow(for: summary)
+                            if isLandscape {
+                                ForEach(Array(pairs(of: group.summaries).enumerated()), id: \.offset) { pair in
+                                    landscapeRowPair(pair.element)
+                                }
+                            } else {
+                                ForEach(group.summaries, id: \.date) { summary in
+                                    interactiveRow(for: summary)
+                                }
                             }
                         }
                         .accessibilityIdentifier("days.month.\(group.id)")
@@ -348,6 +367,78 @@ public struct AppDayListView: View {
             return t("No day matches the current drilldown and filter combination.")
         }
         return t("No day matches the active filter chips.")
+    }
+
+    /// Splits an ordered DaySummary array into 2-wide pairs. The last pair may
+    /// hold a single entry, in which case `landscapeRowPair` renders an empty
+    /// spacer to keep grid columns aligned.
+    private func pairs(of summaries: [DaySummary]) -> [[DaySummary]] {
+        guard !summaries.isEmpty else { return [] }
+        var result: [[DaySummary]] = []
+        var index = 0
+        while index < summaries.count {
+            let next = min(index + 2, summaries.count)
+            result.append(Array(summaries[index..<next]))
+            index = next
+        }
+        return result
+    }
+
+    @ViewBuilder
+    private func landscapeRowPair(_ pair: [DaySummary]) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            ForEach(pair, id: \.date) { summary in
+                landscapeCard(for: summary)
+                    .frame(maxWidth: .infinity)
+            }
+            if pair.count == 1 {
+                Color.clear.frame(maxWidth: .infinity)
+            }
+        }
+        .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+    }
+
+    @ViewBuilder
+    private func landscapeCard(for summary: DaySummary) -> some View {
+        let presentation = DaySummaryRowPresentationBuilder.presentation(
+            for: summary,
+            unit: preferences.distanceUnit,
+            context: .list,
+            isFavorited: favoriteDayIDs.contains(summary.date),
+            isExported: selectedForExportDates.contains(summary.date)
+        )
+        Button {
+            guard summary.hasContent else { return }
+            selectedDate = summary.date
+        } label: {
+            AppDayRow(
+                summary: summary,
+                highlightIcons: highlightIconsForDate(summary.date),
+                isSelectedForExport: selectedForExportDates.contains(summary.date),
+                isFavorited: favoriteDayIDs.contains(summary.date),
+                presentation: presentation
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(!summary.hasContent)
+        .accessibilityIdentifier("days.row.\(summary.date)")
+        .accessibilityHint(summary.hasContent
+            ? ""
+            : t("This day has no exportable routes or visits."))
+        .contextMenu {
+            if let onToggleFavorite {
+                Button {
+                    onToggleFavorite(summary.date)
+                } label: {
+                    Label(
+                        favoriteDayIDs.contains(summary.date) ? t("Remove Favorite") : t("Add Favorite"),
+                        systemImage: favoriteDayIDs.contains(summary.date) ? "star.slash" : "star"
+                    )
+                }
+            }
+        }
     }
 
     @ViewBuilder
