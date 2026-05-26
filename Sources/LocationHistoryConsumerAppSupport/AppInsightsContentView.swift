@@ -205,7 +205,7 @@ public struct AppInsightsContentView: View {
         )
     }
 
-    var body: some View {
+    public var body: some View {
         if daySummaries.isEmpty {
             insightsFullEmptyState
         } else if heroEnabled {

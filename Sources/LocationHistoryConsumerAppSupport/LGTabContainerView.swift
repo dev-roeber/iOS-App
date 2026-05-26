@@ -154,7 +154,9 @@ public struct LGTabContainerView: View {
                 selectedForExportDates: session.exportSelection.selectedDates,
                 favoriteDayIDs: favoritedDayIDs,
                 isRangeFilterActive: session.historyDateRangeFilter.isActive,
-                rangeSummaryText: session.historyDateRangeFilter.summaryText,
+                rangeSummaryText: session.historyDateRangeFilter.isActive
+                    ? session.historyDateRangeFilter.chipLabel
+                    : nil,
                 selectedDate: Binding(
                     get: { selectedDate ?? session.selectedDate },
                     set: { newValue in
