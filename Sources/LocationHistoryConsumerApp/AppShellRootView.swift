@@ -123,6 +123,7 @@ struct AppShellRootView: View {
             }
         }
         .preproductionBanner(isActive: technicalSettings.localTimelineStoreTestModeEnabled)
+        .preferredColorScheme(.dark)
         .environmentObject(preferences)
         .environment(\.locale, preferences.appLocale)
         #if canImport(UniformTypeIdentifiers)

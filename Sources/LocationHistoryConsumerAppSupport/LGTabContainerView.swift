@@ -79,6 +79,7 @@ public struct LGTabContainerView: View {
                 }
             }
         }
+        .preferredColorScheme(.dark)
         .sheet(isPresented: $isExportSheetPresented) {
             NavigationStack {
                 AppExportView(
