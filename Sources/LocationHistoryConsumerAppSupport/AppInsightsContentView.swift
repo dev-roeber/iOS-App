@@ -65,6 +65,15 @@ public struct AppInsightsContentView: View {
     @State private var shareSheetPayload: InsightsRenderedSharePayload?
     @State private var shareError: String?
     @State private var derivedModel: InsightsDerivedModel?
+    // Phase 3b: Insights-Hero-Map multi-layer overlay state.
+    // These flags drive the LiveLayerPanel shown as a top-leading overlay on
+    // the hero map. They are display-only today (mirroring the Live tab's
+    // initial multi-layer pass) — the Overview tracks map currently renders
+    // by activity colour regardless of these toggles. Wiring the panel state
+    // here keeps the visual pattern identical across Live / Tage / Einblicke
+    // / Karte without changing track rendering semantics in this phase.
+    @State private var insightsShowWeatherLayer: Bool = false
+    @State private var insightsShowElevationLayer: Bool = false
     @State private var insightsMapHeaderState = LHMapHeaderState(
         visibility: .compact,
         compactHeight: LHHeroMapLayout.compactHeight,
@@ -313,6 +322,12 @@ public struct AppInsightsContentView: View {
     /// route rendering and viewport-aware overlay simplification stay identical
     /// to Overview / Days. Map controls go vertical and land BELOW the
     /// LHCollapsibleMapHeader chevron via the shared layout offset.
+    ///
+    /// Phase 3b: a top-leading `LiveLayerPanel` overlay is added so the
+    /// Standard / Tempo / Höhe / Wetter layer affordance matches the Live
+    /// tab. The top-trailing `MapLayerMenu` (provided by
+    /// `AppOverviewTracksMapView`) keeps the unified map-style / palette
+    /// trigger. KPI tiles below the map are not touched.
     @ViewBuilder
     private var insightsHeroMap: some View {
         LHCollapsibleMapHeader(
@@ -331,9 +346,44 @@ public struct AppInsightsContentView: View {
                     showsFullscreenControl: false,
                     mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset
                 )
+                .overlay(alignment: .topLeading) {
+                    insightsHeroLayerPanel
+                        .padding(.leading, 12)
+                        .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)
+                }
             }
         }
         .accessibilityIdentifier("insights.map.header")
+    }
+
+    /// Top-leading multi-layer panel, mirrors Live's `LiveLayerPanel`.
+    /// Standard / Tempo bind to the shared `preferences.mapTrackColorMode`;
+    /// Höhe / Wetter remain local display flags (the Insights tracks map
+    /// does not render elevation/weather overlays yet — same situation as
+    /// the Live tab's initial multi-layer pass).
+    @available(iOS 17.0, macOS 14.0, *)
+    @ViewBuilder
+    private var insightsHeroLayerPanel: some View {
+        LiveLayerPanel(
+            selected: $preferences.mapTrackColorMode,
+            showWeather: $insightsShowWeatherLayer,
+            showElevation: $insightsShowElevationLayer,
+            layersLabel: insightsLayersPanelLabel
+        )
+        .accessibilityIdentifier("insights.map.layerPanel")
+    }
+
+    /// "LAYERS n/4" label — same shape as the Live tab so users see
+    /// matching affordances across tabs.
+    private var insightsLayersPanelLabel: String {
+        let standardActive = preferences.mapTrackColorMode != .speed
+        let speedActive = preferences.mapTrackColorMode == .speed
+        let count =
+            (standardActive ? 1 : 0)
+            + (speedActive ? 1 : 0)
+            + (insightsShowElevationLayer ? 1 : 0)
+            + (insightsShowWeatherLayer ? 1 : 0)
+        return "\(t("LAYERS")) \(count)/4"
     }
 
     /// Compact filter strip pinned directly under the Hero-Map. Mirrors the
