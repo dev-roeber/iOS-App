@@ -65,30 +65,13 @@ public struct LGTabContainerView: View {
     // MARK: - Body
 
     public var body: some View {
-        Group {
-            if liveLocation.isRecording {
-                TabView(selection: $selectedTab) {
-                    Tab("Karte", systemImage: "map", value: LGTab.map) { mapTab }
-                    Tab("Tage", systemImage: "calendar", value: LGTab.days) { daysTab }
-                    Tab("Live", systemImage: "record.circle", value: LGTab.live) { liveTab }
-                    Tab("Insights", systemImage: "chart.xyaxis.line", value: LGTab.insights) { insightsTab }
-                }
-                .tabBarMinimizeBehavior(.onScrollDown)
-                .tabViewBottomAccessory {
-                    LGLiveRecordingAccessory(liveModel: liveLocation) {
-                        selectedTab = .live
-                    }
-                }
-            } else {
-                TabView(selection: $selectedTab) {
-                    Tab("Karte", systemImage: "map", value: LGTab.map) { mapTab }
-                    Tab("Tage", systemImage: "calendar", value: LGTab.days) { daysTab }
-                    Tab("Live", systemImage: "record.circle", value: LGTab.live) { liveTab }
-                    Tab("Insights", systemImage: "chart.xyaxis.line", value: LGTab.insights) { insightsTab }
-                }
-                .tabBarMinimizeBehavior(.onScrollDown)
-            }
+        TabView(selection: $selectedTab) {
+            Tab("Karte", systemImage: "map", value: LGTab.map) { mapTab }
+            Tab("Tage", systemImage: "calendar", value: LGTab.days) { daysTab }
+            Tab("Live", systemImage: "record.circle", value: LGTab.live) { liveTab }
+            Tab("Insights", systemImage: "chart.xyaxis.line", value: LGTab.insights) { insightsTab }
         }
+        .tabBarMinimizeBehavior(.onScrollDown)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $isExportSheetPresented) {
             NavigationStack {
@@ -242,6 +225,14 @@ public struct LGTabContainerView: View {
 
     @ToolbarContentBuilder
     private var commonToolbar: some ToolbarContent {
+        if liveLocation.isRecording {
+            ToolbarItem(placement: .primaryAction) {
+                GlobalRecordingToolbarIndicator(
+                    liveModel: liveLocation,
+                    onTap: { selectedTab = .live }
+                )
+            }
+        }
         ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button {
@@ -291,48 +282,59 @@ public struct LGTabContainerView: View {
     }
 }
 
-// MARK: - Live-Pille im tabViewBottomAccessory
+// MARK: - Global Recording Toolbar Indicator
+//
+// Compact pulsing pill that appears in every tab's toolbar (left of the
+// actions menu) whenever `liveLocation.isRecording`. Tapping switches to
+// the Live tab. Replaces the previous large `tabViewBottomAccessory` pill.
 
 @available(iOS 26.0, *)
-private struct LGLiveRecordingAccessory: View {
+struct GlobalRecordingToolbarIndicator: View {
     @EnvironmentObject private var preferences: AppPreferences
     @ObservedObject var liveModel: LiveLocationFeatureModel
-    @Environment(\.horizontalSizeClass) private var hSize
-    let onOpenLiveTab: () -> Void
+    let onTap: () -> Void
 
-    private var statusLabel: String {
-        // Use short label in compact width to avoid "Aufnahm…" truncation.
-        hSize == .compact
-            ? preferences.localized("Rec")
-            : preferences.localized("Recording in progress")
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulse = false
+
+    private var distanceText: String {
+        String(format: "%.2f km", liveModel.currentDistanceMeters / 1000)
     }
 
     var body: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(Color.red)
-                .frame(width: 8, height: 8)
-                .symbolEffect(.pulse, options: .repeating, value: liveModel.isRecording)
-            Text(statusLabel)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Spacer(minLength: 8)
-            Text(String(format: "%.2f km", liveModel.currentDistanceMeters / 1000))
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            Button(action: onOpenLiveTab) {
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 14, weight: .semibold))
+        Button(action: onTap) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 8, height: 8)
+                    .scaleEffect(pulse && !reduceMotion ? 1.35 : 1.0)
+                    .opacity(pulse && !reduceMotion ? 0.55 : 1.0)
+                Text(preferences.localized("Rec"))
+                    .font(.caption.weight(.heavy))
+                    .foregroundStyle(.primary)
+                Text(distanceText)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
-            .buttonStyle(.glass)
-            .buttonBorderShape(.circle)
-            .controlSize(.small)
-            .accessibilityLabel("Live-Aufnahme öffnen")
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().stroke(Color.red.opacity(0.45), lineWidth: 0.8))
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .buttonStyle(.plain)
+        .task(id: liveModel.isRecording) {
+            guard liveModel.isRecording, !reduceMotion else {
+                pulse = false
+                return
+            }
+            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
+        .accessibilityLabel(Text("\(preferences.localized("Recording in progress")) · \(distanceText)"))
+        .accessibilityHint(Text(preferences.localized("Tap to open Live tab")))
+        .accessibilityIdentifier("global.recording.indicator")
     }
 }
 

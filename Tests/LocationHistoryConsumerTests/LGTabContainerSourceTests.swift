@@ -18,18 +18,18 @@ final class LGTabContainerSourceTests: XCTestCase {
         )
         XCTAssertTrue(source.contains(".searchable(text: $searchText"))
         XCTAssertTrue(source.contains(".tabBarMinimizeBehavior(.onScrollDown)"))
-        XCTAssertTrue(source.contains(".tabViewBottomAccessory"))
     }
 
-    func testTabContainerShowsLiveRecordingAccessoryOnlyWhileRecording() throws {
+    func testTabContainerShowsGlobalRecordingIndicatorWhileRecording() throws {
+        // Phase 19.29: The bottom tabViewBottomAccessory pill was replaced by a
+        // compact GlobalRecordingToolbarIndicator that lives in every tab's
+        // toolbar (left of the actions menu) and is gated by
+        // `liveLocation.isRecording`.
         let source = try sourceFile(Self.tabContainerRelativePath)
 
         XCTAssertTrue(source.contains("if liveLocation.isRecording"))
-        XCTAssertTrue(source.contains("LiveRecordingAccessory"))
-        XCTAssertTrue(
-            source.contains(".symbolEffect(.pulse, options: .repeating, value: liveModel.isRecording)")
-        )
-        XCTAssertTrue(source.contains(".buttonStyle(.glass)"))
+        XCTAssertTrue(source.contains("GlobalRecordingToolbarIndicator"))
+        XCTAssertTrue(source.contains("currentDistanceMeters"))
     }
 
     func testContentViewRoutesToTabContainerOnIPhone() throws {

@@ -445,6 +445,7 @@ enum AppGermanTranslations {
         "Identifier": "Kennung",
         "Recording in progress": "Aufnahme läuft",
         "Rec": "Rec",
+        "Tap to open Live tab": "Tippen, um den Live-Tab zu öffnen",
         "URL must begin with https://. Example: https://server.example.com/api/v1/track":
             "URL muss mit https:// beginnen. Beispiel: https://server.example.com/api/v1/track",
         "Only https:// is allowed — http is insecure.":
