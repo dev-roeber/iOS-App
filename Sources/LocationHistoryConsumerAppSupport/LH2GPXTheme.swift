@@ -139,9 +139,16 @@ public struct LHMetricCard: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        // Phase 19.29: KPI-chips on the Live bottom sheet now read as
+        // saturated glass "lampions" floating over the map — the tint colour
+        // becomes the dominant visual signal while the fill drops so the map
+        // shows through. A subtle top→bottom gradient adds depth without
+        // turning the chip into a solid block, and a brighter hairline outline
+        // re-asserts the colour identity.
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        return VStack(alignment: .leading, spacing: 7) {
             Label(label, systemImage: icon)
-                .font(.caption)
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(color)
             Text(value)
                 .font(.headline.monospacedDigit())
@@ -149,8 +156,21 @@ public struct LHMetricCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(color.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(
+            shape.fill(color.opacity(0.14))
+        )
+        .background(
+            LinearGradient(
+                colors: [color.opacity(0.18), color.opacity(0.06)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .clipShape(shape)
+        )
+        .overlay(
+            shape.stroke(color.opacity(0.50), lineWidth: 0.8)
+        )
+        .clipShape(shape)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(value), \(label)")
     }

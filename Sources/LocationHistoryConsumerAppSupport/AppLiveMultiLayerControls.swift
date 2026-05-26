@@ -408,6 +408,9 @@ struct LiveBottomSheet<Content: View>: View {
     }
 
     private var sheetSurface: some View {
+        // Phase 19.29: trim the white surface tint and the top→bottom gradient
+        // so the underlying map shows through more. ultraThinMaterial stays as
+        // the base blur so the hairline outline and legibility are preserved.
         UnevenRoundedRectangle(
             topLeadingRadius: 22,
             bottomLeadingRadius: 0,
@@ -415,10 +418,10 @@ struct LiveBottomSheet<Content: View>: View {
             topTrailingRadius: 22,
             style: .continuous
         )
-        .fill(Color.white.opacity(0.06))
+        .fill(Color.white.opacity(0.03))
         .background(
             LinearGradient(
-                colors: [Color.white.opacity(0.05), Color.white.opacity(0.0)],
+                colors: [Color.white.opacity(0.025), Color.white.opacity(0.0)],
                 startPoint: .top,
                 endPoint: .bottom
             )
