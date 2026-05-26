@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## 2026-05-26 — Liquid-Glass-Final (Branch `feature/liquid-glass-final`, HEAD `0395b74`)
+
+> Echte iOS-26-Liquid-Glass-Adoption: `.glassEffect`, `GlassEffectContainer`,
+> `.glassEffectID`, neue Tab-API mit Bottom-Accessory, Morphing Record-FAB,
+> Layer-Toggle-Bar. Material-Approximation aus dem Vorgänger-Train bleibt als
+> iOS-17-25-Fallback im SPM-Modul. Build-Status: `swift build` succeeded,
+> `swift test` 1700 Tests grün, 3 skipped, 0 failures.
+
+### Geänderte Dateien
+- `Sources/LocationHistoryConsumerAppSupport/LH2GPXTheme.swift` — Surface/Pill/Card auf echte `.glassEffect`-API mit Fallback umgestellt.
+- `Sources/LocationHistoryConsumerAppSupport/AppDayMapView.swift` — Day-Map nutzt iOS-26-Layer-Bar und färbt neue Layer-Modi.
+- `Sources/LocationHistoryConsumerAppSupport/MapLayerMenu.swift` — Legacy-Menü kennt Standard/Speed/Elevation/Weather.
+- `Sources/LocationHistoryConsumerAppSupport/HeatmapPreferenceEnums.swift` — `AppMapTrackColorMode` auf vier Layer erweitert.
+- `Sources/LocationHistoryConsumerAppSupport/AppLiveTrackingView.swift` — iOS-26-Record-FAB hinter Availability-Gate integriert.
+- `Sources/LocationHistoryConsumerAppSupport/AppPreferences.swift` — Feature-Flag `useLiquidGlassTabContainer`, Default `false`.
+- `Sources/LocationHistoryConsumerAppSupport/AppOptionsView.swift` — Settings-Toggle für Liquid-Glass-Tab-Layout.
+- `Sources/LocationHistoryConsumerAppSupport/LiveLocationFeatureModel.swift` — öffentliche Live-Distanz für Bottom-Accessory.
+- `wrapper/LH2GPXWrapper/ContentView.swift` — Root-Switch zwischen Legacy-Layout und Liquid-Glass-Tab-Container.
+- `wrapper/LH2GPXWidget/LH2GPXHomeWidget.swift` — `widgetRenderingMode`-bewusster Widget-Background.
+- `Tests/LocationHistoryConsumerTests/AppPreferencesTests.swift` — Feature-Flag Persistenz/Reset.
+
+### Neue Dateien
+- `wrapper/LH2GPXWrapper/LGTabContainerView.swift` — 5-Tab + Bottom-Accessory
+- `Sources/LocationHistoryConsumerAppSupport/LGRecordButton.swift` — Morphing FAB
+- `Sources/LocationHistoryConsumerAppSupport/LGLayerToggleBar.swift` — Glass-Morphing-Layer-Bar
+- `Tests/LocationHistoryConsumerTests/LH2GPXThemeTests.swift`
+- `Tests/LocationHistoryConsumerTests/WidgetRenderingModeTests.swift`
+- `Tests/LocationHistoryConsumerTests/MapTrackColorModeTests.swift`
+- `Tests/LocationHistoryConsumerTests/LGRecordButtonSourceTests.swift`
+- `Tests/LocationHistoryConsumerTests/LGTabContainerSourceTests.swift`
+- `wrapper/LH2GPXWrapperUITests/LGTabContainerUITests.swift`
+
+### Anti-Claims
+- ❌ Tab-Container ist nicht Default — Feature-Flag `useLiquidGlassTabContainer` in `AppPreferences`, Default `false`. Migration auf Default `true` wird in Folge-Train durchgeführt nach UI-Hardware-Test.
+- ❌ Bestehende `AppContentSplitView` nicht entfernt — bleibt als Legacy-Pfad.
+- ❌ Map-First-Layout in DayDetail/Heatmap/Overview noch nicht migriert — Phase 2.
+
 ## 2026-05-26 (Hotfix) — Files-Tab Picker-Bug + Upload-Test-Logik (Branch `main`, HEAD folgt)
 
 > Live-Test am iPhone deckte zwei Bugs auf, die der vorherige Audit übersehen hatte.

@@ -1,5 +1,19 @@
 # NEXT_STEPS
 
+## Stand 2026-05-26 — Liquid-Glass-Final (Branch `feature/liquid-glass-final`)
+
+Echtes Liquid Glass adoptiert (Surface, Tab-Container, Record-FAB, Layer-Bar, Widget).
+Feature-Flag `useLiquidGlassTabContainer` Default `false` zum Hardware-Test.
+
+**Offen / nicht in dieser Session:**
+- Hardware-Test des Tab-Containers auf physischem iPhone (Tab-Bar-Minimize, Bottom-Accessory unter Scroll).
+- Map-First-Layout-Adoption in `AppDayDetailView`, `AppHeatmapView`, `AppOverviewTracksMapView` (Phase 2).
+- Flag-Flip auf Default `true` nach Hardware-Verifikation.
+- Lokalisierung der neuen UI-Strings (`Localizable.strings`-Sweep).
+- Battery-Drain-Messung auf iPhone 11/12 (älteres GPU, Liquid Glass GPU-intensiv).
+
+---
+
 ## Stand 2026-05-26 — More-Tab Audit + Backend-Hardening Files-Tab (Branch `main`, HEAD folgt)
 
 Audit "More"/"Mehr"-Tab + alle Unterseiten + alle `fileImporter`-Trigger. UI-Verdrahtung 100% sauber. Drei Backend-Hotspots im Files-Tab behoben: zentraler `CKContainer`-Cache (14 Call-Sites), zentraler Staging-Pattern im Cloud-File-Picker, Task-Cancellation + lokale Snapshot-Mutation nach Delete, CloudKit-Retry/Backoff für transiente Fehler, robustere FileHandle-Fehlerbehandlung. **1848 Tests grün.** Details: `CHANGELOG.md` (2026-05-26).

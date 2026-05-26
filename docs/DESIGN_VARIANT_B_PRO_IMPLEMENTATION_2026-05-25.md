@@ -59,7 +59,7 @@
 | HTML/CSS-Konzept | SwiftUI-Adaption |
 |---|---|
 | `--bg-base` body | `LH2GPXTheme.VariantBPro.bgBase` (`Color(red: 10/255, green: 8/255, blue: 7/255)`) |
-| `backdrop-filter: blur(20px)` Glass | `.background(.ultraThinMaterial)` mit availability-Gate auf iOS 17+; iOS 26 `glassEffect` deferred |
+| `backdrop-filter: blur(20px)` Glass | 2026-05-26: echte iOS-26-APIs (`.glassEffect`, `GlassEffectContainer`, `.glassEffectID`) umgesetzt; Material bleibt nur iOS-17-25-Fallback |
 | Hairline `0.5px` Border | `.overlay(RoundedRectangle().stroke(hair2, lineWidth: 0.5))` |
 | `--shadow-card` inset specular | `.overlay(LinearGradient(...))` Top-Highlight + `.shadow(color: .black.opacity(0.5), radius: 24, y: 12)` |
 | Fraunces serif italic display | `.font(.system(.largeTitle, design: .serif).italic())` (Fallback, siehe §5) |
@@ -75,13 +75,11 @@
 - Token-Doku für spätere Adoption.
 
 ### ✅ Systemkonform adaptiert
-- Liquid-Glass-inspirierte Materials via `SwiftUI Material` (`ultraThin`/`regular`/`thick`) — iOS 26 `glassEffect`/`GlassEffectContainer` deferred (API-Stabilität vor Push-Adoption).
+- Liquid Glass mit echten iOS-26-APIs (`.glassEffect`, `GlassEffectContainer`, `.glassEffectID`, `.glass`/`.glassProminent`) — ✅ umgesetzt im Train 2026-05-26, siehe `CHANGELOG.md` Abschnitt "Liquid-Glass-Final".
 - Fonts via System-Design-Rollen (`.serif`/`.default`/`.monospaced`) statt Google-Fonts-Bundle.
 
 ### ⏸️ Nur vorbereitet / deferred
-- **Tab-Remap auf 5 Tabs Map/History/Record/Stats/More** — bestehende Tab-/Navigation-Struktur (Overview/Days/Live/Insights/Export/Settings via `AppContentSplitView`) bleibt. Vollständiger Remap würde Navigation/Routing/Bookmarks brechen und ist ein eigener Train.
-- **Map-first Hero-Layout mit Bottom-Sheet** — bestehende Map-Views (`AppDayDetailView`, `AppHeatmapView`, `AppOverviewTracksMapView`) bleiben funktional unverändert; Token-Adoption ist gradueller Follow-up.
-- **Record-FAB mit Pulse-Animation** — vorhanden über `LiveLocationFeatureModel`; Visual-Polish-Adaption ist Follow-up.
+- **Map-First-Layout in DayDetail/Heatmap/Overview** — bestehende Map-Views (`AppDayDetailView`, `AppHeatmapView`, `AppOverviewTracksMapView`) bleiben funktional unverändert; Token-Adoption ist gradueller Follow-up.
 
 ### ❌ Bewusst nicht übernommen
 - **Externe Webfonts (Fraunces / Geist / Geist Mono)** — keine Lizenzverletzung, kein Asset-Bundling, kein Download. System-Fallback dokumentiert.
