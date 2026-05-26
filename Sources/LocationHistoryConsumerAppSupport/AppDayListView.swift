@@ -16,11 +16,12 @@ struct AppDayRow: View {
         HStack(alignment: .top, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(presentation.dayNumberText)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 Text(presentation.weekdayText)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.white.opacity(0.62))
+                    .textCase(.uppercase)
             }
             .frame(width: 54, alignment: .leading)
 
@@ -28,12 +29,12 @@ struct AppDayRow: View {
                 HStack(alignment: .top, spacing: 8) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(presentation.dateText)
-                            .font(.headline)
+                            .font(.headline.weight(.semibold))
                             .foregroundStyle(.white)
                         if let timeRangeText = presentation.timeRangeText {
                             Label(timeRangeText, systemImage: "clock")
                                 .font(.caption)
-                                .foregroundStyle(LH2GPXTheme.textSecondary)
+                                .foregroundStyle(Color.white.opacity(0.62))
                         }
                     }
                     Spacer()
@@ -49,11 +50,11 @@ struct AppDayRow: View {
                         ForEach(highlightIcons, id: \.self) { icon in
                             Image(systemName: icon)
                                 .font(.caption)
-                                .foregroundStyle(LH2GPXTheme.textSecondary)
+                                .foregroundStyle(Color.white.opacity(0.62))
                         }
                         Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(LH2GPXTheme.primaryBlue.opacity(0.85))
+                            .font(.footnote.weight(.bold))
+                            .foregroundStyle(LH2GPXTheme.primaryBlue)
                     }
                 }
 
@@ -71,15 +72,29 @@ struct AppDayRow: View {
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 12)
-        .background(Color(.systemBackground))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .background(
+            ZStack {
+                // Glas-Card-Treatment analog Karte-KPI-Tiles: helle Lasur auf
+                // dunklem Canvas, dazu sanfter Gradient für Tiefe.
+                Color.white.opacity(0.06)
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.04),
+                        Color.black.opacity(0.10)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
+                .stroke(Color.white.opacity(0.10), lineWidth: 0.8)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.22), radius: 12, y: 6)
+        .shadow(color: .black.opacity(0.28), radius: 14, y: 8)
         .opacity(summary.hasContent ? 1 : 0.7)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(presentation.accessibilityLabel)
@@ -106,11 +121,27 @@ struct AppDayRow: View {
                 .minimumScaleFactor(0.8)
                 .fixedSize(horizontal: true, vertical: false)
         }
-        .font(.caption.weight(.medium))
-        .foregroundStyle(tint)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(tint.opacity(0.10))
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
+        .background(
+            ZStack {
+                // KPI-Tile-Pattern: kräftige Tint-Basis + sanfter Gradient.
+                tint.opacity(0.22)
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.04),
+                        Color.black.opacity(0.10)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
+        .overlay(
+            Capsule().stroke(tint.opacity(0.35), lineWidth: 0.8)
+        )
         .clipShape(Capsule())
     }
 
@@ -336,7 +367,7 @@ public struct AppDayListView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color(.systemBackground))
+            .background(Color.clear)
             .overlay {
                 if !summaries.isEmpty && filteredSummaries.isEmpty {
                     VStack(spacing: 12) {
