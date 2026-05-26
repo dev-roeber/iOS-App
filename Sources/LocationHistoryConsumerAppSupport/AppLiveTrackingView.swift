@@ -1,6 +1,7 @@
 #if canImport(SwiftUI) && canImport(MapKit)
 import SwiftUI
 import MapKit
+import Combine
 import LocationHistoryConsumer
 
 @available(iOS 17.0, macOS 14.0, *)
@@ -46,6 +47,14 @@ public struct AppLiveTrackingView: View {
     @State private var isCompactMap: Bool = false
     @State private var showWeatherLayer: Bool = false
     @State private var showElevationLayer: Bool = false
+    // Phase 19.30 — Weather layer state (Live UI integration). The
+    // WeatherCacheManager actor coalesces fetches into ~0.01° coordinate
+    // bins and caps refresh to every 10 minutes; failures auto-disable the
+    // master `preferences.weatherLayerEnabled` flag via
+    // `AppPreferences.markWeatherLayerFailure(_:)`.
+    @State private var currentWeather: WeatherSnapshot?
+    @State private var weatherError: Bool = false
+    @StateObject private var weatherCacheBox = AppWeatherCacheManagerBox()
     @State private var liveMapHeaderState = LHMapHeaderState(
         visibility: .compact,
         compactHeight: LHHeroMapLayout.compactHeight,
@@ -127,6 +136,62 @@ public struct AppLiveTrackingView: View {
             fullscreenMapView
         }
         #endif
+        // Phase 19.30 — weather refresh wiring. Re-fetch when the master
+        // preference toggles or when the live coordinate moves into a new
+        // ~0.01° bin (the cache handles deduplication).
+        .onChange(of: preferences.weatherLayerEnabled) { _, enabled in
+            if enabled {
+                refreshWeatherSnapshot()
+            } else {
+                currentWeather = nil
+                weatherError = false
+            }
+        }
+        .onChange(of: showWeatherLayer) { _, _ in
+            if showWeatherLayer && preferences.weatherLayerEnabled {
+                refreshWeatherSnapshot()
+            }
+        }
+        .onChange(of: liveLocation.currentLocation?.coordinate.latitude) { _, _ in
+            if preferences.weatherLayerEnabled && showWeatherLayer {
+                refreshWeatherSnapshot()
+            }
+        }
+        .onReceive(weatherRefreshTimer) { _ in
+            if preferences.weatherLayerEnabled && showWeatherLayer {
+                refreshWeatherSnapshot()
+            }
+        }
+    }
+
+    /// Five-minute heartbeat — the cache itself enforces the 10-minute floor
+    /// so this timer is intentionally aggressive; it gives us a re-attempt
+    /// after a transient failure without waiting for the next location nudge.
+    private var weatherRefreshTimer: Publishers.Autoconnect<Timer.TimerPublisher> {
+        Timer.publish(every: 300, on: .main, in: .common).autoconnect()
+    }
+
+    private func refreshWeatherSnapshot() {
+        guard preferences.weatherLayerEnabled, showWeatherLayer else { return }
+        guard let location = liveLocation.currentLocation else { return }
+        let coordinate = AppWeatherCoordinate(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude
+        )
+        let manager = weatherCacheBox.manager
+        let provider = AppWeatherProviderResolver.defaultProvider
+        Task { @MainActor in
+            do {
+                let snapshot = try await manager.snapshot(at: coordinate, provider: provider)
+                self.currentWeather = snapshot
+                self.weatherError = false
+            } catch {
+                self.weatherError = true
+                let message = self.t("Weather unavailable")
+                self.preferences.markWeatherLayerFailure(message)
+                self.currentWeather = nil
+            }
+        }
     }
 
     // MARK: - Layouts
@@ -208,7 +273,9 @@ public struct AppLiveTrackingView: View {
                                 selected: $preferences.mapTrackColorMode,
                                 showWeather: $showWeatherLayer,
                                 showElevation: $showElevationLayer,
-                                layersLabel: layersPanelLabel
+                                layersLabel: layersPanelLabel,
+                                weatherAllowed: preferences.weatherLayerEnabled,
+                                weatherDisabledHint: t("Enable in Settings")
                             )
                             .padding(.leading, 12)
                             .padding(.top, 10)
@@ -241,7 +308,9 @@ public struct AppLiveTrackingView: View {
                             selected: $preferences.mapTrackColorMode,
                             showWeather: $showWeatherLayer,
                             showElevation: $showElevationLayer,
-                            layersLabel: layersPanelLabel
+                            layersLabel: layersPanelLabel,
+                            weatherAllowed: preferences.weatherLayerEnabled,
+                            weatherDisabledHint: t("Enable in Settings")
                         )
                         .padding(.leading, 12)
                         .padding(.top, lhDeviceTopSafeInset() + 12)
@@ -275,6 +344,47 @@ public struct AppLiveTrackingView: View {
                     }
                     .padding(.trailing, 12)
                     .padding(.top, lhDeviceTopSafeInset() + 12)
+                }
+
+                // Weather pill — top-trailing, sits beneath the control stack
+                // when both are visible. Only rendered when the layer toggle
+                // is active and the master preference is on.
+                if showWeatherLayer && preferences.weatherLayerEnabled,
+                   currentWeather != nil || weatherError {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            AppWeatherPill(
+                                snapshot: currentWeather,
+                                isError: weatherError,
+                                errorLabel: t("Weather unavailable"),
+                                onTap: weatherError ? {
+                                    preferences.weatherLayerEnabled = false
+                                } : nil
+                            )
+                            .padding(.trailing, 12)
+                            .padding(.top, lhDeviceTopSafeInset() + 12 + 220)
+                        }
+                        Spacer()
+                    }
+                    .allowsHitTesting(true)
+                    .accessibilityIdentifier("live.weatherPill")
+                }
+
+                // Apple Weather attribution — bottom-leading, above the
+                // bottom-sheet's collapsed top edge. Required by the
+                // WeatherKit license agreement.
+                if showWeatherLayer && preferences.weatherLayerEnabled {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            AppWeatherAttributionView(label: t("Weather"))
+                                .padding(.leading, 12)
+                                .padding(.bottom, 4)
+                            Spacer()
+                        }
+                    }
+                    .accessibilityIdentifier("live.weatherAttribution")
                 }
             }
         }
@@ -367,7 +477,9 @@ public struct AppLiveTrackingView: View {
                     selected: $preferences.mapTrackColorMode,
                     showWeather: $showWeatherLayer,
                     showElevation: $showElevationLayer,
-                    layersLabel: layersPanelLabel
+                    layersLabel: layersPanelLabel,
+                    weatherAllowed: preferences.weatherLayerEnabled,
+                    weatherDisabledHint: t("Enable in Settings")
                 )
                 Divider().opacity(0.35)
                 LiveBottomSheetRow(

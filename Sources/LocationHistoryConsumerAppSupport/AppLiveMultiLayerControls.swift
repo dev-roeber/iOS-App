@@ -27,6 +27,8 @@ struct LiveLayerPanel: View {
     @Binding var showWeather: Bool
     @Binding var showElevation: Bool
     let layersLabel: String
+    var weatherAllowed: Bool = true
+    var weatherDisabledHint: String = "In Einstellungen aktivieren"
 
     @State private var isExpanded: Bool = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -59,8 +61,17 @@ struct LiveLayerPanel: View {
                 layerRow(
                     color: .cyan,
                     title: "Wetter",
-                    isOn: $showWeather
+                    isOn: weatherAllowed
+                        ? $showWeather
+                        : .constant(false),
+                    disabled: !weatherAllowed
                 )
+                if !weatherAllowed {
+                    Text(weatherDisabledHint)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 22)
+                }
             }
         }
         .padding(isExpanded ? 12 : 8)
@@ -102,7 +113,7 @@ struct LiveLayerPanel: View {
     }
 
     @ViewBuilder
-    private func layerRow(color: Color, title: String, isOn: Binding<Bool>) -> some View {
+    private func layerRow(color: Color, title: String, isOn: Binding<Bool>, disabled: Bool = false) -> some View {
         HStack(spacing: 8) {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(color.opacity(isOn.wrappedValue ? 0.95 : 0.30))
@@ -115,7 +126,9 @@ struct LiveLayerPanel: View {
                 .labelsHidden()
                 .scaleEffect(0.75)
                 .frame(width: 36, height: 22)
+                .disabled(disabled)
         }
+        .opacity(disabled ? 0.5 : 1.0)
     }
 }
 
@@ -132,6 +145,8 @@ struct LiveLayerSection: View {
     @Binding var showWeather: Bool
     @Binding var showElevation: Bool
     let layersLabel: String
+    var weatherAllowed: Bool = true
+    var weatherDisabledHint: String = "In Einstellungen aktivieren"
 
     @State private var isExpanded: Bool = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -172,13 +187,24 @@ struct LiveLayerSection: View {
                     set: { newValue in if newValue { selected = .speed } else { selected = .activity } }
                 ))
                 layerRow(color: .green, title: "Höhe", isOn: $showElevation)
-                layerRow(color: .cyan, title: "Wetter", isOn: $showWeather)
+                layerRow(
+                    color: .cyan,
+                    title: "Wetter",
+                    isOn: weatherAllowed ? $showWeather : .constant(false),
+                    disabled: !weatherAllowed
+                )
+                if !weatherAllowed {
+                    Text(weatherDisabledHint)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 22)
+                }
             }
         }
     }
 
     @ViewBuilder
-    private func layerRow(color: Color, title: String, isOn: Binding<Bool>) -> some View {
+    private func layerRow(color: Color, title: String, isOn: Binding<Bool>, disabled: Bool = false) -> some View {
         HStack(spacing: 10) {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(color.opacity(isOn.wrappedValue ? 0.95 : 0.30))
@@ -191,8 +217,10 @@ struct LiveLayerSection: View {
                 .labelsHidden()
                 .scaleEffect(0.78)
                 .frame(width: 38, height: 24)
+                .disabled(disabled)
         }
         .padding(.vertical, 4)
+        .opacity(disabled ? 0.5 : 1.0)
     }
 }
 
