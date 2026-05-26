@@ -698,9 +698,9 @@ public struct AppInsightsContentView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(t("Insights"))
-                .font(.title.weight(.bold))
-                .accessibilityIdentifier("insights.title")
+            // Prompt 03 LG_ROOT: removed in-content "Insights" title — the
+            // NavigationStack title in LGTabContainerView already supplies it.
+            // The hero filter panel below still labels the chip strip.
 
             if !daySummaries.isEmpty {
                 insightsDashboardHero
