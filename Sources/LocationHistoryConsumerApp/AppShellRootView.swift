@@ -209,8 +209,9 @@ struct AppShellRootView: View {
                 }
             }
         } label: {
-            Label(t("Actions"), systemImage: "ellipsis.circle")
+            LGToolbarActionsLabel()
         }
+        .accessibilityLabel(Text(t("Actions")))
     }
 
     private func loadBundledDemo() {
