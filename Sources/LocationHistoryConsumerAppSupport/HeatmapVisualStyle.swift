@@ -53,7 +53,10 @@ enum HeatmapVisualStyle {
         }
         let value = base * controlOpacity * lod.overlayOpacityMultiplier * detailBoost
         let maxOpacity = 0.55 + (controlOpacity * 0.30)
-        return min(max(value, 0.04), maxOpacity)
+        // Dark-mode polish: raise the floor so the lowest-intensity cells
+        // remain perceptible on the dark map surface (previous 0.04 floor
+        // disappeared into the underlay on country zoom).
+        return min(max(value, 0.18), maxOpacity)
     }
 }
 #endif
