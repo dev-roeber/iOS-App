@@ -783,7 +783,7 @@ public struct AppContentSplitView: View {
             ScrollView {
                 overviewPaneContent
             }
-            .background(Color.black.ignoresSafeArea())
+            .background(Color(.systemBackground).ignoresSafeArea())
         }
     }
 
@@ -1469,7 +1469,7 @@ public struct AppContentSplitView: View {
                 .padding()
             }
             .navigationTitle(t("Overview"))
-            .background(Color.black.ignoresSafeArea())
+            .background(Color(.systemBackground).ignoresSafeArea())
         }
     }
 
