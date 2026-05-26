@@ -212,7 +212,7 @@ struct AppOverviewTracksMapView: View {
                     )
                 MapPolyline(coordinates: path.coordinates)
                     .stroke(
-                        MapPalette.routeColor(for: path.activityType),
+                        overviewStrokeColor(for: path.activityType),
                         style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview)
                     )
             }
@@ -338,6 +338,27 @@ struct AppOverviewTracksMapView: View {
         AppMapStyleResolver.mapStyle(for: preferences.preferredMapStyle, showsRealisticElevation: preferences.mapShowsRealisticElevation)
     }
 
+    /// Resolves the polyline stroke color for the overview map, honoring the
+    /// global `mapTrackColorMode` Layer-Panel selection. The overview render
+    /// pipeline does not (yet) carry per-segment speed samples, so the Tempo
+    /// layer falls back to a uniform speed-warm tint — giving the user the
+    /// visible feedback that "Tempo" is the active layer while keeping the
+    /// existing simplification / hashing model untouched. True per-segment
+    /// speed coloring on overview-style maps is tracked as a follow-up phase.
+    private func overviewStrokeColor(for activityType: String?) -> Color {
+        switch preferences.mapTrackColorMode {
+        case .activity:
+            return MapPalette.routeColor(for: activityType)
+        case .speed:
+            // Mid-warm Strava-palette stop ≈ "Tempo aktiv" affordance.
+            return SpeedColors.color(for: 0.65)
+        case .elevation:
+            return .green
+        case .weather:
+            return .blue
+        }
+    }
+
     private var mapAccessibilityLabel: String {
         let count = model.renderData.visibleRouteCount
         if preferences.appLanguage.isGerman {
@@ -419,7 +440,7 @@ struct AppOverviewExploreSheet: View {
                     )
                 MapPolyline(coordinates: path.coordinates)
                     .stroke(
-                        MapPalette.routeColor(for: path.activityType),
+                        overviewStrokeColor(for: path.activityType),
                         style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview)
                     )
             }
@@ -462,6 +483,21 @@ struct AppOverviewExploreSheet: View {
                 }
             }
             .padding(12)
+        }
+    }
+
+    /// Mirrors `AppOverviewTracksMapView.overviewStrokeColor` so the explore
+    /// sheet's full-bleed map honors the Layer-Panel selection too.
+    private func overviewStrokeColor(for activityType: String?) -> Color {
+        switch preferences.mapTrackColorMode {
+        case .activity:
+            return MapPalette.routeColor(for: activityType)
+        case .speed:
+            return SpeedColors.color(for: 0.65)
+        case .elevation:
+            return .green
+        case .weather:
+            return .blue
         }
     }
 
