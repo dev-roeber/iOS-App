@@ -25,10 +25,6 @@ struct AppShellRootView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if technicalSettings.localTimelineStoreTestModeEnabled {
-                LocalTimelineTestModeBanner()
-            }
         Group {
             if session.content != nil {
                 #if canImport(UIKit)
@@ -126,7 +122,7 @@ struct AppShellRootView: View {
                 }
             }
         }
-        }
+        .preproductionBanner(isActive: technicalSettings.localTimelineStoreTestModeEnabled)
         .environmentObject(preferences)
         .environment(\.locale, preferences.appLocale)
         #if canImport(UniformTypeIdentifiers)

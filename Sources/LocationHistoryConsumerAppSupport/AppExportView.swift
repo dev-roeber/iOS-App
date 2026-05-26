@@ -155,13 +155,13 @@ public struct AppExportView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color.black)
+            .background(Color(.systemBackground))
             .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 0) {
                     exportHeroMap(selection: selection, summaries: summaries)
                     exportHeroFilterPanel(selection: selection, summaries: summaries)
                 }
-                .background(Color.black)
+                .background(Color(.systemBackground))
             }
             .safeAreaInset(edge: .bottom) {
                 bottomBar(selection: selection, summaries: summaries)

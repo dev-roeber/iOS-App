@@ -73,7 +73,7 @@ struct AppDayRow: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 12)
-        .background(Color.black)
+        .background(Color(.systemBackground))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
@@ -168,7 +168,7 @@ struct AppDayFilterChipsView: View {
         Button(action: action) {
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(isActive ? Color.black : LH2GPXTheme.textSecondary)
+                .foregroundStyle(isActive ? AnyShapeStyle(.primary) : AnyShapeStyle(LH2GPXTheme.textSecondary))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(isActive ? LH2GPXTheme.liveMint : LH2GPXTheme.elevatedCard)
@@ -288,7 +288,7 @@ public struct AppDayListView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color.black)
+            .background(Color(.systemBackground))
             .overlay {
                 if !summaries.isEmpty && filteredSummaries.isEmpty {
                     VStack(spacing: 12) {

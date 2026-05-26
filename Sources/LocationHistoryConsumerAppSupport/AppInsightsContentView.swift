@@ -226,13 +226,13 @@ public struct AppInsightsContentView: View {
             insightsBodyContent(isLandscape: false)
         }
         .scrollContentBackground(.hidden)
-        .background(Color.black)
+        .background(Color(.systemBackground))
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
                 insightsHeroMap
                 insightsHeroFilterPanel
             }
-            .background(Color.black)
+            .background(Color(.systemBackground))
         }
         .ignoresSafeArea(edges: .top)
         .onAppear { refreshDerivedModel() }

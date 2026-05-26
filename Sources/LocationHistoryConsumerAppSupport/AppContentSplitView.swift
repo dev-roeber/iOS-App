@@ -534,7 +534,7 @@ public struct AppContentSplitView: View {
         .modifier(DaysListSectionSpacingModifier())
         #endif
         .scrollContentBackground(.hidden)
-        .background(Color.black)
+        .background(Color(.systemBackground))
         // Single top workspace: map sticky header + filter panel stacked together.
         // The whole list ignores the top safe area so the inset workspace starts
         // flush at y=0 — this lets the map fill the status-bar region without the
@@ -546,7 +546,7 @@ public struct AppContentSplitView: View {
                 daysListStickyHeader
                 daysFilterPanel
             }
-            .background(Color.black)
+            .background(Color(.systemBackground))
         }
         .ignoresSafeArea(edges: .top)
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -661,7 +661,7 @@ public struct AppContentSplitView: View {
         Button(action: action) {
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(isActive ? Color.black : LH2GPXTheme.textSecondary)
+                .foregroundStyle(isActive ? AnyShapeStyle(.primary) : AnyShapeStyle(LH2GPXTheme.textSecondary))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(isActive ? LH2GPXTheme.liveMint : LH2GPXTheme.elevatedCard)
@@ -770,13 +770,13 @@ public struct AppContentSplitView: View {
                 overviewPaneContent
             }
             .scrollContentBackground(.hidden)
-            .background(Color.black)
+            .background(Color(.systemBackground))
             .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 0) {
                     overviewHeroMap
                     overviewHeroFilterPanel
                 }
-                .background(Color.black)
+                .background(Color(.systemBackground))
             }
             .ignoresSafeArea(edges: .top)
         } else {

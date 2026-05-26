@@ -55,10 +55,6 @@ struct ContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if technicalSettings.localTimelineStoreTestModeEnabled {
-                LocalTimelineTestModeBanner()
-            }
         Group {
             if session.content != nil {
                 let isIPhone: Bool = (UIDevice.current.userInterfaceIdiom == .phone)
@@ -112,7 +108,6 @@ struct ContentView: View {
                         ToolbarItem(placement: .primaryAction) { actionsMenu }
                     }
                 }
-                .preferredColorScheme(.dark)
             } else {
                 NavigationStack {
                     ZStack {
@@ -147,7 +142,6 @@ struct ContentView: View {
                         }
                     }
                 }
-                .preferredColorScheme(.light)
                 .onChange(of: session.isLoading) { _, isLoading in
                     if isLoading {
                         loadingProgress.start()
@@ -159,7 +153,7 @@ struct ContentView: View {
                 }
             }
         }
-        }
+        .preproductionBanner(isActive: technicalSettings.localTimelineStoreTestModeEnabled)
         .environmentObject(preferences)
         .environment(\.locale, preferences.appLocale)
         .fileImporter(
