@@ -209,6 +209,13 @@ struct LiveBottomSheetRow: View {
 // MARK: - Bottom Sheet Container
 
 @available(iOS 17.0, macOS 14.0, *)
+public enum LiveBottomSheetDetent: CGFloat, CaseIterable {
+    case collapsed = 140
+    case medium = 240
+    case expanded = 360
+}
+
+@available(iOS 17.0, macOS 14.0, *)
 struct LiveBottomSheet<Content: View>: View {
     let headerCaption: String
     let headlineText: String
@@ -216,15 +223,19 @@ struct LiveBottomSheet<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var detent: LiveBottomSheetDetent = .medium
+    @GestureState private var dragOffset: CGFloat = 0
+
+    private var currentHeight: CGFloat {
+        // Negative dragOffset = drag up = larger height. Clamp to [80, expanded+40].
+        let raw = detent.rawValue - dragOffset
+        let maxH = LiveBottomSheetDetent.expanded.rawValue + 40
+        return min(max(raw, 80), maxH)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(Color.secondary.opacity(0.45))
-                .frame(width: 44, height: 5)
-                .padding(.top, 8)
-                .padding(.bottom, 10)
-
+            handle
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(headerCaption)
@@ -236,29 +247,106 @@ struct LiveBottomSheet<Content: View>: View {
                         .foregroundStyle(headlineTint)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                content()
+                ScrollView(.vertical, showsIndicators: false) {
+                    content()
+                }
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 12)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            UnevenRoundedRectangle(
-                topLeadingRadius: 22,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: 22,
-                style: .continuous
-            )
-            .fill(Color(.systemBackground).opacity(0.92))
-        )
-        .background(.ultraThinMaterial)
+        .frame(height: currentHeight, alignment: .top)
+        .background(sheetSurface)
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(LH2GPXTheme.LiquidGlass.hairline)
                 .frame(height: 0.6)
         }
         .shadow(color: Color.black.opacity(0.10), radius: 18, x: 0, y: -6)
+        .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: detent)
+    }
+
+    private var handle: some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(Color.secondary.opacity(0.55))
+                .frame(width: 44, height: 5)
+                .padding(.top, 8)
+                .padding(.bottom, 10)
+        }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 2)
+                .updating($dragOffset) { value, state, _ in
+                    state = value.translation.height
+                }
+                .onEnded { value in
+                    snap(to: value.predictedEndTranslation.height)
+                }
+        )
+        .onTapGesture { cycleDetent() }
+        .accessibilityElement()
+        .accessibilityLabel("Sheet-Griff")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var sheetSurface: some View {
+        UnevenRoundedRectangle(
+            topLeadingRadius: 22,
+            bottomLeadingRadius: 0,
+            bottomTrailingRadius: 0,
+            topTrailingRadius: 22,
+            style: .continuous
+        )
+        .fill(Color.white.opacity(0.06))
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.05), Color.white.opacity(0.0)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .clipShape(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 22,
+                    bottomLeadingRadius: 0,
+                    bottomTrailingRadius: 0,
+                    topTrailingRadius: 22,
+                    style: .continuous
+                )
+            )
+        )
+        .background(.ultraThinMaterial,
+            in: UnevenRoundedRectangle(
+                topLeadingRadius: 22,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 22,
+                style: .continuous
+            )
+        )
+    }
+
+    private func snap(to predictedTranslation: CGFloat) {
+        // Up = negative translation. Pick the nearest detent to (current - translation).
+        let target = detent.rawValue - predictedTranslation
+        let next: LiveBottomSheetDetent
+        if target > (LiveBottomSheetDetent.medium.rawValue + LiveBottomSheetDetent.expanded.rawValue) / 2 {
+            next = .expanded
+        } else if target > (LiveBottomSheetDetent.collapsed.rawValue + LiveBottomSheetDetent.medium.rawValue) / 2 {
+            next = .medium
+        } else {
+            next = .collapsed
+        }
+        detent = next
+    }
+
+    private func cycleDetent() {
+        switch detent {
+        case .collapsed: detent = .medium
+        case .medium: detent = .expanded
+        case .expanded: detent = .collapsed
+        }
     }
 }
 
