@@ -1,6 +1,7 @@
 #if canImport(SwiftUI) && canImport(MapKit)
 import SwiftUI
 import MapKit
+import CoreLocation
 import LocationHistoryConsumer
 
 // MARK: - View hierarchy (Export Multi-Layer redesign, Phase 3c)
@@ -143,6 +144,11 @@ struct AppExportMultiLayerHero: View {
                 Divider().opacity(0.35)
                 formatAndModeRow
                     .accessibilityIdentifier("export.hero.formatModePills")
+                if colorMode == .speed || showElevation {
+                    Divider().opacity(0.35)
+                    layerInsightStack
+                        .accessibilityIdentifier("export.hero.layerInsights")
+                }
             }
             .padding(.top, 4)
         }
@@ -270,6 +276,89 @@ struct AppExportMultiLayerHero: View {
             + (showWeather ? 1 : 0)
         return "\(t("LAYERS")) \(count)/4"
     }
+
+    // MARK: - Layer insight section
+    //
+    // When the user activates the Tempo or Höhe layer in the Layer Panel we
+    // mirror the corresponding band component (`AppSpeedBandView` /
+    // `AppElevationProfileView`) inside the bottom sheet so the export sheet
+    // matches Live / DayDetail. Data is aggregated across all selected
+    // export tracks. Speed samples are derived per-overlay via
+    // `SpeedTrackBuilder.instantaneousSpeed` (using the per-point timestamps
+    // surfaced by `ExportPreviewDataBuilder`). Elevation is not yet carried by
+    // `DayMapPathOverlay`, so the elevation profile shows its empty-state
+    // until a follow-up wires elevation into the preview pipeline.
+
+    @ViewBuilder
+    private var layerInsightStack: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if colorMode == .speed {
+                AppSpeedBandView(
+                    speeds: aggregatedSpeedSamples,
+                    unit: .metersPerSecond,
+                    title: t("Tempo")
+                )
+                .accessibilityIdentifier("export.hero.speedBand")
+            }
+            if showElevation {
+                AppElevationProfileView(
+                    points: aggregatedElevationSamples,
+                    title: t("Höhe")
+                )
+                .accessibilityIdentifier("export.hero.elevationProfile")
+            }
+        }
+    }
+
+    /// Aggregates speed samples across every selected export path overlay.
+    /// Each overlay yields (timestamp, m/s) pairs derived from the great-circle
+    /// distance between consecutive points divided by Δt. Overlays without
+    /// per-point timestamps contribute nothing (empty-state).
+    private var aggregatedSpeedSamples: [AppSpeedBandSample] {
+        var result: [AppSpeedBandSample] = []
+        for overlay in previewData.pathOverlays {
+            let coords = overlay.coordinates
+            let times = overlay.timestamps
+            guard coords.count >= 2, times.count == coords.count else { continue }
+            let parsedTimes: [Date?] = times.map { iso in
+                guard let iso else { return nil }
+                return Self.isoFormatter.date(from: iso) ?? Self.isoFallback.date(from: iso)
+            }
+            for index in 0..<(coords.count - 1) {
+                guard let tA = parsedTimes[index], let tB = parsedTimes[index + 1] else { continue }
+                let a = TrackSample(
+                    coordinate: CLLocationCoordinate2D(latitude: coords[index].lat, longitude: coords[index].lon),
+                    timestamp: tA
+                )
+                let b = TrackSample(
+                    coordinate: CLLocationCoordinate2D(latitude: coords[index + 1].lat, longitude: coords[index + 1].lon),
+                    timestamp: tB
+                )
+                if let speed = SpeedTrackBuilder.instantaneousSpeed(from: a, to: b) {
+                    result.append(AppSpeedBandSample(timestamp: tB, speed: speed))
+                }
+            }
+        }
+        result.sort { $0.timestamp < $1.timestamp }
+        return result
+    }
+
+    /// Elevation samples are not yet propagated through `DayMapPathOverlay`,
+    /// so the export hero ships an empty array and the profile component
+    /// renders its empty-state. Documented in the PR body as a follow-up.
+    private var aggregatedElevationSamples: [AppElevationProfileSample] { [] }
+
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    private static let isoFallback: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
 
     // MARK: - Camera helpers
 
