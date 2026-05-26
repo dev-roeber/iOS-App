@@ -25,6 +25,7 @@ public struct AppLiveTrackingView: View {
     @State private var trackSamples: [TrackSample] = []
     @State private var liveRenderWasCapped: Bool = false
     @State private var lastCameraUpdate: (timestamp: Date, coordinate: LiveCameraUpdateThrottle.Coordinate)?
+    @State private var recordButtonState: LGRecordState = .ready
 
     /// Hard cap on how many `liveTrackPoints` are sent into the SwiftUI/MapKit
     /// render path per frame. Train H-Wire-1 (2026-05-16). Pure render-side
@@ -75,13 +76,7 @@ public struct AppLiveTrackingView: View {
         }
         .navigationTitle(t("Live Tracking"))
         .safeAreaInset(edge: .bottom) {
-            LHLiveBottomBar(
-                isRecording: liveLocation.isRecording,
-                isDisabled: liveLocation.isAwaitingAuthorization,
-                startTitle: t("Start Recording"),
-                stopTitle: t("Stop Recording"),
-                onToggle: { liveLocation.setRecordingEnabled(!liveLocation.isRecording) }
-            )
+            liveRecordingBottomInset
         }
         .task {
             liveLocation.refreshAuthorization()
@@ -107,6 +102,7 @@ public struct AppLiveTrackingView: View {
         }
         .onChange(of: liveLocation.isRecording) { _, _ in
             syncTimerState()
+            recordButtonState = liveLocation.isRecording ? .recording : .ready
         }
         #if os(iOS)
         .fullScreenCover(isPresented: $isFullscreenMapPresented) {
@@ -116,6 +112,43 @@ public struct AppLiveTrackingView: View {
     }
 
     // MARK: - Layouts
+
+    @ViewBuilder
+    private var liveRecordingBottomInset: some View {
+        if #available(iOS 26.0, *) {
+            LGRecordButton(
+                state: $recordButtonState,
+                onStart: { liveLocation.setRecordingEnabled(true) },
+                onStop: { liveLocation.setRecordingEnabled(false) },
+                onPause: {
+                    if liveLocation.canPauseUploads {
+                        liveLocation.setUploadPaused(true)
+                    }
+                },
+                onResume: {
+                    if liveLocation.isUploadPaused {
+                        liveLocation.setUploadPaused(false)
+                    }
+                    if !liveLocation.isRecording {
+                        liveLocation.setRecordingEnabled(true)
+                    }
+                },
+                onLap: { refreshMetricSnapshot() }
+            )
+            .disabled(liveLocation.isAwaitingAuthorization)
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 4)
+        } else {
+            LHLiveBottomBar(
+                isRecording: liveLocation.isRecording,
+                isDisabled: liveLocation.isAwaitingAuthorization,
+                startTitle: t("Start Recording"),
+                stopTitle: t("Stop Recording"),
+                onToggle: { liveLocation.setRecordingEnabled(!liveLocation.isRecording) }
+            )
+        }
+    }
 
     private var portraitLayout: some View {
         ScrollView {
