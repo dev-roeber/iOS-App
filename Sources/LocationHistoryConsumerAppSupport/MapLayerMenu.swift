@@ -106,8 +106,10 @@ public struct MapLayerMenu: View {
     @ViewBuilder
     private var trackColorSection: some View {
         Picker(selection: $preferences.mapTrackColorMode) {
-            Label(t("Activity"), systemImage: "paintpalette").tag(AppMapTrackColorMode.activity)
+            Label(t("Standard"), systemImage: "map").tag(AppMapTrackColorMode.activity)
             Label(t("Speed"), systemImage: "speedometer").tag(AppMapTrackColorMode.speed)
+            Label(t("Elevation"), systemImage: "mountain.2").tag(AppMapTrackColorMode.elevation)
+            Label(t("Weather"), systemImage: "cloud.sun").tag(AppMapTrackColorMode.weather)
         } label: {
             Label(t("Layer"), systemImage: "scribble.variable")
         }

@@ -61,14 +61,25 @@ public struct AppDayMapView: View {
 
     @ViewBuilder
     private var mapControlsStack: some View {
-        MapLayerMenu(configuration: MapLayerMenu.Configuration(
-            showsTrackColor: true,
-            fitToData: renderData.region == nil ? nil : {
-                if let region = renderData.region {
-                    withAnimation { mapPosition = .region(region) }
-                }
+        let fitToData = renderData.region == nil ? nil : {
+            if let region = renderData.region {
+                withAnimation { mapPosition = .region(region) }
             }
-        ))
+        }
+        if #available(iOS 26.0, *) {
+            VStack(alignment: .trailing, spacing: 10) {
+                LGLayerToggleBar(selected: $preferences.mapTrackColorMode)
+                MapLayerMenu(configuration: MapLayerMenu.Configuration(
+                    showsTrackColor: false,
+                    fitToData: fitToData
+                ))
+            }
+        } else {
+            MapLayerMenu(configuration: MapLayerMenu.Configuration(
+                showsTrackColor: true,
+                fitToData: fitToData
+            ))
+        }
     }
 
     private var mapAccessibilityLabel: String {
@@ -92,7 +103,6 @@ public struct AppDayMapView: View {
 
     @ViewBuilder
     private func mapContent(region: MKCoordinateRegion) -> some View {
-        let useSpeed = preferences.mapTrackColorMode == .speed
         Map(position: $mapPosition) {
             // region parameter retained for legacy callers; mapPosition is the source of truth
             let _ = region
@@ -106,7 +116,7 @@ public struct AppDayMapView: View {
             }
             // Core stroke — speed-coloured segments OR activity-coloured polyline.
             ForEach(renderData.pathOverlays) { path in
-                if useSpeed, !path.speedSegments.isEmpty {
+                if preferences.mapTrackColorMode == .speed, !path.speedSegments.isEmpty {
                     ForEach(path.speedSegments) { segment in
                         MapPolyline(coordinates: [segment.start, segment.end])
                             .stroke(
@@ -117,7 +127,7 @@ public struct AppDayMapView: View {
                 } else {
                     MapPolyline(coordinates: displayCoords(for: path))
                         .stroke(
-                            MapPalette.routeColor(for: path.activityType),
+                            strokeColor(for: path),
                             style: MapTrackStyle.stroke(width: MapTrackStyle.Width.day)
                         )
                 }
@@ -142,6 +152,19 @@ public struct AppDayMapView: View {
         preferences.dayPathDisplayMode == .mapMatched
             ? path.simplifiedCoordinates
             : path.coordinates
+    }
+
+    private func strokeColor(for path: DayMapRenderData.PathOverlay) -> Color {
+        switch preferences.mapTrackColorMode {
+        case .activity:
+            return MapPalette.routeColor(for: path.activityType)
+        case .speed:
+            return MapPalette.routeColor(for: path.activityType)
+        case .elevation:
+            return .green
+        case .weather:
+            return .blue
+        }
     }
 
     private func t(_ english: String) -> String {

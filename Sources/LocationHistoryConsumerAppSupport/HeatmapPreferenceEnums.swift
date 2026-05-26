@@ -72,13 +72,17 @@ public enum AppHeatmapRadiusPreset: String, CaseIterable, Identifiable, Sendable
 public enum AppMapTrackColorMode: String, CaseIterable, Identifiable, Sendable {
     case activity
     case speed
+    case elevation
+    case weather
 
     public var id: String { rawValue }
 
     public var labelKey: String {
         switch self {
-        case .activity: return "Activity"
-        case .speed:    return "Speed"
+        case .activity:  return "Standard"
+        case .speed:     return "Speed"
+        case .elevation: return "Elevation"
+        case .weather:   return "Weather"
         }
     }
 }
