@@ -208,7 +208,7 @@ public struct AppFilesView: View {
                     Text(isRefreshing ? "Aktualisiere…" : "Aktualisieren")
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .lgGlassButtonProminent(tint: LH2GPXTheme.LiquidGlass.trackPrimary)
             .disabled(viewModel.actionState != .idle || cloudViewModel.actionState != .idle)
             .accessibilityIdentifier(AppAccessibilityID.Files.refresh)
             segmentActionButton
