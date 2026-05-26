@@ -316,6 +316,10 @@ public struct LiveBottomSheetHeights: Equatable {
 
     public static let portrait = LiveBottomSheetHeights(collapsed: 140, medium: 240, expanded: 360)
     public static let landscapeCompact = LiveBottomSheetHeights(collapsed: 140, medium: 200, expanded: 280)
+    /// Phase 19.28 follow-up: when the live map collapses to ~50% in the
+    /// portrait compact variant, the sheet can grow further to give the
+    /// status legend / metrics list more room.
+    public static let compactPortrait = LiveBottomSheetHeights(collapsed: 160, medium: 320, expanded: 520)
 }
 
 @available(iOS 17.0, macOS 14.0, *)
