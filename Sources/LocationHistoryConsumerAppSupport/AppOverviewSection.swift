@@ -148,6 +148,10 @@ public struct AppOverviewSection: View {
                 .stroke(stat.color.swiftUIColor.opacity(0.35), lineWidth: 0.8)
         )
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        // Make the entire tile region tappable, not just the visible
+        // chevron / text glyphs. Without an explicit content shape the
+        // transparent areas inside the VStack would swallow touches.
+        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func t(_ english: String) -> String {
