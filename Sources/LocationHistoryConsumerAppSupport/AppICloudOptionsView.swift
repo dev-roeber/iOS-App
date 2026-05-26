@@ -1,5 +1,8 @@
 #if canImport(SwiftUI)
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - ICloudSyncViewModel
 
@@ -180,6 +183,30 @@ public enum ICloudActionErrorRendering {
     }
 }
 
+// MARK: - LGICloudSection
+
+/// Prompt 04 — Liquid-Glass-Section-Shell für die iCloud-Settings. Ersetzt
+/// das vorher genutzte `LHCard` (dunkles Warm-Variant-B-Pro-Chrome) durch
+/// die helle `LHLiquidGlassSurface`. Drop-in-Wrapper: gleiche Semantik
+/// (VStack, leading-aligned, spacing 12) wie `LHCard`, nur eben Light-LG.
+/// Bewusst lokal gehalten, damit andere Screens unverändert weiterlaufen.
+struct LGICloudSection<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    init(@ViewBuilder content: @escaping () -> Content) {
+        self.content = content
+    }
+
+    var body: some View {
+        LHLiquidGlassSurface {
+            VStack(alignment: .leading, spacing: 12) {
+                content()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
 // MARK: - AppICloudOptionsView
 
 /// Train F.4 — first visible adoption of `LHXSyncStatusCard`. Renders
@@ -300,7 +327,12 @@ public struct AppICloudOptionsView: View {
         .navigationTitle(t("iCloud"))
         .accessibilityIdentifier("options.icloud.title")
         .scrollContentBackground(.hidden)
-        .background(LH2GPXTheme.VariantBPro.bgWarm.ignoresSafeArea())
+        // Prompt 04 — iCloud-Settings auf Liquid Glass (Light-Map-Stil).
+        // Vorher: warmes Dunkelbraun `bgWarm`, das nicht zum Rest der
+        // Settings-Unterseiten passte (Audit P0.2 + P1.5). Jetzt: gleicher
+        // Light-Hintergrund wie alle anderen LG-Screens, mit dezenten
+        // Karten-Wave-Linien.
+        .background(LHLiquidGlassBackground())
         .task {
             // Phase D.2 — respect the user preference. The dedicated
             // „Status aktualisieren" button stays available regardless.
@@ -317,13 +349,14 @@ public struct AppICloudOptionsView: View {
             guard newValue else { return }
             Task { await viewModel.refresh() }
         }
-        // Phase D.4 — `.alert` instead of `.confirmationDialog`. The alert
-        // is the HIG-recommended pattern for rare, critical destructive
-        // actions („alle Cloud-Daten löschen") and renders consistently
-        // across iPhone + iPad without the iPad action-sheet edge cases.
-        .alert(
+        // Prompt 04 — Audit C10: Vorher `.alert`, dessen Hintergrund im
+        // alten Dark-Mode-Layer (IMG_5101) kaum lesbar war. Wir wechseln
+        // auf `.confirmationDialog`, weil dieser automatisch System-Glas
+        // nutzt und in Light + Dark adaptiv rendert.
+        .confirmationDialog(
             "Cloud-Daten löschen?",
-            isPresented: $showsCloudDeleteConfirmation
+            isPresented: $showsCloudDeleteConfirmation,
+            titleVisibility: .visible
         ) {
             Button("Cloud-Daten löschen", role: .destructive) {
                 Task { await viewModel.deleteCloudData() }
@@ -338,13 +371,13 @@ public struct AppICloudOptionsView: View {
 
     @ViewBuilder
     private var iCloudBackupSelectionCard: some View {
-        LHCard {
+        LGICloudSection {
             LHSectionHeader("In iCloud sichern")
             VStack(alignment: .leading, spacing: 10) {
                 if !preferences.iCloudSyncEnabled {
                     Label("iCloud-Sync ist deaktiviert — bitte oben aktivieren, um Sicherungsoptionen auszuwählen.", systemImage: "icloud.slash")
                         .font(.caption)
-                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("options.icloud.backupSelection.gateHint")
                 }
@@ -354,7 +387,7 @@ public struct AppICloudOptionsView: View {
                             .font(.subheadline.weight(.semibold))
                         Text("Name, Zeitraum, Distanz und technische Zusammenfassung eines LiveTracks.")
                             .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -374,7 +407,7 @@ public struct AppICloudOptionsView: View {
                         }
                         Text("Enthält genaue Standortpunkte eines LiveTracks. Diese Option ist standardmäßig deaktiviert.")
                             .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -394,7 +427,7 @@ public struct AppICloudOptionsView: View {
                         }
                         Text("GPX-, KML- und ZIP-Dateien werden nur nach ausdrücklicher Datei-Auswahl hochgeladen. Enthält möglicherweise Standortdaten.")
                             .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -415,7 +448,7 @@ public struct AppICloudOptionsView: View {
                         }
                         Text("Synchronisiert deine lokalen Favoriten (Tage) bidirektional mit der privaten iCloud-Datenbank. Keine Standortdaten.")
                             .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -454,7 +487,7 @@ public struct AppICloudOptionsView: View {
                     if let message = favoriteCloudSync.actionMessage {
                         Text(message)
                             .font(.caption)
-                            .foregroundStyle(favoriteCloudSync.actionFailed ? .orange : LH2GPXTheme.textSecondary)
+                            .foregroundStyle(favoriteCloudSync.actionFailed ? .orange : LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("options.icloud.favorites.message")
                     }
@@ -466,7 +499,7 @@ public struct AppICloudOptionsView: View {
                             .font(.subheadline.weight(.semibold))
                         Text("Nur iCloud-bezogene Einstellungen und Anzeigeoptionen.")
                             .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -479,7 +512,7 @@ public struct AppICloudOptionsView: View {
                             .font(.subheadline.weight(.semibold))
                         Text("Nur lokale Exportziel-Hinweise, keine automatisch hochgeladenen GPX-Dateien.")
                             .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -492,7 +525,7 @@ public struct AppICloudOptionsView: View {
 
     @ViewBuilder
     private var automaticLiveTrackBackupCard: some View {
-        LHCard {
+        LGICloudSection {
             LHSectionHeader("Automatische Sicherung")
             VStack(alignment: .leading, spacing: 10) {
                 Toggle(isOn: $preferences.automaticLiveTrackICloudBackupEnabled) {
@@ -501,7 +534,7 @@ public struct AppICloudOptionsView: View {
                             .font(.subheadline.weight(.semibold))
                         Text("Wenn aktiviert, werden neu abgeschlossene LiveTracks nach dem Speichern zusätzlich in deinem privaten iCloud-Bereich gesichert. Importierte Google-History-Daten werden nicht automatisch hochgeladen.")
                             .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -526,12 +559,12 @@ public struct AppICloudOptionsView: View {
 
     @ViewBuilder
     private var manualLiveTrackCloudActionsCard: some View {
-        LHCard {
+        LGICloudSection {
             LHSectionHeader("LiveTracks manuell sichern")
             VStack(alignment: .leading, spacing: 12) {
                 Text("Upload und Wiederherstellung nutzen die bestehenden LiveTrack-Records in deinem privaten iCloud-Bereich. Google-History-Importe und exportierte Dateien werden hier nicht hochgeladen.")
                     .font(.caption)
-                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 12) {
@@ -600,7 +633,7 @@ public struct AppICloudOptionsView: View {
                                     .font(.caption.weight(.semibold))
                                 Text("\(Self.shortDateFormatter.string(from: envelope.summary.startedAt)) · \(envelope.summary.pointCount) Punkte")
                                     .font(.caption2)
-                                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             }
                             Spacer()
                             Button {
@@ -622,7 +655,7 @@ public struct AppICloudOptionsView: View {
                 if let message = liveTrackCloudActions.actionMessage {
                     Text(message)
                         .font(.footnote)
-                        .foregroundStyle(liveTrackCloudActions.actionFailed ? .orange : LH2GPXTheme.textSecondary)
+                        .foregroundStyle(liveTrackCloudActions.actionFailed ? .orange : LH2GPXTheme.LiquidGlass.secondaryInk)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier(AppAccessibilityID.ICloud.liveTrackActionsMessage)
                 }
@@ -634,7 +667,7 @@ public struct AppICloudOptionsView: View {
 
     @ViewBuilder
     private var healthCheckCard: some View {
-        LHCard {
+        LGICloudSection {
             LHSectionHeader("CloudKit-Health-Check")
             VStack(alignment: .leading, spacing: 8) {
                 Label(viewModel.healthStatus.userFacingStatusKey, systemImage: healthIconName)
@@ -644,11 +677,11 @@ public struct AppICloudOptionsView: View {
                 if let probe = viewModel.healthStatus.lastProbeResult {
                     Text("Letzte Prüfung: \(Self.shortDateFormatter.string(from: probe.checkedAt)) · \(String(format: "%.2f", probe.durationSeconds)) s")
                         .font(.caption)
-                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("Schreiben \(probe.writeSucceeded ? "✓" : "–") · Lesen \(probe.readSucceeded ? "✓" : "–") · Löschen \(probe.deleteSucceeded ? "✓" : "–")")
                         .font(.caption2.monospaced())
-                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     // Phase D.2 — surface the exact failure stage + CKError code so
                     // TestFlight diagnostics no longer hide the root cause behind
@@ -747,7 +780,7 @@ public struct AppICloudOptionsView: View {
 
     @ViewBuilder
     private var storageOverviewCard: some View {
-        LHCard {
+        LGICloudSection {
             LHSectionHeader("In iCloud gesichert")
             VStack(alignment: .leading, spacing: 12) {
                 if viewModel.storageOverview.summaryCount == 0,
@@ -756,7 +789,7 @@ public struct AppICloudOptionsView: View {
                         ? "Noch keine Daten in iCloud gesichert."
                         : "Übersicht verfügbar, sobald iCloud erreichbar ist.")
                         .font(.caption)
-                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                 } else {
                     overviewRow("LiveTrack-Metadaten", value: "\(viewModel.storageOverview.summaryCount)")
                     overviewRow("Routenpunkt-Batches", value: "\(viewModel.storageOverview.pointBatchCount)")
@@ -771,7 +804,7 @@ public struct AppICloudOptionsView: View {
                 if let lastChecked = viewModel.storageOverview.lastCloudKitStatusCheckAt {
                     Text("Zuletzt geprüft: \(Self.shortDateFormatter.string(from: lastChecked))")
                         .font(.caption2)
-                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                         .accessibilityIdentifier("options.icloud.overview.lastChecked")
                 }
                 // Phase D.4 — action HStack with progress-aware labels and
@@ -839,7 +872,7 @@ public struct AppICloudOptionsView: View {
                 if let message = viewModel.overviewActionMessage {
                     Text(message)
                         .font(.footnote)
-                        .foregroundStyle(viewModel.overviewActionFailed ? .orange : LH2GPXTheme.textSecondary)
+                        .foregroundStyle(viewModel.overviewActionFailed ? .orange : LH2GPXTheme.LiquidGlass.secondaryInk)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("options.icloud.overview.actionMessage")
                 }
@@ -860,7 +893,7 @@ public struct AppICloudOptionsView: View {
 
     @ViewBuilder
     private var statusAutoRefreshCard: some View {
-        LHCard {
+        LGICloudSection {
             LHSectionHeader("Statusaktualisierung")
             VStack(alignment: .leading, spacing: 10) {
                 Toggle(isOn: $preferences.iCloudStatusAutoRefreshEnabled) {
@@ -869,7 +902,7 @@ public struct AppICloudOptionsView: View {
                             .font(.subheadline.weight(.semibold))
                         Text("Wenn aktiv, prüft die App die iCloud-Verfügbarkeit erneut, sobald diese Seite erscheint. Die manuelle Aktualisierung bleibt immer verfügbar.")
                             .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -881,7 +914,7 @@ public struct AppICloudOptionsView: View {
 
     @ViewBuilder
     private var networkPolicyCard: some View {
-        LHCard {
+        LGICloudSection {
             LHSectionHeader("Netzwerkrichtlinie")
             VStack(alignment: .leading, spacing: 10) {
                 Toggle(isOn: $preferences.iCloudSyncAllowCellular) {
@@ -890,7 +923,7 @@ public struct AppICloudOptionsView: View {
                             .font(.subheadline.weight(.semibold))
                         Text("Wenn aus, werden CloudKit-Sicherungen nicht über Mobilfunk gestartet.")
                             .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -902,7 +935,7 @@ public struct AppICloudOptionsView: View {
 
     @ViewBuilder
     private var conflictPolicyCard: some View {
-        LHCard {
+        LGICloudSection {
             LHSectionHeader("Konfliktbehandlung")
             VStack(alignment: .leading, spacing: 10) {
                 Picker("Konfliktbehandlung", selection: $preferences.iCloudSyncConflictPolicy) {
@@ -916,7 +949,7 @@ public struct AppICloudOptionsView: View {
 
                 Text(preferences.iCloudSyncConflictPolicy.captionKey)
                     .font(.caption)
-                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("options.icloud.conflictPolicy.caption")
             }
@@ -932,24 +965,37 @@ public struct AppICloudOptionsView: View {
 
     @ViewBuilder
     private var containerInfoCard: some View {
-        LHCard {
+        LGICloudSection {
             LHSectionHeader("CloudKit-Container")
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(t("Identifier"))
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(LH2GPXTheme.textSecondary)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                     Spacer()
                     Text(CloudKitCloudSyncService.defaultContainerIdentifier)
                         .font(.caption2.monospaced())
-                        .foregroundStyle(LH2GPXTheme.VariantBPro.terra300)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .accessibilityIdentifier("options.icloud.container.id")
+                    // Prompt 04 — Copy-Button für Container-ID. Spec verlangt
+                    // einen sichtbaren Knopf, der die ID ins Clipboard legt.
+                    Button {
+                        #if canImport(UIKit)
+                        UIPasteboard.general.string = CloudKitCloudSyncService.defaultContainerIdentifier
+                        #endif
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("CloudKit-Container-ID kopieren")
+                    .accessibilityIdentifier("options.icloud.container.copy")
                 }
                 Text("Nur private CloudKit-Datenbank. Öffentliche und geteilte CloudKit-Datenbanken werden nicht verwendet. Keine Team-ID wird angezeigt.")
                     .font(.caption2)
-                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -1054,7 +1100,7 @@ public struct AppICloudOptionsView: View {
     /// opens.
     @ViewBuilder
     private var iCloudDriveExportHintCard: some View {
-        LHCard {
+        LGICloudSection {
             LHSectionHeader("Exportziel")
             VStack(alignment: .leading, spacing: 10) {
                 Toggle(isOn: $preferences.preferCloudDriveExport) {
@@ -1063,7 +1109,7 @@ public struct AppICloudOptionsView: View {
                             .font(.subheadline.weight(.semibold))
                         Text("Zeigt einen Hinweis beim Export. Der Systemdialog fragt weiterhin nach dem Zielordner. GPX-Dateien werden nicht automatisch hochgeladen.")
                             .font(.caption)
-                            .foregroundStyle(LH2GPXTheme.textSecondary)
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -1071,7 +1117,7 @@ public struct AppICloudOptionsView: View {
 
                 Text(iCloudDriveHintFooter)
                     .font(.caption2)
-                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("options.icloud.driveExportFooter")
             }
@@ -1089,7 +1135,7 @@ public struct AppICloudOptionsView: View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
                 .font(.caption)
-                .foregroundStyle(LH2GPXTheme.textSecondary)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
             Spacer()
             Text(value)
                 .font(.caption.weight(.semibold))
