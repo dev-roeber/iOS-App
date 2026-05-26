@@ -773,6 +773,12 @@ enum AppGermanTranslations {
         "Layers": "Ebenen",
         "Elevation": "Höhe",
         "Weather": "Wetter",
+        // Weather layer (Phase 19.30 — UI integration)
+        "Show weather data": "Wetterdaten anzeigen",
+        "Uses data · Apple WeatherKit · Location required": "Verbraucht Datenvolumen · Apple WeatherKit · Standortzugriff erforderlich",
+        "Weather unavailable": "Wetter unverfügbar",
+        "Enable in Settings": "In Einstellungen aktivieren",
+        "Reset weather error": "Wetterfehler zurücksetzen",
         "Zoom in": "Heranzoomen",
         "Zoom out": "Herauszoomen",
         "Fit to Data": "Auf Daten zoomen",
