@@ -37,7 +37,7 @@ public struct LGTabContainerView: View {
         self.onOpenOptions = onOpenOptions
     }
 
-    public enum LGTab: Int, Hashable { case map, days, live, insights, search }
+    public enum LGTab: Int, Hashable { case map, days, live, insights }
 
     // MARK: - Data sources
 
@@ -70,10 +70,8 @@ public struct LGTabContainerView: View {
             Tab("Tage", systemImage: "calendar", value: LGTab.days) { daysTab }
             Tab("Live", systemImage: "record.circle", value: LGTab.live) { liveTab }
             Tab("Insights", systemImage: "chart.xyaxis.line", value: LGTab.insights) { insightsTab }
-            Tab("Suche", systemImage: "magnifyingglass", value: LGTab.search, role: .search) { searchTab }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
-        .searchable(text: $searchText, prompt: "Tage, Datum oder Monat")
         .tabViewBottomAccessory {
             if liveLocation.isRecording {
                 LGLiveRecordingAccessory(liveModel: liveLocation) {
@@ -191,6 +189,7 @@ public struct LGTabContainerView: View {
             }
             .toolbar { commonToolbar }
             .background(LHLiquidGlassBackground().ignoresSafeArea())
+            .searchable(text: $searchText, prompt: "Tage, Datum oder Monat")
         }
     }
 
@@ -230,23 +229,6 @@ public struct LGTabContainerView: View {
             .navigationTitle("Insights")
             .toolbar { commonToolbar }
             .background(LHLiquidGlassBackground().ignoresSafeArea())
-        }
-    }
-
-    @ViewBuilder
-    private var searchTab: some View {
-        NavigationStack {
-            LGSearchResultsView(
-                summaries: filteredDaySummaries,
-                searchText: searchText,
-                onSelectDate: { date in
-                    selectedDate = date
-                    selectedTab = .days
-                    daysNavigationPath.append(date)
-                }
-            )
-            .navigationTitle("Suche")
-            .toolbar { commonToolbar }
         }
     }
 
@@ -333,44 +315,6 @@ private struct LGLiveRecordingAccessory: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-    }
-}
-
-// MARK: - Search-Tab Resultliste
-
-@available(iOS 26.0, *)
-private struct LGSearchResultsView: View {
-    let summaries: [DaySummary]
-    let searchText: String
-    let onSelectDate: (String) -> Void
-
-    var body: some View {
-        List(summaries, id: \.date) { summary in
-            Button {
-                onSelectDate(summary.date)
-            } label: {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(summary.date)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    Text("\(summary.pathCount) Routen · \(summary.visitCount) Orte · "
-                         + String(format: "%.1f km", summary.totalPathDistanceM / 1000))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-        }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .overlay {
-            if summaries.isEmpty {
-                ContentUnavailableView(
-                    searchText.isEmpty ? "Keine Tage" : "Keine Treffer",
-                    systemImage: "magnifyingglass"
-                )
-            }
-        }
     }
 }
 

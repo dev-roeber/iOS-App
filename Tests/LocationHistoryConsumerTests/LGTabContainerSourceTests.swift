@@ -10,10 +10,11 @@ final class LGTabContainerSourceTests: XCTestCase {
         let source = try sourceFile(Self.tabContainerRelativePath)
 
         XCTAssertTrue(source.contains("Tab(\"Karte\", systemImage: \"map\", value: LGTab.map)"))
-        XCTAssertTrue(
-            source.contains(
-                "Tab(\"Suche\", systemImage: \"magnifyingglass\", value: LGTab.search, role: .search)"
-            )
+        // Prompt 03 LG_ROOT: Such-Tab entfernt (4 Tabs statt 5), Search
+        // wandert in den Tage-Tab via lokalem .searchable(...) Modifier.
+        XCTAssertFalse(
+            source.contains("LGTab.search"),
+            "Search tab should be removed (Prompt 03 LG_ROOT)"
         )
         XCTAssertTrue(source.contains(".searchable(text: $searchText"))
         XCTAssertTrue(source.contains(".tabBarMinimizeBehavior(.onScrollDown)"))
