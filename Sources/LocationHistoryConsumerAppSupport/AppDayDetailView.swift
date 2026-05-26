@@ -144,7 +144,7 @@ public struct AppDayDetailView: View {
                     .padding(.vertical, 16)
             }
             .scrollContentBackground(.hidden)
-            .background(Color.black)
+            .background(Color(.systemBackground))
             .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 0) {
                     if #available(iOS 17.0, macOS 14.0, *) {
@@ -152,7 +152,7 @@ public struct AppDayDetailView: View {
                     }
                     dayHeroFilterPanel(detail: filteredDetail)
                 }
-                .background(Color.black)
+                .background(Color(.systemBackground))
             }
             .ignoresSafeArea(edges: .top)
         }
@@ -343,7 +343,7 @@ public struct AppDayDetailView: View {
                 } label: {
                     Text(t(segment.title))
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(selectedSegment == segment ? Color.black : LH2GPXTheme.textSecondary)
+                        .foregroundStyle(selectedSegment == segment ? AnyShapeStyle(.primary) : AnyShapeStyle(LH2GPXTheme.textSecondary))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(selectedSegment == segment ? LH2GPXTheme.liveMint : LH2GPXTheme.elevatedCard)
