@@ -210,11 +210,25 @@ struct AppOverviewTracksMapView: View {
                         Color.white.opacity(MapTrackStyle.haloOpacity),
                         style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview * MapTrackStyle.haloMultiplier)
                     )
-                MapPolyline(coordinates: path.coordinates)
-                    .stroke(
-                        overviewStrokeColor(for: path.activityType),
-                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview)
-                    )
+                if preferences.mapTrackColorMode == .speed,
+                   let speeds = path.speedSamples,
+                   speeds.count == path.coordinates.count {
+                    ForEach(0..<(path.coordinates.count - 1), id: \.self) { i in
+                        let avg = (speeds[i] + speeds[i + 1]) * 0.5
+                        let normalized = min(max(avg / 16.7, 0.0), 1.0)
+                        MapPolyline(coordinates: [path.coordinates[i], path.coordinates[i + 1]])
+                            .stroke(
+                                SpeedColors.color(for: normalized),
+                                style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview)
+                            )
+                    }
+                } else {
+                    MapPolyline(coordinates: path.coordinates)
+                        .stroke(
+                            overviewStrokeColor(for: path.activityType),
+                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview)
+                        )
+                }
             }
         }
         .mapStyle(mapStyle)
@@ -438,11 +452,25 @@ struct AppOverviewExploreSheet: View {
                         Color.white.opacity(MapTrackStyle.haloOpacity),
                         style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview * MapTrackStyle.haloMultiplier)
                     )
-                MapPolyline(coordinates: path.coordinates)
-                    .stroke(
-                        overviewStrokeColor(for: path.activityType),
-                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview)
-                    )
+                if preferences.mapTrackColorMode == .speed,
+                   let speeds = path.speedSamples,
+                   speeds.count == path.coordinates.count {
+                    ForEach(0..<(path.coordinates.count - 1), id: \.self) { i in
+                        let avg = (speeds[i] + speeds[i + 1]) * 0.5
+                        let normalized = min(max(avg / 16.7, 0.0), 1.0)
+                        MapPolyline(coordinates: [path.coordinates[i], path.coordinates[i + 1]])
+                            .stroke(
+                                SpeedColors.color(for: normalized),
+                                style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview)
+                            )
+                    }
+                } else {
+                    MapPolyline(coordinates: path.coordinates)
+                        .stroke(
+                            overviewStrokeColor(for: path.activityType),
+                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.overview)
+                        )
+                }
             }
         }
         .mapStyle(AppMapStyleResolver.mapStyle(for: preferences.preferredMapStyle, showsRealisticElevation: preferences.mapShowsRealisticElevation))
@@ -511,6 +539,18 @@ struct AppOverviewExploreSheet: View {
 struct OverviewMapPathOverlay: Equatable {
     let coordinates: [CLLocationCoordinate2D]
     let activityType: String?
+    /// Per-coordinate speed in m/s, aligned to `coordinates` (count must
+    /// match). Only populated when the candidate carried usable
+    /// timestamps; otherwise `nil` and the renderer falls back to a
+    /// uniform tint. Required for the Tempo (per-segment) layer on the
+    /// Insights / Days overview map.
+    let speedSamples: [Double]?
+
+    init(coordinates: [CLLocationCoordinate2D], activityType: String?, speedSamples: [Double]? = nil) {
+        self.coordinates = coordinates
+        self.activityType = activityType
+        self.speedSamples = speedSamples
+    }
 }
 
 struct OverviewMapRenderData: Equatable {
@@ -608,6 +648,12 @@ enum OverviewMapTaskKey {
 struct OverviewMapPathCandidate {
     let signature: Int
     let fullCoordinates: [CLLocationCoordinate2D]
+    /// Optional parallel timestamps aligned to `fullCoordinates`. When
+    /// non-nil and the same count as `fullCoordinates`, the overlay
+    /// builder uses these to derive per-coordinate speeds for the Tempo
+    /// (per-segment) layer. `nil` when the source path had no usable
+    /// per-point timestamps (e.g. flat-coordinate fast path).
+    let timestamps: [Date?]?
     let midpoint: CLLocationCoordinate2D
     let boundsMinLat: Double
     let boundsMaxLat: Double
@@ -737,6 +783,7 @@ enum OverviewMapPreparation {
                 // alle weiteren `min/max`-Vergleiche degradieren würden).
                 // Score-Logik bleibt unverändert — `pointWeight = log(count)`
                 // sieht jetzt nur valide Punkte, was strikt besser ist.
+                var timestampsForPath: [Date?]? = nil
                 if let flat = path.flatCoordinates, flat.count >= 4, flat.count.isMultiple(of: 2) {
                     var coords = [CLLocationCoordinate2D]()
                     coords.reserveCapacity(flat.count / 2)
@@ -758,12 +805,19 @@ enum OverviewMapPreparation {
                         i += 2
                     }
                     coordinates = coords
+                    // flat_coordinates carries no per-point timestamps, so
+                    // the Tempo layer falls back to a uniform tint for paths
+                    // that came in via the flat fast path.
+                    timestampsForPath = nil
                 } else if path.points.count >= 2 {
                     var coords = [CLLocationCoordinate2D]()
                     coords.reserveCapacity(path.points.count)
+                    var times = [Date?]()
+                    times.reserveCapacity(path.points.count)
                     for pt in path.points {
                         guard CoordinateValidity.isValid(latitude: pt.lat, longitude: pt.lon) else { continue }
                         coords.append(CLLocationCoordinate2D(latitude: pt.lat, longitude: pt.lon))
+                        times.append(OverviewMapPreparation.parseISO(pt.time))
                         if pt.lat < minLat { minLat = pt.lat }
                         if pt.lat > maxLat { maxLat = pt.lat }
                         if pt.lon < minLon { minLon = pt.lon }
@@ -775,6 +829,9 @@ enum OverviewMapPreparation {
                         hasAnyCoord = true
                     }
                     coordinates = coords
+                    // Only carry timestamps forward if at least one is parseable;
+                    // otherwise the speed layer has nothing to work with.
+                    timestampsForPath = times.contains(where: { $0 != nil }) ? times : nil
                 } else {
                     continue
                 }
@@ -793,7 +850,11 @@ enum OverviewMapPreparation {
                 // Decimate by stride before storing — the makeOverlay step
                 // applies a finer Douglas-Peucker pass, so this is a pure
                 // RAM optimisation and does not affect render quality.
-                let storedCoordinates = strideDecimate(coordinates, maxPoints: candidateStorageCap)
+                let (storedCoordinates, storedTimestamps) = strideDecimateParallel(
+                    coordinates,
+                    parallel: timestampsForPath,
+                    maxPoints: candidateStorageCap
+                )
                 let midpointIndex = storedCoordinates.count / 2
                 var hasher = Hasher()
                 hasher.combine(path.activityType)
@@ -809,6 +870,7 @@ enum OverviewMapPreparation {
                 candidates.append(OverviewMapPathCandidate(
                     signature: hasher.finalize(),
                     fullCoordinates: storedCoordinates,
+                    timestamps: storedTimestamps,
                     midpoint: storedCoordinates[midpointIndex],
                     boundsMinLat: pathMinLat,
                     boundsMaxLat: pathMaxLat,
@@ -992,9 +1054,20 @@ enum OverviewMapPreparation {
         hasher.combine(coordinates.last?.latitude ?? 0)
         hasher.combine(coordinates.last?.longitude ?? 0)
 
+        // Parse parallel ISO timestamps when present so the Tempo layer can
+        // derive per-coordinate speeds on the legacy code path as well.
+        let parsedTimes: [Date?]? = {
+            guard overlay.timestamps.count == overlay.coordinates.count, !overlay.timestamps.isEmpty else {
+                return nil
+            }
+            let parsed: [Date?] = overlay.timestamps.map { OverviewMapPreparation.parseISO($0) }
+            return parsed.contains(where: { $0 != nil }) ? parsed : nil
+        }()
+
         return OverviewMapPathCandidate(
             signature: hasher.finalize(),
             fullCoordinates: coordinates,
+            timestamps: parsedTimes,
             midpoint: coordinates[midpointIndex],
             boundsMinLat: pathMinLat,
             boundsMaxLat: pathMaxLat,
@@ -1058,8 +1131,87 @@ enum OverviewMapPreparation {
         )
         let decimated = decimate(simplified, maxPoints: profile.maxPolylinePoints)
         guard decimated.count >= 2 else { return nil }
-        return OverviewMapPathOverlay(coordinates: decimated, activityType: candidate.activityType)
+        // Build per-coordinate speed samples aligned to the final decimated
+        // coords when the source path carried per-point timestamps. Cap at
+        // ≤500 coords (= ≤499 segments) to keep the MapKit overlay budget
+        // reasonable on dense routes; beyond that the renderer falls back to
+        // the uniform Tempo tint.
+        let speedSamples: [Double]?
+        if let times = candidate.timestamps,
+           times.count == candidate.fullCoordinates.count,
+           decimated.count <= 500 {
+            speedSamples = SimplifiedSpeedSampler.speedSamples(
+                rawCoords: candidate.fullCoordinates,
+                rawTimestamps: times,
+                simplifiedCoords: decimated
+            )
+        } else {
+            speedSamples = nil
+        }
+        return OverviewMapPathOverlay(
+            coordinates: decimated,
+            activityType: candidate.activityType,
+            speedSamples: speedSamples
+        )
     }
+
+    /// Stride-decimates `coordinates` to ≤ `maxPoints` and, when `parallel`
+    /// is supplied, returns a same-shaped parallel array preserving
+    /// alignment. Used to keep `OverviewMapPathCandidate.timestamps` aligned
+    /// to its `fullCoordinates` after the scan-time RAM cap.
+    nonisolated static func strideDecimateParallel(
+        _ coordinates: [CLLocationCoordinate2D],
+        parallel: [Date?]?,
+        maxPoints: Int
+    ) -> ([CLLocationCoordinate2D], [Date?]?) {
+        guard coordinates.count > maxPoints, maxPoints >= 2 else {
+            // Even on the no-decimate path, only return timestamps that
+            // actually match the coord count — otherwise downstream
+            // alignment guards would discard them anyway.
+            if let p = parallel, p.count == coordinates.count {
+                return (coordinates, p)
+            }
+            return (coordinates, parallel == nil ? nil : nil)
+        }
+        let step = max(1, Int(ceil(Double(coordinates.count - 1) / Double(maxPoints - 1))))
+        var resultCoords: [CLLocationCoordinate2D] = []
+        var resultTimes: [Date?] = []
+        resultCoords.reserveCapacity(maxPoints)
+        if parallel != nil { resultTimes.reserveCapacity(maxPoints) }
+        var index = 0
+        while index < coordinates.count - 1 {
+            resultCoords.append(coordinates[index])
+            if let p = parallel, p.count == coordinates.count {
+                resultTimes.append(p[index])
+            }
+            index += step
+        }
+        let lastIdx = coordinates.count - 1
+        resultCoords.append(coordinates[lastIdx])
+        if let p = parallel, p.count == coordinates.count {
+            resultTimes.append(p[lastIdx])
+        }
+        if parallel != nil, resultTimes.count == resultCoords.count {
+            return (resultCoords, resultTimes)
+        }
+        return (resultCoords, nil)
+    }
+
+    /// ISO-8601 parser shared by the scan and legacy paths. Tries the
+    /// fractional-seconds variant first (matches Google Timeline export
+    /// shape), then falls back to the plain ISO formatter.
+    nonisolated static func parseISO(_ value: String?) -> Date? {
+        guard let value, !value.isEmpty else { return nil }
+        if let d = Self.isoFractional.date(from: value) { return d }
+        return Self.isoPlain.date(from: value)
+    }
+
+    nonisolated static let isoFractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+    nonisolated static let isoPlain: ISO8601DateFormatter = ISO8601DateFormatter()
 
     /// Stride-based decimation used during the scan phase to bound how many
     /// points each `OverviewMapPathCandidate` keeps in `fullCoordinates`.
