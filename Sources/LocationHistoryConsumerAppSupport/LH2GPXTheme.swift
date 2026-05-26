@@ -251,6 +251,38 @@ public struct LHFilterChip: View {
     }
 }
 
+/// Non-interactive sibling of ``LHFilterChip`` for status/summary readouts.
+///
+/// Used where the chip is a visual badge only (e.g. selection summary in the
+/// export hero) — keeps the pill aesthetic without giving users a tappable
+/// affordance that would not do anything.
+public struct LHStatusBadge: View {
+    let title: String
+    let systemImage: String
+
+    public init(title: String, systemImage: String) {
+        self.title = title
+        self.systemImage = systemImage
+    }
+
+    public var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.caption)
+            Text(title)
+                .font(.caption.weight(.medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(LH2GPXTheme.chipBackground)
+        .foregroundStyle(Color.primary)
+        .clipShape(Capsule())
+        .accessibilityElement(children: .combine)
+    }
+}
+
 
 
 // MARK: - Variant B Pro · Topographic Outdoor (Train 2026-05-25)
