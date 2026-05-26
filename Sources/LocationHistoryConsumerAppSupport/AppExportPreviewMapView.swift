@@ -91,11 +91,25 @@ struct AppExportPreviewMapView: View {
                         Color.white.opacity(MapTrackStyle.haloOpacity),
                         style: MapTrackStyle.stroke(width: MapTrackStyle.Width.export * MapTrackStyle.haloMultiplier)
                     )
-                MapPolyline(coordinates: path.coordinates)
-                    .stroke(
-                        exportStrokeColor(for: path.activityType),
-                        style: MapTrackStyle.stroke(width: MapTrackStyle.Width.export)
-                    )
+                if preferences.mapTrackColorMode == .speed,
+                   let speeds = path.speedSamples,
+                   speeds.count == path.coordinates.count {
+                    ForEach(0..<(path.coordinates.count - 1), id: \.self) { i in
+                        let avg = (speeds[i] + speeds[i + 1]) * 0.5
+                        let normalized = min(max(avg / 16.7, 0.0), 1.0)
+                        MapPolyline(coordinates: [path.coordinates[i], path.coordinates[i + 1]])
+                            .stroke(
+                                SpeedColors.color(for: normalized),
+                                style: MapTrackStyle.stroke(width: MapTrackStyle.Width.export)
+                            )
+                    }
+                } else {
+                    MapPolyline(coordinates: path.coordinates)
+                        .stroke(
+                            exportStrokeColor(for: path.activityType),
+                            style: MapTrackStyle.stroke(width: MapTrackStyle.Width.export)
+                        )
+                }
             }
         }
         .mapStyle(AppMapStyleResolver.mapStyle(for: preferences.preferredMapStyle, showsRealisticElevation: preferences.mapShowsRealisticElevation))
@@ -170,6 +184,10 @@ struct ExportPreviewRenderData {
     struct PathOverlay {
         let coordinates: [CLLocationCoordinate2D]
         let activityType: String?
+        /// Per-coordinate speed in m/s, aligned to `coordinates`. Only
+        /// populated when the source path carried per-point timestamps so
+        /// the Tempo (per-segment) layer can colour-grade each segment.
+        let speedSamples: [Double]?
     }
 
     let waypointAnnotations: [WaypointAnnotation]
@@ -187,12 +205,36 @@ struct ExportPreviewRenderData {
                 semanticType: $0.semanticType
             )
         }
-        self.pathOverlays = previewData.pathOverlays.map {
-            PathOverlay(
-                coordinates: $0.coordinates.map {
-                    CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                },
-                activityType: $0.activityType
+        self.pathOverlays = previewData.pathOverlays.map { overlay in
+            let coords = overlay.coordinates.map {
+                CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+            }
+            // Cap per-segment rendering at ≤500 coords (= ≤499 segments) so a
+            // very dense recorded track does not flood MapKit with overlays.
+            // Beyond the cap we fall back to the uniform Tempo tint.
+            let speedSamples: [Double]? = {
+                guard coords.count >= 2, coords.count <= 500 else { return nil }
+                guard overlay.timestamps.count == overlay.coordinates.count,
+                      !overlay.timestamps.isEmpty else { return nil }
+                let times: [Date?] = overlay.timestamps.map {
+                    ExportPreviewRenderData.parseISO($0)
+                }
+                guard times.contains(where: { $0 != nil }) else { return nil }
+                // The export preview overlays carry the raw (unsimplified)
+                // points, so we can derive a speed per coord directly using
+                // the same SimplifiedSpeedSampler helper with `simplified ==
+                // raw`. This keeps a single code path with the Insights
+                // overview.
+                return SimplifiedSpeedSampler.speedSamples(
+                    rawCoords: coords,
+                    rawTimestamps: times,
+                    simplifiedCoords: coords
+                )
+            }()
+            return PathOverlay(
+                coordinates: coords,
+                activityType: overlay.activityType,
+                speedSamples: speedSamples
             )
         }
         self.region = previewData.fittedRegion.map {
@@ -209,5 +251,22 @@ struct ExportPreviewRenderData {
         }
         self.hasMapContent = previewData.hasMapContent
     }
+
+    /// ISO-8601 parser shared between the export preview and overview
+    /// render-data builders. Tries the fractional-seconds variant first
+    /// (matches Google Timeline / Live recording shape), then falls back
+    /// to the plain ISO formatter so legacy fixtures still parse.
+    static func parseISO(_ value: String?) -> Date? {
+        guard let value, !value.isEmpty else { return nil }
+        if let d = Self.isoFractional.date(from: value) { return d }
+        return Self.isoPlain.date(from: value)
+    }
+
+    private static let isoFractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+    private static let isoPlain = ISO8601DateFormatter()
 }
 #endif

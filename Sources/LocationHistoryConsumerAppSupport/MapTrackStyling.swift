@@ -278,6 +278,72 @@ public enum SpeedTrackBuilder {
     }
 }
 
+// MARK: - Per-coordinate speed alignment helper
+
+/// Helper used by Insights+Export per-segment speed colouring. Given a set
+/// of raw `(coord, timestamp)` samples and a simplified subset of those
+/// coordinates (e.g. Douglas-Peucker output), this rebuilds a per-coord
+/// speed-in-m/s array that is index-aligned to `simplifiedCoords`.
+///
+/// Matching is done by linear scan over the raw samples — DP returns a
+/// subset of the raw points, so this walk is O(rawCount). The speed at
+/// each simplified coordinate is the great-circle distance to the next
+/// simplified coordinate divided by the corresponding timestamp delta.
+/// The last sample copies the preceding speed so the returned array has
+/// `simplifiedCoords.count` entries. Returns nil if alignment cannot be
+/// established (e.g. <2 simplified coords, or no usable timestamps).
+public enum SimplifiedSpeedSampler {
+    nonisolated public static func speedSamples(
+        rawCoords: [CLLocationCoordinate2D],
+        rawTimestamps: [Date?],
+        simplifiedCoords: [CLLocationCoordinate2D]
+    ) -> [Double]? {
+        guard simplifiedCoords.count >= 2,
+              rawCoords.count == rawTimestamps.count,
+              !rawCoords.isEmpty else { return nil }
+
+        // Map each simplified coord back to a raw index via linear walk —
+        // DP keeps a strictly-increasing subset, so once we find a match
+        // we advance from there.
+        var simplifiedTimes: [Date?] = []
+        simplifiedTimes.reserveCapacity(simplifiedCoords.count)
+        var rawIdx = 0
+        for sc in simplifiedCoords {
+            while rawIdx < rawCoords.count {
+                let rc = rawCoords[rawIdx]
+                if rc.latitude == sc.latitude && rc.longitude == sc.longitude {
+                    simplifiedTimes.append(rawTimestamps[rawIdx])
+                    rawIdx += 1
+                    break
+                }
+                rawIdx += 1
+            }
+            // If we couldn't match (defensive — shouldn't happen with DP),
+            // append nil so downstream logic substitutes 0 speed.
+            if simplifiedTimes.count < simplifiedCoords.count {
+                // ensure at least a placeholder so counts stay aligned
+                if rawIdx >= rawCoords.count {
+                    simplifiedTimes.append(nil)
+                }
+            }
+        }
+        guard simplifiedTimes.count == simplifiedCoords.count else { return nil }
+        guard simplifiedTimes.contains(where: { $0 != nil }) else { return nil }
+
+        var speeds: [Double] = []
+        speeds.reserveCapacity(simplifiedCoords.count)
+        for i in 0..<(simplifiedCoords.count - 1) {
+            let a = TrackSample(coordinate: simplifiedCoords[i], timestamp: simplifiedTimes[i])
+            let b = TrackSample(coordinate: simplifiedCoords[i + 1], timestamp: simplifiedTimes[i + 1])
+            let speed = SpeedTrackBuilder.instantaneousSpeed(from: a, to: b) ?? 0.0
+            speeds.append(speed)
+        }
+        // Last entry mirrors the previous one so output has count == simplifiedCoords.count.
+        speeds.append(speeds.last ?? 0.0)
+        return speeds
+    }
+}
+
 // MARK: - Breadcrumb fade buckets
 
 /// Splits a trail into 3 buckets with progressive alpha so the oldest part
