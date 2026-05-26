@@ -31,7 +31,12 @@ public enum ImportMemoryProbe {
     /// wechseln kann.
     public static var isLoggingEnabled: Bool {
         if processCachedFlag { return true }
-        return LocalTimelineTechnicalTestSettings.shared.importMemoryLoggingEnabled
+        // Read the persisted bool directly so this stays callable from
+        // background contexts (`GoogleTimelineConverter.ingest`,
+        // `AppSessionState.show*`) without forcing a MainActor hop.
+        // The `@Published` MainActor instance keeps SwiftUI in sync;
+        // `UserDefaults` itself is thread-safe.
+        return LocalTimelineTechnicalTestSettings.persistedImportMemoryLoggingEnabled()
     }
 
     /// Cached enablement flag — read once at first probe so we don't pay the
@@ -65,6 +70,7 @@ public enum ImportMemoryProbe {
 
     /// Build-158 — Pure activation rule mit zusätzlichem Settings-Pfad.
     /// Args/ENV haben Vorrang; das Setting aktiviert nur zusätzlich.
+    @MainActor
     public static func isEnabledForEnvironment(
         _ environment: [String: String],
         arguments: [String],
