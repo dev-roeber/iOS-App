@@ -1206,18 +1206,29 @@ public struct AppLiveTrackingView: View {
 
     @ViewBuilder
     private var liveMapPlaceholderContent: some View {
-        VStack(spacing: 12) {
-            Image(systemName: mapOverlayIcon)
-                .font(.system(size: 38))
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            Text(mapOverlayTitle)
-                .font(.headline)
-            Text(mapOverlaySubtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
+        switch liveStatus {
+        case .acquiringFix, .recordingAcquiring:
+            // Liquid-Glass „GPS sucht Satelliten…"-Card (PR #39).
+            // Nutzt die Recording-Session-Startzeit, um die verstrichene
+            // Suchdauer anzuzeigen — fallback nil im Idle-Acquiring-Fall.
+            AppAcquiringLocationCard(
+                elapsed: liveLocation.sessionStartedAt.map { Date().timeIntervalSince($0) }
+            )
+            .padding(.horizontal, 16)
+        default:
+            VStack(spacing: 12) {
+                Image(systemName: mapOverlayIcon)
+                    .font(.system(size: 38))
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(mapOverlayTitle)
+                    .font(.headline)
+                Text(mapOverlaySubtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+            }
         }
     }
 
