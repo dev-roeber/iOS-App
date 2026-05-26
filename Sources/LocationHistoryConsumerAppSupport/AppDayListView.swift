@@ -332,6 +332,9 @@ public struct AppDayListView: View {
                 if !availableChips.isEmpty || filter.isActive {
                     Section {
                         AppDayFilterChipsView(filter: $filter, availableChips: availableChips)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 8, trailing: 8))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
                     }
                 }
                 if !selectedForExportDates.isEmpty {
