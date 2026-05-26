@@ -23,6 +23,13 @@ public struct AppDayDetailView: View {
     let onRemovePath: ((Int) -> Void)?
     @State private var confirmRemovePathIndex: Int? = nil
     @State private var selectedSegment: DayDetailSegment = .overview
+    /// Toggles for the Tempo / Höhe overlay bands rendered inside the
+    /// multi-layer bottom sheet. Independent from the radio
+    /// `mapTrackColorMode` so a user can see the band even when the map
+    /// shows activity colours. Mirrors `AppLiveTrackingView`'s additive
+    /// layer toggles.
+    @State private var showTempoBand: Bool = false
+    @State private var showElevationBand: Bool = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var segmentNamespace
     @StateObject private var dayMapCamera = AppDayMapCameraController()
@@ -166,6 +173,8 @@ public struct AppDayDetailView: View {
                 DayDetailLayerPanel(
                     selected: $preferences.mapTrackColorMode,
                     routeDisplay: $preferences.dayPathDisplayMode,
+                    showTempoBand: $showTempoBand,
+                    showElevationBand: $showElevationBand,
                     hasPaths: !detail.paths.isEmpty,
                     layersLabel: t("Layers"),
                     standardLabel: t("Standard"),
@@ -245,6 +254,7 @@ public struct AppDayDetailView: View {
                     dayTimeRange(detail)
                 }
                 metricGrid(detail)
+                overlayBands(detail)
                 dayActionsSection(detail)
                 segmentControl(detail)
                 segmentedContent(detail)
@@ -264,6 +274,39 @@ public struct AppDayDetailView: View {
             .padding(.bottom, 24)
         }
         .accessibilityIdentifier("dayDetail.bottomSheet")
+    }
+
+    /// Stacks the speed band + elevation profile under the KPIs whenever
+    /// the matching layer toggle in the `DayDetailLayerPanel` is on.
+    /// Order is Tempo → Höhe so a single active band stays "primary".
+    /// Empty path geometry → the components render their own empty state
+    /// (no manual fallback needed here).
+    @ViewBuilder
+    private func overlayBands(_ detail: DayDetailViewState) -> some View {
+        let speeds = showTempoBand ? DayDetailOverlayBands.speedSamples(from: detail) : []
+        let elevations = showElevationBand ? DayDetailOverlayBands.elevationSamples(from: detail) : []
+        VStack(spacing: 10) {
+            if showTempoBand {
+                AppSpeedBandView(
+                    speeds: speeds,
+                    unit: .metersPerSecond,
+                    highlightTimestamp: nil,
+                    title: t("Speed")
+                )
+                .accessibilityIdentifier("dayDetail.speedBand")
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            if showElevationBand {
+                AppElevationProfileView(
+                    points: elevations,
+                    title: t("Elevation")
+                )
+                .accessibilityIdentifier("dayDetail.elevationProfile")
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: showTempoBand)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: showElevationBand)
     }
 
     /// Day headline = long date + distance summary (when paths exist), shown
