@@ -121,8 +121,21 @@ struct AppDayRow: View {
 
 struct AppDayFilterChipsView: View {
     @EnvironmentObject private var preferences: AppPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var filter: DayListFilter
     let availableChips: [DayListFilterChip]
+    @Namespace private var chipNamespace
+
+    /// Identifier of the chip whose pill should host the shared matched-geometry
+    /// background. Only one "active" pill is surfaced at a time so the sliding
+    /// effect stays crisp even when multiple filters are toggled on.
+    private var activePillIdentifier: String {
+        if !filter.isActive { return "days.filter.all" }
+        if filter.activeChips.contains(.favorites) { return "days.filter.favorites" }
+        if filter.activeChips.contains(.hasRoutes) { return "days.filter.routes" }
+        if filter.activeChips.contains(.exportable) { return "days.filter.exported" }
+        return "days.filter.all"
+    }
 
     var body: some View {
         let visibleChips = availableChips.filter { [.hasRoutes, .favorites, .exportable].contains($0) }
@@ -141,6 +154,7 @@ struct AppDayFilterChipsView: View {
                     }
                 }
             }
+            .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: activePillIdentifier)
         }
     }
 
@@ -167,14 +181,28 @@ struct AppDayFilterChipsView: View {
     }
 
     private func filterChip(title: String, isActive: Bool, identifier: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        let isHost = identifier == activePillIdentifier
+        return Button(action: action) {
             Text(title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(isActive ? AnyShapeStyle(.primary) : AnyShapeStyle(LH2GPXTheme.textSecondary))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .frame(minHeight: 44)
-                .background(isActive ? LH2GPXTheme.liveMint : LH2GPXTheme.elevatedCard)
+                .background(
+                    ZStack {
+                        Capsule().fill(LH2GPXTheme.elevatedCard)
+                        if isHost {
+                            Capsule()
+                                .fill(LH2GPXTheme.liveMint)
+                                .matchedGeometryEffect(id: "filterChipPill", in: chipNamespace)
+                        } else if isActive {
+                            // Secondary active chips still receive a tint without
+                            // claiming the shared sliding pill.
+                            Capsule().fill(LH2GPXTheme.liveMint.opacity(0.35))
+                        }
+                    }
+                )
                 .clipShape(Capsule())
                 .contentShape(Capsule())
         }

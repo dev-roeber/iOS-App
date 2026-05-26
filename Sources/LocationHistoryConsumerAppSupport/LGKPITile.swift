@@ -19,6 +19,9 @@ public struct LGKPITile: View {
     public let icon: String
     public let tint: Color
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var didAppear = false
+
     public init(value: String, label: String, icon: String, tint: Color) {
         precondition(!label.isEmpty, "LGKPITile requires a non-empty label")
         self.value = value
@@ -67,6 +70,17 @@ public struct LGKPITile: View {
         )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label): \(value)")
+        .opacity(reduceMotion ? 1 : (didAppear ? 1 : 0))
+        .scaleEffect(reduceMotion ? 1 : (didAppear ? 1 : 0.96))
+        .onAppear {
+            guard !reduceMotion else {
+                didAppear = true
+                return
+            }
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                didAppear = true
+            }
+        }
     }
 }
 

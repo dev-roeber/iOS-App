@@ -23,6 +23,8 @@ public struct AppDayDetailView: View {
     let onRemovePath: ((Int) -> Void)?
     @State private var confirmRemovePathIndex: Int? = nil
     @State private var selectedSegment: DayDetailSegment = .overview
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var segmentNamespace
     @State private var dayMapHeaderState = LHMapHeaderState(
         visibility: .compact,
         compactHeight: LHHeroMapLayout.compactHeight,
@@ -347,7 +349,16 @@ public struct AppDayDetailView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .frame(minHeight: 44)
-                        .background(selectedSegment == segment ? LH2GPXTheme.liveMint : LH2GPXTheme.elevatedCard)
+                        .background(
+                            ZStack {
+                                Capsule().fill(LH2GPXTheme.elevatedCard)
+                                if selectedSegment == segment {
+                                    Capsule()
+                                        .fill(LH2GPXTheme.liveMint)
+                                        .matchedGeometryEffect(id: "segmentPill", in: segmentNamespace)
+                                }
+                            }
+                        )
                         .clipShape(Capsule())
                         .contentShape(Capsule())
                 }
@@ -355,6 +366,7 @@ public struct AppDayDetailView: View {
                 .accessibilityIdentifier(segmentIdentifier(segment))
             }
         }
+        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: selectedSegment)
     }
 
     @ViewBuilder
