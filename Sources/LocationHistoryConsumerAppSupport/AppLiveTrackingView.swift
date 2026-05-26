@@ -152,7 +152,7 @@ public struct AppLiveTrackingView: View {
                 refreshWeatherSnapshot()
             }
         }
-        .onChange(of: liveLocation.currentLocation?.coordinate.latitude) { _, _ in
+        .onChange(of: liveLocation.currentLocation?.latitude) { _, _ in
             if preferences.weatherLayerEnabled && showWeatherLayer {
                 refreshWeatherSnapshot()
             }
@@ -175,8 +175,8 @@ public struct AppLiveTrackingView: View {
         guard preferences.weatherLayerEnabled, showWeatherLayer else { return }
         guard let location = liveLocation.currentLocation else { return }
         let coordinate = AppWeatherCoordinate(
-            latitude: location.coordinate.latitude,
-            longitude: location.coordinate.longitude
+            latitude: location.latitude,
+            longitude: location.longitude
         )
         let manager = weatherCacheBox.manager
         let provider = AppWeatherProviderResolver.defaultProvider
