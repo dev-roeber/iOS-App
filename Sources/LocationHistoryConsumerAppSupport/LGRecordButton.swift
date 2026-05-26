@@ -17,6 +17,8 @@ public struct LGRecordButton: View {
     public var onLap: () -> Void
 
     @Namespace private var namespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var idleBreath = false
 
     public init(
         state: Binding<LGRecordState>,
@@ -72,6 +74,14 @@ public struct LGRecordButton: View {
             .controlSize(.extraLarge)
             .buttonBorderShape(.capsule)
             .accessibilityIdentifier("live.recording.primaryAction")
+            .scaleEffect(reduceMotion ? 1 : (idleBreath ? 1.03 : 1.0))
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
+                    idleBreath = true
+                }
+            }
+            .onDisappear { idleBreath = false }
         case .recording:
             Button {
                 withAnimation(.bouncy(duration: 0.4)) {
