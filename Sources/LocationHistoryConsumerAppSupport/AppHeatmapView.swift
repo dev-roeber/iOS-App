@@ -106,8 +106,14 @@ public struct AppHeatmapView: View {
         )
         let position = HeatmapVisualStyle.colorPosition(for: cell.normalizedIntensity)
         let core = HeatmapPalette.color(for: position, palette: preferences.heatmapPalette)
+        // Dark-mode polish: lift the inner stop (×1.3) and mid stop (×0.65)
+        // so low-intensity cells remain visible against the dark map surface
+        // without saturating high-intensity hotspots (capped in
+        // `effectiveOpacity`).
+        let innerAlpha = min(alpha * 1.3, 1.0)
+        let midAlpha = min(alpha * 0.65, 1.0)
         return RadialGradient(
-            colors: [core.opacity(alpha), core.opacity(alpha * 0.45), core.opacity(0.0)],
+            colors: [core.opacity(innerAlpha), core.opacity(midAlpha), core.opacity(0.0)],
             center: .center,
             startRadius: 0,
             endRadius: 100
@@ -121,14 +127,17 @@ public struct AppHeatmapView: View {
         HStack(spacing: 8) {
             ProgressView()
                 .controlSize(.small)
-                .tint(.accentColor)
+                .tint(LH2GPXTheme.LiquidGlass.trackPrimary)
             Text(t("Computing heatmap…"))
                 .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(.thinMaterial, in: Capsule())
+        .overlay(
+            Capsule().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8)
+        )
         .padding()
         .transition(.move(edge: .bottom).combined(with: .opacity))
         .accessibilityElement(children: .combine)
@@ -144,11 +153,22 @@ public struct AppHeatmapView: View {
         if !statsDescription.isEmpty {
             Text(statsDescription)
                 .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                 .lineLimit(2)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(.thinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.white.opacity(0.06))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8)
+                        )
+                )
                 .padding(.horizontal, 12)
                 .padding(.bottom, 12)
                 .accessibilityElement(children: .combine)
