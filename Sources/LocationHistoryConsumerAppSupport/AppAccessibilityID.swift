@@ -30,11 +30,16 @@ public enum AppAccessibilityID {
     // MARK: - Compact / split tab bar
 
     public enum Tab {
-        public static let overview = "tab.overview"
+        // iPhone Liquid-Glass-Tab-Layout (iOS 26):
+        public static let map      = "tab.map"
+        public static let search   = "tab.search"
+        // Gemeinsam (iPhone + iPad-Fallback):
         public static let days     = "tab.days"
         public static let insights = "tab.insights"
-        public static let export   = "tab.export"
         public static let live     = "tab.live"
+        // Legacy (iPad-Split-Fallback, iOS 17–25):
+        public static let overview = "tab.overview"
+        public static let export   = "tab.export"
         public static let files    = "tab.files"
     }
 

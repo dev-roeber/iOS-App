@@ -11,7 +11,7 @@ import UIKit
 import Charts
 #endif
 
-struct AppInsightsContentView: View {
+public struct AppInsightsContentView: View {
     private struct InsightsDerivedModel {
         let trendItems: [InsightsMonthlyTrendItem]
         let availableWeekdayMetrics: [InsightsWeekdayMetric]
@@ -71,7 +71,7 @@ struct AppInsightsContentView: View {
         isSticky: true
     )
 
-    init(
+    public init(
         insights: ExportInsights,
         daySummaries: [DaySummary] = [],
         allDaySummaries: [DaySummary] = [],

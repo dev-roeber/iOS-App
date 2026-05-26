@@ -313,9 +313,7 @@ public final class AppPreferences: ObservableObject {
         didSet { userDefaults.set(showsTechnicalImportDetails, forKey: Keys.showsTechnicalImportDetails) }
     }
 
-    @Published public var useLiquidGlassTabContainer: Bool {
-        didSet { userDefaults.set(useLiquidGlassTabContainer, forKey: Keys.useLiquidGlassTabContainer) }
-    }
+    @Published public var useLiquidGlassTabContainer: Bool = true
 
     @Published public var appLanguage: AppLanguagePreference {
         didSet {
@@ -666,7 +664,8 @@ public final class AppPreferences: ObservableObject {
             from: userDefaults
         ) ?? .standard
         self.showsTechnicalImportDetails = userDefaults.object(forKey: Keys.showsTechnicalImportDetails) as? Bool ?? true
-        self.useLiquidGlassTabContainer = userDefaults.object(forKey: Keys.useLiquidGlassTabContainer) as? Bool ?? false
+        self.useLiquidGlassTabContainer = true
+        userDefaults.removeObject(forKey: Keys.useLiquidGlassTabContainer)
         self.appLanguage = Self.loadEnum(
             AppLanguagePreference.self,
             key: Keys.appLanguage,
@@ -821,7 +820,7 @@ public final class AppPreferences: ObservableObject {
         startTab = .overview
         preferredMapStyle = .standard
         showsTechnicalImportDetails = true
-        useLiquidGlassTabContainer = false
+        useLiquidGlassTabContainer = true
         appLanguage = .english
         liveTrackingAccuracy = .balanced
         liveTrackingDetail = .balanced

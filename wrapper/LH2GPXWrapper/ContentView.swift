@@ -29,6 +29,7 @@ struct ContentView: View {
     @State private var session = AppSessionState()
     @State private var isImportingFile = false
     @State private var isShowingOptions = false
+    private static let BLOCK_IPHONE_BELOW_IOS26 = false
     @State private var hasPreparedLaunchState = false
     @StateObject private var liveLocation = LiveLocationFeatureModel()
     @StateObject private var preferences = AppPreferences()
@@ -60,14 +61,29 @@ struct ContentView: View {
             }
         Group {
             if session.content != nil {
-                if #available(iOS 26.0, *), preferences.useLiquidGlassTabContainer {
-                    LGTabContainerView(
-                        session: $session,
-                        liveLocation: liveLocation,
-                        onOpen: { isImportingFile = true },
-                        onLoadDemo: loadBundledDemo,
-                        onClear: clearCurrentContent
-                    )
+                let isIPhone: Bool = (UIDevice.current.userInterfaceIdiom == .phone)
+                if isIPhone {
+                    if #available(iOS 26.0, *) {
+                        LGTabContainerView(
+                            session: $session,
+                            liveLocation: liveLocation,
+                            onOpen: { isImportingFile = true },
+                            onLoadDemo: loadBundledDemo,
+                            onClear: clearCurrentContent,
+                            onOpenOptions: { isShowingOptions = true }
+                        )
+                        .tint(LH2GPXTheme.LiquidGlass.trackPrimary)
+                    } else if Self.BLOCK_IPHONE_BELOW_IOS26 {
+                        LGUnsupportedIPhoneView()
+                    } else {
+                        AppContentSplitView(
+                            session: $session,
+                            liveLocation: liveLocation,
+                            onOpen: { isImportingFile = true },
+                            onLoadDemo: loadBundledDemo,
+                            onClear: clearCurrentContent
+                        )
+                    }
                 } else {
                     AppContentSplitView(
                         session: $session,

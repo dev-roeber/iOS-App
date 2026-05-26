@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## 1.1.0 — 2026-05-26 — Liquid-Glass-Vollumstellung
+
+> Liquid Glass ist auf iPhone iOS 26 jetzt Standard (kein Toggle mehr).
+> Deployment-Target wurde von iOS 26 auf iOS 17 abgesenkt, damit iPad-User
+> ab iOS 17 wieder installieren können. iPhone iOS 17–25 sieht den
+> iPad-Fallback (`AppContentSplitView`), iPhone iOS 26+ das neue 5-Tab-Layout.
+
+### Highlights
+- Vollständig neues Liquid-Glass-Design auf iPhone iOS 26 als Standard.
+- Deployment-Target `IPHONEOS_DEPLOYMENT_TARGET = 17.0`, `Package.swift` `.iOS(.v17)`.
+- 5-Tab-Architektur: Karte · Tage · Live · Insights · Suche (`role: .search`).
+- `tabBarMinimizeBehavior(.onScrollDown)`, `searchable`, `tabViewBottomAccessory` für Live-Pille.
+- LGRecordButton mit morphing Glass-Animation (ready → recording → paused).
+- LGLayerToggleBar als `topLeading`-Overlay in Live- und Day-Detail-Map.
+- Widget zeigt unter iOS 26 echtes Liquid Glass (transparenter `containerBackground`).
+- Export, Demo, Optionen, Import, Clear in gemeinsames Toolbar-Menü gewandert; Export öffnet als modales Sheet mit `presentationBackground(.regularMaterial)`.
+- Neue Glas-Helper `lgGlassSurface` / `lgGlassPill` / `lgGlassButton` / `lgGlassButtonProminent`.
+- Feature-Flag `useLiquidGlassTabContainer` aus UI entfernt; Property bleibt aus Source-Compat-Gründen als konstanter `true` erhalten und migriert bestehende UserDefaults-Werte.
+
+### Geänderte Dateien
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` — `IPHONEOS_DEPLOYMENT_TARGET = 17.0` (6 Stellen).
+- `wrapper/LH2GPXWrapper/ContentView.swift` — iPhone-Idiom-Routing mit `BLOCK_IPHONE_BELOW_IOS26 = false`.
+- `wrapper/LH2GPXWrapper/LGTabContainerView.swift` — entfernt (nach AppSupport verschoben).
+- `wrapper/LH2GPXWidget/LH2GPXHomeWidget.swift` — `widgetBackground()` mit iOS-26-Liquid-Glass-Pfad.
+- `wrapper/LH2GPXWrapperUITests/LGTabContainerUITests.swift` — testet 5-Tab-Default ohne Toggle.
+- `Sources/LocationHistoryConsumerApp/AppShellRootView.swift` — spiegelt Wrapper-Routing.
+- `Sources/LocationHistoryConsumerAppSupport/LGTabContainerView.swift` — neuer Kerncode (5 Tabs, Export-Sheet, Live-Accessory).
+- `Sources/LocationHistoryConsumerAppSupport/LGGlassHelpers.swift` — neue View-Extensions.
+- `Sources/LocationHistoryConsumerAppSupport/LGUnsupportedIPhoneView.swift` — Hinweis-View für iPhone iOS <26 (nur aktiv wenn `BLOCK_IPHONE_BELOW_IOS26 = true`).
+- `Sources/LocationHistoryConsumerAppSupport/AppPreferences.swift` — `useLiquidGlassTabContainer` Default `true`, didSet entfernt, Migration im Init.
+- `Sources/LocationHistoryConsumerAppSupport/AppOptionsView.swift` — Liquid-Glass-Toggle entfernt.
+- `Sources/LocationHistoryConsumerAppSupport/AppInsightsContentView.swift` — `public struct` + `public init`.
+- `Sources/LocationHistoryConsumerAppSupport/AppLiveTrackingView.swift` — `Color.black`-Backgrounds durch `liveBackground`-Property, LGLayerToggleBar als `topLeading`-Overlay.
+- `Sources/LocationHistoryConsumerAppSupport/AppAccessibilityID.swift` — Tab-Enum um `map` + `search` erweitert.
+
+### Build
+- `swift build` (Linux, SPM): grün.
+- `xcodebuild test … iPhone 17 Pro/iOS 26`: nicht auf Linux verifizierbar, lokaler macOS-Run ausstehend.
+
+---
+
 ## 2026-05-26 — Liquid-Glass-Final (Branch `feature/liquid-glass-final`, HEAD `0395b74`)
 
 > Echte iOS-26-Liquid-Glass-Adoption: `.glassEffect`, `GlassEffectContainer`,

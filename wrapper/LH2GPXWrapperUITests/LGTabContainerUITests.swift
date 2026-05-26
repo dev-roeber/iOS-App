@@ -2,7 +2,7 @@ import XCTest
 
 final class LGTabContainerUITests: XCTestCase {
     @MainActor
-    func testLiquidGlassTabContainerShowsFiveTabsWhenEnabled() throws {
+    func testLiquidGlassTabContainerShowsFiveTabsByDefault() throws {
         let app = XCUIApplication()
         app.launchArguments += [
             "LH2GPX_UI_TESTING",
@@ -16,26 +16,10 @@ final class LGTabContainerUITests: XCTestCase {
         XCTAssertTrue(demoButton.waitForExistence(timeout: 8))
         demoButton.tap()
 
-        let actions = app.buttons["appshell.actionsMenu"]
-        XCTAssertTrue(actions.waitForExistence(timeout: 8))
-        actions.tap()
-
-        let options = app.buttons["appshell.menu.options"]
-        XCTAssertTrue(options.waitForExistence(timeout: 5))
-        options.tap()
-
-        let general = app.cells.containing(.staticText, identifier: "General").firstMatch
-        if general.waitForExistence(timeout: 5) {
-            general.tap()
-        }
-
-        let toggle = app.switches["options.general.liquidGlassTabContainer"]
-        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
-        if toggle.value as? String != "1" {
-            toggle.tap()
-        }
-
-        app.buttons["Done"].tap()
-        XCTAssertEqual(app.tabBars.buttons.count, 5)
+        // Liquid-Glass-Tab-Container ist Standard ab 1.1.0, kein Toggle mehr.
+        // Erwartung: 5-Tab-Layout (Karte/Tage/Live/Insights/Suche) auf iPhone iOS 26.
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 8))
+        XCTAssertEqual(tabBar.buttons.count, 5)
     }
 }

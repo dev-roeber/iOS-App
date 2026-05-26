@@ -37,7 +37,8 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.startTab, .overview)
             XCTAssertEqual(preferences.preferredMapStyle, .standard)
             XCTAssertTrue(preferences.showsTechnicalImportDetails)
-            XCTAssertFalse(preferences.useLiquidGlassTabContainer)
+            // 1.1.0: Liquid-Glass-Tab-Container ist Standard, kein Toggle mehr.
+            XCTAssertTrue(preferences.useLiquidGlassTabContainer)
             XCTAssertEqual(preferences.appLanguage, .english)
             XCTAssertEqual(preferences.liveTrackingAccuracy, .balanced)
             XCTAssertEqual(preferences.liveTrackingDetail, .balanced)
@@ -174,7 +175,8 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.startTab, .overview)
             XCTAssertEqual(preferences.preferredMapStyle, .standard)
             XCTAssertTrue(preferences.showsTechnicalImportDetails)
-            XCTAssertFalse(preferences.useLiquidGlassTabContainer)
+            // 1.1.0: Liquid-Glass-Tab-Container ist Standard, kein Toggle mehr.
+            XCTAssertTrue(preferences.useLiquidGlassTabContainer)
             XCTAssertEqual(preferences.appLanguage, .english)
             XCTAssertEqual(preferences.liveTrackingAccuracy, .balanced)
             XCTAssertEqual(preferences.liveTrackingDetail, .balanced)

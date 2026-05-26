@@ -2,6 +2,11 @@
 
 **Dieses Repo (`dev-roeber/iOS-App`) ist das zentrale aktive Repository fuer die vollstaendige LH2GPX iOS-App.**
 
+> **Plattform-Support (ab 1.1.0):**
+> - **iPhone**: iOS 26 erforderlich für das volle Liquid-Glass-Design (5-Tab-Layout).
+> - **iPhone iOS 17–25**: läuft im iPad-Fallback-Layout (`AppContentSplitView`), keine Glas-Optik.
+> - **iPad**: ab iOS 17 mit `AppContentSplitView`.
+
 > **Repo-Truth-Lock 2026-05-25 (verbindlich):** `https://github.com/dev-roeber/iOS-App` ist ab sofort das **einzige aktive Arbeits-Repo** für die LH2GPX iOS-App. Alle anderen LH2GPX-/LocationHistory2GPX-Repos (`LocationHistory2GPX-iOS`, `LH2GPXWrapper`, `LocationHistory2GPX-Monorepo`) sind **rein historisch** und werden nicht mehr als aktive Repo-Truth verwendet. `dev-roeber/LocationHistory2GPX` bleibt **externe Producer-Pipeline** (Fixture-Quelle, nicht Arbeitsrepo); `dev-roeber/lh2gpx-live-receiver` bleibt **externe optionale Beispiel-Implementierung** eines user-eigenen Live-Endpoints (kein zentraler Dienst). Details siehe `AGENTS.md` §Repo-Truth-Lock.
 
 > **Repo-Truth-Patch 2026-05-25 (Master Phase D iCloud-/CloudKit-MVP, `main` HEAD `734ab8e` → folgt):**

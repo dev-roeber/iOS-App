@@ -166,15 +166,27 @@ public struct AppLiveTrackingView: View {
             }
         }
         .scrollContentBackground(.hidden)
-        .background(Color.black)
+        .background(liveBackground)
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
                 liveHeroMap
                 liveHeroFilterPanel
             }
-            .background(Color.black)
+            .background(liveBackground)
         }
         .ignoresSafeArea(edges: .top)
+    }
+
+    @ViewBuilder
+    private var liveBackground: some View {
+        if #available(iOS 26.0, *) {
+            LHLiquidGlassBackground()
+                .opacity(0.85)
+                .ignoresSafeArea()
+        } else {
+            Color(UIColor.systemBackground)
+                .ignoresSafeArea()
+        }
     }
 
     // MARK: - Hero Map (portrait)
@@ -190,6 +202,11 @@ public struct AppLiveTrackingView: View {
             if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
                 liveMapBase
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .overlay(alignment: .topLeading) {
+                        LGLayerToggleBar(selected: $preferences.mapTrackColorMode)
+                            .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)
+                            .padding(.leading, 8)
+                    }
                     .overlay(alignment: .topTrailing) {
                         liveMapLayerMenu
                             .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)

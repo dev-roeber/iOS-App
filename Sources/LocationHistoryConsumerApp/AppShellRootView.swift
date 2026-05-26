@@ -31,13 +31,41 @@ struct AppShellRootView: View {
             }
         Group {
             if session.content != nil {
-                AppContentSplitView(
-                    session: $session,
-                    liveLocation: liveLocation,
-                    onOpen: { isImportingFile = true },
-                    onLoadDemo: loadBundledDemo,
-                    onClear: clearCurrentContent
-                )
+                #if canImport(UIKit)
+                let isIPhone = (UIDevice.current.userInterfaceIdiom == .phone)
+                #else
+                let isIPhone = false
+                #endif
+
+                if isIPhone {
+                    if #available(iOS 26.0, *) {
+                        LGTabContainerView(
+                            session: $session,
+                            liveLocation: liveLocation,
+                            onOpen: { isImportingFile = true },
+                            onLoadDemo: loadBundledDemo,
+                            onClear: clearCurrentContent,
+                            onOpenOptions: { isShowingOptions = true }
+                        )
+                        .tint(LH2GPXTheme.LiquidGlass.trackPrimary)
+                    } else {
+                        AppContentSplitView(
+                            session: $session,
+                            liveLocation: liveLocation,
+                            onOpen: { isImportingFile = true },
+                            onLoadDemo: loadBundledDemo,
+                            onClear: clearCurrentContent
+                        )
+                    }
+                } else {
+                    AppContentSplitView(
+                        session: $session,
+                        liveLocation: liveLocation,
+                        onOpen: { isImportingFile = true },
+                        onLoadDemo: loadBundledDemo,
+                        onClear: clearCurrentContent
+                    )
+                }
             } else if let storeSession = session.localTimelineSession {
                 // Phase-9B — Store-Session aktiv (feature-flagged); zeigt
                 // DayList/DayDetail über den Store. Map/Heatmap/Overview UI

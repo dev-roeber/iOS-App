@@ -5,7 +5,11 @@ import SwiftUI
 private extension View {
     @ViewBuilder
     func widgetBackground() -> some View {
-        if #available(iOS 17, *) {
+        if #available(iOS 26, *) {
+            containerBackground(for: .widget) {
+                Color.clear
+            }
+        } else if #available(iOS 17, *) {
             containerBackground(for: .widget) {
                 LH2GPXWidgetBackground()
             }
