@@ -6,77 +6,18 @@ import MapKit
 //
 // AppLiveTrackingView (portrait, multi-layer variant) — ZStack
 //  ├── Map (full-bleed) — liveMapBase / liveMapPlaceholderContent
-//  ├── overlay(.top)        → LiveStatusPill   (icon + title + status badge)
 //  ├── overlay(.topLeading) → LiveLayerPanel   (Standard/Tempo/Höhe/Wetter)
 //  ├── overlay(.topTrailing)→ LiveControlStack (compass / + / − / locate / compact)
 //  └── safeAreaInset(.bottom)
 //        └── LiveBottomSheet (drag-handle, status legend, recording button below)
 //
+// The global recording indicator lives in the navigation toolbar
+// (GlobalRecordingToolbarIndicator) and is shared by all four tabs.
+//
 // All strings flow through the preferences.localized() pipeline; german
 // strings are added to AppGermanTranslations.values.
 // ReduceMotion is respected: pill pulse, layer-panel chevron and sheet drag
 // transitions are disabled when the user opts out.
-
-// MARK: - Status Pill
-
-@available(iOS 17.0, macOS 14.0, *)
-struct LiveStatusPill: View {
-    let icon: String
-    let title: String
-    let badgeText: String
-    let badgeColor: Color
-    let isLive: Bool
-    var onTap: (() -> Void)? = nil
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulse = false
-
-    var body: some View {
-        Button(action: { onTap?() }) {
-            HStack(spacing: 10) {
-                ZStack {
-                    if isLive && !reduceMotion {
-                        Circle()
-                            .fill(badgeColor.opacity(0.35))
-                            .frame(width: 22, height: 22)
-                            .scaleEffect(pulse ? 1.5 : 1.0)
-                            .opacity(pulse ? 0.0 : 1.0)
-                    }
-                    Image(systemName: icon)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(badgeColor)
-                }
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text(badgeText)
-                    .font(.caption2.weight(.heavy))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.black.opacity(0.85), in: Capsule())
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
-            .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 6)
-        }
-        .buttonStyle(.plain)
-        .task(id: isLive) {
-            guard isLive, !reduceMotion else {
-                pulse = false
-                return
-            }
-            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: false)) {
-                pulse = true
-            }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title), \(badgeText)")
-    }
-}
 
 // MARK: - Layer Panel
 
@@ -87,48 +28,77 @@ struct LiveLayerPanel: View {
     @Binding var showElevation: Bool
     let layersLabel: String
 
+    @State private var isExpanded: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(layersLabel)
-                .font(.caption2.weight(.heavy))
-                .tracking(0.6)
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
-
-            layerRow(
-                color: .blue,
-                title: "Standard",
-                isOn: Binding(
-                    get: { selected == .activity },
-                    set: { newValue in if newValue { selected = .activity } }
+            collapsedHeader
+            if isExpanded {
+                layerRow(
+                    color: .blue,
+                    title: "Standard",
+                    isOn: Binding(
+                        get: { selected == .activity },
+                        set: { newValue in if newValue { selected = .activity } }
+                    )
                 )
-            )
-            layerRow(
-                color: .orange,
-                title: "Tempo",
-                isOn: Binding(
-                    get: { selected == .speed },
-                    set: { newValue in if newValue { selected = .speed } else { selected = .activity } }
+                layerRow(
+                    color: .orange,
+                    title: "Tempo",
+                    isOn: Binding(
+                        get: { selected == .speed },
+                        set: { newValue in if newValue { selected = .speed } else { selected = .activity } }
+                    )
                 )
-            )
-            layerRow(
-                color: .green,
-                title: "Höhe",
-                isOn: $showElevation
-            )
-            layerRow(
-                color: .cyan,
-                title: "Wetter",
-                isOn: $showWeather
-            )
+                layerRow(
+                    color: .green,
+                    title: "Höhe",
+                    isOn: $showElevation
+                )
+                layerRow(
+                    color: .cyan,
+                    title: "Wetter",
+                    isOn: $showWeather
+                )
+            }
         }
-        .padding(12)
-        .frame(width: 168)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(isExpanded ? 12 : 8)
+        .frame(width: isExpanded ? 168 : nil)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: isExpanded ? 18 : 14, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: isExpanded ? 18 : 14, style: .continuous)
                 .stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8)
         )
         .shadow(color: Color.black.opacity(0.12), radius: 14, x: 0, y: 8)
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.85), value: isExpanded)
+    }
+
+    private var collapsedHeader: some View {
+        Button {
+            isExpanded.toggle()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "square.3.layers.3d")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                Text(layersLabel)
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.6)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                    .lineLimit(1)
+                if isExpanded {
+                    Spacer(minLength: 4)
+                    Image(systemName: "chevron.up")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(layersLabel)
+        .accessibilityHint(isExpanded ? "Tippen zum Einklappen" : "Tippen zum Ausklappen")
     }
 
     @ViewBuilder
@@ -239,6 +209,13 @@ struct LiveBottomSheetRow: View {
 // MARK: - Bottom Sheet Container
 
 @available(iOS 17.0, macOS 14.0, *)
+public enum LiveBottomSheetDetent: CGFloat, CaseIterable {
+    case collapsed = 140
+    case medium = 240
+    case expanded = 360
+}
+
+@available(iOS 17.0, macOS 14.0, *)
 struct LiveBottomSheet<Content: View>: View {
     let headerCaption: String
     let headlineText: String
@@ -246,15 +223,19 @@ struct LiveBottomSheet<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var detent: LiveBottomSheetDetent = .medium
+    @GestureState private var dragOffset: CGFloat = 0
+
+    private var currentHeight: CGFloat {
+        // Negative dragOffset = drag up = larger height. Clamp to [80, expanded+40].
+        let raw = detent.rawValue - dragOffset
+        let maxH = LiveBottomSheetDetent.expanded.rawValue + 40
+        return min(max(raw, 80), maxH)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(Color.secondary.opacity(0.45))
-                .frame(width: 44, height: 5)
-                .padding(.top, 8)
-                .padding(.bottom, 10)
-
+            handle
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(headerCaption)
@@ -266,29 +247,106 @@ struct LiveBottomSheet<Content: View>: View {
                         .foregroundStyle(headlineTint)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                content()
+                ScrollView(.vertical, showsIndicators: false) {
+                    content()
+                }
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 12)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            UnevenRoundedRectangle(
-                topLeadingRadius: 22,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: 22,
-                style: .continuous
-            )
-            .fill(Color(.systemBackground).opacity(0.92))
-        )
-        .background(.ultraThinMaterial)
+        .frame(height: currentHeight, alignment: .top)
+        .background(sheetSurface)
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(LH2GPXTheme.LiquidGlass.hairline)
                 .frame(height: 0.6)
         }
         .shadow(color: Color.black.opacity(0.10), radius: 18, x: 0, y: -6)
+        .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: detent)
+    }
+
+    private var handle: some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(Color.secondary.opacity(0.55))
+                .frame(width: 44, height: 5)
+                .padding(.top, 8)
+                .padding(.bottom, 10)
+        }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 2)
+                .updating($dragOffset) { value, state, _ in
+                    state = value.translation.height
+                }
+                .onEnded { value in
+                    snap(to: value.predictedEndTranslation.height)
+                }
+        )
+        .onTapGesture { cycleDetent() }
+        .accessibilityElement()
+        .accessibilityLabel("Sheet-Griff")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var sheetSurface: some View {
+        UnevenRoundedRectangle(
+            topLeadingRadius: 22,
+            bottomLeadingRadius: 0,
+            bottomTrailingRadius: 0,
+            topTrailingRadius: 22,
+            style: .continuous
+        )
+        .fill(Color.white.opacity(0.06))
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.05), Color.white.opacity(0.0)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .clipShape(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 22,
+                    bottomLeadingRadius: 0,
+                    bottomTrailingRadius: 0,
+                    topTrailingRadius: 22,
+                    style: .continuous
+                )
+            )
+        )
+        .background(.ultraThinMaterial,
+            in: UnevenRoundedRectangle(
+                topLeadingRadius: 22,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 22,
+                style: .continuous
+            )
+        )
+    }
+
+    private func snap(to predictedTranslation: CGFloat) {
+        // Up = negative translation. Pick the nearest detent to (current - translation).
+        let target = detent.rawValue - predictedTranslation
+        let next: LiveBottomSheetDetent
+        if target > (LiveBottomSheetDetent.medium.rawValue + LiveBottomSheetDetent.expanded.rawValue) / 2 {
+            next = .expanded
+        } else if target > (LiveBottomSheetDetent.collapsed.rawValue + LiveBottomSheetDetent.medium.rawValue) / 2 {
+            next = .medium
+        } else {
+            next = .collapsed
+        }
+        detent = next
+    }
+
+    private func cycleDetent() {
+        switch detent {
+        case .collapsed: detent = .medium
+        case .medium: detent = .expanded
+        case .expanded: detent = .collapsed
+        }
     }
 }
 

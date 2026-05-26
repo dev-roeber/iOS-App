@@ -78,14 +78,15 @@ public struct AppLiveTrackingView: View {
             let isLandscape = geometry.size.width > 500
             if isLandscape {
                 landscapeLayout
+                    .safeAreaInset(edge: .bottom) {
+                        liveRecordingBottomInset
+                    }
             } else {
                 multiLayerPortraitLayout
             }
         }
-        .navigationTitle(t("Live Tracking"))
-        .safeAreaInset(edge: .bottom) {
-            liveRecordingBottomInset
-        }
+        // NavigationTitle is set by the parent (LGTabContainerView → "Live")
+        // — no redundant hero title here.
         .task {
             liveLocation.refreshAuthorization()
             refreshTrackPresentationState()
@@ -170,18 +171,16 @@ public struct AppLiveTrackingView: View {
             multiLayerMapBackground
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer().frame(height: lhDeviceTopSafeInset() + 6)
-                LiveStatusPill(
-                    icon: heroStatusIcon,
-                    title: statusPillTitle,
-                    badgeText: statusPillBadge,
-                    badgeColor: heroStatusTint,
-                    isLive: liveLocation.isRecording
-                )
-                Spacer(minLength: 0)
+            // Floating compact record FAB above the bottom sheet
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    compactRecordFAB
+                        .padding(.trailing, 16)
+                        .padding(.bottom, 12)
+                }
             }
-            .frame(maxWidth: .infinity)
 
             HStack(alignment: .top, spacing: 0) {
                 LiveLayerPanel(
@@ -191,7 +190,7 @@ public struct AppLiveTrackingView: View {
                     layersLabel: layersPanelLabel
                 )
                 .padding(.leading, 12)
-                .padding(.top, lhDeviceTopSafeInset() + 56)
+                .padding(.top, lhDeviceTopSafeInset() + 12)
 
                 Spacer()
 
@@ -208,7 +207,7 @@ public struct AppLiveTrackingView: View {
                     isCompact: isCompactMap
                 )
                 .padding(.trailing, 12)
-                .padding(.top, lhDeviceTopSafeInset() + 56)
+                .padding(.top, lhDeviceTopSafeInset() + 12)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -226,6 +225,32 @@ public struct AppLiveTrackingView: View {
                 liveMapPlaceholderContent
             }
         }
+    }
+
+    // MARK: - Compact Floating Record Button (portrait)
+
+    @ViewBuilder
+    private var compactRecordFAB: some View {
+        let isRecording = liveLocation.isRecording
+        let icon = isRecording ? "stop.fill" : "record.circle.fill"
+        let label = isRecording ? t("Stop Recording") : t("Start Recording")
+        Button(action: {
+            liveLocation.setRecordingEnabled(!isRecording)
+        }) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(
+                    Circle().fill(Color.red)
+                )
+                .overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 1))
+                .shadow(color: Color.black.opacity(0.25), radius: 10, x: 0, y: 5)
+        }
+        .buttonStyle(.plain)
+        .disabled(liveLocation.isAwaitingAuthorization)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(isRecording ? "live.recording.stopAction" : "live.recording.primaryAction")
     }
 
     private var multiLayerBottomSheet: some View {
@@ -336,26 +361,6 @@ public struct AppLiveTrackingView: View {
     }
 
     // MARK: - Multi-Layer Helpers
-
-    private var statusPillTitle: String {
-        if liveLocation.isRecording {
-            return "\(t("Live Tracking")) · \(t("Recording")) \(liveDistanceText)"
-        }
-        return "\(t("Live Tracking")) · \(heroStatusTitle)"
-    }
-
-    private var statusPillBadge: String {
-        switch liveStatus {
-        case .recordingAcquiring, .recordingWeak, .recordingGood:
-            return t("REC")
-        case .acquiringFix:
-            return t("GPS")
-        case .permissionRequired, .permissionDenied, .permissionRestricted:
-            return t("OFF")
-        default:
-            return t("IDLE")
-        }
-    }
 
     private var layersPanelLabel: String {
         // Four overlay slots: Standard base map (always on), Tempo color
