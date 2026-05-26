@@ -344,7 +344,7 @@ public struct AppInsightsContentView: View {
         VStack(spacing: 6) {
             Text(t("Insights"))
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
 
