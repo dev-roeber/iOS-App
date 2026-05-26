@@ -53,6 +53,10 @@ enum AppGermanTranslations {
     static let values: [String: String] = [
         "Overview": "Übersicht",
         "Days": "Tage",
+        "FILTERED DAYS": "GEFILTERTE TAGE",
+        "No days found": "Keine Tage gefunden",
+        "Import more days?": "Mehr Tage importieren?",
+        "Load another location history file to see more days here.": "Lade eine weitere Standortverlauf-Datei, um hier mehr Tage zu sehen.",
         "Insights": "Einblicke",
         "Export": "Export",
         "Options": "Optionen",

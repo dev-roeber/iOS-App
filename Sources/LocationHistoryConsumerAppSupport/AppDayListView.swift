@@ -312,6 +312,8 @@ public struct AppDayListView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         // Prompt 03 LG_ROOT: removed in-list "Days" header
                         // (duplicated the NavigationStack title in LGTabContainerView).
+                        daysTopSummary(for: filteredSummaries)
+                            .accessibilityIdentifier("days.summary")
                         dayContextRow
                             .accessibilityIdentifier("days.title")
                         if let mapHeader {
@@ -334,6 +336,14 @@ public struct AppDayListView: View {
                 }
                 if !selectedForExportDates.isEmpty {
                     exportStatusSection
+                }
+                if summaries.count < 3 && !filteredSummaries.isEmpty {
+                    Section {
+                        daysImportHint()
+                            .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                 }
                 // Prompt 06 LANDSCAPE §A3: in iPhone landscape (compact-vertical)
                 // pair days two-per-row so at least two cards stay visible
@@ -387,6 +397,101 @@ public struct AppDayListView: View {
                 }
             }
         }
+    }
+
+    /// Karte-style top headline: small-caps caption + bold aggregate ("1 Tag ·
+     /// 1 Route · 569,6 km"). Aggregates over `filteredSummaries` so the value
+     /// reflects active range/search/chip filters.
+    @ViewBuilder
+    private func daysTopSummary(for filtered: [DaySummary]) -> some View {
+        let contentful = filtered.filter { $0.hasContent }
+        let totalRoutes = contentful.reduce(0) { $0 + $1.pathCount }
+        let totalDistanceM = contentful.reduce(0.0) { $0 + $1.totalPathDistanceM }
+        let dayCount = contentful.count
+
+        VStack(alignment: .leading, spacing: 6) {
+            Text(t("FILTERED DAYS"))
+                .font(.caption2.weight(.semibold))
+                .tracking(1.4)
+                .foregroundStyle(Color.white.opacity(0.55))
+                .accessibilityIdentifier("days.summary.caption")
+            if dayCount == 0 {
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .font(.title3)
+                        .foregroundStyle(Color.white.opacity(0.45))
+                    Text(t("No days found"))
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.white)
+                }
+                .accessibilityIdentifier("days.summary.headline")
+            } else {
+                Text(daysSummaryHeadline(
+                    days: dayCount,
+                    routes: totalRoutes,
+                    distanceM: totalDistanceM
+                ))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+                    .accessibilityIdentifier("days.summary.headline")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 8)
+    }
+
+    private func daysSummaryHeadline(days: Int, routes: Int, distanceM: Double) -> String {
+        let isGerman = preferences.appLanguage.isGerman
+        let dayUnit = isGerman ? (days == 1 ? "Tag" : "Tage") : (days == 1 ? "day" : "days")
+        let routeUnit = isGerman ? (routes == 1 ? "Route" : "Routen") : (routes == 1 ? "route" : "routes")
+        var parts: [String] = ["\(days) \(dayUnit)"]
+        if routes > 0 {
+            parts.append("\(routes) \(routeUnit)")
+        }
+        if distanceM > 0 {
+            parts.append(formatDistance(distanceM, unit: preferences.distanceUnit))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// Lightweight hint card shown when very few days are present. Pure
+    /// informational — no CTA wired up here because the import-picker action
+    /// isn't plumbed into this view.
+    @ViewBuilder
+    private func daysImportHint() -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "tray.and.arrow.down")
+                .font(.title3)
+                .foregroundStyle(LH2GPXTheme.primaryBlue)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(t("Import more days?"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text(t("Load another location history file to see more days here."))
+                    .font(.caption)
+                    .foregroundStyle(Color.white.opacity(0.62))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(
+            ZStack {
+                Color.white.opacity(0.05)
+                LinearGradient(
+                    colors: [Color.white.opacity(0.04), Color.black.opacity(0.10)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(LH2GPXTheme.primaryBlue.opacity(0.28), lineWidth: 0.8)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("days.import.hint")
     }
 
     private var exportStatusSection: some View {
