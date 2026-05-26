@@ -1,6 +1,7 @@
 import Foundation
 #if canImport(Darwin)
 import Darwin
+import os
 #endif
 
 /// Diagnostic-only memory probe used to localize the post-streaming peak
@@ -18,6 +19,17 @@ import Darwin
 /// Linux SwiftPM test harness still builds.
 public enum ImportMemoryProbe {
     public static let launchArgumentKey = "LH2GPX_IMPORT_MEMORY_LOG"
+
+    #if canImport(Darwin)
+    /// Dedicated `os.Logger` for the import-memory probe. Routes to the
+    /// unified logging system (visible in Xcode Console + Console.app),
+    /// keeping the probe out of stdout/print-land in production builds.
+    /// Subsystem mirrors the app bundle prefix; category is grep-friendly.
+    private static let logger = Logger(
+        subsystem: "de.roeber.lh2gpx",
+        category: "import-memory-probe"
+    )
+    #endif
 
     /// Public, read-only enablement flag. Surfaced through `AppBuildInfo` and
     /// the Settings → Technical → Build Info screen so a tester can verify
@@ -89,10 +101,15 @@ public enum ImportMemoryProbe {
         let footprint = snapshot.footprintMB.map { String(format: "%.1f", $0) } ?? "n/a"
         let resident = snapshot.residentMB.map { String(format: "%.1f", $0) } ?? "n/a"
         let line = "[LH2GPX_MEMORY] \(label) footprint=\(footprint)MB resident=\(resident)MB"
-        // `print` is sufficient — Xcode Console captures stdout; we don't
-        // want to depend on os.Logger here so the probe also works in the
-        // SwiftPM test harness on Linux/macOS.
+        // Route through `os.Logger` on Apple platforms so the line lands in
+        // the unified logging system (Xcode Console + Console.app + sysdiag).
+        // On Linux (SwiftPM test harness) the `os` import is unavailable, so
+        // we keep a stdout fallback solely for the test runner.
+        #if canImport(Darwin)
+        logger.debug("\(line, privacy: .public)")
+        #else
         print(line)
+        #endif
     }
 
     /// Throttled probe: emits `[LH2GPX_MEMORY] <phase>=<counter>` every
@@ -124,7 +141,12 @@ public enum ImportMemoryProbe {
         let memFlag = isLoggingEnabled ? "enabled" : "disabled"
         // Always emitted (no `guard isEnabled`) so the build identity lands
         // in every log even when memory probing is disabled.
-        print("[LH2GPX_BUILD] app.start version=\(marketingVersion) build=\(buildNumber) sha=\(sha) memoryLogging=\(memFlag)")
+        let buildLine = "[LH2GPX_BUILD] app.start version=\(marketingVersion) build=\(buildNumber) sha=\(sha) memoryLogging=\(memFlag)"
+        #if canImport(Darwin)
+        logger.info("\(buildLine, privacy: .public)")
+        #else
+        print(buildLine)
+        #endif
         // Memory snapshot at start — only when probing enabled.
         log("app.start")
     }
