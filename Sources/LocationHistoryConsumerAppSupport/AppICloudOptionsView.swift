@@ -791,10 +791,41 @@ public struct AppICloudOptionsView: View {
                         .font(.caption)
                         .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
                 } else {
-                    overviewRow("LiveTrack-Metadaten", value: "\(viewModel.storageOverview.summaryCount)")
-                    overviewRow("Routenpunkt-Batches", value: "\(viewModel.storageOverview.pointBatchCount)")
-                    overviewRow("Geschätzte Routenpunkte", value: "\(viewModel.storageOverview.estimatedPointCount)")
-                    overviewRow("Geschätzter Speicherverbrauch", value: ByteCountFormatter.string(fromByteCount: Int64(viewModel.storageOverview.estimatedStorageBytes), countStyle: .file))
+                    // Prompt 04 §2.8 — 2×2-KPI-Grid für die Storage-Overview.
+                    LazyVGrid(
+                        columns: [GridItem(.flexible(), spacing: 12),
+                                  GridItem(.flexible(), spacing: 12)],
+                        spacing: 12
+                    ) {
+                        LGKPITile(
+                            value: "\(viewModel.storageOverview.summaryCount)",
+                            label: "Metadaten",
+                            icon: "doc.text",
+                            tint: .blue
+                        )
+                        LGKPITile(
+                            value: "\(viewModel.storageOverview.pointBatchCount)",
+                            label: "Batches",
+                            icon: "point.topleft.down.curvedto.point.bottomright.up",
+                            tint: .orange
+                        )
+                        LGKPITile(
+                            value: "\(viewModel.storageOverview.estimatedPointCount)",
+                            label: "Routenpunkte",
+                            icon: "mappin.and.ellipse",
+                            tint: .green
+                        )
+                        LGKPITile(
+                            value: ByteCountFormatter.string(
+                                fromByteCount: Int64(viewModel.storageOverview.estimatedStorageBytes),
+                                countStyle: .file
+                            ),
+                            label: "Speicher",
+                            icon: "internaldrive",
+                            tint: .purple
+                        )
+                    }
+                    .accessibilityIdentifier("options.icloud.overview.kpiGrid")
                 }
                 if viewModel.pendingBackupCount > 0 {
                     overviewRow("Wartende Sicherungen", value: "\(viewModel.pendingBackupCount)")
