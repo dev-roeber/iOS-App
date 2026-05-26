@@ -1,0 +1,5 @@
+/* Permission usage descriptions (English) */
+"NSLocationWhenInUseUsageDescription" = "Your location is used only inside LH2GPX to show your position on the map and to record live tracks you start manually.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Background recording only happens when you explicitly enable it. Locations stay on the device unless you configure an upload server.";
+"NSPhotoLibraryAddUsageDescription" = "Required to save exported map snapshots to your photo library.";
+"NSUserTrackingUsageDescription" = "LH2GPX does not track you; this permission is only requested if a third-party integration is enabled.";

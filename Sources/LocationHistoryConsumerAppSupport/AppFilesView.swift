@@ -149,13 +149,22 @@ public struct AppFilesView: View {
 
     private var titleHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Dateien")
+            Text(t("Files"))
                 .font(.largeTitle).bold()
-            Text("Lokale Gesamtgröße: \(viewModel.totalSizeGerman)")
+            Text(localTotalSizeLabel)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
+
+    private var localTotalSizeLabel: String {
+        if preferences.appLanguage.isGerman {
+            return "Lokale Gesamtgröße: \(viewModel.totalSizeGerman)"
+        }
+        return "Local total size: \(viewModel.totalSizeGerman)"
+    }
+
+    private func t(_ english: String) -> String { preferences.localized(english) }
 
     private var statusCard: some View {
         let summary = cloudViewModel.statusSummary(localCount: localCloudUploadableEntries.count)
