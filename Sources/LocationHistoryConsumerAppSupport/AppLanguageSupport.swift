@@ -431,6 +431,15 @@ enum AppGermanTranslations {
         "Try Again": "Erneut versuchen",
         "Identifier": "Kennung",
         "Recording in progress": "Aufnahme läuft",
+        "Rec": "Rec",
+        "URL must begin with https://. Example: https://server.example.com/api/v1/track":
+            "URL muss mit https:// beginnen. Beispiel: https://server.example.com/api/v1/track",
+        "Only https:// is allowed — http is insecure.":
+            "Nur https:// ist erlaubt — http ist unsicher.",
+        "The URL could not be parsed. Please check spelling.":
+            "Die URL konnte nicht geparst werden. Bitte prüfe die Schreibweise.",
+        "Hide Bearer Token": "Bearer-Token verbergen",
+        "Show Bearer Token": "Bearer-Token anzeigen",
         "With Routes": "Mit Routen",
         "Has Visits": "Mit Besuchen",
         "Has Routes": "Mit Routen",

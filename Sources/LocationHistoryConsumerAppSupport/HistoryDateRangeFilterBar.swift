@@ -23,6 +23,7 @@ public struct HistoryDateRangeFilterBar: View {
                     Text(localChipLabel)
                         .font(.subheadline.weight(.medium))
                         .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)

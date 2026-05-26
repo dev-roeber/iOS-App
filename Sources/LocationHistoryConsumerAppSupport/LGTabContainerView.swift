@@ -291,7 +291,15 @@ public struct LGTabContainerView: View {
 private struct LGLiveRecordingAccessory: View {
     @EnvironmentObject private var preferences: AppPreferences
     @ObservedObject var liveModel: LiveLocationFeatureModel
+    @Environment(\.horizontalSizeClass) private var hSize
     let onOpenLiveTab: () -> Void
+
+    private var statusLabel: String {
+        // Use short label in compact width to avoid "Aufnahm…" truncation.
+        hSize == .compact
+            ? preferences.localized("Rec")
+            : preferences.localized("Recording in progress")
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -299,12 +307,15 @@ private struct LGLiveRecordingAccessory: View {
                 .fill(Color.red)
                 .frame(width: 8, height: 8)
                 .symbolEffect(.pulse, options: .repeating, value: liveModel.isRecording)
-            Text(preferences.localized("Recording in progress"))
+            Text(statusLabel)
                 .font(.subheadline.weight(.semibold))
-            Spacer()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Spacer(minLength: 8)
             Text(String(format: "%.2f km", liveModel.currentDistanceMeters / 1000))
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
             Button(action: onOpenLiveTab) {
                 Image(systemName: "chevron.up")
                     .font(.system(size: 14, weight: .semibold))
