@@ -19,8 +19,7 @@ private struct LH2GPXWidgetBackground: View {
     @Environment(\.widgetRenderingMode) private var mode
 
     var body: some View {
-        switch mode {
-        case .fullColor:
+        if mode == .fullColor {
             LinearGradient(
                 colors: [
                     Color(red: 11 / 255, green: 87 / 255, blue: 208 / 255).opacity(0.18),
@@ -29,9 +28,9 @@ private struct LH2GPXWidgetBackground: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-        case .accented, .vibrant:
+        } else if mode == .accented || mode == .vibrant {
             Color.clear
-        @unknown default:
+        } else {
             Color(UIColor.systemBackground)
         }
     }

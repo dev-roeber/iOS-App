@@ -6,8 +6,8 @@ final class WidgetRenderingModeTests: XCTestCase {
 
         XCTAssertTrue(source.contains("@Environment(\\.widgetRenderingMode)"))
         XCTAssertTrue(source.contains("LH2GPXWidgetBackground()"))
-        XCTAssertTrue(source.contains("case .fullColor:"))
-        XCTAssertTrue(source.contains("case .accented, .vibrant:"))
+        XCTAssertTrue(source.contains("if mode == .fullColor"))
+        XCTAssertTrue(source.contains("else if mode == .accented || mode == .vibrant"))
         XCTAssertTrue(source.contains("Color.clear"))
     }
 
