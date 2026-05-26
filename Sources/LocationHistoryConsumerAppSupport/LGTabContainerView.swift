@@ -65,18 +65,28 @@ public struct LGTabContainerView: View {
     // MARK: - Body
 
     public var body: some View {
-        TabView(selection: $selectedTab) {
-            Tab("Karte", systemImage: "map", value: LGTab.map) { mapTab }
-            Tab("Tage", systemImage: "calendar", value: LGTab.days) { daysTab }
-            Tab("Live", systemImage: "record.circle", value: LGTab.live) { liveTab }
-            Tab("Insights", systemImage: "chart.xyaxis.line", value: LGTab.insights) { insightsTab }
-        }
-        .tabBarMinimizeBehavior(.onScrollDown)
-        .tabViewBottomAccessory {
+        Group {
             if liveLocation.isRecording {
-                LGLiveRecordingAccessory(liveModel: liveLocation) {
-                    selectedTab = .live
+                TabView(selection: $selectedTab) {
+                    Tab("Karte", systemImage: "map", value: LGTab.map) { mapTab }
+                    Tab("Tage", systemImage: "calendar", value: LGTab.days) { daysTab }
+                    Tab("Live", systemImage: "record.circle", value: LGTab.live) { liveTab }
+                    Tab("Insights", systemImage: "chart.xyaxis.line", value: LGTab.insights) { insightsTab }
                 }
+                .tabBarMinimizeBehavior(.onScrollDown)
+                .tabViewBottomAccessory {
+                    LGLiveRecordingAccessory(liveModel: liveLocation) {
+                        selectedTab = .live
+                    }
+                }
+            } else {
+                TabView(selection: $selectedTab) {
+                    Tab("Karte", systemImage: "map", value: LGTab.map) { mapTab }
+                    Tab("Tage", systemImage: "calendar", value: LGTab.days) { daysTab }
+                    Tab("Live", systemImage: "record.circle", value: LGTab.live) { liveTab }
+                    Tab("Insights", systemImage: "chart.xyaxis.line", value: LGTab.insights) { insightsTab }
+                }
+                .tabBarMinimizeBehavior(.onScrollDown)
             }
         }
         .preferredColorScheme(.dark)
