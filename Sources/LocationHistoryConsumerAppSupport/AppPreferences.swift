@@ -670,7 +670,7 @@ public final class AppPreferences: ObservableObject {
             AppLanguagePreference.self,
             key: Keys.appLanguage,
             from: userDefaults
-        ) ?? .english
+        ) ?? AppLanguagePreference.systemDefault()
         self.liveTrackingAccuracy = Self.loadEnum(
             AppLiveTrackingAccuracyPreference.self,
             key: Keys.liveTrackingAccuracy,

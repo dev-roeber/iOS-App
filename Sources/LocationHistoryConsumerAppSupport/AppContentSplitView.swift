@@ -1207,7 +1207,8 @@ public struct AppContentSplitView: View {
             unit: preferences.distanceUnit,
             context: .list,
             isFavorited: favoritedDayIDs.contains(summary.date),
-            isExported: session.exportSelection.isSelected(summary.date)
+            isExported: session.exportSelection.isSelected(summary.date),
+            localize: preferences.localized
         )
         AppDayRow(
             summary: summary,

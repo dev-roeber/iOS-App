@@ -437,7 +437,8 @@ public struct AppDayListView: View {
             unit: preferences.distanceUnit,
             context: .list,
             isFavorited: favoriteDayIDs.contains(summary.date),
-            isExported: selectedForExportDates.contains(summary.date)
+            isExported: selectedForExportDates.contains(summary.date),
+            localize: preferences.localized
         )
         Button {
             guard summary.hasContent else { return }
@@ -478,7 +479,8 @@ public struct AppDayListView: View {
             unit: preferences.distanceUnit,
             context: .list,
             isFavorited: favoriteDayIDs.contains(summary.date),
-            isExported: selectedForExportDates.contains(summary.date)
+            isExported: selectedForExportDates.contains(summary.date),
+            localize: preferences.localized
         )
         AppDayRow(
             summary: summary,

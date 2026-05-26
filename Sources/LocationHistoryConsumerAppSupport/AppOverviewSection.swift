@@ -112,7 +112,25 @@ public struct AppOverviewSection: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .padding(.horizontal, 10)
-        .background(stat.color.swiftUIColor.opacity(0.08))
+        .background(
+            ZStack {
+                // Solid tint base so the tile-color sticht heraus.
+                stat.color.swiftUIColor.opacity(0.28)
+                // Sanfter Gradient nach unten für etwas Tiefe.
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.04),
+                        Color.black.opacity(0.10)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(stat.color.swiftUIColor.opacity(0.35), lineWidth: 0.8)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
