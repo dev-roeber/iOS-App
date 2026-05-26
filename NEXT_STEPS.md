@@ -1,5 +1,23 @@
 # NEXT_STEPS
 
+## Stand 2026-05-26 — Doku-Verify (Branch `chore/docs-verify`, HEAD baseline `a5d506e`)
+
+Doku-Sync ohne Code-Änderung. README + CHANGELOG um verifizierten Repo-Truth-Patch
+für `1.0.2 (171)` + `IPHONEOS_DEPLOYMENT_TARGET = 17.0` ergänzt. Neue Datei
+`AppStore/ReviewNotes.md`. `swift build` + `swift test` (1700/3/0) auf Linux grün.
+
+**Offen / nicht in dieser Session:**
+- Build-Phase-Script für Auto-`CFBundleVersion` (Spec §3 von `07_DOCS_VERIFY.md`) —
+  Eingriff ins Xcode-Project ohne Xcode-Host nicht sinnvoll verifizierbar.
+- `xcodebuild build test` auf iPhone 16 Pro / iPhone SE 3rd gen / iOS 26
+  (Spec §7) — benötigt macOS-Host.
+- Screenshot-Tour DE/EN × Light/Dark × Accessibility-Settings — Linux-Host.
+- Tag `v1.0.3` + Xcode-Cloud-Build > 190 — extern, nach lokaler macOS-Verifikation.
+- Offene Punkte aus Prompt 03 (LegacyContentView-Toggle, LGKPITile,
+  ViewModel-Adapter pro Screen) bleiben im Backlog.
+
+---
+
 ## Stand 2026-05-26 — Liquid-Glass-Final (Branch `feature/liquid-glass-final`)
 
 Echtes Liquid Glass adoptiert (Surface, Tab-Container, Record-FAB, Layer-Bar, Widget).

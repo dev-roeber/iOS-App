@@ -3,9 +3,20 @@
 **Dieses Repo (`dev-roeber/iOS-App`) ist das zentrale aktive Repository fuer die vollstaendige LH2GPX iOS-App.**
 
 > **Plattform-Support (ab 1.1.0):**
-> - **iPhone**: iOS 26 erforderlich für das volle Liquid-Glass-Design (5-Tab-Layout).
+> - **iPhone iOS 26**: volles Liquid-Glass-Design mit 5-Tab-Layout (Karte · Tage · Live · Insights · Suche).
 > - **iPhone iOS 17–25**: läuft im iPad-Fallback-Layout (`AppContentSplitView`), keine Glas-Optik.
 > - **iPad**: ab iOS 17 mit `AppContentSplitView`.
+>
+> Repo-Stempel (`IPHONEOS_DEPLOYMENT_TARGET = 17.0`, `Package.swift .iOS(.v17)`) ist die kanonische Quelle. Die ältere README-Aussage „iOS 26 erforderlich" war auf das Liquid-Glass-Feature-Set bezogen, nicht auf das Mindestziel.
+
+> **Repo-Truth-Patch 2026-05-26 (Doku-Verify, Branch `chore/docs-verify`, HEAD `a5d506e` baseline):**
+> - Versions-Stempel verifiziert: `MARKETING_VERSION = 1.0.2`, `CURRENT_PROJECT_VERSION = 171` — pbxproj (8 Configs) + `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist` konsistent.
+> - Deployment-Target verifiziert: `IPHONEOS_DEPLOYMENT_TARGET = 17.0` (6 pbxproj-Stellen) + `Package.swift .iOS(.v17)`. Bewusste Entscheidung gemäß `NEXT_STEPS.md`; nicht auf iOS 26 heben.
+> - Privacy-Manifest verifiziert vorhanden: `wrapper/LH2GPXWrapper/PrivacyInfo.xcprivacy` + `wrapper/LH2GPXWidget/PrivacyInfo.xcprivacy` (Reason-Codes `CA92.1` UserDefaults + `0A2A.1` FileTimestamp; `NSPrivacyTracking = false`, keine Tracking-Domains).
+> - Neue Datei `AppStore/ReviewNotes.md` mit App-Review-Notes für 1.0.2 (171).
+> - Linux-Baseline auf HEAD `a5d506e`: `swift build` ✅.
+> - **Nicht verifiziert in diesem Patch:** `xcodebuild` (kein macOS-Host), Xcode-Cloud-Build > 190, Screenshot-Tour, Hardware-Test, ASC-Submission. Der Spec-Block „Auto-set CFBundleVersion via Build-Phase-Script" wurde **nicht** umgesetzt — ein Eingriff in `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` aus Linux-Host ohne Xcode ist nicht sinnvoll verifizierbar und würde den manuellen Build-Stempel überschreiben.
+> - Offene Punkte aus Prompt 03 (LegacyContentView-Toggle, LGKPITile, ViewModel-Adapter pro Screen) bleiben offen — wurden im 4-Tab-Teilstand bewusst nicht umgesetzt und sind hier nicht im Scope.
 
 > **Repo-Truth-Lock 2026-05-25 (verbindlich):** `https://github.com/dev-roeber/iOS-App` ist ab sofort das **einzige aktive Arbeits-Repo** für die LH2GPX iOS-App. Alle anderen LH2GPX-/LocationHistory2GPX-Repos (`LocationHistory2GPX-iOS`, `LH2GPXWrapper`, `LocationHistory2GPX-Monorepo`) sind **rein historisch** und werden nicht mehr als aktive Repo-Truth verwendet. `dev-roeber/LocationHistory2GPX` bleibt **externe Producer-Pipeline** (Fixture-Quelle, nicht Arbeitsrepo); `dev-roeber/lh2gpx-live-receiver` bleibt **externe optionale Beispiel-Implementierung** eines user-eigenen Live-Endpoints (kein zentraler Dienst). Details siehe `AGENTS.md` §Repo-Truth-Lock.
 
