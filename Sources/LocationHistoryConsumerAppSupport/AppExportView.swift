@@ -1299,7 +1299,7 @@ public struct AppExportView: View {
             Button(t("Open Days")) {
                 openDaysReview()
             }
-            .buttonStyle(.borderedProminent)
+            .lgGlassButtonProminent(tint: LH2GPXTheme.LiquidGlass.trackPrimary)
 
             if let onOpenImport {
                 Button(t("Import File")) {
@@ -1321,7 +1321,7 @@ public struct AppExportView: View {
                 Button(t("Select All Days")) {
                     session.exportSelection.selectAll(from: summaries.map(\.date))
                 }
-                .buttonStyle(.borderedProminent)
+                .lgGlassButtonProminent(tint: LH2GPXTheme.LiquidGlass.trackPrimary)
                 .accessibilityIdentifier("export.days.selectAll.cta")
             }
             if !liveLocation.recordedTracks.isEmpty {
@@ -1331,7 +1331,7 @@ public struct AppExportView: View {
                             from: liveLocation.recordedTracks.map(\.id)
                         )
                     }
-                    .buttonStyle(.borderedProminent)
+                    .lgGlassButtonProminent(tint: LH2GPXTheme.LiquidGlass.trackPrimary)
                     .accessibilityIdentifier("export.liveTracks.selectAll.cta")
                 } else {
                     Button(t("Select All Tracks")) {
