@@ -10,35 +10,54 @@ struct AppExportPreviewMapView: View {
     let previewData: ExportPreviewData
     let fillContainer: Bool
     let mapControlTopPadding: CGFloat
+    /// When true, the built-in `MapLayerMenu` control overlay is omitted so the
+    /// caller can render its own multi-layer overlays (Phase 3c multi-layer
+    /// export hero). Defaults to false to preserve previous behavior.
+    let hidesBuiltInControls: Bool
     @State private var renderData: ExportPreviewRenderData
-    @State private var mapPosition: MapCameraPosition
+    @State private var internalMapPosition: MapCameraPosition
+    /// Optional external camera binding. When provided, the parent owns the
+    /// camera state (e.g. for external zoom / locate controls). When nil, the
+    /// view keeps its own `internalMapPosition` so the legacy preview keeps
+    /// working unchanged.
+    private let externalMapPosition: Binding<MapCameraPosition>?
 
     init(
         previewData: ExportPreviewData,
         fillContainer: Bool = false,
-        mapControlTopPadding: CGFloat = 8
+        mapControlTopPadding: CGFloat = 8,
+        hidesBuiltInControls: Bool = false,
+        mapPosition: Binding<MapCameraPosition>? = nil
     ) {
         self.previewData = previewData
         self.fillContainer = fillContainer
         self.mapControlTopPadding = mapControlTopPadding
+        self.hidesBuiltInControls = hidesBuiltInControls
+        self.externalMapPosition = mapPosition
         let initialRender = ExportPreviewRenderData(previewData: previewData)
         self._renderData = State(initialValue: initialRender)
         if let region = initialRender.region {
-            self._mapPosition = State(initialValue: .region(region))
+            self._internalMapPosition = State(initialValue: .region(region))
         } else {
-            self._mapPosition = State(initialValue: .automatic)
+            self._internalMapPosition = State(initialValue: .automatic)
         }
+    }
+
+    private var mapPositionBinding: Binding<MapCameraPosition> {
+        externalMapPosition ?? $internalMapPosition
     }
 
     var body: some View {
         if renderData.hasMapContent, let region = renderData.region {
             mapContent(region: region)
                 .overlay(alignment: .topTrailing) {
-                    mapControls
-                        .padding(.top, mapControlTopPadding)
-                        .padding(.trailing, 8)
-                        .padding(.leading, 8)
-                        .padding(.bottom, 8)
+                    if !hidesBuiltInControls {
+                        mapControls
+                            .padding(.top, mapControlTopPadding)
+                            .padding(.trailing, 8)
+                            .padding(.leading, 8)
+                            .padding(.bottom, 8)
+                    }
                 }
                 .accessibilityLabel(mapAccessibilityLabel)
                 .accessibilityIdentifier(AppAccessibilityID.Map.exportPreviewRoot)
@@ -46,7 +65,13 @@ struct AppExportPreviewMapView: View {
                     let newRender = ExportPreviewRenderData(previewData: newValue)
                     renderData = newRender
                     if let region = newRender.region {
-                        withAnimation { mapPosition = .region(region) }
+                        withAnimation {
+                            if let binding = externalMapPosition {
+                                binding.wrappedValue = .region(region)
+                            } else {
+                                internalMapPosition = .region(region)
+                            }
+                        }
                     }
                 }
         }
@@ -54,7 +79,7 @@ struct AppExportPreviewMapView: View {
 
     @ViewBuilder
     private func mapContent(region: MKCoordinateRegion) -> some View {
-        let map = Map(position: $mapPosition) {
+        let map = Map(position: mapPositionBinding) {
             let _ = region
             ForEach(Array(renderData.waypointAnnotations.enumerated()), id: \.offset) { _, annotation in
                 Marker(annotation.semanticType ?? "Waypoint", coordinate: annotation.coordinate)
@@ -89,7 +114,13 @@ struct AppExportPreviewMapView: View {
         MapLayerMenu(configuration: MapLayerMenu.Configuration(
             fitToData: renderData.region == nil ? nil : {
                 if let region = renderData.region {
-                    withAnimation { mapPosition = .region(region) }
+                    withAnimation {
+                        if let binding = externalMapPosition {
+                            binding.wrappedValue = .region(region)
+                        } else {
+                            internalMapPosition = .region(region)
+                        }
+                    }
                 }
             }
         ))
@@ -112,7 +143,7 @@ struct AppExportPreviewMapView: View {
     }
 }
 
-private struct ExportPreviewRenderData {
+struct ExportPreviewRenderData {
     struct WaypointAnnotation {
         let coordinate: CLLocationCoordinate2D
         let semanticType: String?

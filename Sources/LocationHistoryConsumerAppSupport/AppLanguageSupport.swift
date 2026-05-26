@@ -582,6 +582,10 @@ enum AppGermanTranslations {
         // Phase 19.28 multi-layer redesign — floating-pill, layer-panel and
         // bottom-sheet vocabulary. Short, capsule-friendly translations.
         "STATUS · LIVE MAP": "STATUS · LIVE-KARTE",
+        "STATUS · EXPORT MAP": "STATUS · EXPORT-KARTE",
+        "Nothing selected yet": "Noch nichts ausgewählt",
+        "No selectable content": "Nichts zum Auswählen",
+        "Export ready": "Export bereit",
         "LAYERS": "EBENEN",
         "REC": "REC",
         "GPS": "GPS",

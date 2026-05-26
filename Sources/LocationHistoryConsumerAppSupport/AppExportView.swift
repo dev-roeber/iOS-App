@@ -90,6 +90,14 @@ public struct AppExportView: View {
         expandedHeight: LHHeroMapLayout.expandedHeight,
         isSticky: true
     )
+    // Phase 3c multi-layer export hero state. The Standard/Tempo toggle reuses
+    // the global `preferences.mapTrackColorMode` so the user setting roundtrips
+    // with the Live tab. `showElevationLayer` and `showWeatherLayer` are
+    // display-only flags today (no rendering change yet), mirroring the
+    // current Live behavior — they exist so the layer panel works visually
+    // and round-trips through accessibility.
+    @State private var exportShowElevationLayer: Bool = false
+    @State private var exportShowWeatherLayer: Bool = false
     private let heroEnabled: Bool
 
     public init(
@@ -157,11 +165,8 @@ public struct AppExportView: View {
             .scrollContentBackground(.hidden)
             .background(Color(.systemBackground))
             .safeAreaInset(edge: .top, spacing: 0) {
-                VStack(spacing: 0) {
-                    exportHeroMap(selection: selection, summaries: summaries)
-                    exportHeroFilterPanel(selection: selection, summaries: summaries)
-                }
-                .background(Color(.systemBackground))
+                exportHeroMap(selection: selection, summaries: summaries)
+                    .background(Color(.systemBackground))
             }
             .safeAreaInset(edge: .bottom) {
                 bottomBar(selection: selection, summaries: summaries)
@@ -242,7 +247,7 @@ public struct AppExportView: View {
         }
     }
 
-    // MARK: - Hero Map (compact width)
+    // MARK: - Hero Map (Phase 3c multi-layer)
 
     @ViewBuilder
     private func exportHeroMap(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
@@ -254,29 +259,44 @@ public struct AppExportView: View {
             mode: effectiveExportMode,
             mutations: pathMutations
         )
+        let review = ExportPresentation.reviewSnapshot(
+            importedExport: session.content?.export,
+            selection: selection,
+            recordedTracks: liveLocation.recordedTracks,
+            queryFilter: effectiveQueryFilter,
+            mode: effectiveExportMode
+        )
 
-        LHCollapsibleMapHeader(
-            state: $exportMapHeaderState,
-            language: preferences.appLanguage,
-            overlayControls: true,
-            persistenceKey: LHMapHeightPersistenceKey.export,
-            safeAreaTopInset: lhDeviceTopSafeInset()
-        ) {
-            if previewData.hasMapContent {
-                if #available(iOS 17.0, macOS 14.0, *) {
-                    AppExportPreviewMapView(
-                        previewData: previewData,
-                        fillContainer: true,
-                        mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset
-                    )
-                } else {
-                    exportHeroMapPlaceholder
-                }
-            } else {
+        if #available(iOS 17.0, macOS 14.0, *) {
+            AppExportMultiLayerHero(
+                previewData: previewData,
+                review: review,
+                selection: selection,
+                summaries: summaries,
+                liveTrackCount: liveLocation.recordedTracks.count,
+                selectedFormat: selectedFormat,
+                selectedMode: effectiveExportMode,
+                colorMode: $preferences.mapTrackColorMode,
+                showElevation: $exportShowElevationLayer,
+                showWeather: $exportShowWeatherLayer,
+                localized: { preferences.localized($0) },
+                isGerman: preferences.appLanguage.isGerman,
+                placeholder: { AnyView(exportHeroMapPlaceholder) }
+            )
+            .accessibilityIdentifier("export.map.header")
+        } else {
+            // Pre-iOS-17 fallback: keep the previous collapsible header.
+            LHCollapsibleMapHeader(
+                state: $exportMapHeaderState,
+                language: preferences.appLanguage,
+                overlayControls: true,
+                persistenceKey: LHMapHeightPersistenceKey.export,
+                safeAreaTopInset: lhDeviceTopSafeInset()
+            ) {
                 exportHeroMapPlaceholder
             }
+            .accessibilityIdentifier("export.map.header")
         }
-        .accessibilityIdentifier("export.map.header")
     }
 
     @ViewBuilder
@@ -301,65 +321,6 @@ public struct AppExportView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.secondary.opacity(0.06))
-    }
-
-    @ViewBuilder
-    private func exportHeroFilterPanel(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
-        let review = ExportPresentation.reviewSnapshot(
-            importedExport: session.content?.export,
-            selection: selection,
-            recordedTracks: liveLocation.recordedTracks,
-            queryFilter: effectiveQueryFilter,
-            mode: effectiveExportMode
-        )
-
-        VStack(spacing: 6) {
-            HStack(spacing: 12) {
-                Text(t("Export"))
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityAddTraits(.isHeader)
-
-                Text(selectedFormat.rawValue.uppercased())
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(LH2GPXTheme.primaryBlue)
-                    .clipShape(Capsule())
-                    .accessibilityIdentifier("export.hero.formatPill")
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    if selection.isEmpty {
-                        let hasSelectableItems = !summaries.isEmpty || !liveLocation.recordedTracks.isEmpty
-                        LHStatusBadge(
-                            title: hasSelectableItems ? t("Tap to choose") : t("Nothing selected"),
-                            systemImage: hasSelectableItems ? "hand.tap" : "exclamationmark.triangle"
-                        )
-                    } else {
-                        if review.selectedDayCount > 0 {
-                            LHStatusBadge(
-                                title: "\(review.selectedDayCount) \(t("days"))",
-                                systemImage: "calendar"
-                            )
-                        }
-                        if review.selectedRecordedTrackCount > 0 {
-                            LHStatusBadge(
-                                title: "\(review.selectedRecordedTrackCount) \(t("tracks"))",
-                                systemImage: "point.topleft.down.curvedto.point.bottomright.up"
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 4)
-        .padding(.bottom, 6)
-        .accessibilityIdentifier("export.hero.filterPanel")
     }
 
     // MARK: - Title Header
