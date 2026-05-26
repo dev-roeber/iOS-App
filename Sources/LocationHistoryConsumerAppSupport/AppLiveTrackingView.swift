@@ -358,13 +358,18 @@ public struct AppLiveTrackingView: View {
     }
 
     private var layersPanelLabel: String {
-        let active = [
-            preferences.mapTrackColorMode != .activity ? 1 : 1, // Standard always counted in active when Tempo is off
-            preferences.mapTrackColorMode == .speed ? 1 : 0,
-            showElevationLayer ? 1 : 0,
-            showWeatherLayer ? 1 : 0
-        ].reduce(0, +)
-        return "\(t("LAYERS")) \(active)/4"
+        // Four overlay slots: Standard base map (always on), Tempo color
+        // mode, Höhen-Overlay, Wetter-Overlay. Standard counts as active
+        // whenever Tempo is off; Tempo counts when it is the active base
+        // colour mode.
+        let standardActive = preferences.mapTrackColorMode != .speed
+        let speedActive = preferences.mapTrackColorMode == .speed
+        let count =
+            (standardActive ? 1 : 0)
+            + (speedActive ? 1 : 0)
+            + (showElevationLayer ? 1 : 0)
+            + (showWeatherLayer ? 1 : 0)
+        return "\(t("LAYERS")) \(count)/4"
     }
 
     private var permissionShortValue: String {
