@@ -7,6 +7,15 @@ public enum AppLanguagePreference: String, CaseIterable, Identifiable {
     public var id: String { rawValue }
     public var isGerman: Bool { self == .german }
 
+    /// Resolves the default preference from the system's preferred
+    /// localizations. Falls back to English when no German hint is found.
+    public static func systemDefault() -> AppLanguagePreference {
+        let primary = Bundle.main.preferredLocalizations.first
+            ?? Locale.current.language.languageCode?.identifier
+            ?? "en"
+        return primary.lowercased().hasPrefix("de") ? .german : .english
+    }
+
     public var title: String {
         switch self {
         case .english:
@@ -677,6 +686,13 @@ enum AppGermanTranslations {
         "Simplified preview · export complete": "Vereinfachte Vorschau · Export vollständig",
         "route": "Route",
         "routes": "Routen",
+        "visit": "Besuch",
+        "visits": "Besuche",
+        "activity": "Aktivität",
+        "activities": "Aktivitäten",
+        "route distance": "Routendistanz",
+        "exportable": "exportierbar",
+        "No exportable routes": "Keine exportierbaren Routen",
         "Overview map with": "Übersichtskarte mit",
         // Heatmap chip (task 4)
         "Computing heatmap…": "Heatmap wird berechnet…",

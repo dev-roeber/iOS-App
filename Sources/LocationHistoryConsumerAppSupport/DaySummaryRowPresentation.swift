@@ -43,7 +43,8 @@ enum DaySummaryRowPresentationBuilder {
         unit: AppDistanceUnitPreference,
         context: Context,
         isFavorited: Bool = false,
-        isExported: Bool = false
+        isExported: Bool = false,
+        localize: (String) -> String = { $0 }
     ) -> DaySummaryRowPresentation {
         let dayNumberText = dayNumber(summary.date)
         let weekdayText = AppDateDisplay.weekday(summary.date)
@@ -54,7 +55,7 @@ enum DaySummaryRowPresentationBuilder {
         )
 
         var metrics: [DaySummaryMetricPresentation] = []
-        let visitText = "\(summary.visitCount) \(summary.visitCount == 1 ? "visit" : "visits")"
+        let visitText = "\(summary.visitCount) \(localize(summary.visitCount == 1 ? "visit" : "visits"))"
         metrics.append(
             .init(
                 id: "visits",
@@ -64,7 +65,7 @@ enum DaySummaryRowPresentationBuilder {
                 tint: "mint"
             )
         )
-        let routeTextForMetrics = "\(summary.pathCount) \(summary.pathCount == 1 ? "route" : "routes")"
+        let routeTextForMetrics = "\(summary.pathCount) \(localize(summary.pathCount == 1 ? "route" : "routes"))"
         metrics.append(
             .init(
                 id: "routes",
@@ -75,12 +76,13 @@ enum DaySummaryRowPresentationBuilder {
             )
         )
         if summary.activityCount > 0 {
+            let activityText = "\(summary.activityCount) \(localize(summary.activityCount == 1 ? "activity" : "activities"))"
             metrics.append(
                 .init(
                     id: "activities",
                     icon: "figure.walk",
-                    text: "\(summary.activityCount) \(summary.activityCount == 1 ? "activity" : "activities")",
-                    accessibilityLabel: "\(summary.activityCount) \(summary.activityCount == 1 ? "activity" : "activities")",
+                    text: activityText,
+                    accessibilityLabel: activityText,
                     tint: "blue"
                 )
             )
@@ -95,7 +97,7 @@ enum DaySummaryRowPresentationBuilder {
                     id: "distance",
                     icon: "ruler",
                     text: formatted,
-                    accessibilityLabel: "\(formatted) route distance",
+                    accessibilityLabel: "\(formatted) \(localize("route distance"))",
                     tint: "purple"
                 )
             )
@@ -105,20 +107,22 @@ enum DaySummaryRowPresentationBuilder {
 
         var statuses: [DaySummaryStatusPresentation] = []
         if isFavorited {
-            statuses.append(.init(id: "favorite", text: "Favorite", accessibilityLabel: "Favorite", tint: "yellow"))
+            let label = localize("Favorite")
+            statuses.append(.init(id: "favorite", text: label, accessibilityLabel: label, tint: "yellow"))
         }
         if isExported {
-            statuses.append(.init(id: "exported", text: "Exported", accessibilityLabel: "Exported", tint: "green"))
+            let label = localize("Exported")
+            statuses.append(.init(id: "exported", text: label, accessibilityLabel: label, tint: "green"))
         }
 
         let routeText: String
         switch context {
         case .list:
-            routeText = "\(summary.pathCount) \(summary.pathCount == 1 ? "route" : "routes")"
+            routeText = "\(summary.pathCount) \(localize(summary.pathCount == 1 ? "route" : "routes"))"
         case .export:
             routeText = summary.exportablePathCount > 0
-                ? "\(summary.exportablePathCount) exportable \(summary.exportablePathCount == 1 ? "route" : "routes")"
-                : "No exportable routes"
+                ? "\(summary.exportablePathCount) \(localize("exportable")) \(localize(summary.exportablePathCount == 1 ? "route" : "routes"))"
+                : localize("No exportable routes")
         }
 
         let placeText = visitText
