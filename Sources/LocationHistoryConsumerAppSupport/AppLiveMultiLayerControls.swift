@@ -6,77 +6,18 @@ import MapKit
 //
 // AppLiveTrackingView (portrait, multi-layer variant) — ZStack
 //  ├── Map (full-bleed) — liveMapBase / liveMapPlaceholderContent
-//  ├── overlay(.top)        → LiveStatusPill   (icon + title + status badge)
 //  ├── overlay(.topLeading) → LiveLayerPanel   (Standard/Tempo/Höhe/Wetter)
 //  ├── overlay(.topTrailing)→ LiveControlStack (compass / + / − / locate / compact)
 //  └── safeAreaInset(.bottom)
 //        └── LiveBottomSheet (drag-handle, status legend, recording button below)
 //
+// The global recording indicator lives in the navigation toolbar
+// (GlobalRecordingToolbarIndicator) and is shared by all four tabs.
+//
 // All strings flow through the preferences.localized() pipeline; german
 // strings are added to AppGermanTranslations.values.
 // ReduceMotion is respected: pill pulse, layer-panel chevron and sheet drag
 // transitions are disabled when the user opts out.
-
-// MARK: - Status Pill
-
-@available(iOS 17.0, macOS 14.0, *)
-struct LiveStatusPill: View {
-    let icon: String
-    let title: String
-    let badgeText: String
-    let badgeColor: Color
-    let isLive: Bool
-    var onTap: (() -> Void)? = nil
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulse = false
-
-    var body: some View {
-        Button(action: { onTap?() }) {
-            HStack(spacing: 10) {
-                ZStack {
-                    if isLive && !reduceMotion {
-                        Circle()
-                            .fill(badgeColor.opacity(0.35))
-                            .frame(width: 22, height: 22)
-                            .scaleEffect(pulse ? 1.5 : 1.0)
-                            .opacity(pulse ? 0.0 : 1.0)
-                    }
-                    Image(systemName: icon)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(badgeColor)
-                }
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text(badgeText)
-                    .font(.caption2.weight(.heavy))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.black.opacity(0.85), in: Capsule())
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
-            .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 6)
-        }
-        .buttonStyle(.plain)
-        .task(id: isLive) {
-            guard isLive, !reduceMotion else {
-                pulse = false
-                return
-            }
-            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: false)) {
-                pulse = true
-            }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title), \(badgeText)")
-    }
-}
 
 // MARK: - Layer Panel
 
