@@ -710,6 +710,11 @@ enum AppGermanTranslations {
         "route distance": "Routendistanz",
         "exportable": "exportierbar",
         "No exportable routes": "Keine exportierbaren Routen",
+        "Last 7 days": "Letzte 7 Tage",
+        "Last 30 days": "Letzte 30 Tage",
+        "Last 90 days": "Letzte 90 Tage",
+        "All Time": "Gesamter Zeitraum",
+        "Custom": "Benutzerdefiniert",
         "Overview map with": "Übersichtskarte mit",
         // Heatmap chip (task 4)
         "Computing heatmap…": "Heatmap wird berechnet…",

@@ -159,7 +159,7 @@ public struct LGTabContainerView: View {
                 favoriteDayIDs: favoritedDayIDs,
                 isRangeFilterActive: session.historyDateRangeFilter.isActive,
                 rangeSummaryText: session.historyDateRangeFilter.isActive
-                    ? session.historyDateRangeFilter.chipLabel
+                    ? session.historyDateRangeFilter.localizedChipLabel(preferences.localized)
                     : nil,
                 selectedDate: Binding(
                     get: { selectedDate ?? session.selectedDate },
