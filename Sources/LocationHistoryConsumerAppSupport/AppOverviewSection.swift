@@ -58,8 +58,10 @@ public struct AppOverviewSection: View {
             language: preferences.appLanguage
         )
 
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
+        // Tighter vertical rhythm between subheader and tile grid to reduce
+        // the excess top whitespace called out in the Karte-Tab audit.
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(t("Imported History"))
                     .font(.title3.weight(.semibold))
                 Text(presentation.subtitle)
