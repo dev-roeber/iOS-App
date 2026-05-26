@@ -102,6 +102,8 @@ struct AppDayRow: View {
         HStack(spacing: 5) {
             Image(systemName: icon)
             Text(text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .fixedSize(horizontal: true, vertical: false)
         }
         .font(.caption.weight(.medium))

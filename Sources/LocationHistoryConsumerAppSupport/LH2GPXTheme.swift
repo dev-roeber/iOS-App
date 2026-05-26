@@ -238,6 +238,7 @@ public struct LHFilterChip: View {
                 Text(title)
                     .font(.caption.weight(.medium))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 10)

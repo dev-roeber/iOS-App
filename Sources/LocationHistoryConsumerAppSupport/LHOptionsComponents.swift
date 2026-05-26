@@ -103,6 +103,7 @@ public struct LHLiveRecordingPresetSelector: View {
 public struct LHUploadSettingsCard: View {
     @ObservedObject var preferences: AppPreferences
     let t: (String) -> String
+    @State private var showToken: Bool = false
 
     public init(preferences: AppPreferences, t: @escaping (String) -> String) {
         self._preferences = ObservedObject(wrappedValue: preferences)
@@ -118,6 +119,9 @@ public struct LHUploadSettingsCard: View {
             if preferences.sendsLiveLocationToServer {
                 Divider().foregroundStyle(LH2GPXTheme.separator)
                 uploadURLField
+                if let validationMessage = urlValidationMessage {
+                    urlValidationCard(validationMessage)
+                }
                 tokenField
                 batchPicker
                 uploadStatusRow
@@ -142,23 +146,82 @@ public struct LHUploadSettingsCard: View {
         }
     }
 
+    /// Structured upload URL validation. Returns a localized actionable
+    /// message instead of the generic "Invalid URL" string. Empty input is
+    /// treated as not-yet-configured (no validation error shown).
+    private var urlValidationMessage: String? {
+        let raw = preferences.liveLocationServerUploadURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+        guard let components = URLComponents(string: raw), let scheme = components.scheme else {
+            return t("URL must begin with https://. Example: https://server.example.com/api/v1/track")
+        }
+        if scheme.lowercased() != "https" {
+            return t("Only https:// is allowed — http is insecure.")
+        }
+        if (components.host ?? "").isEmpty {
+            return t("The URL could not be parsed. Please check spelling.")
+        }
+        return nil
+    }
+
+    private func urlValidationCard(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(LH2GPXTheme.warningOrange)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(10)
+        .background(LH2GPXTheme.warningOrange.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .accessibilityIdentifier("options.upload.url.validationError")
+    }
+
     private var tokenField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(t("Bearer Token"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            SecureField(
-                preferences.liveLocationServerUploadBearerToken.isEmpty
-                    ? t("Token not set") : t("Token saved"),
-                text: $preferences.liveLocationServerUploadBearerToken
-            )
-            #if os(iOS)
-            .textInputAutocapitalization(.never)
-            #endif
-            .autocorrectionDisabled()
-            .font(.subheadline)
-            .accessibilityIdentifier("options.upload.token")
-            .accessibilityHint(Text(t("Stored in the iOS keychain on this device. Never shown in plain text and never written to logs.")))
+            HStack(spacing: 8) {
+                Group {
+                    if showToken {
+                        TextField(
+                            preferences.liveLocationServerUploadBearerToken.isEmpty
+                                ? t("Token not set") : t("Token saved"),
+                            text: $preferences.liveLocationServerUploadBearerToken
+                        )
+                    } else {
+                        SecureField(
+                            preferences.liveLocationServerUploadBearerToken.isEmpty
+                                ? t("Token not set") : t("Token saved"),
+                            text: $preferences.liveLocationServerUploadBearerToken
+                        )
+                    }
+                }
+                #if os(iOS)
+                .textInputAutocapitalization(.never)
+                #endif
+                .autocorrectionDisabled()
+                .font(.subheadline)
+                .accessibilityIdentifier("options.upload.token")
+                .accessibilityHint(Text(t("Stored in the iOS keychain on this device. Never shown in plain text and never written to logs.")))
+
+                Button {
+                    showToken.toggle()
+                } label: {
+                    Image(systemName: showToken ? "eye.slash" : "eye")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(minWidth: 44, minHeight: 32)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(showToken ? t("Hide Bearer Token") : t("Show Bearer Token"))
+                .accessibilityIdentifier("options.upload.token.reveal")
+            }
         }
     }
 

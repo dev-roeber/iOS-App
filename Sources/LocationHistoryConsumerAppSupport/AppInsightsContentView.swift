@@ -1479,6 +1479,13 @@ public struct AppInsightsContentView: View {
             AxisMarks(position: .leading)
         }
         .chartYAxisLabel(distanceAxisLabel(unit: preferences.distanceUnit), alignment: .trailing)
+        .chartPlotStyle { plotArea in
+            // Keep Y-axis labels from overlapping the leading bars.
+            plotArea
+                .padding(.leading, 12)
+                .padding(.trailing, 8)
+                .padding(.top, 6)
+        }
         .chartOverlay { proxy in
             GeometryReader { geometry in
                 Rectangle()
@@ -1534,6 +1541,13 @@ public struct AppInsightsContentView: View {
                 AxisTick()
                 AxisValueLabel(orientation: displayItems.count > 8 ? .verticalReversed : .horizontal)
             }
+        }
+        .chartPlotStyle { plotArea in
+            // Padding so Y-axis labels do not overlap the first bar in the trend chart.
+            plotArea
+                .padding(.leading, 12)
+                .padding(.trailing, 8)
+                .padding(.top, 6)
         }
         .frame(height: 220)
     }
