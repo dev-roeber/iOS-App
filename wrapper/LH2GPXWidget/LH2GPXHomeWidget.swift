@@ -185,6 +185,94 @@ struct LH2GPXMediumWidgetView: View {
     }
 }
 
+// MARK: - Large Widget View
+
+struct LH2GPXLargeWidgetView: View {
+    let entry: LH2GPXEntry
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Top: last recording card
+            VStack(alignment: .leading, spacing: 6) {
+                Label(WidgetStr.lastTour, systemImage: "figure.walk")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                if let rec = entry.lastRecording {
+                    Text(rec.formattedDistance)
+                        .font(.title2.weight(.bold).monospacedDigit())
+                        .minimumScaleFactor(0.7)
+                    Text(rec.formattedDuration)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(rec.date, style: .date)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                } else {
+                    Text("—")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+
+            Divider()
+                .padding(.horizontal, 12)
+
+            // Bottom: weekly + monthly stats side by side
+            HStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(WidgetStr.thisWeek, systemImage: "calendar")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    if let stats = entry.weeklyStats {
+                        Text(String(format: "%.1f km", stats.km))
+                            .font(.title3.weight(.bold).monospacedDigit())
+                            .minimumScaleFactor(0.7)
+                        Text("\(stats.routes) \(WidgetStr.tourCount(stats.routes))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(WidgetStr.noData)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+
+                Divider()
+                    .padding(.vertical, 12)
+
+                // TODO P05: real monthly aggregation
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("This Month", systemImage: "calendar.badge.clock")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    if let stats = entry.weeklyStats {
+                        Text(String(format: "%.1f km", stats.km))
+                            .font(.title3.weight(.bold).monospacedDigit())
+                            .minimumScaleFactor(0.7)
+                        Text("\(stats.routes) \(WidgetStr.tourCount(stats.routes))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(WidgetStr.noData)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .widgetBackground()
+    }
+}
+
 // MARK: - Entry View (dispatches by widget family)
 
 struct LH2GPXWidgetEntryView: View {
@@ -195,6 +283,8 @@ struct LH2GPXWidgetEntryView: View {
         switch family {
         case .systemSmall:
             LH2GPXSmallWidgetView(entry: entry)
+        case .systemLarge:
+            LH2GPXLargeWidgetView(entry: entry)
         default:
             LH2GPXMediumWidgetView(entry: entry)
         }
@@ -212,7 +302,7 @@ struct LH2GPXHomeWidget: Widget {
         }
         .configurationDisplayName("LH2GPX")
         .description(WidgetStr.widgetDescription)
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 #endif
