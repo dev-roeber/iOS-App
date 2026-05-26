@@ -31,6 +31,7 @@ public struct AppInsightsContentView: View {
     }
 
     @EnvironmentObject private var preferences: AppPreferences
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     let insights: ExportInsights
     let daySummaries: [DaySummary]
@@ -223,7 +224,11 @@ public struct AppInsightsContentView: View {
     @ViewBuilder
     private var heroLoadedBody: some View {
         ScrollView {
-            insightsBodyContent(isLandscape: false)
+            // Prompt 06 LANDSCAPE §A6: in compact-vertical (iPhone landscape)
+            // run the two-column charts/KPIs layout the legacy loadedBody used
+            // to gate on width>600 only. The Hero path is the live one in
+            // LGTabContainerView so we have to wire the size class here too.
+            insightsBodyContent(isLandscape: verticalSizeClass == .compact)
         }
         .scrollContentBackground(.hidden)
         .background(Color(.systemBackground))
