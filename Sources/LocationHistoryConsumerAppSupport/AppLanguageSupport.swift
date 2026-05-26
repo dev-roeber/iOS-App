@@ -920,6 +920,13 @@ enum AppGermanTranslations {
         "Unreachable": "Nicht erreichbar",
         "Test Connection": "Verbindung testen",
         "Testing…": "Testen…",
-        "Last tour + weekly status": "Letzte Tour + Wochenstatus"
+        "Last tour + weekly status": "Letzte Tour + Wochenstatus",
+        "Acquiring location fix...": "Standort wird ermittelt…",
+        "Acquiring location…": "Standort wird ermittelt…",
+        "GPS searching for satellites": "GPS sucht Satelliten",
+        "No position available yet": "Noch keine Position verfügbar",
+        "Searching for": "Suche seit",
+        "Acquiring location fix. Searching for GPS satellites.": "Standort wird ermittelt. Suche nach GPS-Satelliten.",
+        "Last accuracy": "Letzte Genauigkeit"
     ]
 }
