@@ -170,17 +170,19 @@ final class ImportMemoryProbeActivationTests: XCTestCase {
         }
         defer { defaults.removePersistentDomain(forName: suite) }
 
-        // Lokale Settings-Instanz reicht nicht, weil AppBuildInfo das
-        // Singleton liest. Wir setzen direkt den Singleton-Schalter.
-        let shared = LocalTimelineTechnicalTestSettings.shared
-        let previous = shared.importMemoryLoggingEnabled
-        defer { shared.importMemoryLoggingEnabled = previous }
+        MainActor.assumeIsolated {
+            // Lokale Settings-Instanz reicht nicht, weil AppBuildInfo das
+            // Singleton liest. Wir setzen direkt den Singleton-Schalter.
+            let shared = LocalTimelineTechnicalTestSettings.shared
+            let previous = shared.importMemoryLoggingEnabled
+            defer { shared.importMemoryLoggingEnabled = previous }
 
-        // Beobachte, dass eine Änderung am Singleton-Setting sich sofort in
-        // AppBuildInfo widerspiegelt — vorher fror der Wert ein.
-        shared.importMemoryLoggingEnabled = true
-        XCTAssertTrue(AppBuildInfo.shared.isMemoryLoggingEnabled,
-                      "Build-Info muss Live-Status spiegeln, sobald Toggle an ist")
+            // Beobachte, dass eine Änderung am Singleton-Setting sich sofort in
+            // AppBuildInfo widerspiegelt — vorher fror der Wert ein.
+            shared.importMemoryLoggingEnabled = true
+            XCTAssertTrue(AppBuildInfo.shared.isMemoryLoggingEnabled,
+                          "Build-Info muss Live-Status spiegeln, sobald Toggle an ist")
+        }
 
         // Hinweis: Wenn der Process-Cache (Args/ENV beim Start) bereits true
         // war, kann der nächste Schritt nicht zurück nach false fallen, weil

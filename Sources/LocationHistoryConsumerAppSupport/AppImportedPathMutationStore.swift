@@ -11,6 +11,7 @@ import LocationHistoryConsumer
 /// Mutations are scoped to a source identifier (typically the import filename).
 /// Calling `validateSource(_:)` on each import-change ensures that deletions from a
 /// previous file are not silently applied to a new one.
+@MainActor
 public final class AppImportedPathMutationStore: ObservableObject {
     private static let userDefaultsKey = "app.importedPathMutations"
     private static let sourceIdentifierKey = "app.importedPathMutations.sourceIdentifier"

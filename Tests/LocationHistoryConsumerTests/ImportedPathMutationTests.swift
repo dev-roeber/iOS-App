@@ -107,107 +107,119 @@ final class ImportedPathMutationTests: XCTestCase {
     #if canImport(Combine)
 
     func testAddAndPersistDeletion() {
-        let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        let store = AppImportedPathMutationStore(userDefaults: defaults)
+        MainActor.assumeIsolated {
+            let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            let store = AppImportedPathMutationStore(userDefaults: defaults)
 
-        let deletion = ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0)
-        store.addDeletion(deletion)
+            let deletion = ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0)
+            store.addDeletion(deletion)
 
-        XCTAssertEqual(store.currentMutations.deletions.count, 1)
-        XCTAssertEqual(store.currentMutations.deletions.first, deletion)
+            XCTAssertEqual(store.currentMutations.deletions.count, 1)
+            XCTAssertEqual(store.currentMutations.deletions.first, deletion)
 
-        // Reload from same UserDefaults to verify persistence
-        let store2 = AppImportedPathMutationStore(userDefaults: defaults)
-        XCTAssertEqual(store2.currentMutations.deletions.count, 1)
-        XCTAssertEqual(store2.currentMutations.deletions.first, deletion)
+            // Reload from same UserDefaults to verify persistence
+            let store2 = AppImportedPathMutationStore(userDefaults: defaults)
+            XCTAssertEqual(store2.currentMutations.deletions.count, 1)
+            XCTAssertEqual(store2.currentMutations.deletions.first, deletion)
 
-        defaults.removePersistentDomain(forName: suiteName)
+            defaults.removePersistentDomain(forName: suiteName)
+        }
     }
 
     func testDuplicateDeletionIsIgnored() {
-        let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        let store = AppImportedPathMutationStore(userDefaults: defaults)
+        MainActor.assumeIsolated {
+            let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            let store = AppImportedPathMutationStore(userDefaults: defaults)
 
-        let deletion = ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 2)
-        store.addDeletion(deletion)
-        store.addDeletion(deletion) // second identical tap must be a no-op
-        store.addDeletion(deletion) // third as well
+            let deletion = ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 2)
+            store.addDeletion(deletion)
+            store.addDeletion(deletion) // second identical tap must be a no-op
+            store.addDeletion(deletion) // third as well
 
-        XCTAssertEqual(store.currentMutations.deletions.count, 1)
+            XCTAssertEqual(store.currentMutations.deletions.count, 1)
 
-        defaults.removePersistentDomain(forName: suiteName)
+            defaults.removePersistentDomain(forName: suiteName)
+        }
     }
 
     func testResetClearsAllDeletions() {
-        let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        let store = AppImportedPathMutationStore(userDefaults: defaults)
+        MainActor.assumeIsolated {
+            let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            let store = AppImportedPathMutationStore(userDefaults: defaults)
 
-        store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
-        store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-02", pathIndex: 1))
-        XCTAssertEqual(store.currentMutations.deletions.count, 2)
+            store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
+            store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-02", pathIndex: 1))
+            XCTAssertEqual(store.currentMutations.deletions.count, 2)
 
-        store.reset()
-        XCTAssertTrue(store.currentMutations.deletions.isEmpty)
+            store.reset()
+            XCTAssertTrue(store.currentMutations.deletions.isEmpty)
 
-        // Reload: should also be empty
-        let store2 = AppImportedPathMutationStore(userDefaults: defaults)
-        XCTAssertTrue(store2.currentMutations.deletions.isEmpty)
+            // Reload: should also be empty
+            let store2 = AppImportedPathMutationStore(userDefaults: defaults)
+            XCTAssertTrue(store2.currentMutations.deletions.isEmpty)
 
-        defaults.removePersistentDomain(forName: suiteName)
+            defaults.removePersistentDomain(forName: suiteName)
+        }
     }
 
     // MARK: - validateSource: import-change invalidation
 
     func testMutationsPreservedForSameSource() {
-        let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        let store = AppImportedPathMutationStore(userDefaults: defaults)
+        MainActor.assumeIsolated {
+            let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            let store = AppImportedPathMutationStore(userDefaults: defaults)
 
-        store.validateSource("foo.json")
-        store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
-        XCTAssertEqual(store.currentMutations.deletions.count, 1)
+            store.validateSource("foo.json")
+            store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
+            XCTAssertEqual(store.currentMutations.deletions.count, 1)
 
-        // Same source → mutations must be preserved
-        store.validateSource("foo.json")
-        XCTAssertEqual(store.currentMutations.deletions.count, 1)
+            // Same source → mutations must be preserved
+            store.validateSource("foo.json")
+            XCTAssertEqual(store.currentMutations.deletions.count, 1)
 
-        defaults.removePersistentDomain(forName: suiteName)
+            defaults.removePersistentDomain(forName: suiteName)
+        }
     }
 
     func testMutationsResetOnSourceChange() {
-        let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        let store = AppImportedPathMutationStore(userDefaults: defaults)
+        MainActor.assumeIsolated {
+            let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            let store = AppImportedPathMutationStore(userDefaults: defaults)
 
-        store.validateSource("foo.json")
-        store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
-        XCTAssertEqual(store.currentMutations.deletions.count, 1)
+            store.validateSource("foo.json")
+            store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
+            XCTAssertEqual(store.currentMutations.deletions.count, 1)
 
-        // Different source → mutations must be cleared
-        store.validateSource("bar.json")
-        XCTAssertTrue(store.currentMutations.deletions.isEmpty)
+            // Different source → mutations must be cleared
+            store.validateSource("bar.json")
+            XCTAssertTrue(store.currentMutations.deletions.isEmpty)
 
-        defaults.removePersistentDomain(forName: suiteName)
+            defaults.removePersistentDomain(forName: suiteName)
+        }
     }
 
     func testValidateSourcePersistsIdentifierAcrossReload() {
-        let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        let store = AppImportedPathMutationStore(userDefaults: defaults)
+        MainActor.assumeIsolated {
+            let suiteName = "test.ImportedPathMutation.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            let store = AppImportedPathMutationStore(userDefaults: defaults)
 
-        store.validateSource("foo.json")
-        store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
+            store.validateSource("foo.json")
+            store.addDeletion(ImportedPathDeletion(dayKey: "2024-05-01", pathIndex: 0))
 
-        // Reload store (simulates app restart)
-        let store2 = AppImportedPathMutationStore(userDefaults: defaults)
-        // Same source after reload → must not reset
-        store2.validateSource("foo.json")
-        XCTAssertEqual(store2.currentMutations.deletions.count, 1)
+            // Reload store (simulates app restart)
+            let store2 = AppImportedPathMutationStore(userDefaults: defaults)
+            // Same source after reload → must not reset
+            store2.validateSource("foo.json")
+            XCTAssertEqual(store2.currentMutations.deletions.count, 1)
 
-        defaults.removePersistentDomain(forName: suiteName)
+            defaults.removePersistentDomain(forName: suiteName)
+        }
     }
 
     #endif

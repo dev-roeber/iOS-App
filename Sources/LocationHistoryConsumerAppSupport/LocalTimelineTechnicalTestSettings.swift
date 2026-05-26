@@ -21,6 +21,7 @@ import Combine
 /// 5. Die Settings-Klasse selbst aktiviert den Store-Pfad nicht — sie ist
 ///    nur eine zusätzliche Aktivierungsquelle für `LocalTimelineFeatureFlags`
 ///    bzw. `ImportMemoryProbe`.
+@MainActor
 public final class LocalTimelineTechnicalTestSettings: ObservableObject {
 
     public enum Keys {
@@ -33,6 +34,24 @@ public final class LocalTimelineTechnicalTestSettings: ObservableObject {
     /// Geteilte Instanz für Production-Wiring (App-Shells, Probe). Nutzt
     /// `UserDefaults.standard`. Tests injizieren immer eine eigene Instanz.
     public static let shared = LocalTimelineTechnicalTestSettings()
+
+    /// Thread-safe nonisolated reader for the persisted Bool. `UserDefaults`
+    /// itself is thread-safe; the `@Published` properties on the MainActor
+    /// instance stay the source of truth for SwiftUI, but background paths
+    /// (`ImportMemoryProbe.isLoggingEnabled`, `LocalTimelineFeatureFlags`
+    /// resolver) can read the persisted value without hopping to the
+    /// MainActor.
+    nonisolated public static func persistedLocalTimelineStoreTestModeEnabled(
+        userDefaults: UserDefaults = .standard
+    ) -> Bool {
+        userDefaults.bool(forKey: Keys.localTimelineStoreTestModeEnabled)
+    }
+
+    nonisolated public static func persistedImportMemoryLoggingEnabled(
+        userDefaults: UserDefaults = .standard
+    ) -> Bool {
+        userDefaults.bool(forKey: Keys.importMemoryLoggingEnabled)
+    }
 
     private let userDefaults: UserDefaults
 

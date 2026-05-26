@@ -35,6 +35,7 @@ public struct LocalTimelineFeatureFlags: Equatable {
     /// Args/ENV bleiben primär; das Setting **aktiviert zusätzlich** und
     /// **deaktiviert nichts**. Damit lässt sich der feature-flagged Pfad
     /// auch über TestFlight einschalten, wo Args/ENV nicht setzbar sind.
+    @MainActor
     public static func resolve(arguments: [String],
                                environment: [String: String],
                                settings: LocalTimelineTechnicalTestSettings)
@@ -54,6 +55,7 @@ public struct LocalTimelineFeatureFlags: Equatable {
     /// Convenience: nutzt `ProcessInfo.processInfo` + Settings-Singleton.
     /// Default-Argument macht das Production-Wiring kompakt; Tests können
     /// eine eigene Settings-Instanz reichen.
+    @MainActor
     public static func resolveFromProcess(
         settings: LocalTimelineTechnicalTestSettings
     ) -> LocalTimelineFeatureFlags {
