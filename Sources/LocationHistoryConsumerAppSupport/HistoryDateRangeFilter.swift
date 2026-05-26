@@ -127,16 +127,23 @@ public struct HistoryDateRangeFilter: Equatable {
 
     /// A short human-readable description of the active filter.
     public var chipLabel: String {
+        localizedChipLabel { $0 }
+    }
+
+    /// Localized variant of `chipLabel`. Pass an injected closure (typically
+    /// `preferences.localized`) so the chip text follows the active app
+    /// language without coupling this Foundation-only filter to AppSupport.
+    public func localizedChipLabel(_ localize: (String) -> String) -> String {
         switch preset {
-        case .all: return "All Time"
-        case .last7Days: return "Last 7 days"
-        case .last30Days: return "Last 30 days"
-        case .last90Days: return "Last 90 days"
+        case .all: return localize("All Time")
+        case .last7Days: return localize("Last 7 days")
+        case .last30Days: return localize("Last 30 days")
+        case .last90Days: return localize("Last 90 days")
         case .thisYear:
             let year = Calendar.current.component(.year, from: Date())
             return "\(year)"
         case .custom:
-            guard let start = customStart, let end = customEnd else { return "Custom" }
+            guard let start = customStart, let end = customEnd else { return localize("Custom") }
             let f = DateFormatter()
             f.dateStyle = .short
             f.timeStyle = .none
