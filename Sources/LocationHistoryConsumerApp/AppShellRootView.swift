@@ -85,7 +85,7 @@ struct AppShellRootView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black.ignoresSafeArea())
+                    .background(LHLiquidGlassBackground())
                     .navigationTitle("")
                     #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
@@ -383,44 +383,75 @@ private struct AppShellEmptyStateView: View {
     var body: some View {
         ScrollView {
             LHPageScaffold(horizontalPadding: 20, verticalPadding: 28, spacing: 18) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("LH2GPX")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .accessibilityIdentifier("home.title")
-                    Text(localize("Private location history → GPX, KML, CSV, KMZ"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                HomeLocalPrivacyRow(localize: localize)
+                LHLiquidGlassHeroMark(
+                    title: "LH2GPX",
+                    subtitle: localize("Private location history → GPX, KML, CSV, KMZ")
+                )
+                .accessibilityIdentifier("home.title")
 
                 if let message, message.kind == .error {
                     AppMessageCard(message: message)
                 }
 
-                Button(action: openAction) {
-                    Text(localize("Import File"))
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
+                LHLiquidGlassSurface {
+                    VStack(alignment: .leading, spacing: 18) {
+                        HStack(alignment: .top, spacing: 14) {
+                            Image(systemName: "map.fill")
+                                .font(.title2.weight(.semibold))
+                                .foregroundStyle(LH2GPXTheme.LiquidGlass.trackPrimary)
+                                .frame(width: 44, height: 44)
+                                .background(.thinMaterial, in: Circle())
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(localize("Import File"))
+                                    .font(.headline.weight(.semibold))
+                                    .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                                Text(localize("Processed locally · JSON, ZIP, GPX, TCX"))
+                                    .font(.subheadline)
+                                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                            }
+                        }
+
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                            LHLiquidGlassMetricTile(
+                                title: localize("Private"),
+                                value: localize("Local"),
+                                systemImage: "lock.shield.fill",
+                                tint: LH2GPXTheme.LiquidGlass.elevation
+                            )
+                            LHLiquidGlassMetricTile(
+                                title: localize("Formats"),
+                                value: "GPX TCX",
+                                systemImage: "point.topleft.down.curvedto.point.bottomright.up",
+                                tint: LH2GPXTheme.LiquidGlass.trackPrimary
+                            )
+                        }
+
+                        Button(action: openAction) {
+                            Label(localize("Import File"), systemImage: "doc.badge.plus")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, minHeight: 48)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.roundedRectangle(radius: 18))
+                        .tint(LH2GPXTheme.LiquidGlass.trackPrimary)
+                        .accessibilityIdentifier("home.import.primary")
+                    }
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.white)
-                .background(LH2GPXTheme.primaryBlue, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .accessibilityIdentifier("home.import.primary")
 
                 GoogleMapsExportHelpInlineAction(
                     titleKey: "Google Maps Export Guide",
                     accessibilityIdentifier: "home.googleHelp"
                 )
 
-                HomeActionRow(
-                    title: localize("Load Demo"),
-                    systemImage: "testtube.2",
-                    accessibilityIdentifier: "home.demo",
-                    action: loadDemoAction
-                )
+                LHLiquidGlassSurface(cornerRadius: 22, padding: 14) {
+                    HomeActionRow(
+                        title: localize("Load Demo"),
+                        systemImage: "testtube.2",
+                        accessibilityIdentifier: "home.demo",
+                        action: loadDemoAction
+                    )
+                }
 
                 if !recentFiles.isEmpty {
                     RecentFilesView(
@@ -493,10 +524,10 @@ private struct HomeActionRow: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(LH2GPXTheme.card)
+            .background(Color.white.opacity(0.34))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
+                    .stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }

@@ -44,6 +44,7 @@ final class AppFilesViewSegmentActionTests: XCTestCase {
     /// ohne Crash konstruiert werden kann. Wir prüfen außerdem, dass die
     /// jeweiligen Default-Closures (leere Tupel) ebenfalls akzeptiert
     /// werden — d. h. Aufrufstellen ohne Closure brechen nicht.
+    #if canImport(SwiftUI) && canImport(Combine)
     @MainActor
     func testAppFilesViewTestInitAcceptsBothActionClosures() {
         let scanner = InMemoryLocalFileScanner(snapshots: [])
@@ -92,4 +93,5 @@ final class AppFilesViewSegmentActionTests: XCTestCase {
         let viewDefault = AppFilesView(cloudViewModel: cloudVM)
         _ = viewDefault
     }
+    #endif
 }

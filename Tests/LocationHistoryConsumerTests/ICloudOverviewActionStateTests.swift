@@ -1,6 +1,7 @@
 import XCTest
 @testable import LocationHistoryConsumerAppSupport
 
+#if canImport(SwiftUI) && canImport(Combine)
 /// Phase D.4 — locks down the visible action-state contract for the
 /// iCloud storage-overview buttons. Without these guards, the buttons
 /// looked dead in TestFlight: pressing them changed nothing visible
@@ -192,6 +193,7 @@ final class ICloudOverviewActionStateTests: XCTestCase {
         )
     }
 }
+#endif
 
 @MainActor
 private final class SpyCloudBackupCoordinator: LiveTrackCloudBackupCoordinator {

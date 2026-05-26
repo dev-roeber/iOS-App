@@ -121,7 +121,7 @@ struct ContentView: View {
                         }
                     }
                 }
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(.light)
                 .onChange(of: session.isLoading) { _, isLoading in
                     if isLoading {
                         loadingProgress.start()
@@ -217,132 +217,99 @@ struct ContentView: View {
     }
 
     private var homeBackground: some View {
-        ZStack {
-            // Base solid colour so any letterboxing on tall iPads still
-            // matches the artwork's deep-blue palette instead of system grey.
-            Color(red: 0.02, green: 0.04, blue: 0.10)
-            Image("HomeBackground")
-                .resizable()
-                .scaledToFill()
-                // Soft vertical legibility ramp: darker at top so the
-                // navigation title reads cleanly, slightly darker at bottom
-                // so the privacy chip and buttons keep their contrast.
-                .overlay(
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(0.55),
-                            Color.black.opacity(0.15),
-                            Color.black.opacity(0.55),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-        }
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
+        LHLiquidGlassBackground()
+            .accessibilityHidden(true)
     }
 
     private var emptyStateView: some View {
         VStack(spacing: 20) {
             Spacer()
 
-            // Variant B Pro · Topographic Outdoor — eyebrow mark (Train 9.1).
-            // Mono-caps terra accent, ornamental only. Hidden from VoiceOver
-            // because the title below already says what the screen is for.
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(LH2GPXTheme.VariantBPro.terra300)
-                    .frame(width: 4, height: 4)
-                Text(t("LH2GPX · TOPOGRAPHIC OUTDOOR"))
-                    .font(.caption2.weight(.semibold).monospaced())
-                    .tracking(2.5)
-                    .foregroundStyle(LH2GPXTheme.VariantBPro.terra300)
-                Rectangle()
-                    .fill(LinearGradient(
-                        colors: [LH2GPXTheme.VariantBPro.terra300.opacity(0.6), .clear],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ))
-                    .frame(width: 36, height: 1)
-            }
-            .accessibilityHidden(true)
-            .accessibilityIdentifier("home.heroMark")
-
-            Image(systemName: "map.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(.white)
-                .shadow(color: Color.black.opacity(0.45), radius: 8, y: 2)
-                .accessibilityHidden(true)
-                .accessibilityHidden(true)
-
-            VStack(spacing: 8) {
-                Text(t("Import your location history"))
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .accessibilityIdentifier("home.title")
-                Text(t("Open an app_export.json or .zip from the LocationHistory2GPX tool — or a Google Timeline location-history.json or .zip from Google Takeout."))
-                    .font(.body)
-                    .foregroundStyle(Color.white.opacity(0.78))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("home.subtitle")
-                Text(t("GPX 1.1 and TCX 2.0 are also accepted (including inside .zip archives)."))
-                    .font(.footnote)
-                    .foregroundStyle(Color.white.opacity(0.68))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("home.subtitle.formats")
-            }
-            .shadow(color: Color.black.opacity(0.45), radius: 8, y: 2)
+            LHLiquidGlassHeroMark(
+                title: t("Import your location history"),
+                subtitle: t("Open an app_export.json or .zip from the LocationHistory2GPX tool — or a Google Timeline location-history.json or .zip from Google Takeout.")
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier("home.title")
 
             if let message = session.message, message.kind == .error {
                 AppMessageCard(message: message)
             }
 
+            LHLiquidGlassSurface {
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack(alignment: .top, spacing: 14) {
+                        Image(systemName: "map.fill")
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(LH2GPXTheme.LiquidGlass.trackPrimary)
+                            .frame(width: 44, height: 44)
+                            .background(.thinMaterial, in: Circle())
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("LH2GPX")
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                            Text(t("GPX 1.1 and TCX 2.0 are also accepted (including inside .zip archives)."))
+                                .font(.subheadline)
+                                .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        LHLiquidGlassMetricTile(
+                            title: t("Private"),
+                            value: t("Local"),
+                            systemImage: "lock.shield.fill",
+                            tint: LH2GPXTheme.LiquidGlass.elevation
+                        )
+                        LHLiquidGlassMetricTile(
+                            title: t("Formats"),
+                            value: "JSON ZIP",
+                            systemImage: "doc.zipper",
+                            tint: LH2GPXTheme.LiquidGlass.trackPrimary
+                        )
+                    }
+
+                    VStack(spacing: 10) {
+                        Button {
+                            isImportingFile = true
+                        } label: {
+                            Label(t("Open location history file"), systemImage: "doc.badge.plus")
+                                .frame(maxWidth: .infinity, minHeight: 48)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.roundedRectangle(radius: 18))
+                        .tint(LH2GPXTheme.LiquidGlass.trackPrimary)
+                        .accessibilityIdentifier("home.openFile")
+                        .accessibilityHint(t("Opens the system file picker to choose a location history file from your device or iCloud Drive."))
+
+                        Button(action: loadBundledDemo) {
+                            Label(t("Load Demo Data"), systemImage: "testtube.2")
+                                .frame(maxWidth: .infinity, minHeight: 46)
+                        }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.roundedRectangle(radius: 18))
+                        .tint(LH2GPXTheme.LiquidGlass.trackPrimary)
+                        .accessibilityIdentifier("home.loadDemo")
+                        .accessibilityHint(t("Loads a small bundled sample so you can explore the app without importing your own data."))
+
+                        if session.message?.kind == .error {
+                            Button(action: clearCurrentContent) {
+                                Label(t("Clear"), systemImage: "xmark.circle")
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                            }
+                            .buttonStyle(.bordered)
+                            .buttonBorderShape(.roundedRectangle(radius: 18))
+                            .accessibilityIdentifier("home.clearError")
+                        }
+                    }
+                }
+            }
+
             GoogleMapsExportHelpInlineAction()
 
-            VStack(spacing: 10) {
-                Button {
-                    isImportingFile = true
-                } label: {
-                    Label(t("Open location history file"), systemImage: "doc.badge.plus")
-                        .frame(minHeight: 44)
-                }
-                .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("home.openFile")
-                .accessibilityHint(t("Opens the system file picker to choose a location history file from your device or iCloud Drive."))
-                Button(action: loadBundledDemo) {
-                    Label(t("Load Demo Data"), systemImage: "testtube.2")
-                        .frame(minHeight: 44)
-                }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("home.loadDemo")
-                .accessibilityHint(t("Loads a small bundled sample so you can explore the app without importing your own data."))
-                if session.message?.kind == .error {
-                    Button(action: clearCurrentContent) {
-                        Label(t("Clear"), systemImage: "xmark.circle")
-                            .frame(minHeight: 44)
-                    }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("home.clearError")
-                }
-            }
-
-            // Privacy assurance: all processing happens on-device.
-            HStack(spacing: 10) {
-                Image(systemName: "lock.shield")
-                    .foregroundStyle(Color.green)
-                    .font(.caption)
-                    .accessibilityHidden(true)
-                Text(t("Processed locally · JSON, ZIP, GPX, TCX"))
-                    .font(.caption)
-                    .foregroundStyle(Color.white.opacity(0.78))
-                Spacer()
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            LHLiquidGlassPrivacyPill(t("Processed locally · JSON, ZIP, GPX, TCX"))
             .accessibilityIdentifier("home.localNotice")
             .accessibilityLabel(t("Data processed locally. Supported formats: JSON, ZIP, GPX, TCX"))
 

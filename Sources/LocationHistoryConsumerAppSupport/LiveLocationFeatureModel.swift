@@ -2,6 +2,9 @@ import Foundation
 #if canImport(Combine)
 import Combine
 #endif
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 @MainActor
 public final class LiveLocationFeatureModel: ObservableObject {
@@ -621,6 +624,9 @@ public final class LiveLocationFeatureModel: ObservableObject {
             try store.saveTracks(tracks)
             recordedTracks = tracks.sorted { $0.startedAt > $1.startedAt }
             persistenceErrorMessage = nil
+            #if canImport(WidgetKit)
+            WidgetCenter.shared.reloadAllTimelines()
+            #endif
         } catch {
             persistenceErrorMessage = "Live track changes could not be saved."
         }
@@ -868,6 +874,9 @@ public final class LiveLocationFeatureModel: ObservableObject {
         let weekTracks = allTracks.filter { $0.startedAt >= startOfWeek }
         let weeklyKm = weekTracks.reduce(0.0) { $0 + $1.distanceM } / 1000
         WidgetDataStore.saveWeeklyStats(totalKm: weeklyKm, routeCount: weekTracks.count)
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
     }
 }
 

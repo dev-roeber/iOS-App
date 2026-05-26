@@ -367,5 +367,218 @@ public enum VariantBProGlassMaterial {
     }
 }
 
+// MARK: - Liquid Glass Direction · iOS 26 ready
+
+extension LH2GPXTheme {
+    /// Light, map-first visual language derived from the LH2GPX Liquid Glass
+    /// mockups. The implementation intentionally uses stable SwiftUI Material
+    /// APIs here; native iOS 26 glass symbols should stay in wrapper-only code
+    /// until the project is built with the iOS 26 SDK.
+    public enum LiquidGlass {
+        public static let canvasTop = Color(red: 247/255, green: 250/255, blue: 254/255)
+        public static let canvasBottom = Color(red: 232/255, green: 238/255, blue: 246/255)
+        public static let mapLand = Color(red: 237/255, green: 243/255, blue: 232/255)
+        public static let mapWater = Color(red: 216/255, green: 234/255, blue: 248/255)
+        public static let mapRoad = Color.white.opacity(0.78)
+
+        public static let trackPrimary = Color(red: 11/255, green: 87/255, blue: 208/255)
+        public static let tempo = Color(red: 1.0, green: 149/255, blue: 0)
+        public static let elevation = Color(red: 34/255, green: 197/255, blue: 94/255)
+        public static let weather = Color(red: 38/255, green: 150/255, blue: 217/255)
+        public static let recording = Color(red: 239/255, green: 68/255, blue: 68/255)
+
+        public static let ink = Color(red: 17/255, green: 24/255, blue: 39/255)
+        public static let secondaryInk = Color(red: 107/255, green: 114/255, blue: 128/255)
+        public static let tertiaryInk = Color(red: 156/255, green: 163/255, blue: 175/255)
+        public static let hairline = Color.black.opacity(0.07)
+        public static let specular = Color.white.opacity(0.74)
+
+        public static let cardRadius: CGFloat = 28
+        public static let controlRadius: CGFloat = 22
+    }
+}
+
+public struct LHLiquidGlassBackground: View {
+    public init() {}
+
+    public var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    LH2GPXTheme.LiquidGlass.canvasTop,
+                    LH2GPXTheme.LiquidGlass.canvasBottom
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            LiquidGlassMapLines()
+                .opacity(0.72)
+                .accessibilityHidden(true)
+
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.70),
+                    Color.white.opacity(0.18),
+                    Color.white.opacity(0.62)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .ignoresSafeArea()
+    }
+}
+
+private struct LiquidGlassMapLines: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            ZStack {
+                Circle()
+                    .fill(LH2GPXTheme.LiquidGlass.mapWater.opacity(0.72))
+                    .frame(width: size.width * 0.72, height: size.width * 0.72)
+                    .offset(x: -size.width * 0.34, y: -size.height * 0.08)
+                    .blur(radius: 42)
+
+                Circle()
+                    .fill(LH2GPXTheme.LiquidGlass.mapLand.opacity(0.86))
+                    .frame(width: size.width * 0.92, height: size.width * 0.92)
+                    .offset(x: size.width * 0.33, y: size.height * 0.12)
+                    .blur(radius: 52)
+
+                ForEach(0..<7, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 999, style: .continuous)
+                        .fill(LH2GPXTheme.LiquidGlass.mapRoad)
+                        .frame(width: size.width * 0.95, height: index.isMultiple(of: 2) ? 10 : 6)
+                        .rotationEffect(.degrees(Double(index) * 18 - 42))
+                        .offset(
+                            x: CGFloat(index - 3) * 18,
+                            y: CGFloat(index - 3) * 62
+                        )
+                        .blur(radius: 0.4)
+                }
+            }
+            .frame(width: size.width, height: size.height)
+        }
+    }
+}
+
+public struct LHLiquidGlassSurface<Content: View>: View {
+    public let cornerRadius: CGFloat
+    public let padding: CGFloat
+    @ViewBuilder public let content: () -> Content
+
+    public init(
+        cornerRadius: CGFloat = LH2GPXTheme.LiquidGlass.cardRadius,
+        padding: CGFloat = 18,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.cornerRadius = cornerRadius
+        self.padding = padding
+        self.content = content
+    }
+
+    public var body: some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        content()
+            .padding(padding)
+            .background(.ultraThinMaterial, in: shape)
+            .background(Color.white.opacity(0.34), in: shape)
+            .overlay(shape.stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
+            .overlay(alignment: .top) {
+                shape
+                    .stroke(LH2GPXTheme.LiquidGlass.specular, lineWidth: 1)
+                    .blur(radius: 0.2)
+                    .mask(
+                        LinearGradient(
+                            colors: [.white, .clear],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            }
+            .shadow(color: Color.black.opacity(0.10), radius: 24, x: 0, y: 14)
+    }
+}
+
+public struct LHLiquidGlassHeroMark: View {
+    public let title: String
+    public let subtitle: String
+
+    public init(title: String, subtitle: String) {
+        self.title = title
+        self.subtitle = subtitle
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("IOS 26 · LIQUID GLASS · LH2GPX")
+                .font(.caption2.weight(.semibold).monospaced())
+                .tracking(2.2)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.tertiaryInk)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .minimumScaleFactor(0.82)
+            Text(subtitle)
+                .font(.subheadline)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+public struct LHLiquidGlassMetricTile: View {
+    public let title: String
+    public let value: String
+    public let systemImage: String
+    public let tint: Color
+
+    public init(title: String, value: String, systemImage: String, tint: Color) {
+        self.title = title
+        self.value = value
+        self.systemImage = systemImage
+        self.tint = tint
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(tint)
+                .accessibilityHidden(true)
+            Text(value)
+                .font(.title3.weight(.semibold).monospacedDigit())
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+            Text(title)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title): \(value)")
+    }
+}
+
+public struct LHLiquidGlassPrivacyPill: View {
+    public let text: String
+
+    public init(_ text: String) {
+        self.text = text
+    }
+
+    public var body: some View {
+        Label(text, systemImage: "lock.shield.fill")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
+            .accessibilityLabel(text)
+    }
+}
 
 #endif
