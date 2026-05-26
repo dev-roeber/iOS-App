@@ -25,12 +25,7 @@ public struct AppDayDetailView: View {
     @State private var selectedSegment: DayDetailSegment = .overview
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var segmentNamespace
-    @State private var dayMapHeaderState = LHMapHeaderState(
-        visibility: .compact,
-        compactHeight: LHHeroMapLayout.compactHeight,
-        expandedHeight: LHHeroMapLayout.expandedHeight,
-        isSticky: true
-    )
+    @StateObject private var dayMapCamera = AppDayMapCameraController()
 
     public init(
         detail: DayDetailViewState?,
@@ -138,26 +133,148 @@ public struct AppDayDetailView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            // Portrait — Hero-Map pattern: sticky collapsible map header + filter panel
-            // pinned to the top via .safeAreaInset, content scrolls beneath.
-            ScrollView {
-                portraitContentView(detail: filteredDetail, resolvedMapData: resolvedMapData)
-                    .padding(.horizontal)
-                    .padding(.vertical, 16)
-            }
-            .scrollContentBackground(.hidden)
-            .background(Color(.systemBackground))
-            .safeAreaInset(edge: .top, spacing: 0) {
-                VStack(spacing: 0) {
-                    if #available(iOS 17.0, macOS 14.0, *) {
-                        dayHeroMap(resolvedMapData: resolvedMapData)
-                    }
-                    dayHeroFilterPanel(detail: filteredDetail)
+            // Portrait — Multi-Layer pattern (Phase 3a): full-bleed map +
+            // floating left layer panel + right control stack + bottom-sheet
+            // that hosts the day headline, KPIs, segment picker and segmented
+            // content. Mirrors AppLiveTrackingView's multi-layer portrait
+            // layout while preserving DayDetail's existing data model.
+            if #available(iOS 17.0, macOS 14.0, *) {
+                multiLayerPortraitLayout(detail: filteredDetail, resolvedMapData: resolvedMapData)
+            } else {
+                // Pre-iOS 17 fallback: previous scroll layout without the
+                // hero map (Map(position:) requires iOS 17).
+                ScrollView {
+                    portraitContentView(detail: filteredDetail, resolvedMapData: resolvedMapData)
+                        .padding(.horizontal)
+                        .padding(.vertical, 16)
                 }
                 .background(Color(.systemBackground))
             }
-            .ignoresSafeArea(edges: .top)
         }
+    }
+
+    // MARK: - Multi-Layer Portrait Layout (Phase 3a)
+
+    @available(iOS 17.0, macOS 14.0, *)
+    @ViewBuilder
+    private func multiLayerPortraitLayout(detail: DayDetailViewState, resolvedMapData: DayMapData) -> some View {
+        ZStack(alignment: .top) {
+            multiLayerMapBackground(resolvedMapData: resolvedMapData)
+                .ignoresSafeArea()
+
+            HStack(alignment: .top, spacing: 0) {
+                DayDetailLayerPanel(
+                    selected: $preferences.mapTrackColorMode,
+                    routeDisplay: $preferences.dayPathDisplayMode,
+                    hasPaths: !detail.paths.isEmpty,
+                    layersLabel: t("Layers"),
+                    standardLabel: t("Standard"),
+                    speedLabel: t("Speed"),
+                    elevationLabel: t("Elevation"),
+                    weatherLabel: t("Weather"),
+                    routeDisplayLabel: t("Route Display"),
+                    routeOriginalLabel: t("Original"),
+                    routeSimplifiedLabel: t("Simplified")
+                )
+                .padding(.leading, 12)
+                .padding(.top, lhDeviceTopSafeInset() + 12)
+
+                Spacer()
+
+                DayDetailControlStack(
+                    onFitToData: { dayMapCamera.fitToData?() },
+                    onZoomIn: { dayMapCamera.adjustZoom?(0.5) },
+                    onZoomOut: { dayMapCamera.adjustZoom?(2.0) },
+                    compassLabel: t("Fit to Data"),
+                    zoomInLabel: t("Zoom in"),
+                    zoomOutLabel: t("Zoom out"),
+                    fitLabel: t("Fit to Data")
+                )
+                .padding(.trailing, 12)
+                .padding(.top, lhDeviceTopSafeInset() + 12)
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            multiLayerBottomSheet(detail: detail)
+        }
+    }
+
+    @available(iOS 17.0, macOS 14.0, *)
+    @ViewBuilder
+    private func multiLayerMapBackground(resolvedMapData: DayMapData) -> some View {
+        if resolvedMapData.hasMapContent {
+            AppDayMapView(
+                mapData: resolvedMapData,
+                fillHeight: true,
+                hidesBuiltInControls: true,
+                fullBleed: true,
+                cameraController: dayMapCamera
+            )
+            .accessibilityIdentifier("dayDetail.map")
+        } else {
+            ZStack {
+                Color.secondary.opacity(0.10)
+                VStack(spacing: 8) {
+                    Image(systemName: "map")
+                        .font(.largeTitle)
+                        .foregroundStyle(.tertiary)
+                    Text(t("No map data for this day."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityIdentifier("dayDetail.map.placeholder")
+        }
+    }
+
+    @available(iOS 17.0, macOS 14.0, *)
+    @ViewBuilder
+    private func multiLayerBottomSheet(detail: DayDetailViewState) -> some View {
+        LiveBottomSheet(
+            headerCaption: t("DAY · DETAIL"),
+            headlineText: bottomSheetHeadline(detail),
+            headlineTint: LH2GPXTheme.LiquidGlass.ink
+        ) {
+            VStack(alignment: .leading, spacing: 16) {
+                // Compact weekday + time-range underline below the bold headline.
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(AppDateDisplay.weekday(detail.date))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("dayDetail.weekday")
+                    dayTimeRange(detail)
+                }
+                metricGrid(detail)
+                dayActionsSection(detail)
+                segmentControl(detail)
+                segmentedContent(detail)
+
+                if let liveLocation {
+                    detailContextHeader(
+                        t("Local Recording"),
+                        message: t("Live location and saved live tracks stay separate from the imported day data above.")
+                    )
+                    AppLiveLocationSection(
+                        liveLocation: liveLocation,
+                        onOpenSavedTracksLibrary: onOpenSavedTracks
+                    )
+                }
+            }
+            .padding(.top, 4)
+            .padding(.bottom, 24)
+        }
+        .accessibilityIdentifier("dayDetail.bottomSheet")
+    }
+
+    /// Day headline = long date + distance summary (when paths exist), shown
+    /// as the bold accent inside the bottom sheet.
+    private func bottomSheetHeadline(_ detail: DayDetailViewState) -> String {
+        let date = AppDateDisplay.longDate(detail.date)
+        let totalMeters = detail.paths.compactMap(\.distanceM).reduce(0, +)
+            + detail.activities.compactMap(\.distanceM).reduce(0, +)
+        guard totalMeters > 0 else { return date }
+        let distance = formatDistance(totalMeters, unit: preferences.distanceUnit)
+        return "\(date) · \(distance)"
     }
 
     @ViewBuilder
@@ -237,58 +354,7 @@ public struct AppDayDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Hero map header for the portrait day-detail view. Mirrors the days-list pattern
-    /// in `AppContentSplitView.daysMapHeaderCard`.
-    @available(iOS 17.0, macOS 14.0, *)
-    @ViewBuilder
-    private func dayHeroMap(resolvedMapData: DayMapData) -> some View {
-        LHCollapsibleMapHeader(
-            state: $dayMapHeaderState,
-            language: preferences.appLanguage,
-            overlayControls: true,
-            persistenceKey: LHMapHeightPersistenceKey.dayDetail,
-            safeAreaTopInset: lhDeviceTopSafeInset()
-        ) {
-            AppDayMapView(
-                mapData: resolvedMapData,
-                fillHeight: true,
-                mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset
-            )
-            .accessibilityIdentifier("dayDetail.map")
-        }
-        .accessibilityIdentifier("dayDetail.stickyHeader")
-    }
-
-    /// Filter panel pinned beneath the hero map header. Surfaces the date / weekday /
-    /// time-range block plus the route-display segmented picker (if paths exist).
-    @ViewBuilder
-    private func dayHeroFilterPanel(detail: DayDetailViewState) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(AppDateDisplay.weekday(detail.date))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Text(AppDateDisplay.longDate(detail.date))
-                .font(.title3.weight(.semibold))
-                .accessibilityIdentifier("dayDetail.title")
-            dayTimeRange(detail)
-            if !detail.paths.isEmpty {
-                Picker(t("Route Display"), selection: $preferences.dayPathDisplayMode) {
-                    ForEach(AppDayPathDisplayMode.allCases) { mode in
-                        Text(t(mode.label)).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("dayDetail.routeDisplay")
-                .accessibilityHint(Text(t("Switches between simplified and full route rendering on the day map. Affects only how routes are drawn, not what is exported.")))
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.top, 4)
-        .padding(.bottom, 6)
-    }
-
-    /// Combined control row: route-display picker (when paths exist) + map style toggle,
+/// Combined control row: route-display picker (when paths exist) + map style toggle,
     /// followed by the map itself. The map's built-in style toggle is suppressed so both
     /// controls sit in one horizontal strip above the map.
     @available(iOS 17.0, macOS 14.0, *)

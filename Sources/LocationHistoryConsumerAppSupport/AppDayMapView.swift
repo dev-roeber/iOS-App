@@ -3,6 +3,19 @@ import SwiftUI
 import MapKit
 import LocationHistoryConsumer
 
+/// Lightweight controller surfaced to parents of `AppDayMapView` so they
+/// can drive the map camera from external floating controls (compass /
+/// zoom / fit-to-data). The closures are populated on `onAppear` and
+/// cleared on `onDisappear`.
+@available(iOS 17.0, macOS 14.0, *)
+public final class AppDayMapCameraController: ObservableObject {
+    public init() {}
+    /// Recentres on the fitted region computed from the day's data.
+    public var fitToData: (() -> Void)?
+    /// Zooms the current map region by `factor` (0.5 = zoom in, 2.0 = zoom out).
+    public var adjustZoom: ((Double) -> Void)?
+}
+
 @available(iOS 17.0, macOS 14.0, *)
 public struct AppDayMapView: View {
     @EnvironmentObject private var preferences: AppPreferences
@@ -14,17 +27,33 @@ public struct AppDayMapView: View {
     /// Hero-map callers pass a value combining the device safe-area inset and the
     /// shared `LHHeroMapLayout.mapControlTopOffset` so controls clear the chevron.
     var mapControlTopPadding: CGFloat = 8
+    /// Hides the built-in topTrailing control stack (used when the parent
+    /// provides its own floating controls, e.g. the multi-layer DayDetail).
+    var hidesBuiltInControls: Bool = false
+    /// Suppresses the rounded-clip + fixed-height treatment so the parent
+    /// can place the map as a full-bleed background.
+    var fullBleed: Bool = false
+    /// Optional camera controller — when supplied, the view publishes its
+    /// fit-to-data and zoom actions so the parent's controls can drive the
+    /// camera.
+    var cameraController: AppDayMapCameraController? = nil
     @State private var renderData: DayMapRenderData
     @State private var mapPosition: MapCameraPosition
 
     public init(
         mapData: DayMapData,
         fillHeight: Bool = false,
-        mapControlTopPadding: CGFloat = 8
+        mapControlTopPadding: CGFloat = 8,
+        hidesBuiltInControls: Bool = false,
+        fullBleed: Bool = false,
+        cameraController: AppDayMapCameraController? = nil
     ) {
         self.mapData = mapData
         self.fillHeight = fillHeight
         self.mapControlTopPadding = mapControlTopPadding
+        self.hidesBuiltInControls = hidesBuiltInControls
+        self.fullBleed = fullBleed
+        self.cameraController = cameraController
         let initialRender = DayMapRenderData(mapData: mapData)
         self._renderData = State(initialValue: initialRender)
         if let region = initialRender.region {
@@ -37,26 +66,65 @@ public struct AppDayMapView: View {
     public var body: some View {
         if renderData.hasMapContent, let region = renderData.region {
             mapContent(region: region)
-                .frame(height: fillHeight ? nil : 280)
-                .frame(maxHeight: fillHeight ? .infinity : nil)
-                .clipShape(RoundedRectangle(cornerRadius: fillHeight ? 0 : 12, style: .continuous))
+                .frame(height: (fillHeight || fullBleed) ? nil : 280)
+                .frame(maxHeight: (fillHeight || fullBleed) ? .infinity : nil)
+                .clipShape(RoundedRectangle(cornerRadius: (fillHeight || fullBleed) ? 0 : 12, style: .continuous))
                 .overlay(alignment: .topTrailing) {
-                    mapControlsStack
-                        .padding(.top, mapControlTopPadding)
-                        .padding(.trailing, 8)
-                        .padding(.leading, 8)
-                        .padding(.bottom, 8)
+                    if !hidesBuiltInControls {
+                        mapControlsStack
+                            .padding(.top, mapControlTopPadding)
+                            .padding(.trailing, 8)
+                            .padding(.leading, 8)
+                            .padding(.bottom, 8)
+                    }
                 }
                 .accessibilityLabel(mapAccessibilityLabel)
                 .accessibilityIdentifier(AppAccessibilityID.Map.dayDetailRoot)
+                .onAppear { wireCameraController() }
+                .onDisappear { unwireCameraController() }
                 .onChange(of: mapData) { _, newValue in
                     let newRender = DayMapRenderData(mapData: newValue)
                     renderData = newRender
                     if let region = newRender.region {
                         withAnimation { mapPosition = .region(region) }
                     }
+                    wireCameraController()
                 }
         }
+    }
+
+    private func wireCameraController() {
+        guard let controller = cameraController else { return }
+        controller.fitToData = {
+            if let region = renderData.region {
+                withAnimation { mapPosition = .region(region) }
+            }
+        }
+        controller.adjustZoom = { factor in
+            // Mirrors AppLiveTrackingView.adjustMapZoom — clamp at sensible
+            // bounds so users cannot zoom into a 0-span degenerate camera.
+            guard let region = currentRegion() else { return }
+            let newSpan = MKCoordinateSpan(
+                latitudeDelta: max(0.0005, min(180, region.span.latitudeDelta * factor)),
+                longitudeDelta: max(0.0005, min(360, region.span.longitudeDelta * factor))
+            )
+            withAnimation {
+                mapPosition = .region(MKCoordinateRegion(center: region.center, span: newSpan))
+            }
+        }
+    }
+
+    private func unwireCameraController() {
+        cameraController?.fitToData = nil
+        cameraController?.adjustZoom = nil
+    }
+
+    private func currentRegion() -> MKCoordinateRegion? {
+        // MapCameraPosition does not expose its concrete region across iOS
+        // versions, so fall back to the fitted region when the camera is in
+        // automatic / non-region mode.
+        if case .region(let region) = mapPosition { return region }
+        return renderData.region
     }
 
     @ViewBuilder

@@ -769,6 +769,15 @@ enum AppGermanTranslations {
         "Original": "Original",
         "Simplified": "Vereinfacht",
         "Route Display": "Routen-Darstellung",
+        // Day Detail multi-layer controls (Phase 3a)
+        "Layers": "Ebenen",
+        "Elevation": "Höhe",
+        "Weather": "Wetter",
+        "Zoom in": "Heranzoomen",
+        "Zoom out": "Herauszoomen",
+        "Fit to Data": "Auf Daten zoomen",
+        "DAY · DETAIL": "TAG · DETAIL",
+        "No map data for this day.": "Keine Kartendaten für diesen Tag.",
         // Google Maps Export Help (Prompt 4)
         "Google Maps Export on iPhone": "Google Maps Export auf iPhone",
         "Google Maps Export Guide": "Google Maps Export-Anleitung",
