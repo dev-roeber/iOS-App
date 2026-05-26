@@ -193,6 +193,13 @@ public struct AppLiveTrackingView: View {
                         .frame(height: isCompactMap ? compactHeight : nil,
                                alignment: .top)
                         .clipped()
+                        // Reserve a thin band below the map so the Apple-Maps
+                        // attribution ("Karten · Rechtl. Informationen") and the
+                        // system-rendered locate button stay visible above the
+                        // bottom sheet's collapsed top edge. Only applies when
+                        // the map fills the screen — the compact (~50% hero)
+                        // variant already has plenty of room.
+                        .padding(.bottom, isCompactMap ? 0 : liveMapAttributionInset)
                     if isCompactMap {
                         // Layer panel drops below the hero map when compact
                         // so it no longer overlays the (now smaller) map.
@@ -210,7 +217,12 @@ public struct AppLiveTrackingView: View {
                         Spacer(minLength: 0)
                     }
                 }
-                .ignoresSafeArea(edges: isCompactMap ? [] : .all)
+                // In non-compact mode the map background still bleeds under
+                // the leading/trailing/top safe areas, but the bottom respects
+                // the sheet inset so the attribution band painted by
+                // MKMapView (`.padding(.bottom, liveMapAttributionInset)`
+                // applied on the map view above) stays in the visible region.
+                .ignoresSafeArea(edges: isCompactMap ? [] : [.top, .leading, .trailing])
 
                 // Floating compact record FAB above the bottom sheet
                 VStack {
@@ -237,24 +249,30 @@ public struct AppLiveTrackingView: View {
 
                     Spacer()
 
-                    LiveControlStack(
-                        isFollowing: liveLocation.isFollowingLocation,
-                        onCompass: { centerOnCurrentLocation() },
-                        onZoomIn: { adjustMapZoom(factor: 0.5) },
-                        onZoomOut: { adjustMapZoom(factor: 2.0) },
-                        onLocate: {
-                            liveLocation.isFollowingLocation.toggle()
-                            if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
-                        },
-                        onCompactToggle: {
-                            withAnimation(reduceMotion
-                                          ? nil
-                                          : .smooth(duration: 0.35)) {
-                                isCompactMap.toggle()
-                            }
-                        },
-                        isCompact: isCompactMap
-                    )
+                    // Reserve clearance below the LiveControlStack so the
+                    // floating record FAB (56pt circle + 12pt bottom padding)
+                    // never overlaps the pill column on short screens.
+                    VStack(spacing: 0) {
+                        LiveControlStack(
+                            isFollowing: liveLocation.isFollowingLocation,
+                            onCompass: { centerOnCurrentLocation() },
+                            onZoomIn: { adjustMapZoom(factor: 0.5) },
+                            onZoomOut: { adjustMapZoom(factor: 2.0) },
+                            onLocate: {
+                                liveLocation.isFollowingLocation.toggle()
+                                if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
+                            },
+                            onCompactToggle: {
+                                withAnimation(reduceMotion
+                                              ? nil
+                                              : .smooth(duration: 0.35)) {
+                                    isCompactMap.toggle()
+                                }
+                            },
+                            isCompact: isCompactMap
+                        )
+                        Spacer(minLength: liveFabKeepoutClearance)
+                    }
                     .padding(.trailing, 12)
                     .padding(.top, lhDeviceTopSafeInset() + 12)
                 }
@@ -264,6 +282,18 @@ public struct AppLiveTrackingView: View {
             multiLayerBottomSheet
         }
     }
+
+    /// Vertical room reserved below the trailing `LiveControlStack` so the
+    /// floating record FAB (56pt button + 12pt padding) and the Apple-Maps
+    /// attribution / system locate button stay free of the pill column.
+    /// Phase 19.29 (no-overlap fix).
+    private var liveFabKeepoutClearance: CGFloat { 56 + 12 + 8 }
+
+    /// Vertical room reserved between the map's bottom edge and the sheet's
+    /// top edge so the Apple-Maps attribution "Karten · Rechtl. Informationen"
+    /// and the system locate-button remain tappable above the collapsed sheet.
+    /// Phase 19.29 (no-overlap fix).
+    private var liveMapAttributionInset: CGFloat { 36 }
 
     // MARK: - Multi-Layer Landscape Layout (iPhone, verticalSizeClass == .compact)
     //
@@ -297,19 +327,25 @@ public struct AppLiveTrackingView: View {
             // into the bottom-sheet to free horizontal room.
             HStack(alignment: .top, spacing: 0) {
                 Spacer()
-                LiveControlStack(
-                    isFollowing: liveLocation.isFollowingLocation,
-                    onCompass: { centerOnCurrentLocation() },
-                    onZoomIn: { adjustMapZoom(factor: 0.5) },
-                    onZoomOut: { adjustMapZoom(factor: 2.0) },
-                    onLocate: {
-                        liveLocation.isFollowingLocation.toggle()
-                        if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
-                    },
-                    onCompactToggle: { isCompactMap.toggle() },
-                    isCompact: isCompactMap,
-                    compactSize: true
-                )
+                VStack(spacing: 0) {
+                    LiveControlStack(
+                        isFollowing: liveLocation.isFollowingLocation,
+                        onCompass: { centerOnCurrentLocation() },
+                        onZoomIn: { adjustMapZoom(factor: 0.5) },
+                        onZoomOut: { adjustMapZoom(factor: 2.0) },
+                        onLocate: {
+                            liveLocation.isFollowingLocation.toggle()
+                            if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
+                        },
+                        onCompactToggle: { isCompactMap.toggle() },
+                        isCompact: isCompactMap,
+                        compactSize: true
+                    )
+                    // Landscape FAB is smaller-feeling (still 56pt) and centred,
+                    // but reserve a proportionally smaller clearance so pills
+                    // never extend into the bottom-sheet / attribution band.
+                    Spacer(minLength: 48)
+                }
                 .padding(.trailing, 8)
                 .padding(.top, lhDeviceTopSafeInset() + 8)
             }
