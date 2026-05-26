@@ -663,29 +663,54 @@ public struct AppDayListView: View {
 
     @ViewBuilder
     private var dayContextRow: some View {
+        let trimmedSearch = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         HStack(spacing: 8) {
-            contextPill(text: rangeSummaryText ?? t("All"), icon: "calendar", identifier: "days.range")
             contextPill(
-                text: searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    ? t("Days Search")
-                    : searchText,
+                text: rangeSummaryText ?? t("All"),
+                icon: "calendar",
+                identifier: "days.range",
+                isActive: isRangeFilterActive
+            )
+            contextPill(
+                text: trimmedSearch.isEmpty ? t("Days Search") : searchText,
                 icon: "magnifyingglass",
-                identifier: "days.search"
+                identifier: "days.search",
+                isActive: !trimmedSearch.isEmpty
             )
         }
+        .padding(.horizontal, 8)
     }
 
-    private func contextPill(text: String, icon: String, identifier: String) -> some View {
-        HStack(spacing: 6) {
+    private func contextPill(text: String, icon: String, identifier: String, isActive: Bool) -> some View {
+        let tint = isActive ? LH2GPXTheme.primaryBlue : Color.white
+        return HStack(spacing: 6) {
             Image(systemName: icon)
             Text(text)
                 .lineLimit(1)
         }
-        .font(.caption.weight(.medium))
-        .foregroundStyle(LH2GPXTheme.textSecondary)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(LH2GPXTheme.elevatedCard)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(isActive ? .white : Color.white.opacity(0.72))
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
+        .background(
+            ZStack {
+                // Glas-Surface analog Day-Cards: dezente weiße Lasur auf dem
+                // dunklen Canvas. Aktiv-Filter bekommen zusätzlich eine
+                // Blau-Tönung als deutlichen Hinweis.
+                Color.white.opacity(0.06)
+                if isActive {
+                    LH2GPXTheme.primaryBlue.opacity(0.22)
+                }
+                LinearGradient(
+                    colors: [Color.white.opacity(0.04), Color.black.opacity(0.10)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
+        .overlay(
+            Capsule().stroke(tint.opacity(isActive ? 0.42 : 0.14), lineWidth: 0.8)
+        )
         .clipShape(Capsule())
         .accessibilityIdentifier(identifier)
     }
