@@ -541,11 +541,6 @@ public struct LHLiquidGlassHeroMark: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("IOS 26 · LIQUID GLASS · LH2GPX")
-                .font(.caption2.weight(.semibold).monospaced())
-                .tracking(2.2)
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.tertiaryInk)
-                .accessibilityHidden(true)
             Text(title)
                 .font(.system(.largeTitle, design: .rounded).weight(.bold))
                 .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
