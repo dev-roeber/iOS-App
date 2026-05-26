@@ -394,7 +394,6 @@ extension LH2GPXTheme {
         public static let canvasBottom = Color(red: 232/255, green: 238/255, blue: 246/255)
         public static let mapLand = Color(red: 237/255, green: 243/255, blue: 232/255)
         public static let mapWater = Color(red: 216/255, green: 234/255, blue: 248/255)
-        public static let mapRoad = Color.white.opacity(0.78)
 
         public static let trackPrimary = Color(red: 11/255, green: 87/255, blue: 208/255)
         public static let tempo = Color(red: 1.0, green: 149/255, blue: 0)
