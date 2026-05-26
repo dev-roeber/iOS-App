@@ -94,6 +94,26 @@ public final class StaticWeatherProvider: WeatherDataProvider, @unchecked Sendab
     }
 }
 
+// MARK: - Default provider resolution
+//
+// `defaultProvider` returns the WeatherKit-backed service on iOS where the
+// framework can be linked, and falls back to the deterministic stub on Linux/
+// macOS/Test builds. Call sites (live tracking view, cache manager) should
+// prefer this helper so the Linux test suite stays runnable.
+
+public enum AppWeatherProviderResolver {
+    public static var defaultProvider: WeatherDataProvider {
+        #if canImport(WeatherKit) && os(iOS)
+        if #available(iOS 16.0, *) {
+            return WeatherKitService.shared
+        }
+        return StaticWeatherProvider()
+        #else
+        return StaticWeatherProvider()
+        #endif
+    }
+}
+
 // MARK: - WeatherKit-backed implementation (iOS only)
 
 #if canImport(WeatherKit) && os(iOS)
@@ -105,6 +125,8 @@ import WeatherKit
 /// the result onto our compact `WeatherSnapshot` DTO.
 @available(iOS 16.0, *)
 public final class WeatherKitService: WeatherDataProvider, @unchecked Sendable {
+    public static let shared = WeatherKitService()
+
     public init() {}
 
     public func currentWeather(at coordinate: AppWeatherCoordinate) async throws -> WeatherSnapshot {
