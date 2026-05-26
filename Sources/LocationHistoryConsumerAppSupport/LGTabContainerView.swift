@@ -305,24 +305,17 @@ struct GlobalRecordingToolbarIndicator: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(Color.red)
-                    .frame(width: 8, height: 8)
-                    .scaleEffect(pulse && !reduceMotion ? 1.35 : 1.0)
-                    .opacity(pulse && !reduceMotion ? 0.55 : 1.0)
-                Text(preferences.localized("Rec"))
-                    .font(.caption.weight(.heavy))
-                    .foregroundStyle(.primary)
-                Text(distanceText)
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().stroke(Color.red.opacity(0.45), lineWidth: 0.8))
+            Circle()
+                .fill(Color.red)
+                .frame(width: 10, height: 10)
+                .scaleEffect(pulse && !reduceMotion ? 1.35 : 1.0)
+                .opacity(pulse && !reduceMotion ? 0.55 : 1.0)
+                .frame(minWidth: 44, minHeight: 30)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(Capsule().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .task(id: liveModel.isRecording) {
