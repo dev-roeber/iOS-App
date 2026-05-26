@@ -410,7 +410,7 @@ public struct AppICloudOptionsView: View {
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.yellow)
                                 .accessibilityHidden(true)
-                            Text("Favoriten")
+                            Text(t("Favorites"))
                                 .font(.subheadline.weight(.semibold))
                         }
                         Text("Synchronisiert deine lokalen Favoriten (Tage) bidirektional mit der privaten iCloud-Datenbank. Keine Standortdaten.")
@@ -549,7 +549,7 @@ public struct AppICloudOptionsView: View {
                                 Text("Lade hoch…")
                             }
                         } else {
-                            Text("Neueste hochladen")
+                            Text(t("Upload Latest"))
                         }
                     }
                     .buttonStyle(.borderedProminent)
@@ -609,7 +609,7 @@ public struct AppICloudOptionsView: View {
                                 if liveTrackCloudActions.actionState == .restoring {
                                     ProgressView().controlSize(.small)
                                 } else {
-                                    Text("Wiederherstellen")
+                                    Text(t("Restore"))
                                 }
                             }
                             .buttonStyle(.bordered)
@@ -786,7 +786,7 @@ public struct AppICloudOptionsView: View {
                                 Text("Aktualisiere…")
                             }
                         } else {
-                            Text("Übersicht aktualisieren")
+                            Text(t("Refresh Overview"))
                         }
                     }
                     .buttonStyle(.bordered)
@@ -806,7 +806,7 @@ public struct AppICloudOptionsView: View {
                                     Text("Wiederhole…")
                                 }
                             } else {
-                                Text("Erneut versuchen")
+                                Text(t("Try Again"))
                             }
                         }
                         .buttonStyle(.bordered)
@@ -936,7 +936,7 @@ public struct AppICloudOptionsView: View {
             LHSectionHeader("CloudKit-Container")
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("Kennung")
+                    Text(t("Identifier"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(LH2GPXTheme.textSecondary)
                     Spacer()

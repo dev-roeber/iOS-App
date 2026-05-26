@@ -307,6 +307,7 @@ public struct LGTabContainerView: View {
 
 @available(iOS 26.0, *)
 private struct LGLiveRecordingAccessory: View {
+    @EnvironmentObject private var preferences: AppPreferences
     @ObservedObject var liveModel: LiveLocationFeatureModel
     let onOpenLiveTab: () -> Void
 
@@ -316,7 +317,7 @@ private struct LGLiveRecordingAccessory: View {
                 .fill(Color.red)
                 .frame(width: 8, height: 8)
                 .symbolEffect(.pulse, options: .repeating, value: liveModel.isRecording)
-            Text("Aufnahme läuft")
+            Text(preferences.localized("Recording in progress"))
                 .font(.subheadline.weight(.semibold))
             Spacer()
             Text(String(format: "%.2f km", liveModel.currentDistanceMeters / 1000))
