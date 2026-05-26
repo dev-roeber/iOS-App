@@ -79,4 +79,20 @@ public struct WidgetDataStore {
         guard km > 0 || routes > 0 else { return nil }
         return (km, routes, date)
     }
+
+    public static func saveMonthlyStats(totalKm: Double, routeCount: Int) {
+        guard let defaults = UserDefaults(suiteName: suiteName) else { return }
+        defaults.set(totalKm, forKey: WidgetSharedKeys.monthlyKm)
+        defaults.set(routeCount, forKey: WidgetSharedKeys.monthlyRouteCount)
+        defaults.set(Date(), forKey: WidgetSharedKeys.monthlyStatsDate)
+    }
+
+    public static func loadMonthlyStats() -> (km: Double, routes: Int, date: Date?)? {
+        guard let defaults = UserDefaults(suiteName: suiteName) else { return nil }
+        let km = defaults.double(forKey: WidgetSharedKeys.monthlyKm)
+        let routes = defaults.integer(forKey: WidgetSharedKeys.monthlyRouteCount)
+        let date = defaults.object(forKey: WidgetSharedKeys.monthlyStatsDate) as? Date
+        guard km > 0 || routes > 0 else { return nil }
+        return (km, routes, date)
+    }
 }

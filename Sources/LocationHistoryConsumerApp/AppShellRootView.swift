@@ -8,6 +8,9 @@ import UniformTypeIdentifiers
 #if canImport(UIKit)
 import UIKit
 #endif
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 struct AppShellRootView: View {
     @State private var session = AppSessionState()
@@ -385,6 +388,15 @@ struct AppShellRootView: View {
         case let .failure(clearBookmark):
             if clearBookmark { ImportBookmarkStore.clear() }
         }
+        // Mirror wrapper/LH2GPXWrapper/ContentView.swift:178 — after an
+        // import completes, give the home-screen widget a chance to pick up
+        // the freshly imported tracks. Gated like the wrapper on
+        // `preferences.widgetAutoUpdate`, no-op when WidgetKit is unavailable.
+        #if canImport(WidgetKit)
+        if preferences.widgetAutoUpdate {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+        #endif
     }
 
     private func isUserCancelled(_ error: Error) -> Bool {

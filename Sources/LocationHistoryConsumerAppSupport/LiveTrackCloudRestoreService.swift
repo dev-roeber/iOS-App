@@ -2,6 +2,9 @@ import Foundation
 #if canImport(Combine)
 import Combine
 #endif
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 /// Prompt 2 — koordiniert den Restore-Pfad für LiveTracks aus CloudKit.
 ///
@@ -115,6 +118,13 @@ public final class LiveTrackCloudRestoreService: ObservableObject {
             restoredCloudHashes.insert(envelope.summary.localTrackIDHash)
             userDefaults.set(Array(restoredCloudHashes).sorted(), forKey: restoredHashesKey)
             actionMessage = "LiveTrack mit \(track.points.count) Punkten wiederhergestellt."
+            // Mirror LiveLocationFeatureModel.persistRecordedTracks /
+            // updateWidgetData — after a successful CloudKit restore the
+            // home-screen widget must see the new track too, otherwise its
+            // weekly/monthly stats and last-recording card drift from truth.
+            #if canImport(WidgetKit)
+            WidgetCenter.shared.reloadAllTimelines()
+            #endif
             return LiveTrackRestoreOutcome(
                 envelopeID: envelope.id,
                 restoredTrackID: track.id,

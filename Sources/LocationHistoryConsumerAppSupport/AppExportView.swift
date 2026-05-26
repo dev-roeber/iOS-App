@@ -335,27 +335,21 @@ public struct AppExportView: View {
                 HStack(spacing: 8) {
                     if selection.isEmpty {
                         let hasSelectableItems = !summaries.isEmpty || !liveLocation.recordedTracks.isEmpty
-                        LHFilterChip(
+                        LHStatusBadge(
                             title: hasSelectableItems ? t("Tap to choose") : t("Nothing selected"),
-                            systemImage: hasSelectableItems ? "hand.tap" : "exclamationmark.triangle",
-                            isActive: false,
-                            action: {}
+                            systemImage: hasSelectableItems ? "hand.tap" : "exclamationmark.triangle"
                         )
                     } else {
                         if review.selectedDayCount > 0 {
-                            LHFilterChip(
+                            LHStatusBadge(
                                 title: "\(review.selectedDayCount) \(t("days"))",
-                                systemImage: "calendar",
-                                isActive: false,
-                                action: {}
+                                systemImage: "calendar"
                             )
                         }
                         if review.selectedRecordedTrackCount > 0 {
-                            LHFilterChip(
+                            LHStatusBadge(
                                 title: "\(review.selectedRecordedTrackCount) \(t("tracks"))",
-                                systemImage: "point.topleft.down.curvedto.point.bottomright.up",
-                                isActive: false,
-                                action: {}
+                                systemImage: "point.topleft.down.curvedto.point.bottomright.up"
                             )
                         }
                     }
