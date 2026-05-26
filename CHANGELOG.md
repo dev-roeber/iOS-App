@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## 2026-05-26 — Doku-Verify (Branch `chore/docs-verify`, HEAD baseline `a5d506e`)
+
+> Doku-Sync ohne Code-Änderung. Verifiziert Versions-Stempel + Deployment-Target +
+> Privacy-Manifest gegen Repo-Wahrheit, fügt App-Store-Review-Notes hinzu,
+> dokumentiert nicht umgesetzte Spec-Punkte ehrlich.
+
+### Verifiziert (Repo-Truth)
+- `MARKETING_VERSION = 1.0.2` + `CURRENT_PROJECT_VERSION = 171` in
+  `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` (8 Configs) +
+  `wrapper/Config/Info.plist` + `wrapper/LH2GPXWidget/Info.plist` konsistent.
+- `IPHONEOS_DEPLOYMENT_TARGET = 17.0` in 6 pbxproj-Stellen +
+  `Package.swift .iOS(.v17)` — bewusste Entscheidung gemäß `NEXT_STEPS.md`.
+- Privacy-Manifeste vorhanden in App- und Widget-Target.
+- `swift build` ✅ (Linux), `swift test` ✅ **1700 Tests, 3 skipped, 0 failures, 54,9 s**.
+
+### Added
+- `AppStore/ReviewNotes.md` — konsolidierte App-Store-Review-Notes für 1.0.2 (171)
+  (Test-Account, Demo-Daten, Background-Location, CloudKit-Scope, optionaler
+  Server-Upload, Datenschutz, Plattform-Support, bekannte Einschränkungen).
+
+### Changed
+- `README.md` — Plattform-Support-Block präzisiert (iOS 26 bezieht sich auf
+  Liquid-Glass-Features, nicht aufs Mindestziel), neuer Repo-Truth-Patch-Block
+  für Doku-Verify mit verifiziertem Versions-/Target-/Privacy-Stempel.
+
+### Nicht umgesetzt (mit Begründung)
+- Auto-`CFBundleVersion`-Build-Phase-Script (Spec §3): nicht umgesetzt —
+  Eingriff ins Xcode-Project ohne Xcode-Host nicht sinnvoll verifizierbar, würde
+  manuellen Build-Stempel ungewollt überschreiben.
+- README-Header vollständig auf reines `{MARKETING_VERSION}/{CURRENT_PROJECT_VERSION}`
+  reduziert (Spec §1): bewusst zurückgehalten — bestehende Repo-Truth-Patches im
+  README sind kanonische Historie; ein neuer Patch-Block wurde additiv ergänzt.
+- Build-/Test-Lauf via `xcodebuild` auf iPhone 16 Pro / iPhone SE 3rd gen
+  (Spec §7): Linux-Host ohne Xcode; offen für lokale macOS-Verifikation.
+- End-to-End-Screenshot-Tour (DE/EN × Light/Dark × Accessibility): Linux-Host
+  kann das nicht erzeugen.
+- Offene Punkte aus Prompt 03 (LegacyContentView-Toggle, LGKPITile,
+  ViewModel-Adapter pro Screen) sind hier nicht im Scope; bleiben im Backlog.
+
+---
+
 ## 1.1.0 — 2026-05-26 — Liquid-Glass-Vollumstellung
 
 > Liquid Glass ist auf iPhone iOS 26 jetzt Standard (kein Toggle mehr).
