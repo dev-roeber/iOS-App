@@ -15,6 +15,7 @@ public struct AppLiveTrackingView: View {
     @ObservedObject private var liveLocation: LiveLocationFeatureModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var hasSeededMap = false
     @State private var recordingDuration: TimeInterval = 0
@@ -175,47 +176,88 @@ public struct AppLiveTrackingView: View {
     // LGRecordButton / LHLiveBottomBar wiring contract continues to hold.
 
     private var multiLayerPortraitLayout: some View {
-        ZStack(alignment: .top) {
-            multiLayerMapBackground
-                .ignoresSafeArea()
+        GeometryReader { proxy in
+            // Compact = hero-sized map taking roughly half the available
+            // height. Falls back to full-bleed (`nil` height) when expanded.
+            let compactHeight = max(220, proxy.size.height * 0.5)
+            ZStack(alignment: .top) {
+                // Solid background fills the area below the map when the
+                // map is collapsed; ignored when full-bleed because the map
+                // covers it anyway.
+                liveBackground
+                    .ignoresSafeArea()
 
-            // Floating compact record FAB above the bottom sheet
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    compactRecordFAB
-                        .padding(.trailing, 16)
-                        .padding(.bottom, 12)
+                VStack(spacing: 0) {
+                    multiLayerMapBackground
+                        .frame(maxWidth: .infinity)
+                        .frame(height: isCompactMap ? compactHeight : nil,
+                               alignment: .top)
+                        .clipped()
+                    if isCompactMap {
+                        // Layer panel drops below the hero map when compact
+                        // so it no longer overlays the (now smaller) map.
+                        HStack(alignment: .top, spacing: 0) {
+                            LiveLayerPanel(
+                                selected: $preferences.mapTrackColorMode,
+                                showWeather: $showWeatherLayer,
+                                showElevation: $showElevationLayer,
+                                layersLabel: layersPanelLabel
+                            )
+                            .padding(.leading, 12)
+                            .padding(.top, 10)
+                            Spacer(minLength: 0)
+                        }
+                        Spacer(minLength: 0)
+                    }
                 }
-            }
+                .ignoresSafeArea(edges: isCompactMap ? [] : .all)
 
-            HStack(alignment: .top, spacing: 0) {
-                LiveLayerPanel(
-                    selected: $preferences.mapTrackColorMode,
-                    showWeather: $showWeatherLayer,
-                    showElevation: $showElevationLayer,
-                    layersLabel: layersPanelLabel
-                )
-                .padding(.leading, 12)
-                .padding(.top, lhDeviceTopSafeInset() + 12)
+                // Floating compact record FAB above the bottom sheet
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        compactRecordFAB
+                            .padding(.trailing, 16)
+                            .padding(.bottom, 12)
+                    }
+                }
 
-                Spacer()
+                HStack(alignment: .top, spacing: 0) {
+                    if !isCompactMap {
+                        LiveLayerPanel(
+                            selected: $preferences.mapTrackColorMode,
+                            showWeather: $showWeatherLayer,
+                            showElevation: $showElevationLayer,
+                            layersLabel: layersPanelLabel
+                        )
+                        .padding(.leading, 12)
+                        .padding(.top, lhDeviceTopSafeInset() + 12)
+                    }
 
-                LiveControlStack(
-                    isFollowing: liveLocation.isFollowingLocation,
-                    onCompass: { centerOnCurrentLocation() },
-                    onZoomIn: { adjustMapZoom(factor: 0.5) },
-                    onZoomOut: { adjustMapZoom(factor: 2.0) },
-                    onLocate: {
-                        liveLocation.isFollowingLocation.toggle()
-                        if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
-                    },
-                    onCompactToggle: { isCompactMap.toggle() },
-                    isCompact: isCompactMap
-                )
-                .padding(.trailing, 12)
-                .padding(.top, lhDeviceTopSafeInset() + 12)
+                    Spacer()
+
+                    LiveControlStack(
+                        isFollowing: liveLocation.isFollowingLocation,
+                        onCompass: { centerOnCurrentLocation() },
+                        onZoomIn: { adjustMapZoom(factor: 0.5) },
+                        onZoomOut: { adjustMapZoom(factor: 2.0) },
+                        onLocate: {
+                            liveLocation.isFollowingLocation.toggle()
+                            if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
+                        },
+                        onCompactToggle: {
+                            withAnimation(reduceMotion
+                                          ? nil
+                                          : .smooth(duration: 0.35)) {
+                                isCompactMap.toggle()
+                            }
+                        },
+                        isCompact: isCompactMap
+                    )
+                    .padding(.trailing, 12)
+                    .padding(.top, lhDeviceTopSafeInset() + 12)
+                }
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -393,7 +435,8 @@ public struct AppLiveTrackingView: View {
         LiveBottomSheet(
             headerCaption: t("STATUS · LIVE MAP"),
             headlineText: heroStatusTitle,
-            headlineTint: heroStatusTint
+            headlineTint: heroStatusTint,
+            heights: isCompactMap ? .compactPortrait : .portrait
         ) {
             VStack(spacing: 0) {
                 LiveBottomSheetRow(
