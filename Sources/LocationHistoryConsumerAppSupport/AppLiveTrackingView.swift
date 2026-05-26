@@ -36,6 +36,14 @@ public struct AppLiveTrackingView: View {
     private static let liveRenderPointCap: Int = 10_000
     @State private var isFullscreenMapPresented = false
     @State private var isDiagnosticsExpanded = false
+    // Phase 19.28 multi-layer redesign state. `isCompactMap` collapses the
+    // full-bleed map to 1/3 screen height (eyes-fold control). `showWeather`
+    // and `showElevation` mirror future overlay toggles surfaced by the new
+    // LiveLayerPanel; they are display-only flags today and do not change
+    // recording or persistence behaviour.
+    @State private var isCompactMap: Bool = false
+    @State private var showWeatherLayer: Bool = false
+    @State private var showElevationLayer: Bool = false
     @State private var liveMapHeaderState = LHMapHeaderState(
         visibility: .compact,
         compactHeight: LHHeroMapLayout.compactHeight,
@@ -71,7 +79,7 @@ public struct AppLiveTrackingView: View {
             if isLandscape {
                 landscapeLayout
             } else {
-                portraitLayout
+                multiLayerPortraitLayout
             }
         }
         .navigationTitle(t("Live Tracking"))
@@ -148,6 +156,247 @@ public struct AppLiveTrackingView: View {
                 onToggle: { liveLocation.setRecordingEnabled(!liveLocation.isRecording) }
             )
         }
+    }
+
+    // MARK: - Multi-Layer Portrait Layout (Phase 19.28)
+    //
+    // Full-bleed map with floating glass controls and a bottom sheet, modelled
+    // on the claude.ai multi-layer demo. The recording button stays in
+    // `safeAreaInset(.bottom)` via `liveRecordingBottomInset` so the existing
+    // LGRecordButton / LHLiveBottomBar wiring contract continues to hold.
+
+    private var multiLayerPortraitLayout: some View {
+        ZStack(alignment: .top) {
+            multiLayerMapBackground
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                Spacer().frame(height: lhDeviceTopSafeInset() + 6)
+                LiveStatusPill(
+                    icon: heroStatusIcon,
+                    title: statusPillTitle,
+                    badgeText: statusPillBadge,
+                    badgeColor: heroStatusTint,
+                    isLive: liveLocation.isRecording
+                )
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity)
+
+            HStack(alignment: .top, spacing: 0) {
+                LiveLayerPanel(
+                    selected: $preferences.mapTrackColorMode,
+                    showWeather: $showWeatherLayer,
+                    showElevation: $showElevationLayer,
+                    layersLabel: layersPanelLabel
+                )
+                .padding(.leading, 12)
+                .padding(.top, lhDeviceTopSafeInset() + 56)
+
+                Spacer()
+
+                LiveControlStack(
+                    isFollowing: liveLocation.isFollowingLocation,
+                    onCompass: { centerOnCurrentLocation() },
+                    onZoomIn: { adjustMapZoom(factor: 0.5) },
+                    onZoomOut: { adjustMapZoom(factor: 2.0) },
+                    onLocate: {
+                        liveLocation.isFollowingLocation.toggle()
+                        if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
+                    },
+                    onCompactToggle: { isCompactMap.toggle() },
+                    isCompact: isCompactMap
+                )
+                .padding(.trailing, 12)
+                .padding(.top, lhDeviceTopSafeInset() + 56)
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            multiLayerBottomSheet
+        }
+    }
+
+    @ViewBuilder
+    private var multiLayerMapBackground: some View {
+        if !liveStatus.shouldShowMapOverlayHint, liveLocation.currentLocation != nil {
+            liveMapBase
+        } else {
+            ZStack {
+                Color.secondary.opacity(0.10)
+                liveMapPlaceholderContent
+            }
+        }
+    }
+
+    private var multiLayerBottomSheet: some View {
+        LiveBottomSheet(
+            headerCaption: t("STATUS · LIVE MAP"),
+            headlineText: heroStatusTitle,
+            headlineTint: heroStatusTint
+        ) {
+            VStack(spacing: 0) {
+                LiveBottomSheetRow(
+                    indicatorColor: accuracyColor,
+                    icon: "scope",
+                    label: t("GPS Accuracy"),
+                    value: accuracyText,
+                    trailingTint: accuracyColor
+                )
+                Divider().opacity(0.35)
+                LiveBottomSheetRow(
+                    indicatorColor: liveLocation.isFollowingLocation ? .blue : .secondary,
+                    icon: liveLocation.isFollowingLocation ? "location.fill" : "location",
+                    label: t("Follow"),
+                    value: liveLocation.isFollowingLocation ? t("Follow On") : t("Follow Off"),
+                    trailingTint: liveLocation.isFollowingLocation ? .blue : .secondary,
+                    action: liveLocation.currentLocation == nil ? nil : {
+                        liveLocation.isFollowingLocation.toggle()
+                        if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
+                    }
+                )
+                Divider().opacity(0.35)
+                LiveBottomSheetRow(
+                    indicatorColor: preferences.allowsBackgroundLiveTracking ? LH2GPXTheme.liveMint : .secondary,
+                    icon: preferences.allowsBackgroundLiveTracking ? "moon.fill" : "moon",
+                    label: t("Background Recording"),
+                    value: preferences.allowsBackgroundLiveTracking ? t("On") : t("Off"),
+                    trailingTint: preferences.allowsBackgroundLiveTracking ? LH2GPXTheme.liveMint : .secondary,
+                    action: { preferences.allowsBackgroundLiveTracking.toggle() }
+                )
+                Divider().opacity(0.35)
+                LiveBottomSheetRow(
+                    indicatorColor: LH2GPXTheme.liveMint,
+                    icon: "point.topleft.down.curvedto.point.bottomright.up",
+                    label: t("Track Library"),
+                    value: "\(liveLocation.recordedTracks.count)",
+                    trailingTint: LH2GPXTheme.liveMint,
+                    action: onOpenSavedTracksLibrary
+                )
+                Divider().opacity(0.35)
+                LiveBottomSheetRow(
+                    indicatorColor: permissionTintColor,
+                    icon: statusSymbolName,
+                    label: t("Permission"),
+                    value: permissionShortValue,
+                    trailingTint: permissionTintColor
+                )
+
+                if liveLocation.hasInterruptedSession {
+                    Divider().opacity(0.35)
+                    interruptedSessionBanner
+                        .padding(.vertical, 6)
+                }
+
+                Divider().opacity(0.35)
+                diagnosticsDisclosure
+            }
+        }
+        .accessibilityIdentifier("live.bottomSheet")
+    }
+
+    /// Lightweight diagnostics disclosure for the bottom-sheet. Reuses the
+    /// existing diagnostics grid so its accessibility identifiers stay valid.
+    private var diagnosticsDisclosure: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isDiagnosticsExpanded.toggle()
+                }
+            }) {
+                HStack {
+                    Text(t("Diagnostics"))
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Image(systemName: isDiagnosticsExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("live.diagnostics.section")
+
+            if isDiagnosticsExpanded {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                    LHMetricCard(icon: "road.lanes", label: t("Distance"), value: liveDistanceText, color: .purple)
+                        .accessibilityIdentifier("live.metric.distance")
+                    LHMetricCard(icon: "clock.fill", label: t("Duration"), value: durationText, color: .blue)
+                        .accessibilityIdentifier("live.metric.duration")
+                    LHMetricCard(icon: "point.topleft.down.curvedto.point.bottomright.up", label: t("Points"), value: "\(liveLocation.liveTrackPoints.count)", color: .green)
+                        .accessibilityIdentifier("live.metric.points")
+                    LHMetricCard(icon: "chart.line.uptrend.xyaxis", label: t("Average Speed"), value: averageSpeedText, color: .indigo)
+                        .accessibilityIdentifier("live.metric.averageSpeed")
+                    LHMetricCard(icon: "speedometer", label: t("Current Speed"), value: currentSpeedText, color: .orange)
+                    LHMetricCard(icon: "clock.badge.checkmark", label: t("Update Age"), value: updateAgeText, color: .teal)
+                }
+                liveRenderCapHintIfNeeded
+            }
+        }
+    }
+
+    // MARK: - Multi-Layer Helpers
+
+    private var statusPillTitle: String {
+        if liveLocation.isRecording {
+            return "\(t("Live Tracking")) · \(t("Recording")) \(liveDistanceText)"
+        }
+        return "\(t("Live Tracking")) · \(heroStatusTitle)"
+    }
+
+    private var statusPillBadge: String {
+        switch liveStatus {
+        case .recordingAcquiring, .recordingWeak, .recordingGood:
+            return t("REC")
+        case .acquiringFix:
+            return t("GPS")
+        case .permissionRequired, .permissionDenied, .permissionRestricted:
+            return t("OFF")
+        default:
+            return t("IDLE")
+        }
+    }
+
+    private var layersPanelLabel: String {
+        // Four overlay slots: Standard base map (always on), Tempo color
+        // mode, Höhen-Overlay, Wetter-Overlay. Standard counts as active
+        // whenever Tempo is off; Tempo counts when it is the active base
+        // colour mode.
+        let standardActive = preferences.mapTrackColorMode != .speed
+        let speedActive = preferences.mapTrackColorMode == .speed
+        let count =
+            (standardActive ? 1 : 0)
+            + (speedActive ? 1 : 0)
+            + (showElevationLayer ? 1 : 0)
+            + (showWeatherLayer ? 1 : 0)
+        return "\(t("LAYERS")) \(count)/4"
+    }
+
+    private var permissionShortValue: String {
+        switch liveLocation.authorization {
+        case .authorizedAlways: return t("Always")
+        case .authorizedWhenInUse: return t("In Use")
+        case .denied: return t("Denied")
+        case .restricted: return t("Restricted")
+        case .notDetermined: return t("Tap to grant")
+        }
+    }
+
+    /// Approximates a zoom step on the live MapCameraPosition. Falls back to
+    /// no-op when no anchor region is available — never traps.
+    private func adjustMapZoom(factor: Double) {
+        let anchor: CLLocationCoordinate2D? = liveLocation.currentLocation.map {
+            CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+        }
+        guard let center = anchor else { return }
+        // Use a span scaled by factor — we cannot read current span back from
+        // MapCameraPosition reliably across iOS versions; using a sensible
+        // base span (0.01°) and multiplying mirrors a single zoom step.
+        let base = 0.01 * factor
+        mapPosition = .region(MKCoordinateRegion(
+            center: center,
+            span: MKCoordinateSpan(latitudeDelta: base, longitudeDelta: base)
+        ))
     }
 
     private var portraitLayout: some View {
