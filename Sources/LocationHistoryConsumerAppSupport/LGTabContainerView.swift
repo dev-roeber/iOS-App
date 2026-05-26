@@ -260,8 +260,10 @@ public struct LGTabContainerView: View {
                     }
                 }
             } label: {
-                Label("Aktionen", systemImage: "ellipsis.circle")
+                LGToolbarActionsLabel()
             }
+            .accessibilityLabel(Text("Aktionen"))
+            .accessibilityIdentifier("global.actions.menu")
         }
     }
 
@@ -335,6 +337,26 @@ struct GlobalRecordingToolbarIndicator: View {
         .accessibilityLabel(Text("\(preferences.localized("Recording in progress")) · \(distanceText)"))
         .accessibilityHint(Text(preferences.localized("Tap to open Live tab")))
         .accessibilityIdentifier("global.recording.indicator")
+    }
+}
+
+// MARK: - Toolbar Actions Label
+//
+// Liquid-Glass-konsistentes Label für das primaryAction-Menu („•••").
+// Capsule mit `.ultraThinMaterial` + hairline stroke, passend zum
+// `GlobalRecordingToolbarIndicator`. Tap-Target ≥ 44pt via frame.
+public struct LGToolbarActionsLabel: View {
+    public init() {}
+    public var body: some View {
+        Image(systemName: "ellipsis")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(LH2GPXTheme.LiquidGlass.trackPrimary)
+            .frame(minWidth: 44, minHeight: 30)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
+            .contentShape(Capsule())
     }
 }
 

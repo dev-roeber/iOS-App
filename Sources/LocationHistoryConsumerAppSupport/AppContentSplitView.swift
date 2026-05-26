@@ -1514,8 +1514,9 @@ public struct AppContentSplitView: View {
                 }
             }
         } label: {
-            Label(t("Actions"), systemImage: "ellipsis.circle")
+            LGToolbarActionsLabel()
         }
+        .accessibilityLabel(Text(t("Actions")))
         .sheet(item: $presentedSheet) { sheet in
             NavigationStack {
                 switch sheet {
