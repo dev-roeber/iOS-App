@@ -26,6 +26,13 @@ import SwiftUI
 struct DayDetailLayerPanel: View {
     @Binding var selected: AppMapTrackColorMode
     @Binding var routeDisplay: AppDayPathDisplayMode
+    /// Independent toggle: when on, the day-detail bottom sheet renders the
+    /// `AppSpeedBandView` band under the KPIs. Decoupled from the radio
+    /// `selected` map-colour mode so a user can read a tempo band while the
+    /// map still shows activity colours, and vice-versa.
+    @Binding var showTempoBand: Bool
+    /// Same idea for `AppElevationProfileView` under the tempo band.
+    @Binding var showElevationBand: Bool
     let hasPaths: Bool
     let layersLabel: String
     let standardLabel: String
@@ -46,11 +53,15 @@ struct DayDetailLayerPanel: View {
                 layerRow(color: .blue, title: standardLabel, isSelected: selected == .activity) {
                     selected = .activity
                 }
-                layerRow(color: .orange, title: speedLabel, isSelected: selected == .speed) {
-                    selected = (selected == .speed) ? .activity : .speed
+                layerRow(color: .orange, title: speedLabel, isSelected: selected == .speed || showTempoBand) {
+                    let willActivate = !(selected == .speed || showTempoBand)
+                    selected = willActivate ? .speed : .activity
+                    showTempoBand = willActivate
                 }
-                layerRow(color: .green, title: elevationLabel, isSelected: selected == .elevation) {
-                    selected = (selected == .elevation) ? .activity : .elevation
+                layerRow(color: .green, title: elevationLabel, isSelected: selected == .elevation || showElevationBand) {
+                    let willActivate = !(selected == .elevation || showElevationBand)
+                    selected = willActivate ? .elevation : .activity
+                    showElevationBand = willActivate
                 }
                 layerRow(color: .cyan, title: weatherLabel, isSelected: selected == .weather) {
                     selected = (selected == .weather) ? .activity : .weather
