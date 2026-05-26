@@ -495,18 +495,6 @@ private struct LiquidGlassMapLines: View {
                         y: size.height * 0.12 + phase * size.height * 0.008
                     )
                     .blur(radius: 52)
-
-                ForEach(0..<7, id: \.self) { index in
-                    RoundedRectangle(cornerRadius: 999, style: .continuous)
-                        .fill(LH2GPXTheme.LiquidGlass.mapRoad)
-                        .frame(width: size.width * 0.95, height: index.isMultiple(of: 2) ? 10 : 6)
-                        .rotationEffect(.degrees(Double(index) * 18 - 42 + phase * 0.6))
-                        .offset(
-                            x: CGFloat(index - 3) * 18,
-                            y: CGFloat(index - 3) * 62
-                        )
-                        .blur(radius: 0.4)
-                }
             }
             .frame(width: size.width, height: size.height)
             .onAppear {
