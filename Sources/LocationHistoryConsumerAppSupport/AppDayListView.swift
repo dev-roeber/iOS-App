@@ -16,11 +16,12 @@ struct AppDayRow: View {
         HStack(alignment: .top, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(presentation.dayNumberText)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 Text(presentation.weekdayText)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(LH2GPXTheme.textSecondary)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.white.opacity(0.62))
+                    .textCase(.uppercase)
             }
             .frame(width: 54, alignment: .leading)
 
@@ -28,12 +29,12 @@ struct AppDayRow: View {
                 HStack(alignment: .top, spacing: 8) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(presentation.dateText)
-                            .font(.headline)
+                            .font(.headline.weight(.semibold))
                             .foregroundStyle(.white)
                         if let timeRangeText = presentation.timeRangeText {
                             Label(timeRangeText, systemImage: "clock")
                                 .font(.caption)
-                                .foregroundStyle(LH2GPXTheme.textSecondary)
+                                .foregroundStyle(Color.white.opacity(0.62))
                         }
                     }
                     Spacer()
@@ -49,11 +50,11 @@ struct AppDayRow: View {
                         ForEach(highlightIcons, id: \.self) { icon in
                             Image(systemName: icon)
                                 .font(.caption)
-                                .foregroundStyle(LH2GPXTheme.textSecondary)
+                                .foregroundStyle(Color.white.opacity(0.62))
                         }
                         Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(LH2GPXTheme.primaryBlue.opacity(0.85))
+                            .font(.footnote.weight(.bold))
+                            .foregroundStyle(LH2GPXTheme.primaryBlue)
                     }
                 }
 
@@ -71,15 +72,29 @@ struct AppDayRow: View {
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 12)
-        .background(Color(.systemBackground))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .background(
+            ZStack {
+                // Glas-Card-Treatment analog Karte-KPI-Tiles: helle Lasur auf
+                // dunklem Canvas, dazu sanfter Gradient für Tiefe.
+                Color.white.opacity(0.06)
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.04),
+                        Color.black.opacity(0.10)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(LH2GPXTheme.cardBorder, lineWidth: 1)
+                .stroke(Color.white.opacity(0.10), lineWidth: 0.8)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.22), radius: 12, y: 6)
+        .shadow(color: .black.opacity(0.28), radius: 14, y: 8)
         .opacity(summary.hasContent ? 1 : 0.7)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(presentation.accessibilityLabel)
@@ -106,11 +121,27 @@ struct AppDayRow: View {
                 .minimumScaleFactor(0.8)
                 .fixedSize(horizontal: true, vertical: false)
         }
-        .font(.caption.weight(.medium))
-        .foregroundStyle(tint)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(tint.opacity(0.10))
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
+        .background(
+            ZStack {
+                // KPI-Tile-Pattern: kräftige Tint-Basis + sanfter Gradient.
+                tint.opacity(0.22)
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.04),
+                        Color.black.opacity(0.10)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
+        .overlay(
+            Capsule().stroke(tint.opacity(0.35), lineWidth: 0.8)
+        )
         .clipShape(Capsule())
     }
 
@@ -281,6 +312,8 @@ public struct AppDayListView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         // Prompt 03 LG_ROOT: removed in-list "Days" header
                         // (duplicated the NavigationStack title in LGTabContainerView).
+                        daysTopSummary(for: filteredSummaries)
+                            .accessibilityIdentifier("days.summary")
                         dayContextRow
                             .accessibilityIdentifier("days.title")
                         if let mapHeader {
@@ -303,6 +336,14 @@ public struct AppDayListView: View {
                 }
                 if !selectedForExportDates.isEmpty {
                     exportStatusSection
+                }
+                if summaries.count < 3 && !filteredSummaries.isEmpty {
+                    Section {
+                        daysImportHint()
+                            .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                 }
                 // Prompt 06 LANDSCAPE §A3: in iPhone landscape (compact-vertical)
                 // pair days two-per-row so at least two cards stay visible
@@ -336,7 +377,7 @@ public struct AppDayListView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color(.systemBackground))
+            .background(Color.clear)
             .overlay {
                 if !summaries.isEmpty && filteredSummaries.isEmpty {
                     VStack(spacing: 12) {
@@ -356,6 +397,101 @@ public struct AppDayListView: View {
                 }
             }
         }
+    }
+
+    /// Karte-style top headline: small-caps caption + bold aggregate ("1 Tag ·
+     /// 1 Route · 569,6 km"). Aggregates over `filteredSummaries` so the value
+     /// reflects active range/search/chip filters.
+    @ViewBuilder
+    private func daysTopSummary(for filtered: [DaySummary]) -> some View {
+        let contentful = filtered.filter { $0.hasContent }
+        let totalRoutes = contentful.reduce(0) { $0 + $1.pathCount }
+        let totalDistanceM = contentful.reduce(0.0) { $0 + $1.totalPathDistanceM }
+        let dayCount = contentful.count
+
+        VStack(alignment: .leading, spacing: 6) {
+            Text(t("FILTERED DAYS"))
+                .font(.caption2.weight(.semibold))
+                .tracking(1.4)
+                .foregroundStyle(Color.white.opacity(0.55))
+                .accessibilityIdentifier("days.summary.caption")
+            if dayCount == 0 {
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .font(.title3)
+                        .foregroundStyle(Color.white.opacity(0.45))
+                    Text(t("No days found"))
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.white)
+                }
+                .accessibilityIdentifier("days.summary.headline")
+            } else {
+                Text(daysSummaryHeadline(
+                    days: dayCount,
+                    routes: totalRoutes,
+                    distanceM: totalDistanceM
+                ))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+                    .accessibilityIdentifier("days.summary.headline")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 8)
+    }
+
+    private func daysSummaryHeadline(days: Int, routes: Int, distanceM: Double) -> String {
+        let isGerman = preferences.appLanguage.isGerman
+        let dayUnit = isGerman ? (days == 1 ? "Tag" : "Tage") : (days == 1 ? "day" : "days")
+        let routeUnit = isGerman ? (routes == 1 ? "Route" : "Routen") : (routes == 1 ? "route" : "routes")
+        var parts: [String] = ["\(days) \(dayUnit)"]
+        if routes > 0 {
+            parts.append("\(routes) \(routeUnit)")
+        }
+        if distanceM > 0 {
+            parts.append(formatDistance(distanceM, unit: preferences.distanceUnit))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// Lightweight hint card shown when very few days are present. Pure
+    /// informational — no CTA wired up here because the import-picker action
+    /// isn't plumbed into this view.
+    @ViewBuilder
+    private func daysImportHint() -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "tray.and.arrow.down")
+                .font(.title3)
+                .foregroundStyle(LH2GPXTheme.primaryBlue)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(t("Import more days?"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text(t("Load another location history file to see more days here."))
+                    .font(.caption)
+                    .foregroundStyle(Color.white.opacity(0.62))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(
+            ZStack {
+                Color.white.opacity(0.05)
+                LinearGradient(
+                    colors: [Color.white.opacity(0.04), Color.black.opacity(0.10)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(LH2GPXTheme.primaryBlue.opacity(0.28), lineWidth: 0.8)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("days.import.hint")
     }
 
     private var exportStatusSection: some View {
@@ -527,29 +663,54 @@ public struct AppDayListView: View {
 
     @ViewBuilder
     private var dayContextRow: some View {
+        let trimmedSearch = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         HStack(spacing: 8) {
-            contextPill(text: rangeSummaryText ?? t("All"), icon: "calendar", identifier: "days.range")
             contextPill(
-                text: searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    ? t("Days Search")
-                    : searchText,
+                text: rangeSummaryText ?? t("All"),
+                icon: "calendar",
+                identifier: "days.range",
+                isActive: isRangeFilterActive
+            )
+            contextPill(
+                text: trimmedSearch.isEmpty ? t("Days Search") : searchText,
                 icon: "magnifyingglass",
-                identifier: "days.search"
+                identifier: "days.search",
+                isActive: !trimmedSearch.isEmpty
             )
         }
+        .padding(.horizontal, 8)
     }
 
-    private func contextPill(text: String, icon: String, identifier: String) -> some View {
-        HStack(spacing: 6) {
+    private func contextPill(text: String, icon: String, identifier: String, isActive: Bool) -> some View {
+        let tint = isActive ? LH2GPXTheme.primaryBlue : Color.white
+        return HStack(spacing: 6) {
             Image(systemName: icon)
             Text(text)
                 .lineLimit(1)
         }
-        .font(.caption.weight(.medium))
-        .foregroundStyle(LH2GPXTheme.textSecondary)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(LH2GPXTheme.elevatedCard)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(isActive ? .white : Color.white.opacity(0.72))
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
+        .background(
+            ZStack {
+                // Glas-Surface analog Day-Cards: dezente weiße Lasur auf dem
+                // dunklen Canvas. Aktiv-Filter bekommen zusätzlich eine
+                // Blau-Tönung als deutlichen Hinweis.
+                Color.white.opacity(0.06)
+                if isActive {
+                    LH2GPXTheme.primaryBlue.opacity(0.22)
+                }
+                LinearGradient(
+                    colors: [Color.white.opacity(0.04), Color.black.opacity(0.10)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
+        .overlay(
+            Capsule().stroke(tint.opacity(isActive ? 0.42 : 0.14), lineWidth: 0.8)
+        )
         .clipShape(Capsule())
         .accessibilityIdentifier(identifier)
     }
