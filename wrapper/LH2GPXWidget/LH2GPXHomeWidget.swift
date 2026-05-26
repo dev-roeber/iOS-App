@@ -6,9 +6,33 @@ private extension View {
     @ViewBuilder
     func widgetBackground() -> some View {
         if #available(iOS 17, *) {
-            containerBackground(Color(UIColor.systemBackground), for: .widget)
+            containerBackground(for: .widget) {
+                LH2GPXWidgetBackground()
+            }
         } else {
             background(Color(UIColor.systemBackground))
+        }
+    }
+}
+
+private struct LH2GPXWidgetBackground: View {
+    @Environment(\.widgetRenderingMode) private var mode
+
+    var body: some View {
+        switch mode {
+        case .fullColor:
+            LinearGradient(
+                colors: [
+                    Color(red: 11 / 255, green: 87 / 255, blue: 208 / 255).opacity(0.18),
+                    Color(UIColor.systemBackground)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .accented, .vibrant:
+            Color.clear
+        @unknown default:
+            Color(UIColor.systemBackground)
         }
     }
 }
@@ -68,7 +92,7 @@ struct LH2GPXSmallWidgetView: View {
                 }
                 Spacer()
                 Text(rec.formattedDistance)
-                    .font(.title2.weight(.bold))
+                    .font(.title2.weight(.bold).monospacedDigit())
                     .minimumScaleFactor(0.7)
                 Text(rec.formattedDuration)
                     .font(.caption)
@@ -111,7 +135,7 @@ struct LH2GPXMediumWidgetView: View {
                 Spacer()
                 if let rec = entry.lastRecording {
                     Text(rec.formattedDistance)
-                        .font(.title3.weight(.bold))
+                        .font(.title3.weight(.bold).monospacedDigit())
                         .minimumScaleFactor(0.7)
                     Text(rec.formattedDuration)
                         .font(.caption)
@@ -139,7 +163,7 @@ struct LH2GPXMediumWidgetView: View {
                 Spacer()
                 if let stats = entry.weeklyStats {
                     Text(String(format: "%.1f km", stats.km))
-                        .font(.title3.weight(.bold))
+                        .font(.title3.weight(.bold).monospacedDigit())
                         .minimumScaleFactor(0.7)
                     Text("\(stats.routes) \(WidgetStr.tourCount(stats.routes))")
                         .font(.caption)
