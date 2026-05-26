@@ -35,5 +35,13 @@
 	<array>
 		<string>CloudKit</string>
 	</array>
+	<!--
+	  WeatherKit-Entitlement (PR #44 UI-Integration; Apple-Portal-Side
+	  von 2026-05-27). Ohne diesen Key liefert `WeatherService.shared`
+	  einen Auth-Error, der vom `AppWeatherCacheManager` als
+	  `weatherLayerError` propagiert und den Settings-Toggle auto-deaktiviert.
+	-->
+	<key>com.apple.developer.weatherkit</key>
+	<true/>
 </dict>
 </plist>
