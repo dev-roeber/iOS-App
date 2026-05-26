@@ -39,6 +39,10 @@ public struct AppDayMapView: View {
     var cameraController: AppDayMapCameraController? = nil
     @State private var renderData: DayMapRenderData
     @State private var mapPosition: MapCameraPosition
+    /// Shadow of the last-applied region so `currentRegion()` can read it.
+    /// `MapCameraPosition` is an opaque struct (not an enum) — pattern-
+    /// matching on it fails with stricter Swift versions / Xcode builds.
+    @State private var currentMapRegion: MKCoordinateRegion?
 
     public init(
         mapData: DayMapData,
@@ -86,7 +90,7 @@ public struct AppDayMapView: View {
                     let newRender = DayMapRenderData(mapData: newValue)
                     renderData = newRender
                     if let region = newRender.region {
-                        withAnimation { mapPosition = .region(region) }
+                        setMapRegion(region)
                     }
                     wireCameraController()
                 }
@@ -97,7 +101,7 @@ public struct AppDayMapView: View {
         guard let controller = cameraController else { return }
         controller.fitToData = {
             if let region = renderData.region {
-                withAnimation { mapPosition = .region(region) }
+                setMapRegion(region)
             }
         }
         controller.adjustZoom = { factor in
@@ -108,9 +112,7 @@ public struct AppDayMapView: View {
                 latitudeDelta: max(0.0005, min(180, region.span.latitudeDelta * factor)),
                 longitudeDelta: max(0.0005, min(360, region.span.longitudeDelta * factor))
             )
-            withAnimation {
-                mapPosition = .region(MKCoordinateRegion(center: region.center, span: newSpan))
-            }
+            setMapRegion(MKCoordinateRegion(center: region.center, span: newSpan))
         }
     }
 
@@ -120,18 +122,27 @@ public struct AppDayMapView: View {
     }
 
     private func currentRegion() -> MKCoordinateRegion? {
-        // MapCameraPosition does not expose its concrete region across iOS
-        // versions, so fall back to the fitted region when the camera is in
-        // automatic / non-region mode.
-        if case .region(let region) = mapPosition { return region }
-        return renderData.region
+        // MapCameraPosition is an opaque struct in SwiftUI; we cannot
+        // pattern-match it. Read from the shadow state we maintain whenever
+        // the position is explicitly set, and fall back to the fitted region
+        // when the camera is in automatic mode and nothing has been set yet.
+        currentMapRegion ?? renderData.region
+    }
+
+    private func setMapRegion(_ region: MKCoordinateRegion, animated: Bool = true) {
+        currentMapRegion = region
+        if animated {
+            withAnimation { mapPosition = .region(region) }
+        } else {
+            mapPosition = .region(region)
+        }
     }
 
     @ViewBuilder
     private var mapControlsStack: some View {
         let fitToData = renderData.region == nil ? nil : {
             if let region = renderData.region {
-                withAnimation { mapPosition = .region(region) }
+                setMapRegion(region)
             }
         }
         if #available(iOS 26.0, *) {
