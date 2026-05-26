@@ -874,10 +874,18 @@ public final class LiveLocationFeatureModel: ObservableObject {
         WidgetDataStore.save(recording: recording)
 
         let calendar = Calendar.current
-        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
+        let now = Date()
+        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
         let weekTracks = allTracks.filter { $0.startedAt >= startOfWeek }
         let weeklyKm = weekTracks.reduce(0.0) { $0 + $1.distanceM } / 1000
         WidgetDataStore.saveWeeklyStats(totalKm: weeklyKm, routeCount: weekTracks.count)
+
+        // P05 — same shape as weekly, but bucketed by calendar month so the
+        // Large widget's "This Month" section stops aliasing weekly data.
+        let startOfMonth = calendar.dateInterval(of: .month, for: now)?.start ?? now
+        let monthTracks = allTracks.filter { $0.startedAt >= startOfMonth }
+        let monthlyKm = monthTracks.reduce(0.0) { $0 + $1.distanceM } / 1000
+        WidgetDataStore.saveMonthlyStats(totalKm: monthlyKm, routeCount: monthTracks.count)
         #if canImport(WidgetKit)
         WidgetCenter.shared.reloadAllTimelines()
         #endif

@@ -22,4 +22,9 @@ public enum WidgetSharedKeys {
     public static let weeklyKm = "weeklyKm"
     public static let weeklyRouteCount = "weeklyRouteCount"
     public static let weeklyStatsDate = "weeklyStatsDate"
+
+    /// Monthly-aggregate stats keys (P05). Mirrors the weekly trio.
+    public static let monthlyKm = "monthlyKm"
+    public static let monthlyRouteCount = "monthlyRouteCount"
+    public static let monthlyStatsDate = "monthlyStatsDate"
 }

@@ -46,6 +46,7 @@ struct LH2GPXEntry: TimelineEntry {
     let date: Date
     let lastRecording: WidgetDataStore.LastRecording?
     let weeklyStats: (km: Double, routes: Int)?
+    let monthlyStats: (km: Double, routes: Int)?
 }
 
 // MARK: - Provider
@@ -55,7 +56,8 @@ struct LH2GPXProvider: TimelineProvider {
         LH2GPXEntry(
             date: Date(),
             lastRecording: .init(date: Date(), distanceMeters: 5230, durationSeconds: 1800, trackName: WidgetStr.sampleTrackName),
-            weeklyStats: (km: 24.5, routes: 7)
+            weeklyStats: (km: 24.5, routes: 7),
+            monthlyStats: (km: 96.2, routes: 23)
         )
     }
 
@@ -73,7 +75,8 @@ struct LH2GPXProvider: TimelineProvider {
         LH2GPXEntry(
             date: Date(),
             lastRecording: WidgetDataStore.loadLastRecording(),
-            weeklyStats: WidgetDataStore.loadWeeklyStats().map { ($0.km, $0.routes) }
+            weeklyStats: WidgetDataStore.loadWeeklyStats().map { ($0.km, $0.routes) },
+            monthlyStats: WidgetDataStore.loadMonthlyStats().map { ($0.km, $0.routes) }
         )
     }
 }
@@ -245,13 +248,14 @@ struct LH2GPXLargeWidgetView: View {
                 Divider()
                     .padding(.vertical, 12)
 
-                // TODO P05: real monthly aggregation
+                // P05 — real monthly aggregation written by
+                // LiveLocationFeatureModel.updateWidgetData.
                 VStack(alignment: .leading, spacing: 6) {
                     Label("This Month", systemImage: "calendar.badge.clock")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Spacer()
-                    if let stats = entry.weeklyStats {
+                    if let stats = entry.monthlyStats {
                         Text(String(format: "%.1f km", stats.km))
                             .font(.title3.weight(.bold).monospacedDigit())
                             .minimumScaleFactor(0.7)
