@@ -330,8 +330,7 @@ extension View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         return self
             .padding(padding)
-            .background(material.swiftUIMaterial, in: shape)
-            .background(LH2GPXTheme.VariantBPro.bgWarm.opacity(0.45), in: shape)
+            .modifier(LHVariantBProGlassBackground(shape: shape, material: material))
             .overlay(
                 shape.stroke(LH2GPXTheme.VariantBPro.hair2, lineWidth: 0.5)
             )
@@ -347,6 +346,21 @@ extension View {
             }
             .clipShape(shape)
             .shadow(color: .black.opacity(0.45), radius: 24, x: 0, y: 12)
+    }
+}
+
+private struct LHVariantBProGlassBackground<S: Shape>: ViewModifier {
+    let shape: S
+    let material: VariantBProGlassMaterial
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: shape)
+        } else {
+            content
+                .background(material.swiftUIMaterial, in: shape)
+                .background(LH2GPXTheme.VariantBPro.bgWarm.opacity(0.45), in: shape)
+        }
     }
 }
 
@@ -483,8 +497,7 @@ public struct LHLiquidGlassSurface<Content: View>: View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         content()
             .padding(padding)
-            .background(.ultraThinMaterial, in: shape)
-            .background(Color.white.opacity(0.34), in: shape)
+            .modifier(LHLiquidGlassSurfaceBackground(shape: shape))
             .overlay(shape.stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
             .overlay(alignment: .top) {
                 shape
@@ -499,6 +512,20 @@ public struct LHLiquidGlassSurface<Content: View>: View {
                     )
             }
             .shadow(color: Color.black.opacity(0.10), radius: 24, x: 0, y: 14)
+    }
+}
+
+private struct LHLiquidGlassSurfaceBackground<S: Shape>: ViewModifier {
+    let shape: S
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: shape)
+        } else {
+            content
+                .background(.ultraThinMaterial, in: shape)
+                .background(Color.white.opacity(0.34), in: shape)
+        }
     }
 }
 
@@ -575,7 +602,7 @@ public struct LHLiquidGlassPrivacyPill: View {
             .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(.ultraThinMaterial, in: Capsule())
+            .modifier(LHLiquidGlassSurfaceBackground(shape: Capsule()))
             .overlay(Capsule().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
             .accessibilityLabel(text)
     }
