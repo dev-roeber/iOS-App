@@ -246,11 +246,10 @@ public struct AppDayListView: View {
             List(selection: $selectedDate) {
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(t("Days"))
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .accessibilityIdentifier("days.title")
+                        // Prompt 03 LG_ROOT: removed in-list "Days" header
+                        // (duplicated the NavigationStack title in LGTabContainerView).
                         dayContextRow
+                            .accessibilityIdentifier("days.title")
                         if let mapHeader {
                             mapHeader
                                 .accessibilityIdentifier("days.map.header")
