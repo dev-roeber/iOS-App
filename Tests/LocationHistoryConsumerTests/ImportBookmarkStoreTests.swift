@@ -14,7 +14,7 @@ final class ImportBookmarkStoreTests: XCTestCase {
 
     func testClearRemovesStoredBookmark() {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("test_bookmark.json")
-        FileManager.default.createFile(atPath: url.path, contents: Data("{}".utf8))
+        XCTAssertTrue(FileManager.default.createFile(atPath: url.path, contents: Data("{}".utf8)))
         defer { try? FileManager.default.removeItem(at: url) }
 
         ImportBookmarkStore.save(url: url)
@@ -25,7 +25,7 @@ final class ImportBookmarkStoreTests: XCTestCase {
 
     func testSaveStoresBookmarkData() {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("test_save_bookmark.json")
-        FileManager.default.createFile(atPath: url.path, contents: Data("{}".utf8))
+        XCTAssertTrue(FileManager.default.createFile(atPath: url.path, contents: Data("{}".utf8)))
         defer { try? FileManager.default.removeItem(at: url) }
 
         let data = ImportBookmarkStore.save(url: url)
@@ -35,7 +35,7 @@ final class ImportBookmarkStoreTests: XCTestCase {
 
     func testRestoreReturnsUrlAfterSave() {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("test_restore_bookmark.json")
-        FileManager.default.createFile(atPath: url.path, contents: Data("{}".utf8))
+        XCTAssertTrue(FileManager.default.createFile(atPath: url.path, contents: Data("{}".utf8)))
         defer { try? FileManager.default.removeItem(at: url) }
 
         ImportBookmarkStore.save(url: url)
@@ -51,7 +51,7 @@ final class ImportBookmarkStoreTests: XCTestCase {
 
     func testRestoreClearsBookmarkWhenFileIsGone() {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("test_gone_\(UUID().uuidString).json")
-        FileManager.default.createFile(atPath: url.path, contents: Data("{}".utf8))
+        XCTAssertTrue(FileManager.default.createFile(atPath: url.path, contents: Data("{}".utf8)))
 
         ImportBookmarkStore.save(url: url)
         XCTAssertTrue(ImportBookmarkStore.hasStoredBookmark)

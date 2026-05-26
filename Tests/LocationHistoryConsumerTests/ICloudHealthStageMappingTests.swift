@@ -239,19 +239,20 @@ final class ICloudHealthStageMappingTests: XCTestCase {
     }
 }
 
-private final class CountingBackupUploader: LiveTrackCloudBackupUploading {
-    private let lock = NSLock()
+/// Sendable-safe counter: a serial `DispatchQueue` arbitrates all access to
+/// the mutable counter, so the class itself stays `Sendable` without needing
+/// `nonisolated(unsafe)` storage and without calling `NSLock.lock/unlock` from
+/// an async context (Swift 6 marks those `unavailable` in async positions).
+private final class CountingBackupUploader: LiveTrackCloudBackupUploading, @unchecked Sendable {
+    private let queue = DispatchQueue(label: "lh2gpx.tests.counting-backup-uploader")
     private var _uploadCount = 0
 
     var uploadCount: Int {
-        lock.lock(); defer { lock.unlock() }
-        return _uploadCount
+        queue.sync { _uploadCount }
     }
 
     func upload(_ envelope: LiveTrackCloudBackupEnvelope) async throws {
-        lock.lock()
-        _uploadCount += 1
-        lock.unlock()
+        queue.sync { _uploadCount += 1 }
     }
 
     func fetchOverview() async throws -> ICloudStorageOverview { .init() }
