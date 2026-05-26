@@ -24,18 +24,32 @@ public struct AppOverviewSection: View {
         self.onInsightsTap = onInsightsTap
     }
 
-    private let columns = [
-        GridItem(.adaptive(minimum: 100, maximum: 160), spacing: 12)
+    // Portrait: pin to 2 columns so a 4-stat payload renders as a balanced
+    // 2x2 grid instead of the previous 3+1 asymmetric layout produced by
+    // `.adaptive(minimum: 100)`. For stat counts != 4 we fall back to an
+    // adaptive layout so 3/5/6 tiles still wrap sensibly.
+    private let portraitColumns2x2 = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
     ]
 
-    // Landscape (compact-vertical) on iPhone: fewer KPIs visible in portrait
-    // because the .adaptive(minimum: 100) lets each card balloon to fill width.
-    // Pin to a 2-column layout in landscape so all KPI tiles stay legible and
-    // values aren't squeezed. See Prompt 06 LANDSCAPE §A2.
+    private let portraitColumnsAdaptive = [
+        GridItem(.adaptive(minimum: 140), spacing: 12)
+    ]
+
+    // Landscape (compact-vertical) on iPhone: pin to 2 columns so KPI tiles
+    // stay legible and values aren't squeezed. See Prompt 06 LANDSCAPE §A2.
     private let landscapeColumns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
+
+    private func gridColumns(for statCount: Int) -> [GridItem] {
+        if verticalSizeClass == .compact {
+            return landscapeColumns
+        }
+        return statCount == 4 ? portraitColumns2x2 : portraitColumnsAdaptive
+    }
 
     public var body: some View {
         let presentation = OverviewPresentation.section(
@@ -54,7 +68,7 @@ public struct AppOverviewSection: View {
             }
 
             LazyVGrid(
-                columns: verticalSizeClass == .compact ? landscapeColumns : columns,
+                columns: gridColumns(for: presentation.stats.count),
                 spacing: 12
             ) {
                 ForEach(presentation.stats) { stat in
