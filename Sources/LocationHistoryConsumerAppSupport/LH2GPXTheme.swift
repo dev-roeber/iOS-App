@@ -414,38 +414,66 @@ extension LH2GPXTheme {
 }
 
 public struct LHLiquidGlassBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     public init() {}
 
     public var body: some View {
         ZStack {
             LinearGradient(
-                colors: [
-                    LH2GPXTheme.LiquidGlass.canvasTop,
-                    LH2GPXTheme.LiquidGlass.canvasBottom
-                ],
+                colors: gradientColors,
                 startPoint: .top,
                 endPoint: .bottom
             )
 
             LiquidGlassMapLines()
-                .opacity(0.72)
+                .opacity(colorScheme == .dark ? 0.42 : 0.72)
                 .accessibilityHidden(true)
 
+            // Diffuse highlight — im Light-Modus eine weiße Aufhellung,
+            // im Dark-Modus eine dezente kühle Schicht, damit der Canvas
+                // nicht ausgewaschen wirkt.
             LinearGradient(
-                colors: [
-                    Color.white.opacity(0.70),
-                    Color.white.opacity(0.18),
-                    Color.white.opacity(0.62)
-                ],
+                colors: highlightColors,
                 startPoint: .top,
                 endPoint: .bottom
             )
         }
         .ignoresSafeArea()
     }
+
+    private var gradientColors: [Color] {
+        if colorScheme == .dark {
+            return [
+                Color(red: 16/255, green: 18/255, blue: 22/255),
+                Color(red: 28/255, green: 32/255, blue: 38/255)
+            ]
+        }
+        return [
+            LH2GPXTheme.LiquidGlass.canvasTop,
+            LH2GPXTheme.LiquidGlass.canvasBottom
+        ]
+    }
+
+    private var highlightColors: [Color] {
+        if colorScheme == .dark {
+            return [
+                Color.white.opacity(0.05),
+                Color.white.opacity(0.015),
+                Color.white.opacity(0.04)
+            ]
+        }
+        return [
+            Color.white.opacity(0.70),
+            Color.white.opacity(0.18),
+            Color.white.opacity(0.62)
+        ]
+    }
 }
 
 private struct LiquidGlassMapLines: View {
+    @State private var phase: CGFloat = 0
+
     var body: some View {
         GeometryReader { proxy in
             let size = proxy.size
@@ -453,20 +481,26 @@ private struct LiquidGlassMapLines: View {
                 Circle()
                     .fill(LH2GPXTheme.LiquidGlass.mapWater.opacity(0.72))
                     .frame(width: size.width * 0.72, height: size.width * 0.72)
-                    .offset(x: -size.width * 0.34, y: -size.height * 0.08)
+                    .offset(
+                        x: -size.width * 0.34 + phase * size.width * 0.015,
+                        y: -size.height * 0.08 - phase * size.height * 0.01
+                    )
                     .blur(radius: 42)
 
                 Circle()
                     .fill(LH2GPXTheme.LiquidGlass.mapLand.opacity(0.86))
                     .frame(width: size.width * 0.92, height: size.width * 0.92)
-                    .offset(x: size.width * 0.33, y: size.height * 0.12)
+                    .offset(
+                        x: size.width * 0.33 - phase * size.width * 0.012,
+                        y: size.height * 0.12 + phase * size.height * 0.008
+                    )
                     .blur(radius: 52)
 
                 ForEach(0..<7, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 999, style: .continuous)
                         .fill(LH2GPXTheme.LiquidGlass.mapRoad)
                         .frame(width: size.width * 0.95, height: index.isMultiple(of: 2) ? 10 : 6)
-                        .rotationEffect(.degrees(Double(index) * 18 - 42))
+                        .rotationEffect(.degrees(Double(index) * 18 - 42 + phase * 0.6))
                         .offset(
                             x: CGFloat(index - 3) * 18,
                             y: CGFloat(index - 3) * 62
@@ -475,6 +509,15 @@ private struct LiquidGlassMapLines: View {
                 }
             }
             .frame(width: size.width, height: size.height)
+            .onAppear {
+                // Dezenter, langsamer Atmungs-Drift — kaum merklich, kein
+                // ablenkendes Wandern. 18 s pro Halbzyklus.
+                withAnimation(
+                    .easeInOut(duration: 18).repeatForever(autoreverses: true)
+                ) {
+                    phase = 1
+                }
+            }
         }
     }
 }

@@ -154,6 +154,7 @@ struct ContentView: View {
             }
         }
         .preproductionBanner(isActive: technicalSettings.localTimelineStoreTestModeEnabled)
+        .preferredColorScheme(.dark)
         .environmentObject(preferences)
         .environment(\.locale, preferences.appLocale)
         .fileImporter(
