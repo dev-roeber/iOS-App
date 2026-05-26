@@ -1,5 +1,6 @@
 #if canImport(SwiftUI)
 import SwiftUI
+import CoreLocation
 import LocationHistoryConsumer
 #if canImport(AppKit)
 import AppKit
@@ -459,6 +460,7 @@ public struct AppInsightsContentView: View {
                     systemImage: "chart.bar.xaxis"
                 )
             }
+            insightsLayerCards
             Picker("", selection: $surfaceMode) {
                 ForEach(InsightsSurfaceMode.allCases, id: \.self) { mode in
                     Text(t(mode.rawValue)).tag(mode)
@@ -1924,6 +1926,140 @@ public struct AppInsightsContentView: View {
         preferences.appLanguage.isGerman
             ? "\(count) \(count == 1 ? "Aktivität" : "Aktivitäten")"
             : "\(count) \(count == 1 ? "activity" : "activities")"
+    }
+
+    // MARK: - Multi-layer Insights cards (Tempo / Höhe)
+
+    /// Cap on number of `PathPoint`s scanned when aggregating speed/elevation
+    /// across the active range. Insights is a global summary view, so a very
+    /// large import (~65k points/day) could otherwise stall the main thread.
+    /// `30_000` covers realistic 30-day ranges of high-resolution recording.
+    private static let insightsLayerPointBudget = 30_000
+
+    /// Stack of optional layer affordance cards rendered under the KPI row.
+    /// `AppSpeedBandView` shows when Tempo (i.e. `mapTrackColorMode == .speed`)
+    /// is active; `AppElevationProfileView` shows when the Höhe-toggle is on.
+    /// Both render an intrinsic empty-state placeholder when the active range
+    /// contains no time-stamped speed samples / no `elevationM` data, so we
+    /// never have to gate on data availability here.
+    @ViewBuilder
+    private var insightsLayerCards: some View {
+        let showTempo = preferences.mapTrackColorMode == .speed
+        if showTempo || insightsShowElevationLayer {
+            VStack(spacing: 12) {
+                if showTempo {
+                    AppSpeedBandView(speeds: insightsSpeedBandSamples)
+                        .accessibilityIdentifier("insights.layer.speedBand")
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+                if insightsShowElevationLayer {
+                    AppElevationProfileView(points: insightsElevationSamples)
+                        .accessibilityIdentifier("insights.layer.elevationProfile")
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+        }
+    }
+
+    /// Range-scoped speed-per-segment samples, derived from `heroContent.export`
+    /// restricted to the dates surfaced in `daySummaries`. Each path is fed
+    /// through `SpeedTrackBuilder.segments(...)` so the smoothing and
+    /// percentile-based normalisation match the map's Tempo layer. We emit one
+    /// `AppSpeedBandSample` per segment, using the segment's *start* sample
+    /// timestamp so a horizontal scrub correlates back to the underlying data.
+    /// Days are walked in order; an empty result yields the band's empty
+    /// placeholder.
+    private var insightsSpeedBandSamples: [AppSpeedBandSample] {
+        guard let export = heroContent?.export else { return [] }
+        let allowedDates: Set<String> = Set(daySummaries.map(\.date))
+        guard !allowedDates.isEmpty else { return [] }
+
+        var samples: [AppSpeedBandSample] = []
+        var scannedPoints = 0
+        let budget = Self.insightsLayerPointBudget
+
+        outer: for day in export.data.days {
+            guard allowedDates.contains(day.date) else { continue }
+            for path in day.paths {
+                let points = path.points
+                guard points.count >= 2 else { continue }
+                if scannedPoints >= budget { break outer }
+                let trackSamples: [TrackSample] = points.map { pt in
+                    let coord = CLLocationCoordinate2D(latitude: pt.lat, longitude: pt.lon)
+                    let date = pt.time.flatMap { InsightsLayerISO.date(from: $0) }
+                    return TrackSample(coordinate: coord, timestamp: date)
+                }
+                scannedPoints += points.count
+                let segments = SpeedTrackBuilder.segments(from: trackSamples)
+                for segment in segments {
+                    guard segment.id < trackSamples.count,
+                          let timestamp = trackSamples[segment.id].timestamp else { continue }
+                    samples.append(
+                        AppSpeedBandSample(timestamp: timestamp, speed: segment.speedMS)
+                    )
+                }
+            }
+        }
+        return samples
+    }
+
+    /// Range-scoped elevation profile samples in `(distance, elevation)` form.
+    /// Distance is cumulative across all visited paths in the active range
+    /// using haversine spacing; elevation comes directly from
+    /// `PathPoint.elevationM`. Points without an `elevationM` value are
+    /// skipped (Google Timeline imports never carry elevation, so those days
+    /// contribute nothing to the profile — by design).
+    private var insightsElevationSamples: [AppElevationProfileSample] {
+        guard let export = heroContent?.export else { return [] }
+        let allowedDates: Set<String> = Set(daySummaries.map(\.date))
+        guard !allowedDates.isEmpty else { return [] }
+
+        var samples: [AppElevationProfileSample] = []
+        var cumulativeDistance: Double = 0
+        var previousCoord: CLLocationCoordinate2D?
+        var scannedPoints = 0
+        let budget = Self.insightsLayerPointBudget
+
+        outer: for day in export.data.days {
+            guard allowedDates.contains(day.date) else { continue }
+            for path in day.paths {
+                // Reset the running coordinate between paths so the haversine
+                // distance never bridges a non-contiguous gap (e.g. driving
+                // segment to walking segment at a separate location).
+                previousCoord = nil
+                for point in path.points {
+                    if scannedPoints >= budget { break outer }
+                    scannedPoints += 1
+                    let coord = CLLocationCoordinate2D(latitude: point.lat, longitude: point.lon)
+                    if let prev = previousCoord {
+                        cumulativeDistance += SpeedTrackBuilder.haversine(prev, coord)
+                    }
+                    previousCoord = coord
+                    guard let elevation = point.elevationM else { continue }
+                    samples.append(
+                        AppElevationProfileSample(distance: cumulativeDistance, elevation: elevation)
+                    )
+                }
+            }
+        }
+        return samples
+    }
+}
+
+/// File-private ISO8601 parser used to convert `PathPoint.time` strings into
+/// `Date` values for the speed-band derivation. Cached at module scope so we
+/// avoid allocating one formatter per point. Mirrors the dual-formatter
+/// fallback used in `AppDayMapView` (fractional seconds vs. plain ISO 8601).
+private enum InsightsLayerISO {
+    private static let fractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+    private static let plain: ISO8601DateFormatter = ISO8601DateFormatter()
+
+    static func date(from string: String) -> Date? {
+        fractional.date(from: string) ?? plain.date(from: string)
     }
 }
 
