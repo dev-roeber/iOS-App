@@ -28,48 +28,77 @@ struct LiveLayerPanel: View {
     @Binding var showElevation: Bool
     let layersLabel: String
 
+    @State private var isExpanded: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(layersLabel)
-                .font(.caption2.weight(.heavy))
-                .tracking(0.6)
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
-
-            layerRow(
-                color: .blue,
-                title: "Standard",
-                isOn: Binding(
-                    get: { selected == .activity },
-                    set: { newValue in if newValue { selected = .activity } }
+            collapsedHeader
+            if isExpanded {
+                layerRow(
+                    color: .blue,
+                    title: "Standard",
+                    isOn: Binding(
+                        get: { selected == .activity },
+                        set: { newValue in if newValue { selected = .activity } }
+                    )
                 )
-            )
-            layerRow(
-                color: .orange,
-                title: "Tempo",
-                isOn: Binding(
-                    get: { selected == .speed },
-                    set: { newValue in if newValue { selected = .speed } else { selected = .activity } }
+                layerRow(
+                    color: .orange,
+                    title: "Tempo",
+                    isOn: Binding(
+                        get: { selected == .speed },
+                        set: { newValue in if newValue { selected = .speed } else { selected = .activity } }
+                    )
                 )
-            )
-            layerRow(
-                color: .green,
-                title: "Höhe",
-                isOn: $showElevation
-            )
-            layerRow(
-                color: .cyan,
-                title: "Wetter",
-                isOn: $showWeather
-            )
+                layerRow(
+                    color: .green,
+                    title: "Höhe",
+                    isOn: $showElevation
+                )
+                layerRow(
+                    color: .cyan,
+                    title: "Wetter",
+                    isOn: $showWeather
+                )
+            }
         }
-        .padding(12)
-        .frame(width: 168)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(isExpanded ? 12 : 8)
+        .frame(width: isExpanded ? 168 : nil)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: isExpanded ? 18 : 14, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: isExpanded ? 18 : 14, style: .continuous)
                 .stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8)
         )
         .shadow(color: Color.black.opacity(0.12), radius: 14, x: 0, y: 8)
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.85), value: isExpanded)
+    }
+
+    private var collapsedHeader: some View {
+        Button {
+            isExpanded.toggle()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "square.3.layers.3d")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                Text(layersLabel)
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.6)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                    .lineLimit(1)
+                if isExpanded {
+                    Spacer(minLength: 4)
+                    Image(systemName: "chevron.up")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(layersLabel)
+        .accessibilityHint(isExpanded ? "Tippen zum Einklappen" : "Tippen zum Ausklappen")
     }
 
     @ViewBuilder
