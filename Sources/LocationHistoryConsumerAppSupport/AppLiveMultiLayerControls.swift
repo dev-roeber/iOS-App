@@ -119,6 +119,83 @@ struct LiveLayerPanel: View {
     }
 }
 
+// MARK: - Layer Section (for embedding in bottom sheet in landscape)
+//
+// Same data model as `LiveLayerPanel` but rendered as an inline expandable
+// section so it can live inside the `LiveBottomSheet` content closure in
+// iPhone landscape — where the top-leading overlay would otherwise compete
+// with the map for vertical room.
+
+@available(iOS 17.0, macOS 14.0, *)
+struct LiveLayerSection: View {
+    @Binding var selected: AppMapTrackColorMode
+    @Binding var showWeather: Bool
+    @Binding var showElevation: Bool
+    let layersLabel: String
+
+    @State private var isExpanded: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "square.3.layers.3d")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                    Text(layersLabel)
+                        .font(.caption2.weight(.heavy))
+                        .tracking(0.7)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("live.bottomSheet.layers")
+
+            if isExpanded {
+                layerRow(color: .blue, title: "Standard", isOn: Binding(
+                    get: { selected == .activity },
+                    set: { newValue in if newValue { selected = .activity } }
+                ))
+                layerRow(color: .orange, title: "Tempo", isOn: Binding(
+                    get: { selected == .speed },
+                    set: { newValue in if newValue { selected = .speed } else { selected = .activity } }
+                ))
+                layerRow(color: .green, title: "Höhe", isOn: $showElevation)
+                layerRow(color: .cyan, title: "Wetter", isOn: $showWeather)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func layerRow(color: Color, title: String, isOn: Binding<Bool>) -> some View {
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(color.opacity(isOn.wrappedValue ? 0.95 : 0.30))
+                .frame(width: 14, height: 14)
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(isOn.wrappedValue ? .primary : .secondary)
+            Spacer(minLength: 4)
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .scaleEffect(0.78)
+                .frame(width: 38, height: 24)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
 // MARK: - Control Stack
 
 @available(iOS 17.0, macOS 14.0, *)
@@ -130,9 +207,13 @@ struct LiveControlStack: View {
     let onLocate: () -> Void
     let onCompactToggle: () -> Void
     let isCompact: Bool
+    /// When true, renders smaller pills with tighter spacing so the stack does
+    /// not steal horizontal room in iPhone landscape. Defaults to `false` for
+    /// portrait callers (no behaviour change).
+    var compactSize: Bool = false
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: compactSize ? 6 : 8) {
             pillButton(icon: "location.north.fill", label: "Compass", tint: .red, action: onCompass)
             pillButton(icon: "plus", label: "Zoom in", tint: .primary, action: onZoomIn)
             pillButton(icon: "minus", label: "Zoom out", tint: .primary, action: onZoomOut)
@@ -151,12 +232,15 @@ struct LiveControlStack: View {
         }
     }
 
+    private var pillSize: CGFloat { compactSize ? 30 : 38 }
+    private var pillFont: Font { compactSize ? .caption.weight(.semibold) : .subheadline.weight(.semibold) }
+
     private func pillButton(icon: String, label: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.subheadline.weight(.semibold))
+                .font(pillFont)
                 .foregroundStyle(tint)
-                .frame(width: 38, height: 38)
+                .frame(width: pillSize, height: pillSize)
                 .background(.ultraThinMaterial, in: Circle())
                 .overlay(Circle().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
                 .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 4)
@@ -215,21 +299,49 @@ public enum LiveBottomSheetDetent: CGFloat, CaseIterable {
     case expanded = 360
 }
 
+/// Sheet height triple. Defaults match the original portrait values; iPhone
+/// landscape callers pass smaller values so the map keeps visible room above
+/// the sheet. Public so tests can pin specific scenarios.
+@available(iOS 17.0, macOS 14.0, *)
+public struct LiveBottomSheetHeights: Equatable {
+    public let collapsed: CGFloat
+    public let medium: CGFloat
+    public let expanded: CGFloat
+
+    public init(collapsed: CGFloat, medium: CGFloat, expanded: CGFloat) {
+        self.collapsed = collapsed
+        self.medium = medium
+        self.expanded = expanded
+    }
+
+    public static let portrait = LiveBottomSheetHeights(collapsed: 140, medium: 240, expanded: 360)
+    public static let landscapeCompact = LiveBottomSheetHeights(collapsed: 140, medium: 200, expanded: 280)
+}
+
 @available(iOS 17.0, macOS 14.0, *)
 struct LiveBottomSheet<Content: View>: View {
     let headerCaption: String
     let headlineText: String
     let headlineTint: Color
+    var heights: LiveBottomSheetHeights = .portrait
     @ViewBuilder let content: () -> Content
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var detent: LiveBottomSheetDetent = .medium
+    @State private var detentIndex: Int = 1 // 0 = collapsed, 1 = medium, 2 = expanded
     @GestureState private var dragOffset: CGFloat = 0
+
+    private var detentValue: CGFloat {
+        switch detentIndex {
+        case 0: return heights.collapsed
+        case 2: return heights.expanded
+        default: return heights.medium
+        }
+    }
 
     private var currentHeight: CGFloat {
         // Negative dragOffset = drag up = larger height. Clamp to [80, expanded+40].
-        let raw = detent.rawValue - dragOffset
-        let maxH = LiveBottomSheetDetent.expanded.rawValue + 40
+        let raw = detentValue - dragOffset
+        let maxH = heights.expanded + 40
         return min(max(raw, 80), maxH)
     }
 
@@ -263,7 +375,7 @@ struct LiveBottomSheet<Content: View>: View {
                 .frame(height: 0.6)
         }
         .shadow(color: Color.black.opacity(0.10), radius: 18, x: 0, y: -6)
-        .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: detent)
+        .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: detentIndex)
     }
 
     private var handle: some View {
@@ -329,24 +441,18 @@ struct LiveBottomSheet<Content: View>: View {
 
     private func snap(to predictedTranslation: CGFloat) {
         // Up = negative translation. Pick the nearest detent to (current - translation).
-        let target = detent.rawValue - predictedTranslation
-        let next: LiveBottomSheetDetent
-        if target > (LiveBottomSheetDetent.medium.rawValue + LiveBottomSheetDetent.expanded.rawValue) / 2 {
-            next = .expanded
-        } else if target > (LiveBottomSheetDetent.collapsed.rawValue + LiveBottomSheetDetent.medium.rawValue) / 2 {
-            next = .medium
+        let target = detentValue - predictedTranslation
+        if target > (heights.medium + heights.expanded) / 2 {
+            detentIndex = 2
+        } else if target > (heights.collapsed + heights.medium) / 2 {
+            detentIndex = 1
         } else {
-            next = .collapsed
+            detentIndex = 0
         }
-        detent = next
     }
 
     private func cycleDetent() {
-        switch detent {
-        case .collapsed: detent = .medium
-        case .medium: detent = .expanded
-        case .expanded: detent = .collapsed
-        }
+        detentIndex = (detentIndex + 1) % 3
     }
 }
 

@@ -14,6 +14,7 @@ public struct AppLiveTrackingView: View {
     @EnvironmentObject private var preferences: AppPreferences
     @ObservedObject private var liveLocation: LiveLocationFeatureModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var hasSeededMap = false
     @State private var recordingDuration: TimeInterval = 0
@@ -76,7 +77,14 @@ public struct AppLiveTrackingView: View {
     public var body: some View {
         GeometryReader { geometry in
             let isLandscape = geometry.size.width > 500
-            if isLandscape {
+            // iPhone landscape => verticalSizeClass == .compact. iPad landscape
+            // keeps the existing split layout (regularSizeClass) — the
+            // Master-README blocks iPad-specific work until user screenshots
+            // arrive (Phase 19.28 follow-up).
+            let isCompactLandscape = isLandscape && verticalSizeClass == .compact
+            if isCompactLandscape {
+                multiLayerLandscapeLayout
+            } else if isLandscape {
                 landscapeLayout
                     .safeAreaInset(edge: .bottom) {
                         liveRecordingBottomInset
@@ -213,6 +221,134 @@ public struct AppLiveTrackingView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             multiLayerBottomSheet
         }
+    }
+
+    // MARK: - Multi-Layer Landscape Layout (iPhone, verticalSizeClass == .compact)
+    //
+    // Same full-bleed map + bottom sheet as portrait, but:
+    //  * LiveLayerPanel is *removed* from the top-leading overlay; its content
+    //    becomes a "LAYERS" expandable section inside the bottom sheet.
+    //  * LiveControlStack stays right-side but in compact size.
+    //  * Bottom sheet uses smaller detents (`landscapeCompact`) so the map
+    //    stays visible.
+    //  * The floating record FAB moves towards the centre — easier reach for
+    //    a thumb that holds the device in landscape and doesn't have to
+    //    stretch to the bottom-right corner.
+
+    private var multiLayerLandscapeLayout: some View {
+        ZStack(alignment: .top) {
+            multiLayerMapBackground
+                .ignoresSafeArea()
+
+            // Centered floating record FAB above the bottom sheet
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    compactRecordFAB
+                        .padding(.bottom, 12)
+                    Spacer()
+                }
+            }
+
+            // Right-aligned compact control stack only — layer panel moves
+            // into the bottom-sheet to free horizontal room.
+            HStack(alignment: .top, spacing: 0) {
+                Spacer()
+                LiveControlStack(
+                    isFollowing: liveLocation.isFollowingLocation,
+                    onCompass: { centerOnCurrentLocation() },
+                    onZoomIn: { adjustMapZoom(factor: 0.5) },
+                    onZoomOut: { adjustMapZoom(factor: 2.0) },
+                    onLocate: {
+                        liveLocation.isFollowingLocation.toggle()
+                        if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
+                    },
+                    onCompactToggle: { isCompactMap.toggle() },
+                    isCompact: isCompactMap,
+                    compactSize: true
+                )
+                .padding(.trailing, 8)
+                .padding(.top, lhDeviceTopSafeInset() + 8)
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            multiLayerLandscapeBottomSheet
+        }
+    }
+
+    private var multiLayerLandscapeBottomSheet: some View {
+        LiveBottomSheet(
+            headerCaption: t("STATUS · LIVE MAP"),
+            headlineText: heroStatusTitle,
+            headlineTint: heroStatusTint,
+            heights: .landscapeCompact
+        ) {
+            VStack(spacing: 0) {
+                LiveLayerSection(
+                    selected: $preferences.mapTrackColorMode,
+                    showWeather: $showWeatherLayer,
+                    showElevation: $showElevationLayer,
+                    layersLabel: layersPanelLabel
+                )
+                Divider().opacity(0.35)
+                LiveBottomSheetRow(
+                    indicatorColor: accuracyColor,
+                    icon: "scope",
+                    label: t("GPS Accuracy"),
+                    value: accuracyText,
+                    trailingTint: accuracyColor
+                )
+                Divider().opacity(0.35)
+                LiveBottomSheetRow(
+                    indicatorColor: liveLocation.isFollowingLocation ? .blue : .secondary,
+                    icon: liveLocation.isFollowingLocation ? "location.fill" : "location",
+                    label: t("Follow"),
+                    value: liveLocation.isFollowingLocation ? t("Follow On") : t("Follow Off"),
+                    trailingTint: liveLocation.isFollowingLocation ? .blue : .secondary,
+                    action: liveLocation.currentLocation == nil ? nil : {
+                        liveLocation.isFollowingLocation.toggle()
+                        if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
+                    }
+                )
+                Divider().opacity(0.35)
+                LiveBottomSheetRow(
+                    indicatorColor: preferences.allowsBackgroundLiveTracking ? LH2GPXTheme.liveMint : .secondary,
+                    icon: preferences.allowsBackgroundLiveTracking ? "moon.fill" : "moon",
+                    label: t("Background Recording"),
+                    value: preferences.allowsBackgroundLiveTracking ? t("On") : t("Off"),
+                    trailingTint: preferences.allowsBackgroundLiveTracking ? LH2GPXTheme.liveMint : .secondary,
+                    action: { preferences.allowsBackgroundLiveTracking.toggle() }
+                )
+                Divider().opacity(0.35)
+                LiveBottomSheetRow(
+                    indicatorColor: LH2GPXTheme.liveMint,
+                    icon: "point.topleft.down.curvedto.point.bottomright.up",
+                    label: t("Track Library"),
+                    value: "\(liveLocation.recordedTracks.count)",
+                    trailingTint: LH2GPXTheme.liveMint,
+                    action: onOpenSavedTracksLibrary
+                )
+                Divider().opacity(0.35)
+                LiveBottomSheetRow(
+                    indicatorColor: permissionTintColor,
+                    icon: statusSymbolName,
+                    label: t("Permission"),
+                    value: permissionShortValue,
+                    trailingTint: permissionTintColor
+                )
+
+                if liveLocation.hasInterruptedSession {
+                    Divider().opacity(0.35)
+                    interruptedSessionBanner
+                        .padding(.vertical, 6)
+                }
+
+                Divider().opacity(0.35)
+                diagnosticsDisclosure
+            }
+        }
+        .accessibilityIdentifier("live.bottomSheet")
     }
 
     @ViewBuilder
