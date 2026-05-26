@@ -117,11 +117,6 @@ public struct LGTabContainerView: View {
         NavigationStack {
             ScrollView {
                 LHPageScaffold {
-                    LHLiquidGlassHeroMark(
-                        title: "LH2GPX",
-                        subtitle: ""
-                    )
-                    .padding(.top, 4)
                     if let overview = overview {
                         AppOverviewSection(
                             overview: overview,
