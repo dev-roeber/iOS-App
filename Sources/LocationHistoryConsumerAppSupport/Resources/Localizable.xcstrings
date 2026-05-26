@@ -4161,6 +4161,12 @@
         }
       }
     },
+    "Favoriten" : {
+
+    },
+    "Favoriten jetzt synchronisieren" : {
+
+    },
     "Favorites" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11936,6 +11942,12 @@
           }
         }
       }
+    },
+    "Synchronisiere…" : {
+
+    },
+    "Synchronisiert deine lokalen Favoriten (Tage) bidirektional mit der privaten iCloud-Datenbank. Keine Standortdaten." : {
+
     },
     "Tap a bar to open the corresponding day." : {
       "extractionState" : "manual",

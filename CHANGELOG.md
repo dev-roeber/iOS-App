@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 2026-05-26 (Hotfix) — Files-Tab Picker-Bug + Upload-Test-Logik (Branch `main`, HEAD folgt)
+
+> Live-Test am iPhone deckte zwei Bugs auf, die der vorherige Audit übersehen hatte.
+
+### Bug #1: "Datei auswählen"-Button im Files-Tab tat nichts beim Tap
+- **Ursache:** `.fileImporter` saß als Modifier direkt am `TabView`. Im iPhone-System-„Mehr"-Bereich (Tab 5 = Files) wird der TabView-Container nicht aktiv in der View-Hierarchie präsentiert → State flippt (`isChoosingCloudFile = true`), Sheet erscheint nie.
+- **Fix:** `.fileImporter` direkt am `NavigationStack` des Files-Tabs angeflanscht (innerhalb der Tab-View-Definition). Damit ist er Teil der System-„Mehr"-Auslagerung und feuert zuverlässig.
+- **Zusatz-UX:** „Datei auswählen" war auf allen 3 Segmenten (Lokal/iCloud/Wartend) sichtbar, obwohl semantisch nur für iCloud-Upload gedacht. Neu: segment-spezifischer `segmentActionButton`:
+  - Lokal → „Datei importieren" (öffnet echten Import-Flow via `onImportLocalFile` = `onOpen`).
+  - iCloud → „Datei auswählen" (Upload, bisheriger Pfad).
+  - Wartend → kein Button.
+- **Neue AccessibilityID:** `AppAccessibilityID.Files.importLocal = "files.importLocal"`.
+
+### Bug #2: Upload-„Verbindung testen" zeigte bei HTTP 5xx fälschlich „Erreichbar"
+- **Datei:** `AppOptionsView.swift` `testConnection()` (Optionen → Upload).
+- **Ursache:** Beide Branches der if/else-Auswertung setzten `connectionTestResult = .reachable`. HTTP 500-599 wurde als „reachable" klassifiziert.
+- **Fix:** Else-Branch setzt jetzt `.unreachable`.
+
+### Verifikation
+- Vorheriger Audit (actionsMenu-Sheet könnte gleiches Präsentationsproblem haben) widerlegt: `.sheet(item: $presentedSheet)` sitzt korrekt am `Menu` innerhalb von `actionsMenu`, das pro Tab im Toolbar gerendert wird — Teil des sichtbaren View-Trees.
+
+---
+
 ## 2026-05-26 — More-Tab Audit + Backend-Hardening (Files-Tab) (Branch `main`, HEAD folgt)
 
 > Audit des "More"/"Mehr"-Tabs (iOS-System-More, Tab 5 = Files) inkl. aller Unterseiten (Options-Sheet mit 10 Sektionen, 40+ Settings) und aller `fileImporter`-Trigger. UI-Verdrahtung: 100% sauber, keine Stubs/toten Branches. Drei Backend-Hotspots im Files-Tab behoben. **1848 Tests grün** (`swift test`, 2 skipped, 0 failures, exit 0).

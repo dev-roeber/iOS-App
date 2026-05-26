@@ -33,14 +33,23 @@ public struct AppFilesView: View {
     /// Race-Conditions auf den State).
     @State private var initialRefreshTask: Task<Void, Never>?
 
-    /// Picker-Trigger-Closure. Parent (`AppContentSplitView`) hostet den
-    /// `.fileImporter` selbst — verschachtelte fileImporter in
-    /// Tab-Subviews crashen sofort beim Tap (iOS 17/18 Bug).
+    /// Picker-Trigger-Closure für iCloud-Upload. Parent
+    /// (`AppContentSplitView`) hostet den `.fileImporter` direkt am
+    /// NavigationStack dieses Tabs — verschachtelte fileImporter in
+    /// Tab-Subviews crashen sofort beim Tap (iOS 17/18 Bug); ein
+    /// fileImporter am TabView-Modifier wird im iPhone-System-„Mehr"-
+    /// Bereich nicht präsentiert.
     private let onChooseCloudFile: () -> Void
+
+    /// Trigger für den lokalen Import-Pfad (Datei → Timeline-Pipeline).
+    /// Wird im Lokal-Segment angezeigt und ruft den gleichen Import-
+    /// Flow wie der „Datei öffnen"-Eintrag im Actions-Menü.
+    private let onImportLocalFile: () -> Void
 
     public init(
         cloudViewModel: AppCloudFileViewModel,
-        onChooseCloudFile: @escaping () -> Void = {}
+        onChooseCloudFile: @escaping () -> Void = {},
+        onImportLocalFile: @escaping () -> Void = {}
     ) {
         // Local-File-Scanner wird hier lazy gebaut.
         let scanner: LocalFileScanning
@@ -52,17 +61,20 @@ public struct AppFilesView: View {
         _viewModel = StateObject(wrappedValue: AppFilesViewModel(scanner: scanner))
         _cloudViewModel = ObservedObject(initialValue: cloudViewModel)
         self.onChooseCloudFile = onChooseCloudFile
+        self.onImportLocalFile = onImportLocalFile
     }
 
     /// Explizit für Tests: nimmt beide ViewModels.
     public init(
         viewModel: AppFilesViewModel,
         cloudViewModel: AppCloudFileViewModel,
-        onChooseCloudFile: @escaping () -> Void = {}
+        onChooseCloudFile: @escaping () -> Void = {},
+        onImportLocalFile: @escaping () -> Void = {}
     ) {
         _viewModel = StateObject(wrappedValue: viewModel)
         _cloudViewModel = ObservedObject(initialValue: cloudViewModel)
         self.onChooseCloudFile = onChooseCloudFile
+        self.onImportLocalFile = onImportLocalFile
     }
 
     public var body: some View {
@@ -199,6 +211,26 @@ public struct AppFilesView: View {
             .buttonStyle(.borderedProminent)
             .disabled(viewModel.actionState != .idle || cloudViewModel.actionState != .idle)
             .accessibilityIdentifier(AppAccessibilityID.Files.refresh)
+            segmentActionButton
+            Spacer()
+        }
+    }
+
+    /// Segment-spezifischer Picker-Button. Lokal → echter Import in die
+    /// Timeline-Pipeline. iCloud → Upload in private CloudKit-Datenbank.
+    /// Wartend → kein Picker (User kann hier nur warten/retryen).
+    @ViewBuilder
+    private var segmentActionButton: some View {
+        switch selectedSegment {
+        case .local:
+            Button {
+                onImportLocalFile()
+            } label: {
+                Label("Datei importieren", systemImage: "square.and.arrow.down")
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier(AppAccessibilityID.Files.importLocal)
+        case .cloud:
             Button {
                 onChooseCloudFile()
             } label: {
@@ -207,7 +239,8 @@ public struct AppFilesView: View {
             .buttonStyle(.bordered)
             .disabled(!canUseCloudFiles)
             .accessibilityIdentifier(AppAccessibilityID.Files.chooseFile)
-            Spacer()
+        case .pending:
+            EmptyView()
         }
     }
 

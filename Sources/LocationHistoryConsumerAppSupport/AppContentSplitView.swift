@@ -383,7 +383,8 @@ public struct AppContentSplitView: View {
             NavigationStack {
                 AppFilesView(
                     cloudViewModel: filesCloudViewModel,
-                    onChooseCloudFile: { isChoosingCloudFile = true }
+                    onChooseCloudFile: { isChoosingCloudFile = true },
+                    onImportLocalFile: onOpen
                 )
                     .environmentObject(preferences)
                     .navigationTitle("")
@@ -396,6 +397,20 @@ public struct AppContentSplitView: View {
                             actionsMenu
                         }
                     }
+                    #if canImport(UniformTypeIdentifiers)
+                    // fileImporter MUSS innerhalb des sichtbaren View-Trees
+                    // dieses Tabs sitzen — am TabView-Modifier angeflanscht
+                    // wird er im iPhone-System-„Mehr"-Bereich (Tab 5 ab
+                    // 6 Tabs) nicht präsentiert: State flippt, Sheet
+                    // erscheint nie. Hier am NavigationStack ist er Teil
+                    // der More-Auslagerung und feuert zuverlässig.
+                    .fileImporter(
+                        isPresented: $isChoosingCloudFile,
+                        allowedContentTypes: [.json, .zip, .xml],
+                        allowsMultipleSelection: false,
+                        onCompletion: handleStableCloudFilePick
+                    )
+                    #endif
             }
             .tabItem {
                 Label(t("Files"), systemImage: "folder")
@@ -428,17 +443,9 @@ public struct AppContentSplitView: View {
         .onChange(of: preferences.startTab) { _, newValue in
             selectedTab = newValue.tabIndex
         }
-        #if canImport(UniformTypeIdentifiers)
-        // Stabile UTType-Liste — keine dynamischen `UTType(filenameExtension:)`-
-        // Aufrufe mehr im Picker. Endung-Validierung passiert nach der Auswahl
-        // in `handleStableCloudFilePick`.
-        .fileImporter(
-            isPresented: $isChoosingCloudFile,
-            allowedContentTypes: [.json, .zip, .xml],
-            allowsMultipleSelection: false,
-            onCompletion: handleStableCloudFilePick
-        )
-        #endif
+        // fileImporter wurde nach unten zum Files-Tab-NavigationStack
+        // verschoben, damit er im iPhone-System-„Mehr"-Bereich (Tab 5)
+        // zuverlässig präsentiert wird.
     }
 
     #if canImport(UniformTypeIdentifiers)

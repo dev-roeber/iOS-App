@@ -564,7 +564,7 @@ struct AppUploadOptionsView: View {
                 if let http = response as? HTTPURLResponse, http.statusCode < 500 {
                     connectionTestResult = .reachable
                 } else {
-                    connectionTestResult = .reachable
+                    connectionTestResult = .unreachable
                 }
             } catch {
                 connectionTestResult = .unreachable

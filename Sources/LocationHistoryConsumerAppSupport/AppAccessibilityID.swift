@@ -45,6 +45,7 @@ public enum AppAccessibilityID {
         public static let segmentedControl = "files.segmentedControl"
         public static let refresh = "files.refresh"
         public static let chooseFile = "files.chooseFile"
+        public static let importLocal = "files.importLocal"
         public static let upload = "files.upload"
         public static let download = "files.download"
         public static let delete = "files.delete"
