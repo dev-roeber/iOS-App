@@ -137,6 +137,10 @@ public final class LiveLocationFeatureModel: ObservableObject {
         recorder.configuration
     }
 
+    public var currentDistanceMeters: Double {
+        recorder.accumulatedDistanceM
+    }
+
     public var isBackgroundTrackingActive: Bool {
         prefersBackgroundTracking && authorization == .authorizedAlways
     }

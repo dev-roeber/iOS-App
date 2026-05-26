@@ -247,6 +247,7 @@ public final class AppPreferences: ObservableObject {
         static let startTab = "app.preferences.startTab"
         static let mapStyle = "app.preferences.mapStyle"
         static let showsTechnicalImportDetails = "app.preferences.showsTechnicalImportDetails"
+        static let useLiquidGlassTabContainer = "app.preferences.useLiquidGlassTabContainer"
         static let appLanguage = "app.preferences.appLanguage"
         static let liveTrackingAccuracy = "app.preferences.liveTrackingAccuracy"
         static let liveTrackingDetail = "app.preferences.liveTrackingDetail"
@@ -310,6 +311,10 @@ public final class AppPreferences: ObservableObject {
 
     @Published public var showsTechnicalImportDetails: Bool {
         didSet { userDefaults.set(showsTechnicalImportDetails, forKey: Keys.showsTechnicalImportDetails) }
+    }
+
+    @Published public var useLiquidGlassTabContainer: Bool {
+        didSet { userDefaults.set(useLiquidGlassTabContainer, forKey: Keys.useLiquidGlassTabContainer) }
     }
 
     @Published public var appLanguage: AppLanguagePreference {
@@ -661,6 +666,7 @@ public final class AppPreferences: ObservableObject {
             from: userDefaults
         ) ?? .standard
         self.showsTechnicalImportDetails = userDefaults.object(forKey: Keys.showsTechnicalImportDetails) as? Bool ?? true
+        self.useLiquidGlassTabContainer = userDefaults.object(forKey: Keys.useLiquidGlassTabContainer) as? Bool ?? false
         self.appLanguage = Self.loadEnum(
             AppLanguagePreference.self,
             key: Keys.appLanguage,
@@ -771,6 +777,7 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.startTab)
         userDefaults.removeObject(forKey: Keys.mapStyle)
         userDefaults.removeObject(forKey: Keys.showsTechnicalImportDetails)
+        userDefaults.removeObject(forKey: Keys.useLiquidGlassTabContainer)
         userDefaults.removeObject(forKey: Keys.appLanguage)
         userDefaults.removeObject(forKey: Keys.liveTrackingAccuracy)
         userDefaults.removeObject(forKey: Keys.liveTrackingDetail)
@@ -814,6 +821,7 @@ public final class AppPreferences: ObservableObject {
         startTab = .overview
         preferredMapStyle = .standard
         showsTechnicalImportDetails = true
+        useLiquidGlassTabContainer = false
         appLanguage = .english
         liveTrackingAccuracy = .balanced
         liveTrackingDetail = .balanced

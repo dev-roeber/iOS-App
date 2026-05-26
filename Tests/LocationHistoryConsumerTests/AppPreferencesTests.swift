@@ -37,6 +37,7 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.startTab, .overview)
             XCTAssertEqual(preferences.preferredMapStyle, .standard)
             XCTAssertTrue(preferences.showsTechnicalImportDetails)
+            XCTAssertFalse(preferences.useLiquidGlassTabContainer)
             XCTAssertEqual(preferences.appLanguage, .english)
             XCTAssertEqual(preferences.liveTrackingAccuracy, .balanced)
             XCTAssertEqual(preferences.liveTrackingDetail, .balanced)
@@ -67,6 +68,7 @@ final class AppPreferencesTests: XCTestCase {
         defaults.set(AppStartTabPreference.insights.rawValue, forKey: "app.preferences.startTab")
         defaults.set(AppMapStylePreference.hybrid.rawValue, forKey: "app.preferences.mapStyle")
         defaults.set(false, forKey: "app.preferences.showsTechnicalImportDetails")
+        defaults.set(true, forKey: "app.preferences.useLiquidGlassTabContainer")
         defaults.set(AppLanguagePreference.german.rawValue, forKey: "app.preferences.appLanguage")
         defaults.set(AppLiveTrackingAccuracyPreference.strict.rawValue, forKey: "app.preferences.liveTrackingAccuracy")
         defaults.set(AppLiveTrackingDetailPreference.detailed.rawValue, forKey: "app.preferences.liveTrackingDetail")
@@ -88,6 +90,7 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.startTab, .insights)
             XCTAssertEqual(preferences.preferredMapStyle, .hybrid)
             XCTAssertFalse(preferences.showsTechnicalImportDetails)
+            XCTAssertTrue(preferences.useLiquidGlassTabContainer)
             XCTAssertEqual(preferences.appLanguage, .german)
             XCTAssertEqual(preferences.liveTrackingAccuracy, .strict)
             XCTAssertEqual(preferences.liveTrackingDetail, .detailed)
@@ -151,6 +154,7 @@ final class AppPreferencesTests: XCTestCase {
             preferences.startTab = .export
             preferences.preferredMapStyle = .hybrid
             preferences.showsTechnicalImportDetails = false
+            preferences.useLiquidGlassTabContainer = true
             preferences.appLanguage = .german
             preferences.liveTrackingAccuracy = .strict
             preferences.liveTrackingDetail = .batterySaver
@@ -170,6 +174,7 @@ final class AppPreferencesTests: XCTestCase {
             XCTAssertEqual(preferences.startTab, .overview)
             XCTAssertEqual(preferences.preferredMapStyle, .standard)
             XCTAssertTrue(preferences.showsTechnicalImportDetails)
+            XCTAssertFalse(preferences.useLiquidGlassTabContainer)
             XCTAssertEqual(preferences.appLanguage, .english)
             XCTAssertEqual(preferences.liveTrackingAccuracy, .balanced)
             XCTAssertEqual(preferences.liveTrackingDetail, .balanced)

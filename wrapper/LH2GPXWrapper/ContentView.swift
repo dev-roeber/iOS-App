@@ -60,13 +60,23 @@ struct ContentView: View {
             }
         Group {
             if session.content != nil {
-                AppContentSplitView(
-                    session: $session,
-                    liveLocation: liveLocation,
-                    onOpen: { isImportingFile = true },
-                    onLoadDemo: loadBundledDemo,
-                    onClear: clearCurrentContent
-                )
+                if #available(iOS 26.0, *), preferences.useLiquidGlassTabContainer {
+                    LGTabContainerView(
+                        session: $session,
+                        liveLocation: liveLocation,
+                        onOpen: { isImportingFile = true },
+                        onLoadDemo: loadBundledDemo,
+                        onClear: clearCurrentContent
+                    )
+                } else {
+                    AppContentSplitView(
+                        session: $session,
+                        liveLocation: liveLocation,
+                        onOpen: { isImportingFile = true },
+                        onLoadDemo: loadBundledDemo,
+                        onClear: clearCurrentContent
+                    )
+                }
             } else if let storeSession = session.localTimelineSession {
                 // Phase-9B — Store-Session aktiv (feature-flagged). Zeigt
                 // Metadaten + DayList/DayDetail + Delete-Button.

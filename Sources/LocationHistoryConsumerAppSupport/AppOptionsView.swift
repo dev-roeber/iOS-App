@@ -175,6 +175,8 @@ struct AppGeneralOptionsView: View {
                     }
                 }
                 Toggle(t("Show Technical Import Details"), isOn: $preferences.showsTechnicalImportDetails)
+                Toggle(t("Liquid Glass tab layout"), isOn: $preferences.useLiquidGlassTabContainer)
+                    .accessibilityIdentifier("options.general.liquidGlassTabContainer")
                 Picker(t("App Language"), selection: $preferences.appLanguage) {
                     ForEach(AppLanguagePreference.allCases) { language in
                         Text(t(language.title)).tag(language)
