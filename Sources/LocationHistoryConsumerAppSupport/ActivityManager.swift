@@ -4,6 +4,14 @@ import ActivityKit
 #endif
 
 /// Manages the Live Activity shown during active track recordings.
+///
+/// `@MainActor`-isolated so all reads/writes of `_currentActivityBox` and
+/// `lastUpdateTime` — including the post-`Task` mutations in
+/// `_endActivityInternal` / `_cancelAllActivitiesInternal` — happen on the
+/// main actor. The Live Activity APIs themselves are `nonisolated async`,
+/// so `await activity.update / .end / activities` still works inside the
+/// `Task {}` blocks via the inherited actor context.
+@MainActor
 public final class ActivityManager {
     public static let shared = ActivityManager()
 
