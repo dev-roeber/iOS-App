@@ -295,6 +295,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				de,
 				Base,
 			);
 			mainGroup = 9E7516E02F69096F00E212A7;
@@ -530,8 +531,6 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = LH2GPX;
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Your location is used only inside LH2GPX to continue a live track you started manually, even when the app is no longer in the foreground.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only inside LH2GPX to show your position on the map and to record live tracks you start manually.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = location;
@@ -570,8 +569,6 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = LH2GPX;
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Your location is used only inside LH2GPX to continue a live track you started manually, even when the app is no longer in the foreground.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used only inside LH2GPX to show your position on the map and to record live tracks you start manually.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = location;

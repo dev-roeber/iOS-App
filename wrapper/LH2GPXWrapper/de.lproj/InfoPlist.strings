@@ -1,0 +1,5 @@
+/* Permission usage descriptions (German) */
+"NSLocationWhenInUseUsageDescription" = "Dein Standort wird ausschließlich innerhalb von LH2GPX verwendet, um deine Position auf der Karte zu zeigen und LiveTracks aufzuzeichnen, die du manuell startest.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Hintergrund-Aufzeichnung nur, wenn du sie explizit aktivierst. Standorte bleiben auf dem Gerät, sofern du keinen Upload-Server konfigurierst.";
+"NSPhotoLibraryAddUsageDescription" = "Damit exportierte Karten-Snapshots in deine Foto-Bibliothek gespeichert werden können.";
+"NSUserTrackingUsageDescription" = "LH2GPX trackt dich nicht; diese Erlaubnis wird nur abgefragt, falls eine Drittanbieter-Integration aktiviert ist.";

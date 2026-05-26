@@ -24,6 +24,17 @@
 	<string>Your location is used only inside LH2GPX to continue a live track you started manually, even when the app is no longer in the foreground.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is used only inside LH2GPX to show your position on the map and to record live tracks you start manually.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Required to save exported map snapshots to your photo library.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>LH2GPX does not track you; this permission is only requested if a third-party integration is enabled.</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>de</string>
+	</array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
