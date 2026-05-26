@@ -338,3 +338,44 @@ final class AppPreferencesTests: XCTestCase {
 }
 
 // KeychainHelper tests live in KeychainHelperTests.swift.
+
+extension AppPreferencesTests {
+
+    func testWeatherLayerDefaultsToOff() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            XCTAssertFalse(preferences.weatherLayerEnabled)
+            XCTAssertNil(preferences.weatherLayerError)
+        }
+    }
+
+    func testWeatherLayerEnableClearsPriorError() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            preferences.markWeatherLayerFailure("boom")
+            XCTAssertEqual(preferences.weatherLayerError, "boom")
+            XCTAssertFalse(preferences.weatherLayerEnabled)
+
+            preferences.weatherLayerEnabled = true
+            XCTAssertNil(preferences.weatherLayerError)
+        }
+    }
+
+    func testWeatherLayerMarkFailureDisables() {
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            preferences.weatherLayerEnabled = true
+            preferences.markWeatherLayerFailure("WeatherKit unavailable")
+            XCTAssertFalse(preferences.weatherLayerEnabled)
+            XCTAssertEqual(preferences.weatherLayerError, "WeatherKit unavailable")
+        }
+    }
+
+    func testWeatherLayerPersistedAndReloaded() {
+        defaults.set(true, forKey: "app.preferences.weatherLayerEnabled")
+        MainActor.assumeIsolated {
+            let preferences = AppPreferences(userDefaults: defaults)
+            XCTAssertTrue(preferences.weatherLayerEnabled)
+        }
+    }
+}

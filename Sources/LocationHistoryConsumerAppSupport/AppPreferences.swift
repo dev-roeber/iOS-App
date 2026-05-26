@@ -293,6 +293,10 @@ public final class AppPreferences: ObservableObject {
         // battery-/GPU-conscious users; it does NOT change data flow, no
         // CoreLocation altitude is collected because of this flag.
         static let mapShowsRealisticElevation = "app.preferences.mapShowsRealisticElevation"
+        // Weather layer (PR #38 follow-up). Off by default; enabling without
+        // a working WeatherKit entitlement auto-reverts to false and surfaces
+        // the localized error string in `weatherLayerError`.
+        static let weatherLayerEnabled = "app.preferences.weatherLayerEnabled"
     }
 
     private let userDefaults: UserDefaults
@@ -507,6 +511,26 @@ public final class AppPreferences: ObservableObject {
     @Published public var mapShowsRealisticElevation: Bool {
         didSet { userDefaults.set(mapShowsRealisticElevation, forKey: Keys.mapShowsRealisticElevation) }
     }
+
+    /// Master toggle for the in-app WeatherKit-backed weather layer. Off by
+    /// default. When turned on without a working WeatherKit entitlement, the
+    /// runtime auto-reverts the flag and sets `weatherLayerError`.
+    @Published public var weatherLayerEnabled: Bool {
+        didSet {
+            userDefaults.set(weatherLayerEnabled, forKey: Keys.weatherLayerEnabled)
+            if weatherLayerEnabled {
+                // Clear any prior error optimistically; the live view will
+                // re-set it if the fetch fails.
+                weatherLayerError = nil
+            }
+        }
+    }
+
+    /// Localized last-seen failure message from the weather provider. UI
+    /// surfaces this string below the settings toggle and (if non-nil) below
+    /// the Live weather pill. Cleared when the user re-enables the toggle or
+    /// taps "reset".
+    @Published public var weatherLayerError: String?
 
     /// Which value is shown in the Dynamic Island compact-trailing slot during live recording.
     @Published public var dynamicIslandCompactDisplay: DynamicIslandCompactDisplay {
@@ -767,6 +791,8 @@ public final class AppPreferences: ObservableObject {
             rawValue: userDefaults.string(forKey: Keys.iCloudSyncConflictPolicy) ?? ""
         ) ?? .manual
         self.mapShowsRealisticElevation = userDefaults.object(forKey: Keys.mapShowsRealisticElevation) as? Bool ?? true
+        self.weatherLayerEnabled = userDefaults.object(forKey: Keys.weatherLayerEnabled) as? Bool ?? false
+        self.weatherLayerError = nil
         syncWidgetLanguagePreference()
         WidgetDataStore.saveDynamicIslandCompactDisplay(loadedDynamicIslandDisplay)
     }
@@ -815,6 +841,7 @@ public final class AppPreferences: ObservableObject {
         userDefaults.removeObject(forKey: Keys.iCloudSyncAllowCellular)
         userDefaults.removeObject(forKey: Keys.iCloudSyncConflictPolicy)
         userDefaults.removeObject(forKey: Keys.mapShowsRealisticElevation)
+        userDefaults.removeObject(forKey: Keys.weatherLayerEnabled)
 
         distanceUnit = .metric
         startTab = .overview
@@ -858,6 +885,20 @@ public final class AppPreferences: ObservableObject {
         iCloudSyncAllowCellular = false
         iCloudSyncConflictPolicy = .manual
         mapShowsRealisticElevation = true
+        weatherLayerEnabled = false
+        weatherLayerError = nil
+    }
+
+    /// Marks the weather layer as failing. Auto-disables `weatherLayerEnabled`
+    /// so the UI does not keep retrying without user intent and persists the
+    /// localized message for the settings & live surfaces.
+    public func markWeatherLayerFailure(_ localizedMessage: String) {
+        weatherLayerEnabled = false
+        weatherLayerError = localizedMessage
+    }
+
+    public func clearWeatherLayerError() {
+        weatherLayerError = nil
     }
 
     private func syncWidgetLanguagePreference() {

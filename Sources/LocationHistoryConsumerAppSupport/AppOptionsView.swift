@@ -222,6 +222,44 @@ struct AppMapsOptionsView: View {
                 .accessibilityHint(Text(t("Visual MapKit terrain only — does not add altitude values to imported history or to GPX exports.")))
             } header: { Text(t("Terrain")) }
               footer: { Text(t("3-D terrain is a MapKit rendering feature. No external elevation API is contacted, and no data leaves the device.")) }
+
+            // Phase 19.30 — Weather layer master switch. Off by default; when
+            // enabled the Live view will fetch the current snapshot through
+            // `WeatherCacheManager`. Failures bubble back into
+            // `weatherLayerError` and auto-disable the toggle.
+            Section {
+                Toggle(isOn: $preferences.weatherLayerEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(t("Show weather data"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(t("Uses data · Apple WeatherKit · Location required"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityIdentifier("options.maps.weatherLayer.toggle")
+
+                if let weatherError = preferences.weatherLayerError {
+                    Button(role: .destructive) {
+                        preferences.clearWeatherLayerError()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(weatherError)
+                                    .font(.caption)
+                                    .multilineTextAlignment(.leading)
+                                Text(t("Reset weather error"))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .foregroundStyle(.red)
+                    }
+                    .accessibilityIdentifier("options.maps.weatherLayer.errorReset")
+                }
+            } header: { Text(t("Weather")) }
         }
         .navigationTitle(t("Maps"))
     }
