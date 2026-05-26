@@ -765,7 +765,7 @@ public struct AppLiveTrackingView: View {
                 .opacity(0.85)
                 .ignoresSafeArea()
         } else {
-            Color(UIColor.systemBackground)
+            Color(.systemBackground)
                 .ignoresSafeArea()
         }
     }
