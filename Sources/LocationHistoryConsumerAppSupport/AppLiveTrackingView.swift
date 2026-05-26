@@ -78,15 +78,15 @@ public struct AppLiveTrackingView: View {
             let isLandscape = geometry.size.width > 500
             if isLandscape {
                 landscapeLayout
+                    .safeAreaInset(edge: .bottom) {
+                        liveRecordingBottomInset
+                    }
             } else {
                 multiLayerPortraitLayout
             }
         }
         // NavigationTitle is set by the parent (LGTabContainerView → "Live")
         // — no redundant hero title here.
-        .safeAreaInset(edge: .bottom) {
-            liveRecordingBottomInset
-        }
         .task {
             liveLocation.refreshAuthorization()
             refreshTrackPresentationState()
@@ -171,6 +171,17 @@ public struct AppLiveTrackingView: View {
             multiLayerMapBackground
                 .ignoresSafeArea()
 
+            // Floating compact record FAB above the bottom sheet
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    compactRecordFAB
+                        .padding(.trailing, 16)
+                        .padding(.bottom, 12)
+                }
+            }
+
             HStack(alignment: .top, spacing: 0) {
                 LiveLayerPanel(
                     selected: $preferences.mapTrackColorMode,
@@ -214,6 +225,32 @@ public struct AppLiveTrackingView: View {
                 liveMapPlaceholderContent
             }
         }
+    }
+
+    // MARK: - Compact Floating Record Button (portrait)
+
+    @ViewBuilder
+    private var compactRecordFAB: some View {
+        let isRecording = liveLocation.isRecording
+        let icon = isRecording ? "stop.fill" : "record.circle.fill"
+        let label = isRecording ? t("Stop Recording") : t("Start Recording")
+        Button(action: {
+            liveLocation.setRecordingEnabled(!isRecording)
+        }) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(
+                    Circle().fill(Color.red)
+                )
+                .overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 1))
+                .shadow(color: Color.black.opacity(0.25), radius: 10, x: 0, y: 5)
+        }
+        .buttonStyle(.plain)
+        .disabled(liveLocation.isAwaitingAuthorization)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(isRecording ? "live.recording.stopAction" : "live.recording.primaryAction")
     }
 
     private var multiLayerBottomSheet: some View {
