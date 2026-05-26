@@ -93,7 +93,7 @@ struct AppExportPreviewMapView: View {
                     )
                 MapPolyline(coordinates: path.coordinates)
                     .stroke(
-                        MapPalette.routeColor(for: path.activityType),
+                        exportStrokeColor(for: path.activityType),
                         style: MapTrackStyle.stroke(width: MapTrackStyle.Width.export)
                     )
             }
@@ -136,6 +136,24 @@ struct AppExportPreviewMapView: View {
             return "Vorschaukarte mit \(routes) \(routes == 1 ? "Route" : "Routen"), \(waypoints) \(waypoints == 1 ? "Wegpunkt" : "Wegpunkten") und \(points) eingezeichneten Routenpunkten"
         }
         return "Preview map with \(routes) \(routes == 1 ? "route" : "routes"), \(waypoints) \(waypoints == 1 ? "waypoint" : "waypoints"), and \(points) plotted route points"
+    }
+
+    /// Honors the global Layer-Panel selection on the export preview / hero
+    /// map. Export-preview overlays do not carry per-segment speed samples, so
+    /// the Tempo layer falls back to a uniform speed-warm tint, mirroring the
+    /// Insights pipeline. Elevation/Weather remain placeholder tints until
+    /// their data layers ship (tracked as follow-up).
+    private func exportStrokeColor(for activityType: String?) -> Color {
+        switch preferences.mapTrackColorMode {
+        case .activity:
+            return MapPalette.routeColor(for: activityType)
+        case .speed:
+            return SpeedColors.color(for: 0.65)
+        case .elevation:
+            return .green
+        case .weather:
+            return .blue
+        }
     }
 
     private func t(_ english: String) -> String {
