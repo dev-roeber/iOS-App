@@ -713,8 +713,7 @@ enum AppGermanTranslations {
         "Last 7 days": "Letzte 7 Tage",
         "Last 30 days": "Letzte 30 Tage",
         "Last 90 days": "Letzte 90 Tage",
-        "All Time": "Gesamter Zeitraum",
-        "Custom": "Benutzerdefiniert",
+        // "All Time" + "Custom" exist further up (L354/L869) — keep canonical entries.
         "Overview map with": "Übersichtskarte mit",
         // Heatmap chip (task 4)
         "Computing heatmap…": "Heatmap wird berechnet…",
