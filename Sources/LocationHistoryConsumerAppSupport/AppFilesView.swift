@@ -266,7 +266,7 @@ public struct AppFilesView: View {
             // (z. B. Permission-Fehler aus vorherigem Build) ewig
             // stehenbleiben.
             Button {
-                cloudViewModel.clearActionMessage()
+                clearMergedActionMessage()
             } label: {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(.secondary)
@@ -524,6 +524,14 @@ public struct AppFilesView: View {
 
     private var mergedActionFailed: Bool {
         cloudViewModel.actionMessage != nil ? cloudViewModel.actionFailed : viewModel.actionFailed
+    }
+
+    private func clearMergedActionMessage() {
+        if cloudViewModel.actionMessage != nil {
+            cloudViewModel.clearActionMessage()
+        } else {
+            viewModel.clearActionMessage()
+        }
     }
 
     // Picker-Logik komplett nach AppContentSplitView ausgelagert.

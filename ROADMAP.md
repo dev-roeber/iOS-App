@@ -1,5 +1,16 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-27, Branch `audit/swiftui-ui-framework-complete` — SwiftUI/UI-Framework-Audit)
+
+- **Neu verifiziert:** SwiftUI ist das primäre UI-Framework. `UIViewRepresentable` ist nicht aktiv; genau eine `UIViewControllerRepresentable`-Bridge (`IOSTabReselectionObserver`) bleibt technisch begründet.
+- **Neu verifiziert:** Aktive Kartenflächen verwenden SwiftUI `Map`; kein produktiver UIKit-`MKMapView`-Renderer ist verdrahtet. UIKit-MapKit bleibt ein späterer Performance-Spike, nicht aktuelle App-Wahrheit.
+- **Neu verifiziert:** Swift Charts wird in Insights/Speed/Elevation eingesetzt; Dateiimport/-export läuft über SwiftUI-Systemmodifikatoren; Insights-Sharing nutzt SwiftUI `ShareLink`.
+- **Umgesetzt:** Low-Risk-Fix im Dateien-Tab zum Verwerfen lokaler Aktionsmeldungen.
+- **Offen:** iPad-/regular-width-Smoke trotz `TARGETED_DEVICE_FAMILY = 1,2`, Light-Mode-/Force-Dark-Entscheidung, weitere Designsystem-Vereinheitlichung, Xcode/Device/TestFlight-Verifikation.
+- **Bericht:** `docs/UI_FRAMEWORK_SWIFTUI_AUDIT_2026-05-27.md`.
+
+---
+
 ## Aktiver Stand (2026-05-27, Branch `fix/weatherkit-capability-diagnostics` — WeatherKit Signing/Diagnose-Härtung)
 
 - **Umgesetzt:** App-Entitlements + `project.pbxproj`-Capability fuer WeatherKit sind im App-Target konsistent; Widget bleibt ohne WeatherKit.

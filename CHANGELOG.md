@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-05-27 — SwiftUI/UI-Framework Audit Complete (Branch `audit/swiftui-ui-framework-complete`)
+
+### Added
+- `docs/UI_FRAMEWORK_SWIFTUI_AUDIT_2026-05-27.md` — neuer, repo-aktuell ausgeführter SwiftUI-/UI-Framework-Audit mit View-Inventar, UIKit-Abhängigkeitstabelle, Designsystem-Abweichungen, Modernisierungsphasen und Risiken.
+
+### Changed
+- Dateien-Tab: Der gemeinsame Aktionsbanner kann jetzt auch lokale `AppFilesViewModel`-Meldungen verwerfen. Vorher löschte der X-Button nur iCloud-Meldungen und ließ lokale Refresh-/Delete-Fehler oder Erfolgsmeldungen stehen.
+- Doku-Truth: Aktuelle Repo-Wahrheit für UI-Framework-Stack dokumentiert: SwiftUI ist Primärframework; UIKit bleibt eng begrenzt auf technisch begründete APIs; kein aktiver UIKit-`MKMapView`-Renderer; `TARGETED_DEVICE_FAMILY = 1,2` ist im aktuellen `project.pbxproj` gesetzt, aber iPad-Smoke bleibt offen.
+
+### Tests
+- Nicht ausgeführt: Die Test-/Build-Phase wurde vom User mit „tests überspringen“ übersprungen. Der zuvor gestartete `swift build` wurde abgebrochen; kein Build- oder Testerfolg wird behauptet.
+
 ## 2026-05-27 — WeatherKit Capability + Diagnostics (Branch `fix/weatherkit-capability-diagnostics`)
 
 ### Changed

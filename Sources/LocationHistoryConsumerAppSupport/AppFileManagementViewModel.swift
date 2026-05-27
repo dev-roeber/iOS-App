@@ -93,6 +93,11 @@ public final class AppFilesViewModel: ObservableObject {
         actionState = .idle
     }
 
+    public func clearActionMessage() {
+        actionMessage = nil
+        actionFailed = false
+    }
+
     /// Reine Snapshot-Mutation: entfernt `entry` aus dem zugehörigen
     /// Bucket und passt `totalSizeBytes` an. `internal` + `static`, damit
     /// das ohne MainActor-Hop unit-testbar ist.

@@ -129,6 +129,21 @@ final class AppFileManagementTests: XCTestCase {
     }
 
     @MainActor
+    func testViewModelClearActionMessageResetsLocalBannerState() async {
+        let scanner = InMemoryLocalFileScanner()
+        scanner.scriptedScanError = NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "Scan kaputt"])
+        let vm = AppFilesViewModel(scanner: scanner)
+        await vm.refresh()
+        XCTAssertTrue(vm.actionFailed)
+        XCTAssertNotNil(vm.actionMessage)
+
+        vm.clearActionMessage()
+
+        XCTAssertFalse(vm.actionFailed)
+        XCTAssertNil(vm.actionMessage)
+    }
+
+    @MainActor
     func testViewModelDeleteRemovesEntryAndReloadsSnapshot() async {
         let entry = makeEntry(name: "a.gpx", bucket: .exports, size: 50)
         let scanner = InMemoryLocalFileScanner(snapshots: [

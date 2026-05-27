@@ -1,5 +1,15 @@
 # NEXT_STEPS
 
+## Stand 2026-05-27 — SwiftUI/UI-Framework Audit Complete (Branch `audit/swiftui-ui-framework-complete`)
+
+Neu ausgeführt im aktuellen Repo, ohne alte SwiftUI-/UI-Framework-Findings als verifiziert zu übernehmen: vollständiger Code-Sweep über SwiftUI-Views, UIKit-Imports, Representable-Bridges, Navigation/Sheets/Alerts, MapKit, Charts, FileImporter/FileExporter/ShareLink und Designsystem-Komponenten. Bericht: `docs/UI_FRAMEWORK_SWIFTUI_AUDIT_2026-05-27.md`.
+
+**Lokal umgesetzt:** kleiner Dateien-Tab-Fix: sichtbarer Aktionsbanner kann jetzt lokale und iCloud-Meldungen korrekt verwerfen (`AppFilesViewModel.clearActionMessage`, `AppFilesView.clearMergedActionMessage`).
+
+**Offen / nicht als erledigt markieren:** `swift build`, `swift test`, fokussierte Regressionstests, Xcode-/UI-Smokes (auf User-Wunsch übersprungen), iPad-Sim/Device-Smoke, Light-Mode-/Force-Dark-Entscheidung, weitere LHX/LG-Adoption in Files/Settings, WeatherKit/CloudKit signed device checks, TestFlight/Xcode-Cloud-Smoke.
+
+---
+
 ## Stand 2026-05-27 — WeatherKit Capability + Diagnostics (Branch `fix/weatherkit-capability-diagnostics`)
 
 Lokal umgesetzt: App-Target-Entitlement + Xcode-Target-Capability sind im Repo konsistent, Widget bleibt ohne WeatherKit, WeatherKit-Service ruft nur Current Weather ab, Settings zeigen eine brauchbare deutsche Signing-/Profile-Diagnose, und die nicht angebundenen Day/Overview/Export-Wetterlayer heißen jetzt ehrlich „Wetter vorbereitet“.

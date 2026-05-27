@@ -9,6 +9,12 @@
 >
 > Repo-Stempel (`IPHONEOS_DEPLOYMENT_TARGET = 17.0`, `Package.swift .iOS(.v17)`) ist die kanonische Quelle. Die ältere README-Aussage „iOS 26 erforderlich" war auf das Liquid-Glass-Feature-Set bezogen, nicht auf das Mindestziel.
 
+> **SwiftUI/UI-Framework-Audit 2026-05-27:**
+> - Neuer Bericht: `docs/UI_FRAMEWORK_SWIFTUI_AUDIT_2026-05-27.md`.
+> - Repo-aktuell verifiziert: SwiftUI ist Primärframework; UIKit ist auf wenige technische Brücken/APIs begrenzt; kein aktiver UIKit-`MKMapView`-Renderer.
+> - Aktuelle Projektdatei setzt `TARGETED_DEVICE_FAMILY = 1,2`; iPad-/regular-width-Smoke wurde in diesem Audit nicht lokal abgeschlossen und bleibt offen.
+> - Low-Risk-Fix: Dateien-Tab-Banner kann lokale und iCloud-Meldungen korrekt verwerfen.
+
 > **WeatherKit-Status 2026-05-27:**
 > - Live-Wetter-Pill: echter WeatherKit-Datenpfad fuer Current Weather, gated durch Settings + Location + gueltiges Signing/Profile.
 > - App-Target: `com.apple.developer.weatherkit = true` in `wrapper/LH2GPXWrapper/LH2GPXWrapper.entitlements` und `com.apple.WeatherKit` im App-Target-`SystemCapabilities`-Block.

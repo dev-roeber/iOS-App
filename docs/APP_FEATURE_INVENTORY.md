@@ -1,5 +1,17 @@
 # APP Feature Inventory
 
+## Aktualisierung 2026-05-27 — SwiftUI/UI-Framework-Audit
+
+- **Bericht:** `docs/UI_FRAMEWORK_SWIFTUI_AUDIT_2026-05-27.md`.
+- **Primäres Framework:** SwiftUI. Aktueller Sweep: 84 SwiftUI-Import-Dateien, 64 produktive `View`-Deklarationen, 11 `NavigationStack`-Dateien, 1 `NavigationSplitView`-Datei, 4 `TabView`-Treffer.
+- **UIKit:** 6 UIKit-Import-Dateien. Status: technisch begrenzt/überwiegend notwendig (`UIDevice`, `UIApplication` Memory Notification, `UIPasteboard`, `UIImage` aus `ImageRenderer`, `NSFileCoordinator`/Security-Scope-Staging, `IOSTabReselectionObserver`). Keine `UIViewRepresentable`; genau eine `UIViewControllerRepresentable`.
+- **Maps:** Aktive Kartenflächen nutzen SwiftUI `Map(position:)`. Kein produktiver UIKit-`MKMapView`-Renderer. Store-DayMap bleibt feature-flagged/placeholder; Heavy-Map UIKit bleibt Roadmap-Spike.
+- **Charts/Files/Share:** Swift Charts in Insights/Speed/Elevation; `fileImporter`/`fileExporter` bleiben Systempfade; Insights-Sharing läuft über `ShareLink`.
+- **Designsystem:** LH*, LHX* und LG Liquid Glass koexistieren. Weitere Vereinheitlichung ist offen, aber kein Komplett-Redesign in diesem Audit.
+- **Low-Risk-Fix:** Dateien-Tab-Aktionsbanner löscht jetzt lokale und Cloud-Meldungen korrekt.
+
+---
+
 ## Aktualisierung 2026-05-27 — WeatherKit Capability + Layer-Wahrheit
 
 - **Live-Wetter-Pill:** echter WeatherKit-Pfad fuer Current Weather ueber `AppWeatherKitService` / `WeatherCacheManager`, opt-in via Settings und abhängig von Standortberechtigung + gültigem WeatherKit-Signing.
