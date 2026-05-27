@@ -98,7 +98,7 @@ struct AppShellRootView: View {
                                 }
                             }
                         } else {
-                            AppShellEmptyStateView(
+                            AppShellWelcomeView(
                                 message: session.message,
                                 recentFiles: recentFiles,
                                 openAction: { isImportingFile = true },
@@ -107,7 +107,8 @@ struct AppShellRootView: View {
                                 clearRecentHistoryAction: clearRecentHistory,
                                 loadDemoAction: loadBundledDemo,
                                 clearAction: clearCurrentContent,
-                                localize: t
+                                localize: t,
+                                dropAction: handleDroppedURL
                             )
                         }
                     }
@@ -341,7 +342,7 @@ struct AppShellRootView: View {
     }
 
     #if canImport(UniformTypeIdentifiers)
-    private func handleImportResult(_ result: Result<[URL], Error>) {
+    fileprivate func handleImportResult(_ result: Result<[URL], Error>) {
         switch result {
         case let .success(urls):
             guard let url = urls.first else {
@@ -571,6 +572,15 @@ private struct HomeActionRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(accessibilityIdentifier)
+    }
+}
+
+extension AppShellRootView {
+    /// Train F.4 — Routet eine per Drag&Drop abgelegte File-URL direkt
+    /// in den bestehenden Import-Pfad. Spiegelt 1:1 das Erfolgs-Format
+    /// des system fileImporter, sodass kein Sonderpfad noetig ist.
+    fileprivate func handleDroppedURL(_ url: URL) {
+        handleImportResult(.success([url]))
     }
 }
 #endif

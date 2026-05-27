@@ -24,6 +24,55 @@ final class RecentFilesStoreTests: XCTestCase {
         XCTAssertTrue(entries.isEmpty)
     }
 
+    // MARK: - Train F.4 — RecentFileSource backward-compat
+
+    func testLegacyEntryWithoutSourceFieldDecodesAsUnknown() throws {
+        // Simuliert eine pre-F.4-Persistenz: identische Felder, aber
+        // ohne `source`. Muss weiter decoden und `.unknown` ergeben.
+        let legacyJSON = """
+        [{
+            "id": "\(UUID().uuidString)",
+            "displayName": "legacy.json",
+            "bookmarkData": "\(Data("/tmp/legacy.json".utf8).base64EncodedString())",
+            "lastOpenedAt": 0,
+            "fileSizeBytes": 42
+        }]
+        """.data(using: .utf8)!
+        defaults.set(legacyJSON, forKey: "app.recentImportedFiles")
+
+        let entries = RecentFilesStore.load(userDefaults: defaults)
+        XCTAssertEqual(entries.count, 1)
+        XCTAssertEqual(entries.first?.source, .unknown)
+        XCTAssertEqual(entries.first?.displayName, "legacy.json")
+    }
+
+    func testRoundTripPreservesExplicitSource() throws {
+        let entry = RecentFileEntry(
+            displayName: "icloud.json",
+            bookmarkData: Data("/tmp/icloud.json".utf8),
+            lastOpenedAt: Date(timeIntervalSince1970: 1700000000),
+            fileSizeBytes: 1024,
+            source: .iCloudDrive
+        )
+        let encoded = try JSONEncoder().encode([entry])
+        let decoded = try JSONDecoder().decode([RecentFileEntry].self, from: encoded)
+        XCTAssertEqual(decoded.first?.source, .iCloudDrive)
+    }
+
+    func testDetectSourceOnLocalPathReturnsLocal() {
+        let url = URL(fileURLWithPath: "/tmp/local-only.json")
+        XCTAssertEqual(RecentFilesStore.detectSource(for: url), .local)
+    }
+
+    #if os(iOS) || os(macOS)
+    func testDetectSourceOnMobileDocumentsPathReturnsICloud() {
+        // Path-Heuristik greift nur auf Apple — auf Linux ist `detectSource`
+        // hartverdrahtet auf `.local`, deshalb der OS-Gate.
+        let url = URL(fileURLWithPath: "/private/var/mobile/Library/Mobile Documents/com~apple~CloudDocs/file.json")
+        XCTAssertEqual(RecentFilesStore.detectSource(for: url), .iCloudDrive)
+    }
+    #endif
+
     func testAddCreatesEntry() {
         let url = makeTemporaryFile()
         defer { try? FileManager.default.removeItem(at: url) }
