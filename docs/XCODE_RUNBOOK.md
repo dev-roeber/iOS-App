@@ -1,5 +1,23 @@
 # Xcode Runbook
 
+## WeatherKit Signing Check (2026-05-27)
+
+1. `wrapper/LH2GPXWrapper.xcodeproj` in Xcode oeffnen.
+2. Target `LH2GPXWrapper` → Signing & Capabilities: WeatherKit muss vorhanden sein. Der repo-seitige `project.pbxproj`-Key ist `com.apple.WeatherKit` im App-Target-`SystemCapabilities`-Block; die Entitlements-Datei enthaelt `com.apple.developer.weatherkit = true`.
+3. Target `LH2GPXWidgetExtension`: WeatherKit darf nicht vorhanden sein, solange das Widget WeatherKit nicht direkt nutzt.
+4. Apple Developer Portal: App ID `de.roeber.LH2GPXWrapper` in **App Services** und **App Capabilities** fuer WeatherKit aktivieren/bestaetigen, dann Provisioning Profile refreshen.
+5. App neu installieren und signiertes Bundle pruefen:
+
+```bash
+codesign -d --entitlements :- /path/to/LH2GPXWrapper.app
+```
+
+6. Device/TestFlight-Smoke: Settings → Wetterdaten aktivieren, Live → Wetter-Layer einschalten. Bei WeatherDaemon/JWT/401 zuerst Portal/Profile prüfen; danach bleiben Service-/Account-/Quota-Ursachen separat möglich.
+
+Auf Linux ist dieser Check nicht vollstaendig ausführbar: `xcodebuild`, Signing Profiles, Developer Portal und der signierte Entitlements-Dump benötigen macOS/Xcode + Account-Zugriff.
+
+---
+
 ## Zweck
 
 Dieses Runbook beschreibt den kleinsten reproduzierbaren Xcode-Laufweg fuer das Swift-Package im aktiven Monorepo `iOS-App` (`dev-roeber/iOS-App`).

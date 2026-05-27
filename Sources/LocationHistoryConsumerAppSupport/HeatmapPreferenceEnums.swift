@@ -67,8 +67,9 @@ public enum AppHeatmapRadiusPreset: String, CaseIterable, Identifiable, Sendable
     }
 }
 
-/// Determines whether tracks render in their semantic activity-type colour
-/// or in a speed-coloured gradient ("Tempolayer").
+/// Determines whether tracks render in their semantic activity-type colour,
+/// a speed-coloured gradient ("Tempolayer"), or prepared placeholder tints
+/// for future elevation/weather enrichment.
 public enum AppMapTrackColorMode: String, CaseIterable, Identifiable, Sendable {
     case activity
     case speed
@@ -82,7 +83,7 @@ public enum AppMapTrackColorMode: String, CaseIterable, Identifiable, Sendable {
         case .activity:  return "Standard"
         case .speed:     return "Speed"
         case .elevation: return "Elevation"
-        case .weather:   return "Weather"
+        case .weather:   return "Weather prepared"
         }
     }
 }

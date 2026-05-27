@@ -180,7 +180,7 @@ public struct AppDayDetailView: View {
                     standardLabel: t("Standard"),
                     speedLabel: t("Speed"),
                     elevationLabel: t("Elevation"),
-                    weatherLabel: t("Weather"),
+                    weatherLabel: t("Weather prepared"),
                     routeDisplayLabel: t("Route Display"),
                     routeOriginalLabel: t("Original"),
                     routeSimplifiedLabel: t("Simplified")

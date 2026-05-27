@@ -1,5 +1,29 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-27 — WeatherKit Capability + Diagnostics
+
+**HEAD:** folgt nach Commit auf `fix/weatherkit-capability-diagnostics`.
+
+### Lokal verifiziert
+- App-Entitlements enthalten `com.apple.developer.weatherkit = true`.
+- Widget-Entitlements enthalten WeatherKit nicht.
+- App-Target `LH2GPXWrapper` verweist auf `LH2GPXWrapper/LH2GPXWrapper.entitlements`; Widget-Target verweist auf seine eigene Entitlements-Datei.
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` enthält WeatherKit nur im App-Target-`SystemCapabilities`-Block: `com.apple.WeatherKit = { enabled = 1; }`.
+- WeatherKit-Service nutzt Apples Current-Weather-Query-API (`WeatherService.shared.weather(for:including: .current)`).
+
+### Extern offen
+- Apple Developer Portal: App ID `de.roeber.LH2GPXWrapper` unter **App Services** und **App Capabilities** mit WeatherKit aktivieren/bestätigen.
+- Provisioning Profiles refreshen, App neu installieren, signiertes Bundle prüfen: `codesign -d --entitlements :- LH2GPXWrapper.app`.
+- Xcode/macOS: Signing & Capabilities im App-Target prüfen; Widget darf WeatherKit nicht anzeigen, solange es WeatherKit nicht nutzt.
+- Device/TestFlight-Smoke: Settings-Toggle + Live-Wetter-Pill mit gültigem Profil testen; WeatherDaemon/JWT/401-Fehler sollten danach nicht mehr aus fehlender Capability/Profile-Konfiguration stammen.
+
+### Pflicht-Anti-Claims
+- ❌ Apple Developer Portal / App-ID / Provisioning Profile lokal verifiziert.
+- ❌ Day/Overview/Export-Wetterlayer mit echten WeatherKit-Daten angebunden.
+- ❌ Widget nutzt WeatherKit.
+
+---
+
 ## Aktualisierung 2026-05-25 (Prompt 2) — LiveTrack Upload/Restore via bestehende CloudKit-Records
 
 **HEAD:** `ccd4ef4` → Prompt-2-Commit folgt.

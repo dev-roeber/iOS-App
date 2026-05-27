@@ -1,5 +1,20 @@
 # ROADMAP
 
+## Aktueller Stand (2026-05-27 — WeatherKit Capability Alignment)
+
+**Repo-Truth:**
+- App-Target `LH2GPXWrapper` hat WeatherKit in Entitlements und `project.pbxproj`-Target-Capability.
+- Widget-Target hat WeatherKit nicht.
+- Live-Wetter-Pill ist der echte WeatherKit-Datenpfad.
+- Day/Overview/Export-Wetterlayer sind vorbereitete Platzhalter und keine echte Wetterdaten-Anbindung.
+
+**Offen extern:**
+- Developer Portal App Services + App Capabilities WeatherKit.
+- Provisioning-Profile-Refresh und signierter Entitlements-Dump.
+- Xcode/macOS-Build + Device/TestFlight-Smoke.
+
+---
+
 ## Aktueller Stand (2026-05-19, Branch `chore/deep-audit-doc-truth-sync-2026-05-19`, HEAD pending — Post-Deep-Audit-Follow-up)
 
 **Repo-Truth (Code/Config, unverändert seit Train F-Bump):**

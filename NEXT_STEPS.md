@@ -1,5 +1,17 @@
 # NEXT_STEPS
 
+## Stand 2026-05-27 — WeatherKit Capability + Diagnostics (Branch `fix/weatherkit-capability-diagnostics`)
+
+Lokal umgesetzt: App-Target-Entitlement + Xcode-Target-Capability sind im Repo konsistent, Widget bleibt ohne WeatherKit, WeatherKit-Service ruft nur Current Weather ab, Settings zeigen eine brauchbare deutsche Signing-/Profile-Diagnose, und die nicht angebundenen Day/Overview/Export-Wetterlayer heißen jetzt ehrlich „Wetter vorbereitet“.
+
+**Extern offen / nicht in dieser Session:**
+- Apple Developer Portal: App ID `de.roeber.LH2GPXWrapper` in **App Services** und **App Capabilities** für WeatherKit aktivieren oder bestätigen.
+- Provisioning Profile refreshen, App neu installieren, danach signierten Build prüfen: `codesign -d --entitlements :- LH2GPXWrapper.app`.
+- Xcode Signing & Capabilities auf macOS öffnen und bestätigen, dass das App-Target `LH2GPXWrapper` WeatherKit zeigt und das Widget nicht.
+- Echter Device/TestFlight-Smoke der Live-Wetter-Pill mit gültigem Profile. Day/Overview/Export-Weather bleibt bis zur echten Datenanbindung vorbereitet/Platzhalter.
+
+---
+
 ## Stand 2026-05-26 — Doku-Verify (Branch `chore/docs-verify`, HEAD baseline `a5d506e`)
 
 Doku-Sync ohne Code-Änderung. README + CHANGELOG um verifizierten Repo-Truth-Patch

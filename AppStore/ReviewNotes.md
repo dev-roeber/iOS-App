@@ -71,7 +71,7 @@ deklariert.
 ## Bekannte Einschränkungen
 
 - iPad-Three-Pane-Layout in dieser Version nicht enthalten.
-- WeatherKit-Layer-UI vorhanden, Datenpfad in separater Phase.
+- Live-Wetter-Pill nutzt WeatherKit Current Weather, sofern Entitlement, Developer-Portal-Capability, Provisioning Profile und Standortberechtigung gültig sind. Day/Overview/Export-Wetterlayer sind weiterhin nur vorbereitet/Platzhalter und als „Wetter vorbereitet“ gekennzeichnet.
 - Echtes Road-/Path-Matching (Netzwerk-Snapping) ist nicht implementiert;
   `Simplified` ist GPS-Ausreisserfilterung + Douglas-Peucker.
 

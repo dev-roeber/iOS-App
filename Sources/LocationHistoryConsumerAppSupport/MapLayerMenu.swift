@@ -109,7 +109,7 @@ public struct MapLayerMenu: View {
             Label(t("Standard"), systemImage: "map").tag(AppMapTrackColorMode.activity)
             Label(t("Speed"), systemImage: "speedometer").tag(AppMapTrackColorMode.speed)
             Label(t("Elevation"), systemImage: "mountain.2").tag(AppMapTrackColorMode.elevation)
-            Label(t("Weather"), systemImage: "cloud.sun").tag(AppMapTrackColorMode.weather)
+            Label(t("Weather prepared"), systemImage: "cloud.sun").tag(AppMapTrackColorMode.weather)
         } label: {
             Label(t("Layer"), systemImage: "scribble.variable")
         }

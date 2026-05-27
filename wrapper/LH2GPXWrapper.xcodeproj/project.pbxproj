@@ -270,6 +270,9 @@
 							com.apple.BackgroundModes = {
 								enabled = 1;
 							};
+							com.apple.WeatherKit = {
+								enabled = 1;
+							};
 						};
 					};
 					9E7516F52F69097200E212A7 = {

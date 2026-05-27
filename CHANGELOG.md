@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 2026-05-27 — WeatherKit Capability + Diagnostics (Branch `fix/weatherkit-capability-diagnostics`)
+
+### Changed
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` — App-Target `LH2GPXWrapper` deklariert jetzt zusätzlich zur Entitlements-Datei die WeatherKit Target-Capability im `SystemCapabilities`-Block (`com.apple.WeatherKit = { enabled = 1; }`). Widget-Target bleibt ohne WeatherKit.
+- WeatherKit-Service fordert nur noch Current Weather an (`WeatherService.shared.weather(for:including: .current)`) und reicht NSError-/WeatherDaemon-/JWT-/401-Diagnosen redigiert in die App-Diagnose weiter.
+- Settings zeigen bei WeatherKit-Fehlern eine kurze deutsche technische Diagnose: Entitlement/Profile prüfen, WeatherKit in Apple Developer App Services + App Capabilities aktivieren, Profil aktualisieren und App neu installieren.
+- Day/Overview/Export-Map-Layer benennen den Wetter-Farbmodus ehrlich als „Wetter vorbereitet“/`Weather prepared`, weil diese Layer weiter Platzhalter-Tints sind. Die Live-Wetter-Pill bleibt der einzige WeatherKit-gestützte Live-Datenpfad.
+
+### Added
+- Statische Tests für WeatherKit-Capability/Entitlements: App-Entitlement vorhanden, Widget ohne WeatherKit, App-Target nutzt die richtige Entitlements-Datei, `project.pbxproj` enthält WeatherKit nur im App-Target.
+
+### Nicht lokal verifizierbar
+- Xcode Signing-&-Capabilities-Diff, signierter App-Bundle-Entitlement-Dump, App-ID/App-Services/App-Capabilities im Apple Developer Portal und refreshed Provisioning Profiles benötigen macOS/Xcode + Developer-Account-Zugriff.
+
+---
+
 ## 2026-05-26 — Doku-Verify (Branch `chore/docs-verify`, HEAD baseline `a5d506e`)
 
 > Doku-Sync ohne Code-Änderung. Verifiziert Versions-Stempel + Deployment-Target +

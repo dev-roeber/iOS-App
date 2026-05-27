@@ -19,6 +19,6 @@ final class MapTrackColorModeTests: XCTestCase {
         XCTAssertEqual(AppMapTrackColorMode.activity.labelKey, "Standard")
         XCTAssertEqual(AppMapTrackColorMode.speed.labelKey, "Speed")
         XCTAssertEqual(AppMapTrackColorMode.elevation.labelKey, "Elevation")
-        XCTAssertEqual(AppMapTrackColorMode.weather.labelKey, "Weather")
+        XCTAssertEqual(AppMapTrackColorMode.weather.labelKey, "Weather prepared")
     }
 }
