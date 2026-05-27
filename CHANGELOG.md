@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## [Unreleased] — Glass-Konvergenz & Sweep + tabViewBottomAccessory (Branch `feat/glass-convergence-sweep-bottom-accessory`)
+
+### Added
+- `LGGlassHelpers.lgGlassCircle(diameter:)` — Glas-Kreis-Modifier fuer Map-Control-Buttons (compass / + / − / scope / locate); Default 38 pt.
+- `LGGlassEffectGroup<Content>` — Wrapper um `GlassEffectContainer` (iOS 26+) mit Pass-Through-Fallback unter iOS 25. Koordiniert Specular-Animationen, wenn mehrere Glas-Elemente raeumlich gruppiert sind (Layer-Pill + Control-Stack auf Live/DayDetail/Insights).
+- `GlobalRecordingBottomAccessory` (`LGTabContainerView.swift`) — globaler iOS-26-Recording-Indikator als Now-Playing-Pattern oberhalb der TabBar via `tabViewBottomAccessory`. Reagiert auf `tabViewBottomAccessoryPlacement` (opacity 0.6 bei `.expanded`, 1.0 bei `.inline`). Tap fuehrt zum Live-Tab.
+- `Tests/LocationHistoryConsumerTests/LGGlassHelpersTests.swift` — 8 Body-Compile-/Smoke-Tests fuer `lgGlassCircle`, `lgGlassSurface`, `lgGlassPill`, `lhGlassControlPill` (Forward) und `LGGlassEffectGroup`.
+
+### Changed
+- `LGGlassHelpers` ist jetzt Single Source of Truth fuer Liquid-Glass-Chrome. Hairline-Strokes nutzen ueberall `LH2GPXTheme.LiquidGlass.hairline` (zuvor inkonsistent `Color.white.opacity(0.18)` bzw. `Color.white.opacity(0.32)`).
+- `LHGlassMaterial.lhGlassBackground(in:)` und `lhGlassControlPill()` sind als `@available(*, deprecated, …)` Forwards auf die `lgGlass*`-Helper umgestellt; alle Bestands-Aufrufe funktionieren unveraendert.
+- 11 Material-Call-Sites im Map-/Chrome-Pfad auf `lgGlass*`-Helper migriert: `LiveLayerPanel`-Surface, `LiveControlStack`-Pill, `DayDetailLayerPanel`-Surface, `DayDetailControlStack`-Pill (bereits in voriger Iteration umgestellt), `MapLayerMenu`-Label-Surface, `LHCollapsibleMapHeader`-Resize-Pill + Fullscreen-Close-Button, `LGLayerToggleBar`-Fallback-Bar, `GlobalRecordingToolbarIndicator`-Pill, `LGToolbarActionsLabel`-Pill.
+- `LGGlassEffectGroup(spacing: 8)` umschliesst in `AppLiveTrackingView.multiLayerPortraitLayout`, `AppDayDetailView.multiLayerPortraitLayout` und `AppInsightsContentView.insightsHeroMap` jeweils das HStack mit Layer-Pill und rechtem Control-Stack.
+- `LGTabContainerView` registriert `tabViewBottomAccessory { GlobalRecordingBottomAccessory(...) }` zusaetzlich zur bestehenden Toolbar-Indikator-Variante (Toolbar-Indikator bleibt iOS-17-Fallback fuer Hosts ohne Bottom-Accessory-Pfad).
+
+### Deprecated
+- `View.lhGlassBackground(in:)` — verwende `View.lgGlassSurface(cornerRadius:)`.
+- `View.lhGlassControlPill()` — verwende `View.lgGlassCircle(diameter:)`.
+
+### Tests
+- `swift build` gruen.
+- `swift test` gruen: 1753 Tests, 3 skipped, 0 failures (Linux x86_64). Die 8 neuen `LGGlassHelpersTests` sind SwiftUI-gated und laufen auf Apple-Plattformen.
+
 ## 2026-05-27 — Map-First Finish: TabBar-Clearance, Attribution-Guard, Insights-Control-Stack, iOS-26-Glass-Migration (Branch `feat/map-first-finish-tabbar-attribution-glass`)
 
 ### Added

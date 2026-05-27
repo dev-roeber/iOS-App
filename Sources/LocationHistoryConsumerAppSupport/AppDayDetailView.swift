@@ -169,6 +169,7 @@ public struct AppDayDetailView: View {
             multiLayerMapBackground(resolvedMapData: resolvedMapData)
                 .ignoresSafeArea()
 
+            LGGlassEffectGroup(spacing: 8) {
             HStack(alignment: .top, spacing: 0) {
                 DayDetailLayerPanel(
                     selected: $preferences.mapTrackColorMode,
@@ -202,6 +203,7 @@ public struct AppDayDetailView: View {
                 .padding(.trailing, LHMapBase.floatingControlSideInset)
                 .padding(.top, LHMapBase.floatingControlTopInset(deviceTopSafeInset: lhDeviceTopSafeInset()))
             }
+            } // LGGlassEffectGroup
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             multiLayerBottomSheet(detail: detail)

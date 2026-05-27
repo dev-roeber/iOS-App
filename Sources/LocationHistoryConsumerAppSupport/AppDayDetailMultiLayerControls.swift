@@ -86,11 +86,7 @@ struct DayDetailLayerPanel: View {
         }
         .padding(isExpanded ? 12 : 8)
         .frame(width: isExpanded ? 188 : nil)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: isExpanded ? 18 : 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: isExpanded ? 18 : 14, style: .continuous)
-                .stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8)
-        )
+        .lgGlassSurface(cornerRadius: isExpanded ? 18 : 14)
         .shadow(color: Color.black.opacity(0.12), radius: 14, x: 0, y: 8)
         .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.85), value: isExpanded)
         .accessibilityIdentifier("dayDetail.layerPanel")

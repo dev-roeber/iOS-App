@@ -72,6 +72,17 @@ public struct LGTabContainerView: View {
             Tab("Insights", systemImage: "chart.xyaxis.line", value: LGTab.insights) { insightsTab }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
+        .tabViewBottomAccessory {
+            // iOS-26 Now-Playing-Pattern: globaler Recording-Indikator,
+            // der oberhalb der TabBar als Liquid-Glass-Pill schwebt, solange
+            // `liveLocation.isRecording`. Tap fuehrt zum Live-Tab.
+            if liveLocation.isRecording {
+                GlobalRecordingBottomAccessory(
+                    liveModel: liveLocation,
+                    onTap: { selectedTab = .live }
+                )
+            }
+        }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $isExportSheetPresented) {
             NavigationStack {
@@ -313,8 +324,7 @@ struct GlobalRecordingToolbarIndicator: View {
                 .frame(minWidth: 44, minHeight: 30)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay(Capsule().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
+                .lgGlassPill()
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -333,6 +343,79 @@ struct GlobalRecordingToolbarIndicator: View {
     }
 }
 
+// MARK: - Global Recording Bottom Accessory (iOS 26 Now-Playing-Pattern)
+//
+// Schwebt direkt oberhalb der Liquid-Glass-TabBar, solange
+// `liveLocation.isRecording`. `tabViewBottomAccessoryPlacement` aus dem
+// Environment steuert die Opacity: in der `.inline`-Platzierung tritt der
+// Inhalt voll auf, in `.expanded` (TabBar minimiert) wird der Indikator
+// auf 60% reduziert, damit das Now-Playing-Pattern den Map-/Sheet-Inhalt
+// nicht stoert. Der Toolbar-Indikator (`GlobalRecordingToolbarIndicator`)
+// bleibt als Fallback fuer Hosts ohne `tabViewBottomAccessory`-Support.
+
+@available(iOS 26.0, *)
+struct GlobalRecordingBottomAccessory: View {
+    @EnvironmentObject private var preferences: AppPreferences
+    @ObservedObject var liveModel: LiveLocationFeatureModel
+    let onTap: () -> Void
+
+    @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulse = false
+
+    private var distanceText: String {
+        String(format: "%.2f km", liveModel.currentDistanceMeters / 1000)
+    }
+
+    private var placementOpacity: Double {
+        // `.expanded` (TabBar minimiert) => Inhalt dezent halten,
+        // `.inline` (TabBar voll sichtbar) => Inhalt voll aufdrehen.
+        switch placement {
+        case .expanded: return 0.6
+        case .inline:   return 1.0
+        default:        return 1.0
+        }
+    }
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 10, height: 10)
+                    .scaleEffect(pulse && !reduceMotion ? 1.35 : 1.0)
+                    .opacity(pulse && !reduceMotion ? 0.55 : 1.0)
+                Text(preferences.localized("Live Recording"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(distanceText)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .opacity(placementOpacity)
+        .task(id: liveModel.isRecording) {
+            guard liveModel.isRecording, !reduceMotion else {
+                pulse = false
+                return
+            }
+            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
+        .accessibilityLabel(Text("\(preferences.localized("Live Recording")) · \(distanceText)"))
+        .accessibilityHint(Text(preferences.localized("Tap to open Live tab")))
+        .accessibilityIdentifier("global.recording.bottomAccessory")
+    }
+}
+
 // MARK: - Toolbar Actions Label
 //
 // Liquid-Glass-konsistentes Label für das primaryAction-Menu („•••").
@@ -347,8 +430,7 @@ public struct LGToolbarActionsLabel: View {
             .frame(minWidth: 44, minHeight: 30)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
+            .lgGlassPill()
             .contentShape(Capsule())
     }
 }

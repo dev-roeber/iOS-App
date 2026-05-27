@@ -304,6 +304,7 @@ public struct AppLiveTrackingView: View {
                     }
                 }
 
+                LGGlassEffectGroup(spacing: 8) {
                 HStack(alignment: .top, spacing: 0) {
                     if !isCompactMap {
                         LiveLayerPanel(
@@ -347,6 +348,7 @@ public struct AppLiveTrackingView: View {
                     .padding(.trailing, 12)
                     .padding(.top, LHMapBase.floatingControlTopInset(deviceTopSafeInset: lhDeviceTopSafeInset()))
                 }
+                } // LGGlassEffectGroup
 
                 // Weather pill — top-trailing, sits beneath the control stack
                 // when both are visible. Only rendered when the layer toggle
