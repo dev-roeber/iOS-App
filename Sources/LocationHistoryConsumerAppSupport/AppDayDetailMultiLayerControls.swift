@@ -197,10 +197,7 @@ struct DayDetailControlStack: View {
             Image(systemName: icon)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(tint)
-                .frame(width: 38, height: 38)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
-                .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 4)
+                .lhGlassControlPill()
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)

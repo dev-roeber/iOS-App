@@ -3,11 +3,12 @@ import SwiftUI
 import MapKit
 import LocationHistoryConsumer
 
-/// Lightweight controller surfaced to parents of `AppDayMapView` so they
-/// can drive the map camera from external floating controls (compass /
-/// zoom / fit-to-data). The closures are populated on `onAppear` and
-/// cleared on `onDisappear`.
-@available(iOS 17.0, macOS 14.0, *)
+/// Lightweight controller surfaced to parents of `AppDayMapView` (and
+/// other map views, e.g. the Insights hero map) so they can drive the
+/// map camera from external floating controls (compass / zoom / fit-to-
+/// data). The closures are populated on `onAppear` and cleared on
+/// `onDisappear`. Plain ObservableObject — no iOS-17-only API surface,
+/// so callers on older deployments can instantiate it freely.
 public final class AppDayMapCameraController: ObservableObject {
     public init() {}
     /// Recentres on the fitted region computed from the day's data.

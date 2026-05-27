@@ -58,4 +58,37 @@ public enum LHMapBase {
     ) -> CGFloat {
         deviceTopSafeInset + LHMapBase.floatingControlTopGap
     }
+
+    // MARK: Attribution guard
+
+    /// Mindestabstand zwischen interaktiven, an der Map-Unterkante
+    /// schwebenden Overlays (Resize-Pill, Custom-Locate-Buttons) und
+    /// dem unteren Map-Frame. Schuetzt die Apple-Maps-Attribution
+    /// ("Karten · Rechtl. Informationen") vor Verdeckung — Pflicht
+    /// gemaess Apple Map Display Guidelines. 32 pt = Hoehe der
+    /// Attribution-Zeile (~14 pt) + 12 pt Luft + 6 pt Pill-Stroke.
+    public static let attributionGuardBottomInset: CGFloat = 32
+
+    // MARK: Bottom-Sheet ↔ TabBar Clearance
+
+    /// Hoehe der iOS-26 Liquid-Glass-TabBar exklusive Home-Indicator.
+    /// `tabBarMinimizeBehavior(.onScrollDown)` reduziert die TabBar
+    /// auf eine schmalere "minimized"-Form; wir reservieren den vollen
+    /// Standard-Wert, weil das Sheet auch im NICHT-minimierten Zustand
+    /// nicht hinter der Bar verschwinden darf.
+    public static let tabBarStandardHeight: CGFloat = 49
+
+    /// Zusaetzlicher Bottom-Inset, den ein selbstgebauter `LiveBottomSheet`
+    /// braucht, damit sein Inhalt NICHT unter die TabBar rutscht.
+    /// Das Sheet wird per `safeAreaInset(.bottom)` an die View geheftet —
+    /// SwiftUI addiert dann den TabBar-Inset NICHT mehr zum Sheet-Frame,
+    /// d.h. wir muessen ihn selbst reservieren.
+    public static func bottomSheetTabBarClearance(
+        deviceBottomSafeInset: CGFloat,
+        tabBarBaseHeight: CGFloat = LHMapBase.tabBarStandardHeight
+    ) -> CGFloat {
+        // Home-Indicator (deviceBottomSafeInset) ist bereits Teil der TabBar
+        // safe-area — wir reservieren nur die TabBar-Hoehe darueber.
+        max(0, tabBarBaseHeight)
+    }
 }

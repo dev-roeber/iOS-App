@@ -26,6 +26,26 @@ public func lhDeviceTopSafeInset() -> CGFloat {
     #endif
 }
 
+/// Real device bottom safe-area inset (Home-Indicator strip). Pendant
+/// zu `lhDeviceTopSafeInset()` — wird von `LHMapBase.bottomSheetTabBar
+/// Clearance(...)` herangezogen, damit selbstgebaute Bottom-Sheets die
+/// iOS-26-Liquid-Glass-TabBar nicht ueberlappen.
+///
+/// Faellt auf `34` (iPhone-Standardwert seit X) zurueck, wenn kein Key-
+/// Window verfuegbar ist.
+@MainActor
+public func lhDeviceBottomSafeInset() -> CGFloat {
+    #if os(iOS)
+    UIApplication.shared.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .flatMap { $0.windows }
+        .first { $0.isKeyWindow }?
+        .safeAreaInsets.bottom ?? 34
+    #else
+    0
+    #endif
+}
+
 // MARK: - Hero-Map Workspace constants
 
 /// Shared layout constants for the cross-app Hero-Map pattern

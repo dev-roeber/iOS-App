@@ -51,4 +51,43 @@ final class LHMapBaseTests: XCTestCase {
     func test_totalLayerSlots_isFour() {
         XCTAssertEqual(LHMapBase.totalLayerSlots, 4)
     }
+
+    // MARK: - attributionGuardBottomInset
+
+    func test_attributionGuard_isThirtyTwoPoints() {
+        XCTAssertEqual(LHMapBase.attributionGuardBottomInset, 32)
+    }
+
+    // MARK: - bottomSheetTabBarClearance
+
+    func test_bottomSheetTabBarClearance_defaultsToStandardTabBarHeight() {
+        XCTAssertEqual(
+            LHMapBase.bottomSheetTabBarClearance(deviceBottomSafeInset: 34),
+            49
+        )
+    }
+
+    func test_bottomSheetTabBarClearance_clampsNegative() {
+        XCTAssertEqual(
+            LHMapBase.bottomSheetTabBarClearance(
+                deviceBottomSafeInset: 0,
+                tabBarBaseHeight: -10
+            ),
+            0
+        )
+    }
+
+    func test_bottomSheetTabBarClearance_customTabBarHeight() {
+        XCTAssertEqual(
+            LHMapBase.bottomSheetTabBarClearance(
+                deviceBottomSafeInset: 0,
+                tabBarBaseHeight: 64
+            ),
+            64
+        )
+    }
+
+    func test_tabBarStandardHeight_isFortyNine() {
+        XCTAssertEqual(LHMapBase.tabBarStandardHeight, 49)
+    }
 }

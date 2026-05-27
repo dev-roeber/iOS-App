@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 2026-05-27 — Map-First Finish: TabBar-Clearance, Attribution-Guard, Insights-Control-Stack, iOS-26-Glass-Migration (Branch `feat/map-first-finish-tabbar-attribution-glass`)
+
+### Added
+- `LHMapBase.attributionGuardBottomInset` (32 pt) — App-Store-konformer Mindestabstand zur Apple-Maps-Attribution unter der Map-Unterkante.
+- `LHMapBase.bottomSheetTabBarClearance(deviceBottomSafeInset:tabBarBaseHeight:)` und `LHMapBase.tabBarStandardHeight` (49 pt) — reserviert die iOS-26-LG-TabBar-Hoehe im selbstgebauten `LiveBottomSheet`.
+- `LiveBottomSheet.bottomClearance:` Parameter — propagiert den TabBar-Clearance in die Sheet-Hoehe, Sheet-Padding und den Content-Scroll-Inset.
+- `lhDeviceBottomSafeInset()` Helper in `LHHeroMapWorkspace.swift` (Pendant zu `lhDeviceTopSafeInset()`).
+- `LHGlassMaterial.swift` mit `View.lhGlassBackground(in:prominent:)` und `View.lhGlassControlPill()` — additive iOS-26-Liquid-Glass-Migration mit `.ultraThinMaterial`-Fallback.
+- Insights-Hero-Map bekommt rechten Floating-Control-Stack (compass / + / − / target via `DayDetailControlStack`) — Parität mit Live und DayDetail.
+- `AppOverviewTracksMapView.cameraController:` (optional `AppDayMapCameraController`) — gibt parent views Zugriff auf fit-to-data / zoom; gebunden in `onAppear`, geleert in `onDisappear`.
+- 5 weitere `LHMapBaseTests`: `attributionGuardBottomInset`, drei `bottomSheetTabBarClearance`-Faelle, `tabBarStandardHeight`.
+
+### Changed
+- `LHCollapsibleMapHeader.resizeHandle` rueckt von 10 pt auf `LHMapBase.attributionGuardBottomInset` (32 pt) vom unteren Map-Frame — Apple-Maps-Attribution bleibt frei.
+- `AppLiveTrackingView` Portrait- und Landscape-Sheets sowie `AppDayDetailView`-Sheet reservieren TabBar-Clearance — Track-Mediathek, Permission-Row und KPI-Cards werden nicht mehr von der iOS-26-LG-TabBar verdeckt.
+- `DayDetailControlStack`-Pills nutzen `lhGlassControlPill()` statt inline `.ultraThinMaterial` — auf iOS 26 nativer `glassEffect`, Fallback unveraendert.
+- `AppDayMapCameraController` ist nicht mehr `@available(iOS 17, *)`-gegated; das ist eine reine ObservableObject-Klasse ohne iOS-17-API-Oberflaeche und wird jetzt vom Insights-Hero-Map-Camera-Wiring konsumiert.
+
+### Fixed
+- Insights-Map ohne rechten Map-Control-Stack (visuelle Parität mit Live und DayDetail hergestellt).
+- Bottom-Sheets in Live und DayDetail hatten keinen TabBar-Inset — unterste Inhalte waren unsichtbar oder angeschnitten.
+- App-Store-Review-Risiko: Insights-„Kompakte Karte"-Pill konnte Apple-Maps-Attribution verdecken (32-pt-Guard).
+
+### Why
+- Die drei in der vorigen Iteration als Restpunkte gemeldeten Probleme (Sheet/TabBar-Anschnitt, Attribution-Verdeckung, fehlender Insights-Control-Stack) sind reproduzierbar im Code; sie werden in dieser additiven Iteration als Bundle adressiert, ohne bestehende iOS-25/iPad-Pfade zu brechen.
+
+### Tests
+- `swift build` grün.
+- `swift test` grün: 1753 Tests (3 skipped, 0 failures), inkl. 14 Tests in `LHMapBaseTests` (Linux x86_64).
+
 ## 2026-05-27 — Map-First Liquid Glass: einheitliche Map-Basis (Branch `feat/map-first-liquid-glass-ui`)
 
 ### Added

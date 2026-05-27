@@ -141,11 +141,17 @@ struct AppOverviewTracksMapView: View {
     /// `.ignoresSafeArea(edges: .top)`) must pass `safeAreaTop + N` here so the
     /// controls do not land in Dynamic Island / status bar.
     let mapControlTopPadding: CGFloat
+    /// Optional external camera controller — used by Insights so the
+    /// floating right-side control stack (compass/+/−/target) can drive
+    /// the same `mapPosition` the menu fitToData uses. Pendant zum
+    /// `AppDayMapView.cameraController:` Pattern.
+    var cameraController: AppDayMapCameraController? = nil
 
     @State private var model = AppOverviewMapModel()
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var hasSetInitialPosition = false
     @State private var isExpanded = false
+    @State private var lastKnownRegion: MKCoordinateRegion?
 
     init(
         daySummaries: [DaySummary],
@@ -153,7 +159,8 @@ struct AppOverviewTracksMapView: View {
         queryFilter: AppExportQueryFilter?,
         fixedHeight: CGFloat? = 200,
         showsFullscreenControl: Bool = true,
-        mapControlTopPadding: CGFloat = 8
+        mapControlTopPadding: CGFloat = 8,
+        cameraController: AppDayMapCameraController? = nil
     ) {
         self.daySummaries = daySummaries
         self.content = content
@@ -161,6 +168,7 @@ struct AppOverviewTracksMapView: View {
         self.fixedHeight = fixedHeight
         self.showsFullscreenControl = showsFullscreenControl
         self.mapControlTopPadding = mapControlTopPadding
+        self.cameraController = cameraController
     }
 
     var body: some View {
@@ -236,6 +244,12 @@ struct AppOverviewTracksMapView: View {
         // .continuous is not used to avoid spurious rebuilds during smooth MapKit animations.
         .onMapCameraChange(frequency: .onEnd) { context in
             model.updateForViewport(context.region)
+            lastKnownRegion = context.region
+        }
+        .onAppear { bindCameraController() }
+        .onDisappear {
+            cameraController?.fitToData = nil
+            cameraController?.adjustZoom = nil
         }
         .accessibilityLabel(mapAccessibilityLabel)
         .overlay(alignment: .topTrailing) {
@@ -256,6 +270,31 @@ struct AppOverviewTracksMapView: View {
             }
             .padding(8)
             .zIndex(1)
+        }
+    }
+
+    // MARK: - Camera controller wiring
+
+    private func bindCameraController() {
+        guard let controller = cameraController else { return }
+        controller.fitToData = {
+            if let region = model.dataRegion {
+                withAnimation { mapPosition = .region(region) }
+                lastKnownRegion = region
+            }
+        }
+        controller.adjustZoom = { factor in
+            let baseRegion = lastKnownRegion ?? model.dataRegion
+            guard let region = baseRegion else { return }
+            let scaled = MKCoordinateRegion(
+                center: region.center,
+                span: MKCoordinateSpan(
+                    latitudeDelta: region.span.latitudeDelta * factor,
+                    longitudeDelta: region.span.longitudeDelta * factor
+                )
+            )
+            withAnimation { mapPosition = .region(scaled) }
+            lastKnownRegion = scaled
         }
     }
 

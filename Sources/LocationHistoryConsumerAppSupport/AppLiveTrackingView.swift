@@ -472,7 +472,10 @@ public struct AppLiveTrackingView: View {
             headerCaption: t("STATUS · LIVE MAP"),
             headlineText: heroStatusTitle,
             headlineTint: heroStatusTint,
-            heights: .landscapeCompact
+            heights: .landscapeCompact,
+            bottomClearance: LHMapBase.bottomSheetTabBarClearance(
+                deviceBottomSafeInset: lhDeviceBottomSafeInset()
+            )
         ) {
             VStack(spacing: 0) {
                 LiveLayerSection(
@@ -586,7 +589,10 @@ public struct AppLiveTrackingView: View {
             headerCaption: t("STATUS · LIVE MAP"),
             headlineText: heroStatusTitle,
             headlineTint: heroStatusTint,
-            heights: isCompactMap ? .compactPortrait : .portrait
+            heights: isCompactMap ? .compactPortrait : .portrait,
+            bottomClearance: LHMapBase.bottomSheetTabBarClearance(
+                deviceBottomSafeInset: lhDeviceBottomSafeInset()
+            )
         ) {
             VStack(spacing: 0) {
                 LiveBottomSheetRow(
