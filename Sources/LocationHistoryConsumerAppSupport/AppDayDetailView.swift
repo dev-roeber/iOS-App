@@ -176,7 +176,7 @@ public struct AppDayDetailView: View {
                     showTempoBand: $showTempoBand,
                     showElevationBand: $showElevationBand,
                     hasPaths: !detail.paths.isEmpty,
-                    layersLabel: t("Layers"),
+                    layersLabel: dayDetailLayersPanelLabel,
                     standardLabel: t("Standard"),
                     speedLabel: t("Speed"),
                     elevationLabel: t("Elevation"),
@@ -185,8 +185,8 @@ public struct AppDayDetailView: View {
                     routeOriginalLabel: t("Original"),
                     routeSimplifiedLabel: t("Simplified")
                 )
-                .padding(.leading, 12)
-                .padding(.top, lhDeviceTopSafeInset() + 12)
+                .padding(.leading, LHMapBase.floatingControlSideInset)
+                .padding(.top, LHMapBase.floatingControlTopInset(deviceTopSafeInset: lhDeviceTopSafeInset()))
 
                 Spacer()
 
@@ -199,8 +199,8 @@ public struct AppDayDetailView: View {
                     zoomOutLabel: t("Zoom out"),
                     fitLabel: t("Fit to Data")
                 )
-                .padding(.trailing, 12)
-                .padding(.top, lhDeviceTopSafeInset() + 12)
+                .padding(.trailing, LHMapBase.floatingControlSideInset)
+                .padding(.top, LHMapBase.floatingControlTopInset(deviceTopSafeInset: lhDeviceTopSafeInset()))
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -853,6 +853,22 @@ public struct AppDayDetailView: View {
 
     private func t(_ english: String) -> String {
         preferences.localized(english)
+    }
+
+    /// "LAYERS n/4" label for the DayDetail layer panel — mirrors the Live
+    /// and Insights tabs so the affordance is identical across the map-first
+    /// screens. Counts: Standard (when not Speed-coloured) / Tempo (when
+    /// Speed-coloured *or* Tempo band visible) / Höhe (band visible) /
+    /// Wetter (placeholder slot, currently always off on DayDetail).
+    private var dayDetailLayersPanelLabel: String {
+        let standardActive = preferences.mapTrackColorMode != .speed
+        let speedActive = preferences.mapTrackColorMode == .speed || showTempoBand
+        let count =
+            (standardActive ? 1 : 0)
+            + (speedActive ? 1 : 0)
+            + (showElevationBand ? 1 : 0)
+            + 0
+        return LHMapBase.layersBadge(localizedLayersWord: t("LAYERS"), activeCount: count)
     }
 
     private func metricColor(for identifier: String) -> Color {

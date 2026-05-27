@@ -274,7 +274,7 @@ struct AppExportMultiLayerHero: View {
             + (speedActive ? 1 : 0)
             + (showElevation ? 1 : 0)
             + (showWeather ? 1 : 0)
-        return "\(t("LAYERS")) \(count)/4"
+        return LHMapBase.layersBadge(localizedLayersWord: t("LAYERS"), activeCount: count)
     }
 
     // MARK: - Layer insight section

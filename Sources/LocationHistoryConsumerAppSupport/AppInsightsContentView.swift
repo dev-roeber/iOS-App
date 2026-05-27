@@ -384,7 +384,7 @@ public struct AppInsightsContentView: View {
             + (speedActive ? 1 : 0)
             + (insightsShowElevationLayer ? 1 : 0)
             + (insightsShowWeatherLayer ? 1 : 0)
-        return "\(t("LAYERS")) \(count)/4"
+        return LHMapBase.layersBadge(localizedLayersWord: t("LAYERS"), activeCount: count)
     }
 
     /// Compact filter strip pinned directly under the Hero-Map. Mirrors the

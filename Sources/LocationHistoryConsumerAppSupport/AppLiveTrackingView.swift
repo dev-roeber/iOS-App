@@ -315,7 +315,7 @@ public struct AppLiveTrackingView: View {
                             weatherDisabledHint: t("Enable in Settings")
                         )
                         .padding(.leading, 12)
-                        .padding(.top, lhDeviceTopSafeInset() + 12)
+                        .padding(.top, LHMapBase.floatingControlTopInset(deviceTopSafeInset: lhDeviceTopSafeInset()))
                     }
 
                     Spacer()
@@ -345,7 +345,7 @@ public struct AppLiveTrackingView: View {
                         Spacer(minLength: liveFabKeepoutClearance)
                     }
                     .padding(.trailing, 12)
-                    .padding(.top, lhDeviceTopSafeInset() + 12)
+                    .padding(.top, LHMapBase.floatingControlTopInset(deviceTopSafeInset: lhDeviceTopSafeInset()))
                 }
 
                 // Weather pill — top-trailing, sits beneath the control stack
@@ -704,7 +704,7 @@ public struct AppLiveTrackingView: View {
             + (speedActive ? 1 : 0)
             + (showElevationLayer ? 1 : 0)
             + (showWeatherLayer ? 1 : 0)
-        return "\(t("LAYERS")) \(count)/4"
+        return LHMapBase.layersBadge(localizedLayersWord: t("LAYERS"), activeCount: count)
     }
 
     private var permissionShortValue: String {
