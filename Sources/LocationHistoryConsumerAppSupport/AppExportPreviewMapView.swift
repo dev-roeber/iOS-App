@@ -155,8 +155,8 @@ struct AppExportPreviewMapView: View {
     /// Honors the global Layer-Panel selection on the export preview / hero
     /// map. Export-preview overlays do not carry per-segment speed samples, so
     /// the Tempo layer falls back to a uniform speed-warm tint, mirroring the
-    /// Insights pipeline. Elevation/Weather remain placeholder tints until
-    /// their data layers ship (tracked as follow-up).
+    /// Insights pipeline. Elevation / Weather prepared remain placeholder
+    /// tints until their data layers ship (tracked as follow-up).
     private func exportStrokeColor(for activityType: String?) -> Color {
         switch preferences.mapTrackColorMode {
         case .activity:

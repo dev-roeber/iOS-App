@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## 2026-05-27 — SwiftUI/UI-Framework Audit Complete (Branch `audit/swiftui-ui-framework-complete`)
+
+### Added
+- `docs/UI_FRAMEWORK_SWIFTUI_AUDIT_2026-05-27.md` — neuer, repo-aktuell ausgeführter SwiftUI-/UI-Framework-Audit mit View-Inventar, UIKit-Abhängigkeitstabelle, Designsystem-Abweichungen, Modernisierungsphasen und Risiken.
+
+### Changed
+- Dateien-Tab: Der gemeinsame Aktionsbanner kann jetzt auch lokale `AppFilesViewModel`-Meldungen verwerfen. Vorher löschte der X-Button nur iCloud-Meldungen und ließ lokale Refresh-/Delete-Fehler oder Erfolgsmeldungen stehen.
+- Doku-Truth: Aktuelle Repo-Wahrheit für UI-Framework-Stack dokumentiert: SwiftUI ist Primärframework; UIKit bleibt eng begrenzt auf technisch begründete APIs; kein aktiver UIKit-`MKMapView`-Renderer; `TARGETED_DEVICE_FAMILY = 1,2` ist im aktuellen `project.pbxproj` gesetzt, aber iPad-Smoke bleibt offen.
+
+### Tests
+- Nicht ausgeführt: Die Test-/Build-Phase wurde vom User mit „tests überspringen“ übersprungen. Der zuvor gestartete `swift build` wurde abgebrochen; kein Build- oder Testerfolg wird behauptet.
+
+## 2026-05-27 — WeatherKit Capability + Diagnostics (Branch `fix/weatherkit-capability-diagnostics`)
+
+### Changed
+- `wrapper/LH2GPXWrapper.xcodeproj/project.pbxproj` — App-Target `LH2GPXWrapper` deklariert jetzt zusätzlich zur Entitlements-Datei die WeatherKit Target-Capability im `SystemCapabilities`-Block (`com.apple.WeatherKit = { enabled = 1; }`). Widget-Target bleibt ohne WeatherKit.
+- WeatherKit-Service fordert nur noch Current Weather an (`WeatherService.shared.weather(for:including: .current)`) und reicht NSError-/WeatherDaemon-/JWT-/401-Diagnosen redigiert in die App-Diagnose weiter.
+- Settings zeigen bei WeatherKit-Fehlern eine kurze deutsche technische Diagnose: Entitlement/Profile prüfen, WeatherKit in Apple Developer App Services + App Capabilities aktivieren, Profil aktualisieren und App neu installieren.
+- Day/Overview/Export-Map-Layer benennen den Wetter-Farbmodus ehrlich als „Wetter vorbereitet“/`Weather prepared`, weil diese Layer weiter Platzhalter-Tints sind. Die Live-Wetter-Pill bleibt der einzige WeatherKit-gestützte Live-Datenpfad.
+
+### Added
+- Statische Tests für WeatherKit-Capability/Entitlements: App-Entitlement vorhanden, Widget ohne WeatherKit, App-Target nutzt die richtige Entitlements-Datei, `project.pbxproj` enthält WeatherKit nur im App-Target.
+
+### Nicht lokal verifizierbar
+- Xcode Signing-&-Capabilities-Diff, signierter App-Bundle-Entitlement-Dump, App-ID/App-Services/App-Capabilities im Apple Developer Portal und refreshed Provisioning Profiles benötigen macOS/Xcode + Developer-Account-Zugriff.
+
+---
+
 ## 2026-05-26 — Doku-Verify (Branch `chore/docs-verify`, HEAD baseline `a5d506e`)
 
 > Doku-Sync ohne Code-Änderung. Verifiziert Versions-Stempel + Deployment-Target +

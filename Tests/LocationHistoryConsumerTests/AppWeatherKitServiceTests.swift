@@ -39,4 +39,46 @@ final class AppWeatherKitServiceTests: XCTestCase {
         #endif
         XCTAssertTrue(true)
     }
+
+    func testWeatherErrorKeepsDiagnosticDetailsForSettings() {
+        let error = AppWeatherError.requestFailed("WeatherDaemon.WDSJWTAuthenticatorServiceListener.Errors Code=2 401 auth failed")
+
+        XCTAssertTrue(error.diagnosticDescription.contains("WeatherDaemon"))
+        XCTAssertTrue(error.userFacingGermanDiagnostic.contains("Entitlement"))
+        XCTAssertTrue(error.userFacingGermanDiagnostic.contains("Provisioning Profile"))
+        XCTAssertTrue(error.userFacingGermanDiagnostic.contains("Developer-Portal"))
+        XCTAssertTrue(error.userFacingGermanDiagnostic.contains("401"))
+    }
+
+    func testWeatherErrorRedactsTokenValuesInUserFacingDiagnostic() {
+        let error = AppWeatherError.requestFailed("401 Authorization: Bearer abc123 jwt=secret token=other")
+        let diagnostic = error.userFacingGermanDiagnostic
+
+        XCTAssertTrue(diagnostic.contains("401"))
+        XCTAssertTrue(diagnostic.contains("Bearer [redacted]"))
+        XCTAssertTrue(diagnostic.contains("jwt=[redacted]"))
+        XCTAssertTrue(diagnostic.contains("token=[redacted]"))
+        XCTAssertFalse(diagnostic.contains("abc123"))
+        XCTAssertFalse(diagnostic.contains("secret"))
+        XCTAssertFalse(diagnostic.contains("other"))
+    }
+
+    func testNSErrorDiagnosticIncludesDomainCodeAndUnderlyingError() {
+        let underlying = NSError(domain: "WeatherDaemon.WDSJWTAuthenticatorServiceListener.Errors", code: 2)
+        let error = NSError(
+            domain: "WeatherKit.WeatherService",
+            code: 401,
+            userInfo: [
+                NSLocalizedDescriptionKey: "Authentication failed",
+                NSUnderlyingErrorKey: underlying
+            ]
+        )
+
+        let message = AppWeatherDiagnostics.requestFailedMessage(from: error)
+
+        XCTAssertTrue(message.contains("WeatherKit.WeatherService"))
+        XCTAssertTrue(message.contains("code=401"))
+        XCTAssertTrue(message.contains("WeatherDaemon.WDSJWTAuthenticatorServiceListener.Errors"))
+        XCTAssertTrue(message.contains("code=2"))
+    }
 }

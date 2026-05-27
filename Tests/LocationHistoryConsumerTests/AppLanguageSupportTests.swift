@@ -420,4 +420,8 @@ final class AppLanguageSupportRedesignBatch4Tests: XCTestCase {
             "Keine Tage passen zum aktuellen Filter. Passe den Zeitraum an oder setze ihn zurück."
         )
     }
+
+    func testGermanWeatherPreparedLayerLabel() {
+        XCTAssertEqual(de.localized("Weather prepared"), "Wetter vorbereitet")
+    }
 }

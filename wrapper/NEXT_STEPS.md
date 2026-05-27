@@ -3,6 +3,21 @@
 Abgeleitet aus der ROADMAP. Nur die aktuell offenen, fachlich sinnvoll priorisierten Folgepakete.
 Der Repo-Truth- und Audit-Sync vom 2026-03-31 ist in diesem Batch bewusst geschlossen und taucht hier nicht mehr als offener Punkt auf.
 
+## WeatherKit Follow-up 2026-05-27
+
+Status: **lokal vorbereitet, extern zu verifizieren**
+
+Bereits drin:
+- App-Target-Entitlement `com.apple.developer.weatherkit = true`
+- App-Target-`SystemCapabilities` Key `com.apple.WeatherKit`
+- Widget bleibt ohne WeatherKit
+- Live-Wetter-Pill nutzt Current Weather; Day/Overview/Export-Wetterlayer sind als „Wetter vorbereitet“ gekennzeichnet
+
+Fehlt noch:
+- Apple Developer Portal: App ID `de.roeber.LH2GPXWrapper` in App Services + App Capabilities fuer WeatherKit aktivieren/bestaetigen
+- Provisioning Profile refreshen, App neu installieren, `codesign -d --entitlements :- LH2GPXWrapper.app` pruefen
+- Device/TestFlight-Smoke der Live-Wetter-Pill
+
 ## Abgeschlossen 2026-04-12
 
 - [x] App Groups Entitlements: `LH2GPXWrapper.entitlements` + `LH2GPXWidget.entitlements` mit `group.de.roeber.LH2GPXWrapper`; `CODE_SIGN_ENTITLEMENTS` in `project.pbxproj` fuer alle 4 Build-Konfigurationen gesetzt — Widget-Datenaustausch via `WidgetDataStore` (UserDefaults App Group) funktioniert jetzt korrekt

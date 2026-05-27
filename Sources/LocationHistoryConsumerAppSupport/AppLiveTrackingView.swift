@@ -187,7 +187,9 @@ public struct AppLiveTrackingView: View {
                 self.weatherError = false
             } catch {
                 self.weatherError = true
-                let message = self.t("Weather unavailable")
+                let appError = (error as? AppWeatherError)
+                    ?? AppWeatherError.requestFailed(AppWeatherDiagnostics.requestFailedMessage(from: error))
+                let message = appError.userFacingGermanDiagnostic
                 self.preferences.markWeatherLayerFailure(message)
                 self.currentWeather = nil
             }
@@ -693,7 +695,8 @@ public struct AppLiveTrackingView: View {
         // Four overlay slots: Standard base map (always on), Tempo color
         // mode, Höhen-Overlay, Wetter-Overlay. Standard counts as active
         // whenever Tempo is off; Tempo counts when it is the active base
-        // colour mode.
+        // colour mode. The separate Live weather overlay is the only path
+        // currently backed by real WeatherKit data.
         let standardActive = preferences.mapTrackColorMode != .speed
         let speedActive = preferences.mapTrackColorMode == .speed
         let count =

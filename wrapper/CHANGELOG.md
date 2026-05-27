@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-05-27 — WeatherKit Capability Alignment
+
+- App-Target `LH2GPXWrapper` deklariert WeatherKit jetzt konsistent in Entitlements und `project.pbxproj` (`com.apple.WeatherKit` unter `SystemCapabilities`).
+- Widget-Target bleibt ohne WeatherKit-Entitlement/Capability.
+- Settings-/Live-Diagnose fuer WeatherKit-Auth-/Profile-Fehler wurde im Core-Paket verbessert; Day/Overview/Export-Wetterlayer sind als vorbereitet/Platzhalter dokumentiert.
+- Nicht lokal verifiziert: Xcode Signing-&-Capabilities UI, signierter Bundle-Dump, Apple Developer Portal App Services/App Capabilities und refreshed Provisioning Profiles.
+
 ## 2026-05-12 — perf: add measured performance baseline and low-risk optimizations
 
 - Neuer Audit-Report `docs/PERFORMANCE_DEEP_AUDIT_2026-05-12.md` mit 21 priorisierten Hotspots (6 Subagenten parallel: Code+Performance, SQLite/Store, Test/Benchmark, Static-Search-Sweep, Doku-Truth, App-Store-Compliance).

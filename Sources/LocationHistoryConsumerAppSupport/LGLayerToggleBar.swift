@@ -104,7 +104,7 @@ private extension AppMapTrackColorMode {
         case .activity:  return "Standard"
         case .speed:     return "Tempo"
         case .elevation: return "Höhenmeter"
-        case .weather:   return "Wetter"
+        case .weather:   return "Wetter vorbereitet"
         }
     }
 

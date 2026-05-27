@@ -1,11 +1,11 @@
 // AppWeatherKitService
 //
-// Service-layer scaffold for the in-app weather panel. This file deliberately
-// stays UI-free: we only expose a protocol + DTO, the iOS WeatherKit-backed
+// Service-layer for the in-app weather panel. This file deliberately stays
+// UI-free: it exposes a protocol + DTO, the iOS WeatherKit-backed
 // implementation behind `canImport(WeatherKit)` and a deterministic Linux/
-// test stub. Wiring this provider into Live / DayDetail / Insights / Export
-// views is intentionally out of scope for this change — that work is
-// scheduled for a follow-up PR.
+// test stub. The real WeatherKit data path is currently wired into the Live
+// weather pill; Day/Overview/Export map "weather prepared" track tinting is
+// still a placeholder surface until per-route weather enrichment ships.
 //
 // WeatherKit setup note:
 // - WeatherKit requires the **WeatherKit capability** to be enabled in the
@@ -14,9 +14,9 @@
 //   membership; the capability is not available on free accounts.
 // - There is a free request quota (≈ 500k calls / month / team); the service
 //   throws on exhaustion.
-// Configuration of the capability + entitlement is **not** part of this
-// PR — it must be done in the Xcode project setup before the iOS
-// implementation is exercised at runtime.
+// The app target declares the entitlement and Xcode SystemCapabilities entry;
+// the matching App ID service + refreshed provisioning profile remain an
+// external Apple Developer Portal requirement.
 
 import Foundation
 #if canImport(CoreLocation)
@@ -68,6 +68,110 @@ public protocol WeatherDataProvider: Sendable {
 public enum AppWeatherError: Error, Sendable, Equatable {
     case unavailable
     case requestFailed(String)
+
+    public var diagnosticDescription: String {
+        switch self {
+        case .unavailable:
+            return "WeatherKit is unavailable on this platform."
+        case let .requestFailed(message):
+            return message
+        }
+    }
+
+    public var userFacingGermanTitle: String {
+        "Wetter unverfügbar"
+    }
+
+    public var userFacingGermanDiagnostic: String {
+        let hint = "Bitte WeatherKit-Entitlement, Provisioning Profile und Developer-Portal App Services prüfen. App nach Profile-Refresh neu installieren."
+        switch self {
+        case .unavailable:
+            return "\(hint) Diagnose: WeatherKit ist auf dieser Plattform nicht verfügbar."
+        case let .requestFailed(message):
+            guard !message.isEmpty else { return hint }
+            return "\(hint) Diagnose: \(Self.redacted(message))"
+        }
+    }
+
+    private static func redacted(_ message: String) -> String {
+        let words = message.split(whereSeparator: \.isWhitespace)
+        var redactedWords: [String] = []
+        var index = words.startIndex
+
+        while index < words.endIndex {
+            let word = words[index]
+            let lowercased = word.lowercased()
+            let normalized = lowercased.trimmingCharacters(in: CharacterSet(charactersIn: ":"))
+
+            if normalized == "authorization" {
+                redactedWords.append(String(word))
+                let nextIndex = words.index(after: index)
+                if nextIndex < words.endIndex,
+                   words[nextIndex].lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ":")) == "bearer" {
+                    redactedWords.append(String(words[nextIndex]))
+                    let tokenIndex = words.index(after: nextIndex)
+                    if tokenIndex < words.endIndex {
+                        redactedWords.append("[redacted]")
+                        index = words.index(after: tokenIndex)
+                    } else {
+                        index = tokenIndex
+                    }
+                } else if nextIndex < words.endIndex {
+                    redactedWords.append("[redacted]")
+                    index = words.index(after: nextIndex)
+                } else {
+                    index = nextIndex
+                }
+            } else if normalized == "bearer" {
+                redactedWords.append(String(word))
+                let nextIndex = words.index(after: index)
+                if nextIndex < words.endIndex {
+                    redactedWords.append("[redacted]")
+                    index = words.index(after: nextIndex)
+                } else {
+                    index = nextIndex
+                }
+            } else if lowercased.hasPrefix("token=") || lowercased.hasPrefix("jwt=") {
+                let key = word.prefix { $0 != "=" }
+                redactedWords.append("\(key)=[redacted]")
+                index = words.index(after: index)
+            } else {
+                redactedWords.append(String(word))
+                index = words.index(after: index)
+            }
+        }
+
+        return redactedWords.joined(separator: " ")
+    }
+}
+
+public enum AppWeatherDiagnostics {
+    public static func requestFailedMessage(from error: Error) -> String {
+        if let appError = error as? AppWeatherError {
+            return appError.diagnosticDescription
+        }
+        let nsError = error as NSError
+        var parts: [String] = [
+            "\(type(of: error))",
+            "domain=\(nsError.domain)",
+            "code=\(nsError.code)"
+        ]
+        let description = nsError.localizedDescription
+        if !description.isEmpty {
+            parts.append(description)
+        }
+        let debugText = String(reflecting: error)
+        if debugText != description {
+            parts.append(debugText)
+        }
+        if let reason = nsError.userInfo[NSLocalizedFailureReasonErrorKey] as? String, !reason.isEmpty {
+            parts.append(reason)
+        }
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? Error {
+            parts.append("underlying=\(requestFailedMessage(from: underlying))")
+        }
+        return parts.joined(separator: " | ")
+    }
 }
 
 // MARK: - Deterministic stub (Linux + tests)
@@ -132,8 +236,7 @@ public final class WeatherKitService: WeatherDataProvider, @unchecked Sendable {
     public func currentWeather(at coordinate: AppWeatherCoordinate) async throws -> WeatherSnapshot {
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         do {
-            let weather = try await WeatherService.shared.weather(for: location)
-            let current = weather.currentWeather
+            let current = try await WeatherService.shared.weather(for: location, including: .current)
             let tempC = current.temperature.converted(to: .celsius).value
             let condition = current.condition.description
             return WeatherSnapshot(
@@ -142,7 +245,7 @@ public final class WeatherKitService: WeatherDataProvider, @unchecked Sendable {
                 timestamp: current.date
             )
         } catch {
-            throw AppWeatherError.requestFailed(String(describing: error))
+            throw AppWeatherError.requestFailed(AppWeatherDiagnostics.requestFailedMessage(from: error))
         }
     }
 }

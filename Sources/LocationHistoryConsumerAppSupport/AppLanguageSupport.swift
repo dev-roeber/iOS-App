@@ -773,11 +773,13 @@ enum AppGermanTranslations {
         "Layers": "Ebenen",
         "Elevation": "Höhe",
         "Weather": "Wetter",
+        "Weather prepared": "Wetter vorbereitet",
         // Weather layer (Phase 19.30 — UI integration)
         "Show weather data": "Wetterdaten anzeigen",
         "Uses data · Apple WeatherKit · Location required": "Verbraucht Datenvolumen · Apple WeatherKit · Standortzugriff erforderlich",
         "Weather unavailable": "Wetter unverfügbar",
         "Enable in Settings": "In Einstellungen aktivieren",
+        "Technische Diagnose: Entitlement/Profile prüfen, im Apple Developer Portal App Services und App Capabilities für WeatherKit aktivieren, danach Profil aktualisieren und App neu installieren.": "Technische Diagnose: Entitlement/Profile prüfen, im Apple Developer Portal App Services und App Capabilities für WeatherKit aktivieren, danach Profil aktualisieren und App neu installieren.",
         "Reset weather error": "Wetterfehler zurücksetzen",
         "Zoom in": "Heranzoomen",
         "Zoom out": "Herauszoomen",
