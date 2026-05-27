@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2026-05-27 — Map-First Liquid Glass: einheitliche Map-Basis (Branch `feat/map-first-liquid-glass-ui`)
+
+### Added
+- `Sources/LocationHistoryConsumerAppSupport/LHMapBase.swift` — Single Source of Truth für die Map-First-Basis aller Screens: kanonischer `LAYERS n/4`-Badge-Formatter (`LHMapBase.layersBadge(localizedLayersWord:activeCount:total:)`), zentrale Konstanten für Floating-Control-Insets (`floatingControlTopGap`, `floatingControlSideInset`) und Helper `floatingControlTopInset(deviceTopSafeInset:)`. Foundation/CoreGraphics-only, damit Linux-`swift test` den Formatter direkt prüfen kann.
+- `Tests/LocationHistoryConsumerTests/LHMapBaseTests.swift` — 9 XCTest-Fälle: Badge-Formatierung (0/4, partial, 4/4, German-Pass-through, negativer Clamp, Overshoot-Clamp, Custom-Total), Top-Inset-Arithmetik, Slot-Konstante.
+
+### Changed
+- `AppDayDetailView.swift` — DayDetail-Layer-Pill rendert nun `EBENEN n/4` (vorher nur „Ebenen") über neue `dayDetailLayersPanelLabel`-Property, die `LHMapBase.layersBadge` nutzt. Layer-Panel- und Control-Stack-Insets gehen über `LHMapBase.floatingControlSideInset` / `floatingControlTopInset(...)`, damit die Positionen 1:1 zur Live-Karte sitzen.
+- `AppLiveTrackingView.swift` — `layersPanelLabel` und beide Portrait-Top-Insets der Layer-/Control-Overlays verwenden den shared `LHMapBase`-Helper statt inline `+12`/manueller String-Konkatenation.
+- `AppInsightsContentView.swift` — `insightsLayersPanelLabel` nutzt den shared Formatter.
+- `AppExportMultiLayerHero.swift` — Export-Hero-Layer-Badge konsumiert den shared Formatter, damit Export-Sheet und App-Tabs nicht voneinander driften können.
+
+### Why
+- Vor der Änderung berechneten vier separate Views (`Live`, `Insights`, `DayDetail`-via-plain-String, `Export`) die `LAYERS n/4`-Beschriftung jeweils selbst, und DayDetail zeigte nur den Wortstamm „Ebenen" ohne Zähler. Tab-übergreifend wirkten Layer-Pill und Floating-Insets dadurch wie unterschiedliche Komponenten, obwohl sie das gleiche Affordance modellieren. Eine `LHMapBase`-Zentrale sperrt die Basis künftig auf einen Code-Pfad.
+
+### Tests
+- `swift build` grün.
+- `swift test` grün: 1739 Bestandstests + 9 neue `LHMapBaseTests` (Linux x86_64).
+
 ## 2026-05-27 — SwiftUI/UI-Framework Audit Complete (Branch `audit/swiftui-ui-framework-complete`)
 
 ### Added
