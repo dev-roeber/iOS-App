@@ -66,8 +66,7 @@ public struct LGLayerToggleBar: View {
             }
         }
         .padding(6)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().stroke(Color.white.opacity(0.32), lineWidth: 0.8))
+        .lgGlassPill()
     }
 
     private func fallbackButton(for layer: AppMapTrackColorMode) -> some View {

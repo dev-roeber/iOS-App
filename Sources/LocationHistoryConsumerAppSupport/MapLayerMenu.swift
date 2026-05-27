@@ -76,7 +76,7 @@ public struct MapLayerMenu: View {
                 .font(.callout.weight(.semibold))
                 .padding(8)
                 .frame(width: 34, height: 34)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .lgGlassSurface(cornerRadius: 10)
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(t("Map layers"))

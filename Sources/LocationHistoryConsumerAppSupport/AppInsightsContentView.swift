@@ -354,24 +354,26 @@ public struct AppInsightsContentView: View {
                     mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset,
                     cameraController: insightsHeroMapCamera
                 )
-                .overlay(alignment: .topLeading) {
-                    insightsHeroLayerPanel
-                        .padding(.leading, 12)
+                .overlay(alignment: .top) {
+                    LGGlassEffectGroup(spacing: 8) {
+                        HStack(alignment: .top, spacing: 0) {
+                            insightsHeroLayerPanel
+                                .padding(.leading, LHMapBase.floatingControlSideInset)
+                            Spacer(minLength: 0)
+                            DayDetailControlStack(
+                                onFitToData: { insightsHeroMapCamera.fitToData?() },
+                                onZoomIn:    { insightsHeroMapCamera.adjustZoom?(0.5) },
+                                onZoomOut:   { insightsHeroMapCamera.adjustZoom?(2.0) },
+                                compassLabel: t("Fit to Data"),
+                                zoomInLabel:  t("Zoom in"),
+                                zoomOutLabel: t("Zoom out"),
+                                fitLabel:     t("Fit to Data")
+                            )
+                            .padding(.trailing, LHMapBase.floatingControlSideInset)
+                            .accessibilityIdentifier("insights.map.controlStack")
+                        }
                         .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)
-                }
-                .overlay(alignment: .topTrailing) {
-                    DayDetailControlStack(
-                        onFitToData: { insightsHeroMapCamera.fitToData?() },
-                        onZoomIn:    { insightsHeroMapCamera.adjustZoom?(0.5) },
-                        onZoomOut:   { insightsHeroMapCamera.adjustZoom?(2.0) },
-                        compassLabel: t("Fit to Data"),
-                        zoomInLabel:  t("Zoom in"),
-                        zoomOutLabel: t("Zoom out"),
-                        fitLabel:     t("Fit to Data")
-                    )
-                    .padding(.trailing, LHMapBase.floatingControlSideInset)
-                    .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)
-                    .accessibilityIdentifier("insights.map.controlStack")
+                    }
                 }
             }
         }

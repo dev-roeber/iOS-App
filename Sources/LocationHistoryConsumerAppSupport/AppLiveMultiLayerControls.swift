@@ -76,11 +76,7 @@ struct LiveLayerPanel: View {
         }
         .padding(isExpanded ? 12 : 8)
         .frame(width: isExpanded ? 168 : nil)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: isExpanded ? 18 : 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: isExpanded ? 18 : 14, style: .continuous)
-                .stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8)
-        )
+        .lgGlassSurface(cornerRadius: isExpanded ? 18 : 14)
         .shadow(color: Color.black.opacity(0.12), radius: 14, x: 0, y: 8)
         .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.85), value: isExpanded)
     }
@@ -268,10 +264,7 @@ struct LiveControlStack: View {
             Image(systemName: icon)
                 .font(pillFont)
                 .foregroundStyle(tint)
-                .frame(width: pillSize, height: pillSize)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8))
-                .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 4)
+                .lgGlassCircle(diameter: pillSize)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)

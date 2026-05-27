@@ -297,7 +297,7 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(.thinMaterial, in: Capsule())
+            .lgGlassPill()
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -382,7 +382,7 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
                         .font(.title2)
                         .foregroundStyle(.secondary)
                         .padding(16)
-                        .background(.thinMaterial, in: Circle())
+                        .lgGlassCircle(diameter: 56)
                 }
                 .accessibilityLabel(t(state.closeFullscreenButtonLabel))
                 .padding(20)
