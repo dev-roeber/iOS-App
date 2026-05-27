@@ -81,6 +81,12 @@ public struct AppInsightsContentView: View {
         expandedHeight: LHHeroMapLayout.expandedHeight,
         isSticky: true
     )
+    /// Insights-Hero-Map-Camera-Controller — gibt dem rechten Floating-
+    /// Control-Stack (compass / + / − / target) Zugriff auf die gleiche
+    /// `MapCameraPosition`, die der MapLayerMenu-fitToData nutzt. Eigene
+    /// Instanz pro Insights-View; Lifecycle ueber `onAppear`/`onDisappear`
+    /// im `AppOverviewTracksMapView`.
+    @StateObject private var insightsHeroMapCamera = AppDayMapCameraController()
 
     public init(
         insights: ExportInsights,
@@ -345,12 +351,27 @@ public struct AppInsightsContentView: View {
                     queryFilter: heroQueryFilter,
                     fixedHeight: nil,
                     showsFullscreenControl: false,
-                    mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset
+                    mapControlTopPadding: lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset,
+                    cameraController: insightsHeroMapCamera
                 )
                 .overlay(alignment: .topLeading) {
                     insightsHeroLayerPanel
                         .padding(.leading, 12)
                         .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)
+                }
+                .overlay(alignment: .topTrailing) {
+                    DayDetailControlStack(
+                        onFitToData: { insightsHeroMapCamera.fitToData?() },
+                        onZoomIn:    { insightsHeroMapCamera.adjustZoom?(0.5) },
+                        onZoomOut:   { insightsHeroMapCamera.adjustZoom?(2.0) },
+                        compassLabel: t("Fit to Data"),
+                        zoomInLabel:  t("Zoom in"),
+                        zoomOutLabel: t("Zoom out"),
+                        fitLabel:     t("Fit to Data")
+                    )
+                    .padding(.trailing, LHMapBase.floatingControlSideInset)
+                    .padding(.top, lhDeviceTopSafeInset() + LHHeroMapLayout.mapControlTopOffset)
+                    .accessibilityIdentifier("insights.map.controlStack")
                 }
             }
         }

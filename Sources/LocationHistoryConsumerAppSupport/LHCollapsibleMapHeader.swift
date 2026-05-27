@@ -338,7 +338,7 @@ public struct LHCollapsibleMapHeader<MapContent: View>: View {
                 .overlay(alignment: .bottom) {
                     if state.isCompact || state.isExpanded {
                         resizeHandle
-                            .padding(.bottom, 10)
+                            .padding(.bottom, LHMapBase.attributionGuardBottomInset)
                     }
                 }
                 .accessibilityLabel(t(state.mapPreviewLabel))

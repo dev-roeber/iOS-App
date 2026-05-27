@@ -356,6 +356,11 @@ struct LiveBottomSheet<Content: View>: View {
     let headlineText: String
     let headlineTint: Color
     var heights: LiveBottomSheetHeights = .portrait
+    /// Reservierter Bottom-Inset INNERHALB des Sheets, damit der unterste
+    /// Inhalt (Track-Library, Orte, Diagnostics) NICHT von der iOS-26-Tab-
+    /// Bar verdeckt wird. Uebergeben aus den jeweiligen Screens via
+    /// `LHMapBase.bottomSheetTabBarClearance(...)`.
+    var bottomClearance: CGFloat = 0
     @ViewBuilder let content: () -> Content
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -373,7 +378,7 @@ struct LiveBottomSheet<Content: View>: View {
     private var currentHeight: CGFloat {
         // Negative dragOffset = drag up = larger height. Clamp to [80, expanded+40].
         let raw = detentValue - dragOffset
-        let maxH = heights.expanded + 40
+        let maxH = heights.expanded + 40 + bottomClearance
         return min(max(raw, 80), maxH)
     }
 
@@ -393,13 +398,14 @@ struct LiveBottomSheet<Content: View>: View {
                 }
                 ScrollView(.vertical, showsIndicators: false) {
                     content()
+                        .padding(.bottom, bottomClearance)
                 }
             }
             .padding(.horizontal, 18)
-            .padding(.bottom, 12)
+            .padding(.bottom, 12 + bottomClearance)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: currentHeight, alignment: .top)
+        .frame(height: currentHeight + bottomClearance, alignment: .top)
         .background(sheetSurface)
         .overlay(alignment: .top) {
             Rectangle()

@@ -242,7 +242,10 @@ public struct AppDayDetailView: View {
         LiveBottomSheet(
             headerCaption: t("DAY · DETAIL"),
             headlineText: bottomSheetHeadline(detail),
-            headlineTint: LH2GPXTheme.LiquidGlass.ink
+            headlineTint: LH2GPXTheme.LiquidGlass.ink,
+            bottomClearance: LHMapBase.bottomSheetTabBarClearance(
+                deviceBottomSafeInset: lhDeviceBottomSafeInset()
+            )
         ) {
             VStack(alignment: .leading, spacing: 16) {
                 // Compact weekday + time-range underline below the bold headline.
