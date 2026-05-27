@@ -1,5 +1,16 @@
 import Foundation
 
+/// Source of a recent file — used by the Welcome screen to render a
+/// badge ("LOCAL" / "iCLOUD" / "FILE") so the user can tell at a glance
+/// whether the file lives on-device or in iCloud Drive. Persisted with
+/// each `RecentFileEntry`; legacy entries without the field decode to
+/// `.unknown` thanks to the manual `Codable` implementation below.
+public enum RecentFileSource: String, Codable, Equatable, Sendable {
+    case local
+    case iCloudDrive
+    case unknown
+}
+
 /// A single entry in the recent-files list.
 public struct RecentFileEntry: Codable, Identifiable, Equatable {
     public var id: UUID
@@ -7,19 +18,51 @@ public struct RecentFileEntry: Codable, Identifiable, Equatable {
     public var bookmarkData: Data
     public var lastOpenedAt: Date
     public var fileSizeBytes: Int64?
+    /// Train F.4 — Welcome screen surfaces this as a badge. Legacy
+    /// entries (pre-F.4) decode as `.unknown`.
+    public var source: RecentFileSource
 
     public init(
         id: UUID = UUID(),
         displayName: String,
         bookmarkData: Data,
         lastOpenedAt: Date = Date(),
-        fileSizeBytes: Int64? = nil
+        fileSizeBytes: Int64? = nil,
+        source: RecentFileSource = .unknown
     ) {
         self.id = id
         self.displayName = displayName
         self.bookmarkData = bookmarkData
         self.lastOpenedAt = lastOpenedAt
         self.fileSizeBytes = fileSizeBytes
+        self.source = source
+    }
+
+    // MARK: - Manual Codable (backward-compat with pre-F.4 JSON)
+
+    private enum CodingKeys: String, CodingKey {
+        case id, displayName, bookmarkData, lastOpenedAt, fileSizeBytes, source
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try c.decode(UUID.self, forKey: .id)
+        self.displayName = try c.decode(String.self, forKey: .displayName)
+        self.bookmarkData = try c.decode(Data.self, forKey: .bookmarkData)
+        self.lastOpenedAt = try c.decode(Date.self, forKey: .lastOpenedAt)
+        self.fileSizeBytes = try c.decodeIfPresent(Int64.self, forKey: .fileSizeBytes)
+        // decodeIfPresent → legacy JSON ohne `source` ergibt `.unknown`.
+        self.source = try c.decodeIfPresent(RecentFileSource.self, forKey: .source) ?? .unknown
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(displayName, forKey: .displayName)
+        try c.encode(bookmarkData, forKey: .bookmarkData)
+        try c.encode(lastOpenedAt, forKey: .lastOpenedAt)
+        try c.encodeIfPresent(fileSizeBytes, forKey: .fileSizeBytes)
+        try c.encode(source, forKey: .source)
     }
 }
 
@@ -60,7 +103,8 @@ public enum RecentFilesStore {
             displayName: displayName,
             bookmarkData: bookmarkData,
             lastOpenedAt: Date(),
-            fileSizeBytes: fileSize(for: url)
+            fileSizeBytes: fileSize(for: url),
+            source: detectSource(for: url)
         )
         entries.insert(entry, at: 0)
 
@@ -83,6 +127,24 @@ public enum RecentFilesStore {
     /// Removes all stored entries.
     public static func clear(userDefaults: UserDefaults = .standard) {
         userDefaults.removeObject(forKey: recentFilesKey)
+    }
+
+    // MARK: - Detect source (Train F.4)
+
+    /// Detects whether `url` lives in iCloud Drive (Mobile Documents /
+    /// `com~apple~CloudDocs` tree) or on the local sandbox. No entitlement
+    /// required — `FileManager.isUbiquitousItem(at:)` answers on every URL.
+    public static func detectSource(for url: URL) -> RecentFileSource {
+        #if os(iOS) || os(macOS)
+        if FileManager.default.isUbiquitousItem(at: url) { return .iCloudDrive }
+        let p = url.path
+        if p.contains("/Mobile Documents/") || p.contains("com~apple~CloudDocs") {
+            return .iCloudDrive
+        }
+        return .local
+        #else
+        return .local
+        #endif
     }
 
     // MARK: - Resolve
@@ -141,11 +203,13 @@ public enum RecentFilesStore {
         guard userDefaults.data(forKey: recentFilesKey) == nil,
               let legacyData = userDefaults.data(forKey: legacyBookmarkKey) else { return }
 
-        // Build a synthetic entry from the legacy bookmark
+        // Build a synthetic entry from the legacy bookmark. The original
+        // URL is no longer known here, so the source stays `.unknown`.
         let entry = RecentFileEntry(
             displayName: "Imported File",
             bookmarkData: legacyData,
-            lastOpenedAt: Date()
+            lastOpenedAt: Date(),
+            source: .unknown
         )
         save([entry], userDefaults: userDefaults)
         userDefaults.removeObject(forKey: legacyBookmarkKey)

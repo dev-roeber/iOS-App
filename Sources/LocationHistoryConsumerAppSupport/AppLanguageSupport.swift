@@ -51,6 +51,26 @@ public enum AppLanguagePreference: String, CaseIterable, Identifiable {
 
 enum AppGermanTranslations {
     static let values: [String: String] = [
+        // MARK: Train F.4 — Welcome (iCloud hint, source badge, drop)
+        "JSON · ZIP · GPX · TCX — inside .zip too.":
+            "JSON · ZIP · GPX · TCX — auch innerhalb von .zip-Archiven.",
+        "Browse files": "Dateien durchsuchen",
+        "Drag & drop or pick from Files":
+            "Per Drag & Drop oder aus \"Dateien\" wählen",
+        "Choose from iCloud Drive": "Aus iCloud Drive wählen",
+        "Private · on device": "Privat · auf Gerät",
+        "Drive · ready": "Drive · bereit",
+        "Sample · for testing": "Beispiel · zum Testen",
+        "Drop to import": "Ablegen zum Importieren",
+        // "Remove" → translated below in Imported-path deletion section.
+        "iCloud Drive not active": "iCloud Drive nicht aktiv",
+        "Enable iCloud Drive in Settings to import files from your iCloud.":
+            "Aktiviere iCloud Drive in den Einstellungen, um Dateien aus deiner iCloud zu importieren.",
+        "Open Settings": "Einstellungen öffnen",
+        "Tap to set up": "Tippen zum Einrichten",
+        "Opens Settings to enable iCloud Drive":
+            "Öffnet Einstellungen, um iCloud Drive zu aktivieren",
+
         "Overview": "Übersicht",
         "Days": "Tage",
         "FILTERED DAYS": "GEFILTERTE TAGE",
