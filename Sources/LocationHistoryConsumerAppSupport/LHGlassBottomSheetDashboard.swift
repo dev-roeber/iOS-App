@@ -1,15 +1,27 @@
 #if canImport(SwiftUI)
 import SwiftUI
 
-/// Liquid Glass bottom sheet dashboard with three detents (collapsed / medium /
-/// expanded), a 44pt drag handle and a scrollable body that respects the map
-/// attribution / tab-bar bottom clearance from LHMapBase.
+/// Liquid Glass bottom sheet dashboard with four detents (collapsed / medium /
+/// expanded / full), a 44pt drag handle and a scrollable body that respects
+/// the map attribution / tab-bar bottom clearance from LHMapBase.
+///
+/// Phase D-1.1 (Flush + Fullscreen):
+/// - Neuer Detent `.full` rendert das Sheet flush bis fast unter den
+///   System-Status-Bar (topSafeInset + 6 pt Luft) und schaltet auf einen
+///   opaken Base-Layer (Apple-iOS-26-large-detent-Verhalten).
+/// - Background ist EINE Ebene, die nach unten ueber die Safe-Area lauft
+///   (`ignoresSafeArea(.container, edges: .bottom)`), damit die fruehere
+///   Luecke zwischen Sheet und TabBar verschwindet. Inhalt bleibt durch
+///   `bottomClearance` von der TabBar entkoppelt.
 /// See docs/UI_UX_MAP_FIRST_LIQUID_GLASS_CONTRACT_2026-05-28.md § 5.3.
 @available(iOS 26.0, macOS 15.0, *)
 public enum LHSheetDetent {
     case collapsed
     case medium
     case expanded
+    /// Phase D-1.1: Fullscreen-Detent. Hoehe wird dynamisch aus dem
+    /// `GeometryReader` ermittelt (verfuegbare Hoehe − topSafeInset − 6 pt).
+    case full
 }
 
 @available(iOS 26.0, macOS 15.0, *)
@@ -37,6 +49,7 @@ public struct LHSheetDetents {
     //   - medium    → nutzbare Sheet-Hoehe, ohne Apple-Maps-Attribution
     //                 oder Custom-TabBar zu verdecken.
     //   - expanded  → scrollbarer Inhalt, kein Vollscreen-Block.
+    //   - full      → dynamisch aus verfuegbarer Hoehe (Phase D-1.1).
     //
     // Die alten `.portrait` / `.compactPortrait` / `.landscape` bleiben
     // als Default-Profile fuer Komponenten, die kein Surface-Wissen
@@ -61,11 +74,16 @@ public struct LHSheetDetents {
     /// muss erreichbar sein).
     public static let export = compactPortrait
 
+    /// Statische Hoehen fuer .collapsed/.medium/.expanded. `.full` wird im
+    /// Dashboard dynamisch aus dem GeometryReader berechnet und liefert
+    /// hier den `expanded`-Wert als sicheren Fallback fuer Aufrufer, die
+    /// die Detents ohne GeometryReader-Kontext abfragen.
     public func height(for detent: LHSheetDetent) -> CGFloat {
         switch detent {
         case .collapsed: return collapsed
         case .medium: return medium
         case .expanded: return expanded
+        case .full: return expanded
         }
     }
 }
@@ -74,6 +92,7 @@ public struct LHSheetDetents {
 public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View>: View {
     private let detents: LHSheetDetents
     private let bottomClearance: CGFloat
+    private let topSafeInset: CGFloat
     private let accessibilityPrefix: String
     private let header: HeaderContent
     private let bodyContent: BodyContent
@@ -86,12 +105,14 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
         detents: LHSheetDetents = .portrait,
         initialDetent: LHSheetDetent = .medium,
         bottomClearance: CGFloat,
+        topSafeInset: CGFloat = 0,
         accessibilityPrefix: String = "lhSheet",
         @ViewBuilder header: () -> HeaderContent,
         @ViewBuilder body: () -> BodyContent
     ) {
         self.detents = detents
         self.bottomClearance = bottomClearance
+        self.topSafeInset = topSafeInset
         self.accessibilityPrefix = accessibilityPrefix
         self.header = header()
         self.bodyContent = body()
@@ -99,53 +120,93 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
     }
 
     public var body: some View {
-        let height = detents.height(for: currentDetent)
+        GeometryReader { proxy in
+            // Phase D-1.1: verfuegbare Hoehe + topSafeInset ergeben die
+            // dynamische Fullscreen-Hoehe. 6 pt Luft unter dem System-
+            // Status-Bar/Notch, damit der Drag-Handle nicht hinter die
+            // Dynamic Island wandert. Fallback auf `detents.expanded`,
+            // damit die Fullscreen-Hoehe niemals KLEINER als der bekannte
+            // expanded-Wert wird (Surface-Profile-Schutz).
+            let available = proxy.size.height
+            let fullHeight = max(detents.expanded, available - topSafeInset - 6)
+            let baseHeight = resolvedHeight(fullHeight: fullHeight)
+            let isFull = (currentDetent == .full)
 
-        VStack(spacing: 0) {
-            dragHandle
+            VStack(spacing: 0) {
+                dragHandle
 
-            header
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
+                header
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    bodyContent
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        bodyContent
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, bottomClearance)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.bottom, bottomClearance)
             }
+            // Phase D-0: dark color-scheme erzwungen, damit Sheet-Text
+            // ueber hellen Satelliten- und dunklen Standardkarten
+            // gleichbleibend hell rendert.
+            .environment(\.colorScheme, .dark)
+            .frame(maxWidth: .infinity)
+            .frame(height: max(0, baseHeight - dragOffset))
+            // Phase D-1.1 FLUSH-FIX: Eine einzige background-Ebene, die
+            // nach unten in die Safe-Area hineinlaeuft. Vorher rendere
+            // Dark-Base + lgGlassSurface zwei getrennte Layer, was eine
+            // sichtbare Luecke zwischen Sheet und TabBar/Attribution
+            // hinterliess. Im .full-Detent wird die Base-Opacity
+            // auf ~0.92 angehoben (iOS-26 large-detent ist opak).
+            .background(flushBackground(isFull: isFull))
+            .gesture(dragGesture)
+            .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: currentDetent)
+            .accessibilityIdentifier("\(accessibilityPrefix).root")
         }
-        // Phase D-0 Visual Readability Hardening (2026-05-28):
-        // Map-backed Sheets erzwingen den dark Color-Scheme fuer alle
-        // Kinder. SwiftUI-systemnative `.primary`/`.secondary`-Texte
-        // rendern damit zuverlaessig hell, unabhaengig vom Geraete-
-        // Color-Scheme. Zusammen mit den `mapGlass*Text`-Tokens und dem
-        // dunklen Base-Layer entsteht ein konsistentes, lesbares
-        // Dashboard auf hellen Satelliten- wie auch dunklen Standardkarten.
-        .environment(\.colorScheme, .dark)
-        .frame(maxWidth: .infinity)
-        .frame(height: max(0, height - dragOffset))
-        // B-5.5 Visual Hardening + Phase D-0 Verstaerkung: dunklerer
-        // Base-Layer UNTER dem Liquid-Glass, damit Sheet-Text auch ueber
-        // hellen Satelliten-Karten lesbar bleibt. D-0 hebt die Deckkraft
-        // leicht an (0.18 → 0.28), damit Header-Captions ("KARTE",
-        // "INSIGHTS", "EXPLORE") nicht mehr im Glass verschwinden.
-        .background(
+    }
+
+    /// Resolved height for the current detent. `.full` uses the dynamic
+    /// fullscreen height; other detents fall back to the surface profile.
+    private func resolvedHeight(fullHeight: CGFloat) -> CGFloat {
+        switch currentDetent {
+        case .collapsed: return detents.collapsed
+        case .medium:    return detents.medium
+        case .expanded:  return detents.expanded
+        case .full:      return fullHeight
+        }
+    }
+
+    /// Flush background that extends through the device bottom safe-area
+    /// so there is no visible gap between the sheet and the TabBar /
+    /// Apple-Maps attribution. Bottom radius collapses to 0 in `.full`
+    /// (iOS-26 large detent = flush opaque) and stays at 0 otherwise so
+    /// the sheet sits flush on the bottom edge.
+    @ViewBuilder
+    private func flushBackground(isFull: Bool) -> some View {
+        let topRadius: CGFloat = isFull ? 0 : 22
+        let baseOpacity: Double = isFull ? 0.92 : 0.28
+        UnevenRoundedRectangle(
+            topLeadingRadius: topRadius,
+            bottomLeadingRadius: 0,
+            bottomTrailingRadius: 0,
+            topTrailingRadius: topRadius,
+            style: .continuous
+        )
+        .fill(Color.black.opacity(baseOpacity))
+        .overlay(
             UnevenRoundedRectangle(
-                topLeadingRadius: 22,
+                topLeadingRadius: topRadius,
                 bottomLeadingRadius: 0,
                 bottomTrailingRadius: 0,
-                topTrailingRadius: 22,
+                topTrailingRadius: topRadius,
                 style: .continuous
             )
-            .fill(Color.black.opacity(0.28))
+            .fill(.clear)
+            .modifier(LHFlushGlassSurface(cornerRadius: topRadius))
         )
-        .lgGlassSurface(cornerRadius: 22)
-        .gesture(dragGesture)
-        .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: currentDetent)
-        .accessibilityIdentifier("\(accessibilityPrefix).root")
+        .ignoresSafeArea(.container, edges: .bottom)
     }
 
     private var dragHandle: some View {
@@ -169,6 +230,7 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
         case .collapsed: return "Eingeklappt"
         case .medium: return "Mittel"
         case .expanded: return "Ausgeklappt"
+        case .full: return "Vollbild"
         }
     }
 
@@ -190,25 +252,39 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
     private func cycleDetent() {
         switch currentDetent {
         case .collapsed: currentDetent = .medium
-        case .medium: currentDetent = .expanded
-        case .expanded: currentDetent = .collapsed
+        case .medium:    currentDetent = .expanded
+        case .expanded:  currentDetent = .full
+        case .full:      currentDetent = .collapsed
         }
     }
 
     private func promoteDetent() {
         switch currentDetent {
         case .collapsed: currentDetent = .medium
-        case .medium: currentDetent = .expanded
-        case .expanded: break
+        case .medium:    currentDetent = .expanded
+        case .expanded:  currentDetent = .full
+        case .full:      break
         }
     }
 
     private func demoteDetent() {
         switch currentDetent {
-        case .expanded: currentDetent = .medium
-        case .medium: currentDetent = .collapsed
+        case .full:      currentDetent = .expanded
+        case .expanded:  currentDetent = .medium
+        case .medium:    currentDetent = .collapsed
         case .collapsed: break
         }
+    }
+}
+
+/// Thin wrapper that re-uses the existing `lgGlassSurface` modifier for the
+/// Liquid-Glass material. Kept as a `ViewModifier` so the flush background
+/// composition stays readable.
+@available(iOS 26.0, macOS 15.0, *)
+private struct LHFlushGlassSurface: ViewModifier {
+    let cornerRadius: CGFloat
+    func body(content: Content) -> some View {
+        content.lgGlassSurface(cornerRadius: cornerRadius)
     }
 }
 #endif

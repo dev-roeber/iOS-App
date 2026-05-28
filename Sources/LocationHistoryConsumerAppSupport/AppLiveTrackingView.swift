@@ -475,6 +475,7 @@ public struct AppLiveTrackingView: View {
                 detents: isCompactMap ? .compactPortrait : .live,
                 initialDetent: .medium,
                 bottomClearance: clearance,
+                topSafeInset: lhDeviceTopSafeInset(),
                 accessibilityPrefix: "live.scaffold.sheet"
             ) {
                 // B-5.5 Visual Hardening: FAB im Sheet-Header statt als

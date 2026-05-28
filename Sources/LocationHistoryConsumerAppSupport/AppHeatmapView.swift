@@ -120,6 +120,7 @@ public struct AppHeatmapView: View {
                 detents: .insights,
                 initialDetent: .collapsed,
                 bottomClearance: clearance,
+                topSafeInset: lhDeviceTopSafeInset(),
                 accessibilityPrefix: "heatmap.scaffold.sheet"
             ) {
                 scaffoldedHeatmapSheetHeader

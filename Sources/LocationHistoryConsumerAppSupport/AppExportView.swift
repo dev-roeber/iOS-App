@@ -232,6 +232,7 @@ public struct AppExportView: View {
                 detents: .compactPortrait,
                 initialDetent: .medium,
                 bottomClearance: clearance,
+                topSafeInset: lhDeviceTopSafeInset(),
                 accessibilityPrefix: "export.scaffold.sheet"
             ) {
                 scaffoldedExportSheetHeader
