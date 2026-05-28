@@ -183,6 +183,10 @@ struct ContentView: View {
         }
         .task {
             await prepareLaunchStateIfNeeded()
+            // Perf 2026-05-28: deferred-load persistierter LiveTracks vom
+            // synchronen init() in den View-Lifecycle verschoben (Ø
+            // -200…-800ms Cold-Launch je nach Anzahl gespeicherter Tracks).
+            liveLocation.loadRecordedTracksIfNeeded()
             restoreBookmarkedFile()
         }
         .onAppear {

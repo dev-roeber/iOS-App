@@ -71,12 +71,12 @@ public final class LiveLocationFeatureModel: ObservableObject {
         self.defaults = .standard
         self.authorization = client?.authorization ?? .restricted
 
-        do {
-            self.recordedTracks = try store.loadTracks()
-        } catch {
-            self.recordedTracks = []
-            self.persistenceErrorMessage = "Saved live tracks could not be loaded."
-        }
+        // Perf 2026-05-28: store.loadTracks() ist synchrones File-I/O und
+        // lief im init() → spürbarer Cold-Launch-Block (Ø 4.13s auf iPhone 15
+        // Pro Max iOS 26.4). Track-Bestand startet leer und wird via
+        // loadRecordedTracksIfNeeded() aus dem View-Lifecycle (.task) async
+        // nachgeladen. @Published triggert das UI-Update automatisch.
+        self.recordedTracks = []
 
         restoreInterruptedSessionState()
 
@@ -104,12 +104,9 @@ public final class LiveLocationFeatureModel: ObservableObject {
         self.defaults = userDefaults
         self.authorization = client?.authorization ?? .restricted
 
-        do {
-            self.recordedTracks = try store.loadTracks()
-        } catch {
-            self.recordedTracks = []
-            self.persistenceErrorMessage = "Saved live tracks could not be loaded."
-        }
+        // Perf 2026-05-28: gleiche Deferred-Load-Strategie wie im default
+        // init — verhindert synchronen File-I/O-Block auf MainActor.
+        self.recordedTracks = []
 
         restoreInterruptedSessionState()
 
@@ -120,6 +117,33 @@ public final class LiveLocationFeatureModel: ObservableObject {
             self?.handleLocationSamples(samples)
         }
     }
+
+    /// Lazy-load the persisted recorded tracks from disk. Safe to call multiple
+    /// times — the first call kicks off an async load on a background queue,
+    /// subsequent calls are no-ops. Designed to be invoked from a SwiftUI
+    /// `.task` hook so the synchronous file I/O does not block the
+    /// MainActor at app launch.
+    public func loadRecordedTracksIfNeeded() {
+        guard !hasAttemptedTrackLoad else { return }
+        hasAttemptedTrackLoad = true
+        let store = self.store
+        Task.detached(priority: .userInitiated) { [weak self] in
+            do {
+                let tracks = try store.loadTracks()
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.recordedTracks = tracks
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.persistenceErrorMessage = "Saved live tracks could not be loaded."
+                }
+            }
+        }
+    }
+
+    private var hasAttemptedTrackLoad = false
 
     deinit {
         uploadTask?.cancel()
