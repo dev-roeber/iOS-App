@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.7 Phase B-8: Explore-Sheet on Map-First Scaffold — Phase B complete (Branch `feat/explore-sheet-migration-map-first`)
+
+### Added
+- `AppOverviewExploreSheet.scaffoldedExploreLayout` + `scaffoldedExploreMap` + `scaffoldedExploreSheetHeader` + `scaffoldedExploreSheetBody`, alle `@available(iOS 26.0, *)`. Body-Dispatch waehlt auf iOS 26+ den neuen Pfad, sonst weiterhin `legacyExploreBody` (frueher der Inline-Body).
+- Source-Contract-Test `test_phaseB8_exploreSheetMountsTheNewScaffold` + neuer **Phase-B-Endzustands-Test** `test_phaseB8_allMapSurfacesMigrated`, der die acht migrierten Map-Files in einer Schleife auf `LHMapFirstPageScaffold`-Praesenz prueft.
+
+### Changed
+- Explore-Sheet iOS-26-Pfad rendert: `LHMapFirstPageScaffold` (Map = `scaffoldedExploreMap` mit dem existierenden `exploreMap` inkl. `MapLayerMenu` topTrailing-Overlay und Route-Count- bzw. Optimized-Overview-Badge bottomTrailing; Empty- und Loading-States bekommen jeweils einen dedizierten `accessibilityIdentifier`), `LHGlassBottomSheetDashboard` (Detents `.mapTab`, `initialDetent: .collapsed` — Karte dominiert, Sheet zeigt nur die Zustands-/Routen-Zusammenfassung) mit Header (`EXPORT` ahem `EXPLORE` Caption + `Explore` Title + `Done`-Button rechts) und Body (Route-Count, Optimized-Hint oder Loading-/Empty-Label).
+- Done-Aktion wandert vom `NavigationStack`-Toolbar in den Sheet-Header (Sheet-First-Pattern). Dismiss-Wiring via `@Environment(\.dismiss)` unveraendert.
+- `presentationDragIndicator(.visible)` faellt im Scaffold-Pfad weg, weil das `LHGlassBottomSheetDashboard` selbst einen 44pt-Drag-Handle mit AccessibilityValue rendert.
+
+### Documented exception
+- `LHMapFloatingChrome` wird im Explore-Scaffold NICHT gemountet. `exploreMap` ueberlagert weiterhin selbst `MapLayerMenu` mit `fitToData` plus Route-Count-/Optimized-Overview-Badges. Spiegelt Insights B-3, Map-Tab B-4, Export B-5, Heatmap B-6, Editor B-7.
+
+### Performance-Schutz
+- **Strikt erhalten:** Overview-/Explore-Polyline-Rendering, Halo+Stroke mit `MapTrackStyle.Width.overview`, Speed-Layer-Berechnung, `model.updateForViewport` auf `onMapCameraChange(.onEnd)`. Keine `map`/`reduce`/`sorted`-Hotloops im View-Body, keine grossen Arrays in `@State`, kein neuer `Task.detached`, keine Recompute-Kette bei Sheet-Detent-Aenderungen.
+
+### Attribution-Schutz
+- `MapLayerMenu` bleibt mit seinem bestehenden `.padding(12)` im `exploreMap`-Overlay (kein magischer Spread durch den Scaffold). Sheet-Bottom respektiert `bottomSheetTabBarClearance` (in B-5.5 auf 70 pt angehoben). `.ignoresSafeArea(.bottom)` bleibt am `exploreMap`, weil der Sheet darunter den Apple-Maps-Attribution-Bereich abdeckt — das Sheet selbst respektiert die Clearance.
+
+### Why
+- Phase B-8 des Migrationsplans **schliesst Phase B ab**. Alle acht Map-Surfaces (Live B-1, DayDetail B-2, Insights B-3, Map-Tab B-4, Export B-5, Heatmap B-6, Editor B-7, Explore-Sheet B-8) konsumieren das Shared-System.
+- Bewusst NICHT angefasst: Overview-/Explore-Renderlogik, Track-Aggregation, Viewport-Filtering, Overlay-Caps, Insights-/Map-Tab-/Export-/Heatmap-/Editor-Semantik, WeatherKit-Fix (bleibt separat auf `fix/weatherkit-not-provisioned-classification`), Recording-Dual-Truth, MapLayerMenu-Hit-Region.
+
+### Smoke-Policy
+- **Geraete-/Xcode-Smoke bewusst deferred nach User-Entscheidung.** Linux-Build/Tests gruen; Apple-Sim/Geraet ist nicht verifiziert. Visuelle Wirkung der Explore-Sheet-Migration, der `Done`-Verlagerung in den Sheet-Header und der `.mapTab`-Collapsed-Detents auf einem Modal sind nicht auf Apple-Plattform validiert.
+
+### Tests
+- `swift build` gruen (1.80 s).
+- `swift test` gruen: **1786** Tests, 3 skipped, **0 failures** (~57 s, Linux x86_64).
+- `LHMapFirstComponentSourceContractTests`: Phase-B-1- bis B-7-Regression-Guards bleiben, Phase-B-8-Mount-Check neu, **neuer Phase-B-Endzustands-Test** verifiziert alle acht Map-Files in einer Schleife, AppLanguage- und MapContentBuilder-Regression-Guards bleiben.
+
+### Open
+- Kein xcodebuild-Smoke (Linux-Host) — bewusst deferred. Gesamt-Geraete-Smoke der acht migrierten Surfaces (TestFlight-Build) ist die naechste empfohlene Aktion vor Train 3.
+- WeatherKit-Fix (`fix/weatherkit-not-provisioned-classification`, Commit `995cd50`) bleibt separat — wartet auf User-Review.
+- **Phase B funktional abgeschlossen.** Naechster geplanter Schritt: WeatherKit-Fix finalisieren/pushen, danach Train 3 / Phase D Hardening (Recording-Dual-Truth, MapLayerMenu-Hit-Region, SurfaceMode/RangeFilter-Coupling, ActivityTimeline-Filter, CSV-Layer-Suppression, Performance-Profile, Instruments-Messplan).
+
 ## 2026-05-28 — Train F.7 Phase B-7: Recorded-Track-Editor on Map-First Scaffold (Branch `feat/editor-migration-map-first`)
 
 ### Added

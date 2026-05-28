@@ -441,6 +441,19 @@ struct AppOverviewExploreSheet: View {
     @State private var mapPosition: MapCameraPosition = .automatic
 
     var body: some View {
+        // Phase B-8 (Train F.7): scaffolded Explore-Sheet on iOS 26+.
+        // The legacy NavigationStack-Group-Komposition unten bleibt als
+        // iOS-17/25-Fallback und als One-Line-Revert-Pfad. Camera-/
+        // Viewport-/Overlay-Logik bleibt aus dem Legacy-Pfad unangetastet.
+        if #available(iOS 26.0, *) {
+            scaffoldedExploreLayout
+        } else {
+            legacyExploreBody
+        }
+    }
+
+    @ViewBuilder
+    private var legacyExploreBody: some View {
         NavigationStack {
             Group {
                 if model.renderData.hasContent {
@@ -481,6 +494,152 @@ struct AppOverviewExploreSheet: View {
                 mapPosition = .region(region)
             }
         }
+    }
+
+    // MARK: - Phase B-8 (Train F.7): Scaffolded Explore Layout (iOS 26+)
+    //
+    // Map = bestehende `exploreMap` mit Polyline-Halo+Stroke, Speed-Layer
+    // und `MapLayerMenu` topTrailing + Route-Count-/Optimized-Badge
+    // bottomTrailing. FloatingChrome slot ist `EmptyView()` — die Explore-
+    // Map ueberlagert ihre eigenen Affordances; ein zweites
+    // `LHMapFloatingChrome` wuerde sie doppeln (dokumentierte Ausnahme,
+    // spiegelt Insights B-3, Map-Tab B-4, Export B-5, Heatmap B-6,
+    // Editor B-7).
+    //
+    // Sheet hostet eine kompakte Route-/Zustands-Zusammenfassung sowie
+    // Loading-/Empty-Hinweise. Die Done-Aktion liegt im Sheet-Header,
+    // damit das Modal ohne aussenliegende NavigationStack-Toolbar
+    // dismissable bleibt.
+    //
+    // Performance-Schutz: keine neue Render-Pipeline, kein zusaetzlicher
+    // map/reduce/sorted-Hotloop im View-Body, kein neuer Task.detached,
+    // kein zusaetzlicher Camera-Reset. Overview-Track-Aggregation,
+    // viewport-aware overlay simplification und Overlay-Caps bleiben
+    // strikt im `AppOverviewMapModel`.
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedExploreLayout: some View {
+        let bottomSafe = lhDeviceBottomSafeInset()
+        let clearance = LHMapBase.bottomSheetTabBarClearance(
+            deviceBottomSafeInset: bottomSafe
+        )
+        LHMapFirstPageScaffold(
+            topSafeInset: lhDeviceTopSafeInset(),
+            bottomSafeInset: bottomSafe,
+            sheetBottomClearance: clearance
+        ) {
+            scaffoldedExploreMap
+        } floatingChrome: {
+            EmptyView()
+        } sheet: {
+            LHGlassBottomSheetDashboard(
+                detents: .mapTab,
+                initialDetent: .collapsed,
+                bottomClearance: clearance,
+                accessibilityPrefix: "explore.scaffold.sheet"
+            ) {
+                scaffoldedExploreSheetHeader
+            } body: {
+                scaffoldedExploreSheetBody
+            }
+        }
+        .onAppear {
+            if let region = model.dataRegion {
+                mapPosition = .region(region)
+            }
+        }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedExploreMap: some View {
+        if model.renderData.hasContent {
+            exploreMap
+                .accessibilityIdentifier("explore.scaffold.map")
+        } else if model.renderData.isLoading {
+            VStack(spacing: 12) {
+                ProgressView()
+                Text(t("Loading map…"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityIdentifier("explore.scaffold.loading")
+        } else {
+            VStack(spacing: 8) {
+                Image(systemName: "map")
+                    .font(.largeTitle)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(t("No tracks in selected range"))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityIdentifier("explore.scaffold.empty")
+        }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedExploreSheetHeader: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(t("EXPLORE"))
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.7)
+                    .foregroundStyle(.secondary)
+                Text(t("Explore"))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(action: { dismiss() }) {
+                Text(t("Done"))
+                    .font(.subheadline.weight(.semibold))
+            }
+            .accessibilityIdentifier("explore.scaffold.done")
+        }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedExploreSheetBody: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if model.renderData.hasContent {
+                HStack(spacing: 8) {
+                    Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.trackPrimary)
+                    Text("\(model.renderData.visibleRouteCount) \(t(model.renderData.visibleRouteCount == 1 ? "route" : "routes"))")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                        .monospacedDigit()
+                }
+                .accessibilityIdentifier("explore.scaffold.routeCount")
+                .accessibilityElement(children: .combine)
+
+                if model.renderData.isOptimized {
+                    let label = model.renderData.visibleRouteCount < model.renderData.totalRouteCount
+                        ? t("Simplified preview · export complete")
+                        : t("Optimized overview")
+                    Label(label, systemImage: "checkmark.seal.fill")
+                        .font(.caption)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                        .accessibilityIdentifier("explore.scaffold.optimized")
+                }
+            } else if model.renderData.isLoading {
+                Label(t("Loading map…"), systemImage: "arrow.triangle.2.circlepath")
+                    .font(.caption)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+            } else {
+                Label(t("No tracks in selected range"), systemImage: "tray")
+                    .font(.caption)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+            }
+        }
+        .accessibilityIdentifier("explore.scaffold.sheet.body")
     }
 
     private var exploreMap: some View {

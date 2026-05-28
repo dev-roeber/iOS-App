@@ -140,6 +140,34 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         XCTAssertTrue(liveSource.contains("LHGlassBottomSheetDashboard"))
     }
 
+    func test_phaseB8_exploreSheetMountsTheNewScaffold() throws {
+        // Phase B-8 migrates AppOverviewExploreSheet iOS-26-Pfad onto the
+        // shared scaffold. LHMapFloatingChrome is NOT required — exploreMap
+        // ueberlagert weiterhin selbst MapLayerMenu topTrailing + Route-
+        // Count-/Optimized-Badges bottomTrailing. Dokumentierte Ausnahme,
+        // spiegelt Insights B-3, Map-Tab B-4, Export B-5, Heatmap B-6,
+        // Editor B-7.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let source = try String(
+            contentsOf: root.appendingPathComponent("AppOverviewTracksMapView.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(
+            source.contains("scaffoldedExploreLayout"),
+            "AppOverviewExploreSheet must mount scaffoldedExploreLayout in Phase B-8."
+        )
+        XCTAssertTrue(
+            source.contains("LHGlassBottomSheetDashboard"),
+            "AppOverviewExploreSheet must mount LHGlassBottomSheetDashboard in Phase B-8."
+        )
+        XCTAssertTrue(
+            source.contains("bottomSheetTabBarClearance"),
+            "Explore scaffold must consume LHMapBase.bottomSheetTabBarClearance."
+        )
+    }
+
     func test_phaseB7_editorMountsTheNewScaffold() throws {
         // Phase B-7 migrates AppRecordedTrackEditorView iOS-26-Pfad onto the
         // shared scaffold. LHMapFloatingChrome is NOT required — editorMap
@@ -296,13 +324,33 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         )
     }
 
-    func test_phaseB7_onlyExploreSheetRemainsUnmigrated() throws {
-        // After Phase B-7, all map screens except the Explore-Sheet have
-        // been migrated. There is no separate file for Explore-Sheet; it
-        // ships as the iOS-26 fullscreenCover inside `AppOverviewTracksMap
-        // View` and follows in Phase B-8. The boundary check is therefore
-        // a documentation placeholder — no concrete file to lock down here.
-        XCTAssertTrue(true)
+    func test_phaseB8_allMapSurfacesMigrated() throws {
+        // Phase B-8 schliesst Phase B ab — alle Map-Surfaces sind auf
+        // dem Shared-Scaffold. Diese Source-Pruefung verriegelt den
+        // gemeinsamen Endzustand: jede Datei muss `LHMapFirstPageScaffold`
+        // referenzieren. Falls in einer spaeteren Iteration ein Screen
+        // bewusst zurueckgerollt wird, muss dieser Test angepasst werden.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let candidates = [
+            "AppLiveTrackingView.swift",
+            "AppDayDetailView.swift",
+            "AppInsightsContentView.swift",
+            "LGTabContainerView.swift",
+            "AppExportView.swift",
+            "AppHeatmapView.swift",
+            "AppRecordedTrackEditorView.swift",
+            "AppOverviewTracksMapView.swift"
+        ]
+        for relative in candidates {
+            let url = root.appendingPathComponent(relative)
+            let source = try String(contentsOf: url, encoding: .utf8)
+            XCTAssertTrue(
+                source.contains("LHMapFirstPageScaffold"),
+                "\(relative) must mount LHMapFirstPageScaffold after Phase B-8."
+            )
+        }
     }
 
     func test_noMapContentBuilderRegression() throws {
