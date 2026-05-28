@@ -67,19 +67,42 @@ public protocol WeatherDataProvider: Sendable {
 /// switch on a single enum without leaking WeatherKit internals.
 public enum AppWeatherError: Error, Sendable, Equatable {
     case unavailable
+    /// WeatherKit-Auth-Fehler ohne gueltige Entitlement-/Provisioning-Kette.
+    /// Wird aus `WDSJWTAuthenticatorServiceListener.Errors` Code 1/2 sowie
+    /// vergleichbaren JWT-Authentifizierungs-Pfaden klassifiziert. Aufrufer
+    /// SOLLEN beim Empfang KEINE Retries oder Backoff einplanen — das
+    /// Feature ist clientseitig nicht freigeschaltet, jeder weitere Call
+    /// verbraucht Quota ohne Erfolgschance.
+    case notProvisioned(String)
     case requestFailed(String)
+
+    /// `true` wenn der Fehler clientseitig dauerhaft ist und Retry-Loops
+    /// sinnlos sind.
+    public var isPermanent: Bool {
+        switch self {
+        case .notProvisioned, .unavailable: return true
+        case .requestFailed: return false
+        }
+    }
 
     public var diagnosticDescription: String {
         switch self {
         case .unavailable:
             return "WeatherKit is unavailable on this platform."
+        case let .notProvisioned(message):
+            return message.isEmpty ? "WeatherKit not provisioned." : message
         case let .requestFailed(message):
             return message
         }
     }
 
     public var userFacingGermanTitle: String {
-        "Wetter unverfügbar"
+        switch self {
+        case .notProvisioned:
+            return "Wetter nicht freigeschaltet"
+        case .unavailable, .requestFailed:
+            return "Wetter unverfügbar"
+        }
     }
 
     public var userFacingGermanDiagnostic: String {
@@ -87,6 +110,10 @@ public enum AppWeatherError: Error, Sendable, Equatable {
         switch self {
         case .unavailable:
             return "\(hint) Diagnose: WeatherKit ist auf dieser Plattform nicht verfügbar."
+        case let .notProvisioned(message):
+            let head = "WeatherKit lehnt die Authentifizierung ab — die App-ID ist im Apple Developer Portal nicht fuer WeatherKit freigeschaltet, das Provisioning Profile ist veraltet oder das Entitlement fehlt. Automatische Wiederholungsversuche sind deaktiviert, weil sie das Quota verbrauchen wuerden."
+            guard !message.isEmpty else { return "\(hint) Diagnose: \(head)"  }
+            return "\(hint) Diagnose: \(head) Detail: \(Self.redacted(message))"
         case let .requestFailed(message):
             guard !message.isEmpty else { return hint }
             return "\(hint) Diagnose: \(Self.redacted(message))"
@@ -146,6 +173,56 @@ public enum AppWeatherError: Error, Sendable, Equatable {
 }
 
 public enum AppWeatherDiagnostics {
+
+    /// Klassifiziert einen WeatherKit-/NSError-Fehler in eine stabile
+    /// `AppWeatherError`-Variante. WeatherKit liefert Auth-Probleme als
+    /// `WDSJWTAuthenticatorServiceListener.Errors` (Codes 1/2) zurueck;
+    /// die kommen auf einem Geraet ohne aktive App-ID-WeatherKit-
+    /// Capability bzw. mit veraltetem Provisioning Profile. Wir mappen
+    /// das auf `.notProvisioned`, damit Aufrufer keine Retries ausloesen.
+    public static func classify(_ error: Error) -> AppWeatherError {
+        if let appError = error as? AppWeatherError {
+            return appError
+        }
+        let nsError = error as NSError
+        let message = requestFailedMessage(from: error)
+        if isNotProvisionedError(domain: nsError.domain, code: nsError.code, debug: message) {
+            return .notProvisioned(message)
+        }
+        return .requestFailed(message)
+    }
+
+    /// `true` wenn Domain/Code/Debug-Text auf den WeatherKit-Auth-Fehler
+    /// passen, der ohne Entitlement/Portal-Service auftritt.
+    /// Erkannt werden:
+    ///   - `WDSJWTAuthenticatorServiceListener.Errors` Code 1/2.
+    ///   - Domain `com.apple.weatherkit.authservice` (alle Codes).
+    ///   - HTTP 401 / 403 aus WeatherKit-Stacks.
+    static func isNotProvisionedError(domain: String, code: Int, debug: String) -> Bool {
+        let normalisedDomain = domain.lowercased()
+        if normalisedDomain.contains("wdsjwtauthenticatorservicelistener")
+            || normalisedDomain.contains("weatherkit.authservice")
+            || normalisedDomain.contains("weatherdaemon.weatherauthorization") {
+            return true
+        }
+        let normalisedDebug = debug.lowercased()
+        if normalisedDebug.contains("wdsjwtauthenticatorservicelistener.errors") {
+            // Codes 1+2 zaehlen beide als Auth-Verweigerung; der Listener
+            // unterscheidet "kein Token" vs "Token abgelehnt".
+            if code == 1 || code == 2 { return true }
+            // Wenn der Code in der Domain als Suffix kommt, akzeptieren wir
+            // auch das (Apple liefert das Code-Praefix manchmal als Text).
+            if normalisedDebug.contains("code=1") || normalisedDebug.contains("code=2") {
+                return true
+            }
+        }
+        // HTTP-401/403 aus WeatherKit landet ueblicherweise im Debug-Text.
+        if normalisedDebug.contains("weather") && (code == 401 || code == 403) {
+            return true
+        }
+        return false
+    }
+
     public static func requestFailedMessage(from error: Error) -> String {
         if let appError = error as? AppWeatherError {
             return appError.diagnosticDescription
@@ -245,7 +322,11 @@ public final class WeatherKitService: WeatherDataProvider, @unchecked Sendable {
                 timestamp: current.date
             )
         } catch {
-            throw AppWeatherError.requestFailed(AppWeatherDiagnostics.requestFailedMessage(from: error))
+            // Klassifizieren statt blind als requestFailed durchreichen:
+            // `WDSJWTAuthenticatorServiceListener.Errors` (Code 1/2) bedeutet
+            // "App-ID nicht fuer WeatherKit freigeschaltet" und ist
+            // permanent — Aufrufer SOLLEN keinen Retry/Backoff starten.
+            throw AppWeatherDiagnostics.classify(error)
         }
     }
 }
