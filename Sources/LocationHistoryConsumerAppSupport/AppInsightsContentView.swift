@@ -393,6 +393,7 @@ public struct AppInsightsContentView: View {
                     .padding(.top, LHMapBase.floatingControlTopInset(deviceTopSafeInset: lhDeviceTopSafeInset()))
                 }
             }
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("insights.scaffold.map")
         }
     }

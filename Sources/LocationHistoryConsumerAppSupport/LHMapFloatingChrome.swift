@@ -54,6 +54,10 @@ public struct LHMapFloatingChrome<LayerContent: View, ControlsContent: View>: Vi
             .padding(.top, topInset)
         }
         .frame(maxWidth: .infinity, alignment: .top)
+        // P0-Fix 2026-05-28 Identifier-Cascading (siehe LHGlassBottomSheetDashboard):
+        // children .contain hält Sub-Identifiers (layers, controls, Compass etc.)
+        // sichtbar, statt sie mit .root zu überschreiben.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("\(accessibilityPrefix).root")
     }
 }

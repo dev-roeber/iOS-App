@@ -73,6 +73,7 @@ public struct AppMapTabActivityTimelineStrip: View {
                     .padding(.horizontal, 16)
                 }
             }
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("mapTab.activity.strip")
         }
     }
@@ -209,6 +210,7 @@ public struct AppMapTabQuickActionPills: View {
 
             quickActionRow
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("mapTab.quickActions.strip")
     }
 
