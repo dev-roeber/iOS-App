@@ -119,68 +119,114 @@ public struct LGTabContainerView: View {
     @ViewBuilder
     private var mapTab: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    if let overview = overview {
-                        // F.5-A: echte Karte als immersiver Hero statt
-                        // nur Stat-Cards. Wiederverwendet die bestehende
-                        // `AppOverviewTracksMapView`-Implementierung, die
-                        // auch auf Insights/Overview als Single Source of
-                        // Truth dient.
-                        AppOverviewTracksMapView(
-                            daySummaries: allDaySummaries,
-                            content: session.content,
-                            queryFilter: nil,
-                            fixedHeight: 300,
-                            showsFullscreenControl: true,
-                            mapControlTopPadding: 8
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8)
-                        )
-                        .padding(.horizontal, 16)
-                        .padding(.top, 4)
-
-                        LHPageScaffold {
-                            AppOverviewGlassSection(
-                                overview: overview,
-                                daySummaries: allDaySummaries,
-                                onDaysTap: { selectedTab = .days },
-                                onInsightsTap: { selectedTab = .insights }
-                            )
-                        }
-
-                        // F.5-B: Aktivitaets-Timeline-Strip + Quick-Action-Pills.
-                        AppMapTabActivityTimelineStrip(
-                            daySummaries: allDaySummaries,
-                            onDaySelected: { date in
-                                selectedTab = .days
-                                selectedDate = date
-                                daysNavigationPath.append(date)
-                            }
-                        )
-
-                        LHPageScaffold {
-                            AppMapTabQuickActionPills(
-                                onLiveTap: { selectedTab = .live },
-                                onDaysTap: { selectedTab = .days },
-                                onInsightsTap: { selectedTab = .insights },
-                                onExportTap: { isExportSheetPresented = true }
-                            )
-                        }
-                    } else {
-                        mapEmptyState
+            Group {
+                if let overview = overview {
+                    // Phase B-4 (Train F.7): Map-Tab-Hero mounts the shared
+                    // LHMapFirstPageScaffold + LHGlassBottomSheetDashboard.
+                    // LGTabContainerView is already iOS-26-only, so there is
+                    // no in-component fallback — the legacy pre-iOS-26 / iPad
+                    // path runs through `AppContentSplitView` and is
+                    // intentionally untouched.
+                    scaffoldedMapTabBody(overview: overview)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 16) { mapEmptyState }
                     }
+                    .background(LHLiquidGlassBackground().ignoresSafeArea())
                 }
             }
-            .scrollEdgeEffectStyle(.soft, for: .all)
             .navigationTitle("Karte")
             .navigationBarTitleDisplayMode(.large)
             .toolbar { commonToolbar }
-            .background(LHLiquidGlassBackground().ignoresSafeArea())
         }
+    }
+
+    // MARK: - Phase B-4 (Train F.7): Scaffolded Map-Tab Hero
+    //
+    // Map = full-bleed `AppOverviewTracksMapView` (single source of truth for
+    // overview tracks). FloatingChrome slot is intentionally `EmptyView()` —
+    // `AppOverviewTracksMapView` already overlays `MapLayerMenu`, route-count
+    // and optimized-overview badges; mounting `LHMapFloatingChrome` would
+    // double the affordances (documented exception, mirrors Insights B-3).
+    // Sheet hosts the existing dashboard strips: KPI tiles, activity timeline
+    // and quick-action pills. Render pipeline, viewport filtering and
+    // overlay caps in `AppOverviewTracksMapView` are not touched.
+
+    @ViewBuilder
+    private func scaffoldedMapTabBody(overview: ExportOverview) -> some View {
+        let bottomSafe = lhDeviceBottomSafeInset()
+        let clearance = LHMapBase.bottomSheetTabBarClearance(
+            deviceBottomSafeInset: bottomSafe
+        )
+        LHMapFirstPageScaffold(
+            topSafeInset: lhDeviceTopSafeInset(),
+            bottomSafeInset: bottomSafe,
+            sheetBottomClearance: clearance
+        ) {
+            AppOverviewTracksMapView(
+                daySummaries: allDaySummaries,
+                content: session.content,
+                queryFilter: nil,
+                fixedHeight: nil,
+                showsFullscreenControl: true,
+                mapControlTopPadding: lhDeviceTopSafeInset()
+                    + LHMapBase.floatingControlTopGap
+            )
+        } floatingChrome: {
+            EmptyView()
+        } sheet: {
+            LHGlassBottomSheetDashboard(
+                detents: .portrait,
+                initialDetent: .medium,
+                bottomClearance: clearance,
+                accessibilityPrefix: "mapTab.scaffold.sheet"
+            ) {
+                scaffoldedMapTabSheetHeader
+            } body: {
+                scaffoldedMapTabSheetBody(overview: overview)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var scaffoldedMapTabSheetHeader: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("KARTE")
+                .font(.caption2.weight(.heavy))
+                .tracking(0.7)
+                .foregroundStyle(.secondary)
+            Text("Übersicht")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func scaffoldedMapTabSheetBody(overview: ExportOverview) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            AppOverviewGlassSection(
+                overview: overview,
+                daySummaries: allDaySummaries,
+                onDaysTap: { selectedTab = .days },
+                onInsightsTap: { selectedTab = .insights }
+            )
+            AppMapTabActivityTimelineStrip(
+                daySummaries: allDaySummaries,
+                onDaySelected: { date in
+                    selectedTab = .days
+                    selectedDate = date
+                    daysNavigationPath.append(date)
+                }
+            )
+            AppMapTabQuickActionPills(
+                onLiveTap: { selectedTab = .live },
+                onDaysTap: { selectedTab = .days },
+                onInsightsTap: { selectedTab = .insights },
+                onExportTap: { isExportSheetPresented = true }
+            )
+        }
+        .accessibilityIdentifier("mapTab.scaffold.sheet.body")
     }
 
     @ViewBuilder

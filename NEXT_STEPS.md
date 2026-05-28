@@ -1,5 +1,21 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.7 Phase B-4: Map-Tab Hero migrated (Branch `feat/map-tab-hero-migration-map-first`)
+
+Vierte produktive Screen-Migration aus Phase B. Damit sind Live (B-1), DayDetail (B-2), Insights (B-3) und Map-Tab (B-4) auf dem Shared-System. Modale Familie (Export, Heatmap, Editor, Explore-Sheet) folgt einzeln.
+
+Neu im Repo:
+- `LGTabContainerView.mapTab` mountet im iOS-26-Pfad (der einzige Pfad — `LGTabContainerView` selbst ist iOS-26-only) `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard`. `AppOverviewTracksMapView` full-bleed als Map-Slot. Sheet-Body: `AppOverviewGlassSection` + `AppMapTabActivityTimelineStrip` + `AppMapTabQuickActionPills`. `LHMapFloatingChrome` bewusst nicht gemountet (Overlays im OverviewTracksMapView).
+- Source-Contract-Test `test_phaseB4_mapTabHeroMountsTheNewScaffold`. Sub-Train-Boundary auf Export/Heatmap/Editor reduziert.
+
+**Naechster Schritt:** Phase B-5 — `AppExportView` Export-Preview. Danach Heatmap, Editor, Explore-Sheet als modale Familie.
+
+**Train 3 (Hardening, weiterhin offen):** Recording-Dual-Truth aufloesen, MapLayerMenu-Hit-Region final pruefen, SurfaceMode/RangeFilter-Coupling entkoppeln, ActivityTimeline-Visit-only-Filter semantisch klaeren, Performance-Profile scharf stellen, Instruments-Messplan.
+
+**Offen / nicht in F.7 Phase B-4:** xcodebuild-Smoke, Geraete-Smoke der neuen Komposition (Karte als Liquid-Glass-Hero + Dashboard-Sheet mit Timeline/QuickActions), Sheet-Detent-Robustheit bei Rotation/iPad/Dynamic Type, ActivityTimeline-Filter-Semantik.
+
+---
+
 ## Stand 2026-05-28 — Train F.7 Phase B-3: Insights Screen migrated (Branch `feat/insights-migration-map-first`)
 
 Dritte produktive Screen-Migration aus Phase B. Live (B-1), DayDetail (B-2) und Insights (B-3) konsumieren das Shared-System. Alle anderen Map-Screens bleiben auf ihrer Pre-Migration-Komposition.
