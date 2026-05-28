@@ -1,5 +1,21 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.6 Prep: Design-Contract Map-First Liquid Glass UI (Branch `docs/map-first-liquid-glass-contract`)
+
+Vorbereitung der drei-Train-Modernisierung der iOS-26-Surfaces. **Keine Code-Aenderungen in F.6**, nur Dokumentation.
+
+Neu im Repo:
+- `docs/UI_UX_MAP_FIRST_LIQUID_GLASS_CONTRACT_2026-05-28.md` — verbindlicher Design-Contract (Komponenten, Tokens, HIG-Hartregeln, Per-Screen-/Per-Map-Contract).
+- `docs/UI_UX_MAP_FIRST_MIGRATION_PLAN_2026-05-28.md` — Migrationsplan in 4 Phasen mit Risiko-Matrix.
+
+**Naechster Train (F.7 = Train 2):** Phase A des Migrationsplans — `LHMapFirstPageScaffold`, `LHMapWorkspace`, `LHGlassBottomSheetDashboard`, `LHMapFloatingChrome`, `LHMapMetricCard`, `LHGlassPageScaffold`, `LHGlassSectionCard`, `LHMapPerformancePolicy` implementieren. Anschliessend Phase B Map-Screen-Migration in der dokumentierten Reihenfolge (Live → DayDetail → Insights → Map-Tab → Export → Heatmap → Editor → Explore-Sheet).
+
+**Train 3 (Performance-Hardening):** `LHMapPerformancePolicy`-Profile scharf stellen, Recording-Dual-Truth aufloesen, MapLayerMenu-Hit-Region final pruefen, Insights Mode/Filter-Coupling entkoppeln, FPS-/Memory-Messplan ausfuehren.
+
+**Bekannte Restpunkte (Audit 2026-05-27, Detail im Migrationsplan § 9):** 17 i18n-Holes (14 Files + 3 LGTabContainerView), MapLayerMenu-Pill 34×34 pt, Recording-Dual-Truth, A11y-Lueken (Insights 33% / DayMap-Controls 25%), Track-Width-Drift, Card-Drift.
+
+---
+
 ## Stand 2026-05-27 — SwiftUI/UI-Framework Audit Complete (Branch `audit/swiftui-ui-framework-complete`)
 
 Neu ausgeführt im aktuellen Repo, ohne alte SwiftUI-/UI-Framework-Findings als verifiziert zu übernehmen: vollständiger Code-Sweep über SwiftUI-Views, UIKit-Imports, Representable-Bridges, Navigation/Sheets/Alerts, MapKit, Charts, FileImporter/FileExporter/ShareLink und Designsystem-Komponenten. Bericht: `docs/UI_FRAMEWORK_SWIFTUI_AUDIT_2026-05-27.md`.
