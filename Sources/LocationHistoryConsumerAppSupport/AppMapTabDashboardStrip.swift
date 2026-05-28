@@ -185,17 +185,20 @@ public struct AppMapTabQuickActionPills: View {
     let onDaysTap: () -> Void
     let onInsightsTap: () -> Void
     let onExportTap: () -> Void
+    let onHeatmapTap: () -> Void
 
     public init(
         onLiveTap: @escaping () -> Void,
         onDaysTap: @escaping () -> Void,
         onInsightsTap: @escaping () -> Void,
-        onExportTap: @escaping () -> Void
+        onExportTap: @escaping () -> Void,
+        onHeatmapTap: @escaping () -> Void = {}
     ) {
         self.onLiveTap = onLiveTap
         self.onDaysTap = onDaysTap
         self.onInsightsTap = onInsightsTap
         self.onExportTap = onExportTap
+        self.onHeatmapTap = onHeatmapTap
     }
 
     public var body: some View {
@@ -220,6 +223,8 @@ public struct AppMapTabQuickActionPills: View {
                     .accessibilityIdentifier("mapTab.quickActions.live")
                 pill(icon: "calendar", title: t("Days"), tint: LH2GPXTheme.LiquidGlass.trackPrimary, action: onDaysTap)
                     .accessibilityIdentifier("mapTab.quickActions.days")
+                pill(icon: "flame.fill", title: t("Heatmap"), tint: .pink, action: onHeatmapTap)
+                    .accessibilityIdentifier("mapTab.quickActions.heatmap")
                 pill(icon: "chart.xyaxis.line", title: t("Insights"), tint: LH2GPXTheme.LiquidGlass.elevation, action: onInsightsTap)
                     .accessibilityIdentifier("mapTab.quickActions.insights")
                 pill(icon: "square.and.arrow.up", title: t("Export"), tint: .orange, action: onExportTap)

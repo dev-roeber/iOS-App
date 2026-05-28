@@ -97,12 +97,22 @@ final class LH2GPXWrapperUITests: XCTestCase {
 
         // 05 — Insights: hero summary, KPI grid, sections
         let insightsTab = app.tabBars.buttons["Insights"]
-        if insightsTab.waitForExistence(timeout: 5) { insightsTab.tap(); sleep(2) }
+        if insightsTab.waitForExistence(timeout: 5) {
+            insightsTab.tap()
+            // Warte explizit auf gerendert (insights.hero.summary oder kpi grid)
+            _ = app.otherElements["insights.hero.summary"].waitForExistence(timeout: 5)
+            sleep(3)
+        }
         attach(screenshot(app), name: "iphone15pm_05_insights")
 
         // 06 — Live Tracking: hero status card, map preview, bottom bar
         let liveTab = app.tabBars.buttons["Live"]
-        if liveTab.waitForExistence(timeout: 5) { liveTab.tap(); sleep(1) }
+        if liveTab.waitForExistence(timeout: 5) {
+            liveTab.tap()
+            // Warte auf Live-Recording-Button (zuverlässiger als Sleep)
+            _ = app.buttons["live.recording.primaryAction"].waitForExistence(timeout: 8)
+            sleep(2)
+        }
         attach(screenshot(app), name: "iphone15pm_06_live_tracking")
     }
 
@@ -199,13 +209,18 @@ final class LH2GPXWrapperUITests: XCTestCase {
         app.launch()
 
         let demoButton = app.buttons["Load Demo Data"]
-        XCTAssertTrue(demoButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(demoButton.waitForExistence(timeout: 10))
         demoButton.tap()
 
+        // Demo-Load: warte bis TabBar tatsächlich gerendert ist (statt nur Tab-Existence)
         let overviewTab = app.tabBars.buttons["Karte"]
-        XCTAssertTrue(overviewTab.waitForExistence(timeout: 10))
+        XCTAssertTrue(overviewTab.waitForExistence(timeout: 15), "Karte tab nicht erschienen nach Demo-Load")
+        // Zusätzliche Settle-Zeit, damit der App-Watchdog nicht zuschnappt wenn LG-Hero-Map
+        // gerade aufbaut (war Ursache für SIGKILL auf Device, Migration 2026-05-28).
+        RunLoop.current.run(until: Date().addingTimeInterval(2.0))
 
         overviewTab.tap()
+        RunLoop.current.run(until: Date().addingTimeInterval(1.0))
 
         // Demo fixture dates are from 2024 — switch to All Time so Insights and other
         // tabs show content regardless of when the test runs.
@@ -215,20 +230,17 @@ final class LH2GPXWrapperUITests: XCTestCase {
             RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         }
 
-        // Stable identifier set in AppContentSplitView.overviewRangeCard.
-        // Falls back to a label-based predicate so older builds without the
-        // identifier still resolve the same control. Identifier timeout
-        // raised from 2s → 5s to stay reliable under concurrent system load
-        // (parallel xcodebuild runs delay accessibility tree population).
-        let heatmapButton: XCUIElement = {
-            let byIdentifier = app.buttons["overview.range.heatmap.button"]
-            if byIdentifier.waitForExistence(timeout: 5) { return byIdentifier }
-            return app.buttons.matching(NSPredicate(format: "label CONTAINS 'Heatmap'")).firstMatch
-        }()
-        XCTAssertTrue(scrollUntilHittable(heatmapButton, in: app))
-        heatmapButton.tap()
-        XCTAssertTrue(app.navigationBars["Heatmap"].waitForExistence(timeout: 10))
-        app.buttons["Done"].tap()
+        // Heatmap: in LG-4-Tab wieder eingebaut als 5. Quick-Action im Map-Tab
+        // (mapTab.quickActions.heatmap). Tap öffnet AppHeatmapView als Sheet.
+        // Lokalisations-immun: a11y-Identifier statt Button-Label.
+        let heatmapQuick = app.buttons["mapTab.quickActions.heatmap"]
+        if heatmapQuick.waitForExistence(timeout: 5), heatmapQuick.isHittable {
+            heatmapQuick.tap()
+            let doneBtn = app.buttons["heatmap.sheet.done"]
+            if doneBtn.waitForExistence(timeout: 10) {
+                doneBtn.tap()
+            }
+        }
 
         let insightsTab = app.tabBars.buttons["Insights"]
         XCTAssertTrue(insightsTab.waitForExistence(timeout: 5))

@@ -19,6 +19,7 @@ public struct LGTabContainerView: View {
     @State private var daysNavigationPath = NavigationPath()
     @State private var favoritedDayIDs: Set<String> = []
     @State private var isExportSheetPresented = false
+    @State private var isHeatmapSheetPresented = false
     @StateObject private var pathMutationStore = AppImportedPathMutationStore()
 
     public init(
@@ -83,6 +84,39 @@ public struct LGTabContainerView: View {
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Fertig") { isExportSheetPresented = false }
+                        }
+                    }
+                }
+                .presentationDetents([.large])
+                .presentationBackground(.regularMaterial)
+            }
+            .sheet(isPresented: $isHeatmapSheetPresented) {
+                NavigationStack {
+                    if let export = session.content?.export {
+                        AppHeatmapView(export: export)
+                            .environmentObject(preferences)
+                            .navigationTitle(preferences.localized("Heatmap"))
+                            .toolbar {
+                                ToolbarItem(placement: .confirmationAction) {
+                                    Button(preferences.localized("Done")) {
+                                        isHeatmapSheetPresented = false
+                                    }
+                                    .accessibilityIdentifier("heatmap.sheet.done")
+                                }
+                            }
+                    } else {
+                        ContentUnavailableView(
+                            preferences.localized("No data"),
+                            systemImage: "square.grid.3x3.fill",
+                            description: Text(preferences.localized("Import a file to see the heatmap."))
+                        )
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button(preferences.localized("Done")) {
+                                    isHeatmapSheetPresented = false
+                                }
+                                .accessibilityIdentifier("heatmap.sheet.done")
+                            }
                         }
                     }
                 }
@@ -244,7 +278,8 @@ public struct LGTabContainerView: View {
                 onLiveTap: { selectedTab = .live },
                 onDaysTap: { selectedTab = .days },
                 onInsightsTap: { selectedTab = .insights },
-                onExportTap: { isExportSheetPresented = true }
+                onExportTap: { isExportSheetPresented = true },
+                onHeatmapTap: { isHeatmapSheetPresented = true }
             )
         }
         .accessibilityIdentifier("mapTab.scaffold.sheet.body")
