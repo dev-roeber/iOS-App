@@ -93,7 +93,8 @@ struct AppShellRootView: View {
                                 if importUI.hasObservedSnapshot {
                                     LocalTimelineImportProgressView(
                                         state: importUI,
-                                        onCancel: { importUI.cancel() }
+                                        onCancel: { importUI.cancel() },
+                                        localize: t
                                     )
                                 }
                             }

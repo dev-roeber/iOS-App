@@ -1,5 +1,53 @@
 # CHANGELOG
 
+## 2026-05-28 — Train 3 Phase D-1: Map Controls + Context Clarity (Branch `feat/d1-map-controls-context-hardening`)
+
+### Added
+- `LHMapBase.mapLayerMenuVisualSize: CGFloat = 34` und `LHMapBase.mapLayerMenuMinimumHitSize: CGFloat = 44` — sichtbare Pill bleibt kompakt (34 pt), interaktive Tap-Region erreicht den Apple-HIG-Floor (44 pt).
+- `LHMapBase.LayerOrder` (`map = 0`, `mapOverlay = 100`, `bottomSheet = 200`, `floatingChrome = 300`, `tabBar = 400`) — verbindlicher Z-Index-Kontrakt: Karte unten, Overlays / Bottom-Sheets / Floating-Chrome / TabBar geordnet darueber.
+- `LHMapBase.combinedBottomPillClearance(deviceBottomSafeInset:)` — gemeinsamer Bottom-Inset-Helper fuer schwebende Map-Pills (`bottomSheetTabBarClearance + attributionGuardBottomInset`).
+- `MapLayerMenu` `accessibilityIdentifier("map.layerMenu.button")`.
+- `AppExportView.csvNoteCard` zusaetzlicher Label-Hinweis "CSV exports tabular data. Map layers such as speed, elevation, or standard view do not affect the CSV file." mit `accessibilityIdentifier("export.csv.layerSuppressionHint")`. Greift im Legacy- und Scaffold-Pfad, weil `csvNoteCard` aus dem gemeinsamen `checkoutContent` heraus gerendert wird.
+- `AppInsightsContentView.insightsContextStatusLine` — persistente Status-Zeile im Insights-Hero-Filter-Panel mit aktivem Zeitraum (`insights.context.range`) und SurfaceMode (`insights.context.mode`), gekapselt in `insights.context.statusLine`.
+- `LocalTimelineImportProgressView(localize:)` — optionale Lokalisierungs-Closure (Default `{ $0 }` haelt bestehende Linux-Tests gruen). AppShell uebergibt `t` aus `AppPreferences.localized(_:)`.
+- Deutsche Eintraege in `AppLanguageSupport`: "Preparing import", "Sniffing format", "Importing entries", "Building model", "Import complete", "Import cancelled", "Import failed", "Cancel import" + Hint, "CSV exports tabular data…", "Range active".
+- 5 neue Source-Contract-Tests: `test_phaseD1_mapLayerMenuHitRegionIs44Pt`, `test_phaseD1_layerOrderContractDeclared`, `test_phaseD1_exportCsvLayerSuppressionHintPresent`, `test_phaseD1_insightsContextStatusLinePresent`, `test_phaseD1_loadingStatusLocalized`.
+
+### Changed
+- `MapLayerMenu` Label wickelt die kompakte 34 × 34 pt Glass-Pill jetzt in eine 44 × 44 pt `contentShape(Rectangle())`-Region. Kein visuelles Aufblaehen, Tap reagiert auf die volle HIG-konforme Region.
+- `LocalTimelineImportProgressView` schickt `statusText`, "Cancel import"-Label und Hint durch die `localize`-Closure.
+- `AppShellRootView` initialisiert `LocalTimelineImportProgressView(state:onCancel:localize: t)`.
+
+### Why
+- Aus dem Video-Walkthrough: MapLayerMenu wirkt eng/klein (HIG-Verletzung); CSV-Format mischt unausgesprochen Map-Layer-Erwartung; Insights surfaceMode/rangeFilter erzeugen ohne Status-Anzeige Verwirrung; Loading-Screen zeigt englische Mischsprache. D-1 schliesst diese Reibungspunkte ohne Datenlogik anzuruehren.
+- Layer-Ordnung wurde bewusst als zentraler Vertrag in `LHMapBase.LayerOrder` festgenagelt: Map unten, TabBar oben, dazwischen Overlays / Sheets / expandierbares Menue in definierter Reihenfolge. Vor D-1 verteilten sich zIndex-Entscheidungen ueber mehrere Views.
+
+### Documented exception
+- Recording-Dual-Truth bleibt bewusst D-2 (groesserer Refactor).
+- `LHMapPerformancePolicy`-Render-Pipeline-Umschaltung bleibt bewusst spaeter (eigene Messplan-Phase).
+- Pre-iOS-26-Pfade unangetastet (Repo-Truth).
+
+### Performance-Schutz
+- Keine Render-Pipeline-Aenderung. Kein neuer `@State`. Keine Hotloops. Insights-Status-Line ist reine View-Anzeige aus bereits gehaltenen Bindings.
+
+### Bottom-Clearance-/Attribution-/TabBar-Schutz
+- `tabBarStandardHeight = 70`, per-screen Detents, `attributionGuardBottomInset = 32` bleiben unveraendert. `combinedBottomPillClearance` ist additiv und kombiniert bestehende Tokens.
+
+### Tests
+- `swift build`: gruen.
+- `swift test`: **1810** Tests (+5 D-1), 3 skipped, **0 failures** (~57 s, Linux x86_64).
+- Filter `--filter MapLayer`: keine Match-Klasse vorhanden (0 tests). Filter `--filter Loading`: 11 Tests gruen. Filter `--filter Insights`: 105 Tests gruen. Filter `--filter Export`: 212 Tests gruen. Filter `--filter Language`: 64 Tests gruen. Filter `--filter Accessibility`: 16 Tests gruen. Filter `--filter Import`: 220 Tests gruen.
+
+### Smoke-Policy
+- **Geraete-/Xcode-Smoke bewusst deferred nach User-Entscheidung.** MapLayerMenu-44pt-Tap-Region und Insights-Context-Line sind reine SwiftUI-Aenderungen ohne Apple-API-Risiko, aber visuell auf Apple-Plattform nicht verifiziert.
+
+### Offen / nicht in D-1
+- Train 3 / Phase D-2: Recording-Dual-Truth (`recordButtonState` ↔ `liveLocation.isRecording`-Single-Source), `LHMapPerformancePolicy`-Profile in Render-Pipeline scharf stellen, ActivityTimeline-Visit-only-Filter klaeren, Instruments-Messplan (Time Profiler, Allocations, Animation Hitches, Energy Log).
+- Manuelle Apple-Portal-Schritte fuer WeatherKit (Capability aktivieren, Profil refreshen, App installieren, Entitlements pruefen, Geraete-Smoke).
+- Geraete-/TestFlight-Smoke aller acht migrierten Map-Surfaces + Welcome (Light + Dark + Satellitenkarte).
+
+---
+
 ## 2026-05-28 — WeatherKit: `notProvisioned` error classification (Branch `fix/weatherkit-not-provisioned-classification`)
 
 ### Added

@@ -613,6 +613,14 @@ public struct AppInsightsContentView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityAddTraits(.isHeader)
 
+            // Phase D-1: Aktiver Kontext (Zeitraum + Surface-Mode) ist
+            // immer sichtbar, damit der User nicht raten muss, welche
+            // Datenscheibe gerade auf dem Sheet liegt. Reine UI-
+            // Anzeige — keine Datenlogik wird hier veraendert, und ein
+            // SurfaceMode-Wechsel laesst den rangeFilter unangetastet.
+            insightsContextStatusLine
+                .padding(.bottom, 2)
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     insightsHeroRangeChip(.last7Days, identifier: "insights.hero.range.last7Days")
@@ -638,6 +646,47 @@ public struct AppInsightsContentView: View {
         .padding(.horizontal, 12)
         .padding(.top, 4)
         .padding(.bottom, 10)
+    }
+
+    /// Phase D-1: persistente Status-Zeile im Insights-Sheet, die den
+    /// aktiven Zeitraum und SurfaceMode klar kommuniziert. Bewusst rein
+    /// anzeigend — keine Reset-/Switch-Logik, die hier heimlich greifen
+    /// koennte. Tap-/Drilldown-Verhalten bleibt unveraendert.
+    @ViewBuilder
+    private var insightsContextStatusLine: some View {
+        HStack(spacing: 8) {
+            Label {
+                Text("\(t("Range active")): \(t(rangeFilter.preset.title))")
+                    .font(.caption.weight(.medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            } icon: {
+                Image(systemName: "calendar")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(LH2GPXTheme.primaryBlue)
+            }
+            .accessibilityIdentifier("insights.context.range")
+
+            Spacer(minLength: 6)
+
+            Label {
+                Text("\(t("Mode")): \(t(surfaceMode.rawValue))")
+                    .font(.caption.weight(.medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            } icon: {
+                Image(systemName: "chart.xyaxis.line")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(LH2GPXTheme.insightPurple)
+            }
+            .accessibilityIdentifier("insights.context.mode")
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(LH2GPXTheme.chipBackground, in: Capsule())
+        .accessibilityIdentifier("insights.context.statusLine")
+        .accessibilityElement(children: .combine)
     }
 
     private func insightsHeroRangeChip(

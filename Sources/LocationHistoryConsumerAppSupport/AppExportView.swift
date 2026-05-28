@@ -961,7 +961,21 @@ public struct AppExportView: View {
             )
             .font(.caption)
             .foregroundStyle(.secondary)
+            // Phase D-1: Map-Layer-Suppression-Hinweis. CSV ist rein
+            // tabellarisch — die Auswahl von Tempo/Hoehe/Standard im
+            // MapLayerMenu beeinflusst die CSV-Datei nicht. Hinweis lebt
+            // sowohl im Legacy- als auch im Scaffold-Pfad, weil
+            // `csvNoteCard` aus dem gemeinsamen `checkoutContent` heraus
+            // gerendert wird.
+            Label(
+                t("CSV exports tabular data. Map layers such as speed, elevation, or standard view do not affect the CSV file."),
+                systemImage: "square.stack.3d.up.slash"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("export.csv.layerSuppressionHint")
         }
+        .accessibilityIdentifier("export.csv.note.card")
     }
 
     @ViewBuilder

@@ -72,14 +72,26 @@ public struct MapLayerMenu: View {
 
             actionsSection
         } label: {
+            // Phase D-1: Visuelle Pill bleibt bei 34 pt (kompakt), aber
+            // die Tap-Flaeche wird auf den Apple-HIG-Floor 44 × 44 pt
+            // gehoben. Beide Konstanten leben in `LHMapBase`, damit
+            // versehentliche Aufblaehung des Sichtbaren erkannt wird.
             Image(systemName: "slider.horizontal.3")
                 .font(.callout.weight(.semibold))
                 .padding(8)
-                .frame(width: 34, height: 34)
+                .frame(
+                    width: LHMapBase.mapLayerMenuVisualSize,
+                    height: LHMapBase.mapLayerMenuVisualSize
+                )
                 .lgGlassSurface(cornerRadius: 10)
+                .frame(
+                    minWidth: LHMapBase.mapLayerMenuMinimumHitSize,
+                    minHeight: LHMapBase.mapLayerMenuMinimumHitSize
+                )
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(t("Map layers"))
+        .accessibilityIdentifier("map.layerMenu.button")
     }
 
     // MARK: - Sections
