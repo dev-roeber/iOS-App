@@ -140,6 +140,34 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         XCTAssertTrue(liveSource.contains("LHGlassBottomSheetDashboard"))
     }
 
+    func test_phaseB6_heatmapMountsTheNewScaffold() throws {
+        // Phase B-6 migrates AppHeatmapView iOS-26-Pfad onto the shared
+        // scaffold. LHMapFloatingChrome is NOT required — MapLayerMenu
+        // mit `showsHeatmapControls` bleibt direkt am `mapView` als
+        // Overlay topTrailing; ein zweites LHMapFloatingChrome wuerde
+        // die Affordances doppeln (dokumentierte Ausnahme, spiegelt
+        // Insights B-3, Map-Tab B-4, Export B-5).
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let source = try String(
+            contentsOf: root.appendingPathComponent("AppHeatmapView.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(
+            source.contains("LHMapFirstPageScaffold"),
+            "AppHeatmapView must mount LHMapFirstPageScaffold in Phase B-6."
+        )
+        XCTAssertTrue(
+            source.contains("LHGlassBottomSheetDashboard"),
+            "AppHeatmapView must mount LHGlassBottomSheetDashboard in Phase B-6."
+        )
+        XCTAssertTrue(
+            source.contains("bottomSheetTabBarClearance"),
+            "Heatmap scaffold must consume LHMapBase.bottomSheetTabBarClearance."
+        )
+    }
+
     func test_phaseB5_exportMountsTheNewScaffold() throws {
         // Phase B-5 migrates AppExportView heroEnabled-Pfad onto the shared
         // scaffold. LHMapFloatingChrome is NOT required — the existing
@@ -233,14 +261,13 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         )
     }
 
-    func test_phaseB5_remainingMapScreensNotYetMigrated() throws {
-        // Heatmap and Editor remain on their pre-migration compositions;
-        // update each entry in the corresponding sub-train PR.
+    func test_phaseB6_remainingMapScreensNotYetMigrated() throws {
+        // Editor remains on its pre-migration composition; update in the
+        // Phase-B-7 sub-train PR.
         guard let root = sourcesDirectory() else {
             throw XCTSkip("Sources/ tree not reachable.")
         }
         let candidates = [
-            "AppHeatmapView.swift",
             "AppRecordedTrackEditorView.swift"
         ]
         for relative in candidates {

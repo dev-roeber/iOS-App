@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.7 Phase B-6: Heatmap on Map-First Scaffold (Branch `feat/heatmap-migration-map-first`)
+
+### Added
+- `AppHeatmapView.scaffoldedHeatmapLayout` + `scaffoldedHeatmapMap` + `scaffoldedHeatmapSheetHeader` + `scaffoldedHeatmapSheetBody`, alle `@available(iOS 26.0, *)`. Body-Dispatch waehlt auf iOS 26+ den neuen Pfad, sonst weiterhin `legacyHeatmapBody`.
+- Source-Contract-Test `test_phaseB6_heatmapMountsTheNewScaffold` mit explizitem `bottomSheetTabBarClearance`-Verbrauch-Check. Sub-Train-Boundary auf Editor reduziert.
+
+### Changed
+- Heatmap iOS-26-Pfad rendert: `LHMapFirstPageScaffold` (Map = `mapView` mit `MapPolygon`-Rendering, `MapLayerMenu` als topTrailing-Overlay direkt am `mapView` mit `lhDeviceTopSafeInset() + LHMapBase.floatingControlTopGap`), `LHGlassBottomSheetDashboard` (Detents `.insights`, `initialDetent: .collapsed` — Karte soll dominieren) mit Header (`HEATMAP` Caption + `Heatmap` Title) und Body (Stats + Computing-Hinweis).
+- Bisherige Karten-Overlays `calculatingOverlay` (`.bottom`) und `statsBadge` (`.bottomLeading`) wandern in den Sheet-Body. Damit bleibt die Apple-Maps-Attribution unverdeckt (Sheet respektiert `attributionGuardBottomInset` ueber `bottomSheetTabBarClearance`).
+- Legacy-Pfad bleibt als `legacyHeatmapBody` strukturell unveraendert — gleiche Overlays, gleiche Animation, gleicher Lifecycle (`startPrecomputation`, `updateScale`, `seedInitialViewport`).
+
+### Documented exception
+- `LHMapFloatingChrome` wird im Heatmap-Scaffold NICHT gemountet. `mapView` ueberlagert weiterhin selbst `MapLayerMenu` mit `showsHeatmapControls`. Ein zweites Floating-Chrome wuerde die Affordances doppeln (spiegelt Insights B-3, Map-Tab B-4, Export B-5).
+
+### Performance-Schutz
+- **Strikt erhalten:** `MapPolygon` / Hex-Grid-Rendering, `HeatmapVisualStyle.effectiveOpacity`, `HeatmapPalette`, LOD-Logik, Polygon-Caps, `onMapCameraChange(.onEnd)`-Frequenz, `model.startPrecomputation`/`updateScale`/`updateForRegion`-Lifecycle, kein neuer `Task.detached`, keine `map`/`reduce`/`sorted`-Hotloops im View-Body, keine grossen Arrays in `@State`. Keine Performance-Verbesserung behauptet — der Migrationspatch ist reine Komposition.
+
+### Attribution-Schutz
+- `MapLayerMenu` rueckt im Scaffold-Pfad an `lhDeviceTopSafeInset() + LHMapBase.floatingControlTopGap` (kein magischer `.padding(12)` mehr). Sheet-Bottom respektiert `bottomSheetTabBarClearance` (in B-5.5 auf 70 pt angehoben). `mapView` haelt weiterhin `.ignoresSafeArea(.top)`, weil das Hex-Grid den Statusbar-Bereich edge-to-edge fuellen soll.
+
+### Why
+- Phase B-6 des Migrationsplans. Damit sind sechs Map-Surfaces (Live B-1, DayDetail B-2, Insights B-3, Map-Tab B-4, Export B-5, Heatmap B-6) auf dem Shared-System. Nur Editor (B-7) und Explore-Sheet stehen noch aus.
+- Bewusst NICHT angefasst: Heatmap-Berechnung, LOD-Semantik, Overlay-Caps, Density-/Grid-Berechnung, Import-/Export-/Cloud-/Live-Semantik.
+
+### Smoke-Policy
+- **Geraete-/Xcode-Smoke bewusst deferred nach User-Entscheidung.** Linux-Build/Tests gruen; Apple-Sim/Geraet ist nicht verifiziert. Visuelle Wirkung der Heatmap-Stats-Migration in den Sheet-Body, der `.collapsed`-Initial-Detent-Wahl und der `MapLayerMenu`-Repositionierung an die Safe-Area sind nicht auf Apple-Plattform validiert.
+
+### Tests
+- `swift build` gruen (1.73 s).
+- `swift test` gruen: **1784** Tests, 3 skipped, **0 failures** (~57 s, Linux x86_64).
+- `LHMapFirstComponentSourceContractTests`: Phase-B-1- bis B-5-Regression-Guards bleiben, Phase-B-6-Mount-Check neu (inkl. `bottomSheetTabBarClearance`-Verbrauch), Sub-Train-Boundary auf Editor reduziert, AppLanguage- und MapContentBuilder-Regression-Guards bleiben.
+
+### Open
+- Kein xcodebuild-Smoke (Linux-Host) — bewusst deferred.
+- Heatmap-spezifischer Smoke vor TestFlight: Detent-Bewegung mit aktiven Stats waehrend laufender Precomputation pruefen, Map-Zoom unter Sheet-Drag pruefen, Apple-Maps-Attribution-Sichtbarkeit unter `.expanded`-Detent verifizieren.
+- Phase B-7 (Editor) ist der naechste dokumentierte Schritt.
+
 ## 2026-05-28 — Train F.7 Phase B-5.5: Scaffold Visual Regression Fix (Branch `feat/scaffold-visual-hardening`)
 
 ### Added
