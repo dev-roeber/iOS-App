@@ -28,6 +28,39 @@ public struct LHSheetDetents {
     public static let landscape = LHSheetDetents(collapsed: 140, medium: 200, expanded: 280)
     public static let compactPortrait = LHSheetDetents(collapsed: 160, medium: 320, expanded: 520)
 
+    // MARK: B-5.5 Visual Hardening — per-screen Detent-Profile
+    //
+    // Eigene Profile pro Surface, damit Detents nicht mehr per Magic
+    // Number inline am Aufrufer gesetzt werden. Die Profile sind so
+    // gewaehlt, dass:
+    //   - collapsed → Header + 1-2 Zeilen sichtbar, Karte dominiert.
+    //   - medium    → nutzbare Sheet-Hoehe, ohne Apple-Maps-Attribution
+    //                 oder Custom-TabBar zu verdecken.
+    //   - expanded  → scrollbarer Inhalt, kein Vollscreen-Block.
+    //
+    // Die alten `.portrait` / `.compactPortrait` / `.landscape` bleiben
+    // als Default-Profile fuer Komponenten, die kein Surface-Wissen
+    // haben.
+
+    /// Map-Tab Hero — Karte soll dominieren, Sheet kompakt.
+    public static let mapTab = LHSheetDetents(collapsed: 130, medium: 220, expanded: 380)
+
+    /// Live Tracking — Sheet hostet Status-Liste + Metriken; FAB lebt im
+    /// Sheet-Header, deshalb darf das Sheet etwas hoeher starten.
+    public static let live = LHSheetDetents(collapsed: 150, medium: 260, expanded: 420)
+
+    /// DayDetail — Sheet hostet Segmented-Content + KPI-Grid + Bands.
+    public static let dayDetail = LHSheetDetents(collapsed: 150, medium: 280, expanded: 440)
+
+    /// Insights — Sheet hostet Filter + KPI-Grid + Highlights + Charts-
+    /// Einstieg. Hoeher als DayDetail wegen Mode-/Filter-Strips am Top.
+    public static let insights = LHSheetDetents(collapsed: 160, medium: 320, expanded: 480)
+
+    /// Export — Sheet hostet die komplette Checkout-Liste inkl. Export-
+    /// Button am Ende. Bleibt der hoechste Profil-Wert (Export-Button
+    /// muss erreichbar sein).
+    public static let export = compactPortrait
+
     public func height(for detent: LHSheetDetent) -> CGFloat {
         switch detent {
         case .collapsed: return collapsed
@@ -86,6 +119,20 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
         }
         .frame(maxWidth: .infinity)
         .frame(height: max(0, height - dragOffset))
+        // B-5.5 Visual Hardening: dunklerer Base-Layer UNTER dem
+        // Liquid-Glass, damit Sheet-Text auch ueber hellen Satelliten-
+        // Karten lesbar bleibt. Vor B-5.5 schien die Karte zu stark
+        // durch und Titel/KPIs waren grenzwertig kontrastarm.
+        .background(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 22,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 22,
+                style: .continuous
+            )
+            .fill(Color.black.opacity(0.18))
+        )
         .lgGlassSurface(cornerRadius: 22)
         .gesture(dragGesture)
         .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: currentDetent)

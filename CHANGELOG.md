@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.7 Phase B-5.5: Scaffold Visual Regression Fix (Branch `feat/scaffold-visual-hardening`)
+
+### Added
+- `LHSheetDetents` Per-Screen-Profile: `.mapTab` (130/220/380), `.live` (150/260/420), `.dayDetail` (150/280/440), `.insights` (160/320/480), `.export` (= `.compactPortrait` 160/320/520). Legacy `.portrait`/`.landscape`/`.compactPortrait` bleiben erhalten als Default-Profile fuer Komponenten ohne Surface-Wissen.
+- `Tests/LocationHistoryConsumerTests/LHSheetDetentsProfilesTests.swift` — 2 Linux-Tests: Per-Screen-Profile praesent, Legacy-Profile ueberleben B-5.5.
+
+### Changed
+- `LHMapBase.tabBarStandardHeight`: **49 → 70**. iOS 26 LG-TabBar rendert deutlich groesser als die UIKit-Legacy-49pt-Bar. In allen migrierten Surfaces klemmten Sheet-Unterkante und Apple-Maps-Attribution. Cascade-Effekt: alle Sheets bekommen automatisch +21 pt Bottom-Clearance.
+- `LHGlassBottomSheetDashboard`: dunklerer Base-Layer (`Color.black.opacity(0.18)`) unter dem Liquid-Glass-Surface, damit Sheet-Text auch ueber hellen Satellitenkarten lesbar bleibt. Vor B-5.5 schien die Karte zu stark durch und Titel/KPIs waren grenzwertig kontrastarm.
+- `AppLiveTrackingView.scaffoldedPortraitLayout`: Stop-/Record-FAB lebt jetzt im Sheet-Header (HStack rechts), nicht mehr als ZStack-Overlay mit `.padding(.bottom, …)`. Eliminiert Overlap mit Sheet-Inhalt ueber alle Detents. ZStack(.bottomTrailing) entfernt — Scaffold ist jetzt das direkte Root. Live-Detents auf `.live` (statt `.portrait`).
+- `AppInsightsContentView.scaffoldedInsightsLayout`: Map-Slot rendert jetzt direkt `AppOverviewTracksMapView` (mit Layer-Panel- + Control-Stack-Overlays via `LGGlassEffectGroup`) statt `insightsHeroMap` (`LHCollapsibleMapHeader`-Wrapper). Der Collapsible-Header hatte eigene compact-/expanded-Hoehe + System-BG, was zu einer sichtbaren grauen Luecke zwischen Karte und Sheet fuehrte. Insights-Detents auf `.insights`.
+- `LGTabContainerView.scaffoldedMapTabBody`: Map-Tab-Detents auf `.mapTab` mit `initialDetent: .collapsed`. Karte dominiert visuell, KPIs erreichbar via Drag-Up.
+- `AppDayDetailView.scaffoldedDayDetailLayout`: Detents auf `.dayDetail` (mehr Headroom fuer Segmented-Content + KPI-Grid + Bands).
+
+### Why
+- B-5.5 ist ein Visual-Regression-Fix, **keine neue Screen-Migration**. Geraete-Screenshots nach B-1 bis B-5 zeigten konkrete sichtbare Probleme: Live-FAB ueberlappte Sheet-Inhalt, Insights hatte grauen Leerraum zwischen Map und Sheet, Map-Tab-Sheet war zu hoch + schlecht lesbar, DayDetail-Sheet/TabBar/Attribution stapelten sich zu eng. Die Fixes wandern bewusst in die Shared-Tokens (`LHMapBase`, `LHGlassBottomSheetDashboard`, `LHSheetDetents`) und in die Screen-spezifische Detent-Wahl — keine Screen-by-Screen-Magic-Numbers.
+
+### Tests
+- `swift build` gruen (2.38 s).
+- `swift test` gruen: **1783** Tests, 3 skipped, **0 failures** (~57 s, Linux x86_64).
+- Angepasste `LHMapBaseTests`: `test_tabBarStandardHeight_isSeventy` (vorher `_isFortyNine`), `test_bottomSheetTabBarClearance_defaultsToStandardTabBarHeight` erwartet 70.
+- Neu: `LHSheetDetentsProfilesTests` — Per-Screen-Profile praesent, Legacy ueberlebt.
+- `LHMapFirstComponentSourceContractTests` weiterhin gruen: Live/DayDetail/Insights/Map-Tab/Export Mount-Checks + Sub-Train-Boundary (Heatmap/Editor) + AppLanguage- und MapContentBuilder-Regression-Guards.
+
+### Behobene Screenshot-Findings
+1. **Map-Tab:** Sheet zu hoch/zu dunkel → `.mapTab`-Detents + `.collapsed`-Initial + dunklerer Base-Layer fuer Lesbarkeit.
+2. **DayDetail:** Sheet/TabBar/Attribution stapeln zu eng → `tabBarStandardHeight 70` + `.dayDetail`-Detents geben automatisch mehr Headroom.
+3. **Live:** Stop-FAB ueberlappt Sheet-Inhalt → FAB in Sheet-Header verlagert, ZStack-Overlay entfernt.
+4. **Insights:** grauer Leerraum zwischen Map und Sheet → direktes `AppOverviewTracksMapView` statt `LHCollapsibleMapHeader`-Wrapper.
+5. **Global:** Detents/Opacity/Bottom-Clearance/TabBar-Abstand zentral via Shared-Tokens, statt per Screen-Magic-Numbers.
+
+### Open
+- Kein xcodebuild-Smoke (Linux-Host). Visuelle Wirkung der `tabBarStandardHeight 70`-Anhebung, des dunkleren Sheet-Base-Layers, der FAB-im-Header-Platzierung und der direkten Insights-Map nicht auf Apple-Sim/Geraet validiert.
+- iPad-Pfad (`AppContentSplitView`) bewusst unangetastet.
+- Heatmap (B-6) bleibt als naechster geplanter Schritt nach Geraete-Smoke.
+
 ## 2026-05-28 — Train F.7 Phase B-5: Export Preview on Map-First Scaffold (Branch `feat/export-preview-migration-map-first`)
 
 ### Added

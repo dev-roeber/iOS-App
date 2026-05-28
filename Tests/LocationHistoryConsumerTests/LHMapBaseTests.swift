@@ -61,9 +61,12 @@ final class LHMapBaseTests: XCTestCase {
     // MARK: - bottomSheetTabBarClearance
 
     func test_bottomSheetTabBarClearance_defaultsToStandardTabBarHeight() {
+        // B-5.5 Visual Hardening: tabBarStandardHeight von 49 auf 70
+        // angehoben, weil iOS 26 LG-TabBar deutlich groesser rendert als
+        // die UIKit-49pt-Legacy-Bar und Sheet/Attribution sonst klemmen.
         XCTAssertEqual(
             LHMapBase.bottomSheetTabBarClearance(deviceBottomSafeInset: 34),
-            49
+            70
         )
     }
 
@@ -87,7 +90,8 @@ final class LHMapBaseTests: XCTestCase {
         )
     }
 
-    func test_tabBarStandardHeight_isFortyNine() {
-        XCTAssertEqual(LHMapBase.tabBarStandardHeight, 49)
+    func test_tabBarStandardHeight_isSeventy() {
+        // B-5.5 Visual Hardening — siehe LHMapBase.swift Kommentar.
+        XCTAssertEqual(LHMapBase.tabBarStandardHeight, 70)
     }
 }

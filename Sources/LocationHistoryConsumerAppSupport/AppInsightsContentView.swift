@@ -267,12 +267,18 @@ public struct AppInsightsContentView: View {
             bottomSafeInset: bottomSafe,
             sheetBottomClearance: clearance
         ) {
-            insightsHeroMap
+            // B-5.5 Visual Hardening: direkt `AppOverviewTracksMapView`
+            // statt `LHCollapsibleMapHeader`-Wrapper. Der Collapsible-
+            // Header haelt eine eigene compact-/expanded-Hoehe + Color-
+            // BG, was im Scaffold zu einer sichtbaren grauen Lucke
+            // zwischen Karte und Sheet fuehrte. Direktes Mount fuellt
+            // den Map-Slot edge-to-edge.
+            scaffoldedInsightsMapContent
         } floatingChrome: {
             EmptyView()
         } sheet: {
             LHGlassBottomSheetDashboard(
-                detents: .portrait,
+                detents: .insights,
                 initialDetent: .medium,
                 bottomClearance: clearance,
                 accessibilityPrefix: "insights.scaffold.sheet"
@@ -348,6 +354,45 @@ public struct AppInsightsContentView: View {
             .accessibilityIdentifier("insights.shareFailed.ok")
         } message: {
             Text(shareError ?? "")
+        }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedInsightsMapContent: some View {
+        if #available(iOS 17.0, macOS 14.0, *) {
+            AppOverviewTracksMapView(
+                daySummaries: daySummaries,
+                content: heroContent,
+                queryFilter: heroQueryFilter,
+                fixedHeight: nil,
+                showsFullscreenControl: false,
+                mapControlTopPadding: lhDeviceTopSafeInset()
+                    + LHMapBase.floatingControlTopGap,
+                cameraController: insightsHeroMapCamera
+            )
+            .overlay(alignment: .top) {
+                LGGlassEffectGroup(spacing: 8) {
+                    HStack(alignment: .top, spacing: 0) {
+                        insightsHeroLayerPanel
+                            .padding(.leading, LHMapBase.floatingControlSideInset)
+                        Spacer(minLength: 0)
+                        DayDetailControlStack(
+                            onFitToData: { insightsHeroMapCamera.fitToData?() },
+                            onZoomIn:    { insightsHeroMapCamera.adjustZoom?(0.5) },
+                            onZoomOut:   { insightsHeroMapCamera.adjustZoom?(2.0) },
+                            compassLabel: t("Fit to Data"),
+                            zoomInLabel:  t("Zoom in"),
+                            zoomOutLabel: t("Zoom out"),
+                            fitLabel:     t("Fit to Data")
+                        )
+                        .padding(.trailing, LHMapBase.floatingControlSideInset)
+                        .accessibilityIdentifier("insights.scaffold.map.controlStack")
+                    }
+                    .padding(.top, LHMapBase.floatingControlTopInset(deviceTopSafeInset: lhDeviceTopSafeInset()))
+                }
+            }
+            .accessibilityIdentifier("insights.scaffold.map")
         }
     }
 
