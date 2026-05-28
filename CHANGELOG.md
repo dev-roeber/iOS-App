@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## 2026-05-28 — WeatherKit: `notProvisioned` error classification (Branch `fix/weatherkit-not-provisioned-classification`)
+
+### Added
+- `AppWeatherError.notProvisioned(String)` — neuer Case fuer dauerhafte WeatherKit-Auth-/Capability-Probleme.
+- `AppWeatherError.isPermanent: Bool` — `true` fuer `.notProvisioned` und `.unavailable`. Erlaubt Aufrufern, Retry-Loops zu deaktivieren, wenn der Fehler nicht behebbar ist (z. B. fehlende WeatherKit-Capability im Provisioning-Profil).
+- `AppWeatherDiagnostics.classify(_:)` — klassifiziert `NSError` nach Domain (`WDSJWTAuthenticatorServiceListener.Errors`, `weatherkit.authservice`, `WeatherDaemon.WeatherAuthorization`), Debug-Text und HTTP-401/403 im Weather-Kontext als `.notProvisioned`. Quota-/Netz-Fehler bleiben `.requestFailed`.
+- `AppWeatherDiagnostics.isNotProvisionedError(domain:code:debug:)` — explizite Detector-Helper-API.
+- `AppWeatherErrorClassificationTests` — 14 neue Linux-Tests (Domain/Code/Debug, HTTP 401/403, Quota, Titel, Redaction, Idempotency).
+
+### Changed
+- `WeatherKitService.currentWeather`: nutzt jetzt `AppWeatherDiagnostics.classify(...)` statt `blind .requestFailed`. Der korrekte Error-Case kommt am Live-Pill an.
+- `AppLiveTrackingView.refreshWeatherSnapshot`: catch-Branch ruft `classify(...)` auf und setzt `showWeatherLayer = false`, wenn `appError.isPermanent` zutrifft — der 5-Min-Heartbeat loest dann keinen weiteren Retry mehr aus.
+- Deutscher Diagnose-Text fuer `.notProvisioned` weist explizit darauf hin: "Wiederholungsversuche sind deaktiviert".
+
+### Why
+- WDSJWTAuthenticatorServiceListener.Errors code=2 (WeatherKit-Capability ist nicht im Provisioning-Profil enthalten / Apple-Developer-App-Service nicht aktiv) war bisher als generisches `.requestFailed` klassifiziert. Folge: stiller 5-Minuten-Retry-Loop, kein klarer Hinweis im Live-Pill, kein klares Signal fuer den User.
+- Mit der Klassifizierung wird der Fehler als permanent erkannt, der Live-Pfad deaktiviert die Wetter-Layer lokal, und die Live-Pill kommuniziert die Capability-Luecke statt einer transienten Fehlermeldung.
+
+### Documented exception / Security
+- Keine API-Keys oder Secrets im Repo. WeatherKit-Authentifizierung geschieht ausschliesslich ueber das ohnehin im App-ID hinterlegte Provisioning-Profil-Entitlement.
+- Apple-Developer-Portal-Setup (WeatherKit-App-Service aktivieren fuer `de.roeber.LH2GPXWrapper`, Provisioning-Profil refreshen, App neu installieren, `codesign -d --entitlements` verifizieren) bleibt manueller Step ausserhalb des Repos.
+
+### Tests
+- `swift build`: gruen.
+- `swift test`: 1805 Tests (+14 WeatherKit-Tests gegenueber D-0), 3 skipped, **0 failures** (~59 s, Linux x86_64).
+
+### Smoke
+- Geraete-Verifikation der notProvisioned-Klassifizierung benoetigt aktivierten Apple-Developer-Portal-Service + frisches Profil. Bewusst deferred bis User die Capability dort eingerichtet hat.
+
+### Offen
+- Train 3 / Phase D-1 (siehe NEXT_STEPS).
+
+---
+
 ## 2026-05-28 — Train 3 Phase D-0: Visual Readability Hardening (Branch `feat/visual-readability-hardening-d0`)
 
 ### Added
