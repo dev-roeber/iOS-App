@@ -383,6 +383,13 @@ struct ContentView: View {
         RecentFilesStore.clear()
         preferences.reset()
         session.clearContent()
+        // P0-Fix 2026-05-28: persistenter Recording-State leakte zwischen
+        // UI-Tests — eine LiveActivity-Aufzeichnung aus einem vorigen Lauf
+        // blieb beim resetPersistence stehen, sodass beim nächsten Live-Tab
+        // der Stop- statt Start-Button erschien (Tests fanden
+        // `live.recording.primaryAction` nicht). Beides explizit beenden.
+        liveLocation.setRecordingEnabled(false)
+        liveLocation.dismissInterruptedSession()
         applyUITestingOverrides()
         if let bytes = uiLargeImportBytes() {
             await runUITestingLargeImport(targetBytes: bytes)

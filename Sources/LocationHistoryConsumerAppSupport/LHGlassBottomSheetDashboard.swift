@@ -141,6 +141,12 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
         )
         .lgGlassSurface(cornerRadius: 22)
         .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: currentDetent)
+        // P0-Fix 2026-05-28 Identifier-Cascading: ohne `children: .contain`
+        // erbten alle Sub-Buttons (Stop/Start, Background Recording usw.) den
+        // `<prefix>.root`-Identifier statt ihres eigenen — Tests konnten
+        // `live.recording.primaryAction` etc. nicht mehr finden. .contain
+        // hält den Container als a11y-Element ohne Kinder zu vereinnahmen.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("\(accessibilityPrefix).root")
     }
 

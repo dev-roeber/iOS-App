@@ -512,8 +512,14 @@ public struct AppLiveTrackingView: View {
 
             // FAB sits in the header so it is always reachable at every
             // detent without overlapping sheet content.
+            //
+            // P0-Fix 2026-05-28: KEIN .accessibilityIdentifier hier setzen —
+            // der innere Button in `compactRecordFAB` (Line ~768) trägt den
+            // dynamischen `live.recording.primaryAction` / `…stopAction`
+            // bereits. Ein äußerer Identifier hätte den inneren überschrieben
+            // und alle Tests auf iOS 26 brechen lassen (Live-Tests konnten
+            // den Start-Button nicht finden).
             compactRecordFAB
-                .accessibilityIdentifier("live.recording.scaffold.fab")
         }
     }
 
