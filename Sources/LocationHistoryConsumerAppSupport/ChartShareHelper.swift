@@ -100,6 +100,14 @@ public enum ChartShareHelper {
             return "custom"
         case .all:
             return nil
+        case .rollingWindow:
+            if let range = filter.computedRollingWindowRange() {
+                let f = DateFormatter()
+                f.dateFormat = "yyyy-MM-dd"
+                f.locale = Locale(identifier: "en_US_POSIX")
+                return "\(f.string(from: range.lowerBound))_to_\(f.string(from: range.upperBound))"
+            }
+            return "rolling\(filter.rollingWindowSize)d"
         }
     }
 }

@@ -6,6 +6,10 @@ enum AppHistoryDateRangeQueryBridge {
         base: AppExportQueryFilter?,
         rangeFilter: HistoryDateRangeFilter
     ) -> AppExportQueryFilter? {
+        // `.rollingWindow` resolves its own bounds through
+        // `effectiveRange` -> `computedRollingWindowRange()`, so
+        // `fromDateString` / `toDateString` already carry the correct values
+        // (or nil when the dataset bounds are unknown).
         let fromDate = mergedLowerBound(base: base?.fromDate, range: rangeFilter.fromDateString)
         let toDate = mergedUpperBound(base: base?.toDate, range: rangeFilter.toDateString)
 

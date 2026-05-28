@@ -96,6 +96,10 @@ struct AppHistoryDateRangeControl: View {
                 }
             }
 
+            if filter.preset == .rollingWindow {
+                rollingWindowSlider
+            }
+
             if showsExportHint {
                 Label(
                     t("Export always uses the active time range before any local export filters."),
@@ -196,6 +200,57 @@ struct AppHistoryDateRangeControl: View {
 
     private func t(_ english: String) -> String {
         preferences.localized(english)
+    }
+
+    @ViewBuilder
+    private var rollingWindowSlider: some View {
+        let maxOffset = filter.maxRollingWindowOffset
+        let isInteractive = maxOffset > 0
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(rollingWindowStartLabel)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("range.window.start.label")
+                Spacer()
+                Text(rollingWindowEndLabel)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("range.window.end.label")
+            }
+            Slider(
+                value: Binding(
+                    get: { Double(min(filter.rollingWindowOffset, max(0, maxOffset))) },
+                    set: { newValue in
+                        filter.rollingWindowOffset = Int(newValue.rounded())
+                    }
+                ),
+                in: 0...Double(max(maxOffset, 1)),
+                step: 1
+            )
+            .disabled(!isInteractive)
+            .accessibilityIdentifier("range.window.slider")
+            Text(isInteractive
+                 ? t("Drag to shift the 60-day window across the imported time span.")
+                 : t("The imported time span fits inside the 60-day window."))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.top, 4)
+    }
+
+    private var rollingWindowStartLabel: String {
+        guard let range = filter.computedRollingWindowRange() else {
+            return t("Start")
+        }
+        return displayDate(range.lowerBound)
+    }
+
+    private var rollingWindowEndLabel: String {
+        guard let range = filter.computedRollingWindowRange() else {
+            return t("End")
+        }
+        return displayDate(range.upperBound)
     }
 }
 #endif

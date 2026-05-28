@@ -286,7 +286,7 @@ public struct AppSessionState {
     /// App-wide export selection. Cleared automatically on new import or content clear.
     public var exportSelection: ExportSelectionState = ExportSelectionState()
     /// App-wide date range filter applied across Days, Insights and Export tabs.
-    public var historyDateRangeFilter: HistoryDateRangeFilter = HistoryDateRangeFilter(preset: .last7Days)
+    public var historyDateRangeFilter: HistoryDateRangeFilter = HistoryDateRangeFilter(preset: .rollingWindow)
     /// Active drilldown action originating from the Insights tab.
     /// Set when a user taps a drilldown target in Insights; cleared by the receiving tab.
     public var activeDrilldownFilter: InsightsDrilldownAction?
@@ -478,7 +478,11 @@ public struct AppSessionState {
         selectedLocalTimelineDayId = nil
         exportSelection.clearAll()
         activeDrilldownFilter = nil
-        historyDateRangeFilter = HistoryDateRangeFilter(preset: .last7Days)
+        // The local-timeline path does not have a fully decoded `AppExport`
+        // available, so dataset bounds stay unknown here. The slider in the
+        // UI will therefore be disabled until the user manually picks a
+        // preset; the 60-day default behaves like "all" with no bounds set.
+        historyDateRangeFilter = HistoryDateRangeFilter(preset: .rollingWindow)
         isLoading = false
         message = AppUserMessage(
             kind: .info,
@@ -498,7 +502,18 @@ public struct AppSessionState {
         activeDrilldownFilter = nil
         // Reset to the standard initial time window on every new import so the
         // overview starts with a manageable, recent slice of data by default.
-        historyDateRangeFilter = HistoryDateRangeFilter(preset: .last7Days)
+        // Default = 60-day rolling window anchored at the newest imported day.
+        // Bounds derived by scanning `export.data.days` once (no projection /
+        // overview materialisation) so we stay within the post-import memory
+        // budget on huge Google Timeline imports.
+        let bounds = Self.dayDateBounds(in: content.export.data.days)
+        historyDateRangeFilter = HistoryDateRangeFilter(
+            preset: .rollingWindow,
+            rollingWindowSize: HistoryDateRangeFilter.defaultRollingWindowSize,
+            rollingWindowOffset: 0,
+            datasetStartDate: bounds?.start,
+            datasetEndDate: bounds?.end
+        )
         isLoading = false
         let title: String
         if content.source == .demoFixture(name: AppContentLoader.defaultDemoFixtureName) {
@@ -576,6 +591,35 @@ public struct AppSessionState {
             return
         }
         selectedLocalTimelineDayId = dayId
+    }
+
+    /// Scans the day list once for the smallest and largest `yyyy-MM-dd`
+    /// strings and returns them as `Date` values in the current calendar.
+    /// Cheap: O(n) with no projection/decoding, so it is safe to call on the
+    /// post-import hot path. Returns `nil` for empty inputs or when every
+    /// date string fails to parse.
+    static func dayDateBounds(in days: [Day]) -> (start: Date, end: Date)? {
+        guard !days.isEmpty else { return nil }
+        var minString: String?
+        var maxString: String?
+        for day in days {
+            if minString == nil || day.date < minString! {
+                minString = day.date
+            }
+            if maxString == nil || day.date > maxString! {
+                maxString = day.date
+            }
+        }
+        guard let minString, let maxString else { return nil }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .autoupdatingCurrent
+        guard let start = formatter.date(from: minString),
+              let end = formatter.date(from: maxString) else {
+            return nil
+        }
+        return (start: start, end: end)
     }
 
     public mutating func clearContent() {

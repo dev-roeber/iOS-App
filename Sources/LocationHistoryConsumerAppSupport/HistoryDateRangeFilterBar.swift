@@ -79,6 +79,15 @@ public struct HistoryDateRangeFilterBar: View {
             f.timeStyle = .none
             f.locale = preferences.appLocale
             return "\(f.string(from: start)) – \(f.string(from: end))"
+        case .rollingWindow:
+            if let range = filter.computedRollingWindowRange() {
+                let f = DateFormatter()
+                f.dateStyle = .short
+                f.timeStyle = .none
+                f.locale = preferences.appLocale
+                return "\(f.string(from: range.lowerBound)) – \(f.string(from: range.upperBound))"
+            }
+            return "\(filter.rollingWindowSize) \(t("d"))"
         }
     }
 

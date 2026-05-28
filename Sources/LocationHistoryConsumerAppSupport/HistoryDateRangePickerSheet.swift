@@ -173,6 +173,7 @@ public struct HistoryDateRangePickerSheet: View {
         case .last90Days: return t("Last 90 Days")
         case .thisYear: return t("This Year")
         case .custom: return t("Custom")
+        case .rollingWindow: return t("60-Day Window")
         }
     }
 
