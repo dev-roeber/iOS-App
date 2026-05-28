@@ -1,5 +1,21 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.7 Phase B-2: DayDetail Screen migrated (Branch `feat/daydetail-migration-map-first`)
+
+Zweite produktive Screen-Migration aus Phase B. Live (Phase B-1) und DayDetail (Phase B-2) konsumieren beide das Shared-System. Alle anderen Map-Screens bleiben auf ihrer Pre-Migration-Komposition.
+
+Neu im Repo:
+- `AppDayDetailView` iOS-26-Pfad mountet `LHMapFirstPageScaffold` + `LHMapFloatingChrome{DayDetailLayerPanel, DayDetailControlStack}` + `LHGlassBottomSheetDashboard`. Sheet-Inhalt aus dem Legacy-Pfad 1:1 wiederverwendet.
+- Phase-B-2-Sub-Train-Boundary im Source-Contract-Test.
+
+**Naechster Schritt:** Phase B-3 — `AppInsightsContentView`. Danach Map-Tab-Hero. Beide nutzen `AppOverviewTracksMapView`-Komposition, daher als zwei separate PRs.
+
+**Train 3 (Hardening, weiterhin offen):** Recording-Dual-Truth aufloesen, MapLayerMenu-Hit-Region final pruefen, Insights Mode/Filter-Coupling entkoppeln, Performance-Profile in Render-Pipeline scharf stellen, Instruments-Messplan.
+
+**Offen / nicht in F.7 Phase B-2:** xcodebuild-Smoke, Geraete-Smoke der neuen Komposition, Sheet-Detent-Robustheit bei Rotation/iPad/Dynamic Type, Recording-Dual-Truth-Refactor.
+
+---
+
 ## Stand 2026-05-28 — Train F.7 Phase B-1: Live Screen migrated (Branch `feat/live-migration-map-first`)
 
 Erste produktive Screen-Migration aus Phase B. Nur `AppLiveTrackingView` ist auf das Shared-System umgestellt; alle anderen Map-Screens bleiben auf ihrer Pre-Migration-Komposition.
