@@ -71,6 +71,12 @@ enum AppGermanTranslations {
         "Opens Settings to enable iCloud Drive":
             "Öffnet Einstellungen, um iCloud Drive zu aktivieren",
 
+        // MARK: Train F.5-B — Map-Tab Dashboard Strip
+        "Recent activity": "Letzte Aktivität",
+        "Quick actions": "Schnellaktionen",
+        // „active day"/„active days" sind bereits im Insights-Dashboard-
+        // Batch uebersetzt; „Live"/„Days"/„Insights"/„Export" ebenfalls.
+
         "Overview": "Übersicht",
         "Days": "Tage",
         "FILTERED DAYS": "GEFILTERTE TAGE",

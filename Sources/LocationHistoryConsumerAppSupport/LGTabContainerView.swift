@@ -151,6 +151,25 @@ public struct LGTabContainerView: View {
                                 onInsightsTap: { selectedTab = .insights }
                             )
                         }
+
+                        // F.5-B: Aktivitaets-Timeline-Strip + Quick-Action-Pills.
+                        AppMapTabActivityTimelineStrip(
+                            daySummaries: allDaySummaries,
+                            onDaySelected: { date in
+                                selectedTab = .days
+                                selectedDate = date
+                                daysNavigationPath.append(date)
+                            }
+                        )
+
+                        LHPageScaffold {
+                            AppMapTabQuickActionPills(
+                                onLiveTap: { selectedTab = .live },
+                                onDaysTap: { selectedTab = .days },
+                                onInsightsTap: { selectedTab = .insights },
+                                onExportTap: { isExportSheetPresented = true }
+                            )
+                        }
                     } else {
                         mapEmptyState
                     }
