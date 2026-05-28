@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.7 Phase B-7: Recorded-Track-Editor on Map-First Scaffold (Branch `feat/editor-migration-map-first`)
+
+### Added
+- `AppRecordedTrackEditorView.scaffoldedEditorLayout` + `scaffoldedEditorMap` + `scaffoldedEditorSheetHeader` + `scaffoldedEditorSheetBody` + `scaffoldedEditorSummaryCard` + `scaffoldedEditorPointsCard` + `scaffoldedEditorRow(_:value:)`, alle `@available(iOS 26.0, *)`. Body-Dispatch im Portrait-Zweig waehlt auf iOS 26+ den neuen Pfad, sonst weiterhin `portraitLayout`. Landscape-Pfad bleibt unveraendert.
+- Source-Contract-Test `test_phaseB7_editorMountsTheNewScaffold` inkl. expliziter Save-disabled-Predicate-Regression-Guard (`draft.savedTrack == nil || !draft.isModified`) und `bottomSheetTabBarClearance`-Verbrauch-Check.
+
+### Changed
+- Editor iOS-26-Pfad rendert: `LHMapFirstPageScaffold` (Map = `scaffoldedEditorMap` mit dem existierenden `editorMap` + `editorMapLayerMenu` als topTrailing-Overlay an `lhDeviceTopSafeInset() + LHMapBase.floatingControlTopGap`), `LHGlassBottomSheetDashboard` (Detents `.dayDetail`) mit Header (`EDITOR` Caption + `Edit Saved Track` Title + Dirty-State-Hint wenn `draft.isModified`) und Body (Summary-Card + Points-Card als Glass-Surface).
+- Toolbar (Done/Reset/Save/Delete) bleibt auf der `NavigationStack` — Save-disabled-Condition `draft.savedTrack == nil || !draft.isModified`, Reset-Sichtbarkeit `draft.isModified`, Delete-Confirmation-Dialog 1:1 wiederverwendet. Auto-Center via `centerMapOnTrack()` auf `draft.points`-Change weiterhin aussen am NavigationStack registriert.
+
+### Documented exception
+- `LHMapFloatingChrome` wird im Editor-Scaffold NICHT gemountet. `editorMap` ueberlagert weiterhin selbst `editorMapLayerMenu` als einzige Map-Affordance. Ein zweites Floating-Chrome wuerde sie doppeln (spiegelt Insights B-3, Map-Tab B-4, Export B-5, Heatmap B-6).
+
+### Performance-Schutz
+- **Strikt erhalten:** `MapPolyline`-Halo+Stroke mit `MapTrackStyle.Width.editor` und `MapTrackStyle.haloMultiplier`, Start-/End-Marker-Rendering, `mapStyle` via `AppMapStyleResolver`, `centerMapOnTrack()`-Camera-Logik, Draft-Point-State, `isModified`-Predicate, `validationMessage`-Berechnung. Keine `map`/`reduce`/`sorted`-Hotloops im View-Body, keine neuen Arrays in `@State`, kein neuer `Task.detached`, keine Recompute-Kette bei Sheet-Detent-Aenderungen.
+
+### Attribution-Schutz
+- `editorMapLayerMenu` rueckt im Scaffold-Pfad an `lhDeviceTopSafeInset() + LHMapBase.floatingControlTopGap` (kein magischer `.padding(8)` mehr). Sheet-Bottom respektiert `bottomSheetTabBarClearance`. Die Editor-View wird ueblicherweise als modaler `.sheet`/`.fullScreenCover` praesentiert ohne TabBar; der Clearance-Wert ist hier konservativ, aber harmlos.
+
+### Why
+- Phase B-7 des Migrationsplans. Damit sind sieben Map-Surfaces (Live B-1, DayDetail B-2, Insights B-3, Map-Tab B-4, Export B-5, Heatmap B-6, Editor B-7) auf dem Shared-System. Nur noch Explore-Sheet (B-8) steht aus.
+- Bewusst NICHT angefasst: Track-Editing-Semantik, Draft-Point-State, Save/Cancel-Verhalten, Auto-Center-Verhalten, SavedTrack-Persistenz, Import-/Export-/Cloud-/Live-Semantik.
+
+### Smoke-Policy
+- **Geraete-/Xcode-Smoke bewusst deferred nach User-Entscheidung.** Linux-Build/Tests gruen; Apple-Sim/Geraet ist nicht verifiziert. Visuelle Wirkung der Editor-Summary-/Points-Card im Glass-Sheet, der Dirty-Hint-Sichtbarkeit und der `editorMapLayerMenu`-Repositionierung an die Safe-Area sind nicht auf Apple-Plattform validiert.
+
+### Tests
+- `swift build` gruen (2.23 s).
+- `swift test` gruen: **1785** Tests, 3 skipped, **0 failures** (~57 s, Linux x86_64).
+- `LHMapFirstComponentSourceContractTests`: Phase-B-1- bis B-6-Regression-Guards bleiben, Phase-B-7-Mount-Check neu (inkl. Save-disabled-Predicate-Regression-Guard + `bottomSheetTabBarClearance`-Verbrauch). Sub-Train-Boundary auf Explore-Sheet reduziert (Dokumentations-Placeholder, da Explore-Sheet kein eigenes File hat).
+
+### Open
+- Kein xcodebuild-Smoke (Linux-Host) — bewusst deferred.
+- Editor-spezifischer Smoke vor TestFlight: Save-Button-Disabled-Verhalten unter `medium`/`expanded`-Detent visuell pruefen, Points-Card-Liste mit langen Tracks scrollen, Reset-Sichtbarkeit unter Dirty-State pruefen, Apple-Maps-Attribution-Sichtbarkeit unter Editor-Modal verifizieren.
+- Phase B-8 (Explore-Sheet) ist der naechste dokumentierte Schritt.
+
 ## 2026-05-28 — Train F.7 Phase B-6: Heatmap on Map-First Scaffold (Branch `feat/heatmap-migration-map-first`)
 
 ### Added

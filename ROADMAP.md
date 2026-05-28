@@ -9,9 +9,9 @@
 - **Train F.7 Phase B-4 (implementiert):** `LGTabContainerView.mapTab` rendert `AppOverviewTracksMapView` full-bleed in `LHMapFirstPageScaffold`, Dashboard-Sheet hostet KPIs/Timeline/QuickActions. Dokumentierte Ausnahme.
 - **Train F.7 Phase B-5 (implementiert):** `AppExportView` heroEnabled-Pfad nutzt `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard` (`compactPortrait`-Detents).
 - **Train F.7 Phase B-5.5 (implementiert, Visual Hardening):** `tabBarStandardHeight 49→70`, Per-Screen-Detent-Profile, dunklerer Sheet-Base-Layer, Live-FAB im Sheet-Header, Insights-Map ohne `LHCollapsibleMapHeader`-Wrapper, Map-Tab `.collapsed`-Initial.
-- **Train F.7 Phase B-6 (implementiert):** `AppHeatmapView` iOS-26-Pfad nutzt `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard`. Stats + Computing-Hinweis wandern in den Sheet-Body. `MapLayerMenu` bleibt am `mapView`. Heatmap-Berechnung, LOD, Polygon-Caps unveraendert. Smoke bewusst deferred.
-- **Train F.7 Phase B-7 (geplant):** Editor (`AppRecordedTrackEditorView`).
-- **Train F.7 Phase B (Rest):** Editor → Explore-Sheet. Pro Screen ein PR.
+- **Train F.7 Phase B-6 (implementiert):** `AppHeatmapView` iOS-26-Pfad nutzt `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard`. Stats + Computing-Hinweis wandern in den Sheet-Body. Smoke bewusst deferred.
+- **Train F.7 Phase B-7 (implementiert):** `AppRecordedTrackEditorView` iOS-26-Pfad nutzt `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard` (Detents `.dayDetail`). Toolbar Done/Reset/Save/Delete bleibt auf der NavigationStack. Save-disabled-Predicate unveraendert. Smoke bewusst deferred.
+- **Train F.7 Phase B-8 (geplant):** Explore-Sheet.
 - **Train F.7 Phase B (Rest):** Heatmap → Editor → Explore-Sheet. Pro Screen ein PR.
 - **Train F.7 Phase C (geplant):** Nicht-Karten-Screens auf `LHGlassPageScaffold` (Welcome, Files, Options, iCloud-Options, Editor-Form-Modus).
 - **Train 3 (Hardening, geplant):** Phase D — Performance-Profile scharf stellen, Recording-Single-Truth, MapLayerMenu-Hit-Region, Insights Mode/Filter-Coupling, Instruments-Messplan.
