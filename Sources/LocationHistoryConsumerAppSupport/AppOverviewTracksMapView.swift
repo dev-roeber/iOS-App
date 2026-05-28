@@ -537,6 +537,7 @@ struct AppOverviewExploreSheet: View {
                 detents: .mapTab,
                 initialDetent: .collapsed,
                 bottomClearance: clearance,
+                topSafeInset: lhDeviceTopSafeInset(),
                 accessibilityPrefix: "explore.scaffold.sheet"
             ) {
                 scaffoldedExploreSheetHeader

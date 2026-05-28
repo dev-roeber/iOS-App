@@ -181,6 +181,7 @@ public struct LGTabContainerView: View {
                 detents: .mapTab,
                 initialDetent: .collapsed,
                 bottomClearance: clearance,
+                topSafeInset: lhDeviceTopSafeInset(),
                 accessibilityPrefix: "mapTab.scaffold.sheet"
             ) {
                 scaffoldedMapTabSheetHeader

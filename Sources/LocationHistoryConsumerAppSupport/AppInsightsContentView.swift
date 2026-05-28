@@ -281,6 +281,7 @@ public struct AppInsightsContentView: View {
                 detents: .insights,
                 initialDetent: .medium,
                 bottomClearance: clearance,
+                topSafeInset: lhDeviceTopSafeInset(),
                 accessibilityPrefix: "insights.scaffold.sheet"
             ) {
                 scaffoldedInsightsSheetHeader

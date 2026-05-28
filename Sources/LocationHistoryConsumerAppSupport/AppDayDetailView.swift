@@ -230,6 +230,7 @@ public struct AppDayDetailView: View {
                 detents: .dayDetail,
                 initialDetent: .medium,
                 bottomClearance: clearance,
+                topSafeInset: lhDeviceTopSafeInset(),
                 accessibilityPrefix: "dayDetail.scaffold.sheet"
             ) {
                 scaffoldedSheetHeader(detail: detail)

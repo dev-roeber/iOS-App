@@ -128,6 +128,7 @@ struct AppRecordedTrackEditorView: View {
                 detents: .dayDetail,
                 initialDetent: .medium,
                 bottomClearance: clearance,
+                topSafeInset: lhDeviceTopSafeInset(),
                 accessibilityPrefix: "editor.scaffold.sheet"
             ) {
                 scaffoldedEditorSheetHeader
