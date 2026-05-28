@@ -1,5 +1,21 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.7 Phase B-3: Insights Screen migrated (Branch `feat/insights-migration-map-first`)
+
+Dritte produktive Screen-Migration aus Phase B. Live (B-1), DayDetail (B-2) und Insights (B-3) konsumieren das Shared-System. Alle anderen Map-Screens bleiben auf ihrer Pre-Migration-Komposition.
+
+Neu im Repo:
+- `AppInsightsContentView` iOS-26-Pfad mountet `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard`. `LHMapFloatingChrome` ist hier bewusst nicht gemountet (Insights-Hero kapselt seit F.5-Finish bereits eigene Layer-/Control-Overlays) — dokumentierte Ausnahme im CHANGELOG.
+- Phase-B-3-Sub-Train-Boundary im Source-Contract-Test, `test_noMapContentBuilderRegression` als Linux-tauglicher Guard gegen die Build-288-Klasse von Apple-Compile-Fehlern.
+
+**Naechster Schritt:** Phase B-4 — Map-Tab-Hero. Beide nutzen `AppOverviewTracksMapView`-Komposition, daher als zwei separate PRs (Insights bereits gemacht, Map-Tab-Hero folgt). Danach Export/Heatmap/Editor/Explore-Sheet als modale Familie.
+
+**Train 3 (Hardening, weiterhin offen):** Recording-Dual-Truth aufloesen, MapLayerMenu-Hit-Region final pruefen, SurfaceMode/RangeFilter-Coupling entkoppeln, Insights-Hero-Camera-Race bei Drilldown waehrend fitToData absichern, Performance-Profile scharf stellen, Instruments-Messplan.
+
+**Offen / nicht in F.7 Phase B-3:** xcodebuild-Smoke, Geraete-Smoke der neuen Komposition (SurfaceMode + Charts + ShareLink im Glas-Sheet), Sheet-Detent-Robustheit bei Rotation/iPad/Dynamic Type.
+
+---
+
 ## Stand 2026-05-28 — Train F.7 Phase B-2: DayDetail Screen migrated (Branch `feat/daydetail-migration-map-first`)
 
 Zweite produktive Screen-Migration aus Phase B. Live (Phase B-1) und DayDetail (Phase B-2) konsumieren beide das Shared-System. Alle anderen Map-Screens bleiben auf ihrer Pre-Migration-Komposition.

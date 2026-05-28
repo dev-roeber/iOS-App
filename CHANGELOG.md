@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.7 Phase B-3: Insights Screen on Map-First Scaffold (Branch `feat/insights-migration-map-first`)
+
+### Added
+- `AppInsightsContentView.scaffoldedInsightsLayout` + `scaffoldedInsightsSheetHeader` + `scaffoldedInsightsSheetBody` (alle `@available(iOS 26.0, *)`). Body-Dispatch waehlt im `heroEnabled`-Pfad auf iOS 26+ den neuen Pfad, sonst weiterhin `heroLoadedBody`.
+- Source-Contract-Tests: `test_phaseB3_insightsMountsTheNewScaffold`, neue `test_noMapContentBuilderRegression` als Linux-tauglicher Guard gegen die Build-288-Klasse von Apple-Compile-Fehlern (Generic-Constraint `Content: MapContent`, `@MapContentBuilder` in `LHMapWorkspace`).
+- Phase-B-3-Sub-Train-Boundary: Map-Tab-Hero/Export/Heatmap/Editor duerfen `LHMapFirstPageScaffold` weiterhin NICHT mounten.
+
+### Changed
+- Insights iOS-26-Pfad rendert: `LHMapFirstPageScaffold` (Map = bestehender `insightsHeroMap` ueber `LHCollapsibleMapHeader` + `AppOverviewTracksMapView` + bestehende Layer-/Control-Overlays), `LHGlassBottomSheetDashboard` (Detents `portrait`) mit Header (Caption + Insights-Titel) und Body (`insightsHeroFilterPanel` + `insightsBodyContent(isLandscape:)`).
+- Side-Effect-Modifier (onAppear/onChange-Cascade fuer `refreshDerivedModel`, `confirmationDialog` fuer Drilldown, `.sheet` fuer ShareLink-Payload, `.alert` fuer Share-Fehler) 1:1 auf den Scaffold-Outer angewendet — gleiche Filter-, RangeFilter-, SurfaceMode-, Drilldown-, ShareLink- und Chart-Semantik wie `heroLoadedBody`.
+
+### Documented exception
+- `LHMapFloatingChrome` wird im Insights-Scaffold NICHT gemountet. `insightsHeroMap` kapselt seit Train F.5-Finish bereits eigene `LiveLayerPanel`- und `DayDetailControlStack`-Overlays via `LHCollapsibleMapHeader`. Ein zweites `LHMapFloatingChrome` wuerde die Affordances doppeln. Die Boundary-Test-Pflicht reduziert sich daher fuer Insights auf `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard`.
+
+### Why
+- Phase B-3 des Migrationsplans. Nach Live (B-1) und DayDetail (B-2) ist Insights der dritte produktive Konsument des Shared-Systems. Damit konvergieren die drei meist-genutzten iOS-26-Surfaces auf das gleiche Dashboard-/Floating-Chrome-Vokabular, bevor Map-Tab-Hero (B-4) und die modale Familie (Export/Heatmap/Editor/Explore-Sheet) nachziehen.
+- Bewusst NICHT angefasst: Insights-Berechnung, RangeFilter-Semantik, Drilldown-Datenmodelle, ShareLink-/Export-/Cloud-/Weather-Semantik. Der bekannte SurfaceMode/RangeFilter-Coupling-Restpunkt bleibt fuer Train 3 / Phase D.
+
+### Tests
+- `swift build` gruen (1.70 s).
+- `swift test` gruen: **1779** Tests, 3 skipped, **0 failures** (~60 s, Linux x86_64).
+- `LHMapFirstComponentSourceContractTests`: Phase-B-1-Live-Regression-Guard + Phase-B-2-DayDetail-Regression-Guard + Phase-B-3-Insights-Mount-Check + reduzierte Sub-Train-Boundary + AppLanguage- und MapContentBuilder-Regression-Guards.
+
+### Open
+- Kein xcodebuild-Smoke (Linux-Host). iOS-26-Komposition (Insights-Hero ueber Liquid-Glass-Scaffold, Sheet mit SurfaceMode/Charts/ShareLink) ist nicht auf Apple-Sim/Geraet validiert.
+- SurfaceMode/RangeFilter-Coupling bleibt fuer Train 3 / Phase D.
+- `insightsHeroMapCamera`-Race-Risiko bei Drilldown waehrend `fitToData` bleibt fuer Train 3 / Phase D.
+- Phase B-4 (Map-Tab-Hero) ist der naechste dokumentierte Schritt.
+
 ## 2026-05-28 — Train F.7 Phase B-2: DayDetail Screen on Map-First Scaffold (Branch `feat/daydetail-migration-map-first`)
 
 ### Added
