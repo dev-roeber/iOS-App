@@ -68,8 +68,8 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.lhSheetAvailableHeight) private var availableHeight
 
-    private static var fullTopGap: CGFloat { 8 }
-    private static var dragThreshold: CGFloat { 28 }
+    private static var fullTopReserve: CGFloat { 64 }
+    private static var dragThreshold: CGFloat { 24 }
 
     public init(
         detents: LHSheetDetents = .portrait,
@@ -92,7 +92,7 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
     private var fullHeight: CGFloat {
         let floor = detents.expanded + bottomClearance
         guard availableHeight > 0 else { return floor }
-        return max(floor, availableHeight - topSafeInset - Self.fullTopGap)
+        return max(floor, availableHeight - topSafeInset - Self.fullTopReserve)
     }
 
     private func frameHeight(for detent: LHSheetDetent) -> CGFloat {
@@ -102,13 +102,9 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
         }
     }
 
-    private var isFull: Bool { currentDetent == .full }
-
     public var body: some View {
         let base = frameHeight(for: currentDetent)
         let clamped = min(max(base - dragOffset, 0), fullHeight)
-        let radius: CGFloat = isFull ? 0 : 22
-        let baseOpacity: Double = isFull ? 0.92 : 0.28
 
         VStack(spacing: 0) {
             VStack(spacing: 0) {
@@ -134,16 +130,16 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
         .frame(height: clamped)
         .background(
             UnevenRoundedRectangle(
-                topLeadingRadius: radius,
+                topLeadingRadius: 22,
                 bottomLeadingRadius: 0,
                 bottomTrailingRadius: 0,
-                topTrailingRadius: radius,
+                topTrailingRadius: 22,
                 style: .continuous
             )
-            .fill(Color.black.opacity(baseOpacity))
+            .fill(Color.black.opacity(0.28))
             .ignoresSafeArea(.container, edges: .bottom)
         )
-        .lgGlassSurface(cornerRadius: radius)
+        .lgGlassSurface(cornerRadius: 22)
         .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: currentDetent)
         .accessibilityIdentifier("\(accessibilityPrefix).root")
     }
