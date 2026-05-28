@@ -1,16 +1,36 @@
 # NEXT_STEPS
 
-## Stand 2026-05-28 — WeatherKit `notProvisioned` Classification merged (Branch `fix/weatherkit-not-provisioned-classification`)
+## Stand 2026-05-28 — Train 3 Phase D-1: Map Controls + Context Clarity (Branch `feat/d1-map-controls-context-hardening`)
 
-WeatherKit-Fix ist auf main. WDSJWTAuthenticatorServiceListener.Errors code=2 (Capability fehlt im Provisioning-Profil) wird jetzt als `.notProvisioned` klassifiziert; `isPermanent` deaktiviert den 5-Min-Retry-Loop lokal. 14 neue Linux-Tests gruen.
+**Phase D-1 abgeschlossen.** UX-Hardening nach Phase B + D-0 + WeatherKit-Fix.
 
-**Manueller Apple-Developer-Step bleibt offen (ausserhalb Repo):**
+Was neu ist:
+- `MapLayerMenu` Tap-Region auf Apple-HIG-Floor 44 × 44 pt; sichtbare Pill bleibt 34 pt. Konstanten leben zentral in `LHMapBase` (`mapLayerMenuVisualSize`, `mapLayerMenuMinimumHitSize`).
+- `LHMapBase.LayerOrder` — verbindliche Z-Reihenfolge fuer Map / Map-Overlay / Bottom-Sheet / Floating-Chrome / TabBar (Map immer unten, TabBar immer oben).
+- `LHMapBase.combinedBottomPillClearance(deviceBottomSafeInset:)` — gemeinsamer Bottom-Inset-Helper fuer schwebende Map-Pills (Live-Recording, Simplified-Preview), kein Magic-Number-Spread mehr.
+- CSV-Layer-Suppression-Hinweis im Export-Sheet (`csvNoteCard`): "CSV exportiert tabellarische Daten. Kartenlayer wie Tempo, Höhe oder Standardansicht beeinflussen die CSV-Datei nicht." Greift in Legacy- und Scaffold-Pfad.
+- Insights-Sheet zeigt persistente Status-Zeile: aktiver Zeitraum + SurfaceMode. Reine Anzeige — SurfaceMode-Wechsel veraendert den rangeFilter nicht (Best-Guess-Verhalten dokumentiert).
+- Loading-Status-Strings (`Importing entries`, `Building model`, `Preparing import`, `Sniffing format`, `Cancel import`, etc.) lokalisiert: `LocalTimelineImportProgressView` akzeptiert eine `localize`-Closure, AppShell uebergibt `t`. Deutsche Keys in `AppLanguageSupport`.
+- 5 neue D-1 Source-Contract-Tests.
+
+**Tests:** 1810 Tests, 3 skipped, 0 failures (~57 s, Linux x86_64).
+
+**Manueller Apple-Developer-Step offen (ausserhalb Repo, weiter aus WeatherKit-Block):**
 - WeatherKit-Capability im App-ID `de.roeber.LH2GPXWrapper` (Apple Developer Portal → App Services) aktivieren
-- Provisioning-Profil refreshen
-- App neu installieren
-- `codesign -d --entitlements -` auf dem signierten Binary verifizieren
+- Provisioning-Profil refreshen, App neu installieren
+- `codesign -d --entitlements -` auf signiertem Binary verifizieren
+- Geraete-Smoke der notProvisioned-Klassifizierung durchfuehren
 
-**Naechster Schritt:** Train 3 / Phase D-1 (siehe Block weiter unten).
+**Bewusst NICHT in D-1:**
+- Kein Recording-Dual-Truth-Refactor (verschoben nach D-2).
+- Keine WeatherKit-Logikaenderung.
+- Kein neuer Map-first-Screen-Migrationsschritt.
+- Keine Import-/Export-Pipeline-Aenderung.
+- Keine `LHMapPerformancePolicy`-Render-Pipeline-Umschaltung (verschoben).
+
+**Naechster Schritt:** Train 3 / Phase D-2 (Recording-Dual-Truth-Refactor, `LHMapPerformancePolicy`-Profile in Render-Pipelines scharf stellen, Instruments-Messplan, ActivityTimeline-Visit-only-Filter klaeren).
+
+---
 
 ---
 
@@ -28,8 +48,7 @@ Was neu ist:
 
 **Behoben (Screenshot-Findings):** Map-Tab/DayDetail/Insights/Explore/Editor/Heatmap Sheet-Header lesbar; Welcome im Dark-Mode lesbar; Map-Tab-Sheet wirkt nicht mehr wie schwarzer Block.
 
-**Pending review (nicht gepusht, lokal auf separatem Branch):**
-- `fix/weatherkit-not-provisioned-classification` (Commit `995cd50`) — wartet auf User-Review vor Push.
+**WeatherKit-Fix:** zwischenzeitlich gemerged (s. eigener Eintrag), keine offenen Repo-Aktionen mehr.
 
 **Naechster Schritt:** Train 3 / Phase D-1.
 

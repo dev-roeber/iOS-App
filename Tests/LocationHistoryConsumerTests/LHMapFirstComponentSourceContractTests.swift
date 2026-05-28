@@ -487,6 +487,136 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         )
     }
 
+    // MARK: - Phase D-1: Map controls + context clarity
+
+    func test_phaseD1_mapLayerMenuHitRegionIs44Pt() throws {
+        // Apple HIG verlangt minimum 44 × 44 pt Tap-Region. MapLayerMenu
+        // bleibt visuell bei 34 pt, hebt die Hit-Area aber auf 44 pt.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let base = root.appendingPathComponent("LHMapBase.swift")
+        let baseSource = try String(contentsOf: base, encoding: .utf8)
+        XCTAssertTrue(
+            baseSource.contains("mapLayerMenuVisualSize: CGFloat = 34"),
+            "LHMapBase must declare mapLayerMenuVisualSize = 34 (Phase D-1)."
+        )
+        XCTAssertTrue(
+            baseSource.contains("mapLayerMenuMinimumHitSize: CGFloat = 44"),
+            "LHMapBase must declare mapLayerMenuMinimumHitSize = 44 (Phase D-1)."
+        )
+
+        let menu = root.appendingPathComponent("MapLayerMenu.swift")
+        let menuSource = try String(contentsOf: menu, encoding: .utf8)
+        XCTAssertTrue(
+            menuSource.contains("LHMapBase.mapLayerMenuVisualSize"),
+            "MapLayerMenu must reference LHMapBase.mapLayerMenuVisualSize (Phase D-1)."
+        )
+        XCTAssertTrue(
+            menuSource.contains("LHMapBase.mapLayerMenuMinimumHitSize"),
+            "MapLayerMenu must reference LHMapBase.mapLayerMenuMinimumHitSize (Phase D-1)."
+        )
+        XCTAssertTrue(
+            menuSource.contains("contentShape(Rectangle())"),
+            "MapLayerMenu must set contentShape(Rectangle()) on the hit area (Phase D-1)."
+        )
+    }
+
+    func test_phaseD1_layerOrderContractDeclared() throws {
+        // Die Z-Reihenfolge (Map → Overlays → Sheets → Floating-Chrome →
+        // TabBar) muss als zentrale Konstantengruppe in LHMapBase liegen,
+        // damit niemand mehr eigene Magic-zIndex-Werte verteilt.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let base = root.appendingPathComponent("LHMapBase.swift")
+        let source = try String(contentsOf: base, encoding: .utf8)
+        for token in ["LayerOrder", "static let map", "static let mapOverlay", "static let bottomSheet", "static let floatingChrome", "static let tabBar"] {
+            XCTAssertTrue(
+                source.contains(token),
+                "LHMapBase.LayerOrder must declare `\(token)` (Phase D-1)."
+            )
+        }
+        XCTAssertTrue(
+            source.contains("combinedBottomPillClearance"),
+            "LHMapBase must expose combinedBottomPillClearance(...) (Phase D-1)."
+        )
+    }
+
+    func test_phaseD1_exportCsvLayerSuppressionHintPresent() throws {
+        // CSV ignoriert Map-Layer; das muss im Export-Sheet sichtbar
+        // dokumentiert sein, damit ein Layer-Wechsel keine falsche
+        // Erwartung an die CSV-Datei erzeugt.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let exportURL = root.appendingPathComponent("AppExportView.swift")
+        let source = try String(contentsOf: exportURL, encoding: .utf8)
+        XCTAssertTrue(
+            source.contains("export.csv.layerSuppressionHint"),
+            "AppExportView must mount the CSV layer-suppression hint with accessibility identifier (Phase D-1)."
+        )
+        XCTAssertTrue(
+            source.contains("Map layers such as speed, elevation, or standard view do not affect the CSV file"),
+            "AppExportView csvNoteCard must include the layer-suppression English string (Phase D-1)."
+        )
+    }
+
+    func test_phaseD1_insightsContextStatusLinePresent() throws {
+        // Insights-Sheet muss Zeitraum + SurfaceMode dauerhaft als
+        // Status-Zeile anzeigen, ohne Datenlogik zu aendern.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let insightsURL = root.appendingPathComponent("AppInsightsContentView.swift")
+        let source = try String(contentsOf: insightsURL, encoding: .utf8)
+        XCTAssertTrue(
+            source.contains("insights.context.statusLine"),
+            "AppInsightsContentView must mount the context status line (Phase D-1)."
+        )
+        XCTAssertTrue(
+            source.contains("insights.context.range") && source.contains("insights.context.mode"),
+            "AppInsightsContentView context status must expose range + mode identifiers (Phase D-1)."
+        )
+    }
+
+    func test_phaseD1_loadingStatusLocalized() throws {
+        // LocalTimelineImportProgressView muss eine `localize`-Closure
+        // exponieren und alle sichtbaren Strings durch sie schicken.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let viewURL = root.appendingPathComponent("LocalTimelineImportProgressView.swift")
+        let source = try String(contentsOf: viewURL, encoding: .utf8)
+        XCTAssertTrue(
+            source.contains("localize: @escaping (String) -> String"),
+            "LocalTimelineImportProgressView must take a localize closure (Phase D-1)."
+        )
+        XCTAssertTrue(
+            source.contains("localize(p.statusText)"),
+            "LocalTimelineImportProgressView statusText must be wrapped in localize(...) (Phase D-1)."
+        )
+        XCTAssertTrue(
+            source.contains("localize(\"Cancel import\")"),
+            "LocalTimelineImportProgressView Cancel-Import label must be wrapped in localize(...) (Phase D-1)."
+        )
+
+        let langURL = root.appendingPathComponent("AppLanguageSupport.swift")
+        let langSource = try String(contentsOf: langURL, encoding: .utf8)
+        for key in [
+            "\"Preparing import\": \"Import wird vorbereitet\"",
+            "\"Sniffing format\": \"Format wird erkannt\"",
+            "\"Importing entries\": \"Einträge werden gelesen\"",
+            "\"Building model\": \"Modell wird aufgebaut\"",
+            "\"Cancel import\": \"Import abbrechen\""
+        ] {
+            XCTAssertTrue(
+                langSource.contains(key),
+                "AppLanguageSupport must declare \(key) (Phase D-1)."
+            )
+        }
+    }
+
     // MARK: - Xcode-Cloud regression guard
 
     func test_noAppLanguageScopeRegression() throws {

@@ -752,6 +752,27 @@ enum AppGermanTranslations {
         "Overview map with": "Übersichtskarte mit",
         // Heatmap chip (task 4)
         "Computing heatmap…": "Heatmap wird berechnet…",
+
+        // Phase D-1: LocalTimelineImportProgress phase status strings
+        // (additive only — Idle/Patterns/Breakdowns/Overview/Mode and the
+        // "Opening location history..." key already exist further up).
+        "Preparing import": "Import wird vorbereitet",
+        "Sniffing format": "Format wird erkannt",
+        "Importing entries": "Einträge werden gelesen",
+        "Building model": "Modell wird aufgebaut",
+        "Import complete": "Import abgeschlossen",
+        "Import cancelled": "Import abgebrochen",
+        "Import failed": "Import fehlgeschlagen",
+        "Cancel import": "Import abbrechen",
+        "Stops the running import and rolls back the open transaction.":
+            "Stoppt den laufenden Import und macht die offene Transaktion rückgängig.",
+
+        // Phase D-1: Export CSV layer-suppression hint
+        "CSV exports tabular data. Map layers such as speed, elevation, or standard view do not affect the CSV file.":
+            "CSV exportiert tabellarische Daten. Kartenlayer wie Tempo, Höhe oder Standardansicht beeinflussen die CSV-Datei nicht.",
+
+        // Phase D-1: Insights context status line
+        "Range active": "Zeitraum aktiv",
         // Insights strings missing DE
         "No activity streak yet. Start recording to build your streak.": "Noch keine Aktivitätsserie. Starte die Aufzeichnung, um deine Serie aufzubauen.",
         "Comparing the active date range to the equal-length period immediately before it.": "Vergleicht den aktiven Datumsbereich mit dem gleich langen Zeitraum unmittelbar davor.",

@@ -13,15 +13,22 @@ public struct LocalTimelineImportProgressView: View {
     @ObservedObject private var state: LocalTimelineImportUIState
     private let onCancel: (() -> Void)?
     private let onCleared: (() -> Void)?
+    /// Phase D-1: optional Lokalisierungs-Closure. Default `{ $0 }` haelt
+    /// bestehende Linux-Tests gruen (identity); die App-Schale ruft mit
+    /// `t` aus `AppPreferences.localized(_:)`, damit deutsche Status-
+    /// Strings im Loading-Screen erscheinen.
+    private let localize: (String) -> String
 
     public init(
         state: LocalTimelineImportUIState,
         onCancel: (() -> Void)? = nil,
-        onCleared: (() -> Void)? = nil
+        onCleared: (() -> Void)? = nil,
+        localize: @escaping (String) -> String = { $0 }
     ) {
         self._state = ObservedObject(wrappedValue: state)
         self.onCancel = onCancel
         self.onCleared = onCleared
+        self.localize = localize
     }
 
     public var body: some View {
@@ -43,11 +50,11 @@ public struct LocalTimelineImportProgressView: View {
                         .progressViewStyle(.circular)
                         .accessibilityHidden(true)
                 }
-                Text(p.statusText)
+                Text(localize(p.statusText))
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .accessibilityIdentifier("localTimeline.progress.status")
-                    .accessibilityLabel(Text(p.statusText))
+                    .accessibilityLabel(Text(localize(p.statusText)))
                 Spacer(minLength: 0)
             }
 
@@ -84,7 +91,7 @@ public struct LocalTimelineImportProgressView: View {
 
             if p.isCancellable {
                 Button(role: .cancel, action: { onCancel?() }) {
-                    Text("Cancel import")
+                    Text(localize("Cancel import"))
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity, minHeight: 36)
                 }
@@ -92,8 +99,8 @@ public struct LocalTimelineImportProgressView: View {
                 .controlSize(.small)
                 .tint(.red)
                 .accessibilityIdentifier("localTimeline.progress.cancel")
-                .accessibilityLabel(Text("Cancel import"))
-                .accessibilityHint(Text("Stops the running import and rolls back the open transaction."))
+                .accessibilityLabel(Text(localize("Cancel import")))
+                .accessibilityHint(Text(localize("Stops the running import and rolls back the open transaction.")))
             }
         }
         .padding(16)

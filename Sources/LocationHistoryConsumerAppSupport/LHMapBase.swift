@@ -97,4 +97,71 @@ public enum LHMapBase {
         // safe-area — wir reservieren nur die TabBar-Hoehe darueber.
         max(0, tabBarBaseHeight)
     }
+
+    // MARK: - Phase D-1: MapLayerMenu Hit-Region
+    //
+    // MapLayerMenu rendert eine kompakte Glass-Pill (visuell 34 pt), aber
+    // die interaktive Tap-Flaeche muss laut Apple HIG mindestens 44 × 44 pt
+    // betragen. Beide Konstanten leben hier zentral, damit der visuelle
+    // Footprint nicht versehentlich auf 44 pt aufgeblaeht wird und der
+    // Hit-Region-Floor nicht in einem einzelnen View versteckt landet.
+
+    /// Sichtbare Groesse der MapLayerMenu-Pill (Glass-Surface). Beruehrt
+    /// das Layout der Karten-Overlays — nicht erhoehen, ohne zuerst die
+    /// Map-First-Spec zu pruefen.
+    public static let mapLayerMenuVisualSize: CGFloat = 34
+
+    /// Apple-HIG-konforme minimale Tap-Flaeche fuer MapLayerMenu, gemessen
+    /// an `contentShape(Rectangle())`. Die Pill bleibt visuell bei
+    /// `mapLayerMenuVisualSize`, aber der Button reagiert auf die
+    /// gesamte 44 × 44 pt Region.
+    public static let mapLayerMenuMinimumHitSize: CGFloat = 44
+
+    // MARK: - Phase D-1: Bottom-Pill Clearance (Live + Map-Tab)
+    //
+    // Die Live-Recording-Bar und die Map-Tab-Zusatzpills (Simplified-
+    // Preview, Optimized-Overview-Badge) sitzen am unteren Map-Rand und
+    // duerfen nicht in die Apple-Maps-Attribution oder die iOS-26
+    // TabBar hineinwachsen. Statt jeden Aufrufer eigene Magic Numbers
+    // pflegen zu lassen, liefert `combinedBottomPillClearance` den
+    // gemeinsamen Floor: `bottomSheetTabBarClearance` + `attributionGuardBottomInset`.
+
+    /// Kombinierter Bottom-Inset fuer schwebende Map-Pills (Live-Recording,
+    /// Simplified-Preview, Optimized-Overview-Badge), wenn die Pill keinen
+    /// Sheet darunter hat. Der Wert reserviert sowohl die TabBar-Hoehe
+    /// als auch den Attribution-Guard.
+    public static func combinedBottomPillClearance(
+        deviceBottomSafeInset: CGFloat
+    ) -> CGFloat {
+        bottomSheetTabBarClearance(deviceBottomSafeInset: deviceBottomSafeInset)
+            + attributionGuardBottomInset
+    }
+
+    // MARK: - Phase D-1: Layer Order Contract
+    //
+    // Visuelle Stapel-Reihenfolge der Map-Surfaces. Wird im Code als
+    // einheitliche `zIndex`-Quelle genutzt — wer Map-Overlays bauen
+    // moechte, soll diese Konstanten verwenden, nicht eigene Magic
+    // zIndex-Werte.
+    //
+    //   ┌──────────────────────────────────────┐
+    //   │ tabBar              (zIndex 400, top)│
+    //   │ floating chrome / menu (zIndex 300)  │
+    //   │ bottom sheet / dashboard (zIndex 200)│
+    //   │ map overlays / pills  (zIndex 100)   │
+    //   │ map         (zIndex 0, background)   │
+    //   └──────────────────────────────────────┘
+
+    public enum LayerOrder {
+        /// Karte selbst — bleibt immer untere Ebene.
+        public static let map: Double = 0
+        /// Schwebende Map-Pills (Simplified-Preview, Recording-Indicator).
+        public static let mapOverlay: Double = 100
+        /// Bottom-Sheets, Dashboards.
+        public static let bottomSheet: Double = 200
+        /// Floating-Chrome, MapLayerMenu, expandierbares Menue.
+        public static let floatingChrome: Double = 300
+        /// TabBar — bleibt ueber allem.
+        public static let tabBar: Double = 400
+    }
 }
