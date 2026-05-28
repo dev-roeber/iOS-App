@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.7 Phase A: Map-First Liquid Glass Shared Components (Branch `feat/map-first-shared-components`)
+
+### Added
+- `Sources/LocationHistoryConsumerAppSupport/LHMapPerformancePolicy.swift` — Foundation-only Policy-Struct mit sieben Default-Profilen (`.live`, `.dayDetail`, `.overview`, `.insights`, `.export`, `.heatmap`, `.editor`) sowie `LHMapLOD`- und `LHMapCameraUpdateMode`-Enums. Linux-testbar.
+- `Sources/LocationHistoryConsumerAppSupport/LHMapWorkspace.swift` — generischer `Map`-Host gemaess Contract § 5.2. iOS-26-gegated. Konsumiert `LHMapPerformancePolicy.cameraUpdateMode` ueber `.onMapCameraChange(frequency:)`. Keine Camera-Mutation in Phase A.
+- `Sources/LocationHistoryConsumerAppSupport/LHMapFirstPageScaffold.swift` — generischer Map-First-Layout-Scaffold (Map full-bleed, Floating-Chrome, Bottom-Sheet via `safeAreaInset(.bottom)`). Contract § 5.1.
+- `Sources/LocationHistoryConsumerAppSupport/LHMapFloatingChrome.swift` — Floating-Top-Chrome mit Layer-/Control-Slot, `LGGlassEffectGroup`, 44pt-Hit-Region (`minimumHitRegion`). Contract § 5.4.
+- `Sources/LocationHistoryConsumerAppSupport/LHMapMetricCard.swift` — einheitliche KPI-Karte mit Glass-Surface; kombiniertes AccessibilityLabel; kein Color-Only-State. Contract § 5.5.
+- `Sources/LocationHistoryConsumerAppSupport/LHGlassBottomSheetDashboard.swift` — Bottom-Sheet-Dashboard mit drei Detents (`LHSheetDetent`/`LHSheetDetents`), 44pt-Drag-Handle (AccessibilityLabel + Value), `bottomClearance` aus `LHMapBase`. Contract § 5.3.
+- `Sources/LocationHistoryConsumerAppSupport/LHGlassPageScaffold.swift` — Page-Scaffold fuer Nicht-Karten-Screens (NavigationStack + LHPageScaffold + Liquid-Glass-Background). Contract § 5.6.
+- `Sources/LocationHistoryConsumerAppSupport/LHGlassSectionCard.swift` — Section-Card auf Glass-Surface mit optionalem Title/Footer. Contract § 5.7.
+- `Tests/LocationHistoryConsumerTests/LHMapPerformancePolicyTests.swift` — 10 Linux-Tests: Profil-Inventur, negative-Clamp-Invarianten, Profil-spezifische Felder (Live continuous-Camera + Map-in-Tree, Overview low-LOD-Viewport-Filtering, Heatmap-Polyline-Caps = 0, Export/Editor ohne Viewport-Filter), Enum-Cases.
+- `Tests/LocationHistoryConsumerTests/LHMapFirstComponentSourceContractTests.swift` — 8 Source-Contract-Tests (Symbol-Praesenz, iOS-26-Availability-Gate, Doc-Anker im Header, Phase-A-Boundary: `AppLiveTrackingView` darf neue Scaffolds noch nicht mounten).
+
+### Changed
+- `Sources/LocationHistoryConsumerAppSupport/AppMapTabDashboardStrip.swift` — Typkorrektur: `ActivityDayChip.language: AppLanguage` → `AppLanguagePreference`. Der falsche Typ wurde auf Linux durch das `canImport(SwiftUI) && canImport(MapKit)`-Gate stumm uebersprungen; Xcode-Cloud-Archive (iOS-Apple-Compile) brach mit `Cannot find type 'AppLanguage' in scope` bei `AppMapTabDashboardStrip.swift:99`. Behoben vor Push.
+
+### Why
+- Phase A des Migrationsplans liefert ausschliesslich Shared-Components — kein produktiver Screen wird migriert. Die Komponenten existieren als geprueftes API-Surface, damit Phase B Live → DayDetail → Insights → … schrittweise migrieren kann, ohne API-Drift, Layout-Bugs und Map-Regressionen zu vermischen.
+
+### Tests
+- `swift build` gruen (2.55 s).
+- `swift test` gruen: **1774** Tests (3 skipped, 0 failures) auf Linux x86_64.
+- Spezifische Filter gruen: `LHMapPerformancePolicyTests` 10/10, `LHMapFirstComponentSourceContractTests` 8/8, `LHMapBaseTests` weiterhin 14/14.
+
+### Open
+- Kein xcodebuild-Smoke moeglich (Linux-Host) — der `AppLanguage`-Scope-Fix wurde durch Code-Inspektion verifiziert, nicht durch Apple-Compile.
+- iOS-26-Komponenten haben keine produktiven Screen-Konsumenten in Phase A. Visuelles Verhalten (GlassEffectContainer-Morphing, Detent-Animationen, 44pt-Hit-Region) bleibt bis Phase B unverifiziert.
+- Keine Doku-/App-Store-Behauptungen, dass das neue System produktiv ist.
+
 ## 2026-05-28 — Train F.6 Prep: Design-Contract Map-First Liquid Glass UI (Branch `docs/map-first-liquid-glass-contract`)
 
 ### Added

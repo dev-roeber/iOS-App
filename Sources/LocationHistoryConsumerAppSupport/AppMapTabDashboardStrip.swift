@@ -96,7 +96,7 @@ public struct AppMapTabActivityTimelineStrip: View {
 
 private struct ActivityDayChip: View {
     let day: DaySummary
-    let language: AppLanguage
+    let language: AppLanguagePreference
     let onTap: () -> Void
 
     var body: some View {

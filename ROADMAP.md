@@ -1,5 +1,15 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-28, Branch `feat/map-first-shared-components` — Train F.7 Phase A: Shared-Components)
+
+- **Train F.7 Phase A (implementiert):** 8 Shared-Components in `Sources/LocationHistoryConsumerAppSupport/` — `LHMapPerformancePolicy`, `LHMapWorkspace`, `LHMapFirstPageScaffold`, `LHMapFloatingChrome`, `LHMapMetricCard`, `LHGlassBottomSheetDashboard`, `LHGlassPageScaffold`, `LHGlassSectionCard`. 18 neue Linux-Tests gruen. Keine produktive Screen-Migration.
+- **Train F.7 Phase B (geplant):** Live → DayDetail → Insights → Map-Tab-Hero → Export-Preview → Heatmap → Editor → Explore-Sheet. Pro Screen ein PR.
+- **Train F.7 Phase C (geplant):** Nicht-Karten-Screens auf `LHGlassPageScaffold` (Welcome, Files, Options, iCloud-Options, Editor-Form-Modus).
+- **Train 3 (Hardening, geplant):** Phase D — Performance-Profile scharf stellen, Recording-Single-Truth, MapLayerMenu-Hit-Region, Insights Mode/Filter-Coupling, Instruments-Messplan.
+- **Akzeptanzkriterien & Risiko-Matrix:** in `docs/UI_UX_MAP_FIRST_MIGRATION_PLAN_2026-05-28.md` dokumentiert.
+
+---
+
 ## Aktiver Stand (2026-05-28, Branch `docs/map-first-liquid-glass-contract` — Train F.6 Prep: Design-Contract)
 
 - **Train F.6 Prep (laufend):** Design-Contract „Map-First Liquid Glass UI" + Migrationsplan in `docs/UI_UX_MAP_FIRST_LIQUID_GLASS_CONTRACT_2026-05-28.md` und `docs/UI_UX_MAP_FIRST_MIGRATION_PLAN_2026-05-28.md`. Keine Code-Aenderung.
