@@ -1,5 +1,22 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.7 Phase B-6: Heatmap migrated (Branch `feat/heatmap-migration-map-first`)
+
+Sechste produktive Screen-Migration. Live (B-1), DayDetail (B-2), Insights (B-3), Map-Tab (B-4), Export (B-5), Heatmap (B-6) konsumieren das Shared-System. Editor (B-7) und Explore-Sheet stehen noch aus.
+
+Neu im Repo:
+- `AppHeatmapView` iOS-26-Pfad mountet `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard` (Detents `.insights`, `initialDetent: .collapsed`). `LHMapFloatingChrome` bewusst nicht gemountet — `MapLayerMenu` bleibt direkt am `mapView`. Stats + Computing-Hinweis wandern in den Sheet-Body, damit Apple-Maps-Attribution unverdeckt bleibt.
+- Source-Contract-Test `test_phaseB6_heatmapMountsTheNewScaffold` mit `bottomSheetTabBarClearance`-Verbrauch-Check. Sub-Train-Boundary auf Editor reduziert.
+- **Smoke bewusst deferred nach User-Entscheidung** — Linux-Build/Tests gruen, Apple-Sim/Geraet nicht verifiziert.
+
+**Naechster Schritt:** Phase B-7 — `AppRecordedTrackEditorView`. Editor ist der letzte Map-Screen vor dem Explore-Sheet.
+
+**Train 3 (Hardening, weiterhin offen):** Recording-Dual-Truth, MapLayerMenu-Hit-Region, SurfaceMode/RangeFilter-Coupling, ActivityTimeline-Filter, CSV-Layer-Suppression, Performance-Profile in Render-Pipeline scharf stellen, Instruments-Messplan.
+
+**Offen / nicht in F.7 Phase B-6:** xcodebuild-Smoke (Linux-Host, bewusst deferred), Geraete-Smoke aller sechs migrierten Screens vor TestFlight, Heatmap-spezifische Stats-/Detent-Robustheit waehrend laufender Precomputation.
+
+---
+
 ## Stand 2026-05-28 — Train F.7 Phase B-5.5: Scaffold Visual Regression Fix (Branch `feat/scaffold-visual-hardening`)
 
 Visual-Hardening-Train, KEINE neue Screen-Migration. Behebt die in den Geraete-Screenshots sichtbaren Regressions nach B-1 bis B-5:

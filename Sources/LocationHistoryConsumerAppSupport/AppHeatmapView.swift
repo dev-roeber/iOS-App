@@ -25,6 +25,20 @@ public struct AppHeatmapView: View {
     }
 
     public var body: some View {
+        // Phase B-6 (Train F.7): scaffolded layout on iOS 26+. The legacy
+        // overlay-based composition below stays as the iOS-17/25 fallback
+        // and as a one-line revert path. Heatmap-Berechnung, LOD,
+        // Polygon-Caps und Precomputation sind in beiden Pfaden identisch.
+        if #available(iOS 26.0, *) {
+            scaffoldedHeatmapLayout
+                .accessibilityIdentifier(AppAccessibilityID.Map.heatmapRoot)
+        } else {
+            legacyHeatmapBody
+        }
+    }
+
+    @ViewBuilder
+    private var legacyHeatmapBody: some View {
         mapView
             .overlay(alignment: .topTrailing) {
                 if model.hasData {
@@ -65,6 +79,126 @@ public struct AppHeatmapView: View {
         .navigationBarTitleDisplayMode(.inline)
 #endif
         .accessibilityIdentifier(AppAccessibilityID.Map.heatmapRoot)
+    }
+
+    // MARK: - Phase B-6 (Train F.7): Scaffolded Heatmap Layout (iOS 26+)
+    //
+    // Map = bestehende `mapView` mit `MapPolygon`-Rendering, `densityMapStyle`
+    // ueber `AppMapStyleResolver` und `.onMapCameraChange(.onEnd)`. Floating
+    // Chrome slot ist `EmptyView()` — `MapLayerMenu` (showsHeatmapControls)
+    // bleibt als Overlay direkt am `mapView`, sonst wuerde der LHMapFloating
+    // Chrome die Affordances doppeln (dokumentierte Ausnahme, spiegelt
+    // Insights B-3, Map-Tab B-4, Export B-5).
+    //
+    // Sheet hostet die Stats-Zeile und den Computing-/Truncation-Hinweis,
+    // die im Legacy-Pfad als kleine Pills auf der Karte sassen. Damit
+    // bleibt die Apple-Maps-Attribution frei (Sheet respektiert
+    // attributionGuardBottomInset via `bottomSheetTabBarClearance`).
+    //
+    // Performance-Schutz: keine neue Precomputation, kein zusaetzlicher
+    // map/reduce/sorted-Hotloop im Body, kein `.continuous`-Camera-Update,
+    // kein neuer `Task.detached`. Heatmap-LOD, Polygon-Caps und
+    // Precomputed-Data bleiben strikt im `AppHeatmapModel`.
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedHeatmapLayout: some View {
+        let bottomSafe = lhDeviceBottomSafeInset()
+        let clearance = LHMapBase.bottomSheetTabBarClearance(
+            deviceBottomSafeInset: bottomSafe
+        )
+        LHMapFirstPageScaffold(
+            topSafeInset: lhDeviceTopSafeInset(),
+            bottomSafeInset: bottomSafe,
+            sheetBottomClearance: clearance
+        ) {
+            scaffoldedHeatmapMap
+        } floatingChrome: {
+            EmptyView()
+        } sheet: {
+            LHGlassBottomSheetDashboard(
+                detents: .insights,
+                initialDetent: .collapsed,
+                bottomClearance: clearance,
+                accessibilityPrefix: "heatmap.scaffold.sheet"
+            ) {
+                scaffoldedHeatmapSheetHeader
+            } body: {
+                scaffoldedHeatmapSheetBody
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: model.visibleCells.count)
+        .onAppear {
+            if isFirstLoad {
+                model.startPrecomputation(scale: preferences.heatmapScale)
+                isFirstLoad = false
+            }
+        }
+        .onChange(of: model.initialCenter) { _, newCenter in
+            if let center = newCenter {
+                seedInitialViewport(center: center)
+            }
+        }
+        .onChange(of: preferences.heatmapScale) { _, newScale in
+            model.updateScale(newScale)
+        }
+#if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+#endif
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedHeatmapMap: some View {
+        mapView
+            .overlay(alignment: .topTrailing) {
+                if model.hasData {
+                    MapLayerMenu(configuration: MapLayerMenu.Configuration(
+                        showsHeatmapControls: true,
+                        fitToData: model.dataRegion == nil ? nil : fitToData
+                    ))
+                    .padding(.top, lhDeviceTopSafeInset() + LHMapBase.floatingControlTopGap)
+                    .padding(.trailing, LHMapBase.floatingControlSideInset)
+                    .accessibilityIdentifier("heatmap.layerMenu")
+                }
+            }
+            .accessibilityIdentifier("heatmap.scaffold.map")
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedHeatmapSheetHeader: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(t("HEATMAP"))
+                .font(.caption2.weight(.heavy))
+                .tracking(0.7)
+                .foregroundStyle(.secondary)
+            Text(t("Heatmap"))
+                .font(.title3.weight(.bold))
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedHeatmapSheetBody: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if model.isCalculating {
+                calculatingOverlay
+                    .transition(.opacity)
+            }
+            if model.hasData {
+                statsBadge
+                    .padding(.horizontal, 0)
+                    .padding(.bottom, 0)
+            } else if !model.isCalculating {
+                Text(t("No heatmap data available for this view yet."))
+                    .font(.subheadline)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+            }
+        }
+        .accessibilityIdentifier("heatmap.scaffold.sheet.body")
     }
 
     // MARK: - Map
