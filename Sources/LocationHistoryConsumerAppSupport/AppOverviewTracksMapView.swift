@@ -588,10 +588,10 @@ struct AppOverviewExploreSheet: View {
                 Text(t("EXPLORE"))
                     .font(.caption2.weight(.heavy))
                     .tracking(0.7)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassCaptionText)
                 Text(t("Explore"))
                     .font(.title3.weight(.bold))
-                    .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -614,7 +614,7 @@ struct AppOverviewExploreSheet: View {
                         .foregroundStyle(LH2GPXTheme.LiquidGlass.trackPrimary)
                     Text("\(model.renderData.visibleRouteCount) \(t(model.renderData.visibleRouteCount == 1 ? "route" : "routes"))")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
                         .monospacedDigit()
                 }
                 .accessibilityIdentifier("explore.scaffold.routeCount")
@@ -626,17 +626,17 @@ struct AppOverviewExploreSheet: View {
                         : t("Optimized overview")
                     Label(label, systemImage: "checkmark.seal.fill")
                         .font(.caption)
-                        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassSecondaryText)
                         .accessibilityIdentifier("explore.scaffold.optimized")
                 }
             } else if model.renderData.isLoading {
                 Label(t("Loading map…"), systemImage: "arrow.triangle.2.circlepath")
                     .font(.caption)
-                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassSecondaryText)
             } else {
                 Label(t("No tracks in selected range"), systemImage: "tray")
                     .font(.caption)
-                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassSecondaryText)
             }
         }
         .accessibilityIdentifier("explore.scaffold.sheet.body")

@@ -1,5 +1,66 @@
 # CHANGELOG
 
+## 2026-05-28 — Train 3 Phase D-0: Visual Readability Hardening (Branch `feat/visual-readability-hardening-d0`)
+
+### Added
+- `LH2GPXTheme.LiquidGlass.mapGlassPrimaryText` / `mapGlassSecondaryText` / `mapGlassTertiaryText` / `mapGlassCaptionText` / `mapGlassProminentText` — neue, immer helle Cream-Tokens (`#FBF6EC` mit gestaffelten Opacities). Sie sind bewusst NICHT dynamic: das Map-backed Bottom-Sheet ist unabhaengig vom System-Color-Scheme dunkel/halbtransparent und braucht stabile Hell-Kontraste.
+- Source-Contract-Tests: `test_phaseD0_mapGlassTextTokensExist`, `test_phaseD0_dashboardForcesDarkColorScheme`, `test_phaseD0_migratedSheetHeadersUseMapGlassTokens`, `test_phaseD0_mapMetricCardUsesMapGlassTokens`, `test_phaseD0_dynamicInkSupportsDarkMode` — verriegeln den Endzustand der D-0-Token-Migration.
+
+### Changed
+- `LH2GPXTheme.LiquidGlass.ink` / `secondaryInk` / `tertiaryInk` sind jetzt **dynamic** (UIKit-`UIColor`-Trait-Provider). Im Light-Mode bleibt der klassische dunkelblaue Ink; im Dark-Mode liefert das Token einen Cream-Ton (`#F5F0E8`). Auf Plattformen ohne UIKit (Linux/macOS-Preview) faellt es auf den Light-Wert zurueck. Konsequenz: Welcome / Hero / Recent-Files / Source-Tiles / Settings sind im Dark-Mode wieder lesbar, ohne dass die einzelnen Aufrufer angepasst werden mussten.
+- `LHGlassBottomSheetDashboard` erzwingt jetzt `\.colorScheme = .dark` auf seinem Header- und Body-Content. SwiftUI-systemnative `.primary`/`.secondary` Texte rendern damit zuverlaessig hell — egal ob die Karte aktuell Standard- oder Satelliten-Stil ist.
+- `LHGlassBottomSheetDashboard` Base-Layer-Deckkraft `Color.black.opacity(0.18) → 0.28`, damit Sheet-Captions ("KARTE", "INSIGHTS", "EXPLORE", "EDITOR" etc.) und Werte ueber hellen Satelliten-Kacheln nicht mehr im Liquid-Glass verschwinden.
+- `LHMapMetricCard`: Werte/Labels/Subtitles auf `mapGlassPrimaryText` / `mapGlassSecondaryText` / `mapGlassTertiaryText` umgestellt (Komponente lebt ausschliesslich im map-backed Bottom-Sheet-Dashboard).
+- Sheet-Header der migrierten Map-Surfaces auf mapGlass-Tokens umgestellt:
+  - `LGTabContainerView.scaffoldedMapTabSheetHeader` (Map-Tab)
+  - `AppDayDetailView.scaffoldedSheetHeader`
+  - `AppInsightsContentView.scaffoldedInsightsSheetHeader`
+  - `AppExportView.scaffoldedExportSheetHeader`
+  - `AppHeatmapView.scaffoldedHeatmapSheetHeader` + `.scaffoldedHeatmapSheetBody` Empty-Hint
+  - `AppRecordedTrackEditorView.scaffoldedEditorSheetHeader` + Summary-/Points-Cards + Row-Helper
+  - `AppOverviewTracksMapView.scaffoldedExploreSheetHeader` + `.scaffoldedExploreSheetBody`
+  - `AppLiveTrackingView.scaffoldedSheetHeader` Caption (heroStatusTint bleibt gesaettigt → lesbar)
+- `AppMapTabDashboardStrip` (Activity-Strip + QuickAction-Pills) komplett auf mapGlass-Tokens umgestellt — die Strips leben ausschliesslich im Map-Tab-Sheet.
+
+### Behoben (Screenshot-Findings aus den User-Bildern)
+- Map-Tab Sheet-Header "KARTE / Übersicht" jetzt klar lesbar (war: ink + .secondary auf dunklem Glas → grenzwertig).
+- DayDetail Sheet-Header lesbar (war: ink + .secondary).
+- Insights Sheet-Header lesbar (war: ink + .secondary).
+- Explore-Sheet Caption + Title lesbar (war: ink + .secondary).
+- Editor Sheet-Header / Summary / Points / Rows lesbar.
+- Heatmap Sheet-Header + Empty-Hint lesbar.
+- Welcome (Hero, Source-Tiles, RecentFiles, iCloud-Hint) wird im Dark-Mode automatisch lesbar, weil ink/secondaryInk dynamic geworden sind — minimaler Fix ohne Layout-Migration.
+
+### Documented exception
+- `LHGlassSectionCard` und `LHGlassPageScaffold` bleiben auf den dynamischen ink-Tokens — sie werden auf Non-Map-Page-Backgrounds verwendet (`LHLiquidGlassBackground`), wo die Ink-Tokens jetzt auto-adaptiv arbeiten. Kein expliziter mapGlass-Switch noetig.
+- `AppICloudOptionsView` (Settings-/Sheet-Page) bleibt unangetastet — nicht Map-backed.
+- Live-Hero-Status-Title nutzt weiterhin `heroStatusTint` (gesaettigte semantische Farben mint/orange/red); nur die Caption wandert auf `mapGlassCaptionText`.
+- Pre-iOS-26 Bottom-Sheet-Pfade (`multiLayerBottomSheet` in DayDetail, Live-Legacy-Path) bleiben mit ink — bewusst unangetastet pro Repo-Truth.
+
+### Performance-Schutz
+- **Strikt erhalten:** Recording-Semantik, Track-Aggregation, Viewport-Filtering, Overlay-Caps, alle B-Phasen-Detents, Smoke-Policy. Kein neuer Map-Hotloop, keine zusaetzlichen `@State`-Allokationen, kein `Task.detached`.
+
+### Attribution-/Bottom-Clearance-Schutz
+- `tabBarStandardHeight = 70`, per-screen Detents und `bottomSheetTabBarClearance` aus B-5.5 bleiben unveraendert. D-0 ist rein visueller Token-/Kontrast-Hardening, kein Layout-Shift.
+
+### Why
+- Phase B hat die acht Map-Surfaces strukturell migriert. Die Screenshots im Anschluss zeigten den naechsten Reibungspunkt: dunkler `LiquidGlass.ink`-Text auf dem dunklen Glass-Sheet ist im Light- wie im Dark-Mode grenzwertig — Sheet-Captions ("KARTE", "INSIGHTS") und KPI-Werte sind teils kaum lesbar. D-0 schliesst die Luecke ohne Detent-/Layout-Verschiebung.
+- WeatherKit-Fix `fix/weatherkit-not-provisioned-classification` (Commit `995cd50`) bleibt explizit ausserhalb dieses Trains.
+
+### Smoke-Policy
+- **Geraete-/Xcode-Smoke bewusst deferred nach User-Entscheidung.** Linux-Build/Tests gruen; Apple-Simulator und Geraet nicht verifiziert. Visuelle Wirkung der mapGlass-Tokens, des erzwungenen Dark-Scheme im Sheet und des dynamic-ink im Welcome wurden auf Apple-Plattformen NICHT validiert. Erforderlich vor TestFlight.
+
+### Tests
+- `swift build`: gruen.
+- `swift test`: 1791 Tests, 3 skipped, **0 failures** (~58 s, Linux x86_64). **+5 D-0-Source-Contract-Tests**.
+
+### Offen / nicht in D-0
+- Train 3 / Phase D-1: MapLayerMenu-Hit-Region 34 → 44 pt, CSV-Layer-Hinweis, SurfaceMode/RangeFilter-Kopplung, Recording-Dual-Truth, ActivityTimeline-Filter, Performance-Profile in Render-Pipeline, Instruments-Messplan.
+- Geraete-Smoke aller acht migrierten Surfaces + Welcome (Light + Dark + Satellitenkarte) auf realem iPhone.
+- WeatherKit-Fix separater Push + Review.
+
+---
+
 ## 2026-05-28 — Train F.7 Phase B-8: Explore-Sheet on Map-First Scaffold — Phase B complete (Branch `feat/explore-sheet-migration-map-first`)
 
 ### Added

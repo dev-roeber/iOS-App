@@ -117,12 +117,21 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
                 .padding(.bottom, bottomClearance)
             }
         }
+        // Phase D-0 Visual Readability Hardening (2026-05-28):
+        // Map-backed Sheets erzwingen den dark Color-Scheme fuer alle
+        // Kinder. SwiftUI-systemnative `.primary`/`.secondary`-Texte
+        // rendern damit zuverlaessig hell, unabhaengig vom Geraete-
+        // Color-Scheme. Zusammen mit den `mapGlass*Text`-Tokens und dem
+        // dunklen Base-Layer entsteht ein konsistentes, lesbares
+        // Dashboard auf hellen Satelliten- wie auch dunklen Standardkarten.
+        .environment(\.colorScheme, .dark)
         .frame(maxWidth: .infinity)
         .frame(height: max(0, height - dragOffset))
-        // B-5.5 Visual Hardening: dunklerer Base-Layer UNTER dem
-        // Liquid-Glass, damit Sheet-Text auch ueber hellen Satelliten-
-        // Karten lesbar bleibt. Vor B-5.5 schien die Karte zu stark
-        // durch und Titel/KPIs waren grenzwertig kontrastarm.
+        // B-5.5 Visual Hardening + Phase D-0 Verstaerkung: dunklerer
+        // Base-Layer UNTER dem Liquid-Glass, damit Sheet-Text auch ueber
+        // hellen Satelliten-Karten lesbar bleibt. D-0 hebt die Deckkraft
+        // leicht an (0.18 → 0.28), damit Header-Captions ("KARTE",
+        // "INSIGHTS", "EXPLORE") nicht mehr im Glass verschwinden.
         .background(
             UnevenRoundedRectangle(
                 topLeadingRadius: 22,
@@ -131,7 +140,7 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
                 topTrailingRadius: 22,
                 style: .continuous
             )
-            .fill(Color.black.opacity(0.18))
+            .fill(Color.black.opacity(0.28))
         )
         .lgGlassSurface(cornerRadius: 22)
         .gesture(dragGesture)

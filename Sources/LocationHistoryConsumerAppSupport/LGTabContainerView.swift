@@ -192,14 +192,18 @@ public struct LGTabContainerView: View {
 
     @ViewBuilder
     private var scaffoldedMapTabSheetHeader: some View {
+        // Phase D-0: Sheet-Caption nutzt `mapGlassCaptionText` (warm, leicht
+        // gedaempft), Title nutzt `mapGlassPrimaryText`. Vorher waren beide
+        // im Glass kaum lesbar (Caption: .secondary → grau auf grau,
+        // Title: ink → dunkelblau auf dunklem Glas).
         VStack(alignment: .leading, spacing: 2) {
             Text("KARTE")
                 .font(.caption2.weight(.heavy))
                 .tracking(0.7)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassCaptionText)
             Text("Übersicht")
                 .font(.title3.weight(.bold))
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

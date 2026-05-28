@@ -399,14 +399,15 @@ public struct AppInsightsContentView: View {
     @available(iOS 26.0, *)
     @ViewBuilder
     private var scaffoldedInsightsSheetHeader: some View {
+        // Phase D-0: mapGlass-Tokens fuer Sheet-Caption + Headline.
         VStack(alignment: .leading, spacing: 2) {
             Text(t("INSIGHTS"))
                 .font(.caption2.weight(.heavy))
                 .tracking(0.7)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassCaptionText)
             Text(t("Insights"))
                 .font(.title3.weight(.bold))
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

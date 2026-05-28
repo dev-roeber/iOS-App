@@ -38,23 +38,27 @@ public struct LHMapMetricCard: View {
                     .frame(width: 32, height: 32)
                 Image(systemName: icon)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(tint ?? LH2GPXTheme.LiquidGlass.ink)
+                    .foregroundStyle(tint ?? LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
                     .accessibilityHidden(true)
             }
 
+            // Phase D-0: KPI-Tiles leben ausschliesslich im map-backed
+            // Bottom-Sheet-Dashboard. Werte/Labels werden auf
+            // `mapGlass*Text`-Tokens umgestellt, damit der Kontrast auf
+            // dunklem Glas (auch ueber hellen Satelliten) klar bleibt.
             Text(value)
                 .font(.title2.weight(.bold))
                 .monospacedDigit()
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
 
             Text(label)
                 .font(.caption)
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassSecondaryText)
 
             if let subtitle {
                 Text(subtitle)
                     .font(.caption2)
-                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassTertiaryText)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

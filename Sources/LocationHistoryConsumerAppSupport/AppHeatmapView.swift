@@ -168,14 +168,15 @@ public struct AppHeatmapView: View {
     @available(iOS 26.0, *)
     @ViewBuilder
     private var scaffoldedHeatmapSheetHeader: some View {
+        // Phase D-0: mapGlass-Tokens fuer Sheet-Caption + Headline.
         VStack(alignment: .leading, spacing: 2) {
             Text(t("HEATMAP"))
                 .font(.caption2.weight(.heavy))
                 .tracking(0.7)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassCaptionText)
             Text(t("Heatmap"))
                 .font(.title3.weight(.bold))
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -195,7 +196,7 @@ public struct AppHeatmapView: View {
             } else if !model.isCalculating {
                 Text(t("No heatmap data available for this view yet."))
                     .font(.subheadline)
-                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassSecondaryText)
             }
         }
         .accessibilityIdentifier("heatmap.scaffold.sheet.body")

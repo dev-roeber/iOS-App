@@ -1,5 +1,8 @@
 #if canImport(SwiftUI)
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - Design Tokens
 
@@ -453,14 +456,86 @@ extension LH2GPXTheme {
         public static let weather = Color(red: 38/255, green: 150/255, blue: 217/255)
         public static let recording = Color(red: 239/255, green: 68/255, blue: 68/255)
 
-        public static let ink = Color(red: 17/255, green: 24/255, blue: 39/255)
-        public static let secondaryInk = Color(red: 107/255, green: 114/255, blue: 128/255)
-        public static let tertiaryInk = Color(red: 156/255, green: 163/255, blue: 175/255)
+        // Phase D-0 (Visual Readability Hardening 2026-05-28):
+        // ink / secondaryInk / tertiaryInk wurden dynamic gemacht, weil der
+        // LHLiquidGlassBackground im Dark-Mode auf einen dunklen Verlauf
+        // umschaltet, der dunkelblauer Ink-Text unlesbar machte (Welcome,
+        // Hero, Source-Tiles, RecentFiles). Im Light-Mode bleibt der
+        // klassische dark-navy Ink. Auf Plattformen ohne UIKit (macOS-
+        // Previews, Linux-Build) faellt es auf den Light-Wert zurueck — der
+        // Apple-Versand-Pfad ist iOS und damit immer UIKit.
+        public static let ink: Color = {
+            #if canImport(UIKit)
+            return Color(UIColor { trait in
+                trait.userInterfaceStyle == .dark
+                    ? UIColor(red: 245/255, green: 240/255, blue: 232/255, alpha: 1)
+                    : UIColor(red: 17/255,  green: 24/255,  blue: 39/255,  alpha: 1)
+            })
+            #else
+            return Color(red: 17/255, green: 24/255, blue: 39/255)
+            #endif
+        }()
+
+        public static let secondaryInk: Color = {
+            #if canImport(UIKit)
+            return Color(UIColor { trait in
+                trait.userInterfaceStyle == .dark
+                    ? UIColor(red: 245/255, green: 240/255, blue: 232/255, alpha: 0.74)
+                    : UIColor(red: 107/255, green: 114/255, blue: 128/255, alpha: 1)
+            })
+            #else
+            return Color(red: 107/255, green: 114/255, blue: 128/255)
+            #endif
+        }()
+
+        public static let tertiaryInk: Color = {
+            #if canImport(UIKit)
+            return Color(UIColor { trait in
+                trait.userInterfaceStyle == .dark
+                    ? UIColor(red: 245/255, green: 240/255, blue: 232/255, alpha: 0.52)
+                    : UIColor(red: 156/255, green: 163/255, blue: 175/255, alpha: 1)
+            })
+            #else
+            return Color(red: 156/255, green: 163/255, blue: 175/255)
+            #endif
+        }()
+
         public static let hairline = Color.black.opacity(0.07)
         public static let specular = Color.white.opacity(0.74)
 
         public static let cardRadius: CGFloat = 28
         public static let controlRadius: CGFloat = 22
+
+        // MARK: Map-backed glass text tokens (Phase D-0)
+        //
+        // Diese Tokens sind bewusst NICHT dynamic — sie werden ausschliesslich
+        // auf Map-backed Liquid-Glass-Sheets verwendet, deren Base-Layer
+        // unabhaengig vom System-Color-Scheme dunkel/halbtransparent ueber
+        // einer Apple-Maps- oder Satelliten-Kachel liegt. Dort braucht der
+        // Sheet-Text einen warmen, hellen Cream-Ton mit klarem Kontrast.
+        //
+        // Verwendung: Sheet-Header (Caption + Title), Sheet-Body-Default,
+        // KPI-Tiles innerhalb LHGlassBottomSheetDashboard, Activity-Strips
+        // / QuickAction-Pills auf dem Map-Tab.
+        //
+        // Nicht verwenden auf:
+        // - LHGlassPageScaffold (Non-Map-Page) — dort weiter ink/secondaryInk
+        // - AppICloudOptionsView / Settings-Listen (Plain-Backgrounds)
+        // - Welcome / Hero auf LHLiquidGlassBackground — ink ist jetzt
+        //   selber dynamic und liefert dort kontrastfaehigen Text.
+        public static let mapGlassPrimaryText = Color(
+            red: 251/255, green: 246/255, blue: 236/255
+        )
+        public static let mapGlassSecondaryText = Color(
+            red: 251/255, green: 246/255, blue: 236/255
+        ).opacity(0.78)
+        public static let mapGlassTertiaryText = Color(
+            red: 251/255, green: 246/255, blue: 236/255
+        ).opacity(0.58)
+        public static let mapGlassCaptionText = Color(
+            red: 251/255, green: 246/255, blue: 236/255
+        ).opacity(0.70)
+        public static let mapGlassProminentText = Color.white
     }
 }
 

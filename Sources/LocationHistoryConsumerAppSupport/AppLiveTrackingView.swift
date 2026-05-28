@@ -483,12 +483,16 @@ public struct AppLiveTrackingView: View {
     @available(iOS 26.0, *)
     @ViewBuilder
     private var scaffoldedSheetHeader: some View {
+        // Phase D-0: Caption auf mapGlassCaptionText umgestellt, damit der
+        // "STATUS · LIVE MAP"-Header auf dem dunklen Glass-Sheet klar
+        // lesbar bleibt. `heroStatusTint` ist gesaettigt (mint/orange/red)
+        // und liest sich auch im neuen Dark-erzwungenen Sheet.
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(t("STATUS · LIVE MAP"))
                     .font(.caption2.weight(.heavy))
                     .tracking(0.7)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassCaptionText)
                 Text(heroStatusTitle)
                     .font(.title3.weight(.bold))
                     .foregroundStyle(heroStatusTint)

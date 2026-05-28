@@ -1,5 +1,37 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train 3 Phase D-0: Visual Readability Hardening (Branch `feat/visual-readability-hardening-d0`)
+
+**Phase D-0 abgeschlossen.** Visuelles Kontrast-Hardening der acht migrierten Map-Sheets + Welcome-Lesbarkeit im Dark-Mode.
+
+Was neu ist:
+- Neue Tokens `LH2GPXTheme.LiquidGlass.mapGlass*Text` (immer hell, Cream `#FBF6EC`, gestaffelte Opacities) fuer Map-backed Bottom-Sheets.
+- `LiquidGlass.ink` / `secondaryInk` / `tertiaryInk` sind jetzt dynamic (UIKit-Trait-Provider) — Light bleibt Navy, Dark wird Cream. Welcome / Hero / RecentFiles / Settings sind im Dark-Mode automatisch lesbar.
+- `LHGlassBottomSheetDashboard` erzwingt `\.colorScheme = .dark` auf Header+Body, dunklerer Base-Layer (0.18 → 0.28).
+- Sheet-Header der acht migrierten Surfaces + `LHMapMetricCard` + `AppMapTabDashboardStrip` auf mapGlass-Tokens.
+- 5 neue Source-Contract-Tests (Tokens, ColorScheme-Force, Sheet-Header-Migration, MapMetricCard, dynamic-ink).
+- **Smoke bewusst deferred nach User-Entscheidung** — Linux-Build/Tests gruen, Apple-Sim/Geraet nicht verifiziert.
+
+**Behoben (Screenshot-Findings):** Map-Tab/DayDetail/Insights/Explore/Editor/Heatmap Sheet-Header lesbar; Welcome im Dark-Mode lesbar; Map-Tab-Sheet wirkt nicht mehr wie schwarzer Block.
+
+**Pending review (nicht gepusht, lokal auf separatem Branch):**
+- `fix/weatherkit-not-provisioned-classification` (Commit `995cd50`) — wartet auf User-Review vor Push.
+
+**Naechster Schritt:** Train 3 / Phase D-1.
+
+**Train 3 / Phase D-1 (geplant):**
+- MapLayerMenu-Hit-Region 34 → 44 pt
+- CSV-Layer-Suppression-Hinweis im Export-Sheet
+- SurfaceMode/RangeFilter-Coupling im Insights-Sheet entkoppeln
+- Recording-Dual-Truth-Refactor (`recordButtonState` parallel zu `liveLocation.isRecording`)
+- ActivityTimeline-Visit-only-Filter klaeren
+- `LHMapPerformancePolicy`-Profile in Render-Pipelines tatsaechlich scharf stellen
+- Instruments-Messplan (Time Profiler, Allocations, Animation Hitches, Energy Log)
+
+**Offen / nicht in D-0:** xcodebuild-Smoke (Linux-Host, bewusst deferred), TestFlight-Smoke der acht migrierten Surfaces + Welcome im Light/Dark/Satellitenkarte vor Train 3 D-1.
+
+---
+
 ## Stand 2026-05-28 — Train F.7 Phase B-8: Explore-Sheet migrated — Phase B complete (Branch `feat/explore-sheet-migration-map-first`)
 
 **Phase B funktional abgeschlossen.** Alle acht Map-Surfaces (Live B-1, DayDetail B-2, Insights B-3, Map-Tab B-4, Export B-5, Heatmap B-6, Editor B-7, Explore-Sheet B-8) konsumieren das Shared-System.

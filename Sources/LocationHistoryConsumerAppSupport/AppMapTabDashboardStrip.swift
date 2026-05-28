@@ -51,11 +51,11 @@ public struct AppMapTabActivityTimelineStrip: View {
                 HStack {
                     Text(t("Recent activity"))
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
                     Spacer()
                     Text(formatChipCountLabel(active: chips.count, total: activeDays.count))
                         .font(.caption2)
-                        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                        .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassSecondaryText)
                 }
                 .padding(.horizontal, 16)
 
@@ -108,10 +108,10 @@ private struct ActivityDayChip: View {
                     .foregroundStyle(LH2GPXTheme.LiquidGlass.trackPrimary)
                 Text(dateLabel)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
                 Text(distanceLabel)
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassSecondaryText)
                 HStack(spacing: 6) {
                     if day.pathCount > 0 {
                         ChipPill(icon: "arrow.triangle.swap", value: "\(day.pathCount)")
@@ -169,7 +169,7 @@ private struct ChipPill: View {
             Text(value)
                 .font(.caption2.monospacedDigit())
         }
-        .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+        .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassSecondaryText)
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
         .background(Color.white.opacity(0.06), in: Capsule())
@@ -202,7 +202,7 @@ public struct AppMapTabQuickActionPills: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(t("Quick actions"))
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
 
             quickActionRow
         }
@@ -237,7 +237,7 @@ public struct AppMapTabQuickActionPills: View {
                     .foregroundStyle(tint)
                 Text(title)
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, minHeight: 56)

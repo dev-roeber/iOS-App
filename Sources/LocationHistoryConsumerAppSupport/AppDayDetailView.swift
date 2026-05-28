@@ -242,14 +242,16 @@ public struct AppDayDetailView: View {
     @available(iOS 26.0, *)
     @ViewBuilder
     private func scaffoldedSheetHeader(detail: DayDetailViewState) -> some View {
+        // Phase D-0: Caption + Headline auf mapGlass-Tokens umgestellt,
+        // damit Sheet-Header auf dunklem Glas zuverlaessig lesbar bleibt.
         VStack(alignment: .leading, spacing: 2) {
             Text(t("DAY · DETAIL"))
                 .font(.caption2.weight(.heavy))
                 .tracking(0.7)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassCaptionText)
             Text(bottomSheetHeadline(detail))
                 .font(.title3.weight(.bold))
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

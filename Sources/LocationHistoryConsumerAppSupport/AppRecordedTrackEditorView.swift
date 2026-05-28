@@ -152,14 +152,15 @@ struct AppRecordedTrackEditorView: View {
     @available(iOS 26.0, *)
     @ViewBuilder
     private var scaffoldedEditorSheetHeader: some View {
+        // Phase D-0: mapGlass-Tokens fuer Caption + Headline.
         VStack(alignment: .leading, spacing: 2) {
             Text(t("EDITOR"))
                 .font(.caption2.weight(.heavy))
                 .tracking(0.7)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassCaptionText)
             Text(t("Edit Saved Track"))
                 .font(.title3.weight(.bold))
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
                 .fixedSize(horizontal: false, vertical: true)
             if draft.isModified {
                 Text(t("Unsaved changes"))
@@ -190,7 +191,7 @@ struct AppRecordedTrackEditorView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(t("Summary"))
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
             scaffoldedEditorRow(t("Date"), value: AppDateDisplay.longDate(draft.dayKey))
             scaffoldedEditorRow(t("Started"), value: AppDateDisplay.abbreviatedDateTime(draft.startedAt))
             scaffoldedEditorRow(t("Ended"), value: AppDateDisplay.abbreviatedDateTime(draft.endedAt))
@@ -213,7 +214,7 @@ struct AppRecordedTrackEditorView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(t("Points"))
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
             pointsSection
                 .accessibilityIdentifier("editor.scaffold.pointsSection")
         }
@@ -228,11 +229,11 @@ struct AppRecordedTrackEditorView: View {
         HStack {
             Text(label)
                 .font(.caption)
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassSecondaryText)
             Spacer()
             Text(value)
                 .font(.subheadline.monospacedDigit())
-                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.mapGlassPrimaryText)
         }
     }
 

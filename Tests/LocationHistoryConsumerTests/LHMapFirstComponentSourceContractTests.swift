@@ -379,6 +379,114 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         )
     }
 
+    // MARK: - Phase D-0: Visual Readability Hardening
+
+    func test_phaseD0_mapGlassTextTokensExist() throws {
+        // Phase D-0 fuehrt dedizierte Map-Sheet-Text-Tokens ein, die
+        // unabhaengig vom System-Color-Scheme einen warmen Cream-Ton auf
+        // dunklem Glas liefern. Source-Guard: die Tokens muessen im Theme
+        // vorhanden bleiben und duerfen nicht versehentlich ueberschrieben
+        // werden.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let themeURL = root.appendingPathComponent("LH2GPXTheme.swift")
+        let source = try String(contentsOf: themeURL, encoding: .utf8)
+        for token in [
+            "mapGlassPrimaryText",
+            "mapGlassSecondaryText",
+            "mapGlassTertiaryText",
+            "mapGlassCaptionText",
+            "mapGlassProminentText"
+        ] {
+            XCTAssertTrue(
+                source.contains("public static let \(token)"),
+                "LH2GPXTheme.LiquidGlass must declare token `\(token)` (Phase D-0)."
+            )
+        }
+    }
+
+    func test_phaseD0_dashboardForcesDarkColorScheme() throws {
+        // Map-backed Bottom-Sheet Dashboard muss .colorScheme = .dark
+        // erzwingen, damit SwiftUI-systemnative `.primary`/`.secondary`
+        // Texte auf hellen Satellitenkarten und dunklen Standardkarten
+        // konsistent lesbar bleiben.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let url = root.appendingPathComponent("LHGlassBottomSheetDashboard.swift")
+        let source = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(
+            source.contains("\\.colorScheme, .dark"),
+            "LHGlassBottomSheetDashboard must force dark colorScheme on sheet content (Phase D-0)."
+        )
+    }
+
+    func test_phaseD0_migratedSheetHeadersUseMapGlassTokens() throws {
+        // Sheet-Header der migrierten Map-Screens muessen die neuen
+        // mapGlass-Tokens nutzen — kein dunkles LiquidGlass.ink mehr im
+        // primaeren Sheet-Header.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let sheetHeaderFiles = [
+            "LGTabContainerView.swift",
+            "AppDayDetailView.swift",
+            "AppInsightsContentView.swift",
+            "AppExportView.swift",
+            "AppHeatmapView.swift",
+            "AppRecordedTrackEditorView.swift",
+            "AppOverviewTracksMapView.swift"
+        ]
+        for relative in sheetHeaderFiles {
+            let url = root.appendingPathComponent(relative)
+            let source = try String(contentsOf: url, encoding: .utf8)
+            XCTAssertTrue(
+                source.contains("mapGlassPrimaryText"),
+                "\(relative) must use mapGlassPrimaryText in its sheet header after Phase D-0."
+            )
+        }
+    }
+
+    func test_phaseD0_mapMetricCardUsesMapGlassTokens() throws {
+        // LHMapMetricCard lebt ausschliesslich im Bottom-Sheet-Dashboard
+        // und muss die mapGlass-Tokens verwenden, damit Werte/Labels
+        // auf dunklem Glas zuverlaessig lesbar bleiben.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let url = root.appendingPathComponent("LHMapMetricCard.swift")
+        let source = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(
+            source.contains("mapGlassPrimaryText"),
+            "LHMapMetricCard must use mapGlassPrimaryText for its value text (Phase D-0)."
+        )
+        XCTAssertTrue(
+            source.contains("mapGlassSecondaryText"),
+            "LHMapMetricCard must use mapGlassSecondaryText for its label text (Phase D-0)."
+        )
+    }
+
+    func test_phaseD0_dynamicInkSupportsDarkMode() throws {
+        // ink/secondaryInk/tertiaryInk wurden in D-0 dynamic gemacht
+        // (UIKit dynamic provider). Source-Guard: die UIKit-basierte
+        // Branch existiert weiterhin, damit Welcome im Dark-Mode lesbar
+        // bleibt.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let url = root.appendingPathComponent("LH2GPXTheme.swift")
+        let source = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(
+            source.contains("#if canImport(UIKit)"),
+            "LH2GPXTheme must guard dynamic ink colors with canImport(UIKit) (Phase D-0)."
+        )
+        XCTAssertTrue(
+            source.contains("trait.userInterfaceStyle == .dark"),
+            "LH2GPXTheme.LiquidGlass.ink must resolve a dark-mode variant via UIColor trait provider (Phase D-0)."
+        )
+    }
+
     // MARK: - Xcode-Cloud regression guard
 
     func test_noAppLanguageScopeRegression() throws {
