@@ -120,27 +120,78 @@ public struct LGTabContainerView: View {
     private var mapTab: some View {
         NavigationStack {
             ScrollView {
-                LHPageScaffold {
+                VStack(spacing: 16) {
                     if let overview = overview {
-                        AppOverviewSection(
-                            overview: overview,
+                        // F.5-A: echte Karte als immersiver Hero statt
+                        // nur Stat-Cards. Wiederverwendet die bestehende
+                        // `AppOverviewTracksMapView`-Implementierung, die
+                        // auch auf Insights/Overview als Single Source of
+                        // Truth dient.
+                        AppOverviewTracksMapView(
                             daySummaries: allDaySummaries,
-                            onDaysTap: { selectedTab = .days },
-                            onInsightsTap: { selectedTab = .insights }
+                            content: session.content,
+                            queryFilter: nil,
+                            fixedHeight: 300,
+                            showsFullscreenControl: true,
+                            mapControlTopPadding: 8
                         )
+                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .stroke(LH2GPXTheme.LiquidGlass.hairline, lineWidth: 0.8)
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+
+                        LHPageScaffold {
+                            AppOverviewGlassSection(
+                                overview: overview,
+                                daySummaries: allDaySummaries,
+                                onDaysTap: { selectedTab = .days },
+                                onInsightsTap: { selectedTab = .insights }
+                            )
+                        }
                     } else {
-                        ContentUnavailableView(
-                            "Keine Daten",
-                            systemImage: "map",
-                            description: Text("Importiere eine Datei, um die Karte zu sehen.")
-                        )
+                        mapEmptyState
                     }
                 }
             }
+            .scrollEdgeEffectStyle(.soft, for: .all)
             .navigationTitle("Karte")
             .navigationBarTitleDisplayMode(.large)
             .toolbar { commonToolbar }
             .background(LHLiquidGlassBackground().ignoresSafeArea())
+        }
+    }
+
+    @ViewBuilder
+    private var mapEmptyState: some View {
+        LHPageScaffold {
+            VStack(spacing: 14) {
+                Image(systemName: "map")
+                    .font(.system(size: 44, weight: .light))
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.trackPrimary)
+                Text("Keine Daten")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                Text("Importiere eine Datei, um die Karte zu sehen.")
+                    .font(.subheadline)
+                    .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+                    .multilineTextAlignment(.center)
+                Button(action: onOpen) {
+                    Label("Datei öffnen", systemImage: "doc.badge.plus")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.roundedRectangle(radius: 16))
+                .tint(LH2GPXTheme.LiquidGlass.trackPrimary)
+                .padding(.top, 4)
+            }
+            .padding(28)
+            .frame(maxWidth: .infinity)
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .padding(.top, 40)
         }
     }
 
