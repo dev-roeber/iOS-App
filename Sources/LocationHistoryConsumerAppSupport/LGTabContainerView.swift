@@ -65,6 +65,60 @@ public struct LGTabContainerView: View {
     // MARK: - Body
 
     public var body: some View {
+        tabViewWithAccessory
+            .preferredColorScheme(.dark)
+            .sheet(isPresented: $isExportSheetPresented) {
+                NavigationStack {
+                    AppExportView(
+                        session: $session,
+                        liveLocation: liveLocation,
+                        dayListFilter: dayListFilter,
+                        favoritedDayIDs: favoritedDayIDs,
+                        pathMutations: pathMutationStore.currentMutations,
+                        onOpenImport: onOpen,
+                        onOpenDays: { selectedTab = .days; isExportSheetPresented = false },
+                        heroEnabled: true
+                    )
+                    .navigationTitle("Export")
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Fertig") { isExportSheetPresented = false }
+                        }
+                    }
+                }
+                .presentationDetents([.large])
+                .presentationBackground(.regularMaterial)
+            }
+            .onAppear { refreshFavoritedDays() }
+            .onChange(of: liveLocation.navigateToLiveTabRequested) { _, requested in
+                guard requested else { return }
+                selectedTab = .live
+                liveLocation.navigateToLiveTabRequested = false
+            }
+    }
+
+    /// Map-First v2 Feedback-Fix: `tabViewBottomAccessory` wird nur dann am
+    /// TabView angeheftet, wenn auch wirklich aufgezeichnet wird. Vorher
+    /// blieb beim `if isRecording`-Branch im Builder die leere
+    /// Glas-Pille als sichtbarer Streifen ueber der TabBar stehen, weil
+    /// `.tabViewBottomAccessory` den Slot reserviert, sobald der Modifier
+    /// gesetzt ist.
+    @ViewBuilder
+    private var tabViewWithAccessory: some View {
+        if liveLocation.isRecording {
+            coreTabView
+                .tabViewBottomAccessory {
+                    GlobalRecordingBottomAccessory(
+                        liveModel: liveLocation,
+                        onTap: { selectedTab = .live }
+                    )
+                }
+        } else {
+            coreTabView
+        }
+    }
+
+    private var coreTabView: some View {
         TabView(selection: $selectedTab) {
             Tab("Karte", systemImage: "map", value: LGTab.map) { mapTab }
             Tab("Tage", systemImage: "calendar", value: LGTab.days) { daysTab }
@@ -72,46 +126,6 @@ public struct LGTabContainerView: View {
             Tab("Insights", systemImage: "chart.xyaxis.line", value: LGTab.insights) { insightsTab }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
-        .tabViewBottomAccessory {
-            // iOS-26 Now-Playing-Pattern: globaler Recording-Indikator,
-            // der oberhalb der TabBar als Liquid-Glass-Pill schwebt, solange
-            // `liveLocation.isRecording`. Tap fuehrt zum Live-Tab.
-            if liveLocation.isRecording {
-                GlobalRecordingBottomAccessory(
-                    liveModel: liveLocation,
-                    onTap: { selectedTab = .live }
-                )
-            }
-        }
-        .preferredColorScheme(.dark)
-        .sheet(isPresented: $isExportSheetPresented) {
-            NavigationStack {
-                AppExportView(
-                    session: $session,
-                    liveLocation: liveLocation,
-                    dayListFilter: dayListFilter,
-                    favoritedDayIDs: favoritedDayIDs,
-                    pathMutations: pathMutationStore.currentMutations,
-                    onOpenImport: onOpen,
-                    onOpenDays: { selectedTab = .days; isExportSheetPresented = false },
-                    heroEnabled: true
-                )
-                .navigationTitle("Export")
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Fertig") { isExportSheetPresented = false }
-                    }
-                }
-            }
-            .presentationDetents([.large])
-            .presentationBackground(.regularMaterial)
-        }
-        .onAppear { refreshFavoritedDays() }
-        .onChange(of: liveLocation.navigateToLiveTabRequested) { _, requested in
-            guard requested else { return }
-            selectedTab = .live
-            liveLocation.navigateToLiveTabRequested = false
-        }
     }
 
     // MARK: - Tabs
