@@ -1,5 +1,22 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.7 Phase A: Map-First Liquid Glass Shared Components (Branch `feat/map-first-shared-components`)
+
+Phase A des Migrationsplans implementiert. **Keine produktive Screen-Migration**, nur Shared-Components + Tests.
+
+Neu im Repo:
+- 8 Komponenten in `Sources/LocationHistoryConsumerAppSupport/`: `LHMapPerformancePolicy`, `LHMapWorkspace`, `LHMapFirstPageScaffold`, `LHMapFloatingChrome`, `LHMapMetricCard`, `LHGlassBottomSheetDashboard`, `LHGlassPageScaffold`, `LHGlassSectionCard`.
+- 2 Test-Suites: `LHMapPerformancePolicyTests` (10 Tests, Linux), `LHMapFirstComponentSourceContractTests` (8 Tests, Linux).
+- Typfix in `AppMapTabDashboardStrip.swift` (AppLanguage → AppLanguagePreference), der Xcode-Cloud-Archive 286/287 zum Brechen brachte.
+
+**Naechster Schritt (Phase B Start):** `AppLiveTrackingView` als erste produktive Migration auf `LHMapFirstPageScaffold` + `LHMapWorkspace(.live)` + `LHGlassBottomSheetDashboard` + `LHMapFloatingChrome`. Erst Live, dann DayDetail — keine Multi-Screen-Migration im selben PR.
+
+**Train 3 (Performance-Hardening):** unveraendert offen — `LHMapPerformancePolicy`-Profile in Render-Pipeline scharf stellen, Recording-Dual-Truth aufloesen, MapLayerMenu-Hit-Region final pruefen, Insights Mode/Filter-Coupling entkoppeln, Instruments-Messplan ausfuehren.
+
+**Offen / nicht in F.7 Phase A:** xcodebuild-Smoke (Linux-Host), Geraete-Smoke der GlassEffectContainer-Morph- und Detent-Animationen, Sheet-Detent-Robustheit bei Rotation/iPad/Dynamic Type, A11y-Coverage-Sweep auf Insights und DayMap-Controls.
+
+---
+
 ## Stand 2026-05-28 — Train F.6 Prep: Design-Contract Map-First Liquid Glass UI (Branch `docs/map-first-liquid-glass-contract`)
 
 Vorbereitung der drei-Train-Modernisierung der iOS-26-Surfaces. **Keine Code-Aenderungen in F.6**, nur Dokumentation.
