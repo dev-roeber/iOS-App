@@ -2,22 +2,23 @@
 //  LHMapFirstPageScaffold.swift
 //  LocationHistoryConsumerAppSupport
 //
-//  Shared map-first page scaffold (Contract § 5.1, Phase A).
+//  Shared map-first page scaffold (Contract § 5.1).
 //  See docs/UI_UX_MAP_FIRST_LIQUID_GLASS_CONTRACT_2026-05-28.md § 5.1.
 //
-//  Phase-A scope:
-//    - Provides the canonical map-first layout: full-bleed map, floating chrome
-//      anchored to the top, and a bottom sheet attached via
-//      `.safeAreaInset(edge: .bottom)`.
-//    - Makes NO assumptions about sheet detents or sheet styling — the caller
-//      passes whatever sheet view they want (e.g. `LHGlassBottomSheetDashboard`
-//      or a plain container).
-//    - Does NOT gate the map out of the view tree and does NOT own a camera
-//      controller. Camera/data plumbing belongs to `LHMapWorkspace` and the
-//      caller's `AppDayMapCameraController`.
+//  Map-First Hardening (Anchor-Fix):
+//    - Das Sheet wird NICHT mehr per `.safeAreaInset(edge: .bottom)` angeheftet
+//      (das ließ es je nach Detent/NavigationTitle mittig "schweben", mit Karte
+//      ober- UND unterhalb). Stattdessen liegt es in einem
+//      `ZStack(alignment: .bottom)` und ist damit deterministisch am unteren
+//      Bildschirmrand verankert — flush, ohne Map-Streifen darunter.
+//    - Die volle (safe-area-ignorierende) Bildschirmhöhe wird per GeometryReader
+//      gemessen und über `lhSheetAvailableHeight` an das Sheet gereicht, damit
+//      die `.full`-Raste echtes Vollbild rechnen kann.
+//    - z-Order folgt strikt `LHMapBase.LayerOrder`: Karte (0) < Sheet (200)
+//      < FloatingChrome (300). Die iOS-26-TabBar (TabView-Chrome) liegt als
+//      eigenes System-Overlay weiterhin über allem (LayerOrder.tabBar = 400).
 //
-//  iPhone-iOS-26-only. No fallback inside the component — the caller decides
-//  whether to instantiate it.
+//  iPhone-iOS-26-only. Kein Fallback in der Komponente — der Aufrufer entscheidet.
 //
 
 #if canImport(SwiftUI) && canImport(MapKit)
@@ -52,14 +53,29 @@ public struct LHMapFirstPageScaffold<MapContent: View, FloatingContent: View, Sh
     }
 
     public var body: some View {
-        ZStack(alignment: .top) {
-            mapBuilder()
-                .ignoresSafeArea()
-            floatingChromeBuilder()
+        GeometryReader { proxy in
+            ZStack(alignment: .bottom) {
+                // Karte: vollbild, unterste Ebene.
+                mapBuilder()
+                    .ignoresSafeArea()
+                    .zIndex(LHMapBase.LayerOrder.map)
+
+                // Floating-Chrome (Layer-Pille, Zoom/Locate-Stack): oben verankert.
+                // Top-Inset managen die Aufrufer selbst über ihre Control-Paddings.
+                floatingChromeBuilder()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .zIndex(LHMapBase.LayerOrder.floatingChrome)
+
+                // Sheet: hart am unteren Bildschirmrand. Die volle Höhe geben wir
+                // per Environment weiter, damit die `.full`-Raste Vollbild kann.
+                sheetBuilder()
+                    .environment(\.lhSheetAvailableHeight, proxy.size.height)
+                    .frame(maxWidth: .infinity, alignment: .bottom)
+                    .zIndex(LHMapBase.LayerOrder.bottomSheet)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .bottom)
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            sheetBuilder()
-        }
+        .ignoresSafeArea()
     }
 }
 
