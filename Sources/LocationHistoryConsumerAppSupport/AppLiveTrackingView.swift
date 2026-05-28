@@ -197,11 +197,20 @@ public struct AppLiveTrackingView: View {
                 self.weatherError = false
             } catch {
                 self.weatherError = true
-                let appError = (error as? AppWeatherError)
-                    ?? AppWeatherError.requestFailed(AppWeatherDiagnostics.requestFailedMessage(from: error))
+                let appError = AppWeatherDiagnostics.classify(error)
                 let message = appError.userFacingGermanDiagnostic
                 self.preferences.markWeatherLayerFailure(message)
                 self.currentWeather = nil
+                // Permanente Fehler (z.B. WDSJWTAuthenticatorServiceListener
+                // Code 2 = WeatherKit nicht provisioniert) duerfen keinen
+                // Retry-Loop aus dem 5-Minuten-Heartbeat ausloesen.
+                // `markWeatherLayerFailure` setzt `weatherLayerEnabled = false`,
+                // wodurch `refreshWeatherSnapshot()` am Guard frueh aussteigt
+                // — der explizite Check macht das Vertragsverhalten lokal
+                // sichtbar und schuetzt vor unbeabsichtigten Reaktivierungen.
+                if appError.isPermanent {
+                    self.showWeatherLayer = false
+                }
             }
         }
     }

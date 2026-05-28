@@ -1,5 +1,19 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — WeatherKit `notProvisioned` Classification merged (Branch `fix/weatherkit-not-provisioned-classification`)
+
+WeatherKit-Fix ist auf main. WDSJWTAuthenticatorServiceListener.Errors code=2 (Capability fehlt im Provisioning-Profil) wird jetzt als `.notProvisioned` klassifiziert; `isPermanent` deaktiviert den 5-Min-Retry-Loop lokal. 14 neue Linux-Tests gruen.
+
+**Manueller Apple-Developer-Step bleibt offen (ausserhalb Repo):**
+- WeatherKit-Capability im App-ID `de.roeber.LH2GPXWrapper` (Apple Developer Portal → App Services) aktivieren
+- Provisioning-Profil refreshen
+- App neu installieren
+- `codesign -d --entitlements -` auf dem signierten Binary verifizieren
+
+**Naechster Schritt:** Train 3 / Phase D-1 (siehe Block weiter unten).
+
+---
+
 ## Stand 2026-05-28 — Train 3 Phase D-0: Visual Readability Hardening (Branch `feat/visual-readability-hardening-d0`)
 
 **Phase D-0 abgeschlossen.** Visuelles Kontrast-Hardening der acht migrierten Map-Sheets + Welcome-Lesbarkeit im Dark-Mode.
