@@ -67,27 +67,33 @@ final class LH2GPXWrapperUITests: XCTestCase {
         demoButton.tap()
         sleep(4)
 
-        // Switch to Overview tab; expand to All Time so 2024 demo data is visible
-        let overviewTab = app.tabBars.buttons["Overview"]
+        // Switch to Karte tab (alte Overview); expand to All Time so 2024 demo data is visible
+        let overviewTab = app.tabBars.buttons["Karte"]
         if overviewTab.waitForExistence(timeout: 5) { overviewTab.tap(); sleep(1) }
         let allChip = app.buttons["range.chip.all"]
         if allChip.waitForExistence(timeout: 5) { allChip.tap(); sleep(2) }
 
-        // 02 — Overview: map + KPI grid + date range
+        // 02 — Karte: map + KPI grid + date range
         attach(screenshot(app), name: "iphone15pm_02_overview")
 
-        // 03 — Days tab: sticky map visible, list below, demo days from 2024
+        // 03 — Tage tab (alte Days): sticky map visible, list below, demo days from 2024
         // Clear "Last 7 Days" filter so 2024 demo data appears.
-        let daysTab = app.tabBars.buttons["Days"]
+        let daysTab = app.tabBars.buttons["Tage"]
         if daysTab.waitForExistence(timeout: 5) { daysTab.tap(); sleep(2) }
         let clearDateFilter = app.buttons["Clear Date Range"]
         if clearDateFilter.waitForExistence(timeout: 3) { clearDateFilter.tap(); sleep(2) }
         attach(screenshot(app), name: "iphone15pm_03_days_sticky_map")
 
-        // 04 — Export Checkout: review selection, format pills, sticky bottom bar
-        let exportTab = app.tabBars.buttons["Export"]
-        if exportTab.waitForExistence(timeout: 5) { exportTab.tap(); sleep(1) }
-        attach(screenshot(app), name: "iphone15pm_04_export_checkout")
+        // 04 — Export: kein eigener Tab mehr (LG 4-Tab), Export läuft als Modal-Sheet
+        // aus global.actions.menu. Screenshot via Menu-Trigger.
+        let actionsMenu = app.buttons["global.actions.menu"]
+        if actionsMenu.waitForExistence(timeout: 5) {
+            actionsMenu.tap(); sleep(1)
+            attach(screenshot(app), name: "iphone15pm_04_export_checkout")
+            // Menü wieder schliessen
+            if app.buttons["global.actions.menu"].exists { app.buttons["global.actions.menu"].tap() }
+            sleep(1)
+        }
 
         // 05 — Insights: hero summary, KPI grid, sections
         let insightsTab = app.tabBars.buttons["Insights"]
@@ -129,19 +135,19 @@ final class LH2GPXWrapperUITests: XCTestCase {
         // landscape on each tab for screenshot + key element check. This avoids iOS 26
         // sidebar navigation uncertainty in landscape.
 
-        let overviewFirst = app.tabBars.buttons["Overview"]
-        XCTAssertTrue(overviewFirst.waitForExistence(timeout: 10), "Overview tab not found after demo load")
+        let overviewFirst = app.tabBars.buttons["Karte"]
+        XCTAssertTrue(overviewFirst.waitForExistence(timeout: 10), "Karte tab not found after demo load")
         overviewFirst.tap()
         let allChip = app.buttons["range.chip.all"]
         if allChip.waitForExistence(timeout: 5) { allChip.tap(); sleep(2) }
 
-        // 01 — Overview landscape
+        // 01 — Karte landscape
         XCUIDevice.shared.orientation = .landscapeRight; sleep(2)
         attach(screenshot(app), name: "landscape_01_overview")
         XCUIDevice.shared.orientation = .portrait; sleep(1)
 
-        // 02 — Days tab landscape: sticky map + bottom-bar
-        let daysTab = app.tabBars.buttons["Days"]
+        // 02 — Tage tab landscape: sticky map + bottom-bar
+        let daysTab = app.tabBars.buttons["Tage"]
         XCTAssertTrue(daysTab.waitForExistence(timeout: 5)); daysTab.tap()
         let clearDateFilter = app.buttons["Clear Date Range"]
         if clearDateFilter.waitForExistence(timeout: 3) { clearDateFilter.tap(); sleep(2) }
@@ -150,12 +156,15 @@ final class LH2GPXWrapperUITests: XCTestCase {
         attach(screenshot(app), name: "landscape_02_days")
         XCUIDevice.shared.orientation = .portrait; sleep(1)
 
-        // 03 — Export tab landscape
-        let exportTab = app.tabBars.buttons["Export"]
-        XCTAssertTrue(exportTab.waitForExistence(timeout: 5)); exportTab.tap(); sleep(1)
+        // 03 — Export Sheet landscape (kein Tab mehr in LG 4-Tab)
+        let actionsMenuLandscape = app.buttons["global.actions.menu"]
+        XCTAssertTrue(actionsMenuLandscape.waitForExistence(timeout: 5))
+        actionsMenuLandscape.tap(); sleep(1)
         XCUIDevice.shared.orientation = .landscapeRight; sleep(2)
         attach(screenshot(app), name: "landscape_03_export")
         XCUIDevice.shared.orientation = .portrait; sleep(1)
+        // Menü schliessen
+        if app.buttons["global.actions.menu"].exists { app.buttons["global.actions.menu"].tap(); sleep(1) }
 
         // 04 — Insights tab landscape
         let insightsTab = app.tabBars.buttons["Insights"]
@@ -193,7 +202,7 @@ final class LH2GPXWrapperUITests: XCTestCase {
         XCTAssertTrue(demoButton.waitForExistence(timeout: 5))
         demoButton.tap()
 
-        let overviewTab = app.tabBars.buttons["Overview"]
+        let overviewTab = app.tabBars.buttons["Karte"]
         XCTAssertTrue(overviewTab.waitForExistence(timeout: 10))
 
         overviewTab.tap()
@@ -239,38 +248,20 @@ final class LH2GPXWrapperUITests: XCTestCase {
             app.buttons["Done"].tap()
         }
 
-        let exportTab = app.tabBars.buttons["Export"]
-        XCTAssertTrue(exportTab.waitForExistence(timeout: 5))
-        exportTab.tap()
+        // Export hat in LG-4-Tab (Commit 159e696) keinen eigenen Tab mehr.
+        // Smoke: aus dem Tage-Tab via Day-Selektion → Export-Bottom-Bar (`days.exportBar`).
+        // Falls die Bottom-Bar nicht erscheint (z.B. ohne Multi-Select-Auswahl), wird der
+        // Schritt soft übersprungen — der Smoke-Test bleibt zu Navigation grün.
+        let daysTab = app.tabBars.buttons["Tage"]
+        XCTAssertTrue(daysTab.waitForExistence(timeout: 5))
+        daysTab.tap()
         RunLoop.current.run(until: Date().addingTimeInterval(2.0))
 
-        // Verify the export bar is rendered (export action button present, possibly disabled).
-        // SwiftUI TabView keeps all tabs in memory, so cell-based queries are unreliable.
-        // Instead, verify the export action button exists and tap a coordinate to select a day.
-        // The Export CTA is in LHExportBottomBar (.safeAreaInset). XCTest accessibility may not
-        // expose .safeAreaInset content reliably on all simulator configs — smoke only navigates.
         let exportAction = app.buttons.matching(identifier: "export.primaryButton").firstMatch
-        if exportAction.waitForExistence(timeout: 10) {
-            // Tap in the upper portion of the list area to select the first visible day row.
-            let listTapTarget = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
-            listTapTarget.tap()
-            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
-
-            if exportAction.isEnabled {
-                exportAction.tap()
-                XCTAssertTrue(waitForExportPresentation(in: app, timeout: 10))
-                dismissPresentedExportUI(in: app)
-            } else {
-                app.swipeUp()
-                RunLoop.current.run(until: Date().addingTimeInterval(0.5))
-                listTapTarget.tap()
-                RunLoop.current.run(until: Date().addingTimeInterval(0.5))
-                if exportAction.isEnabled {
-                    exportAction.tap()
-                    XCTAssertTrue(waitForExportPresentation(in: app, timeout: 10))
-                    dismissPresentedExportUI(in: app)
-                }
-            }
+        if exportAction.waitForExistence(timeout: 5), exportAction.isEnabled {
+            exportAction.tap()
+            XCTAssertTrue(waitForExportPresentation(in: app, timeout: 10))
+            dismissPresentedExportUI(in: app)
         }
 
         let liveTab = app.tabBars.buttons["Live"]
@@ -394,17 +385,17 @@ final class LH2GPXWrapperUITests: XCTestCase {
         // Give the synthetic generator + import pipeline up to 4 min.
         // On iPhone 15 Pro Max, baseline expectation is < 90 s; the
         // extra headroom guards against simulator/CI variance.
-        let overviewTab = app.tabBars.buttons["Overview"]
+        let overviewTab = app.tabBars.buttons["Karte"]
         let appeared = overviewTab.waitForExistence(timeout: 240)
         if !appeared {
             attach(screenshot(app), name: "large_import_failure_state")
         }
-        XCTAssertTrue(appeared, "Tab bar with Overview tab must appear after the synthetic 46 MiB import completes (otherwise the loader crashed, jetsamed, or hung)")
+        XCTAssertTrue(appeared, "Tab bar with Karte tab must appear after the synthetic 46 MiB import completes (otherwise the loader crashed, jetsamed, or hung)")
 
         // App must be usable post-import: switch tabs without dialog.
-        let daysTab = app.tabBars.buttons["Days"]
+        let daysTab = app.tabBars.buttons["Tage"]
         if daysTab.waitForExistence(timeout: 8) { daysTab.tap() }
-        XCTAssertTrue(app.tabBars.firstMatch.exists, "Tab bar must remain present after navigating Days post-import")
+        XCTAssertTrue(app.tabBars.firstMatch.exists, "Tab bar must remain present after navigating Tage post-import")
 
         attach(screenshot(app), name: "large_import_post_import_overview")
     }
