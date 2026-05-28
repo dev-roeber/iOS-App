@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.7 Phase B-2: DayDetail Screen on Map-First Scaffold (Branch `feat/daydetail-migration-map-first`)
+
+### Added
+- `AppDayDetailView.scaffoldedDayDetailLayout(detail:resolvedMapData:)` + `scaffoldedSheetHeader(detail:)` + `scaffoldedSheetBody(detail:)`, alle `@available(iOS 26.0, *)`. Body-Dispatch waehlt auf iOS 26+ den neuen Pfad, iOS 17–25 bleibt auf `multiLayerPortraitLayout`, Pre-iOS-17 weiter auf der Legacy-ScrollView.
+- Sub-Train-Boundary in `LHMapFirstComponentSourceContractTests`: `test_phaseB2_dayDetailMountsTheNewScaffold` und Liste der noch-nicht-migrierten Screens (Insights/Export/Heatmap/Editor).
+
+### Changed
+- DayDetail iOS-26-Pfad rendert: `LHMapFirstPageScaffold` (full-bleed Map via `multiLayerMapBackground`), `LHMapFloatingChrome` mit `DayDetailLayerPanel` (links) + `DayDetailControlStack` (rechts), `LHGlassBottomSheetDashboard` (Detents `portrait`, Drag-Handle mit AccessibilityValue). Sheet-Inhalt 1:1 aus dem Legacy-Pfad: Wochentag, Time-Range, KPI-Grid, Overlay-Bands, Day-Actions (Favorite + Export), Segment-Control, Segmented-Content (Overview/Timeline/Routes/Places), optional `AppLiveLocationSection`.
+- Camera-Wiring (`dayMapCamera.fitToData`, `adjustZoom`), Favorite-Toggle, Export-Selection, Route-Display-Picker, ImportedPath-Mutation- und Delete-Pfade wiederverwendet — keine semantische Aenderung.
+
+### Why
+- Phase B-2 des Migrationsplans. Nach Live ist DayDetail der zweite produktive Konsument der Shared-Components. Damit ist die gemeinsame Bottom-Sheet- und Floating-Chrome-Sprache zwischen Live und DayDetail etabliert, bevor Insights und Map-Tab-Hero folgen.
+
+### Tests
+- `swift build` gruen (1.71 s).
+- `swift test` gruen: **1777** Tests, 3 skipped, **0 failures** (~56 s, Linux x86_64).
+- `LHMapFirstComponentSourceContractTests`: Phase-B-1-Live-Regression-Guard bleibt, Phase-B-2-Boundary aktiv, AppLanguage-Regression-Guard bleibt.
+
+### Open
+- Kein xcodebuild-Smoke moeglich (Linux-Host). iOS-26-Komposition (Glas-Morph, Detent-Drag-Animation, Bottom-Sheet-Inhalt mit Segmented-Content unter Drag-Handle) ist nicht auf Apple-Sim/Geraet validiert.
+- Kein wiring-bezogener semantischer Bruch erwartet — Favorite/Export/Route-Display/Timeline-Aktionen sind reine Wiederverwendung der bestehenden Helpers. Trotzdem Geraete-Smoke vor TestFlight noetig.
+- Phase B-3 (Insights) ist der naechste dokumentierte Schritt.
+
 ## 2026-05-28 — Train F.7 Phase B-1: Live Screen on Map-First Scaffold (Branch `feat/live-migration-map-first`)
 
 ### Added

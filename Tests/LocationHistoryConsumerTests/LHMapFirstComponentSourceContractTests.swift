@@ -121,11 +121,10 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         )
     }
 
-    // MARK: - Phase B-1 boundary: Live migrated, the others not yet
+    // MARK: - Phase B-2 boundary: Live + DayDetail migrated, the others not yet
 
     func test_phaseB1_liveMountsTheNewScaffold() throws {
-        // Phase B-1 migrates the Live screen onto the shared scaffold while
-        // every other map surface still uses its pre-migration composition.
+        // Phase B-1 must remain migrated. Regression guard.
         guard let root = sourcesDirectory() else {
             throw XCTSkip("Sources/ tree not reachable.")
         }
@@ -135,27 +134,42 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         )
         XCTAssertTrue(
             liveSource.contains("LHMapFirstPageScaffold"),
-            "AppLiveTrackingView must mount LHMapFirstPageScaffold in Phase B-1."
+            "AppLiveTrackingView must keep LHMapFirstPageScaffold from Phase B-1."
+        )
+        XCTAssertTrue(liveSource.contains("LHMapFloatingChrome"))
+        XCTAssertTrue(liveSource.contains("LHGlassBottomSheetDashboard"))
+    }
+
+    func test_phaseB2_dayDetailMountsTheNewScaffold() throws {
+        // Phase B-2 migrates AppDayDetailView onto the shared scaffold.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let source = try String(
+            contentsOf: root.appendingPathComponent("AppDayDetailView.swift"),
+            encoding: .utf8
         )
         XCTAssertTrue(
-            liveSource.contains("LHMapFloatingChrome"),
-            "AppLiveTrackingView must mount LHMapFloatingChrome in Phase B-1."
+            source.contains("LHMapFirstPageScaffold"),
+            "AppDayDetailView must mount LHMapFirstPageScaffold in Phase B-2."
         )
         XCTAssertTrue(
-            liveSource.contains("LHGlassBottomSheetDashboard"),
-            "AppLiveTrackingView must mount LHGlassBottomSheetDashboard in Phase B-1."
+            source.contains("LHMapFloatingChrome"),
+            "AppDayDetailView must mount LHMapFloatingChrome in Phase B-2."
+        )
+        XCTAssertTrue(
+            source.contains("LHGlassBottomSheetDashboard"),
+            "AppDayDetailView must mount LHGlassBottomSheetDashboard in Phase B-2."
         )
     }
 
-    func test_phaseB1_otherMapScreensNotYetMigrated() throws {
-        // DayDetail / Insights / Map-Tab / Export / Heatmap / Editor remain
-        // on their pre-migration compositions; update each entry in the
-        // corresponding migration PR.
+    func test_phaseB2_remainingMapScreensNotYetMigrated() throws {
+        // Insights / Export / Heatmap / Editor remain on their pre-migration
+        // compositions; update each entry in the corresponding sub-train PR.
         guard let root = sourcesDirectory() else {
             throw XCTSkip("Sources/ tree not reachable.")
         }
         let candidates = [
-            "AppDayDetailView.swift",
             "AppInsightsContentView.swift",
             "AppExportView.swift",
             "AppHeatmapView.swift",

@@ -145,7 +145,12 @@ public struct AppDayDetailView: View {
             // that hosts the day headline, KPIs, segment picker and segmented
             // content. Mirrors AppLiveTrackingView's multi-layer portrait
             // layout while preserving DayDetail's existing data model.
-            if #available(iOS 17.0, macOS 14.0, *) {
+            if #available(iOS 26.0, *) {
+                // Phase B-2 (Train F.7): scaffolded layout on iOS 26+.
+                // The legacy `multiLayerPortraitLayout` below stays as the
+                // iOS-17/25 fallback and as a one-line revert path.
+                scaffoldedDayDetailLayout(detail: filteredDetail, resolvedMapData: resolvedMapData)
+            } else if #available(iOS 17.0, macOS 14.0, *) {
                 multiLayerPortraitLayout(detail: filteredDetail, resolvedMapData: resolvedMapData)
             } else {
                 // Pre-iOS 17 fallback: previous scroll layout without the
@@ -158,6 +163,124 @@ public struct AppDayDetailView: View {
                 .background(Color(.systemBackground))
             }
         }
+    }
+
+    // MARK: - Phase B-2 (Train F.7): Scaffolded DayDetail Layout (iOS 26+)
+    //
+    // Wraps the existing `multiLayerMapBackground`, `DayDetailLayerPanel`,
+    // `DayDetailControlStack` and bottom-sheet content into the shared
+    // `LHMapFirstPageScaffold` + `LHMapFloatingChrome` +
+    // `LHGlassBottomSheetDashboard` components. Favorit-, Export-, Route-
+    // Display-, Timeline-/Routes-/Places- und ImportedPath-Mutation-Wirings
+    // bleiben aus dem Legacy-Pfad unveraendert — nur die aeussere
+    // Komposition wechselt auf das Shared-System.
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private func scaffoldedDayDetailLayout(
+        detail: DayDetailViewState,
+        resolvedMapData: DayMapData
+    ) -> some View {
+        let bottomSafe = lhDeviceBottomSafeInset()
+        let clearance = LHMapBase.bottomSheetTabBarClearance(
+            deviceBottomSafeInset: bottomSafe
+        )
+        LHMapFirstPageScaffold(
+            topSafeInset: lhDeviceTopSafeInset(),
+            bottomSafeInset: bottomSafe,
+            sheetBottomClearance: clearance
+        ) {
+            multiLayerMapBackground(resolvedMapData: resolvedMapData)
+        } floatingChrome: {
+            LHMapFloatingChrome(
+                topSafeInset: lhDeviceTopSafeInset(),
+                accessibilityPrefix: "dayDetail.scaffold"
+            ) {
+                DayDetailLayerPanel(
+                    selected: $preferences.mapTrackColorMode,
+                    routeDisplay: $preferences.dayPathDisplayMode,
+                    showTempoBand: $showTempoBand,
+                    showElevationBand: $showElevationBand,
+                    hasPaths: !detail.paths.isEmpty,
+                    layersLabel: dayDetailLayersPanelLabel,
+                    standardLabel: t("Standard"),
+                    speedLabel: t("Speed"),
+                    elevationLabel: t("Elevation"),
+                    weatherLabel: t("Weather prepared"),
+                    routeDisplayLabel: t("Route Display"),
+                    routeOriginalLabel: t("Original"),
+                    routeSimplifiedLabel: t("Simplified")
+                )
+            } controls: {
+                DayDetailControlStack(
+                    onFitToData: { dayMapCamera.fitToData?() },
+                    onZoomIn: { dayMapCamera.adjustZoom?(0.5) },
+                    onZoomOut: { dayMapCamera.adjustZoom?(2.0) },
+                    compassLabel: t("Fit to Data"),
+                    zoomInLabel: t("Zoom in"),
+                    zoomOutLabel: t("Zoom out"),
+                    fitLabel: t("Fit to Data")
+                )
+            }
+        } sheet: {
+            LHGlassBottomSheetDashboard(
+                detents: .portrait,
+                initialDetent: .medium,
+                bottomClearance: clearance,
+                accessibilityPrefix: "dayDetail.scaffold.sheet"
+            ) {
+                scaffoldedSheetHeader(detail: detail)
+            } body: {
+                scaffoldedSheetBody(detail: detail)
+            }
+        }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private func scaffoldedSheetHeader(detail: DayDetailViewState) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(t("DAY · DETAIL"))
+                .font(.caption2.weight(.heavy))
+                .tracking(0.7)
+                .foregroundStyle(.secondary)
+            Text(bottomSheetHeadline(detail))
+                .font(.title3.weight(.bold))
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private func scaffoldedSheetBody(detail: DayDetailViewState) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(AppDateDisplay.weekday(detail.date))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("dayDetail.weekday")
+                dayTimeRange(detail)
+            }
+            metricGrid(detail)
+            overlayBands(detail)
+            dayActionsSection(detail)
+            segmentControl(detail)
+            segmentedContent(detail)
+
+            if let liveLocation {
+                detailContextHeader(
+                    t("Local Recording"),
+                    message: t("Live location and saved live tracks stay separate from the imported day data above.")
+                )
+                AppLiveLocationSection(
+                    liveLocation: liveLocation,
+                    onOpenSavedTracksLibrary: onOpenSavedTracks
+                )
+            }
+        }
+        .accessibilityIdentifier("dayDetail.scaffold.sheet.body")
     }
 
     // MARK: - Multi-Layer Portrait Layout (Phase 3a)
