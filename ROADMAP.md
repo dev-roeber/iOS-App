@@ -6,9 +6,10 @@
 - **Train F.7 Phase B-1 (implementiert):** `AppLiveTrackingView` iOS-26-Pfad nutzt das Shared-System. Legacy-Pfad als Fallback.
 - **Train F.7 Phase B-2 (implementiert):** `AppDayDetailView` iOS-26-Pfad nutzt das Shared-System. Sheet-Inhalt aus dem Legacy-Pfad wiederverwendet. Favorite/Export/Route-Display/ImportedPath-Mutation-Wirings unangetastet.
 - **Train F.7 Phase B-3 (implementiert):** `AppInsightsContentView` iOS-26-Pfad nutzt `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard`. `LHMapFloatingChrome` bewusst nicht gemountet (dokumentierte Ausnahme).
-- **Train F.7 Phase B-4 (implementiert):** `LGTabContainerView.mapTab` rendert `AppOverviewTracksMapView` full-bleed in `LHMapFirstPageScaffold`, Dashboard-Sheet hostet KPIs/Timeline/QuickActions. `LHMapFloatingChrome` bewusst nicht gemountet (Overlays im OverviewTracksMapView).
-- **Train F.7 Phase B-5 (geplant):** Export-Preview.
-- **Train F.7 Phase B (Rest):** Export-Preview → Heatmap → Editor → Explore-Sheet. Pro Screen ein PR.
+- **Train F.7 Phase B-4 (implementiert):** `LGTabContainerView.mapTab` rendert `AppOverviewTracksMapView` full-bleed in `LHMapFirstPageScaffold`, Dashboard-Sheet hostet KPIs/Timeline/QuickActions. Dokumentierte Ausnahme.
+- **Train F.7 Phase B-5 (implementiert):** `AppExportView` heroEnabled-Pfad nutzt `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard` (`compactPortrait`-Detents). Format-Picker, Selection, fileExporter, CSV-Hinweis, Privacy unveraendert. Dokumentierte `LHMapFloatingChrome`-Ausnahme.
+- **Train F.7 Phase B-6 (geplant):** Heatmap.
+- **Train F.7 Phase B (Rest):** Heatmap → Editor → Explore-Sheet. Pro Screen ein PR.
 - **Train F.7 Phase C (geplant):** Nicht-Karten-Screens auf `LHGlassPageScaffold` (Welcome, Files, Options, iCloud-Options, Editor-Form-Modus).
 - **Train 3 (Hardening, geplant):** Phase D — Performance-Profile scharf stellen, Recording-Single-Truth, MapLayerMenu-Hit-Region, Insights Mode/Filter-Coupling, Instruments-Messplan.
 - **Akzeptanzkriterien & Risiko-Matrix:** in `docs/UI_UX_MAP_FIRST_MIGRATION_PLAN_2026-05-28.md` dokumentiert.

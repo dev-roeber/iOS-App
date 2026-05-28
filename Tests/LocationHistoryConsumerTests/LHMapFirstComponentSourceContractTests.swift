@@ -140,6 +140,30 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         XCTAssertTrue(liveSource.contains("LHGlassBottomSheetDashboard"))
     }
 
+    func test_phaseB5_exportMountsTheNewScaffold() throws {
+        // Phase B-5 migrates AppExportView heroEnabled-Pfad onto the shared
+        // scaffold. LHMapFloatingChrome is NOT required — the existing
+        // exportHeroMap (AppExportMultiLayerHero + AppExportPreviewMapView)
+        // already overlays MapLayerMenu and layer toggles; a second
+        // LHMapFloatingChrome would double the affordances (documented
+        // exception, mirrors Insights B-3 and Map-Tab B-4).
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let source = try String(
+            contentsOf: root.appendingPathComponent("AppExportView.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(
+            source.contains("LHMapFirstPageScaffold"),
+            "AppExportView must mount LHMapFirstPageScaffold in Phase B-5."
+        )
+        XCTAssertTrue(
+            source.contains("LHGlassBottomSheetDashboard"),
+            "AppExportView must mount LHGlassBottomSheetDashboard in Phase B-5."
+        )
+    }
+
     func test_phaseB4_mapTabHeroMountsTheNewScaffold() throws {
         // Phase B-4 migrates the Map-Tab Hero inside LGTabContainerView onto
         // the shared scaffold. LHMapFloatingChrome is NOT required —
@@ -209,14 +233,13 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         )
     }
 
-    func test_phaseB4_remainingMapScreensNotYetMigrated() throws {
-        // Export / Heatmap / Editor remain on their pre-migration
-        // compositions; update each entry in the corresponding sub-train PR.
+    func test_phaseB5_remainingMapScreensNotYetMigrated() throws {
+        // Heatmap and Editor remain on their pre-migration compositions;
+        // update each entry in the corresponding sub-train PR.
         guard let root = sourcesDirectory() else {
             throw XCTSkip("Sources/ tree not reachable.")
         }
         let candidates = [
-            "AppExportView.swift",
             "AppHeatmapView.swift",
             "AppRecordedTrackEditorView.swift"
         ]

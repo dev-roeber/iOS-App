@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.7 Phase B-5: Export Preview on Map-First Scaffold (Branch `feat/export-preview-migration-map-first`)
+
+### Added
+- `AppExportView.scaffoldedExportLayout(selection:summaries:)` + `scaffoldedExportSheetHeader` + `scaffoldedExportSheetBody(selection:summaries:)`, alle `@available(iOS 26.0, *)`. Body-Dispatch im `heroEnabled`-Zweig waehlt auf iOS 26+ den neuen Pfad, sonst weiterhin den Legacy-Hero-Pfad. Pre-heroEnabled-Pfad bleibt strukturell unveraendert.
+- Source-Contract-Test `test_phaseB5_exportMountsTheNewScaffold`. Sub-Train-Boundary auf Heatmap und Editor reduziert.
+
+### Changed
+- Export iOS-26-`heroEnabled`-Pfad rendert: `LHMapFirstPageScaffold` (Map = bestehende `exportHeroMap`, FloatingChrome = `EmptyView()`), `LHGlassBottomSheetDashboard` (Detents `compactPortrait` — Export-Sheet braucht mehr Vertikal-Raum als `portrait` weil Preview-Card + Selection + Range + Privacy + Export-Button alle reinpassen muessen) mit Header (`EXPORT` Caption + `Export` Title) und Body (`ScrollViewReader { proxy in checkoutScrollContent(...) + bottomBar }`).
+- `checkoutScrollContent` und `bottomBar` 1:1 wiederverwendet — Format-Picker, Selection-Logik, fileExporter, CSV-Hinweis, Privacy-Sektion, Import-Summary, Range-Filter, Selection-Summary, Preview-Card unveraendert.
+
+### Documented exception
+- `LHMapFloatingChrome` wird im Export-Scaffold NICHT gemountet. `exportHeroMap` mountet bereits `AppExportMultiLayerHero` mit eigenen Layer-Toggles und `AppExportPreviewMapView` mit eigenem `MapLayerMenu`. Ein zweites `LHMapFloatingChrome` wuerde die Affordances doppeln. Spiegelt die Insights-B-3- und Map-Tab-B-4-Begruendung.
+
+### Why
+- Phase B-5 des Migrationsplans. Mit Export ist nach Live (B-1) / DayDetail (B-2) / Insights (B-3) / Map-Tab (B-4) auch die Export-Modal-Surface auf dem Shared-System. Heatmap (B-6) und Editor (B-7) folgen einzeln.
+- Bewusst NICHT angefasst: Export-Pipeline, GPX/KML/CSV/ZIP-Erzeugung, `fileExporter`, Auswahlsemantik fuer Tage/Tracks, Cloud-/iCloud-Hinweise, Camera-/Zoom-Verhalten der Preview-Karte, suggestedFilename-Logik.
+
+### Tests
+- `swift build` gruen (1.71 s).
+- `swift test` gruen: **1781** Tests, 3 skipped, **0 failures** (~57 s, Linux x86_64).
+- `LHMapFirstComponentSourceContractTests`: Phase-B-1- bis B-4-Regression-Guards bleiben, Phase-B-5-Mount-Check neu, Sub-Train-Boundary auf Heatmap/Editor reduziert, AppLanguage- und MapContentBuilder-Regression-Guards bleiben.
+
+### Open
+- Kein xcodebuild-Smoke (Linux-Host). Export-Sheet mit Preview-Card + Selection-Summary + Range-Filter + Privacy + Export-Button im `compactPortrait`-Detent ist nicht auf Apple-Sim/Geraet validiert. Geraete-Smoke vor TestFlight: Sheet-Detent-Robustheit pruefen, Export-Button-Erreichbarkeit im `collapsed`/`medium`-Detent.
+- CSV-Layer-Suppression-Hinweis bleibt offen als bekannter Audit-Punkt — in diesem Train bewusst nicht semantisch geaendert.
+- Phase B-6 (Heatmap) ist der naechste dokumentierte Schritt.
+
 ## 2026-05-28 — Train F.7 Phase B-4: Map-Tab Hero on Map-First Scaffold (Branch `feat/map-tab-hero-migration-map-first`)
 
 ### Added
