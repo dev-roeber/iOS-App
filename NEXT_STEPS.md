@@ -1,5 +1,21 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.7 Phase B-5: Export Preview migrated (Branch `feat/export-preview-migration-map-first`)
+
+Fuenfte produktive Screen-Migration. Live (B-1), DayDetail (B-2), Insights (B-3), Map-Tab (B-4), Export-Preview (B-5) konsumieren das Shared-System. Heatmap und Editor folgen.
+
+Neu im Repo:
+- `AppExportView.heroEnabled` iOS-26-Pfad mountet `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard` (Detents `compactPortrait`). `LHMapFloatingChrome` bewusst nicht gemountet (Export-Hero hat eigene Layer-Toggles). Body-Dispatch behaelt Legacy-Pfad fuer iOS 17-25.
+- Source-Contract-Test `test_phaseB5_exportMountsTheNewScaffold`. Sub-Train-Boundary auf Heatmap und Editor.
+
+**Naechster Schritt:** Phase B-6 — `AppHeatmapView`. Besonders vorsichtig wegen LOD, Overlay-Caps, Attribution-Guard und Performance.
+
+**Train 3 (Hardening, weiterhin offen):** Recording-Dual-Truth, MapLayerMenu-Hit-Region, SurfaceMode/RangeFilter-Coupling, ActivityTimeline-Filter, CSV-Layer-Suppression-Hinweis, Performance-Profile in Render-Pipeline scharf stellen, Instruments-Messplan.
+
+**Offen / nicht in F.7 Phase B-5:** xcodebuild-Smoke, Geraete-Smoke des Export-Sheets (Detent-Robustheit, Export-Button-Erreichbarkeit), CSV-Layer-Hinweis-Klarstellung.
+
+---
+
 ## Stand 2026-05-28 — Train F.7 Phase B-4: Map-Tab Hero migrated (Branch `feat/map-tab-hero-migration-map-first`)
 
 Vierte produktive Screen-Migration aus Phase B. Damit sind Live (B-1), DayDetail (B-2), Insights (B-3) und Map-Tab (B-4) auf dem Shared-System. Modale Familie (Export, Heatmap, Editor, Explore-Sheet) folgt einzeln.

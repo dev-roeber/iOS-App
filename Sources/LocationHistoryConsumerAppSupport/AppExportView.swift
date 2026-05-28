@@ -155,6 +155,12 @@ public struct AppExportView: View {
     @ViewBuilder
     private func checkoutLayout(selection: ExportSelectionState, summaries: [DaySummary]) -> some View {
         if heroEnabled {
+            // Phase B-5 (Train F.7): scaffolded layout on iOS 26+.
+            // The legacy heroEnabled-Pfad bleibt als Fallback fuer
+            // iOS 17-25 erhalten und als One-Line-Revert.
+            if #available(iOS 26.0, *) {
+                scaffoldedExportLayout(selection: selection, summaries: summaries)
+            } else {
             ScrollViewReader { proxy in
                 ScrollView {
                     LHPageScaffold(spacing: 14) {
@@ -172,6 +178,7 @@ public struct AppExportView: View {
                 bottomBar(selection: selection, summaries: summaries)
             }
             .ignoresSafeArea(edges: .top)
+            }
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
@@ -183,6 +190,85 @@ public struct AppExportView: View {
             .safeAreaInset(edge: .bottom) {
                 bottomBar(selection: selection, summaries: summaries)
             }
+        }
+    }
+
+    // MARK: - Phase B-5 (Train F.7): Scaffolded Export Layout (iOS 26+)
+    //
+    // Map = bestehende `exportHeroMap` (mountet `AppExportMultiLayerHero` +
+    // `AppExportPreviewMapView`). FloatingChrome slot ist bewusst
+    // `EmptyView()` — der Export-Hero ueberlagert bereits `MapLayerMenu` /
+    // Layer-Toggles intern. Mounten eines zweiten `LHMapFloatingChrome`
+    // wuerde die Affordances doppeln (dokumentierte Ausnahme, spiegelt
+    // Insights B-3 und Map-Tab B-4).
+    //
+    // Sheet hostet den existierenden `checkoutScrollContent` (Title,
+    // Insights-Drilldown-Card, Import-Summary, Range-Filter, Selection,
+    // Preview, Privacy-Hinweise) und am Ende den `bottomBar` mit dem
+    // Export-Button. Format-Picker, Selection-Logik, fileExporter,
+    // CSV-Hinweis und Privacy-Sektion bleiben aus dem Legacy-Pfad
+    // unveraendert.
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private func scaffoldedExportLayout(
+        selection: ExportSelectionState,
+        summaries: [DaySummary]
+    ) -> some View {
+        let bottomSafe = lhDeviceBottomSafeInset()
+        let clearance = LHMapBase.bottomSheetTabBarClearance(
+            deviceBottomSafeInset: bottomSafe
+        )
+        LHMapFirstPageScaffold(
+            topSafeInset: lhDeviceTopSafeInset(),
+            bottomSafeInset: bottomSafe,
+            sheetBottomClearance: clearance
+        ) {
+            exportHeroMap(selection: selection, summaries: summaries)
+        } floatingChrome: {
+            EmptyView()
+        } sheet: {
+            LHGlassBottomSheetDashboard(
+                detents: .compactPortrait,
+                initialDetent: .medium,
+                bottomClearance: clearance,
+                accessibilityPrefix: "export.scaffold.sheet"
+            ) {
+                scaffoldedExportSheetHeader
+            } body: {
+                scaffoldedExportSheetBody(selection: selection, summaries: summaries)
+            }
+        }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedExportSheetHeader: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(t("EXPORT"))
+                .font(.caption2.weight(.heavy))
+                .tracking(0.7)
+                .foregroundStyle(.secondary)
+            Text(t("Export"))
+                .font(.title3.weight(.bold))
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private func scaffoldedExportSheetBody(
+        selection: ExportSelectionState,
+        summaries: [DaySummary]
+    ) -> some View {
+        ScrollViewReader { proxy in
+            VStack(alignment: .leading, spacing: 14) {
+                checkoutScrollContent(selection: selection, summaries: summaries, proxy: proxy)
+                bottomBar(selection: selection, summaries: summaries)
+                    .padding(.top, 4)
+            }
+            .accessibilityIdentifier("export.scaffold.sheet.body")
         }
     }
 
