@@ -121,12 +121,11 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         )
     }
 
-    // MARK: - Phase A boundary
+    // MARK: - Phase B-1 boundary: Live migrated, the others not yet
 
-    func test_phaseA_doesNotMigrateExistingScreens() throws {
-        // Phase A introduces shared components but does NOT swap them into
-        // production screens. This guard asserts the canonical screens still
-        // reference their pre-migration entry points.
+    func test_phaseB1_liveMountsTheNewScaffold() throws {
+        // Phase B-1 migrates the Live screen onto the shared scaffold while
+        // every other map surface still uses its pre-migration composition.
         guard let root = sourcesDirectory() else {
             throw XCTSkip("Sources/ tree not reachable.")
         }
@@ -134,16 +133,83 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
             contentsOf: root.appendingPathComponent("AppLiveTrackingView.swift"),
             encoding: .utf8
         )
-        // Until Phase B mounts the new scaffolds, the live screen must NOT
-        // already reference them. If you are deliberately migrating Live,
-        // update this test in the same PR.
-        XCTAssertFalse(
+        XCTAssertTrue(
             liveSource.contains("LHMapFirstPageScaffold"),
-            "AppLiveTrackingView must not mount LHMapFirstPageScaffold in Phase A."
+            "AppLiveTrackingView must mount LHMapFirstPageScaffold in Phase B-1."
         )
-        XCTAssertFalse(
+        XCTAssertTrue(
+            liveSource.contains("LHMapFloatingChrome"),
+            "AppLiveTrackingView must mount LHMapFloatingChrome in Phase B-1."
+        )
+        XCTAssertTrue(
             liveSource.contains("LHGlassBottomSheetDashboard"),
-            "AppLiveTrackingView must not mount LHGlassBottomSheetDashboard in Phase A."
+            "AppLiveTrackingView must mount LHGlassBottomSheetDashboard in Phase B-1."
+        )
+    }
+
+    func test_phaseB1_otherMapScreensNotYetMigrated() throws {
+        // DayDetail / Insights / Map-Tab / Export / Heatmap / Editor remain
+        // on their pre-migration compositions; update each entry in the
+        // corresponding migration PR.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let candidates = [
+            "AppDayDetailView.swift",
+            "AppInsightsContentView.swift",
+            "AppExportView.swift",
+            "AppHeatmapView.swift",
+            "AppRecordedTrackEditorView.swift"
+        ]
+        for relative in candidates {
+            let url = root.appendingPathComponent(relative)
+            guard let source = try? String(contentsOf: url, encoding: .utf8) else {
+                continue
+            }
+            XCTAssertFalse(
+                source.contains("LHMapFirstPageScaffold"),
+                "\(relative) must not mount LHMapFirstPageScaffold before its Phase-B sub-train."
+            )
+        }
+    }
+
+    // MARK: - Xcode-Cloud regression guard
+
+    func test_noAppLanguageScopeRegression() throws {
+        // Linux skips files gated by `canImport(SwiftUI) && canImport(MapKit)`,
+        // so a wrong type name there compiles under Linux but breaks Xcode
+        // Cloud (see Phase-A hotfix in AppMapTabDashboardStrip.swift). This
+        // guard fails fast if the wrong `AppLanguage` identifier (without
+        // the `Preference` suffix) shows up again.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let enumerator = FileManager.default.enumerator(
+            at: root,
+            includingPropertiesForKeys: nil
+        )
+        var offenders: [String] = []
+        while let item = enumerator?.nextObject() as? URL {
+            guard item.pathExtension == "swift" else { continue }
+            guard let source = try? String(contentsOf: item, encoding: .utf8) else { continue }
+            // Reject any literal use of `: AppLanguage` not followed by `Preference`.
+            let pattern = ": AppLanguage"
+            var searchRange = source.startIndex..<source.endIndex
+            while let match = source.range(of: pattern, range: searchRange) {
+                let afterEnd = match.upperBound
+                if afterEnd < source.endIndex {
+                    let nextChars = source[afterEnd..<source.index(afterEnd, offsetBy: min(10, source.distance(from: afterEnd, to: source.endIndex)))]
+                    if !nextChars.hasPrefix("Preference") {
+                        offenders.append(item.lastPathComponent)
+                        break
+                    }
+                }
+                searchRange = afterEnd..<source.endIndex
+            }
+        }
+        XCTAssertTrue(
+            offenders.isEmpty,
+            "Stale `AppLanguage` (without `Preference` suffix) found in: \(offenders.joined(separator: ", "))"
         )
     }
 }

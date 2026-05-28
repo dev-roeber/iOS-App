@@ -26,14 +26,14 @@ import SwiftUI
 import MapKit
 
 @available(iOS 26.0, macOS 15.0, *)
-public struct LHMapWorkspace<MapContent: View>: View {
+public struct LHMapWorkspace<Content: MapContent>: View {
 
     @Binding private var cameraPosition: MapCameraPosition
     private let style: MapStyle
     private let performancePolicy: LHMapPerformancePolicy
     private let accessibilityIdentifier: String
     private let accessibilityLabelText: String?
-    private let mapContent: () -> MapContent
+    private let mapContent: () -> Content
 
     public init(
         cameraPosition: Binding<MapCameraPosition>,
@@ -41,7 +41,7 @@ public struct LHMapWorkspace<MapContent: View>: View {
         performancePolicy: LHMapPerformancePolicy,
         accessibilityIdentifier: String = "lhMapWorkspace",
         accessibilityLabel: String? = nil,
-        @ViewBuilder mapContent: @escaping () -> MapContent
+        @MapContentBuilder mapContent: @escaping () -> Content
     ) {
         self._cameraPosition = cameraPosition
         self.style = style

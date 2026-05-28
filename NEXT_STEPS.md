@@ -1,5 +1,21 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.7 Phase B-1: Live Screen migrated (Branch `feat/live-migration-map-first`)
+
+Erste produktive Screen-Migration aus Phase B. Nur `AppLiveTrackingView` ist auf das Shared-System umgestellt; alle anderen Map-Screens bleiben auf ihrer Pre-Migration-Komposition.
+
+Neu im Repo:
+- `AppLiveTrackingView` iOS-26-Pfad mountet `LHMapFirstPageScaffold` + `LHMapFloatingChrome` + `LHGlassBottomSheetDashboard`. Stop-FAB sitzt mit `.zIndex(1)` ueber dem Dashboard. Sheet-Inhalt 1:1 aus dem Legacy-Pfad uebernommen.
+- Erweiterte `LHMapFirstComponentSourceContractTests`: Live-Mount-Check, Sub-Train-Boundary fuer DayDetail/Insights/Export/Heatmap/Editor, AppLanguage-Regression-Guard.
+
+**Naechster Schritt:** Phase B-2 — `AppDayDetailView` analog migrieren. Erst danach Insights/Map-Tab-Hero, weil Live + DayDetail die gemeinsame Bottom-Sheet-/Floating-Chrome-Sprache definieren.
+
+**Train 3 (Hardening, weiterhin offen):** Recording-Dual-Truth aufloesen, MapLayerMenu-Hit-Region final pruefen, Insights Mode/Filter-Coupling entkoppeln, Performance-Profile in Render-Pipeline scharf stellen, Instruments-Messplan ausfuehren.
+
+**Offen / nicht in F.7 Phase B-1:** xcodebuild-Smoke (Linux-Host), Geraete-Smoke der GlassEffectContainer-Morph- und Detent-Animationen, Sheet-Detent-Robustheit bei Rotation/iPad/Dynamic Type, Recording-Dual-Truth-Refactor.
+
+---
+
 ## Stand 2026-05-28 — Train F.7 Phase A: Map-First Liquid Glass Shared Components (Branch `feat/map-first-shared-components`)
 
 Phase A des Migrationsplans implementiert. **Keine produktive Screen-Migration**, nur Shared-Components + Tests.

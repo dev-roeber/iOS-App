@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.7 Phase B-1: Live Screen on Map-First Scaffold (Branch `feat/live-migration-map-first`)
+
+### Added
+- `Sources/LocationHistoryConsumerAppSupport/AppLiveTrackingView.swift` erhaelt `scaffoldedPortraitLayout`, `scaffoldedSheetHeader` und `scaffoldedSheetBody` (alle `@available(iOS 26.0, *)`). Body-Dispatch waehlt auf iOS 26+ den neuen Pfad, sonst weiterhin `multiLayerPortraitLayout`.
+- Stop-/Record-FAB nutzt im Scaffold-Pfad `.zIndex(1)` plus `bottomSheetTabBarClearance`-Padding, damit das Dashboard ihn nicht verdecken kann.
+- `Tests/LocationHistoryConsumerTests/LHMapFirstComponentSourceContractTests.swift` wechselt von der Phase-A-Boundary (kein Screen migriert) auf Phase-B-1-Boundary: Live MUSS Scaffold + FloatingChrome + Dashboard mounten, DayDetail/Insights/Export/Heatmap/Editor duerfen es noch NICHT. Plus neuer Regression-Guard `test_noAppLanguageScopeRegression`, der eine Wiederholung des Xcode-Cloud-Hotfix-Bugs verhindert.
+
+### Changed
+- Live-Screen iOS-26-Pfad rendert jetzt: `LHMapFirstPageScaffold` (full-bleed Map + Floating-Chrome + Sheet via `safeAreaInset(.bottom)`), `LHMapFloatingChrome` (`LiveLayerPanel` + `LiveControlStack`, 44pt-Hit-Region via `LHMapFloatingChrome.minimumHitRegion`), `LHGlassBottomSheetDashboard` (Detents `compactPortrait`/`portrait`, Drag-Handle mit AccessibilityValue). Sheet-Inhalt unveraendert: GPS-Genauigkeit, Follow-Toggle, Background-Recording-Toggle, Track-Library, Permission-Row, Diagnostics-Disclosure mit `LHMetricCard`-Grid.
+- `liveMapBase`, `LiveLayerPanel`, `LiveControlStack`, `compactRecordFAB`, `diagnosticsDisclosure`, `LiveBottomSheetRow`, alle Camera-/Follow-/Compact-Closures wiederverwendet — keine Recording-, Permission- oder Upload-Semantik geaendert.
+
+### Why
+- Phase B-1 des Migrationsplans. Live ist der hoechst-Risiko-Screen (Recording-State, Permissions, Follow-Mode, Stop-FAB, Bottom-Sheet, TabBar, MapKit, Background-Recording haengen zusammen). Wir migrieren visuell auf das im Train F.7-A definierte Shared-System, ohne die Recording-Semantik anzufassen. Der Legacy-Pfad bleibt 1:1 erhalten als Fallback und Rollback-Option.
+
+### Tests
+- `swift build` gruen (1.70 s).
+- `swift test` gruen: **1776** Tests, 3 skipped, **0 failures** (~58 s, Linux x86_64).
+- `LHMapFirstComponentSourceContractTests` erweitert: Live-Mount-Check, Sub-Train-Boundary fuer DayDetail/Insights/Export/Heatmap/Editor, AppLanguage-Regression-Guard.
+
+### Fixed
+- `LHMapWorkspace.swift:56` — Xcode-Cloud-Archive 288 brach mit „Static method 'buildExpression' requires that 'MapContent' conform to '_MapKit_SwiftUI.MapContent'". Generischer Parameter war `MapContent: View` und der Builder `@ViewBuilder`; korrekt ist `Content: MapContent` (MapKit-Protokoll) mit `@MapContentBuilder`. Linux ueberspringt die Datei via `canImport(SwiftUI) && canImport(MapKit)`-Gate, deshalb war der Bug nur auf Apple-Compile sichtbar — selbe Klasse wie der vorherige `AppLanguage`-Hotfix. Behoben vor Push.
+
+### Open
+- Kein xcodebuild-Smoke moeglich (Linux-Host) — die neue iOS-26-Komposition (Glas-Morph, Detent-Animation, FAB-zIndex ueber Glas-Surface) ist nicht auf Apple-Sim/Geraet validiert. Der `LHMapWorkspace`-Fix ist ausschliesslich durch Code-Inspektion und Linux-Build verifiziert.
+- Recording-Dual-Truth (`recordButtonState` parallel zu `liveLocation.isRecording`) bleibt bewusst in Train 3 / Phase D.
+- Phase B-2 (DayDetail-Migration) ist der naechste dokumentierte Schritt.
+
 ## 2026-05-28 — Train F.7 Phase A: Map-First Liquid Glass Shared Components (Branch `feat/map-first-shared-components`)
 
 ### Added

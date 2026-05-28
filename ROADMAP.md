@@ -1,9 +1,11 @@
 # ROADMAP
 
-## Aktiver Stand (2026-05-28, Branch `feat/map-first-shared-components` — Train F.7 Phase A: Shared-Components)
+## Aktiver Stand (2026-05-28, Branch `feat/live-migration-map-first` — Train F.7 Phase B-1: Live migrated)
 
-- **Train F.7 Phase A (implementiert):** 8 Shared-Components in `Sources/LocationHistoryConsumerAppSupport/` — `LHMapPerformancePolicy`, `LHMapWorkspace`, `LHMapFirstPageScaffold`, `LHMapFloatingChrome`, `LHMapMetricCard`, `LHGlassBottomSheetDashboard`, `LHGlassPageScaffold`, `LHGlassSectionCard`. 18 neue Linux-Tests gruen. Keine produktive Screen-Migration.
-- **Train F.7 Phase B (geplant):** Live → DayDetail → Insights → Map-Tab-Hero → Export-Preview → Heatmap → Editor → Explore-Sheet. Pro Screen ein PR.
+- **Train F.7 Phase A (abgeschlossen):** 8 Shared-Components produktiv im Repo.
+- **Train F.7 Phase B-1 (implementiert):** `AppLiveTrackingView` iOS-26-Pfad nutzt `LHMapFirstPageScaffold` + `LHMapFloatingChrome` + `LHGlassBottomSheetDashboard`. Legacy-Pfad als Fallback erhalten. Recording-/Permission-/Upload-Semantik unangetastet.
+- **Train F.7 Phase B-2 (geplant):** `AppDayDetailView` analog. Erst danach Insights/Map-Tab.
+- **Train F.7 Phase B (Rest):** Insights → Map-Tab-Hero → Export-Preview → Heatmap → Editor → Explore-Sheet. Pro Screen ein PR.
 - **Train F.7 Phase C (geplant):** Nicht-Karten-Screens auf `LHGlassPageScaffold` (Welcome, Files, Options, iCloud-Options, Editor-Form-Modus).
 - **Train 3 (Hardening, geplant):** Phase D — Performance-Profile scharf stellen, Recording-Single-Truth, MapLayerMenu-Hit-Region, Insights Mode/Filter-Coupling, Instruments-Messplan.
 - **Akzeptanzkriterien & Risiko-Matrix:** in `docs/UI_UX_MAP_FIRST_MIGRATION_PLAN_2026-05-28.md` dokumentiert.
