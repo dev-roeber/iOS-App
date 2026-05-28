@@ -7,8 +7,9 @@
 - **Train F.7 Phase B-2 (implementiert):** `AppDayDetailView` iOS-26-Pfad nutzt das Shared-System. Sheet-Inhalt aus dem Legacy-Pfad wiederverwendet. Favorite/Export/Route-Display/ImportedPath-Mutation-Wirings unangetastet.
 - **Train F.7 Phase B-3 (implementiert):** `AppInsightsContentView` iOS-26-Pfad nutzt `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard`. `LHMapFloatingChrome` bewusst nicht gemountet (dokumentierte Ausnahme).
 - **Train F.7 Phase B-4 (implementiert):** `LGTabContainerView.mapTab` rendert `AppOverviewTracksMapView` full-bleed in `LHMapFirstPageScaffold`, Dashboard-Sheet hostet KPIs/Timeline/QuickActions. Dokumentierte Ausnahme.
-- **Train F.7 Phase B-5 (implementiert):** `AppExportView` heroEnabled-Pfad nutzt `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard` (`compactPortrait`-Detents). Format-Picker, Selection, fileExporter, CSV-Hinweis, Privacy unveraendert. Dokumentierte `LHMapFloatingChrome`-Ausnahme.
-- **Train F.7 Phase B-6 (geplant):** Heatmap.
+- **Train F.7 Phase B-5 (implementiert):** `AppExportView` heroEnabled-Pfad nutzt `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard` (`compactPortrait`-Detents).
+- **Train F.7 Phase B-5.5 (implementiert, Visual Hardening):** `tabBarStandardHeight 49→70`, Per-Screen-Detent-Profile, dunklerer Sheet-Base-Layer, Live-FAB im Sheet-Header, Insights-Map ohne `LHCollapsibleMapHeader`-Wrapper, Map-Tab `.collapsed`-Initial. **Keine neue Screen-Migration**.
+- **Train F.7 Phase B-6 (geplant, nach Geraete-Smoke):** Heatmap.
 - **Train F.7 Phase B (Rest):** Heatmap → Editor → Explore-Sheet. Pro Screen ein PR.
 - **Train F.7 Phase C (geplant):** Nicht-Karten-Screens auf `LHGlassPageScaffold` (Welcome, Files, Options, iCloud-Options, Editor-Form-Modus).
 - **Train 3 (Hardening, geplant):** Phase D — Performance-Profile scharf stellen, Recording-Single-Truth, MapLayerMenu-Hit-Region, Insights Mode/Filter-Coupling, Instruments-Messplan.

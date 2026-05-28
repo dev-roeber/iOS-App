@@ -176,8 +176,10 @@ public struct LGTabContainerView: View {
             EmptyView()
         } sheet: {
             LHGlassBottomSheetDashboard(
-                detents: .portrait,
-                initialDetent: .medium,
+                // B-5.5 Visual Hardening: `.mapTab`-Detents lassen die
+                // Karte dominieren, Sheet startet kompakt.
+                detents: .mapTab,
+                initialDetent: .collapsed,
                 bottomClearance: clearance,
                 accessibilityPrefix: "mapTab.scaffold.sheet"
             ) {

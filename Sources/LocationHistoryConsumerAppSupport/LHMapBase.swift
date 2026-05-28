@@ -76,7 +76,13 @@ public enum LHMapBase {
     /// auf eine schmalere "minimized"-Form; wir reservieren den vollen
     /// Standard-Wert, weil das Sheet auch im NICHT-minimierten Zustand
     /// nicht hinter der Bar verschwinden darf.
-    public static let tabBarStandardHeight: CGFloat = 49
+    ///
+    /// B-5.5 Visual Hardening: von 49 auf 70 angehoben. iOS 26 LG-TabBar
+    /// rendert deutlich groesser als die UIKit-Legacy-49pt-Bar, und in
+    /// allen migrierten Surfaces (Live/DayDetail/Insights/Map-Tab/Export)
+    /// klemmten Sheet-Unterkante und Apple-Maps-Attribution zu eng — die
+    /// 49pt unterreservierten den realen TabBar-Footprint.
+    public static let tabBarStandardHeight: CGFloat = 70
 
     /// Zusaetzlicher Bottom-Inset, den ein selbstgebauter `LiveBottomSheet`
     /// braucht, damit sein Inhalt NICHT unter die TabBar rutscht.

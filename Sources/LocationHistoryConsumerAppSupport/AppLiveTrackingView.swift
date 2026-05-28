@@ -424,81 +424,83 @@ public struct AppLiveTrackingView: View {
         let clearance = LHMapBase.bottomSheetTabBarClearance(
             deviceBottomSafeInset: bottomSafe
         )
-        return ZStack(alignment: .bottomTrailing) {
-            LHMapFirstPageScaffold(
+        return LHMapFirstPageScaffold(
+            topSafeInset: lhDeviceTopSafeInset(),
+            bottomSafeInset: bottomSafe,
+            sheetBottomClearance: clearance
+        ) {
+            liveMapBase
+        } floatingChrome: {
+            LHMapFloatingChrome(
                 topSafeInset: lhDeviceTopSafeInset(),
-                bottomSafeInset: bottomSafe,
-                sheetBottomClearance: clearance
+                accessibilityPrefix: "live.scaffold"
             ) {
-                liveMapBase
-            } floatingChrome: {
-                LHMapFloatingChrome(
-                    topSafeInset: lhDeviceTopSafeInset(),
-                    accessibilityPrefix: "live.scaffold"
-                ) {
-                    LiveLayerPanel(
-                        selected: $preferences.mapTrackColorMode,
-                        showWeather: $showWeatherLayer,
-                        showElevation: $showElevationLayer,
-                        layersLabel: layersPanelLabel,
-                        weatherAllowed: preferences.weatherLayerEnabled,
-                        weatherDisabledHint: t("Enable in Settings")
-                    )
-                } controls: {
-                    LiveControlStack(
-                        isFollowing: liveLocation.isFollowingLocation,
-                        onCompass: { centerOnCurrentLocation() },
-                        onZoomIn: { adjustMapZoom(factor: 0.5) },
-                        onZoomOut: { adjustMapZoom(factor: 2.0) },
-                        onLocate: {
-                            liveLocation.isFollowingLocation.toggle()
-                            if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
-                        },
-                        onCompactToggle: {
-                            withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
-                                isCompactMap.toggle()
-                            }
-                        },
-                        isCompact: isCompactMap
-                    )
-                }
-            } sheet: {
-                LHGlassBottomSheetDashboard(
-                    detents: isCompactMap ? .compactPortrait : .portrait,
-                    initialDetent: .medium,
-                    bottomClearance: clearance,
-                    accessibilityPrefix: "live.scaffold.sheet"
-                ) {
-                    scaffoldedSheetHeader
-                } body: {
-                    scaffoldedSheetBody
-                }
+                LiveLayerPanel(
+                    selected: $preferences.mapTrackColorMode,
+                    showWeather: $showWeatherLayer,
+                    showElevation: $showElevationLayer,
+                    layersLabel: layersPanelLabel,
+                    weatherAllowed: preferences.weatherLayerEnabled,
+                    weatherDisabledHint: t("Enable in Settings")
+                )
+            } controls: {
+                LiveControlStack(
+                    isFollowing: liveLocation.isFollowingLocation,
+                    onCompass: { centerOnCurrentLocation() },
+                    onZoomIn: { adjustMapZoom(factor: 0.5) },
+                    onZoomOut: { adjustMapZoom(factor: 2.0) },
+                    onLocate: {
+                        liveLocation.isFollowingLocation.toggle()
+                        if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
+                    },
+                    onCompactToggle: {
+                        withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
+                            isCompactMap.toggle()
+                        }
+                    },
+                    isCompact: isCompactMap
+                )
             }
-
-            // Stop / record FAB sits above the sheet via explicit z-index so a
-            // future sheet-gesture refactor cannot put it behind the dashboard.
-            compactRecordFAB
-                .padding(.trailing, 16)
-                .padding(.bottom, 12 + clearance)
-                .zIndex(1)
-                .accessibilityIdentifier("live.recording.scaffold.fab")
+        } sheet: {
+            LHGlassBottomSheetDashboard(
+                detents: isCompactMap ? .compactPortrait : .live,
+                initialDetent: .medium,
+                bottomClearance: clearance,
+                accessibilityPrefix: "live.scaffold.sheet"
+            ) {
+                // B-5.5 Visual Hardening: FAB im Sheet-Header statt als
+                // ZStack-Overlay. Eliminiert das Overlap-Problem ueber alle
+                // Detents — Stop/Record-Button bleibt deterministisch im
+                // Header-Bereich erreichbar, egal ob das Sheet collapsed,
+                // medium oder expanded ist.
+                scaffoldedSheetHeader
+            } body: {
+                scaffoldedSheetBody
+            }
         }
     }
 
     @available(iOS 26.0, *)
     @ViewBuilder
     private var scaffoldedSheetHeader: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(t("STATUS · LIVE MAP"))
-                .font(.caption2.weight(.heavy))
-                .tracking(0.7)
-                .foregroundStyle(.secondary)
-            Text(heroStatusTitle)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(heroStatusTint)
-                .fixedSize(horizontal: false, vertical: true)
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(t("STATUS · LIVE MAP"))
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.7)
+                    .foregroundStyle(.secondary)
+                Text(heroStatusTitle)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(heroStatusTint)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // FAB sits in the header so it is always reachable at every
+            // detent without overlapping sheet content.
+            compactRecordFAB
+                .accessibilityIdentifier("live.recording.scaffold.fab")
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @available(iOS 26.0, *)

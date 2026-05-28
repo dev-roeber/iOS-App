@@ -1,5 +1,26 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.7 Phase B-5.5: Scaffold Visual Regression Fix (Branch `feat/scaffold-visual-hardening`)
+
+Visual-Hardening-Train, KEINE neue Screen-Migration. Behebt die in den Geraete-Screenshots sichtbaren Regressions nach B-1 bis B-5:
+- Live-FAB-Overlap, Insights-Gray-Gap, Map-Tab-Sheet-Lesbarkeit, DayDetail-Cramping, globale TabBar/Attribution-Clearance.
+
+Neu im Repo:
+- `tabBarStandardHeight 49 → 70` (alle Sheets bekommen automatisch +21 pt Bottom-Clearance).
+- Per-Screen-Detent-Profile (`.mapTab`/`.live`/`.dayDetail`/`.insights`/`.export`).
+- Dunklerer Sheet-Base-Layer (`Color.black.opacity(0.18)` unter dem Liquid-Glass).
+- Live-FAB im Sheet-Header statt als ZStack-Overlay.
+- Insights-Map direkt via `AppOverviewTracksMapView`, kein `LHCollapsibleMapHeader`-Wrapper.
+- Map-Tab `.mapTab`-Detents + `.collapsed`-Initial (Karte dominiert).
+
+**Naechster Schritt:** Phase B-6 — `AppHeatmapView`. Erst nach Geraete-Smoke der B-5.5-Fixes.
+
+**Train 3 (Hardening, weiterhin offen):** Recording-Dual-Truth, MapLayerMenu-Hit-Region, SurfaceMode/RangeFilter-Coupling, ActivityTimeline-Filter, CSV-Layer-Suppression-Hinweis, Performance-Profile, Instruments-Messplan.
+
+**Offen / nicht in F.7 Phase B-5.5:** xcodebuild-Smoke (Linux-Host), Geraete-Smoke der visuellen Aenderungen (TabBar-Anhebung, dunklerer Sheet-Layer, FAB-Position, Insights-Map ohne Wrapper).
+
+---
+
 ## Stand 2026-05-28 — Train F.7 Phase B-5: Export Preview migrated (Branch `feat/export-preview-migration-map-first`)
 
 Fuenfte produktive Screen-Migration. Live (B-1), DayDetail (B-2), Insights (B-3), Map-Tab (B-4), Export-Preview (B-5) konsumieren das Shared-System. Heatmap und Editor folgen.

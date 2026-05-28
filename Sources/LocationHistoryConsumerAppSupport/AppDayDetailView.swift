@@ -224,7 +224,10 @@ public struct AppDayDetailView: View {
             }
         } sheet: {
             LHGlassBottomSheetDashboard(
-                detents: .portrait,
+                // B-5.5 Visual Hardening: dedizierte `.dayDetail`-Detents
+                // statt generischer `.portrait`. Mehr Headroom fuer den
+                // Segmented-Content + KPI-Grid + Bands.
+                detents: .dayDetail,
                 initialDetent: .medium,
                 bottomClearance: clearance,
                 accessibilityPrefix: "dayDetail.scaffold.sheet"
