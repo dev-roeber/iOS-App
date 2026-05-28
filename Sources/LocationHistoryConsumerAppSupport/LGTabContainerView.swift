@@ -452,6 +452,9 @@ struct GlobalRecordingToolbarIndicator: View {
     }
 
     var body: some View {
+        // iOS 26 NavigationBar liefert Trailing-Toolbar-Items selbst einen
+        // Liquid-Glass-Container — kein Custom-`.lgGlassPill()` hier, sonst
+        // doppeltes Glas (Phantom-Pille).
         Button(action: onTap) {
             Circle()
                 .fill(Color.red)
@@ -459,10 +462,7 @@ struct GlobalRecordingToolbarIndicator: View {
                 .scaleEffect(pulse && !reduceMotion ? 1.35 : 1.0)
                 .opacity(pulse && !reduceMotion ? 0.55 : 1.0)
                 .frame(minWidth: 44, minHeight: 30)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .lgGlassPill()
-                .contentShape(Capsule())
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .task(id: liveModel.isRecording) {
@@ -561,14 +561,14 @@ struct GlobalRecordingBottomAccessory: View {
 public struct LGToolbarActionsLabel: View {
     public init() {}
     public var body: some View {
+        // iOS 26 NavigationBar liefert Trailing-Toolbar-Items selbst einen
+        // Liquid-Glass-Container — kein Custom-`.lgGlassPill()` hier, sonst
+        // doppeltes Glas (Phantom-Pille).
         Image(systemName: "ellipsis")
             .font(.system(size: 15, weight: .semibold))
             .foregroundStyle(LH2GPXTheme.LiquidGlass.trackPrimary)
             .frame(minWidth: 44, minHeight: 30)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .lgGlassPill()
-            .contentShape(Capsule())
+            .contentShape(Rectangle())
     }
 }
 
