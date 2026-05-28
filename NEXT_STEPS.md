@@ -1,5 +1,32 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.7 Phase B-8: Explore-Sheet migrated — Phase B complete (Branch `feat/explore-sheet-migration-map-first`)
+
+**Phase B funktional abgeschlossen.** Alle acht Map-Surfaces (Live B-1, DayDetail B-2, Insights B-3, Map-Tab B-4, Export B-5, Heatmap B-6, Editor B-7, Explore-Sheet B-8) konsumieren das Shared-System.
+
+Neu im Repo:
+- `AppOverviewExploreSheet` iOS-26-Pfad mountet `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard` (Detents `.mapTab`, `initialDetent: .collapsed`). `LHMapFloatingChrome` bewusst nicht gemountet (Explore-Map hat eigene Overlays). Done-Aktion im Sheet-Header.
+- Source-Contract-Test `test_phaseB8_exploreSheetMountsTheNewScaffold` + neuer **Phase-B-Endzustands-Test** `test_phaseB8_allMapSurfacesMigrated`, der alle acht Map-Files auf `LHMapFirstPageScaffold`-Praesenz prueft.
+- **Smoke bewusst deferred nach User-Entscheidung** — Linux-Build/Tests gruen, Apple-Sim/Geraet nicht verifiziert.
+
+**Naechster Schritt (nach User-Wunsch):** Erst WeatherKit-Fix finalisieren, danach Train 3 / Phase D Hardening.
+
+**Pending review (nicht gepusht, lokal auf separatem Branch):**
+- `fix/weatherkit-not-provisioned-classification` (Commit `995cd50`) — WeatherKit-Auth-Klassifizierung (WDSJWTAuthenticatorServiceListener.Errors code=2 als `.notProvisioned` mit `isPermanent`-Flag, kein Retry-Loop). 14 neue Linux-Tests gruen. Wartet auf User-Review vor Push.
+
+**Train 3 / Phase D (geplant, nach WeatherKit-Finalisierung):**
+- Recording-Dual-Truth-Refactor (`recordButtonState` parallel zu `liveLocation.isRecording`)
+- MapLayerMenu-Hit-Region 34→44 pt
+- SurfaceMode/RangeFilter-Coupling im Insights-Sheet entkoppeln
+- ActivityTimeline-Visit-only-Filter klaeren
+- CSV-Layer-Suppression-Hinweis im Export-Sheet
+- `LHMapPerformancePolicy`-Profile in Render-Pipelines tatsaechlich scharf stellen
+- Instruments-Messplan (Time Profiler, Allocations, Animation Hitches, Energy Log)
+
+**Offen / nicht in F.7 Phase B-8:** xcodebuild-Smoke (Linux-Host, bewusst deferred), TestFlight-Smoke aller acht migrierten Surfaces vor Train 3.
+
+---
+
 ## Stand 2026-05-28 — Train F.7 Phase B-7: Recorded-Track-Editor migrated (Branch `feat/editor-migration-map-first`)
 
 Siebte produktive Screen-Migration. Live (B-1), DayDetail (B-2), Insights (B-3), Map-Tab (B-4), Export (B-5), Heatmap (B-6), Editor (B-7) konsumieren das Shared-System. Nur Explore-Sheet (B-8) steht noch aus.
