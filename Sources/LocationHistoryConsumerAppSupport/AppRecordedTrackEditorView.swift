@@ -23,7 +23,16 @@ struct AppRecordedTrackEditorView: View {
             if isLandscape {
                 landscapeLayout
             } else {
-                portraitLayout
+                // Phase B-7 (Train F.7): scaffolded layout on iOS 26+.
+                // Legacy `portraitLayout` bleibt als iOS-17/25-Fallback und
+                // als One-Line-Revert. Toolbar-Buttons (Done/Reset/Save/
+                // Delete), Save-disabled-Condition, ImportedPath-/Recorded-
+                // Track-Persistenz, Auto-Center und Draft-State unangetastet.
+                if #available(iOS 26.0, *) {
+                    scaffoldedEditorLayout
+                } else {
+                    portraitLayout
+                }
             }
         }
         .navigationTitle(t("Edit Saved Track"))
@@ -75,6 +84,155 @@ struct AppRecordedTrackEditorView: View {
             summarySection
             mapSection
             pointsSection
+        }
+    }
+
+    // MARK: - Phase B-7 (Train F.7): Scaffolded Editor Layout (iOS 26+)
+    //
+    // Map = bestehende `editorMap` mit `MapPolyline`-Halo+Stroke und Start-
+    // /End-Markern, plus `editorMapLayerMenu` als topTrailing-Overlay direkt
+    // am `editorMap` (Safe-Area-bewusst via LHMapBase-Tokens). FloatingChrome
+    // slot ist bewusst `EmptyView()` — `editorMapLayerMenu` ist die einzige
+    // Editor-Map-Affordance, ein zweites `LHMapFloatingChrome` wuerde sie
+    // doppeln (dokumentierte Ausnahme, spiegelt Insights B-3, Map-Tab B-4,
+    // Export B-5, Heatmap B-6).
+    //
+    // Sheet hostet Summary (Datum, Start/End, Punktanzahl, Distanz,
+    // Validierungs-Message) und die Punkte-Liste. Toolbar mit Done/Reset/
+    // Save/Delete bleibt aussen auf der `NavigationStack` — Save-disabled-
+    // Condition `draft.savedTrack == nil || !draft.isModified` und alle
+    // Aktionen unveraendert.
+    //
+    // Performance-Schutz: keine neue Route-Simplification, kein neuer
+    // map/reduce/sorted-Hotloop, kein zusaetzlicher Camera-Reset, kein
+    // neuer Task.detached. Track-Polyline-Cap und `MapTrackStyle.Width
+    // .editor` bleiben strikt erhalten.
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedEditorLayout: some View {
+        let bottomSafe = lhDeviceBottomSafeInset()
+        let clearance = LHMapBase.bottomSheetTabBarClearance(
+            deviceBottomSafeInset: bottomSafe
+        )
+        LHMapFirstPageScaffold(
+            topSafeInset: lhDeviceTopSafeInset(),
+            bottomSafeInset: bottomSafe,
+            sheetBottomClearance: clearance
+        ) {
+            scaffoldedEditorMap
+        } floatingChrome: {
+            EmptyView()
+        } sheet: {
+            LHGlassBottomSheetDashboard(
+                detents: .dayDetail,
+                initialDetent: .medium,
+                bottomClearance: clearance,
+                accessibilityPrefix: "editor.scaffold.sheet"
+            ) {
+                scaffoldedEditorSheetHeader
+            } body: {
+                scaffoldedEditorSheetBody
+            }
+        }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedEditorMap: some View {
+        editorMap
+            .overlay(alignment: .topTrailing) {
+                editorMapLayerMenu
+                    .padding(.top, lhDeviceTopSafeInset() + LHMapBase.floatingControlTopGap)
+                    .padding(.trailing, LHMapBase.floatingControlSideInset)
+            }
+            .accessibilityIdentifier("editor.scaffold.map")
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedEditorSheetHeader: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(t("EDITOR"))
+                .font(.caption2.weight(.heavy))
+                .tracking(0.7)
+                .foregroundStyle(.secondary)
+            Text(t("Edit Saved Track"))
+                .font(.title3.weight(.bold))
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            if draft.isModified {
+                Text(t("Unsaved changes"))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .accessibilityIdentifier("editor.scaffold.dirty")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedEditorSheetBody: some View {
+        // Re-Use der bestehenden Form-Sections als Card-style Inhalt im
+        // Sheet. Form selbst wuerde mit eigener Hintergrundfarbe brechen,
+        // deshalb plain VStack mit den Section-Body-Inhalten.
+        VStack(alignment: .leading, spacing: 16) {
+            scaffoldedEditorSummaryCard
+            scaffoldedEditorPointsCard
+        }
+        .accessibilityIdentifier("editor.scaffold.sheet.body")
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedEditorSummaryCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(t("Summary"))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+            scaffoldedEditorRow(t("Date"), value: AppDateDisplay.longDate(draft.dayKey))
+            scaffoldedEditorRow(t("Started"), value: AppDateDisplay.abbreviatedDateTime(draft.startedAt))
+            scaffoldedEditorRow(t("Ended"), value: AppDateDisplay.abbreviatedDateTime(draft.endedAt))
+            scaffoldedEditorRow(t("Points"), value: "\(draft.pointCount)")
+            scaffoldedEditorRow(t("Distance"), value: formatDistance(draft.distanceM, unit: preferences.distanceUnit))
+            if let message = draft.validationMessage {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .lgGlassSurface(cornerRadius: 16)
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedEditorPointsCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(t("Points"))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+            pointsSection
+                .accessibilityIdentifier("editor.scaffold.pointsSection")
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .lgGlassSurface(cornerRadius: 16)
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private func scaffoldedEditorRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.secondaryInk)
+            Spacer()
+            Text(value)
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
         }
     }
 

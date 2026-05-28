@@ -1,5 +1,24 @@
 # NEXT_STEPS
 
+## Stand 2026-05-28 — Train F.7 Phase B-7: Recorded-Track-Editor migrated (Branch `feat/editor-migration-map-first`)
+
+Siebte produktive Screen-Migration. Live (B-1), DayDetail (B-2), Insights (B-3), Map-Tab (B-4), Export (B-5), Heatmap (B-6), Editor (B-7) konsumieren das Shared-System. Nur Explore-Sheet (B-8) steht noch aus.
+
+Neu im Repo:
+- `AppRecordedTrackEditorView` iOS-26-Pfad mountet `LHMapFirstPageScaffold` + `LHGlassBottomSheetDashboard` (Detents `.dayDetail`). `LHMapFloatingChrome` bewusst nicht gemountet — `editorMapLayerMenu` ist einzige Affordance. Toolbar Done/Reset/Save/Delete bleibt auf der NavigationStack, Save-disabled-Predicate unveraendert.
+- Source-Contract-Test `test_phaseB7_editorMountsTheNewScaffold` inkl. expliziter Save-disabled-Regression-Guard.
+- **Smoke bewusst deferred nach User-Entscheidung** — Linux-Build/Tests gruen, Apple-Sim/Geraet nicht verifiziert.
+
+**Naechster Schritt:** Phase B-8 — Explore-Sheet / Fullscreen-Explore (iOS-26 `fullScreenCover` aus `AppOverviewTracksMapView`).
+
+**Train 3 (Hardening, weiterhin offen):** Recording-Dual-Truth, MapLayerMenu-Hit-Region, SurfaceMode/RangeFilter-Coupling, ActivityTimeline-Filter, CSV-Layer-Suppression, Performance-Profile in Render-Pipeline scharf stellen, Instruments-Messplan.
+
+**Pending review (nicht gepusht, lokal auf separatem Branch):** `fix/weatherkit-not-provisioned-classification` (Commit `995cd50`) — WeatherKit-Auth-Klassifizierung (WDSJWTAuthenticatorServiceListener.Errors code=2 als `.notProvisioned` mit `isPermanent`-Flag, kein Retry-Loop). 14 neue Linux-Tests gruen. Wartet auf User-Review vor Push.
+
+**Offen / nicht in F.7 Phase B-7:** xcodebuild-Smoke (Linux-Host, bewusst deferred), Geraete-Smoke aller sieben migrierten Screens vor TestFlight.
+
+---
+
 ## Stand 2026-05-28 — Train F.7 Phase B-6: Heatmap migrated (Branch `feat/heatmap-migration-map-first`)
 
 Sechste produktive Screen-Migration. Live (B-1), DayDetail (B-2), Insights (B-3), Map-Tab (B-4), Export (B-5), Heatmap (B-6) konsumieren das Shared-System. Editor (B-7) und Explore-Sheet stehen noch aus.
