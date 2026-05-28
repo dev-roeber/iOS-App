@@ -47,6 +47,10 @@ struct AppDayRow: View {
                             statusChip(title: t("Exported"), systemImage: "checkmark.circle.fill", tint: LH2GPXTheme.liveMint)
                                 .accessibilityIdentifier("days.row.exported.\(summary.date)")
                         }
+                        if summary.kind == .live || summary.kind == .liveCompleted {
+                            statusChip(title: t("Live"), systemImage: "circle.fill", tint: .red)
+                                .accessibilityIdentifier("days.row.live.\(summary.date)")
+                        }
                         ForEach(highlightIcons, id: \.self) { icon in
                             Image(systemName: icon)
                                 .font(.caption)

@@ -43,7 +43,17 @@ public struct LGTabContainerView: View {
     // MARK: - Data sources
 
     private var allDaySummaries: [DaySummary] {
-        session.content?.daySummaries(applying: nil) ?? session.daySummaries
+        let imported = session.content?.daySummaries(applying: nil) ?? session.daySummaries
+        // LiveTracks-in-DayList 2026-05-28: aufgezeichnete LiveTracks werden
+        // als virtuelle DaySummaries (kind = .liveCompleted / .live) in die
+        // gemeinsame Liste injiziert. Die DayListView dekoriert sie via
+        // summary.kind mit einem roten „Live"-Chip.
+        let activeRecordingID: UUID? = liveLocation.isRecording ? liveLocation.sessionID : nil
+        let liveDerived = LiveTrackDaySummaryAdapter.daySummaries(
+            from: liveLocation.recordedTracks,
+            activeRecordingID: activeRecordingID
+        )
+        return DaySummaryDisplayOrdering.newestFirst(imported + liveDerived)
     }
 
     private var filteredDaySummaries: [DaySummary] {
