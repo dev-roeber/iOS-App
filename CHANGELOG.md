@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.7 Phase B-4: Map-Tab Hero on Map-First Scaffold (Branch `feat/map-tab-hero-migration-map-first`)
+
+### Added
+- `LGTabContainerView.scaffoldedMapTabBody(overview:)` + `scaffoldedMapTabSheetHeader` + `scaffoldedMapTabSheetBody(overview:)`. Da `LGTabContainerView` bereits `@available(iOS 26.0, *)` ist, gibt es keinen in-Komponente-Fallback — der Pre-iOS-26-/iPad-Pfad laeuft weiterhin durch `AppContentSplitView` und wird nicht angefasst.
+- Source-Contract-Tests: `test_phaseB4_mapTabHeroMountsTheNewScaffold` + neue Sub-Train-Boundary fuer Export/Heatmap/Editor.
+
+### Changed
+- Map-Tab-Hero rendert: `LHMapFirstPageScaffold` (Map = `AppOverviewTracksMapView(fixedHeight: nil)` full-bleed, `mapControlTopPadding = lhDeviceTopSafeInset() + LHMapBase.floatingControlTopGap`), `LHGlassBottomSheetDashboard` (Detents `portrait`) mit Header („KARTE" Caption + „Übersicht" Title) und Body (`AppOverviewGlassSection` + `AppMapTabActivityTimelineStrip` + `AppMapTabQuickActionPills`).
+- `NavigationStack` umschliesst Scaffold + Empty-State-Branch, `navigationTitle("Karte")` und `commonToolbar` bleiben.
+- Empty-State-Pfad (`mapEmptyState`) bleibt strukturell unveraendert, jetzt eingebettet in ScrollView mit `LHLiquidGlassBackground` Hintergrund — nur wenn `overview == nil`.
+- Keine Render-Pipeline-, Viewport-Filter- oder Overlay-Cap-Aenderung in `AppOverviewTracksMapView`. Navigation-Tab-Wechsel-Closures (`onDaysTap`, `onInsightsTap`, `onLiveTap`, `onExportTap`, `onDaySelected`) wiederverwendet.
+
+### Documented exception
+- `LHMapFloatingChrome` wird im Map-Tab-Hero-Scaffold NICHT gemountet. `AppOverviewTracksMapView` ueberlagert bereits `MapLayerMenu` topTrailing + Route-Count- und Optimized-Overview-Badges bottomTrailing. Ein zweites Floating-Chrome wuerde die Affordances doppeln — selbe Begruendung wie bei der Insights-B-3-Ausnahme.
+
+### Why
+- Phase B-4 des Migrationsplans. Damit sind die vier sichtbarsten iOS-26-Surfaces (Live B-1, DayDetail B-2, Insights B-3, Map-Tab B-4) auf dem Shared-System. Die modale Familie (Export, Heatmap, Editor, Explore-Sheet) folgt einzeln.
+- Bewusst NICHT angefasst: Navigation zwischen Tabs, Import-/Export-/Demo-/Clear-Aktionen, Overview-Map-Renderlogik, Overlay-Caps, Insights-Berechnungen.
+
+### Tests
+- `swift build` gruen (1.72 s).
+- `swift test` gruen: **1780** Tests, 3 skipped, **0 failures** (~58 s, Linux x86_64).
+- `LHMapFirstComponentSourceContractTests`: Phase-B-1- bis B-3-Regression-Guards bleiben, Phase-B-4-Mount-Check neu, Sub-Train-Boundary auf Export/Heatmap/Editor reduziert, AppLanguage- und MapContentBuilder-Regression-Guards bleiben.
+
+### Open
+- Kein xcodebuild-Smoke (Linux-Host). Map-Tab-Hero ueber Liquid-Glass-Scaffold mit KPIs/Timeline/QuickActions im Sheet ist nicht auf Apple-Sim/Geraet validiert.
+- Bekannter F.5-B-Restpunkt: `AppMapTabActivityTimelineStrip` filtert `pathCount > 0` und versteckt Visit-only-Tage stumm. In diesem Train bewusst nicht semantisch geaendert — bleibt fuer eine spaetere Iteration / Train 3.
+- Phase B-5 (Export-Preview) ist der naechste dokumentierte Schritt.
+
 ## 2026-05-28 — Train F.7 Phase B-3: Insights Screen on Map-First Scaffold (Branch `feat/insights-migration-map-first`)
 
 ### Added

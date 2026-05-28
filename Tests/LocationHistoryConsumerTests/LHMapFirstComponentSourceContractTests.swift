@@ -140,6 +140,29 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         XCTAssertTrue(liveSource.contains("LHGlassBottomSheetDashboard"))
     }
 
+    func test_phaseB4_mapTabHeroMountsTheNewScaffold() throws {
+        // Phase B-4 migrates the Map-Tab Hero inside LGTabContainerView onto
+        // the shared scaffold. LHMapFloatingChrome is NOT required —
+        // `AppOverviewTracksMapView` already overlays MapLayerMenu + badges;
+        // a second LHMapFloatingChrome would double the affordances
+        // (documented exception, mirrors the Insights B-3 treatment).
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let source = try String(
+            contentsOf: root.appendingPathComponent("LGTabContainerView.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(
+            source.contains("LHMapFirstPageScaffold"),
+            "LGTabContainerView.mapTab must mount LHMapFirstPageScaffold in Phase B-4."
+        )
+        XCTAssertTrue(
+            source.contains("LHGlassBottomSheetDashboard"),
+            "LGTabContainerView.mapTab must mount LHGlassBottomSheetDashboard in Phase B-4."
+        )
+    }
+
     func test_phaseB3_insightsMountsTheNewScaffold() throws {
         // Phase B-3 migrates AppInsightsContentView onto the shared scaffold
         // for the heroEnabled iOS-26 path. LHMapFloatingChrome is NOT
@@ -186,10 +209,9 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         )
     }
 
-    func test_phaseB3_remainingMapScreensNotYetMigrated() throws {
-        // Map-Tab-Hero / Export / Heatmap / Editor remain on their
-        // pre-migration compositions; update each entry in the
-        // corresponding sub-train PR.
+    func test_phaseB4_remainingMapScreensNotYetMigrated() throws {
+        // Export / Heatmap / Editor remain on their pre-migration
+        // compositions; update each entry in the corresponding sub-train PR.
         guard let root = sourcesDirectory() else {
             throw XCTSkip("Sources/ tree not reachable.")
         }
