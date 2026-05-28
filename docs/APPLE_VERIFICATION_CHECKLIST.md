@@ -1,5 +1,22 @@
 # Apple Verification Checklist
 
+## Aktualisierung 2026-05-28 — Train F.6 Prep: Design-Contract Map-First Liquid Glass UI
+
+**HEAD:** folgt nach Commit auf `docs/map-first-liquid-glass-contract`.
+
+### Lokal verifiziert
+- `docs/UI_UX_MAP_FIRST_LIQUID_GLASS_CONTRACT_2026-05-28.md` und `docs/UI_UX_MAP_FIRST_MIGRATION_PLAN_2026-05-28.md` als neue Single Sources im Repo.
+- HIG-Hartregeln im Contract festgeschrieben: Tap-Targets >= 44 pt, Apple-Maps-Attribution nie verdecken, Color-Only-Information verboten, Dynamic Type, GlassEffectContainer-Gruppierung.
+- Apple-Referenzen (Liquid Glass, SwiftUI GlassEffectContainer, MapKit-for-SwiftUI, HIG Maps/Buttons/Layout/Accessibility, Xcode Performance, Animation Hitches) im Contract verlinkt.
+- `swift build` und `swift test` gruen (Linux x86_64) — keine Code-Aenderung in Train F.6.
+
+### Extern offen
+- Pruefung der Apple-Referenz-URLs auf macOS mit Browser/Developer-Doc-Viewer vor Train 2.
+- HIG-Konformitaet pro migrierter Surface in Train 2/3 (Hit-Region >= 44 pt, Attribution-Guard, Dynamic Type) am Geraet verifizieren.
+- Performance-Profile aus `LHMapPerformancePolicy` mit Instruments (Time Profiler, Allocations, Animation Hitches, Energy Log) in Train 3 messen.
+
+---
+
 ## Aktualisierung 2026-05-27 — WeatherKit Capability + Diagnostics
 
 **HEAD:** folgt nach Commit auf `fix/weatherkit-capability-diagnostics`.

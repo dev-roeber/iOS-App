@@ -1,5 +1,16 @@
 # APP Feature Inventory
 
+## Aktualisierung 2026-05-28 — Train F.6 Prep: Design-Contract Map-First Liquid Glass UI
+
+- **Bericht:** `docs/UI_UX_MAP_FIRST_LIQUID_GLASS_CONTRACT_2026-05-28.md` (Design-Contract), `docs/UI_UX_MAP_FIRST_MIGRATION_PLAN_2026-05-28.md` (Phasen + Risiko-Matrix).
+- **Verbindliche Komponenten (ab Train 2):** `LHMapFirstPageScaffold`, `LHMapWorkspace`, `LHGlassBottomSheetDashboard`, `LHMapFloatingChrome`, `LHMapMetricCard`, `LHGlassPageScaffold`, `LHGlassSectionCard`, `LHMapPerformancePolicy`.
+- **Karten-Inventur (8 Map-Instanzen):** AppDayMapView, AppOverviewTracksMapView (Compact + Explore-Sheet), AppExportPreviewMapView, AppHeatmapView, AppLiveTrackingView (Inline + Fullscreen), AppRecordedTrackEditorView. Alle nutzen `AppMapStyleResolver` als Single Source. Heutige Track-Width-Drift (3.0/4.0/4.5/5.0/5.5) wird auf Default 4.5 konsolidiert (Override fuer Export 5.0 dokumentiert).
+- **Token-Single-Sources:** `LHMapBase` (Insets, Detents, Attribution-Guard, TabBar-Clearance), `LGGlassHelpers` (lgGlassSurface/Pill/Circle, LGGlassEffectGroup), `LH2GPXTheme.LiquidGlass` (Hairline, Track-/Tempo-/Elevation-/Weather-Tints), `AppMapStyleResolver` (MapStyle-Pfad).
+- **Bekannte Restpunkte aus Audit 2026-05-27:** 17 i18n-Holes (Files 14 + LGTabContainerView 3), MapLayerMenu-Pill 34×34 pt (HIG-Verletzung), Recording-Dual-Truth, Insights Mode/Filter-Coupling, A11y-Lueken Insights/DayMap-Controls.
+- **Geltungsbereich:** iOS-26-iPhone-Pfad (`LGTabContainerView`). Pre-iOS-26-/iPad-Pfad (`AppContentSplitView`) bleibt unangetastet.
+
+---
+
 ## Aktualisierung 2026-05-27 — SwiftUI/UI-Framework-Audit
 
 - **Bericht:** `docs/UI_FRAMEWORK_SWIFTUI_AUDIT_2026-05-27.md`.

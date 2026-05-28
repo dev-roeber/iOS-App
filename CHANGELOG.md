@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2026-05-28 — Train F.6 Prep: Design-Contract Map-First Liquid Glass UI (Branch `docs/map-first-liquid-glass-contract`)
+
+### Added
+- `docs/UI_UX_MAP_FIRST_LIQUID_GLASS_CONTRACT_2026-05-28.md` — verbindlicher Design-Contract fuer iOS-26-iPhone-Surfaces: Architektur-Schichten, Komponenten-Contract (`LHMapFirstPageScaffold`, `LHMapWorkspace`, `LHGlassBottomSheetDashboard`, `LHMapFloatingChrome`, `LHMapMetricCard`, `LHGlassPageScaffold`, `LHGlassSectionCard`, `LHMapPerformancePolicy`), Token-Konstanten, HIG-Hartregeln, Per-Map-Screen-Contract-Tabelle, Nicht-Karten-Screen-Contract, verbotene Patterns, Migrationsregeln, Governance. Inkl. Apple-Referenzen (Liquid Glass, SwiftUI GlassEffectContainer, MapKit for SwiftUI, HIG Maps/Buttons/Layout/Accessibility, Xcode Performance, Animation Hitches).
+- `docs/UI_UX_MAP_FIRST_MIGRATION_PLAN_2026-05-28.md` — Migrationsplan in 4 Phasen (Shared-Components → Map-Screens → Nicht-Karten-Screens → Hardening), Screen- und Karten-Inventur, Risiko-Matrix, Akzeptanzkriterien pro Phase, Test-Strategie, offene Fragen, bekannte Restpunkte aus dem 2026-05-27-Audit.
+
+### Why
+- Vor Train 2 (Migration) und Train 3 (Hardening) wird die verbindliche UI-Sprache schriftlich festgelegt, damit der Big-Bang-Refactor vermieden und Migration in 4 nachvollziehbaren Phasen ausgerollt werden kann. Single Sources fuer Material, Insets, Detents und Performance-Policy verhindern erneute Drift.
+
+### Tests
+- `swift build` gruen.
+- `swift test` gruen, 1756 Tests / 3 skipped / 0 failures (Linux x86_64) — keine Code-Aenderung in Train F.6, nur Dokumentation.
+
 ## [Unreleased] — Glass-Konvergenz & Sweep + tabViewBottomAccessory (Branch `feat/glass-convergence-sweep-bottom-accessory`)
 
 ### Added

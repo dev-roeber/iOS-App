@@ -1,5 +1,14 @@
 # ROADMAP
 
+## Aktiver Stand (2026-05-28, Branch `docs/map-first-liquid-glass-contract` — Train F.6 Prep: Design-Contract)
+
+- **Train F.6 Prep (laufend):** Design-Contract „Map-First Liquid Glass UI" + Migrationsplan in `docs/UI_UX_MAP_FIRST_LIQUID_GLASS_CONTRACT_2026-05-28.md` und `docs/UI_UX_MAP_FIRST_MIGRATION_PLAN_2026-05-28.md`. Keine Code-Aenderung.
+- **Train 2 (F.7, geplant):** Phase A des Migrationsplans — Shared-Components (`LHMapFirstPageScaffold`, `LHMapWorkspace`, `LHGlassBottomSheetDashboard`, `LHMapFloatingChrome`, `LHMapMetricCard`, `LHGlassPageScaffold`, `LHGlassSectionCard`, `LHMapPerformancePolicy`). Anschliessend Phase B/C Screen-Migrationen in dokumentierter Reihenfolge.
+- **Train 3 (Performance-Hardening, geplant):** Phase D — Performance-Profile, Recording-Single-Truth, MapLayerMenu-Hit-Region, Insights Mode/Filter-Coupling, Instruments-Messplan.
+- **Akzeptanzkriterien & Risiko-Matrix:** im Migrationsplan dokumentiert.
+
+---
+
 ## Aktiver Stand (2026-05-27, Branch `audit/swiftui-ui-framework-complete` — SwiftUI/UI-Framework-Audit)
 
 - **Neu verifiziert:** SwiftUI ist das primäre UI-Framework. `UIViewRepresentable` ist nicht aktiv; genau eine `UIViewControllerRepresentable`-Bridge (`IOSTabReselectionObserver`) bleibt technisch begründet.
