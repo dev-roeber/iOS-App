@@ -147,8 +147,9 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
     private var dragHandle: some View {
         VStack(spacing: 0) {
             Capsule()
-                .fill(LH2GPXTheme.LiquidGlass.hairline)
-                .frame(width: 40, height: 5)
+                .fill(Color.white.opacity(0.6))
+                .frame(width: 44, height: 6)
+                .shadow(color: Color.black.opacity(0.25), radius: 1, y: 0.5)
         }
         .frame(maxWidth: .infinity, minHeight: 44)
         .contentShape(Rectangle())
@@ -170,7 +171,7 @@ public struct LHGlassBottomSheetDashboard<HeaderContent: View, BodyContent: View
     }
 
     private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 8)
+        DragGesture(minimumDistance: 8, coordinateSpace: .global)
             .updating($dragOffset) { value, state, _ in
                 state = value.translation.height
             }
