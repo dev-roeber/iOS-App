@@ -100,7 +100,17 @@ public struct AppLiveTrackingView: View {
                         liveRecordingBottomInset
                     }
             } else {
-                multiLayerPortraitLayout
+                // Phase B-1 (Train F.7): iOS 26 mounts the new
+                // LHMapFirstPageScaffold + LHMapWorkspace(.live) +
+                // LHMapFloatingChrome + LHGlassBottomSheetDashboard. The
+                // existing `multiLayerPortraitLayout` stays as the iOS-17/25
+                // fallback so a one-line revert is enough if the new path
+                // regresses on device.
+                if #available(iOS 26.0, *) {
+                    scaffoldedPortraitLayout
+                } else {
+                    multiLayerPortraitLayout
+                }
             }
         }
         // NavigationTitle is set by the parent (LGTabContainerView → "Live")
@@ -395,6 +405,162 @@ public struct AppLiveTrackingView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             multiLayerBottomSheet
         }
+    }
+
+    // MARK: - Phase B-1 (Train F.7): Scaffolded Portrait Layout (iOS 26+)
+    //
+    // Wraps the existing `liveMapBase`, `LiveLayerPanel`, `LiveControlStack`
+    // and `compactRecordFAB` into the new shared `LHMapFirstPageScaffold`
+    // + `LHMapFloatingChrome` + `LHGlassBottomSheetDashboard` components.
+    // Recording semantics, follow toggle, background-recording toggle and
+    // permission handling are unchanged — only the outer composition moves
+    // to the contract-mandated scaffolding. The legacy
+    // `multiLayerPortraitLayout` above stays untouched as the iOS-17/25
+    // fallback and as a one-line revert path.
+
+    @available(iOS 26.0, *)
+    private var scaffoldedPortraitLayout: some View {
+        let bottomSafe = lhDeviceBottomSafeInset()
+        let clearance = LHMapBase.bottomSheetTabBarClearance(
+            deviceBottomSafeInset: bottomSafe
+        )
+        return ZStack(alignment: .bottomTrailing) {
+            LHMapFirstPageScaffold(
+                topSafeInset: lhDeviceTopSafeInset(),
+                bottomSafeInset: bottomSafe,
+                sheetBottomClearance: clearance
+            ) {
+                liveMapBase
+            } floatingChrome: {
+                LHMapFloatingChrome(
+                    topSafeInset: lhDeviceTopSafeInset(),
+                    accessibilityPrefix: "live.scaffold"
+                ) {
+                    LiveLayerPanel(
+                        selected: $preferences.mapTrackColorMode,
+                        showWeather: $showWeatherLayer,
+                        showElevation: $showElevationLayer,
+                        layersLabel: layersPanelLabel,
+                        weatherAllowed: preferences.weatherLayerEnabled,
+                        weatherDisabledHint: t("Enable in Settings")
+                    )
+                } controls: {
+                    LiveControlStack(
+                        isFollowing: liveLocation.isFollowingLocation,
+                        onCompass: { centerOnCurrentLocation() },
+                        onZoomIn: { adjustMapZoom(factor: 0.5) },
+                        onZoomOut: { adjustMapZoom(factor: 2.0) },
+                        onLocate: {
+                            liveLocation.isFollowingLocation.toggle()
+                            if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
+                        },
+                        onCompactToggle: {
+                            withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
+                                isCompactMap.toggle()
+                            }
+                        },
+                        isCompact: isCompactMap
+                    )
+                }
+            } sheet: {
+                LHGlassBottomSheetDashboard(
+                    detents: isCompactMap ? .compactPortrait : .portrait,
+                    initialDetent: .medium,
+                    bottomClearance: clearance,
+                    accessibilityPrefix: "live.scaffold.sheet"
+                ) {
+                    scaffoldedSheetHeader
+                } body: {
+                    scaffoldedSheetBody
+                }
+            }
+
+            // Stop / record FAB sits above the sheet via explicit z-index so a
+            // future sheet-gesture refactor cannot put it behind the dashboard.
+            compactRecordFAB
+                .padding(.trailing, 16)
+                .padding(.bottom, 12 + clearance)
+                .zIndex(1)
+                .accessibilityIdentifier("live.recording.scaffold.fab")
+        }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedSheetHeader: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(t("STATUS · LIVE MAP"))
+                .font(.caption2.weight(.heavy))
+                .tracking(0.7)
+                .foregroundStyle(.secondary)
+            Text(heroStatusTitle)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(heroStatusTint)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedSheetBody: some View {
+        VStack(spacing: 0) {
+            LiveBottomSheetRow(
+                indicatorColor: accuracyColor,
+                icon: "scope",
+                label: t("GPS Accuracy"),
+                value: accuracyText,
+                trailingTint: accuracyColor
+            )
+            Divider().opacity(0.35)
+            LiveBottomSheetRow(
+                indicatorColor: liveLocation.isFollowingLocation ? .blue : .secondary,
+                icon: liveLocation.isFollowingLocation ? "location.fill" : "location",
+                label: t("Follow"),
+                value: liveLocation.isFollowingLocation ? t("Follow On") : t("Follow Off"),
+                trailingTint: liveLocation.isFollowingLocation ? .blue : .secondary,
+                action: liveLocation.currentLocation == nil ? nil : {
+                    liveLocation.isFollowingLocation.toggle()
+                    if liveLocation.isFollowingLocation { centerOnCurrentLocation() }
+                }
+            )
+            Divider().opacity(0.35)
+            LiveBottomSheetRow(
+                indicatorColor: preferences.allowsBackgroundLiveTracking ? LH2GPXTheme.liveMint : .secondary,
+                icon: preferences.allowsBackgroundLiveTracking ? "moon.fill" : "moon",
+                label: t("Background Recording"),
+                value: preferences.allowsBackgroundLiveTracking ? t("On") : t("Off"),
+                trailingTint: preferences.allowsBackgroundLiveTracking ? LH2GPXTheme.liveMint : .secondary,
+                action: { preferences.allowsBackgroundLiveTracking.toggle() }
+            )
+            Divider().opacity(0.35)
+            LiveBottomSheetRow(
+                indicatorColor: LH2GPXTheme.liveMint,
+                icon: "point.topleft.down.curvedto.point.bottomright.up",
+                label: t("Track Library"),
+                value: "\(liveLocation.recordedTracks.count)",
+                trailingTint: LH2GPXTheme.liveMint,
+                action: onOpenSavedTracksLibrary
+            )
+            Divider().opacity(0.35)
+            LiveBottomSheetRow(
+                indicatorColor: permissionTintColor,
+                icon: statusSymbolName,
+                label: t("Permission"),
+                value: permissionShortValue,
+                trailingTint: permissionTintColor
+            )
+
+            if liveLocation.hasInterruptedSession {
+                Divider().opacity(0.35)
+                interruptedSessionBanner
+                    .padding(.vertical, 6)
+            }
+
+            Divider().opacity(0.35)
+            diagnosticsDisclosure
+        }
+        .accessibilityIdentifier("live.scaffold.sheet.body")
     }
 
     /// Vertical room reserved below the trailing `LiveControlStack` so the
