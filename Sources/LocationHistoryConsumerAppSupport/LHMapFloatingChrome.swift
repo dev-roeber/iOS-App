@@ -9,6 +9,12 @@ import SwiftUI
 public struct LHMapFloatingChrome<LayerContent: View, ControlsContent: View>: View {
     public static var minimumHitRegion: CGFloat { 44 }
 
+    /// Zusätzlicher Abstand zur iOS-26 NavigationBar (Trailing-Toolbar-Items
+    /// wie '•••' und der Recording-Indikator + Leading-Back-Pille auf
+    /// Detail-Screens). Verhindert, dass Layer-Panel/Control-Stack IN die
+    /// NavBar-Höhe laufen und dort kollidieren.
+    public static var navBarClearance: CGFloat { 52 }
+
     private let topSafeInset: CGFloat
     private let accessibilityPrefix: String
     private let layers: LayerContent
@@ -28,6 +34,7 @@ public struct LHMapFloatingChrome<LayerContent: View, ControlsContent: View>: Vi
 
     public var body: some View {
         let topInset = LHMapBase.floatingControlTopInset(deviceTopSafeInset: topSafeInset)
+            + Self.navBarClearance
         let side = LHMapBase.floatingControlSideInset
 
         LGGlassEffectGroup(spacing: 8) {
