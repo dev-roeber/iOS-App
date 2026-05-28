@@ -226,10 +226,155 @@ public struct AppInsightsContentView: View {
         if daySummaries.isEmpty {
             insightsFullEmptyState
         } else if heroEnabled {
-            heroLoadedBody
+            // Phase B-3 (Train F.7): scaffolded layout on iOS 26+.
+            // The legacy `heroLoadedBody` stays as the iOS-17/25 fallback
+            // and as a one-line revert path.
+            if #available(iOS 26.0, *) {
+                scaffoldedInsightsLayout
+            } else {
+                heroLoadedBody
+            }
         } else {
             loadedBody
         }
+    }
+
+    // MARK: - Phase B-3 (Train F.7): Scaffolded Insights Layout (iOS 26+)
+    //
+    // Mounts `LHMapFirstPageScaffold` with the existing `insightsHeroMap`
+    // as the map slot and the existing `insightsHeroFilterPanel` plus
+    // `insightsBodyContent` inside an `LHGlassBottomSheetDashboard`.
+    //
+    // Floating chrome slot is intentionally an `EmptyView()` because
+    // `insightsHeroMap` (via `LHCollapsibleMapHeader` + the F.5-finish
+    // additions) already embeds its own `LiveLayerPanel` and
+    // `DayDetailControlStack` overlays. Mounting another
+    // `LHMapFloatingChrome` would double the affordances — documented
+    // exception in the F.7 Phase B-3 entry of CHANGELOG.md.
+    //
+    // SurfaceMode / RangeFilter / Drilldown / Share / Chart semantics are
+    // 1:1 reused from `heroLoadedBody` via the same side-effect modifiers.
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedInsightsLayout: some View {
+        let bottomSafe = lhDeviceBottomSafeInset()
+        let clearance = LHMapBase.bottomSheetTabBarClearance(
+            deviceBottomSafeInset: bottomSafe
+        )
+        LHMapFirstPageScaffold(
+            topSafeInset: lhDeviceTopSafeInset(),
+            bottomSafeInset: bottomSafe,
+            sheetBottomClearance: clearance
+        ) {
+            insightsHeroMap
+        } floatingChrome: {
+            EmptyView()
+        } sheet: {
+            LHGlassBottomSheetDashboard(
+                detents: .portrait,
+                initialDetent: .medium,
+                bottomClearance: clearance,
+                accessibilityPrefix: "insights.scaffold.sheet"
+            ) {
+                scaffoldedInsightsSheetHeader
+            } body: {
+                scaffoldedInsightsSheetBody
+            }
+        }
+        .onAppear { refreshDerivedModel() }
+        .onChange(of: insights) { _, _ in refreshDerivedModel() }
+        .onChange(of: daySummaries) { _, _ in refreshDerivedModel() }
+        .onChange(of: rangeFilter) { _, _ in refreshDerivedModel() }
+        .onChange(of: preferences.distanceUnit) { _, _ in refreshDerivedModel() }
+        .onChange(of: preferences.appLanguage) { _, _ in refreshDerivedModel() }
+        .confirmationDialog(
+            pendingDrilldownTitle,
+            isPresented: Binding(
+                get: { !pendingDrilldownTargets.isEmpty },
+                set: { if !$0 { pendingDrilldownTargets = [] } }
+            ),
+            titleVisibility: .visible
+        ) {
+            ForEach(pendingDrilldownTargets) { target in
+                Button(t(target.label)) {
+                    pendingDrilldownTargets = []
+                    onDrilldown?(target.action)
+                }
+            }
+            Button(t("Cancel"), role: .cancel) {
+                pendingDrilldownTargets = []
+            }
+        } message: {
+            Text(t("Choose where to continue with this insight."))
+        }
+        .sheet(item: $shareSheetPayload) { payload in
+            NavigationStack {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(payload.title)
+                        .font(.headline)
+                    Text(payload.filename)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    ShareLink(item: payload.url) {
+                        Label(t("Share Chart"), systemImage: "square.and.arrow.up")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .accessibilityIdentifier("insights.share.chart")
+                    .buttonStyle(.borderedProminent)
+                    Spacer()
+                }
+                .padding()
+                .navigationTitle(t("Share"))
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(t("Done")) {
+                            shareSheetPayload = nil
+                        }
+                    }
+                }
+            }
+        }
+        .alert(
+            t("Share Failed"),
+            isPresented: Binding(
+                get: { shareError != nil },
+                set: { if !$0 { shareError = nil } }
+            )
+        ) {
+            Button(t("OK"), role: .cancel) {
+                shareError = nil
+            }
+            .accessibilityIdentifier("insights.shareFailed.ok")
+        } message: {
+            Text(shareError ?? "")
+        }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedInsightsSheetHeader: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(t("INSIGHTS"))
+                .font(.caption2.weight(.heavy))
+                .tracking(0.7)
+                .foregroundStyle(.secondary)
+            Text(t("Insights"))
+                .font(.title3.weight(.bold))
+                .foregroundStyle(LH2GPXTheme.LiquidGlass.ink)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var scaffoldedInsightsSheetBody: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            insightsHeroFilterPanel
+            insightsBodyContent(isLandscape: verticalSizeClass == .compact)
+        }
+        .accessibilityIdentifier("insights.scaffold.sheet.body")
     }
 
     /// Compact-width body wrapped in the cross-app Hero-Map workspace.

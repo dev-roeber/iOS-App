@@ -140,6 +140,29 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         XCTAssertTrue(liveSource.contains("LHGlassBottomSheetDashboard"))
     }
 
+    func test_phaseB3_insightsMountsTheNewScaffold() throws {
+        // Phase B-3 migrates AppInsightsContentView onto the shared scaffold
+        // for the heroEnabled iOS-26 path. LHMapFloatingChrome is NOT
+        // required here — `insightsHeroMap` already encapsulates its own
+        // layer-panel + control-stack overlays via LHCollapsibleMapHeader
+        // (documented exception in CHANGELOG and migration plan).
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let source = try String(
+            contentsOf: root.appendingPathComponent("AppInsightsContentView.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(
+            source.contains("LHMapFirstPageScaffold"),
+            "AppInsightsContentView must mount LHMapFirstPageScaffold in Phase B-3."
+        )
+        XCTAssertTrue(
+            source.contains("LHGlassBottomSheetDashboard"),
+            "AppInsightsContentView must mount LHGlassBottomSheetDashboard in Phase B-3."
+        )
+    }
+
     func test_phaseB2_dayDetailMountsTheNewScaffold() throws {
         // Phase B-2 migrates AppDayDetailView onto the shared scaffold.
         guard let root = sourcesDirectory() else {
@@ -163,14 +186,14 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
         )
     }
 
-    func test_phaseB2_remainingMapScreensNotYetMigrated() throws {
-        // Insights / Export / Heatmap / Editor remain on their pre-migration
-        // compositions; update each entry in the corresponding sub-train PR.
+    func test_phaseB3_remainingMapScreensNotYetMigrated() throws {
+        // Map-Tab-Hero / Export / Heatmap / Editor remain on their
+        // pre-migration compositions; update each entry in the
+        // corresponding sub-train PR.
         guard let root = sourcesDirectory() else {
             throw XCTSkip("Sources/ tree not reachable.")
         }
         let candidates = [
-            "AppInsightsContentView.swift",
             "AppExportView.swift",
             "AppHeatmapView.swift",
             "AppRecordedTrackEditorView.swift"
@@ -185,6 +208,32 @@ final class LHMapFirstComponentSourceContractTests: XCTestCase {
                 "\(relative) must not mount LHMapFirstPageScaffold before its Phase-B sub-train."
             )
         }
+    }
+
+    func test_noMapContentBuilderRegression() throws {
+        // After the Phase-A LHMapWorkspace hotfix (Build 288), the only
+        // generic parameter constrained to `MapContent` lives in
+        // LHMapWorkspace.swift with `@MapContentBuilder`. A regression
+        // would re-introduce `<MapContent: View>` or `@ViewBuilder` next
+        // to a MapKit `Map { ... }` builder elsewhere in the new
+        // components.
+        guard let root = sourcesDirectory() else {
+            throw XCTSkip("Sources/ tree not reachable.")
+        }
+        let workspaceURL = root.appendingPathComponent("LHMapWorkspace.swift")
+        let source = try String(contentsOf: workspaceURL, encoding: .utf8)
+        XCTAssertTrue(
+            source.contains("Content: MapContent"),
+            "LHMapWorkspace must constrain its generic to the MapKit `MapContent` protocol."
+        )
+        XCTAssertTrue(
+            source.contains("@MapContentBuilder"),
+            "LHMapWorkspace must use `@MapContentBuilder` for its map closure."
+        )
+        XCTAssertFalse(
+            source.contains("MapContent: View"),
+            "LHMapWorkspace generic must NOT be constrained to View again — Build 288 regression."
+        )
     }
 
     // MARK: - Xcode-Cloud regression guard
